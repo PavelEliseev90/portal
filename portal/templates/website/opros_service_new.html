@@ -1,0 +1,1266 @@
+{% extends 'base_web_old.html' %}
+
+{% block title %} - электронный заказ наряд {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+
+<script type="text/javascript">
+    
+    function clickAnswer(id, groups){
+        
+        var codes = document.querySelectorAll("#main" + groups + " .btn");
+        for (let elem of codes) {
+            elem.className  = "btn btn-dark"
+        }
+        var id_elem = "#v" + groups + "_" + id
+        var button = document.querySelector(id_elem);
+       
+        var input = document.querySelector('#a' + groups);
+        
+        if (groups == 7){
+          input.value = button.innerHTML
+        }else{
+          input.value = id
+        }
+      
+        starsClear(1, id, groups)
+        
+        stars(1, id, groups)
+        
+    }
+
+    function starsClear(from, to, groups) {
+            let current = from;
+            let timer1 = setInterval(function() {    
+                    var id_elem = "#v" + groups + "_" + current
+                    var button = document.querySelector(id_elem);
+                    if (current != to){
+                        if (current < 4){
+                            button.className  = "btn btn-dark"   
+                        } else if (current < 8){
+                            button.className  = "btn btn-dark"
+                        } else {
+                            button.className  = "btn btn-dark" 
+                        }
+                    }
+                    if (groups == 7){
+                        if (current == 5) {
+                            clearInterval(timer1);
+                        }
+                    } else if (current == 10) {
+                        clearInterval(timer1);
+                    }
+                    current++;
+                }, 150);
+                clearError(groups)
+            }
+
+    function stars(from, to, groups) {
+            let current = from;
+            let timer = setInterval(function() {    
+                    var id_elem = "#v" + groups + "_" + current
+                    var button = document.querySelector(id_elem);
+                   
+                    if (groups == 7){
+                        button.className  = "btn btn-success" 
+                    } else if (current < 7){
+                        button.className  = "btn btn-danger"   
+                    } else if (current < 9){
+                        button.className  = "btn btn-warning"
+                    } else {
+                        button.className  = "btn btn-success" 
+                    }
+                    
+                    prev = current - 1
+                    if (prev > 0){
+                        var id_elem = "#v" + groups + "_" + prev
+                        var button = document.querySelector(id_elem);
+                        button.className  = "btn btn-dark"
+                    }
+                    
+                    if (current == to) {
+                        clearInterval(timer);
+                    }
+                    current++;
+                }, 150);
+                clearError(groups)
+            }
+
+    function clearError(groups){
+        errorLabel =document.querySelector('#e' + groups);
+        errorLabel.innerHTML = ""
+    }
+
+    function validate_form(){
+        
+        let answer = 1
+        let answers = 7
+        valid = true
+
+        while (answer < answers +1){
+            var input = document.querySelector('#a' + answer);   
+            var error = document.querySelector('#e' + answer);
+            if (input.value == ""){
+                error.innerHTML = "Пожалуйста выберите значение"
+                valid = false
+            }else{
+                error.innerHTML = ""
+            }
+            answer++ 
+        }
+        
+        return valid
+    }
+
+   
+</script>
+
+
+<div style="min-height: 89vh;">  
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>	
+    
+    <nav class="navbar fixed-bottom flex-nowrap overflow-auto bg-white">
+        
+        <div class="nav nav-tabs flex-nowrap overflow-auto" id="nav-tab" role="tablist" style="width: 100%;">
+           
+            {% if not params.doc.typeRemont.warranty %} 
+                <button class="nav-link nbsp active" style="width: 100%; margin: 0; padding: 0;" id="nav-zn-tab" href="#z" data-bs-toggle="tab" data-bs-target="#z" type="button" role="tab" aria-controls="z" aria-selected="false">
+                    
+                    <span class="icon-mbri-home"></span>  
+                    
+                    <br> Заказ-наряд
+
+                </button>
+            {% endif %}
+
+            {% if params.opros %}
+                
+                <button class="nav-link nbsp" style="width: 100%; margin: 0; padding: 0;" id="nav-opros-tab" href="#o" data-bs-toggle="tab" data-bs-target="#o" type="button" role="tab" aria-controls="o" aria-selected="false">
+                    
+                    {% if params.doc.get_opros_close %}
+                        <span class="icon-mbri-bookmark"></span>    
+                    {% elif params.doc.closed %}
+                        <span class="icon-mbri-bookmark fs-bold text-danger"></span>
+                        <span class="badge text-bg-danger"> &nbsp;</span>
+                    {% else %}
+                        <span class="icon-mbri-bookmark"></span>
+                    {% endif %}
+                    
+                    <br> Опрос
+
+                </button>
+
+            {% endif %}
+
+            {% if not params.doc.typeRemont.warranty %} 
+                
+                <button class="nav-link nbsp" style="width: 100%; margin: 0; padding: 0;" id="nav-recomendation-tab" href="#r" data-bs-toggle="tab" data-bs-target="#r" type="button" role="tab" aria-controls="r" aria-selected="false">
+                    
+                    <span class="icon-mbri-features"></span>
+                    
+                    {% if params.doc.recomendations_customer_1_count > 0 %}
+                        <span class="badge text-bg-danger">{{params.doc.recomendations_new_customer}}</span>
+                    {% endif %}
+                    
+                    <br> Рекомендации 
+
+                </button>
+
+            {% endif %}
+
+        </div>
+
+    </nav>
+
+    <div class="demo-wrap">
+    
+        <div class="bodys_data">
+            
+                
+            <div class="tab-content" id="nav-tabContent">
+
+                {% if not params.doc.typeRemont.warranty %} 
+                    
+                    <div class="tab-pane fade show active" id="z" role="tabpanel" aria-labelledby="nav-zn-tab" tabindex="0">
+                                        
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <table>
+                                        <tbody class="align-middle">
+                                            <tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
+                                            
+                                                <td class="align-middle" style="padding-left: 0.2em;">
+                                                
+                                                    <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                        
+                                                        <label class="fs-4 text-start fw-normal">
+                                                            {% if params.doc.unit.name_dop|length > 0 %}
+                                                                {{params.doc.unit.name_dop}}
+                                                            {% else %}
+                                                                {{params.doc.unit.name}}
+                                                            {% endif %}
+                                                        </label>
+                                                        {% if params.doc.unit.city|length > 0  %}
+                                                            <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span> г. {{params.doc.unit.city}}</label>
+                                                        {% endif %}
+
+                                                        {% if params.doc.unit.phone|length > 0  %}
+                                                            <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-mobile"></span> {{params.doc.unit.phone}}</label>
+                                                        {% endif %}
+
+                                                        {% if params.doc.unit.email|length > 0  %}
+                                                            <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-paper-plane"></span> {{params.doc.unit.email}}</label>
+                                                        {% endif %}
+                                                        
+                                                    </div>
+
+                                                </td>
+
+                                                {% if params.doc.unit.main_photo %}
+                                                    <td class="align-middle col-5 bg-filter" >
+                                                        <div>
+                                                            <img src="{{params.doc.unit.main_photo.url}}" style="border-radius: 0.2em;"> 
+                                                        </div> 
+                                                    </td>  
+                                                {% else %}
+                                                    <td class="align-middle col-4 bg-image">
+                                                    </td>  
+                                                {% endif %}
+                                                
+                                                
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <hr style="width: 75%;">
+
+                                    <table>
+                                        <tbody class="align-middle">
+                                            <tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
+                                            
+                                                <td class="align-middle" style="padding-left: 0.2em;">
+                                                
+                                                    <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                        
+                                                        <label class="fs-4 text-start fw-normal">
+                                                        {{params.doc.master}}
+                                                        </label>
+
+                                                        <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span>{{params.doc.master.post}}</label>
+                                                        
+                                                    </div>
+
+                                                </td>
+
+                                                {% if params.doc.master.main_photo %}
+                                                    <td class="align-middle col-5 bg-filter" >
+                                                        <div>
+                                                            <img src="{{params.doc.master.main_photo.url}}" style="border-radius: 0.2em;"> 
+                                                        </div>
+                                                    </td>  
+                                                {% else %}
+                                                    <td class="align-middle col-4 bg-image">
+                                                    </td>  
+                                                {% endif %}
+                                                
+                                                
+
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <hr style="width: 75%;">
+
+                                    <label class="fs-4 text-start fw-normal">
+                                        № {{params.doc.nomer}} <br> от {{params.doc.dataTime}} 
+                                    </label><br>
+
+                                    <label class="fs-6 text-start fw-normal">
+                                        Вид ремонта: 
+                                    </label> 
+                                    <br>
+                                    <label class="fs-6 text-start fw-normal">
+                                        <span class="icon-mbri-minus text-secondary">{{params.doc.typeRemont}}</span>
+                                    </label>
+                                    <br>
+                                    <label class="fs-6 text-start fw-normal">
+                                        Автомобиль: 
+                                    </label> <br>
+                                    <label class="fs-6 text-start fw-normal">
+                                        <span class="icon-mbri-minus text-secondary">{{params.doc.cars.mark}} {{params.doc.cars.model}}</span><br>
+                                        <span class="icon-mbri-minus text-secondary">{{params.doc.cars.vin}}</span><br>
+                                        <span class="icon-mbri-minus text-secondary">{{params.doc.cars.year}} г.</span><br>
+                                        <span class="icon-mbri-minus text-secondary">{{params.doc.run|floatformat:"0g"}} км.</span><br>
+
+                                    </label>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="table-responsive-sm">
+                                        <table class="table table-sm align-middle">
+                                            <thead>
+                                                <tr>
+                                                <th scope="col text-nowrap nbsp">Позиция</th>
+                                                <th scope="col text-nowrap nbsp text-center">Колво</th>
+                                                <th scope="text-nowrap text-end align-middle" class="text-end align-middle">Сумма</th>
+                                                
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-group-divider">
+                                                {% for work in params.doc.works %}
+                                                    <tr>
+                                                        <td class="align-middle">{{work.work}}</td>
+                                                        <td class="text-nowrap text-center align-middle"> {{work.quantity|floatformat:"2g"}}</td>
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                    </tr>     
+                                                {% endfor %} 
+                                                {% for product in params.doc.products %}
+                                                    <tr>
+                                                        <td class="align-middle">{{product.product}}</td>
+                                                        <td class="text-nowrap text-center align-middle"> {{product.quantity|floatformat:"2g"}}</td>
+                                                        <td class="text-nowrap text-end align-middle"> {{product.amount|floatformat:"2g"}} &#8381;</td>
+                                                    </tr>     
+                                                {% endfor %}    
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                                    
+                                        <div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
+                                        
+                                            <label class="fs-6 text-center" style="padding: 0.2em;">  
+                                                <table>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><span class="icon-mbri-shopping-bag">Товары</td>
+                                                            <td> &nbsp;-&nbsp; </td>
+                                                            <td class="text-end">{{params.doc.products_amount|floatformat:"2g"}} &#8381;</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><span class="icon-mbri-setting3">Работы</td>
+                                                            <td> &nbsp;-&nbsp; </td>
+                                                            <td class="text-end">{{params.doc.works_amount|floatformat:"2g"}} &#8381;</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                
+                                            </label>
+                                            
+                                        </div>
+
+                                        <div class="col">
+
+                                        </div>
+
+                                        <div class="col-auto text-end bg-success bg-opacity-75" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+                                            <label class="fs-2 text-white" style="padding: 0.2em;">  {{params.doc.amount_zn|floatformat:"2g"}} &#8381;</label>
+                                        </div>
+
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <span class="icon-mbri-home" style="padding-bottom: 0.2rem;"> {{params.doc.organization.name}} </span> 
+                                    <br>
+                                    <span class="icon-mbri-sites" style="padding-bottom: 0.2rem;"> {{params.doc.organization.phone}} </span>  
+                                    <br>
+                                    <span class="icon-mbri-bookmark" style="padding-bottom: 0.2rem;"> {{params.doc.organization.inn}}  / {{params.doc.organization.kpp}} </span>  
+                                    <br>
+                                    <span class="icon-mbri-map-pin" style="padding-bottom: 0.2rem;"> {{params.doc.organization.adress}} </span> 
+                                    <br>
+                                    
+                                    <hr style="width: 75%;">
+
+
+                                </div>
+
+                            </div>
+                    </div>
+
+                {% endif %}
+
+                {% if params.opros %}
+                
+                    <div class="tab-pane fade" id="o" role="tabpanel" aria-labelledby="nav-opros-tab" tabindex="0">
+                        
+                        {% if params.doc.get_opros_close %}
+                            
+                            <div class="row g-1">
+                                <div class="col-1 my-auto text-center">
+                                    <p class="fs-5"><span class="icon-mbri-success"> </span></p>
+                                </div>
+                                
+                                <div class="col-11 my-auto text-center">
+                                    <div style="text-align: center;">
+                                        <p class="fs-5"> Спасибо. <br> Ваши ответы помогают нам стать лучше.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% elif params.doc.closed %}
+                            
+                            <form name="form" method="post" onsubmit="return validate_form();"> 
+                                
+                                <div class="card mb-3" style="padding-left: 0.3em; padding-right: 0.3em;">
+                                        
+                                    <div class="">
+                                       
+                                        <label class="fs-5 text-start fw-normal">
+                                            Оцените нашу работу
+                                        </label>
+
+                                    </div>
+                                    
+                                    <hr style="width: 75%;">
+                                    
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                1. Как бы вы оценили общую удовлетворенность обслуживанием в дилерском центре от 1 до 10?
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main1">
+                                                        <div class="container" style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v1_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 1)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label  name="e1" id="e1"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a1" id="a1" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                2. С какой вероятностью Вы порекомендовали бы нас своим друзьям или знакомым если Вас спросят по шкале от 1 до 10?
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main2">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v2_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 2)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label  name="e2" id="e2"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a2" id="a2" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                3. Скорость обслуживания: работы были выполнены в оговоренное время
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main3">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v3_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 3)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label  name="e3" id="e3"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a3" id="a3" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                4. Оцените вежливость и внимательность персонала
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main4">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v4_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 4)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label name="e4" id="e4"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a4" id="a4" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                5. Доступно ли разъяснили Вам перечень и стоимость работ
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main5">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v5_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 5)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label name="e5" id="e5"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a5" id="a5" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                6. Качество оказанной услуги/работ
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main6">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v6_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 6)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label name="e6" id="e6"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a6" id="a6" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                7. Откуда вы узнали о нашем сервисном центре
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main7">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row g-1">
+
+                                                                        <button type="button" class="btn btn-dark" id="v7_1" onclick="clickAnswer(1, 7)">2GIS</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_2" onclick="clickAnswer(2, 7)">От знакомых</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_3" onclick="clickAnswer(3, 7)">Уличная реклама /Радио реклама</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_4" onclick="clickAnswer(4, 7)">Покупал автомобиль в вашем ДЦ</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_5" onclick="clickAnswer(5, 7)">Из интернета</button> 
+                                                                    
+                                                                        <label style="text-align: center;" name="e7" id="e7"> </label>
+                                                            </div>
+                                                            
+                                                        </div>
+                                                        
+                                                        <input type="hidden" name="a7" id="a7" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                8. Если у вас есть пожелания/замечания вы можете поделиться с нами
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main6">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="input-group">
+                                                                        <textarea class="form-control" aria-label="With textarea" name="a8"></textarea>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    {% csrf_token %}
+                                    
+                                    <button id="send" name="send_opros" type="submit" value="submit" class="btn btn-dark">Отправить</button>
+                                        
+                                </div>
+                            
+                            </form>
+
+                        {% else %}
+                           
+                            <div class="row g-1">
+                                <div class="col-1 my-auto text-center">
+                                    <p class="fs-5"><span class="icon-mbri-success"> </span></p>
+                                </div>
+                                
+                                <div class="col-11 my-auto text-center">
+                                    <div style="text-align: center;">
+                                        <p class="fs-5"> Немного терпения. <br> Работы по Вашему автомобилю выполняются.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+                
+                {% endif %}
+                
+                {% if not params.doc.typeRemont.warranty %} 
+                    <div class="tab-pane fade" id="r" role="tabpanel" aria-labelledby="nav-recomendation-tab" tabindex="0">
+                        <div class="card1">
+                            <div class="card-body1">
+
+                                <div class="row g-1">
+                                    
+                                    {% if params.doc.recomendations_mcu_count > 0 or params.doc.recomendations_customer_count > 0 %}
+                                        
+                                            {% for recomendation in params.doc.recomendations_customer %}
+                                                
+                                                <div data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}"  style="z-index: 1000;">
+                                                    
+                                                    <div style="border-radius: 0.3em; border-width: 0.5em; border: 0.1em solid silver;">
+                                                        
+                                                        <table >
+                                                            <tbody class="align-middle">
+                                                                <tr class="align-middle" style="border-radius: 0.3em;" >
+                                                                    
+                                                                    {% if recomendation.recomendation_files_count > 0 %}
+                                                                        <td class="align-middle col-5 bg-filter" style="background-size: cover;background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('/{{recomendation.recomendation_files.0.file.url}}');">
+                                                                            <div class="" data-index="{{forloop.counter}}" >
+                                                                                <img src="{{recomendation.recomendation_files.0.file.url}}" >
+                                                                            </div>
+                                                                        </td>  
+                                                                    {% else %}
+                                                                        <td class="align-middle col-5 bg-filter" style="background-size: cover;background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('/{{recomendation.recomendation_files.0.file.url}}');">
+                                                                            <div class="" data-index="{{forloop.counter}}" >
+                                                                                <img src="/media/nophoto.png" style="opacity: 0.5;" >
+                                                                            </div>
+                                                                        </td>  
+                                                                    {% endif %}
+                                                                    
+                                                                    <td class="align-middle" style="padding-left: 0.2em;">
+                                                                        
+                                                                        <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em; padding: 0.2em;">
+                                                                            
+                                                                            <label class="fs-6 fw-normal position-relative">{{recomendation.name}}
+                                                                                
+                                                                                {% if recomendation.customerStatus == 1 %}
+                                                                                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger" style="left: 95%;">
+                                                                                    &nbsp;
+                                                                                    </span>
+                                                                                {% endif %}
+
+                                                                            </label>
+                                                                            
+                                                                            <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-home"></span> Слесарный участок</label>
+            
+                                                                            {% if recomendation.customerStatus == 1 %}
+                                                                    
+                                                                                <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-idea"></span> Новая</label>
+                                                                                
+                                                                            {% elif recomendation.customerStatus == 2 %}
+                                                                            
+                                                                                <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-success"></span> Согласована</label>
+            
+                                                                            {% elif recomendation.customerStatus == 3 %}
+                                                                            
+                                                                                <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-cursor-close"></span> Отклонена</label>
+            
+                                                                            {% endif %}
+                                                                            
+                                                                            
+                                                                            <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+                                                                                
+                                                                                <label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+                                                                                    
+                                                                                    <span class="icon-mbri-shopping-bag"></span> {{recomendation.recomendation_products|length}}
+                                                                                    <div class="vr"></div>
+                                                                                    <span class="icon-mbri-setting3"></span> {{recomendation.recomendation_works|length}}
+                                                                                    <div class="vr"></div>
+                                                                                    <span class="icon-mbri-photos"></span> {{recomendation.recomendation_files_count}}
+                                                                                </label>
+                                                                                
+                                                                            </div>
+            
+                                                                            
+            
+                                                                        </div>
+            
+                                                                        <div class="col text-end">
+                                                                            <label class="fs-4 bg-success bg-opacity-75 text-white" style="border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{recomendation.recomendation_amount|floatformat:"2g"}} &#8381;</label>
+                                                                        </div>
+                                                                    </td>
+
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                        
+                                                    </div>
+                                                </div>
+
+                                                <div  class="modal fade" id="example_recomendation_service_{{forloop.counter}}" tabindex="-1" aria-labelledby="example_filter_label" aria-hidden="true">
+                                                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                                                        <div class="modal-content">
+                                                            
+                                                            <div class="modal-header">
+                                                                {% if recomendation.customerStatus == 1 %}
+                                                            
+                                                                    <label class="fs-6 fw-normal"> <span class="icon-mbri-idea"></span> Новая</label>
+                                                                    
+                                                                {% elif recomendation.customerStatus == 2 %}
+                                                                
+                                                                    <label class="fs-6 fw-normal"> <span class="icon-mbri-success"></span> Согласована</label>
+
+                                                                {% elif recomendation.customerStatus == 3 %}
+                                                                
+                                                                    <label class="fs-6 fw-normal"> <span class="icon-mbri-close"></span> Отклонена</label>
+
+                                                                {% endif %}
+
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                                                            </div>
+                                                
+                                                            <div class="modal-body">
+                                                            
+                                                                <div class="card-body">
+                                                                    
+                                                                    <label class="fs-5 fw-normal">Рекомендация:</label><br>
+                                                                    <span class="icon-mbri-minus">{{recomendation.name}}</span><br>
+                                                                    
+                                                                    <hr>
+
+                                                                    <div class="table-responsive-sm">
+                                                                        <table class="table table-sm align-middle">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th scope="col text-nowrap nbsp">Позиция</th>
+                                                                                    <th scope="col text-nowrap nbsp text-end">Колво</th>
+                                                                                    <th scope="text-nowrap text-end align-middle" class="text-end align-middle">Сумма</th>
+                                                                                    
+                                                                                </tr>
+                                                                                </thead>
+                                                                            <tbody class="table-group-divider">
+                                                                                {% for work in recomendation.recomendation_works %}
+                                                                                    <tr>
+                                                                                        <td class="align-middle">{{work.work}}</td>
+                                                                                        <td class="text-nowrap text-center align-middle"> {{work.quantity|floatformat:"2g"}}</td>
+                                                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                                                    </tr>     
+                                                                                {% endfor %} 
+                                                                                {% for product in recomendation.recomendation_products %}
+                                                                                    <tr>
+                                                                                        <td class="align-middle">{{product.product}}</td>
+                                                                                        <td class="text-nowrap text-center align-middle"> {{product.quantity|floatformat:"2g"}}</td>
+                                                                                        <td class="text-nowrap text-end align-middle"> {{product.amount|floatformat:"2g"}} &#8381;</td>
+                                                                                    </tr>     
+                                                                                {% endfor %}    
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+
+                                                                    <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                                    
+                                                                        <div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
+                                                                            
+                                                                            <label class="fs-6 text-center" style="padding: 0.2em;">  
+                                                                                <table>
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td><span class="icon-mbri-shopping-bag">Товары</td>
+                                                                                            <td> &nbsp;-&nbsp; </td>
+                                                                                            <td class="text-end">{{recomendation.recomendation_products_amount|floatformat:"2g"}} &#8381;</td>
+                                                                                        </tr>
+                                                                                        <tr>
+                                                                                            <td><span class="icon-mbri-setting3">Работы</td>
+                                                                                            <td> &nbsp;-&nbsp; </td>
+                                                                                            <td class="text-end">{{recomendation.recomendation_works_amount|floatformat:"2g"}} &#8381;</td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                                
+                                                                            </label>
+                                                                            
+                                                                        </div>
+
+                                                                        <div class="col">
+
+                                                                        </div>
+
+                                                                        <div class="col-auto text-end bg-success bg-opacity-75" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+                                                                            <label class="fs-2 text-white" style="padding: 0.2em;">  {{recomendation.recomendation_amount|floatformat:"2g"}} &#8381;</label>
+                                                                        </div>
+
+                                                                    </div>
+                
+                                                                    
+                                                                    
+                                                                    {% if recomendation.recomendation_files_count > 0 %}
+                                                                        <hr>
+                                                                        
+                                                                        <div class="gallery-container">
+                                                                            {% for recomendation_object in recomendation.recomendation_files %}
+                                                                                    
+                                                                                {% if recomendation_object.is_video %}
+                                                                                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                                                                                        <div class="video-responsive">
+                                                                                            <iframe width="auto" src="{{recomendation_object.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                {% else %}
+                                                                                    <div class="gallery-item" id='foto_{{forloop.parentloop.counter}}_{{forloop.counter}}' data-index="{{forloop.parentloop.counter}}_{{forloop.counter}}">
+                                                                                        <img src="{{recomendation_object.file.url}}">
+                                                                                    </div>
+                                                                                {% endif %}
+                                                            
+                                                                            {% endfor %}
+                                                                        </div>
+                
+                                                                    {% endif %}
+                                                                    
+                                                                    {% if recomendation.customerStatus == 1 %}
+                                                                        <hr>
+                                                                        <!--
+                                                                        <div class="form-floating mb-3">
+                                                                            <input type="number" style="text-align: center;" maxlength="4" min="1000" max="9999" id="dop_key_{{recomendation.id}}" name="dop_key_{{recomendation.id}}" class="form-control" aria-label="" onkeypress="return isNumberKey(event)">
+                                                                            <label for="floatingInput">Код согласования из СМС</label>
+                                                                            
+                                                                        </div>
+                                                                        
+                                                                        <div class="col-sm" style="text-align: center;">
+                                                                            <label id="dop_key_error_{{recomendation.id}}" name="dop_key_error_{{recomendation.id}}" style="text-align: center; color: red;">   </label>
+                                                                        </div>
+                                                                        -->
+                                                                        <form action="" id="form_send_dop_success">
+                                                                            <div class="d-grid gap-2">
+                                                                                <button type="submit"  class="btn btn-outline-success" id="dop_success_{{recomendation.id}}" name="dop_success_{{recomendation.id}}" ><span class="icon-mbri-success"></span> Согласовать</button>
+                                                                            </div>
+                                                                        </form>
+                    
+                                                                        <br>
+                    
+                                                                        <form action="" method="POST" id="form_send_dop_cancel">
+                                                                            <div class="d-grid gap-2">
+                                                                                <input hidden name="dop_cancel" id="dop_cancel" value="{{recomendation.id}}"> 
+                                                                                <button type="submit" class="btn btn-outline-danger" id="dop_cancel_{{recomendation.id}}" name="dop_cancel_{{recomendation.id}}" ><span class="icon-mbri-close"></span> Отклонить</button>
+                                                                            </div>
+                                                                        </form>
+                                                                    {% endif %}
+
+                                                                </div>
+                                                                
+                                                                <script>
+                            
+                                                                    $(document).ready(function() {
+                                                                    
+                                                                        $('#dop_success_{{recomendation.id}}').click(function(e) {
+                                                                            e.preventDefault();
+                                                            
+                                                                            var btn = $(this);
+                                                            
+                                                                            $.ajax({
+                                                                                method: "POST",
+                                                                                url: "",
+                                                                                dataType: "json",
+                                                                                data: {
+                                                                                    'dop_success'   : '{{recomendation.id}}',
+                                                                                    'recomendation' : $('#dop_success_{{recomendation.id}}').attr('name'),
+                                                                                    'dop_key'       : $('#dop_key_{{recomendation.id}}').val()
+                                                                                },
+                                                                                success: function(data) {
+                                                                                    location.reload();
+                                                                                },
+                                                                                error: function(er) {
+                                                                                    $('#dop_key_error_{{recomendation.id}}').text('Неизвестная ошибка попробйте повторить!');
+                                                                                },
+                                                                                statusCode: { 
+                                                                                    200: function(){ 
+                                                                                        location.reload();
+                                                                                    },
+                                                                                    400: function(){
+                                                                                        $('#dop_key_error_{{recomendation.id}}').text('Неверный код согласования');
+                                                                                    },
+                                                                                    404: function(){ 
+                                                                                        $('#dop_key_error_{{recomendation.id}}').text('Неизвестная ошибка попробйте повторить!');
+                                                                                    },
+                                                                                    403: function(){ 
+                                                                                        $('#dop_key_error_{{recomendation.id}}').text('Неизвестная ошибка попробйте повторить!');
+                                                                                    } 
+                                                                                }
+                                                                            });
+                                                            
+                                                                            
+                                                                        })
+                                                                    });
+                                                                
+                                                                </script>
+                                                            
+                                                            </div>
+                                                
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>
+                                                            </div>
+                                                
+                                                        </div>
+                                                    </div>
+                                                </div> 
+                                            
+                                            {% endfor %}
+
+                                            {% for recomendation in params.doc.recomendations_mcu %}
+                                            
+                                                <div data-bs-toggle="modal" data-bs-target="#example_recomendation_service_mcu{{forloop.counter}}" style="z-index: 1000;">
+                                                    
+                                                    <div style="border-radius: 0.3em; border-width: 0.5em; border: 0.1em solid silver;">
+                                                        
+                                                        <table>
+                                                            <tbody class="align-middle">
+                                                                <tr class="align-middle" style="border-radius: 0.3em;">
+                                                                    
+                                                                    {% if recomendation.recomendation_files_mcu_count > 0 %}
+                                                                        <td class="align-middle col-5 bg-filter" style="background-size: cover;background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('/{{recomendation.recomendation_mcu_files.0.file.url}}');">
+                                                                            <div class="" data-index="{{forloop.counter}}" >
+                                                                                <img src="{{recomendation.recomendation_mcu_files.0.file.url}}" >
+                                                                            </div>
+                                                                        </td>  
+                                                                    {% else %}
+                                                                        <td class="align-middle col-5 bg-filter" style="background-size: cover;background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('/{{recomendation.recomendation_files.0.file.url}}');">
+                                                                            <div class="" data-index="{{forloop.counter}}" >
+                                                                                <img src="/media/nophoto.png" style="opacity: 0.5;" >
+                                                                            </div>
+                                                                        </td>  
+                                                                    {% endif %}
+                                                                    
+                                                                    <td class="align-middle" style="padding-left: 0.2em;">
+                                                                        
+                                                                        <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em; padding: 0.2em;">
+                                                                            
+                                                                            <label class="fs-6 fw-normal position-relative">{{recomendation.name}}
+                                                                                {% if recomendation.customerStatus == 1 %}
+                                                                                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger" style="left: 95%;">
+                                                                                    &nbsp;
+                                                                                    </span>
+                                                                                {% endif %}
+                                                                            </label>
+                                                                            
+                                                                            <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-home"></span> Кузовной участок</label>
+            
+                                                                            {% if recomendation.customerStatus == 1 %}
+                                                                    
+                                                                                <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-idea"></span> Новая</label>
+                                                                                
+                                                                            {% elif recomendation.customerStatus == 2 %}
+                                                                            
+                                                                                <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-timer"></span> Рассчитывается</label>
+            
+                                                                            {% elif recomendation.customerStatus == 3 %}
+                                                                            
+                                                                                <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-cursor-close"></span> Отклонена</label>
+            
+                                                                            {% endif %}
+                                                                            
+                                                                            
+                                                                            <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+                                                                                
+                                                                                <label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+                                                                                    
+                                                                                    <span class="icon-mbri-photos"></span> {{recomendation.recomendation_files_mcu_count}}
+                                                                                </label>
+                                                                                
+                                                                            </div>
+            
+                                                                            
+            
+                                                                        </div>
+            
+                                                                        <div class="col text-end">
+                                                                            {% if recomendation.customerStatus == 1 %}
+                                                                    
+                                                                                <label class="fs-4 bg-success bg-opacity-75 text-white" style="border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  Рассчитать</label>
+                                                                                
+                                                                            {% elif recomendation.customerStatus == 2 %}
+                                                                            
+                                                                                <label class="fs-4 bg-success bg-opacity-75 text-white" style="border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  Рассчитывается</label>
+            
+                                                                            {% elif recomendation.customerStatus == 3 %}
+                                                                            
+                                                                                <label class="fs-4 bg-success bg-opacity-75 text-white" style="border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  Не расчитываем</label>
+            
+                                                                            {% endif %}
+                                                                            
+                                                                        </div>
+                                                                    </td>
+
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                        
+                                                    </div>
+
+                                                </div>
+
+                                                <div  class="modal fade" id="example_recomendation_service_mcu{{forloop.counter}}" tabindex="-1" aria-labelledby="example_filter_label" aria-hidden="true">
+                                                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                                                        <div class="modal-content">
+                                                            
+                                                            <div class="modal-header">
+                                                                {% if recomendation.customerStatus == 1 %}
+                                                            
+                                                                    <label class="fs-6 fw-normal"> <span class="icon-mbri-idea"></span> Новая</label>
+                                                                    
+                                                                {% elif recomendation.customerStatus == 2 %}
+                                                                
+                                                                    <label class="fs-6 fw-normal"> <span class="icon-mbri-timer"></span> Рассчитывается</label>
+
+                                                                {% elif recomendation.customerStatus == 3 %}
+                                                                
+                                                                    <label class="fs-6 fw-normal"> <span class="icon-mbri-close"></span> Отклонена</label>
+
+                                                                {% endif %}
+
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                                                            </div>
+                                                
+                                                            <div class="modal-body">
+                                                            
+                                                                <div class="card-body">
+                                                                    
+                                                                    <p class="fs-6 fw-normal">В процессе приемки автомобиля на сервисное обслуживание, были выявлены повреждения.</p>
+                                                                    <p class="fs-6 fw-normal">Предлагаем Вам ознакомиться с выявленными дефектами.</p>
+
+                                                                    <hr>
+                                                                    <label class="fs-5 fw-normal">{{recomendation.name}}</label>
+
+                                                                    {% if recomendation.recomendation_files_mcu_count > 0 %}
+                                                                        <div class="gallery-container">
+                                                                            {% for recomendation_object in recomendation.recomendation_mcu_files %}
+                                                                                    
+                                                                                {% if recomendation_object.is_video %}
+                                                                                    
+                                                                                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                                                                                        <div class="video-responsive">
+                                                                                            <iframe width="auto" src="{{recomendation_object.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                {% else %}
+
+                                                                                    <div class="gallery-item" id='foto_9{{forloop.parentloop.counter}}_{{forloop.counter}}' data-index="9{{forloop.parentloop.counter}}_{{forloop.counter}}">
+                                                                                        <img src="{{recomendation_object.file.url}}">
+                                                                                    </div>
+
+                                                                                {% endif %}
+                                                            
+                                                                            {% endfor %}
+                                                                        </div>
+                
+                                                                    {% endif %}
+                                                                        
+                                                                    {% if recomendation.customerStatus == 1 %}
+                                                            
+                                                                        <hr>   
+                                                                        <p class="fs-6 fw-normal">Мы можем рассчитать стоимость восстановительного ремонта.</p> 
+                                                                        <p class="fs-6 fw-normal">Для этого мы передадим информацию сотруднику малярно-кузовного участка и файлы повреждений, после расчета стоимости мы с Вами свяжемся и озвучим планируемые работы и их стоимость.</p> 
+                                                                        <form action="" method="POST">
+                                                                            <input hidden name="id_recomendation_mcu" value="{{recomendation.id}}">
+                                                                                
+                                                                            <div class="d-grid gap-2 d-md-block">
+                                                                                <button class="btn btn-outline-success"  type="submit" name="yes"> <span class="icon-mbri-letter"> </span> Узнать стоимость</button>
+                                                                                <button class="btn btn-outline-danger" type="submit" name="no"> <span class="icon-mbri-close"> </span> Нет необходимости</button>
+                                                                            </div>
+                                                                        </form>
+
+                                                                    {% endif %}
+                
+                                                                </div>
+                                                                
+                                                                <script>
+                            
+                                                                    $(document).ready(function() {
+                                                                    
+                                                                        $('#dop_success_{{recomendation.id}}').click(function(e) {
+                                                                            e.preventDefault();
+                                                            
+                                                                            var btn = $(this);
+                                                            
+                                                                            $.ajax({
+                                                                                method: "POST",
+                                                                                url: "",
+                                                                                dataType: "json",
+                                                                                data: {
+                                                                                    'dop_success'   : '{{recomendation.id}}',
+                                                                                    'recomendation' : $('#dop_success_{{recomendation.id}}').attr('name'),
+                                                                                    'dop_key'       : $('#dop_key_{{recomendation.id}}').val()
+                                                                                },
+                                                                                success: function(data) {
+                                                                                    location.reload();
+                                                                                },
+                                                                                error: function(er) {
+                                                                                    $('#dop_key_error_{{recomendation.id}}').text('Неизвестная ошибка попробйте повторить!');
+                                                                                },
+                                                                                statusCode: { 
+                                                                                    200: function(){ 
+                                                                                        location.reload();
+                                                                                    },
+                                                                                    400: function(){
+                                                                                        $('#dop_key_error_{{recomendation.id}}').text('Неверный код согласования');
+                                                                                    },
+                                                                                    404: function(){ 
+                                                                                        $('#dop_key_error_{{recomendation.id}}').text('Неизвестная ошибка попробйте повторить!');
+                                                                                    },
+                                                                                    403: function(){ 
+                                                                                        $('#dop_key_error_{{recomendation.id}}').text('Неизвестная ошибка попробйте повторить!');
+                                                                                    } 
+                                                                                }
+                                                                            });
+                                                            
+                                                                            
+                                                                        })
+                                                                    });
+                                                                
+                                                                </script>
+                                                            
+                
+                
+                                                            </div>
+                                                
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>
+                                                            </div>
+                                                
+                                                        </div>
+                                                    </div>
+                                                </div> 
+
+                                            {% endfor %}
+
+                                        
+                                    {% else %}
+                                
+                                        <div class="col-1 my-auto text-center">
+                                            <p class="fs-5"><span class="icon-mbri-success"> </span></p>
+                                        </div>
+                                        
+                                        <div class="col-11 my-auto text-center">
+                                            <div style="text-align: center;">
+                                                <p class="fs-5"> Нет рекомендаций <br> по Вашему заказ - наряду.</p>
+                                            </div>
+                                        </div>
+                                
+                                    {% endif %}
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                {% endif %}
+
+            </div>
+
+            
+        
+        </div>
+    
+    </div>
+
+</div>
+
+  <script>
+	jQuery(document).ready(function ($) {
+		var urlTab = window.location.hash;
+		$('.nav-link[href="' + urlTab + '"]' ).trigger('click');
+	});
+</script>
+
+         
+{% endblock %}
+
+

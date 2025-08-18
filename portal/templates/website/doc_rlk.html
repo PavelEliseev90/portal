@@ -1,0 +1,587 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - рабочий лист №{{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
+
+{% block title_navbar %} - рабочий лист №{{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
+    
+{% block content %}
+ 	
+<style>
+	.highcharts-figure .chart-container {
+	  width: 250px;
+	  height: 175px;
+	  float: inline-block;
+  }
+  
+  
+  
+  @media (max-width: 600px) {
+	  .highcharts-figure,
+	  .highcharts-data-table table {
+		  width: 100%;
+	  }
+  
+	  .highcharts-figure .chart-container {
+		  width: 250px;
+		  float: none;
+		  margin: 0 auto;
+	  }
+  }
+  
+  </style>
+  
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/highcharts-more.js"></script>
+  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+  
+
+<div class="col-sm">
+	
+	<label class="fs-4 text-start fw-normal">
+		№ {{params.doc.nomer}} от {{params.doc.dataTime}} 
+	</label><br>
+
+	<label class="fs-6 text-start fw-normal">
+		Подразделение: 
+	</label> 
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.unit.name}} г. {{params.doc.unit.city}}</span>
+	</label>
+	
+	<br>
+
+	<label class="fs-6 text-start fw-normal">
+		Менеджер: 
+	</label> 
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.staff.name}} </span>
+	</label>
+	
+
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Вид контакта: 
+	</label> 
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.contacType}}</span>
+	</label>
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Клиент: 
+	</label> <br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.customer}}</span><br>
+
+	</label>
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Комментарий администратора: 
+	</label> <br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.commentAdministrator}}</span><br>
+	</label>
+
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Комментарий менеджера: 
+	</label> <br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.commentManager}}</span><br>
+	</label>
+
+	<hr style="width: 75%;">
+			
+	<div class="accordion accordion-flush" id="accordionFlushExample">
+	
+		<div class="accordion-item">
+		<h2 class="accordion-header" id="flush-headingOne">
+		<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+			События  - {{params.doc.events|length}}
+		</button>
+		</h2>
+		<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+			<div class="accordion-body">
+				<div class="table-responsive-sm">
+					<table class="table table-sm table-striped table-hover">
+						<tbody> 
+							{% for event in params.doc.events %}
+								<tr class="align-middle"> 
+									<td class="align-middle">{{event.dataTime}}</td>
+									<td class="align-middle">{{event.dataTimeEvent}}</td>
+									<td class="align-middle">{{event.contacType}}</td>
+									<td class="align-middle">{{event.comment}}</td>
+									<td class="align-middle">{{event.contacType}}</td>
+									<td class="align-middle">{{event.staff}}</td>
+									<td class="align-middle">{{event.status}}</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		</div>
+		
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="flush-headingTwo">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+				Контроль качества
+			</button>
+			</h2>
+			<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+			<div class="accordion-body">
+				<div class="row g-1">
+					
+					
+					{% if params.doc.get_check != None %}
+						<div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px;">
+			
+							<div class="card text-center align-self-center text-center">
+								<div class="card-body text-center align-self-center text-center">
+									<figure class="highcharts-figure">
+										<div id="container-check" class="chart-container"></div>
+									</figure>
+								</div>
+
+								{% if params.doc.unit.buauto %}						
+									<a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.doc.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
+								{% else %}
+									<a href="/checklists/glav/op/doc/?checkid={{params.doc.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
+								{% endif %}
+							</div>
+							
+							<script>
+
+								var gaugeOptions = {
+								chart: {
+									type: 'solidgauge'
+								},
+								
+								title: null,
+								
+								pane: {
+									center: ['50%', '85%'],
+									size: '140%',
+									startAngle: -90,
+									endAngle: 90,
+									background: {
+										backgroundColor:
+											Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+										innerRadius: '60%',
+										outerRadius: '100%',
+										shape: 'arc'
+									}
+								},
+								
+								exporting: {
+									enabled: false
+								},
+								
+								tooltip: {
+									enabled: false
+								},
+								
+								// the value axis
+								yAxis: {
+									stops: [
+										[0.3, '#DF5353'], // green
+										[0.5, '#DDDF0D'], // yellow
+										[0.7, '#55BF3B'] // red
+									],
+									lineWidth: 0,
+									tickWidth: 0,
+									minorTickInterval: null,
+									tickAmount: 2,
+									title: {
+										y: -70
+									},
+									labels: {
+										y: 16
+									}
+								},
+								
+								plotOptions: {
+									solidgauge: {
+										dataLabels: {
+											y: 5,
+											borderWidth: 0,
+											useHTML: true
+										}
+									}
+								}
+								};
+								
+								// The speed gauge
+								var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
+								yAxis: {
+									min: 0,
+									max: 100,
+									title: {
+										text: 'Выполнение чек листа'
+									}
+								},
+								
+								credits: {
+									enabled: false
+								},
+								
+								series: [{
+									name: 'CVC',
+									data: [{{params.doc.get_check.result}}],
+									dataLabels: {
+										format:
+											'<div style="text-align:center">' +
+											'<span style="font-size:25px">{y}</span><br/>' +
+											'<span style="font-size:12px;opacity:0.4">%</span>' +
+											'</div>'
+									}
+								}]
+								
+								}));
+								
+								
+							</script>
+
+						</div>
+					{% endif %}
+
+					{% if params.doc.get_opros != None %}
+						<div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px; ">
+			
+							<div class="card text-center align-self-center text-center">
+								<div class="card-body text-center align-self-center text-center">
+									<figure class="highcharts-figure">
+										<div id="container-sms" class="chart-container"></div>
+									</figure>
+								</div>
+								<a href="/sms_opros_op/{{params.doc.get_opros.id}}/" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
+							</div>
+						
+						</div>
+					{% endif %}
+
+				</div>
+			</div>
+			</div>
+		</div>
+		
+	</div>
+		
+	<hr>
+		  
+</div>
+	
+
+
+<script language="JavaScript">
+	function change_link(){
+		link_1= document.getElementById("unit");
+		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
+	}
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+<script>
+	$(document).ready(function(){
+		
+		$("#uploadForm").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progress", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#uploadForm')[0].reset();
+						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+		
+		$("#uploadFormMCU").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progressMCU", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatusMCU').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatusMCU').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#uploadFormMCU')[0].reset();
+						$('#uploadStatusMCU').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatusMCU').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+		
+		$("#videoForm").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progress", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#videoForm')[0].reset();
+						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+
+		// File type validation
+		$("#fileInput").change(function(){
+			var allowedTypes = ['audio/wav', 'audio/mp3'];
+			var file = this.files[0];
+			var fileType = file.type;
+			if(!allowedTypes.includes(fileType)){
+				alert('Please select a valid file (mp3/wav/).');
+				$("#fileInput").val('');
+				return false;
+			}
+		});
+	});
+</script>
+
+
+<script>
+
+	var gaugeOptions = {
+	  chart: {
+		  type: 'solidgauge'
+	  },
+	
+	  title: null,
+	
+	  pane: {
+		  center: ['50%', '85%'],
+		  size: '140%',
+		  startAngle: -90,
+		  endAngle: 90,
+		  background: {
+			  backgroundColor:
+				  Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+			  innerRadius: '60%',
+			  outerRadius: '100%',
+			  shape: 'arc'
+		  }
+	  },
+	
+	  exporting: {
+		  enabled: false
+	  },
+	
+	  tooltip: {
+		  enabled: false
+	  },
+	
+	  // the value axis
+	  yAxis: {
+		  stops: [
+			  [0.3, '#DF5353'], // green
+			  [0.5, '#DDDF0D'], // yellow
+			  [0.7, '#55BF3B'] // red
+		  ],
+		  lineWidth: 0,
+		  tickWidth: 0,
+		  minorTickInterval: null,
+		  tickAmount: 0,
+		  title: {
+			  y: -70
+		  },
+		  labels: {
+			  y: 16
+		  }
+	  },
+	
+	  plotOptions: {
+		  solidgauge: {
+			  dataLabels: {
+				  y: 5,
+				  borderWidth: 0,
+				  useHTML: true
+			  }
+		  }
+	  }
+	};
+	
+	var gaugeOptions_sms = {
+	  chart: {
+		  type: 'solidgauge'
+	  },
+	
+	  title: null,
+	
+	  pane: {
+		  center: ['50%', '85%'],
+		  size: '140%',
+		  startAngle: -90,
+		  endAngle: 90,
+		  background: {
+			  backgroundColor:
+				  Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+			  innerRadius: '60%',
+			  outerRadius: '100%',
+			  shape: 'arc'
+		  }
+	  },
+	
+	  exporting: {
+		  enabled: false
+	  },
+	
+	  tooltip: {
+		  enabled: false
+	  },
+	
+	  // the value axis
+	  yAxis: {
+		  stops: [
+			  [0.3, '#DF5353'], // green
+			  [0.5, '#DDDF0D'], // yellow
+			  [0.7, '#55BF3B'] // red
+		  ],
+		  lineWidth: 0,
+		  tickWidth: 0,
+		 
+		 
+		  title: {
+			  y: -70
+		  },
+		  labels: {
+			  y: 16
+		  }
+	  },
+	
+	  plotOptions: {
+		  solidgauge: {
+			  dataLabels: {
+				  y: 5,
+				  borderWidth: 0,
+				  useHTML: true
+			  }
+		  }
+	  }
+	};
+	
+	
+	var chartRpm = Highcharts.chart('container-sms', Highcharts.merge(gaugeOptions_sms, {
+	  yAxis: {
+		  min: 0,
+		  max: 5.0,
+		  title: {
+			  text: 'SMS'
+		  }
+	  },
+	
+	  series: [{
+		  name: 'SMS',
+		  data: [{{params.doc.rating_sms_opros}}],
+		  dataLabels: {
+			format:
+				  '<div style="text-align:center">' +
+				  '<span style="font-size:25px">{y}</span><br/>' +
+				  '<span style="font-size:12px;opacity:0.4"><span class="icon-mbri-star fw-bold"></span></span>' +
+				  '</div>'
+		  }
+	  }]
+	
+	}));
+	  
+	</script>
+
+{% endblock %}

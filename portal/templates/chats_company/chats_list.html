@@ -1,0 +1,147 @@
+{% extends 'base_web_new_chat_company.html' %}
+
+
+{% block url %} {% endblock %} 
+
+{% block meta_description %}
+  
+{% endblock %}
+
+{% block meta_keywords %}
+    
+{% endblock %}
+
+{% block title %}
+
+    Список чатов
+
+{% endblock %} 
+
+{% block title_navbar %}
+    
+    Список чатов
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+  
+    <!-- Content wrapper start -->
+    <div class="content-wrapper">
+
+        <div class="row">
+            <div class="col">
+                <span class='fs-5'> <span class="icon-mbri-user"></span> {{params.cookie.name}}  <a href='/chats/c/a/edit'> - сменить </a></span> <a class="text-end" href='/lk/'> выйти </a></span>
+            </div>
+        </div>
+        <hr>
+        <!-- Row start -->
+        <div class="row gutters">
+
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 bg-silver">
+
+                <div class="card m-0">
+
+                    <div class="row no-gutters">
+                         
+                            <div class="col position-relative chat-body-users">
+                            <div class="users-container ">
+                                <ul class="users scroll-container">
+                                    
+                                    {% for chat in params.chats %}
+                                    
+                                        <li class="person {% if params.chat == chat %}active-{% endif %}user" data-chat="person1">
+                                            <a class="text-dark" href="/chats/c/a/r/{{chat.pk}}">
+                                                <div class="user">
+                                                    <img src="https://www.bootdey.com/img/Content/avatar/avatar3.png" alt="Retail Admin">
+                                                    <span class="status away"></span>
+                                                </div>
+                                                <p class="name-time">
+                                                    <span class="name fs-5">{{chat.cookie.name}} </span>
+                                                    <br>
+                                                    <span class="name fs-5">{{chat.name}} </span>
+                                                    <br>
+                                                    {% if chat.product == None %}
+                                                        <span class="time fs-6">Общий</span>
+                                                    {% else %}    
+                                                        <span class="time fs-6">{{chat.product.name}} для {{chat.product.get_name_avito}}</span>
+                                                    {% endif %}
+                                                    <br>
+                                                    <span class="time fs-6">{{chat.last_message}}</span>
+                                                </p>
+                                            </a>
+                                        </li>
+
+                                    {% endfor %}
+
+                                </ul>
+                            </div>
+                        </div>
+                        <!--
+                        <div class="col bg-silver">
+                            <div class="selected-user send-form fixed-top bg-white">
+                                <span class="icon-mbri-arrow-prev"> <-- </span><span>Чат: <span class="name">{{params.chat.name}}</span></span>
+                            </div>
+                            <div class="chat-container">
+                                <ul class="chat-box chatContainerScroll chat-body-messages" id="message-list" name="message-list">
+                                    
+                                    {% for message in params.messages %}
+                                        
+                                        <li class="chat-left">
+                                            <div class="chat-avatar">
+                                                <img src="https://www.bootdey.com/img/Content/avatar/avatar3.png" alt="Retail Admin">
+                                                <div class="chat-name"> Admin</div>
+                                            </div>
+                                            <div class="chat-text">
+                                                {{message.content}}
+                                            </div>
+                                            <div class="chat-hour">{{message.date}} <span class="fa fa-check-circle"></span></div>
+                                        </li>
+                                        
+                                    {% endfor %}
+
+                                </ul>
+                            </div>
+                            <div class="selected-user send-form fixed-bottom">
+                                <div class="form-group mt-3 mb-0 send-form ">
+                                    <form id="post-form">
+                                        {% csrf_token %}
+                                            
+                                        <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
+                                        <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
+                                            
+                                        <div class="input-group mb-3 form-control bg-primary" style="padding: 0rem;">
+                                            <input type="text" class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off">
+                                            <button class="btn btn-primary-send" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play "></span></button>
+                                        </div>
+                                   
+                                    </form>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        -->
+                    </div>
+                    <!-- Row end -->
+                </div>
+
+            </div>
+
+        </div>
+        <!-- Row end -->
+
+    </div>
+    <!-- Content wrapper end -->
+
+</div>
+
+<script>
+
+
+</script>
+
+  
+
+  {% endblock %}

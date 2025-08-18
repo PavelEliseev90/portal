@@ -1,0 +1,1323 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+
+{% block title %} - интерактивная оценка {{params.rlk}} {% endblock %}
+
+{% block title_navbar %} - интерактивная оценка {{params.rlk}} {% endblock %}
+
+{% block content %}
+
+  {% include 'chats/chat.html' %}
+
+  <div class="row">
+
+    <div class="col-2 text-center hidemobile">
+      <div class="sticky-top" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
+          <ul class="nav flex-column nav-pills" id="myTab" role="tablist">
+            <button class="nav-link  justify-content-between align-items-center text-start {% if params.tabindex == 0 or not params.tabindex %} active {% endif %} " id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true" onclick="reload(0)">Главная</button>
+            <button class="nav-link d-flex justify-content-between align-items-center text-start {% if params.tabindex == 1 %} active {% endif %}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#document" type="button" role="tab" aria-controls="document" aria-selected="false" onclick="reload(1)">Документы {% if params.estimation.page_documents == None %}<span class="badge bg-danger rounded-pill justify-content-end">!</span> {% endif %}</button>
+            <button class="nav-link d-flex justify-content-between align-items-center text-start {% if params.tabindex == 2 %} active {% endif %} " id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false" onclick="reload(2)">Салон {% if params.estimation.page_salon == None %}<span class="badge bg-danger rounded-pill justify-content-end">!</span> {% endif %}</button>
+            <button class="nav-link d-flex justify-content-between align-items-center text-start {% if params.tabindex == 3 %} active {% endif %} " id="vnesh-tab" data-bs-toggle="tab" data-bs-target="#vnesh" type="button" role="tab" aria-controls="vnesh" aria-selected="false" onclick="reload(3)">Внешний осмотр {% if params.estimation.page_documents == None %}<span class="badge bg-danger rounded-pill justify-content-end">!</span> {% endif %}</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">Комплектность</button>
+            <button class="nav-link text-start {% if params.tabindex == 5 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Колеса</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Тест - драйв</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">ГИБДД</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">История оценок</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Не принятые</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Продажи</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Склад</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">История оценок</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">История ремонтов</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Автотека</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Анализ рынка</button>
+            <button class="nav-link text-start {% if params.tabindex == 4 %} active {% endif %} " id="confim-tab" data-bs-toggle="tab" data-bs-target="#confim" type="button" role="tab" aria-controls="confim" aria-selected="false">Согласование</button>
+          </ul>
+        </div>
+     
+    </div>
+
+    <main class="col">
+      
+      <div class="hidesite fixed-top" style="margin-top: 3.2rem; z-index: 1;">
+        <div class="col">
+          <select class="form-select" aria-label="" id="select_page">
+            <option {% if params.tabindex == 0 or not params.tabindex %} selected {% endif %} value="0">Главная</option>
+            <option {% if params.tabindex == 1 %} selected {% endif %} value="1">Документы</option>
+            <option {% if params.tabindex == 2 %} selected {% endif %} value="2">Салон</option>
+            <option {% if params.tabindex == 3 %} selected {% endif %} value="3">Внешний осмотр</option>
+          </select>
+          <p> </p>
+        </div>
+       
+      </div>
+      <div class="hidesite" style="padding-top: 3.5rem;">
+        
+        
+      </div>
+      <div class="tab-content">
+       
+        <div class="tab-pane {% if params.tabindex == 0 or not params.tabindex %} active {% endif %}" id="home" role="tabpanel" aria-labelledby="home-tab">
+          
+          {% if params.tabindex == 0 %}
+
+          <div class=""> 
+            <h5>Рабочий лист</h5>
+            <hr style="width: 75%;">
+
+            <div class="">
+              
+              <div class="row">
+                
+                <div class="col-sm">
+                  {% if params.fotos %}
+
+                    <div style="object-fit: cover; border-radius: 10px; max-height: 400px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                          
+                      <div class="carousel-indicators">
+                        {% for img in params.fotos %}
+                          <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                        {% endfor %}
+                      </div>
+                      
+                      <div class="carousel-inner">
+                        
+                        {% for img in params.fotos %}
+                        
+                          <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                          </div>
+
+                        {% endfor %}
+                        
+                      </div>
+                      
+                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    </div>
+                
+                  {% endif %}
+                </div>
+
+                <div class="col-sm">
+                  <table class="table table-hover">
+                    <thead>
+                    </thead>
+                    <tbody>
+                    
+                      <tr>
+                        <td>Документ</td>
+                        <td><label>Лист оценки автомобиля ПО - 01215015 от 04.04.2022 10:55</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Основание</td>
+                        <td><label>Рабочий лист №{{params.rlk.nomer}} от {{params.rlk.dataTime}}</label></td>
+                      </tr>
+                      <tr>
+                        <td>Тип оценки</td>
+                        <td><label>{{params.estimation}} </label></td>
+                      </tr> 
+                      <tr>
+                        <td>Фирма</td>
+                        <td><label>{{params.Firma}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Филиал</td>
+                        <td><label>{{params.Filial}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Стоянка</td>
+                        <td><label>{{params.Stoyanka}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Подразделение</td>
+                        <td><label>{{params.rlk.unit.name}} </label></td>
+                      </tr>   
+                      <tr>
+                        <td>Оценщик</td>
+                        <td><label>{{params.rlk.staff}} </label></td>
+                      </tr> 
+                      <tr>
+                        <td>Клиент</td>
+                        <td><label>{{params.rlk.clientName}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Телефон</td>
+                        <td><label>{{params.ClientPhone}}</label></td>
+                      </tr> 
+                    </tbody>
+                  </table>
+                </div>
+      
+              </div>
+              
+              <br>
+              <div class="col"> 
+                
+                {% if params.Kredit %}
+                  <button style="padding: 5px 10px;" type="button"class="btn btn-dark">
+                    В кредите
+                  </button>
+                {% endif %}
+
+                {% if params.AutoRu %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Размещен на AUTO.RU
+                  </button>
+                {% endif %}
+
+                {% if params.Avito %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Размещен на AVITO.RU
+                  </button>
+                {% endif %}
+
+                {% if params.Drom %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Размещен на DROM.RU
+                  </button>
+                {% endif %}
+                
+                {% if params.Krashenyj %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Есть крашеные элементы
+                  </button>
+                {% endif %}
+
+                {% if params.Krashenyj %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Есть расхождения в пробегах 
+                  </button>
+                {% endif %}
+
+              </div>
+            </div>
+
+          </div>
+
+            <div class=""> 
+              <h5>Интерактивная оценка</h5>
+              <hr style="width: 75%;">
+
+              <div class="">
+                
+                <div class="row">
+                  
+                  <div class="col-sm">
+                    {% if params.fotos %}
+
+                      <div style="object-fit: cover; border-radius: 10px; max-height: 400px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                            
+                        <div class="carousel-indicators">
+                          {% for img in params.fotos %}
+                            <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                          {% endfor %}
+                        </div>
+                        
+                        <div class="carousel-inner">
+                          
+                          {% for img in params.fotos %}
+                          
+                            <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                            </div>
+
+                          {% endfor %}
+                          
+                        </div>
+                        
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Предыдущий</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Следующий</span>
+                        </button>
+                      </div>
+                  
+                    {% endif %}
+                  </div>
+
+                  <div class="col-sm">
+                    <table class="table table-hover">
+                      <thead>
+                      </thead>
+                      <tbody>
+                      
+                        <tr>
+                          <td>Документ</td>
+                          <td><label>Лист оценки автомобиля ПО - 01215015 от 04.04.2022 10:55</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Основание</td>
+                          <td><label>Рабочий лист №{{params.rlk.nomer}} от {{params.rlk.dataTime}}</label></td>
+                        </tr>
+                        <tr>
+                          <td>Тип оценки</td>
+                          <td><label>{{params.TypeOcenki}} </label></td>
+                        </tr> 
+                        <tr>
+                          <td>Фирма</td>
+                          <td><label>{{params.Firma}}</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Филиал</td>
+                          <td><label>{{params.Filial}}</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Стоянка</td>
+                          <td><label>{{params.Stoyanka}}</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Подразделение</td>
+                          <td><label>{{params.rlk.unit.name}} </label></td>
+                        </tr>   
+                        <tr>
+                          <td>Оценщик</td>
+                          <td><label>{{params.rlk.staff}} </label></td>
+                        </tr> 
+                        <tr>
+                          <td>Клиент</td>
+                          <td><label>{{params.rlk.clientName}}</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Телефон</td>
+                          <td><label>{{params.ClientPhone}}</label></td>
+                        </tr> 
+                      </tbody>
+                    </table>
+                  </div>
+        
+                </div>
+                
+                <br>
+                <div class="col"> 
+                  
+                  {% if params.Kredit %}
+                    <button style="padding: 5px 10px;" type="button"class="btn btn-dark">
+                      В кредите
+                    </button>
+                  {% endif %}
+
+                  {% if params.AutoRu %}
+                    <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                      Размещен на AUTO.RU
+                    </button>
+                  {% endif %}
+
+                  {% if params.Avito %}
+                    <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                      Размещен на AVITO.RU
+                    </button>
+                  {% endif %}
+
+                  {% if params.Drom %}
+                    <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                      Размещен на DROM.RU
+                    </button>
+                  {% endif %}
+                  
+                  {% if params.Krashenyj %}
+                    <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                      Есть крашеные элементы
+                    </button>
+                  {% endif %}
+
+                  {% if params.Krashenyj %}
+                    <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                      Есть расхождения в пробегах 
+                    </button>
+                  {% endif %}
+
+                </div>
+              </div>
+
+            </div>
+              
+            <div class=""> 
+              <h5>Автомобиль</h5>
+              <hr style="width: 75%;">
+              <div class="">
+              
+                <div class="row row-cols-md-2 g-2">
+                  
+                  <div class="col-sm">
+                    
+                    <table class="table table-hover">
+                      <thead>
+                      </thead>
+                      <tbody>
+                      
+                        <tr>
+                          <td>VIN</td>
+                          <td><label>WAUZZZ01115586652</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Марка</td>
+                          <td><label>AUDI</label></td>
+                        </tr>  
+                        <tr>
+                          <td>Модель</td>
+                          <td><label>Q3, I Рестайлинг</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Год выпуска</td>
+                          <td><label>2015</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Пробег</td>
+                          <td><label>145 000 km</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Гос номер</td>
+                          <td><label>{{params.GosNomer}}</label></td>
+                        </tr>
+                        <tr>
+                          <td>Номер двигателя</td>
+                          <td><label>{{params.EngineNomer}}</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Цвет</td>
+                          <td><label>{{params.ColorName}}</label></td>
+                        </tr> 
+                        <tr>
+                          <td>Владельцев</td>
+                          <td><label>1</label></td>
+                        </tr>  
+                      </tbody>
+                    </table>
+    
+                  </div>
+                  
+
+                </div>
+      
+              </div>
+            </div>
+
+            <div class="row g-1">
+
+              <div class="col">
+                <div class="card">
+                  <div class="card-body">
+                    
+                    <table class="table table-hover">
+                      <thead>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Рабочий лист</td>
+                          <td>{{params.rlk.nomer}} от {{params.rlk.dataTime}}</td>
+                        </tr>
+                        <tr>
+                          <td>Подразделение</td>
+                          <td>{{params.rlk.unit.name}}</td>
+                        </tr> 
+                        <tr>
+                          <td>Сотрудник</td>
+                          <td><label>{{params.rlk.staff}}</label></td>
+                        </tr>  
+                        <tr>
+                          <td>Клиент</td>
+                          <td><label>{{params.rlk.clientName}}</label></td>
+                        </tr> 
+                      </tbody>
+                    </table>
+
+                    <div class="d-grid gap-2">
+                      <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk"> <span class="icon-mbri-file"></span> Рабочий лист</button>	
+                    </div>
+
+                    <div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                        <span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Рабочий лист - {{params.rlk.nomer}} от {{params.rlk.dataTime}}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="table-responsive-sm">
+                            <table class="table table-sm table-striped table-hover">
+                              <tbody>
+                              <tr class="align-middle">
+                                <td class="align-middle">Имя клиента:</td>
+                                <td class="align-middle">{% if params.rlk.clientName|length > 0 %} {{params.rlk.clientName}} {% else %} Не указан {% endif %}</td>
+                              </tr>
+                              <tr class="align-middle">
+                                <td class="align-middle">Телефон:</td>
+                                <td class="align-middle">{% if params.rlk.phone|length > 0 %} {{params.rlk.phone}} {% else %} Не указан {% endif %}</td>
+                              </tr>
+                              <tr class="align-middle">
+                                <td class="align-middle">Вид контакта:</td>
+                                <td class="align-middle">{{params.rlk.contacType}}</td>
+                              </tr>
+                              
+                              <tr class="align-middle">
+                                <td class="align-middle">Дата создания:</td>
+                                <td class="align-middle">{{params.rlk.dataTimeCreate}}</td>
+                              </tr>
+
+                              <tr class="align-middle">
+                                <td class="align-middle">Дата окончания:</td>
+                                <td class="align-middle">{{params.rlk.dataEnd}}</td>
+                              </tr>
+
+                              <tr class="align-middle">
+                                <td class="align-middle">Продолжительность:</td>
+                                <td class="align-middle">{{params.rlk.time_visit}}</td>
+                              </tr>
+
+                              
+                              <tr class="align-middle">
+                                <td class="align-middle">Закрыт день в день:</td>
+                                <td class="align-middle">{% if params.rlk.archiveDayToDay %} Да {% else %} Нет {% endif %}</td>
+                              </tr>
+                              <tr class="align-middle">
+                                <td class="align-middle">Комментарий администратора</td>
+                                <td class="align-middle">{{params.rlk.commentAdministrator}}</td>
+                              </tr> 
+                              <tr class="align-middle">
+                                <td class="align-middle">Комментарий менеджера</td>
+                                <td class="align-middle">{{params.rlk.commentManager}}</td>
+                              </tr> 
+                              </tbody>
+                            </table>
+                          </div>
+                          <hr>
+                          <div class="table-responsive-sm">
+                            <table class="table table-sm table-striped table-hover">
+                              <tbody> 
+                                {% for event in params.rlk.events %}
+                                <tr class="align-middle"> 
+                                  <td class="align-middle">{{event.dataTime}}</td>
+                                  <td class="align-middle">{{event.dataTimeEvent}}</td>
+                                  <td class="align-middle">{{event.contacType}}</td>
+                                  <td class="align-middle">{{event.comment}}</td>
+                                  <td class="align-middle">{{event.contacType}}</td>
+                                  <td class="align-middle">{{event.staff}}</td>
+                                  <td class="align-middle">{{event.status}}</td>
+                                </tr>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            
+
+              <div class="col">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="row g-1">
+                      <div class="progress" style="height: 25px;">
+                        <div class="progress-bar {% if params.rlk.statusOcenka.id > 0 %} bg-success {% else %} bg-secondary {% endif %}" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">Новый</div>
+                        <div class="progress-bar {% if params.rlk.statusOcenka.id > 1 %} bg-success {% else %} bg-secondary {% endif %}" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">На согласовании до диагностики</div>
+                        <div class="progress-bar {% if params.rlk.statusOcenka.id > 2 %} bg-success {% else %} bg-secondary {% endif %}" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">Согласовано до диагностики</div>
+                        <div class="progress-bar {% if params.rlk.statusOcenka.id > 3 %} bg-success {% else %} bg-secondary {% endif %}" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">На согласовании после диагностики</div>
+                        <div class="progress-bar {% if params.rlk.statusOcenka.id > 4 %} bg-success {% else %} bg-secondary {% endif %}" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">Согласовано после диагностики</div>
+                      </div>
+                      <div class="col-sm">
+                        
+                        <table class="table table-hover">
+                          <thead>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Согласующий до диагностики</td>
+                              <td><label>
+                                {% if params.rlk.staffECO1 == None %} 
+                                  <button onclick="window.location.href = '/eco/doc/{{params.rlk.id}}/?status=2';" style="padding: 5px 10px;" type="button" class="btn btn-outline-success">
+                                      Принять в работу
+                                  </button>   
+                              {% else %} 
+                                  {{params.rlk.staffECO1}}
+                              {% endif %} </label></td>
+                            </tr> 
+                            <tr>
+                              <td>Согласующий после диагностики</td>
+                              <td><label> - </label></td>
+                            </tr>  
+                            <tr>
+                              <td>Дата оценки</td>
+                              <td><label> 06.04.2022 11:50 </label></td>
+                            </tr> 
+                            <tr>
+                              <td>Продолжительсность оценки</td>
+                              <td><label> 15 мин</label></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      {% if params.Checklist %}
+                      <div class="col-sm">
+                        <a href="/checklist/glav/trade_in/doc/?checkid={{params.Checklist.id}}" class="link-dark">
+                        {% if params.Checklist.checkItog > 80 %}
+                        <div class="card border-success"> 
+                        {% elif params.Checklist.checkItog > 50 %} 
+                          <div class="card border-warning">
+                        {% else %}
+                        <div class="card border-danger">
+                        {% endif %}
+                          <h5 class="card-header">Чек лист прослушки</h5>
+                          <div class="card-body">
+                            
+                            <table class="table table-hover">
+                              <thead>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td>Итог</td>
+                                  <td><label>Дата оценки</label></td>
+                                  <td><label>Аппелирован</label></td>
+                                </tr> 
+                                <tr>
+                                  <td>{{params.Checklist.checkItog}} %</td>
+                                  <td>{{params.Checklist.dataTimeCreate}} </td>
+                                  <td> 
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" value="" id="flexCheckDisabled1" {% if params.Checklist.canceled %} checked {% endif %}  disabled>
+                                    </div> 
+                                  </td>
+                                </tr> 
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        </a>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        
+          {% endif %}
+
+        </div>
+        
+        
+        <div class="tab-pane {% if params.tabindex == 1 %} active {% endif %}" id="document" role="tabpanel" aria-labelledby="profile-tab">
+      
+          {% if params.tabindex == 1 %}
+            {% if params.fotos %}
+              <div class="row">
+                <div class="col-sm-6">
+                  <table class="table table-hover">
+                    <thead>
+                    </thead>
+                    <tbody>
+                    
+                      <tr>
+                        <td>Марка, модель по ПТС</td>
+                        <td><label>{{params.MarkModPTS}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Гос номер</td>
+                        <td><label>{{params.GosNomer}}</label></td>
+                      </tr>
+                      <tr>
+                        <td>Номер двигателя</td>
+                        <td><label>{{params.EngineNomer}} </label></td>
+                      </tr>   
+                      <tr>
+                        <td>Цвет по ПТС</td>
+                        <td><label>{{params.ColorPTS}} </label></td>
+                      </tr> 
+                      <tr>
+                        <td>Владельцев</td>
+                        <td><label>{{params.KolvoVlad}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>Владелец</td>
+                        <td><label>{{params.ClientFamily}} {{params.ClientName}} {{params.ClientOtv}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Область</td>
+                        <td><label>{{params.ClientObl}}</label></td>
+                      </tr><tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>СТС номер</td>
+                        <td><label>{{params.STSNomer}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>СТС дата</td>
+                        <td><label>{{params.STSDate}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>ПТС номер</td>
+                        <td><label>{{params.PTSNomer}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>ПТС дата</td>
+                        <td><label>{{params.PTSDate}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>ПТС оригинал</td>
+                        <td>
+                          <div>
+                            <input class="form-check-input" type="checkbox" id="checkboxNoLabel" value="" {% if params.PTSOriginal %} checked {% endif %} aria-label="...">
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div class="col-sm-6">
+                  {% if params.fotos %}
+
+                    <div style="border-radius: 10px; max-height: 720px; max-width: 480px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                          
+                      <div class="carousel-indicators">
+                        {% for img in params.fotos %}
+                          <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                        {% endfor %}
+                      </div>
+                      
+                      <div class="carousel-inner">
+                        
+                        {% for img in params.fotos %}
+                        
+                          <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                            <img class="d-block w-100" style="border-radius: 10px; max-height: 720px; max-width: 480px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                          </div>
+
+                        {% endfor %}
+                        
+                      </div>
+                      
+                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    </div>
+                
+                  {% endif %}
+                </div>   
+              </div>
+            {% else %}
+              <div class="card text-danger"> 
+                <div class="card-body">
+                  Нет данных по документам
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+
+        </div>
+        
+
+        <div class="tab-pane {% if params.tabindex == 2 %} active {% endif %}" id="salon" role="tabpanel" aria-labelledby="messages-tab">
+          
+          {% if params.tabindex == 2 %}
+          
+            <h5>Данные по пробегу</h5>
+            <hr style="width: 75%;">
+
+            <div class="row">
+              
+              <div class="col-sm">
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                    </thead>
+                    <tbody>
+                    
+                      <tr>
+                        <td>Пробег</td>
+                        <td>
+                          <label>
+                            {{ params.salon_dict.Run|formatted_number }} км.
+                          </label>
+                        </td>
+                      </tr> 
+                      <tr>
+                        <td>
+                          Пробeг подтвержден
+                        </td>
+                        <td>
+                          <input class="form-check-input" name="canceled" type="checkbox" disabled {% if params.salon_dict.RunPodtv %}  checked {% endif %} value="True" id="flexCheckIndeterminate2">
+                        </td>
+                      </tr>
+                      {% if params.salon_dict.RunPodtv %}
+                      <tr>
+                        <td>Комментарий подтверждения</td>
+                        <td><label>{{params.RunPodtvText}} </label></td>
+                      </tr>
+                      {% endif %}   
+                      <tr>
+                        <td>Цвет по ПТС</td>
+                        <td><label>{{params.ColorPTS}} </label></td>
+                      </tr> 
+                      <tr>
+                        <td>Владельцев</td>
+                        <td><label>{{params.KolvoVlad}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>Владелец</td>
+                        <td><label>{{params.ClientFamily}} {{params.ClientName}} {{params.ClientOtv}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Область</td>
+                        <td><label>{{params.ClientObl}}</label></td>
+                      </tr><tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>СТС номер</td>
+                        <td><label>{{params.STSNomer}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>СТС дата</td>
+                        <td><label>{{params.STSDate}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>ПТС номер</td>
+                        <td><label>{{params.PTSNomer}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>ПТС дата</td>
+                        <td><label>{{params.PTSDate}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>ПТС оригинал</td>
+                        <td>
+                          <div>
+                            <input class="form-check-input" type="checkbox" id="checkboxNoLabel" value="" {% if params.PTSOriginal %} checked {% endif %} aria-label="...">
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+
+              <div class="col-sm">
+                
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 320px;" id="FotosRunArray" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                  
+                    <div class="carousel-indicators">
+                      {% for img in params.salon_dict.FotosRunArray %}
+                        {% if img.path != "" %} 
+                          <button type="button" data-bs-target="#FotosRunArray" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.salon_dict.FotosRunArray %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          {% if img != "" %} 
+                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 320px;" src="{% puth_photo_mobile_replace path=img %}" >
+                            <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <h6>{{img.text}}</h5>
+                            </div>
+                          {% endif %}
+                        </div>
+      
+                      {% endfor %}
+                      
+                    </div>
+                    {% for img in params.salon_dict.FotosRunArray %}
+                      {% if img != "" and forloop.counter == 2  %} 
+                        <button class="carousel-control-prev" type="button" data-bs-target="#FotosRunArray"  data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Предыдущий</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#FotosRunArray"  data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Следующий</span>
+                        </button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+              </div>
+            </div>
+            <div class="carousel-indicators">
+              {% for img in params.salon_dict.FotosRunArray %}
+                <button type="button" data-bs-target="#FotosRunArray" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                
+              {% endfor %}
+            </div>
+
+          {% endif%}
+
+        </div>
+        
+
+        <div class="tab-pane {% if params.tabindex == 3 %} active {% endif %}" id="vnesh" role="tabpanel" aria-labelledby="vnesh-tab">
+          {% if params.tabindex == 3 %}
+            
+            <div class="row">
+              
+              <div class="col-sm">
+                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 320px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{params.vnesh_dict.IViewOsmotrPered}}"> 
+              </div>
+              
+              <div class="col-sm">
+                <div style="object-fit: cover; border-radius: 10px; max-height: 320px;" id="JsonArrayArrayImagesPered" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesPered %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#JsonArrayArrayImagesPered" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesPered %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 320px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img.path}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>{{img.text}}</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.JsonArrayArrayImagesPered %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesPered"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesPered"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>   
+        
+            </div>
+            
+            <br>
+
+            <div class="row">
+              
+              <div class="col-sm">
+                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{params.vnesh_dict.IViewOsmotrVod}}"> 
+              </div>
+              
+              <div class="col-sm">
+                <div style="object-fit: cover; border-radius: 10px; max-height: 400px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesVod %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesVod %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img.path}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>{{img.text}}</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.JsonArrayArrayImagesVod %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>   
+        
+            </div>
+            
+            <br>
+
+            <div class="row">
+              
+              <div class="col-sm">
+                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{params.vnesh_dict.IViewOsmotrZad}}"> 
+              </div>
+              
+              <div class="col-sm">
+                <div style="object-fit: cover; border-radius: 10px; max-height: 400px;" id="JsonArrayArrayImagesZad" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesZad %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#JsonArrayArrayImagesZad" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesZad %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img.path}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>{{img.text}}</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.JsonArrayArrayImagesZad %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesZad"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesZad"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>   
+        
+            </div>
+            <br>
+
+            <div class="row">
+              
+              <div class="col-sm">
+                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{params.vnesh_dict.IViewOsmotrPass}}"> 
+              </div>
+              
+              <div class="col-sm">
+                <div style="object-fit: cover; border-radius: 10px; max-height: 400px;" id="JsonArrayArrayImagesPas" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesPas %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#JsonArrayArrayImagesPas" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.JsonArrayArrayImagesPas %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img.path}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>{{img.text}}</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.JsonArrayArrayImagesPas %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesPas"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesPas"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>              
+            </div>
+        
+            <br>
+
+            <div class="row g-1">
+              
+              <div class="col-sm-3">
+                <div style="object-fit: cover; border-radius: 10px; max-height: 400px;" id="jsonArrayArrayImagesVin" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                  
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.jsonArrayArrayImagesVin %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#jsonArrayArrayImagesVin" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.jsonArrayArrayImagesVin %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>VIN</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.jsonArrayArrayImagesVin %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#jsonArrayArrayImagesVin"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#jsonArrayArrayImagesVin"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="col-sm-3">
+                <div style="object-fit: cover; border-radius: 10px; height: 400px;" id="jsonArrayArrayImagesPodKapot" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                  
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.jsonArrayArrayImagesPodKapot %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#jsonArrayArrayImagesPodKapot" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.jsonArrayArrayImagesPodKapot %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>Подкапотное пространство</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.jsonArrayArrayImagesPodKapot %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#jsonArrayArrayImagesPodKapot"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#jsonArrayArrayImagesPodKapot"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+
+              {% if params.vnesh_dict.ArrayLobStekloError|length > 0 %}
+              <div class="col-sm-3">
+                <div style="object-fit: cover; border-radius: 10px; height: 400px;" id="ArrayLobStekloError" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                  
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.ArrayLobStekloError %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#ArrayLobStekloError" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.ArrayLobStekloError %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>Повреждения лобового стекла</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.ArrayLobStekloError %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#ArrayLobStekloError"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#ArrayLobStekloError"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+              {% if params.vnesh_dict.ArraySvetPriborError|length > 0 %}
+              <div class="col-sm-3">
+                <div style="object-fit: cover; border-radius: 10px; height: 400px;" id="ArraySvetPriborError" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                  
+                  <div class="carousel-indicators">
+                    {% for img in params.vnesh_dict.ArraySvetPriborError %}
+                      {% if img.path != "" %} 
+                        <button type="button" data-bs-target="#ArraySvetPriborError" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  
+                  <div class="carousel-inner">
+                    
+                    {% for img in params.vnesh_dict.ArraySvetPriborError %}
+                    
+                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        {% if img.path != "" %} 
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 400px;" src="http:\\carcopy.autoshina.net:8080/carcopy/{{img}}" >
+                          <div class="carousel-caption d-none d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                            <h6>Проблема световых приборов</h5>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                    {% endfor %}
+                    
+                  </div>
+                  {% for img in params.vnesh_dict.ArraySvetPriborError %}
+                    {% if img.path != "" and forloop.counter == 2  %} 
+                      <button class="carousel-control-prev" type="button" data-bs-target="#ArraySvetPriborError"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#ArraySvetPriborError"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+            </div>
+
+        {% endif %}
+
+        </div>
+
+
+        <div class="tab-pane {% if params.tabindex == 4 %} active {% endif %}" id="confim" role="tabpanel" aria-labelledby="confim-tab">
+
+          
+
+        </div>
+
+
+      </div>
+    </main>
+    
+  </div>
+	         
+  <br>
+  
+  <script>
+    $(document).ready(function(){
+      $('#select_page').change(function(){
+        reload($(this).val());
+      });
+    });
+    </script>
+
+<script language="JavaScript">
+  function reload(id){
+    var url = new URL(document.location.href);
+     url.searchParams.set('page', id)
+     document.location.href  = url.href;
+  }
+</script>
+<!--
+<div class="card"> 
+  <h5 class="card-header">Интерактивная оценка</h5>
+  <div class="card-body text-success">
+  
+  </div>
+</div>
+-->
+
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - справочник автозамены слов {% endblock %}
+
+{% block title_navbar %} - справочник автозамены слов {% endblock %}
+
+{% block content %}
+<form method="GET" id="form" name="form">
+  
+  <div class="row g-1">
+      
+    <div class="col-sm">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
+          <label for="floatingInput">Слово</label>
+      </div>
+    </div>
+
+
+      <div class="col-sm-auto my-auto">
+        <div class="form-floating mb-3">
+            <button class="btn btn-outline-success"><span class="icon-mbri-refresh"> </span></button>
+        </div>
+      </div>
+
+  </div>
+
+  <div class="table-responsive-sm">
+    <table class="table table-hover table-sm table-striped">
+    <thead class="table-white" style="font-size: 18px;">
+      <tr class="align-middle">
+        <th scope="col" class="align-middle text-success"><a href="0" class="link-danger"><span class="icon-mbri-plus"></span></a></th>
+        <th scope="col" class="align-middle">Дата добавления</th>
+        <th scope="col" class="align-middle">Фраза с</th>
+        <th scope="col" class="align-middle">Фраза на</th>
+        <th scope="col" class="align-middle">Добавлено в модель</th>
+        <th scope="col" class="align-middle"></th>			
+      </tr>
+    </thead>
+    <tbody>
+    
+      {% if params.paginator.object_list %}
+        {% for object in params.paginator.object_list %}
+          <tr class="align-middle">
+            <td class="align-middle text-success"><a href="{{object.pk}}" class="link-success"><span class="icon-mbri-edit"></span></a></td>
+            <td class="align-middle">{{object.date}}</td>
+            <td class="align-middle">{{object.name_s}}</td>
+            <td class="align-middle">{{object.name_n}}</td>
+            <td class="align-middle">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="closed" {% if object.added %} checked {% endif %} disabled>
+              </div>
+            </td>
+            <td><a href="{% if params.param_url|length == 0 %}?delite={{object.pk}} {% else %}?{{params.param_url}}&delite={{object.pk}} {% endif %}" class="link-success"><span class="icon-mbri-close"></span></a></td>  
+          </tr>
+        {% endfor %} 
+      {% endif %}
+      
+    </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <div class="row g-1">
+    <div class="col justify-content-center">
+      <div class="form-floating mb-3">
+        <select class="form-select" name = "select_count" onchange="this.form.submit()">
+          <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
+          <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
+          <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
+          <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
+        </select>
+        <label for="floatingInput">Выводить</label>
+      </div>
+    </div>
+    <div class="col justify-content-center">
+      <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+        
+        {% if  params.paginator.has_previous %}
+          <li class="page-num">
+              <a class="page-link text-secondary"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
+          </li>
+        {% endif %}
+    
+        {% for p in params.paginator.paginator.page_range %}
+          {% if  params.paginator.number == p %}
+          <li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
+              {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+          <li class="page-item">
+            <a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+          
+        {% if params.paginator.has_next %}
+          <li class="page-num">
+            <a class="page-link text-secondary" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
+          </li>
+        {% endif %}
+    
+        </ul>
+      </nav>
+    </div>
+    <div class="col justify-content-center" >
+      Выведено : {{params.paginator.object_list|length}}
+    </div>
+  </div>
+
+</form>
+
+{% endblock %}
+

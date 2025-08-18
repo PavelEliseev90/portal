@@ -1,0 +1,34 @@
+{% extends 'base_web.html' %}
+
+{% block title %} - 403 нет прав на просмотр {% endblock %}
+
+{% block title_navbar %} - 403 нет прав на просмотр {% endblock %}
+
+
+
+{% block content %}
+
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<br>
+
+<div class="card border-success mb-3">
+      <div class="card-header">
+        <div class="row align-items-center">
+          <div class="col-sm-auto align-self-center">
+            <img src="/static/images/mbri-user.svg" style="opacity: 0.5; height: 150px;">
+          </div>
+          <div class="col-sm align-self-center text-secondary">
+            <div class="fs-5"> 403 - Доступ запрещен.<br>
+              Нет прав на просмотр.</div>
+          </div>
+        </div>
+      </div>     
+  </div>
+</div> 
+             
+{% endblock %}

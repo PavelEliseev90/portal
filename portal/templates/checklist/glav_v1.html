@@ -1,0 +1,334 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - прослушка диктофонов {% endblock %}
+
+{% block title_navbar %} - прослушка диктофонов {% endblock %}
+    
+{% block content %}
+
+
+<form action="" method="POST" enctype="multipart/form-data">	
+	
+	{% csrf_token %}
+
+	<div class="row g-3">
+		<div class="card border-secondary">
+			<div class="card-header">
+			Фильтр
+			</div>
+			<div class="card-body">
+				<div class="row g-1">
+					
+					<div class="col-sm-2">
+						<div class="form-floating mb-3">
+							<input onchange="this.form.submit()" class="form-control form-control-sm" type="month" name="date" value="{{params.filter.date|date:"Y-m"}}">
+							<label for="floatingInput">Месяц</label>
+						</div>		
+					</div>
+					
+					<div class="col-sm-2">
+						<div class="form-floating mb-3">
+							<select class="form-select" name = "select_city" id = "city" onchange="this.form.submit()" onChange="change_link()">
+								<option> </option>
+								{% for city in params.selected.citys %}
+									{% if params.filter.cityID|lower == city.id|lower %}
+										<option id={{city.id}} value="{{city.id}}" selected>{{city.name}} </option>
+									{% else %}
+										<option id={{city.id}} value="{{city.id}}"> {{city.name}} </option>
+									{% endif %}
+								{% endfor %}
+							</select>
+							<label for="floatingInput">Город</label>
+						</div>		
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<br>
+
+	<div class="row g-3">
+
+		<div class="card border-secondary">
+			<div class="card-header">
+				Дилерские центры новых авто
+			</div>
+			<div class="card-body">
+				
+				<div class="row g-2">
+
+					<div class="col-sm">
+		
+						<div class="card mb-3">
+							<div class="card-header">
+								Отдел продаж - {{params.op_count}}
+							</div>
+							<div class="card-body">
+								
+					
+								<table class="table table-sm table-striped">
+								<thead>
+									<tr>
+									<th scope="col"></th>
+									<th scope="col"></th>
+									
+									</tr>
+								</thead>
+								<tbody>
+									{% for op in params.op_list %}
+										<tr>
+										<th scope="row">{{op.rlk__unit__name}}</th>
+										<td>{{op.count}}</td>  
+										</tr>
+									{% endfor %}
+								</tbody>
+								</table>
+					
+															
+								</div>
+							</div>
+					</div>
+
+					<div class="col-sm">	
+						<div class="card mb-3">
+							<div class="card-header">
+							Отдел сервиса (прием авто) - {{params.zn_in_count}}
+							</div>
+							<div class="card-body">
+								
+								<table class="table table-sm table-striped">
+								<thead>
+									<tr>
+									<th scope="col"></th>
+									<th scope="col"></th>
+									
+									</tr>
+								</thead>
+								<tbody>
+									{% for zn in params.zn_in_list %}
+										<tr>
+										<th scope="row">{{zn.zn__unit__name}}</th>
+										<td>{{zn.count}}</td>  
+										</tr>
+									{% endfor %}
+								</tbody>
+								</table>
+														
+							</div>
+						</div>
+					</div>
+
+					<div class="col-sm">
+						<div class="card mb-3">
+							<div class="card-header">
+							Отдел сервиса (выдача авто) - {{params.zn_out_count}}
+							</div>
+							<div class="card-body">
+								
+									<table class="table table-sm table-striped">
+								<thead>
+									<tr>
+									<th scope="col"></th>
+									<th scope="col"></th>
+									
+									</tr>
+								</thead>
+								<tbody>
+									{% for zn in params.zn_out_list %}
+										<tr>
+										<th scope="row">{{zn.zn__unit__name}}</th>
+										<td>{{zn.count}}</td>  
+										</tr>
+									{% endfor %}
+								</tbody>
+								</table>
+														
+							</div>
+						</div>
+					</div>
+				
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<br>
+
+	<div class="row g-3">
+
+		<div class="card border-secondary">
+			<div class="card-header">
+			Дилерские центры КорсАвто (автомобили с пробегом)
+			</div>
+			<div class="card-body">
+				
+				<div class="row g-2">
+
+					<div class="col-sm">
+						<div class="card mb-3">
+							<div class="card-header">
+							Отдел оценки - {{params.rlk_tradein_count}}
+							</div>
+							<div class="card-body">
+								
+								<table class="table table-sm table-striped">
+									  <thead>
+									<tr>
+									  <th scope="col"></th>
+									  <th scope="col"></th>
+									  
+									</tr>
+								  </thead>
+								  <tbody>
+									{% for rlk in params.rlk_tradein_list %}
+										<tr>
+										  <th scope="row">{{rlk.rlk__unit__name}}</th>
+										  <td>{{rlk.count}}</td>  
+										</tr>
+									{% endfor %}
+								  </tbody>
+								</table>
+														  
+							</div>
+						</div>
+					</div>
+
+					<div class="col-sm">
+						<div class="card mb-3">
+							<div class="card-header">
+							Отдел продаж - {{params.op_kors_count}}
+							</div>
+							<div class="card-body">
+								
+								<table class="table table-sm table-striped">
+									  <thead>
+									<tr>
+									  <th scope="col"></th>
+									  <th scope="col"></th>
+									  
+									</tr>
+								  </thead>
+								  <tbody>
+									{% for rlk in params.op_kors_list %}
+										<tr>
+										  <th scope="row">{{rlk.rlk__unit__name}}</th>
+										  <td>{{rlk.count}}</td>  
+										</tr>
+									{% endfor %}
+								  </tbody>
+								</table>
+														  
+							</div>
+						</div>
+					</div>
+				
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<br>
+
+</form>
+
+
+<script type="text/javascript">
+	
+	function test1(){ 
+		
+		document.getElementById('itog_v1').innerHTML = Number(document.getElementById('exampleDataList_v1_1').value) + Number(document.getElementById('exampleDataList_v1_2').value) + Number(document.getElementById('exampleDataList_v1_3').value) + Number(document.getElementById('exampleDataList_v1_4').value);
+		
+		document.getElementById('itog_v1P').innerHTML = div(Number(document.getElementById('itog_v1').innerHTML), Number(document.getElementById('itog_v1M').innerHTML)) 
+
+		itog();
+	}
+
+	function test2(){ 
+		
+		document.getElementById('itog_v2').innerHTML = Number(document.getElementById('exampleDataList_v2_1').value) + Number(document.getElementById('exampleDataList_v2_2').value) + Number(document.getElementById('exampleDataList_v2_3').value) + Number(document.getElementById('exampleDataList_v2_4').value) + Number(document.getElementById('exampleDataList_v2_5').value) + Number(document.getElementById('exampleDataList_v2_6').value);
+		
+		document.getElementById('itog_v2P').innerHTML = div(Number(document.getElementById('itog_v2').innerHTML), Number(document.getElementById('itog_v2M').innerHTML)) 
+
+		itog();
+	}
+
+	function test3(){ 
+		
+		document.getElementById('itog_v3').innerHTML = Number(document.getElementById('exampleDataList_v3_1').value) + Number(document.getElementById('exampleDataList_v3_2').value) + Number(document.getElementById('exampleDataList_v3_3').value) + Number(document.getElementById('exampleDataList_v3_4').value) + Number(document.getElementById('exampleDataList_v3_5').value);
+		
+		document.getElementById('itog_v3P').innerHTML = div(Number(document.getElementById('itog_v3').innerHTML), Number(document.getElementById('itog_v3M').innerHTML)) 
+
+		itog();
+	}
+
+	function test4(){ 
+		
+		document.getElementById('itog_v4').innerHTML = Number(document.getElementById('exampleDataList_v4_1').value) + Number(document.getElementById('exampleDataList_v4_2').value) + Number(document.getElementById('exampleDataList_v4_3').value) + Number(document.getElementById('exampleDataList_v4_4').value);
+		
+		document.getElementById('itog_v4P').innerHTML = div(Number(document.getElementById('itog_v4').innerHTML), Number(document.getElementById('itog_v4M').innerHTML)) 
+
+		itog();
+	} 
+
+	function test5(){ 
+		
+		document.getElementById('itog_v5').innerHTML = Number(document.getElementById('exampleDataList_v5_1').value) + Number(document.getElementById('exampleDataList_v5_2').value) + Number(document.getElementById('exampleDataList_v5_3').value) + Number(document.getElementById('exampleDataList_v5_4').value) + Number(document.getElementById('exampleDataList_v5_5').value);
+		
+		document.getElementById('itog_v5P').innerHTML = div(Number(document.getElementById('itog_v5').innerHTML), Number(document.getElementById('itog_v5M').innerHTML)) 
+
+		itog();
+	}
+
+	function test6(){ 
+		
+		document.getElementById('itog_v6').innerHTML = Number(document.getElementById('exampleDataList_v6_1').value) + Number(document.getElementById('exampleDataList_v6_2').value) + Number(document.getElementById('exampleDataList_v6_3').value);
+		
+		document.getElementById('itog_v6P').innerHTML = div(Number(document.getElementById('itog_v6').innerHTML), Number(document.getElementById('itog_v6M').innerHTML)) 
+
+		itog();
+	}
+
+	function test7(){ 
+		
+		document.getElementById('itog_v7').innerHTML = Number(document.getElementById('exampleDataList_v7_1').value) + Number(document.getElementById('exampleDataList_v7_2').value) + Number(document.getElementById('exampleDataList_v7_3').value) + Number(document.getElementById('exampleDataList_v7_4').value);
+		
+		document.getElementById('itog_v7P').innerHTML = div(Number(document.getElementById('itog_v7').innerHTML), Number(document.getElementById('itog_v7M').innerHTML)) 
+
+		itog();
+	}
+
+	function test8(){ 
+		
+		document.getElementById('itog_v8').innerHTML = Number(document.getElementById('exampleDataList_v8_1').value) + Number(document.getElementById('exampleDataList_v8_2').value) + Number(document.getElementById('exampleDataList_v8_3').value);
+		
+		document.getElementById('itog_v8P').innerHTML = div(Number(document.getElementById('itog_v8').innerHTML), Number(document.getElementById('itog_v8M').innerHTML)) 
+
+		itog();
+	} 
+
+	function div(val, by){
+	    return Math.floor(val/by*100);
+	}
+
+	function itog(){
+	    document.getElementById('itog').innerHTML = Number(document.getElementById('itog_v1').innerHTML) +
+	    Number(document.getElementById('itog_v2').innerHTML) + 
+	    Number(document.getElementById('itog_v3').innerHTML) +
+	    Number(document.getElementById('itog_v4').innerHTML) +
+	    Number(document.getElementById('itog_v5').innerHTML) + 
+	    Number(document.getElementById('itog_v6').innerHTML) +
+	    Number(document.getElementById('itog_v7').innerHTML) +
+	    Number(document.getElementById('itog_v8').innerHTML);
+	}
+
+</script>
+
+{% endblock %}

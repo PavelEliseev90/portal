@@ -1,0 +1,32 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - справочники {% endblock %}
+
+{% block title_navbar %} - справочники {% endblock %}
+    
+{% block content %}
+
+
+	<div class="row">
+		
+		<div class="col">
+			<div class="card">
+				<div class="card-body">
+					<a href="units_group/" class="link-dark"> <span class="icon-mbri-photos"> Группы подразделений</span> </a>
+				</div>
+			</div>
+		</div>
+
+		<div class="col">
+			<div class="card">
+				<div class="card-body">
+					<a href="units/" class="link-dark"> <span class="icon-mbri-photo"> Подразделения</span> </a>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+{% endblock %}

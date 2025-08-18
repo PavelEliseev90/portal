@@ -1,0 +1,1 @@
+python D:\kors_group\portal\manage.py process_tasks --queue queue_recognition_kg --duration 10

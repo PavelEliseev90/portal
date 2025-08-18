@@ -1,0 +1,1328 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - Рабочий лист № {{params.rlk.nomer}} от {{params.rlk.dataTime}} {% endblock %}
+
+{% block title_navbar %} - Рабочий лист № {{params.rlk.nomer}} от {{params.rlk.dataTime}}  {% endblock %}
+
+
+{% block content %}
+
+<div aria-live="polite" aria-atomic="true" class="bg-dark position-relative bd-example-toasts">
+  
+  <div class="toast-container position-absolute top-0 start-50 p-3">
+    <div id='toast_auto_replace' class="toast" role="alert" data-bs-delay="4000" data-bs-autohide="true" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <span class="icon-mbri-success"></span>
+        <strong class="me-auto">Корс Групп</strong>
+        <small class="text-muted">прямо сейчас</small>
+        <button id='close_toast_auto_replace' type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+      </div>
+      <div class="toast-body">
+        Автозамена сохранена. Спасибо что помогаете стать программе лучше.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast-container position-absolute top-0 start-50 p-3">
+    <div id='toast_model' class="toast" role="alert" data-bs-delay="4000" data-bs-autohide="true" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <span class="icon-mbri-success"></span>
+        <strong class="me-auto">Корс Групп</strong>
+        <small class="text-muted">прямо сейчас</small>
+        <button id='close_toast_model' type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+      </div>
+      <div class="toast-body">
+        Слово и фраза добавлена в список для обучения модели, это позволит в будущем более качествено распозновать аудио в текст. Спасибо Вам. 
+      </div>
+    </div>
+
+  </div>
+
+
+</div>
+
+
+<form method="GET" id="form" name="form">
+
+  <div class="row"> 
+    
+    <div class="col-sm-3">
+      
+      <div class="row g-1">
+
+        <div class="card"> 
+          <h6 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseExampleRLK" aria-expanded="false" aria-controls="collapseExampleRLK"><span class="icon-mbri-right"></span>Рабочий лист</h6>
+          <div class="collapse" id="collapseExampleRLK">
+            <div class="card-body text-success">
+            
+              {% csrf_token %}
+                
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <tbody>
+                      <tr>
+                        <td>ИД</td>
+                        <td>{{params.rlk.id}}</td>
+                      </tr>
+                      <tr>
+                        <td>Дата рабочего листа</td>
+                        <td>{{params.rlk.dataTime}}</td>
+                      </tr>
+                      <tr>
+                        <td>Номер рабочего листа</td>
+                        <td>{{params.rlk.nomer}}</td>
+                      </tr>
+                      <tr>
+                        <td>Подразделение</td>
+                        <td>{{params.rlk.unit}}</td>
+                      </tr>
+                      <tr>
+                        <td>Сотрудник</td>
+                        <td>{{params.rlk.staff}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {% if params.rlk %}
+                  <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk"> <span class="icon-mbri-file"></span> Рабочий лист</button>	
+                  </div>
+
+                  <div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                      <span class=""></span><h6 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Рабочий лист - {{params.rlk.nomer}} от {{params.rlk.dataTime}}</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="table-responsive-sm">
+                          <table class="table table-sm table-striped table-hover">
+                            <tbody>
+                            <tr class="align-middle">
+                              <td class="align-middle">Имя клиента:</td>
+                              <td class="align-middle">{% if params.rlk.clientName|length > 0 %} {{params.rlk.clientName}} {% else %} Не указан {% endif %}</td>
+                            </tr>
+                            <tr class="align-middle">
+                              <td class="align-middle">Телефон:</td>
+                              <td class="align-middle">{% if params.rlk.phone|length > 0 %} {{params.rlk.phone}} {% else %} Не указан {% endif %}</td>
+                            </tr>
+                            <tr class="align-middle">
+                              <td class="align-middle">Вид контакта:</td>
+                              <td class="align-middle">{{params.rlk.contacType}}</td>
+                            </tr>
+                            <tr class="align-middle">
+                              <td class="align-middle">Закрыт день в день:</td>
+                              <td class="align-middle">{% if params.rlk.archiveDayToDay %} Да {% else %} Нет {% endif %}</td>
+                            </tr>
+                            <tr class="align-middle">
+                              <td class="align-middle">Комментарий администратора</td>
+                              <td class="align-middle">{{params.rlk.commentAdministrator}}</td>
+                            </tr> 
+                            <tr class="align-middle">
+                              <td class="align-middle">Комментарий менеджера</td>
+                              <td class="align-middle">{{params.rlk.commentManager}}</td>
+                            </tr> 
+                            </tbody>
+                          </table>
+                        </div>
+                        <hr>
+                        <div class="table-responsive-sm">
+                          <table class="table table-sm table-striped table-hover">
+                            <tbody> 
+                              {% for event in params.rlk.events %}
+                              <tr class="align-middle"> 
+                                <td class="align-middle">{{event.dataTime}}</td>
+                                <td class="align-middle">{{event.dataTimeEvent}}</td>
+                                <td class="align-middle">{{event.contacType}}</td>
+                                <td class="align-middle">{{event.comment}}</td>
+                                <td class="align-middle">{{event.contacType}}</td>
+                                <td class="align-middle">{{event.staff}}</td>
+                                <td class="align-middle">{{event.status}}</td>
+                              </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                      </div>
+                    </div>
+                    </div>
+                  </div>
+                {% endif %}
+
+             
+            </div>
+          </div>
+        </div>
+
+        {% if params.survey != None %}
+        <div class="card"> 
+          <h6 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseExampleOpros" aria-expanded="false" aria-controls="collapseExampleOpros"><span class="icon-mbri-right"></span> Чек лист 1С - {{params.survey.result}} % </h6>
+          <div class="collapse" id="collapseExampleOpros">
+            <div class="card-body text-success">
+            
+              {% csrf_token %}
+                
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <tbody>
+                      <tr>
+                        <td>Дата</td>
+                        <td>{{params.survey.dateTime}}</td>
+                      </tr>
+                      <tr>
+                        <td>Номер</td>
+                        <td>{{params.survey.nomer}}</td>
+                      </tr>
+                      <tr>
+                        <td>Подразделение</td>
+                        <td>{{params.survey.unit.name}}</td>
+                      </tr>
+                      <tr>
+                        <td>Сотрудник</td>
+                        <td>{{params.survey.staff}}</td>
+                      </tr>
+                      
+                    </tbody>
+                  </table>
+                </div>
+
+                {% if params.survey != None %}
+                  <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#opros"> <span class="icon-mbri-file"></span> Опрос</button>	
+                  </div>
+
+                  <div class="modal fade" id="opros" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                      <span class=""></span><h6 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Опрос - {{params.survey.nomer}} от {{params.survey.dateTime}} - {{params.survey.result}}% </h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="table-responsive-sm">
+                          <table class="table table-sm table-striped table-hover">
+                            <tbody>
+                            <tr class="align-middle">
+                              <td class="align-middle">Рабочий лист</td>
+                              <td class="align-middle">{{params.survey.rlk}}</td>
+                            </tr>
+                            <tr class="align-middle">
+                              <td class="align-middle">Сотрудник:</td>
+                              <td class="align-middle">{{params.survey.staff}}</td>
+                            </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <hr>
+                        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                          <li class="nav-item" role="presentation">
+                            <button class="nav-link active text-secondary" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true"> <span class="icon-mbri-question"></span> Вопросы - <span class="icon-mbri-success"> </span> {{params.survey.questions_success_count}} / <span class="icon-mbri-close"> </span> {{params.survey.questions_fail_count}} </button>
+                          </li>
+                          <li class="nav-item" role="presentation">
+                            <button class="nav-link text-secondary" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false"> <span class="icon-mbri-speed"></span> Выводы </button>
+                          </li>
+                          <li class="nav-item" role="presentation">
+                            <button class="nav-link text-secondary" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false"> <span class="icon-mbri-help"></span> Распознанные тематики - {{params.survey.tematics_count}}</button>
+                          </li>
+                        </ul> 
+                          
+                          <div class="tab-content" id="myTabContent">
+                            
+                            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                              
+                                <div class="card-body text-success">
+                                  
+                                  <div class="row g-1">
+                                    
+                                    <div class="col-sm">
+                                      <div class="card border-success">
+                                        <div class="card-body text-success">
+                                          <div class="table-responsive">
+                                            <table class="table table-sm align-middle">
+                                              <tbody>
+                                                {% for question_success in params.survey.questions_success %}
+                                                <tr>
+                                                  <td class="text-success">{{question_success.name}}</td>
+                                                  <td class="text-success">{{question_success.answer}}</td>
+                                                </tr>
+                                                {% endfor %}
+                                                
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                            
+                                    <div class="col-sm">
+                                      <div class="card border-danger">
+                                        <div class="card-body">
+                                          <div class="table-responsive">
+                                            <table class="table table-sm align-middle">
+                                              <tbody>
+                                                {% for question_fail in params.survey.questions_fail %}
+                                                <tr>
+                                                  <td class="text-danger">{{question_fail.name}}</td>
+                                                  <td class="text-danger">{{question_fail.answer}}</td>
+                                                </tr>
+                                                {% endfor %}
+                                                
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                    </div>
+
+                                  </div>
+                                  
+                                </div>
+                              
+                            </div>
+                    
+                            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                              <div class="mb-3">
+                                {% if params.survey.conclusions_table != None %}
+                                  <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                      <tbody>
+                                        {% for conclusions in params.survey.conclusions_table %}
+                                        <tr class="{% if conclusions.0 == 'operator' %} bg-success bg-opacity-10 {% else %} bg-danger bg-opacity-10 {% endif%}">
+                                          <td><span class="{% if conclusions.0 == 'operator' %} icon-mbri-home {% else %} icon-mbri-user {% endif%}"></span></td>
+                                          <td>{{conclusions.0}}</td>
+                                          <td>{{conclusions.1}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        
+                                      </tbody>
+                                    </table>
+                                  </div> 
+                                {% elif params.survey.сonclusions|length > 0 %}
+                                  <textarea class="form-control" id="exampleFormControlTextarea1" rows="20">{{params.survey.conclusions}}</textarea>
+                                {% else %} 
+                                  <div class="row g-1">
+                                    <p class="fs-5 fw-normal">Нет выводов по звонку.</p>
+                                    <p class="fs-6 fw-normal">Нет информации по расшифровке звонка.</p>
+                                  </div>
+                                {% endif %}
+                              </div>
+                            </div>
+                    
+                            <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+                              
+                                <div class="card-body">
+                                  
+                                  <div class="col-sm">
+                                    <div class="card border-success">
+                                      <div class="card-body text-success">
+                                        <div class="table-responsive">
+                                          <table class="table table-sm align-middle">
+                                            <tbody>
+                                              {% for tematics in params.survey.tematics %}
+                                              <tr>
+                                                <td class="text-success">{{tematics.name}}</td>
+                                                <td class="text-success">{{tematics.entry_id}}</td>
+                                                <td class="text-success">{{tematics.record}}</td>
+                                              </tr>
+                                              {% endfor %}
+                                              
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                </div>
+
+                            </div>
+                          
+                          </div>
+
+                        
+
+                      </div>
+                      <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                      </div>
+                    </div>
+                    </div>
+                  </div>
+                {% endif %}
+
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="card"> 
+          <h6 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"><span class="icon-mbri-right"></span> История звонков - {{params.entrys_id|length}}</h6>
+          <div class="collapse" id="collapseExample">
+            
+            <div class="card-body text-success">
+              
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <tbody>
+                    {% for call in params.entrys_id %}
+                    <tr class='{% if call.answer %} text-success {% else %} text-danger {% endif %}'>
+                      <td><span class='{% if call.answer %} icon-mbri-success {% else %} icon-mbri-close {% endif %}'>   </span></td>
+                      <td>
+                        {% if call.direction == 'INBOUND' %}
+                          <span class="icon-mbri-right"></span>
+                        {% elif call.direction == 'OUTBOUND'  %}
+                          <span class="icon-mbri-left"></span>
+                        {% else %}
+                          <span class="icon-mbri-left-right"></span>
+                        {% endif %}
+                        
+                      </td>
+                      <td>{{call.start|date:"H:i"}} <br> {{call.duration}}</td>
+                      <td>{{call.from_number|truncatechars:15 }} <br> {{call.to_number|truncatechars:15}}</td>
+                      <td>{{call.records}}</td>
+                    </tr>
+                    
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+             
+            </div>
+          </div>
+        </div>
+
+        <div class="card"> 
+          <h6 class="card-header"   data-bs-toggle="collapse" data-bs-target="#collapse_data_recognition" aria-expanded="false" aria-controls="collapse_data_recognition"><span class="icon-mbri-right"></span> Записи - {{params.records_list|length}}</h6>
+          <div class="collapse" id="collapse_data_recognition">
+            <div class="card-body text-success">
+              <div class="table-responsive">
+                <table class="table table-sm" id="table_records">
+                  <tbody>
+                    {% for recognition in params.records_list %}
+                    <tr id="tr_{{recognition.record}}" {% if forloop.counter0 == 0 %} class="bg-success bg-opacity-10" {% endif %}>
+                      <td id="records_play_{{recognition.record}}" class="align-middle"><span class="icon-mbri-play"></span></td>
+                      <td class="align-middle">{{recognition.start|date:"H:i"}} <br> {{recognition.duration}} </td>
+                      <td class="align-middle">{{recognition.record}}</td>
+                      
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card"> 
+          <h6 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseExampleSearch" aria-expanded="false" aria-controls="collapseExample"><span class="icon-mbri-right"></span> Тематики </h6>
+          <div class="collapse" id="collapseExampleSearch">
+            <div class="card-body text-success">
+              <table class="table" >
+                <tbody>
+                  
+                  {% for tematik in params.tematics_list %}
+                    <tr {% if tematik.value > 0 %} class="text-success" {% else %} class="text-success" {% endif %} data-bs-toggle="info_tematic_{{forloop.counter0}}" data-bs-target="info_tematic_{{forloop.counter0}}">
+                      <td> 
+                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#info_tematic_{{forloop.counter0}}">
+                          <span {% if tematik.value > 0 %} class="icon-mbri-success" {% else %} class="icon-mbri-success" {% endif %}> </span>
+                        </button> 
+                      </td>
+                      <td> {{tematik.name}} </td>
+                    </tr>
+                    
+                    <div class="modal fade" id="info_tematic_{{forloop.counter0}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="info_tematic_{{forloop.counter0}}" aria-hidden="true">
+                      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                        <span class=""></span><h6 class="modal-title" id="info_tematic_{{forloop.counter0}}"> {{tematik.name}} <span class="icon-mbri-plus"></span>  </h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          
+                          <div class="card">
+                            <div class="card-body">
+                              
+                              {% for tem_data in tematik.data %}
+                                <div class="row">
+                                  <div class="col-sm-2">{{tem_data.tematics}} </div>
+                                  <div class="col-sm-1">{{tem_data.resulttoken_sort_ratio}}</div>
+                                  <div class="col-sm">{{tem_data.tematics_text}}</div>
+                                  <div class="col-sm">{{tem_data.record}}</div>
+                                  <div class="col-sm-1">{{tem_data.sec_human}}</div>
+                                </div>
+                              {% endfor %}  
+                            </div>
+                          </div> 
+                            
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+
+                  {% endfor %}
+
+                </tbody>
+              </table>    
+            </div>
+          </div>
+        </div>
+
+        <div class="card"> 
+          <h6 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapsecheck" aria-expanded="false" aria-controls="collapseExample"><span class="icon-mbri-right"></span> Чек лист - {{params.qyestions_check}} %</h6>
+          <div class="collapse" id="collapsecheck">
+            <div class="card-body text-success">
+              <table class="table" >
+                <tbody>
+                  
+                  {% for qyestion in params.qyestions %}
+                    
+                    <tr {% if tematik.value > 0 %} class="text-success" {% else %} class="text-success" {% endif %} data-bs-toggle="info_tematic_{{forloop.counter0}}" data-bs-target="info_tematic_{{forloop.counter0}}">
+                      <td> 
+                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#info_qyestion_{{forloop.counter0}}">
+                          <span {% if qyestion.estimation > 0 %} class="icon-mbri-success" {% else %} class="icon-mbri-success" {% endif %}> </span>
+                        </button> 
+                      </td>
+                      <td> {{qyestion.name}} </td>
+                      <td> {{qyestion.estimation}} </td>
+                    </tr>
+                    
+                    <div class="modal fade" id="info_qyestion_{{forloop.counter0}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="info_qyestion_{{forloop.counter0}}" aria-hidden="true">
+                      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                        <span class=""></span><h6 class="modal-title" id="info_qyestion_{{forloop.counter0}}"> {{qyestion.name}} <span class="icon-mbri-plus"></span>  </h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          
+                          <div class="card">
+                            <div class="card-body">
+                              
+                              {% for tem_data in tematik.data %}
+                                <div class="row">
+                                  <div class="col-sm-2">{{tem_data.tematics}} </div>
+                                  <div class="col-sm-1">{{tem_data.resulttoken_sort_ratio}}</div>
+                                  <div class="col-sm">{{tem_data.tematics_text}}</div>
+                                  <div class="col-sm">{{tem_data.record}}</div>
+                                  <div class="col-sm-1">{{tem_data.sec_human}}</div>
+                                </div>
+                              {% endfor %}  
+                            </div>
+                          </div> 
+                            
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+
+                  {% endfor %}
+
+                </tbody>
+              </table>    
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-sm-9">
+      <div class="card">
+        <div class="row g-2">
+          
+          <div class="table-wrapper-scroll-y my-custom-scrollbar">
+            <div class="table-responsive-sm" id="div_table_text">
+              <table id="table_text" class="table table-hover fixed-header">
+                
+                <tbody>
+
+                  {% for data_json in params.data_list %}
+                    
+                    <tr id="table_text_tr_{{data_json.recognition}}_{{data_json.sec}}" class="{% if data_json.talking == 'Клиент' %}bg-dark bg-opacity-10{% else %}bg-info bg-opacity-10{% endif %} ">
+                      
+                      <td class="align-middle"><span id="span_record_{{data_json.recognition}}_{{data_json.sec}}"></span>
+                      
+                      <td>{{data_json.date|date:"H:i:s"}}</td>
+                      <td>{{data_json.time}}</td> 
+<!--
+                      <td>{{data_json.recognition}}</td>
+                      
+                      <td>{{data_json.direction_call}}</td>
+                      <td>{{data_json.chanel}}</td>
+                      -->
+                      <td>{{data_json.talking}}</td> 
+                      
+                      <td>{{data_json.text}}</td> 
+                      <td>{{data_json.words}}</td>  
+                     
+                    </tr>
+
+                  {% endfor %}
+                    
+                </tbody>
+                
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</form>
+
+
+<div class="modal fade" id="add_model_window" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="add_model_window" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <div class="modal-content">
+    <div class="modal-header">
+    <span class=""></span><h6 class="modal-title" id="add_model_window"> <span class="icon-mbri-plus"></span> Добавление слов в звуковую модель </h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="add_model_window_text" name="add_model_window_text" autocomplete="off">
+        <label for="floatingInput">Слово или фраза для добавления в звуковую модель</label>
+      </div>
+
+      <label id="add_model_window_label" class="text-danger"></label>
+      
+      <br>
+      
+      <button id="add_model_window_save" title="Сохранить" name="add_model_window_save" type="button" class="btn btn-outline-success"><span class="icon-mbri-paper-plane"></span>  Сохранить</button>  
+       
+    </div>
+    <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<div class="modal fade" id="add_auto_replace_window" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="add_auto_replace_window" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <div class="modal-content">
+    <div class="modal-header">
+    <span class=""></span><h6 class="modal-title" id="add_auto_replace_window"> <span class="icon-mbri-plus"></span> Добавление автозамены слов и предложений </h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="text_s" name="text_s" autocomplete="off">
+        <label for="floatingInput">Что меняем</label>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="text_n" name="text_n" autocomplete="off">
+        <label for="floatingInput">На что меняем</label>
+      </div>
+      
+      <label id="add_auto_replace_label" class="text-danger"></label>
+      
+      <br>
+      
+      <button id="add_auto_replace_save" title="Сохранить" name="add_auto_replace_save" type="button" class="btn btn-outline-success"><span class="icon-mbri-paper-plane"></span>  Сохранить</button>  
+                                      
+    </div>
+    
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+
+  </div>
+  </div>
+</div>
+
+{% if params.audio_voice_call %}
+
+    <div class="fixed-bottom">
+        <div class="row g-1" style="background-color: white;">
+        
+            <span class="icon-mbri-arrow-down" style="padding-bottom: 1px; background-color: white;" id="colapse_player" data-bs-toggle="collapse" data-bs-target="#collapse_player" aria-expanded="true" aria-controls="collapse_player"> Скрыть плеер </span>
+
+            <div class="collapse show" id="collapse_player" style="transition: 0.25s;">
+                
+                <!--{{params.path_sounds_kg_external}}{{params.audio_voice_call.record}}.mp3-->
+                <figure class="d-none">		
+                    <audio id="audio_voice_call"
+                        controls 
+                      
+                        src="{{params.path_sounds_kg_external}}{{params.audio_voice_call.record}}.mp3">
+                            Your browser does not support the
+                            <code>audio_voice_call</code> element.
+                    </audio>	
+                </figure>
+
+                <div class="row" style="padding: 10px;"> 
+                
+                    <div class="col">
+                
+                        <form name="form" method="post">
+                        
+                            <div class="card">
+                                
+                                <div class="col-sm-auto"  style="padding-left: 20px; padding-right: 20px; padding-bottom: 10px;">
+                                    
+                                    <div class="row" style="padding-bottom: 2px; padding-top: 2px;">
+                                        <img id="img_chanel_1" src="/media/{{params.audio_voice_call.img_chanel_1}}" style="height: 50px; image-rendering: pixelated;">
+                                    </div>
+                                    
+                                    <div class="row" style="padding-bottom: 2px; padding-top: 2px;">
+                                      <img id="img_chanel_2" src="/media/{{params.audio_voice_call.img_chanel_2}}" style="height: 50px; image-rendering: pixelated;">
+                                    </div>
+                              
+                                    <div id="slider-pips">
+                                    </div>
+                                  
+                                </div>
+                                
+                                <div class="row g-1" style="padding-left: 2px; padding-right: 2px; padding-bottom: 1px;">
+                                  
+                                    
+
+                                    <div class="col-sm-auto my-auto" style="text-align: center;">
+                                    
+                                        <input type="hidden" name="audio_times" id="audio_times" value=''>
+                                        
+                                        <div class="btn-group me-2" role="group" aria-label="Третья группа">
+                                            <button id="second_to" name="second_to" type="button" class="btn btn-outline-dark">--:--:--</button>
+                                        </div>
+                                        
+                                        
+                                    </div>
+
+                                    <div class="col-sm-auto" style="text-align: center; padding: 0.3em;">
+                                    
+                                      <input type="radio" class="btn-check" name="btnradio" id="play" autocomplete="off">
+                                      <label class="btn btn-circle btn-outline-dark" for="play" title="Воспроизвести"><span class="icon-mbri-play"></span></label>
+                                    
+                                      <input type="radio" class="btn-check" name="btnradio" id="pause" autocomplete="off">
+                                      <label class="btn btn-circle btn-outline-dark" for="pause" title="Пауза"><span class="icon-mbri-pause-1"></span></label>
+                                    
+                                      <input type="radio" class="btn-check" name="btnradio" id="restart" autocomplete="off">
+                                      <label class="btn btn-circle btn-outline-dark" for="restart" title="Начать сначала"><span class="icon-mbri-undo"></span></label>
+
+                                  </div>
+
+                                    <div class="col-sm-1" style="padding-bottom: 35px; padding-left: 10px; padding-right: 10px;">
+                                        <div id="slider-pips-volume">
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-auto my-auto">
+                                        <div class="btn-group" role="group" aria-label="Базовая группа переключателей радио">
+                                          <select class="form-select" id="speed" aria-label="Disabled select example">
+                                          <option value="0.25">x 0.25</option>
+                                          <option value="0.5">x 0.5</option>
+                                          <option value="0.75">x 0.75</option>
+                                          <option selected value="1">x 1</option>
+                                          <option value="1.25">x 1.25</option>
+                                          <option value="1.5">x 1.5</option>
+                                          <option value="1.75">x 1.75</option>
+                                          <option value="2">x 2</option>
+                                          </select>
+                                      </div>
+                                    </div>
+
+                                    <div class="col-sm-auto my-auto">
+                                      
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="True" checked id="cheked_scroll">
+                                        <label class="form-check-label" for="cheked_scroll">
+                                          Прокрутка
+                                        </label>
+                                      </div>   
+                                      
+                                    </div>
+
+                                    <div class="col-sm-auto my-auto">
+                                      {% if params.audio_voice_call %}
+                                        <a class="btn btn-circle btn-outline-dark btn-block" href="{{params.path_sounds_kg_external}}{{params.audio_voice_call.record}}.mp3" target="_blank" title="Скачать запись звонка"> <span class="icon-mbri-download"></span></a>
+                                      {% endif %}
+                                    </div>
+
+                                    <div class="col-sm-auto my-auto">
+                                      
+                                      <button id="add_model" title="Можете выделить часть текста и добавить слова в звуковую модель для лучшего распознования последующих записей" name="add_model" type="button" class="btn btn-outline-secondary btn-circle"><span class="icon-mbri-idea"></span></button>  
+                                      
+                                    </div>
+
+                                    <div class="col-sm-auto my-auto">
+                                      
+                                      <button id="add_auto_replace" title="Можете выделить часть текста для автозамены и внести данные на что делать автозамену" name="add_auto_replace" type="button" class="btn btn-outline-secondary btn-circle"><span class="icon-mbri-update"></span></button>  
+                                      
+                                    </div>
+
+                      
+
+                                    <!--
+                                    <div class="col" style="text-align: center;">  
+                                        <div class="btn-toolbar" role="toolbar" aria-label="">
+                                        
+                                            <input hidden name="audio_id_strip" value="{{params.audio_voice_call.id}}">
+                                            <input hidden name="select_unit" value="{{params.doc.unit.id}}">
+                                            <input hidden name="select_staff" value="{{params.doc.staff.id}}">
+                                            <input hidden name="date" value="{{params.doc.dataTime|date:"Y-m-d"}}">
+                                            <input hidden name="select_rlk" value="{{params.doc.id}}">
+                                            
+                                            {% csrf_token %}
+                                            
+                                            <div class="row g-1 align-items-center">
+                                                <div class="col align-self-center">
+                                                    <div class="form-floating mb-3">
+                                                    <input type="time" name="appt-time" step="2" class="form-control" id="second_from_record" name="second_from_record" placeholder="" value="-">
+                                                    <label for="floatingInput">Начало</label>
+                                                    </div>
+                                                </div> 
+                                                <div class="col align-self-center">
+                                                    <div class="form-floating mb-3">
+                                                    <input type="time" name="appt-time" step="2" class="form-control" id="second_to_record" name="second_to_record" max="01:00:00" placeholder="" value="-">
+                                                    <label for="floatingInput">Конец</label>
+                                                    </div>
+                                                </div> 
+                                                <div class="col align-self-center my-auto">
+                                                    <div class="form-floating mb-3">
+                                                        <button type="submit" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable1">Обрезать</button>
+                                                    </div>
+                                                </div> 
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    -->
+                                </div>
+                                
+                            </div>
+                        
+                        </form>
+                    
+                    </div>
+                
+                </div>
+            
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="exampleModalCenteredScrollable1" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="exampleModalCenteredScrollableTitle1">Выполняется обработка аудио записи...</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+            
+                <div class="modal-body" style="text-align: center;">
+                    <h3>Выполняется обработка аудио записи... не обновляйте страничку и не закрывайте вкладку браузера.</h3>
+                    <br>
+                    <hr>
+                    <h3>По завершению операции страница обновится автоматически.</h3>
+                </div>
+
+                <div class="modal-footer">
+                
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script language="JavaScript">
+        
+        $("#add_auto_replace").click(function(){
+            var textlabel = getSelectionText();
+            if (textlabel.length > 0){
+              $('#text_s').val(textlabel); 
+            }
+            $('#add_auto_replace_window').modal('show');
+        });
+
+        $("#add_auto_replace_save").click(function(){
+          var text_s = $('#text_s').val();
+          var text_n = $('#text_n').val();
+          if (text_s.length > 0 && text_s.length > 0){
+            $('#add_auto_replace_label').text('');
+            $.ajax({
+                type: 'POST',
+                url: '',
+                data:  JSON.stringify({"add_auto_replace_save": "true", "text_s": text_s, "text_n": text_n, "csrfmiddlewaretoken" : "{{csrf_token}}"}),
+                success: function(data) { 
+                  $('#text_s').val('');
+                  $('#text_n').val('');
+                  $('#add_auto_replace_window').modal('hide');
+                  $('#toast_auto_replace').toast('show');
+                },
+                contentType: "application/json",
+                dataType:   'json'
+            });
+          } else {
+              var text_error = '';
+              if (text_s.length == 0){
+                  text_error = 'Не заполено поле "Что меняем"!   ';
+              };
+              if (text_n.length == 0){
+                text_error = text_error + 'Не заполено поле "На что меняем"!   ';
+              };
+              $('#add_auto_replace_label').text(text_error);
+          }
+          });
+        
+        $("#close_toast_auto_replace").click(function(){
+          $('#toast_auto_replace').hide();
+        });
+        
+        $("#close_toast_model").click(function(){
+          $('#toast_model').hide();
+        });
+        
+        $("#add_model").click(function(){
+            var textlabel = getSelectionText();
+            if (textlabel.length > 0){
+              $('#add_model_window_text').val(textlabel); 
+            }
+            $('#add_model_window').modal('show');
+        });
+
+        $("#add_model_window_save").click(function(){
+          var add_model_window_text = $('#add_model_window_text').val();
+          if (add_model_window_text.length > 0){
+            console.log('1');
+            $('#add_model_window_label').text('');
+            console.log('2');
+            $.ajax({
+                type: 'POST',
+                url: '',
+                data:  JSON.stringify({"add_model_window_save": "true", "text": add_model_window_text, "csrfmiddlewaretoken" : "{{csrf_token}}"}),
+                success: function(data) { 
+                  $('#add_model_window_text').val('');
+                  $('#add_model_window').modal('hide');
+                  $('#toast_model').toast('show');
+                },
+                fail: function(XMLHttpRequest, textStatus, errorThrown) {
+                  alert(textStatus);
+                },
+                contentType: "application/json",
+                dataType:   'json'
+            });
+          } else {
+              var text_error = '';
+              if (add_model_window_text.length == 0){
+                  text_error = 'Не заполено слово или фраза для добавления в модель!';
+              };
+              $('#add_model_window_label').text(text_error);
+          }
+          });
+          $("#close_toast_auto_replace").click(function(){
+            $('#toast_auto_replace').hide();
+          });
+
+        $("#close_toast_auto_replace").click(function(){
+          $('#toast_auto_replace').hide();
+        });
+        
+        document.addEventListener("DOMContentLoaded", function() {
+          $('#toast_auto_replace').toast();
+        });
+
+        function getSelectionText() {
+            var text = "";
+            if (window.getSelection) {
+                text = window.getSelection().toString();
+            } else if (document.selection && document.selection.type != "Control") {
+                text = document.selection.createRange().text;
+            }
+            return text;
+        }
+
+        function reload(id){
+            var url = new URL(document.location.href);
+                url.searchParams.set('tag_id', id)
+                document.location.href  = url.href;
+            }
+    
+    </script>
+
+    <script language="JavaScript">
+        $(document).ready(function() {
+            $("#colapse_player").click(function(){
+                var textlabel = $("#colapse_player").text();
+                if (textlabel == ' Скрыть плеер '){
+                    $('#colapse_player').attr('class', 'icon-mbri-arrow-up');
+                    $("#colapse_player").text(' Показать плеер ');
+                    $("#content").css({"padding-bottom":"25px"});
+                }
+                else{
+                    $('#colapse_player').attr('class', 'icon-mbri-arrow-down');
+                    $("#colapse_player").text(' Скрыть плеер ');
+                    $("#content").css({"padding-bottom":"200px"});
+                }
+            });
+        });
+    </script>
+
+    <script language="JavaScript">
+      
+      var array_record = jQuery.parseJSON({{params.record_array|safe}}); 
+      let array_length = array_record.length; 
+      
+      $("body").on('click', "td[id*='records_play_']", function(){  
+        var record  = $(this)[0].id.replace('records_play_','');  
+        refresh_records(record);
+      });
+
+      function refresh_records(record){
+        for (let i = 0; i < array_length; i++) { 
+          if (record == array_record[i].record){
+            $('#img_chanel_1').attr('src', "" + array_record[i].img1);
+            $('#img_chanel_2').attr('src', "" + array_record[i].img2);
+            tr_records(record);
+            play_record(record, array_record[i]);
+          };
+        } 
+      }
+
+      function tr_records(record){
+        $('#table_records tr').removeClass();
+        $('#tr_' + record).addClass('bg-success bg-opacity-10');
+        $('#table_text tr').each(function() {
+          var id = $(this)[0].id;
+          var rec = id.replace('table_text_tr_', '')
+          if (rec.indexOf(record) >= 0){
+            $(this)[0].scrollIntoView();
+            return false;
+          };
+        });
+      }
+
+    </script>
+
+    <script language="JavaScript">
+
+        function play_record(record, record_array_elem){
+          var audioElement    = document.getElementById('audio_voice_call');
+          var src             = audioElement.src;
+          if (src.indexOf(record) >= 0){
+            console.log('текущая запись');
+          }
+          else{
+            $(".btn-check").removeAttr('checked').prop('checked', false).parent().removeClass('active');
+            $(".btn-group button").removeClass("active");
+            var duration 	= record_array_elem.duration;
+            var end 		  = record_array_elem.duration;
+
+            audioElement.duration     = record_array_elem.duration;
+            audioElement.src          = record_array_elem.path;
+            audioElement.currentTime  = 0;
+            
+            var pipsSlider = document.getElementById('slider-pips');
+            pipsSlider.noUiSlider.destroy()
+            noUiSlider.create(pipsSlider, {
+            start: [0, 0, duration],
+            connect: [false, true, true, false],
+            tooltips: [{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},],
+            range: {
+                'min': 0,
+                'max': duration
+              }
+            });
+
+            refresh_pips();
+            
+        }
+
+        function refresh_pips(){
+          
+          var pipsSlider = document.getElementById('slider-pips');
+          var classes = ['c-1-color', 'c-2-color', 'c-3-color', 'c-4-color', 'c-5-color'];
+
+          var pipsSliderConnect = pipsSlider.querySelectorAll('.noUi-connect');
+          for (var i = 0; i < pipsSliderConnect.length; i++) {
+              pipsSliderConnect[i].classList.add(classes[i]);
+          }
+
+          pipsSlider.noUiSlider.on('update', function (values, handle, unencoded, drag, positions) {
+              $("#second_from_record").val(secondsToHHMM(values[0]));
+              $("#second_to_record").val(secondsToHHMM(values[2]));
+              $("#audio_times").val(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+              end = values[2]; 
+          });
+
+          pipsSlider.noUiSlider.on('change', function (values, handle, unencoded, drag, positions) { 
+            var audioElement = document.getElementById('audio_voice_call');
+            audioElement.currentTime = values[1];
+            console.log(values[1])
+          });
+        } 
+        }
+
+        var duration 	= {{params.audio_voice_call.duration}}
+        var end 		  = {{params.audio_voice_call.duration}}
+
+            $(document).ready(function() {
+            
+            var audioElement    = document.getElementById('audio_voice_call');
+            
+            duration = audioElement.duration;
+            
+            {% if params.start_record_seconds %}
+                audioElement.currentTime = {{params.start_record_seconds}} ;
+                pipsSlider.noUiSlider.setHandle(0, {{params.start_record_seconds}} - 100 );    
+                pipsSlider.noUiSlider.setHandle(1, {{params.start_record_seconds}});
+                $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+            {% endif %}
+
+            {% if params.end_record_seconds %}
+                pipsSlider.noUiSlider.setHandle(2, {{params.end_record_seconds}}); 
+            {% endif %}
+
+            audioElement.addEventListener('ended', function() {
+                this.play();
+            }, false);
+            
+            audioElement.addEventListener("canplay",function(){
+                $("#length").text("Duration:" + audioElement.duration + " seconds");
+                $("#source").text("Source:" + audioElement.src);
+                $("#status").text("Status: Ready to play").css("color","green");
+            });
+            
+            audioElement.addEventListener("timeupdate",function(){
+                $("#currentTime").text("Current second:" + audioElement.currentTime);
+                pipsSlider.noUiSlider.setHandle(1, audioElement.currentTime);
+                $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+                if (audioElement.currentTime > audioElement.duration){
+                    audioElement.pause();
+                };
+                
+                $('#table_text span').removeClass();
+                var checked_scroll = $('#cheked_scroll').is(':checked');
+                var rec           = get_current_record();
+                var prev          = ''
+                $('#table_text tr').each(function(){
+                    var id = $(this)[0].id;
+                    if (prev.length == 0){
+                      prev = id;
+                    }
+                    const array_tr      = id.split('_');
+                    var cur_rec         = array_tr[3];
+                    var cur_time        = Number(array_tr[4]);
+                    if (cur_time < audioElement.currentTime && rec == cur_rec) {
+                      $('#'+ id + ' span').addClass('icon-mbri-play');
+                      if (checked_scroll == true){  
+                        $('#'+ prev)[0].scrollIntoView();
+                      }
+                      prev = id;  
+                    };  
+                });
+            });
+            
+            $('#play').click(function() {
+                audioElement.play();
+                $("#status").text("Status: Playing");
+            });
+            
+            $('#pause').click(function() {
+                audioElement.pause();
+                $("#status").text("Status: Paused");
+            });
+            
+            $("select").change(function () {
+                var value = $( "select#speed option:checked" ).val();
+                audioElement.playbackRate = value;
+            });
+
+            $('#restart').click(function() {
+                audioElement.currentTime = 0;
+                $('#table_text span').removeClass();
+            });
+
+            function get_current_record(){
+              var id = $('#table_records .bg-success.bg-opacity-10')[0].id;
+              return id.replace('tr_', '');
+            }
+            
+            function times(timestamp){
+                var hours = Math.floor(timestamp / 60 / 60);
+                var minutes = Math.floor(timestamp / 60) - (hours * 60);
+                var seconds = timestamp % 60;
+                var formatted = [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                seconds.toString().padStart(2, '0')
+                ].join(':');
+                return  formatted
+            }
+              
+            });
+
+        $("#table_text tr").click(function() {
+            function get_current_record(){
+              var id = $('#table_records .bg-success.bg-opacity-10')[0].id;
+              return id.replace('tr_', '');
+            }
+            
+            $('#table_text span').removeClass();
+            var cur_rec = get_current_record();
+            var id      = $(this)[0].id;
+            const array = id.split('_');
+            var rec = array[3];
+            if (cur_rec != rec){
+              refresh_records(rec);
+            }
+            var current = Number(array[4]);
+            $('#'+ id + ' span').addClass('icon-mbri-play');
+            var audioElement          = document.getElementById('audio_voice_call');
+            audioElement.currentTime 	= current;
+        });
+
+        $("#audio_user tr").click(function() {
+            
+            var current 	= $(this)[0].id;
+            var audios = $("#audio_user_cheked").val()
+            
+            if (audios.indexOf(current) > 0)
+            {
+                audios = audios.replace('|' + current, "")
+                $("#audio_user_cheked").val(audios);
+            }
+            else{
+                $("#audio_user_cheked").val(audios + '|' + current);
+            }
+            
+            var audios = $("#audio_user_cheked").val()
+            if (audios.length > 0){
+                document.getElementById('audio_user_sends_button').style.visibility = 'visible';
+            }else{
+                document.getElementById('audio_user_sends_button').style.visibility = 'hidden';
+            }
+            
+            $('#audio_user label').text('');
+            
+            ids = audios.split('|');
+            for (let i = 0; i < ids.length; i++) { 
+                if (ids[i].length > 0){
+                    id = '#' + ids[i] + ' label';
+                    
+                    $(id).text(i);	
+                }
+            }
+
+        });
+
+        var format = {
+            to: function(value) {
+                console.log(value);
+                return secondsToHHMM(value);
+            },
+            from: function (value) {
+                return HHMMtoMinutes(value);
+            }
+        };
+
+        var pipsSlider = document.getElementById('slider-pips');
+        
+        noUiSlider.create(pipsSlider, {
+            start: [0, 0, duration],
+            connect: [false, true, true, false],
+            tooltips: [{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},],
+            range: {
+                'min': 0,
+                'max': duration
+            }
+        });
+
+        var classes = ['c-1-color', 'c-2-color', 'c-3-color', 'c-4-color', 'c-5-color'];
+
+        var pipsSliderConnect = pipsSlider.querySelectorAll('.noUi-connect');
+        for (var i = 0; i < pipsSliderConnect.length; i++) {
+            pipsSliderConnect[i].classList.add(classes[i]);
+        }
+
+        var clickPipsSlider = document.getElementById('slider-pips-volume');
+        noUiSlider.create(clickPipsSlider, {
+            range: {
+                min: 0,
+                max: 100
+            },
+            connect: [true, false],
+            start: [80],
+            pips: {mode: 'count', values: 5}
+        });
+
+        var clickPipsSliderConnect = clickPipsSlider.querySelectorAll('.noUi-connect');
+        for (var i = 0; i < clickPipsSliderConnect.length; i++) {
+            clickPipsSliderConnect[i].classList.add(classes[i]);
+        }
+
+        function secondsToHHMM(value) {
+            return new Date(value * 1000).toISOString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");      
+        }
+
+        function minutesToHHMM(value) {
+                value = Math.round(value);
+                var hour = Math.floor(value / 60);
+                var min = value - hour * 60;
+                //console.log("value:" + value + "\thour: " + hour + "\tmin: " + min)
+                return ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
+            }
+
+        function HHMMtoMinutes(value) {
+                var split = value.toString().split(":");
+                var hour = parseInt(split[0], 10) * 60;
+                var min = parseInt(split[1], 10);
+                //console.log("value: " + value + "\thour: " + hour + "\tmin " + min);
+                return hour + min;
+            }
+
+        clickPipsSlider.noUiSlider.on('update', function (values) {
+            var audioElement    = document.getElementById('audio_voice_call');
+            audioElement.volume = values[0]/100;
+        });
+
+        pipsSlider.noUiSlider.on('update', function (values, handle, unencoded, drag, positions) {
+            $("#second_from_record").val(secondsToHHMM(values[0]));
+            $("#second_to_record").val(secondsToHHMM(values[2]));
+            $("#audio_times").val(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+            end = values[2]; 
+        });
+
+        pipsSlider.noUiSlider.on('change', function (values, handle, unencoded, drag, positions) { 
+            var audioElement = document.getElementById('audio_voice_call');
+            audioElement.currentTime = values[1];
+            console.log(values[1])
+            
+        });
+
+        function reload(id){
+          var url = new URL(document.location.href);
+          url.searchParams.set('tag_id', id)
+          document.location.href  = url.href;
+        }
+
+    </script>
+
+{% endif %}
+
+{% endblock %}
+

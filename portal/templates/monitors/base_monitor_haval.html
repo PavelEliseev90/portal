@@ -1,0 +1,328 @@
+{% extends 'base_web_board_new.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block refresh %} content="{{params.time_refresh}}; URL={{params.url_next}}" {% endblock %} 
+
+{% block title %} Добро пожаловать в {{params.board.name_title}} {% endblock %}
+  
+{% block head %}
+
+
+
+<style>
+  @font-face {
+    font-family: "Haval-Medium";
+    src: url('/../static/fonts/Haval-Medium.eot') format('embedded-opentype'),
+		 url('/../static/fonts/Haval-Medium.woff2') format('woff2'),
+		 url('/../static/fonts/Haval-Medium.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Haval-Light";
+    src: url('/../static/fonts/Haval-Light.eot') format('embedded-opentype'),
+		 url('/../static/fonts/Haval-Light.woff2') format('woff2'),
+		 url('/../static/fonts/Haval-Light.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "TTWellingtons-Regular";
+    src: url('/../static/fonts/TTWellingtons-Regular.eot') format('embedded-opentype'),
+		 url('/../static/fonts/TTWellingtons-Regular.woff2') format('woff2'),
+		 url('/../static/fonts/TTWellingtons-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Haval-MediumSlanted";
+    src: url('/../static/fonts/Haval-MediumSlanted.eot') format('embedded-opentype'),
+		 url('/../static/fonts/Haval-MediumSlanted.woff2') format('woff2'),
+		 url('/../static/fonts/Haval-MediumSlanted.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Haval-Regular";
+    src: url('/../static/fonts/Haval-Regular.eot') format('embedded-opentype'),
+		 url('/../static/fonts/Haval-Regular.woff2') format('woff2'),
+		 url('/../static/fonts/Haval-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+  .start{
+  
+    width: 26px;
+    min-height: 26px;
+    -webkit-clip-path: polygon( 0 100%, 100% 100%, 100% 25%, 75% 0, 0 0);
+    clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 25%, 75% 0);
+    background: lightblue;
+  }
+
+  body {
+   font-family: Haval-Medium, 'Haval-Medium', normal;
+  }
+
+  div {
+    padding: 0;
+    margin: 0; 
+  }
+
+  .row {
+    padding: 0;
+    margin: 0; 
+  }
+
+  .cols {
+    padding: 0;
+    margin: 0; 
+  }
+
+  .rows {
+    margin: 0;
+    padding: 0;
+  }
+
+  .d10 {
+    width: 0; 
+    height: 0;
+    clip-path: polygon(0 100%, 100% 0, 100% 100%, 0 100%);
+    background: white;
+  }
+
+  .d12 {
+    margin-left: 20px; 
+    width: 26px; 
+    height: 26px;
+    transform: skew(145deg);
+    background: white;
+    
+  }
+
+  .d13 {
+  margin-left: 10px; 
+  width: 20px; 
+  height: 28px;
+  transform: skew(145deg);
+  background: #44b8b6;
+}
+
+ </style>
+
+<script language="JavaScript">
+   // clip-path: polygon(0 100%, 100% 0, 100% 100%, 0 100%);
+  function zero_first_format(value)
+  {
+      if (value < 10)
+      {
+          value='0'+value;
+      }
+      return value;
+  }
+
+  function fulltime () {
+    
+    var days = [
+      'Воскресенье',
+      'Понедельник',
+      'Вторник',
+      'Среда',
+      'Четверг',
+      'Пятница',
+      'Суббота'
+    ];
+    var d = new Date();
+    var n = d.getDay();
+    
+    document.getElementById('days').innerHTML   = days[n];
+
+    var time = new Date();
+
+    var hours   = zero_first_format(time.getHours());
+    var minutes = zero_first_format(time.getMinutes());
+    var seconds = zero_first_format(time.getSeconds());
+    
+    var day     = zero_first_format(time.getDate());
+    var month   = zero_first_format(time.getMonth()+1);
+    var year    = time.getFullYear()
+
+    var clockW  = hours + ":" + minutes; 
+    var dateW   = day + "." + month + "." + year;
+    
+    document.getElementById('clock').innerHTML  = clockW;
+    
+    document.getElementById('year').innerHTML   = dateW;
+    
+    setTimeout('fulltime()', 500);
+
+}
+
+</script>
+
+{% endblock %}
+
+
+{% block content %}
+
+
+<body onload="fulltime();" style="padding: 38px; margin:0px; background-color: black;">
+        
+    <script language="JavaScript">
+      fulltime();
+    </script>
+   
+    <div>
+
+      <div>
+        <div class="row rows" style="height: 28px; ">
+          
+         
+          <div class="col-auto rows  align-self-center justify-content-center" style="height: 28px; background: linear-gradient(140deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 71%, rgba(255,255,255,1) 72%);">
+            <div class="d13">
+              <label class="text-dark" style="font-size: 14px; font-family: Haval-Light;">&nbsp;&nbsp;</label>
+            </div>
+            
+          </div>
+          
+          <div class="col rows  align-self-center justify-content-center" style="height: 28px; background-color: white;">
+            <label class="text-dark" style="font-size: 14px; font-family: Haval-Light;">&nbsp;&nbsp;&nbsp;&nbsp;Инновации для каждого</label>
+          </div>
+          <div class="col-auto rows align-self-center"> 
+            <label class="text-white" style="font-size: 26px; font-family: Haval-Light;">&nbsp;HAVAL</label>
+          </div>
+        </div>
+       
+      </div>
+
+      <div style="height: 42px;" ></div>
+
+      
+      <div class="row">
+        
+        <div class="col cols">
+            
+          <div>
+            <label class="text-white" style="font-family: Haval-Medium; font-size: 30pt;">Добро пожаловать!<br> Мы ценим ваше время<br> и пунктуальность</label>
+          </div>
+          <div style="" ></div>
+            <div class="row" >
+              <div class="col-auto cols" >
+                <div >
+                  <label class=" text-white"  style="font-family: Haval-Regular; font-size: 90pt;" id="clock" > - - - </label>
+                </div>
+              </div>
+              <div class="col-auto cols align-self-center">
+                <label  class=" text-white"  id="days" style="font-family: Haval-Medium; font-size: 28pt;" > - - - </label>
+                <br>
+                <label  class=" text-white align-text-bottom"  style="font-family: Haval-Medium; font-size: 28pt;" id="year"> - - - </label>
+              </div>
+              
+            </div>
+        </div>
+
+        <div class="col cols">
+              <label  class=" text-white"  style="font-family: Haval-Regular; font-size: 32pt;" > Хавейл </label>
+              <br>
+              <label  class=" text-white align-text-bottom"  style="font-family: Haval-Regular; font-size: 32pt;"> КорсГрупп</label>
+              <br>
+              <label  class=" text-secondary align-text-bottom"  style="font-family: Haval-Regular; font-size: 24pt;"> {{params.board.adress}}</label>
+        </div>
+
+        <div class="col cols">
+          
+          <div class="row rows">
+
+            {% for staff in params.staffs %}
+              
+             <div class="col-auto" style="max-width: 225px; padding: 0; margin-right: 54px;">
+              {{ staff.image_img_haval }}
+              <br>
+
+              {% autoescape off %}
+                <label style="font-family: TTWellingtons-Regular; font-size: 18pt; max-width: 225px; padding: 0;" class="text-white"> {{ staff.name_lines }} </label>
+              {% endautoescape %}
+              
+              <br>
+
+              <label class="text-white" style="font-family: TTWellingtons-Regular; font-size: 18pt; max-width: 225px; padding: 0;"> {{ staff.phone }} </label>
+
+             </div>
+            
+            {% endfor %}
+
+          </div>
+
+        </div>
+
+      </div>
+      
+      <table class="table text-white">
+        
+        <thead>
+          <tr>
+            <th scope="col text-white" style="font-family: Haval-Medium; font-size: 28pt;">Время<br>записи</th>
+            <th scope="col text-white" style="font-family: Haval-Medium; font-size: 28pt;">Время<br>выдачи</th>
+            <th scope="col text-white" style="font-family: Haval-Medium; font-size: 28pt;">Гос. номер<br>автомобиля</th>
+            <th scope="col text-white" style="font-family: Haval-Medium; font-size: 28pt;">Модель<br>автомобиля</th>
+            <th scope="col text-white" style="font-family: Haval-Medium; font-size: 28pt;">Мастер<br>-консультант</th>
+            <th scope="col text-white" style="font-family: Haval-Medium; font-size: 28pt;">Статус<br>готовности</th>
+          </tr>
+        </thead>
+
+
+        <tbody>
+        
+          {% if params.objects %}
+            {% for doc in params.objects %}
+              <tr style="height: 74px; font-family: TTWellingtons-Regular; font-size: 30pt;">
+                
+                <td>{{doc.dateStart|date:"H:i"}}</td>
+              
+                <td>{{doc.date_end|date:"H:i"}}</td>
+              
+                <td>{{doc.serviceRequest.cars_grz_board}}</td>
+
+                <td>{{doc.serviceRequest.cars.mark}} {{doc.serviceRequest.cars.model}}</td>
+
+                <td>{{doc.staff}}</td>
+                
+                {% if doc.status == None %} 
+
+                  <td style="color: #d6d6d6;"> <label style="background-color: #d6d6d6;">&nbsp;&nbsp;</label> ждем авто</td>
+
+                {% elif doc.status == True %} 
+              
+                  <td style="color: #48b5b8;"> <label style="background-color: #48b5b8;">&nbsp;&nbsp;</label> выполнен</td>
+                
+                {% else %}
+                  
+                  <td style="color: #efa319;"> <label style="background-color: #efa319;">&nbsp;&nbsp;</label> в работе</td>
+
+                {% endif %}
+                
+                
+              
+              </tr>
+            {% endfor %} 
+          {% endif %}
+          
+        </tbody>
+			</table>
+	
+
+    </div>
+
+    	
+     
+      
+  
+
+</body>
+
+{% endblock %}

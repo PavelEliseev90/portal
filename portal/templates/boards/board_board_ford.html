@@ -1,0 +1,201 @@
+{% extends 'base_web_board.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block refresh %} content="60;URL={{params.url_next}}" {% endblock %} 
+
+{% block title %} Добро пожаловать в {{params.unit.name}} {% endblock %}
+  
+{% block head %}
+
+  <script language="JavaScript">
+    
+    function zero_first_format(value)
+    {
+        if (value < 10)
+        {
+            value='0'+value;
+        }
+        return value;
+    }
+
+    function fulltime () {
+      
+      var time = new Date();
+
+      var hours   = zero_first_format(time.getHours());
+      var minutes = zero_first_format(time.getMinutes());
+      var seconds = zero_first_format(time.getSeconds());
+      
+      var day     = zero_first_format(time.getDate());
+      var month   = zero_first_format(time.getMonth()+1);
+      var year    = time.getFullYear()
+
+      var clockW  = hours + ":" + minutes; 
+      var dateW   = day + "." + month + "." + year;
+      
+      document.getElementById('clock').innerHTML = clockW;
+      
+      document.getElementById('year').innerHTML = dateW;
+      
+      setTimeout('fulltime()', 500);
+
+  }
+
+  </script>
+
+{% endblock %}
+
+
+{% block content %}
+<style>
+
+  html { 
+    overflow-y: hidden;
+    overflow-x: hidden; 
+  }
+  
+  .table_style {
+    border-collapse: collapse;
+    width: 100%;  
+  }
+  
+  .table_td {
+    border: 1px solid white;
+    text-align: center;
+  }
+  
+  .table_td_left {
+    text-align: left;
+  }
+  .wrapper {
+          max-height: 300px;
+          
+        }
+        .exmpl {
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .exmpl img {
+          height: auto;
+          width: auto;
+        }
+  </style>
+
+  <script language="JavaScript">
+    fulltime();
+  </script>
+
+  <div class="row g-2">
+
+    <div class="col-sm-2">
+        {% if params.unit.main_photo %}
+          
+          <div class="wrapper">
+            <img src="{{staff.main_photo.url}}" style="object-fit: cover">
+          </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-sm">
+        <p class="fs-3 fw-bold">Добро пожаловать в {{params.unit.name}}</p>
+        <p class="fs-4 fw-bold">Спасибо что приехали вовремя.</p>
+    </div>
+    
+    <div class="col-sm-2">
+        <p class="fs-3 fw-bold" id="clock"> - - - </p>
+        <p class="fs-4 fw-bold" id="year"> - - - </p>
+    </div>
+
+  </div>
+
+  <hr>
+
+<div class="row g-1">
+
+  <div class="col-sm-2">
+
+    {% for staff in params.staffs %}
+      <br>
+      {% if staff.main_photo %}
+        <div class="wrapper exmpl">
+          <img src="{{staff.main_photo.url}}" >
+        </div>
+      {% endif %}
+      <br>
+      <p class="fs-6 text-center">{{staff.name}}</p> 
+      <hr>
+
+    {% endfor %}
+
+  </div>
+
+  <div class="col-sm">
+    <div class="table-responsive-sm">
+			<table class="table table-hover table-sm">
+        <tbody>
+        
+          {% if params.docs %}
+            {% for doc in params.docs %}
+              <tr>
+                <td>{{doc.dataTime|date:"H:i"}}</td>
+                <td>{{doc.cars_grz_board|capfirst}}</td>
+                <td>{{doc.cars.model|title}}</td>
+                <td>{{doc.ready_status_board}}</td>
+                <td>{{doc.master}}</td>
+              </tr>
+            {% endfor %} 
+          {% endif %}
+          
+        </tbody>
+			</table>
+		</div>
+
+  </div>
+
+</div>
+
+
+<div class="fixed-bottom">
+			
+  <div class="row" style="padding: 15px;"> 
+       
+    <div class="card style="padding: 25px;">
+      
+      <div class="row">
+        
+        {% if params.unit.phone|length > 0 %}
+          <div class="col-sm-3">
+            <span class="icon-mbri-mobile">
+              <a class="link-dark" href=tel:{{params.doc.unit.phone_normalize}}>{{params.unit.phone}}</a>
+            </span>
+          </div>  
+        {% endif %}
+
+        {% if params.unit.email|length > 0 %}
+            <div class="col-sm-3">
+              <span class="icon-mbri-letter">
+                  <a class="link-dark">{{params.unit.email}}</a>
+              </span>
+            </div>
+        {% endif %}
+
+        {% if params.unit.adress|length > 0 %}
+          <div class="col-sm">
+            <span class="icon-mbri-pin">
+              <a class="link-dark">{{params.unit.adress}}</a>
+            </span>
+          </div>
+        {% endif %}
+
+      </div>
+    
+    </div>
+    
+  </div>
+    
+</div>
+
+{% endblock %}

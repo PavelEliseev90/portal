@@ -1,0 +1,291 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - {{params.answer.Товар}} {% endblock %}
+
+{% block title_navbar %} - {{params.answer.Товар}} {% endblock %}
+    
+{% block content %}
+ 	
+
+{% if params.answer.МассивФото|length > 0 %}
+														
+		<div class="gallery-container">
+			
+			{% for foto in params.answer.МассивФото %}
+				<div class="gallery-item" data-index="{{forloop.counter}}">
+					<img src="{{foto}}">
+				</div>
+			{% endfor %}
+
+		</div>
+
+		
+{% endif %}
+	
+<hr>
+
+	<div class="d-grid gap-2">
+	<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить фото</button>
+	</div>
+
+	<div class="col-sm-auto">
+	<div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление фото товара</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			
+				<div class="modal-body">
+					<form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
+						
+						{% csrf_token %}
+
+						<input type="text" class="form-control" name="dop_mcu_new" name="dop_mcu_new" placeholder="" value="dop_mcu_new"  hidden>
+						<div class="mb-3">
+							<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
+						</div>
+								
+						<hr>
+						<div class="progressMCU">
+							<div class="progress-bar bg-success"></div>
+						</div> 
+						
+						<div id="uploadStatusMCU">
+
+						</div>
+						
+						<hr>
+
+						<div class="d-grid gap-2">
+							<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_mcu_new" ><span class="icon-mbri-success"></span> Сохранить </button>
+						</div>
+						
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	</div>
+
+<hr>
+
+
+
+
+<!-- Второй столбец !-->
+<div class="card">
+	<div class="card-body">
+		<label class="fs-6 text-start fw-normal">
+			Код 1С: 
+		</label><br>
+		<label class="fs-4 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Код}}
+		</label><br>
+
+		<label class="fs-6 text-start fw-normal">
+			Наименование: 
+		</label><br> 
+		<label class="fs-4 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Товар}}
+		</label><br>
+		
+		<label class="fs-6 text-start fw-normal">
+			Ячейка: 
+		</label><br> 
+		<label class="fs-4 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Ячейка}}
+		</label><br>
+
+		<label class="fs-6 text-start fw-normal">
+			Артикул: 
+		</label><br> 
+		<label class="fs-4 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Артикул}}
+		</label><br>
+
+		<label class="fs-6 text-start fw-normal">
+			Производитель: 
+		</label><br> 
+		<label class="fs-4 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Производитель}}
+		</label><br>
+		
+		<label class="fs-6 text-start fw-normal">
+			Авито категория: 
+		</label><br> 
+		<label class="fs-4 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.AVITOПодкатегорияТовара}}
+		</label><br>
+
+		<hr>
+		<label class="fs-6 text-start fw-normal">
+			Описание: 
+		</label> <br>
+		<label class="fs-6 text-start fw-normal">
+			<span class="icon-mbri-minus text-secondary">{{params.answer.AVITOОписание}}</span><br>
+		</label>
+
+		<hr>
+		<div class="col-auto text-center bg-opacity-75 
+				{% if params.answer.Статус == 'Не выгружался' %}
+					bg-warning
+				{% elif params.answer.Статус == 'active' %} 
+					bg-success
+				{% else %}
+					bg-danger
+				{% endif %}" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+				<label class="fs-2 text-white " style="padding: 0.2em;">  {{params.answer.Статус}}</label>
+		</div>
+
+		<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+												
+			<div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
+			   
+				<label class="fs-6 text-center" style="padding: 0.2em;">  
+					<table>
+						<tbody>
+							<tr>
+								<td class="text-start"><span class="icon-mbri-preview">Просмотров</td>
+								<td> &nbsp;-&nbsp; </td>
+								<td class="text-end">{{params.answer.Просмотров}}</td>
+							</tr>
+							<tr>
+								<td class="text-start"><span class="icon-mbri-touch">Контактов</td>
+								<td> &nbsp;-&nbsp; </td>
+								<td class="text-end">{{params.answer.Контактов}}</td>
+							</tr>
+							<tr>
+								<td class="text-start"><span class="icon-mbri-hearth">Избранное</td>
+								<td> &nbsp;-&nbsp; </td>
+								<td class="text-end">{{params.answer.Избранное}}</td>
+							</tr>
+						</tbody>
+					</table>
+					
+				</label>
+				
+			</div>
+	
+			<div class="col">
+	
+			</div>
+	
+			<div class="col-auto text-end bg-opacity-75 
+				{% if params.answer.Статус == 'Не выгружался' %}
+					bg-warning
+				{% elif params.answer.Статус == 'active' %} 
+					bg-success
+				{% else %}
+					bg-danger
+				{% endif %}" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+				<label class="fs-2 text-white " style="padding: 0.2em;">  {{params.answer.Цена|floatformat:"2g"}} &#8381;</label>
+			</div>
+	
+		</div>
+		
+		{% if params.answer.Ссылка != '' %}
+			<div class="row">
+				<div class="col-sm">
+					<div class="form-floating mb-3">
+						<input class="form-control form-control-sm" type="datetime" readonly value="{{params.answer.АвитоДатаСтарт}}">
+						<label for="floatingInput">Дата начала публикации</label>
+					</div>
+				</div>
+				<div class="col-sm">
+					<div class="form-floating mb-3">
+						<input class="form-control form-control-sm" type="datetime" readonly value="{{params.answer.АвитоДатаОкончания}}">
+						<label for="floatingInput">Дата окончания публикации</label>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm">
+					<div class="form-floating mb-3">
+						<input class="form-control form-control-sm" type="text" readonly value="{{params.answer.АвитоНаименование}}">
+						<label for="floatingInput">Наименование на авито</label>
+					</div>
+				</div>
+				<div class="col-sm-auto">
+					<div class="form-floating mb-3">
+						<input class="form-control form-control-sm" type="datetime" value="{{params.answer.АвитоИД}}">
+						<label for="floatingInput">ID</label>
+					</div>
+				</div>
+				<div class="col-sm-auto align-items-center justify-content-center">
+					<a class="btn text-center text-white bg-opacity-75 
+					{% if params.answer.Статус == 'Не выгружался' %}
+						bg-warning
+					{% elif params.answer.Статус == 'active' %} 
+						bg-success
+					{% else %}
+						bg-danger
+					{% endif %}" href="{{params.answer.Ссылка}}" target="_blank"> Посмотреть на Авито</a>
+				</div>
+			</div>
+		{% endif %}
+	</div>
+
+</div>
+	
+</form>
+
+<script>
+	document.forms.upload.onsubmit = function() {
+	  var input = this.elements.file_audio;
+	  var file = input.files[0];
+	  if (file) {
+		upload(file);
+	  }
+	  return false;
+	}
+  
+	function upload(file) {
+
+	var xhr = new XMLHttpRequest();
+
+	// обработчик для отправки
+	xhr.upload.onprogress = function(event) {
+		console.log(event.loaded + ' / ' + event.total);
+	}
+
+	// обработчики успеха и ошибки
+	// если status == 200, то это успех, иначе ошибка
+	xhr.onload = xhr.onerror = function() {
+	if (this.status == 200) {
+		console.log("success");
+	} else {
+		console.log("error " + this.status);
+	}
+	};
+
+	xhr.open("POST", "", true);
+	xhr.send(file);
+
+	}
+  </script>
+
+  
+
+<script language="JavaScript">
+	
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

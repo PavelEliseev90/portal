@@ -1,0 +1,1606 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - главная {% endblock %}
+
+{% block title_navbar %} - главная {% endblock %}
+    
+{% block content %}
+
+	{% if request.user.is_superuser %}
+		<form method="GET" id="form" name="form">
+			<select class="form-select" aria-label="Пример выбора по умолчанию" name="user_id" onchange="submit()">
+				<option selected>Выберите пользователя</option>
+				{% for user in params.users %}
+					<option value="{{user.pk}}" {% if params.user_id == user.pk %} selected {% endif %}>{{user.last_name}} {{user.first_name}}</option>
+				{% endfor %}
+			</select>
+		</form>
+	{% endif %}
+
+	{% if params.info.updates_count > 0 %}
+		
+		<div class="modal fade" id="exampleModal" tabindex="-1" data-show="true" aria-labelledby="exampleModalLabel" aria-hidden="false">
+			<div class="modal-dialog modal-xl modal-dialog-scrollable">
+				<div class="modal-content">
+					
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-bookmark"></span> {{params.info.updates.title}}</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					
+					<div class="modal-body">
+						
+						{% autoescape off %}
+							{{ params.info.updates.text }}
+						{% endautoescape %}
+					
+						<hr style="width: 75%;">
+						<div class="card border-light"> 
+							<div class="card-body">
+								<span class="icon-mbri-bookmark"> </span>
+								{% for tag in params.info.updates.tags.all %}
+									<button type="button" class="btn btn-outline-dark">{{tag.name}}</button>	
+								{% endfor %}
+							</div>
+						</div>
+						<hr style="width: 75%;">
+						
+						<span class="icon-mbri-clock"> </span> {{params.info.updates.dateCreate}}
+						
+						<br>
+							
+						<span class="icon-mbri-user"> </span> {{params.info.updates.author.last_name}} {{params.info.updates.author.first_name}}
+
+					</div>
+					
+					<div class="modal-footer">
+						<form action="" method="POST">
+							{% csrf_token %}
+							<input hidden name="id_update" value="{{params.info.updates.id}}"> 
+							<button class="btn btn-block btn-outline-success" name="updates_ok" type="submit"><span class="icon-mbri-success"></span> Прочитано </button>
+						</form>
+					</div>
+
+				</div>
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			$(window).on('load',function(){
+				$('#exampleModal').modal('show');
+			});
+		</script>
+
+	{% endif %}
+	
+
+
+	{% if params.rab_stol.rlks_estimation_sogrlasovanie|length > 0 %}
+		
+		<br>
+		
+		<div class="row g-1" id="rlks_trade_in" style="width: 100%; overflow-x: hidden;">
+			<div style="display: flex; text-align: start; margin-bottom: 1em;">
+				<div class='row g-1 entries flex-nowrap overflow-auto' id="myTable">
+						
+					{% for object in params.rab_stol.rlks_estimation_sogrlasovanie %}
+
+						
+							<div class="card" style="width: 18rem; margin-right: 0.2rem;">
+								<div class="card-body">
+									<a href="/rlks_trade_in/{{object.slug_rlk}}/" class="text-dark" >
+										<label> <span class="icon-mbri-add-submenu"></span> {{object.estimation_status|default_if_none:"Новый"}}</label>
+										<hr style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2 align-self-center">
+												<span class="icon-mbri-sites"></span>
+											</div>
+											<div class="col">
+												<label>{{object.number}}</label>
+												<br>
+												<label>{{object.date}}</label>
+												<br>
+												<label>
+													{% if object.customer_name|length > 0 %} 
+														{{object.customer_name}} 
+													{% elif object.customer_estination %}
+														{{object}}
+													{% else %} 
+														Не указан 
+													{% endif %}</label>
+											</div>
+										</div>
+
+										<hr style="width: 75%;">
+
+										<div class="row g-1">
+											<div class="col-2 align-self-center">
+												<span class="icon-mbri-delivery"></span>
+											</div>
+											<div class="col">
+												<label>{{object.estimation_mark_name|default_if_none:"Пока нет данных"}} {{object.estimation_model_name|default_if_none:""}} {{object.estimation_modification_name|default_if_none:""}}</label>
+												<br>
+												<label>{% if object.estimation_year > 0 %} {{ object.estimation_year }} г. {% else %} - {% endif %}</label>
+												<br>
+												<label>{% if object.estimation_vin|length > 0 %} {{ object.estimation_vin }} {% else %} - {% endif %}</label>
+											</div>
+										</div>
+
+										<hr style="width: 75%;">
+
+										<div class="row g-1">
+											<div class="col-2 align-self-center">
+												<span class="icon-mbri-sale"></span>
+											</div>
+											<div class="col">
+												<label>{{object.price_reception|floatformat:"2g" }} &#8381; </label>
+												<br>
+												<label>{{object.price_sale|floatformat:"2g" }} &#8381; </label>
+												
+											</div>
+										</div>
+									</a>
+								</div>
+							</div>
+						
+
+					{% endfor %} 
+
+				</div>
+			</div>
+		</div>
+
+
+
+		<div class="row g-1"  style="width: 100%; overflow-x: scroll;">
+			<div style="display: flex; text-align: start; margin-bottom: 1em;">
+								
+				
+
+				<br>
+				
+			</div>
+		</div>
+
+	{% endif %}
+
+
+	{% if params.rab_stol.docs_zn_in|length > 0 or params.rab_stol.rating > 0 %}
+		
+		<br>
+		<div class="row">
+			
+			<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+					
+				<div class="row row-cols-3">
+					<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Рабочий стол МК   </span></div>
+					<div class="col"></div>
+					<div class="col"></div>
+				</div>
+
+			</div>
+
+			<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
+				<br>
+				
+				<div class="row g-1 my-auto">
+					
+					<div class="col-sm-auto">
+						
+						<div class="card">
+							<div class="card-header bg-light"> Общий </div>
+							<div class="card-body bg-light" style="padding: 2rem;">
+								{% if params.rab_stol.rating_common > 8 %}
+									<span class="fs-1 text-success"><span class="icon-mbri-star"></span> {{params.rab_stol.rating_common}} </span> 
+								{% elif params.rab_stol.rating_common > 3 %}
+									<span class="fs-1 text-warning"><span class="icon-mbri-star"></span> {{params.rab_stol.rating_common}} </span>
+								{% else %}
+									<span class="fs-1 text-danger"><span class="icon-mbri-star"></span> {{params.rab_stol.rating_common}} </span>
+								{% endif %}
+							</div>
+						</div> 
+					</div>
+
+					{% if params.rab_stol.rating > 0 %}
+						<div class="col-sm-auto">
+							
+							<div class="card">
+								<div class="card-header bg-light"> Текущий месяц </div>
+								<div class="card-body bg-light" style="padding: 2rem;">
+									{% if params.rab_stol.rating > 8 %}
+										<span class="fs-1 text-success"><span class="icon-mbri-star"></span> {{params.rab_stol.rating}} </span>
+									{% elif params.rab_stol.rating > 3 %}
+										<span class="fs-1 text-warning"><span class="icon-mbri-star"></span> {{params.rab_stol.rating}} </span>
+									{% else %}
+										<span class="fs-1 text-danger"><span class="icon-mbri-star"></span> {{params.rab_stol.rating}} </span>
+									{% endif %}
+								</div>
+							</div> 
+						</div>
+					{% endif %}
+
+					<div class="col-sm-auto">
+						<div class="d-grid gap-2">
+						
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
+								<span class="icon-mbri-file"></span> Заказ - наряды за сегодня 
+								<span class="badge text-bg-success">{{params.rab_stol.docs_zn_in|length}}</span>
+							</button>	
+						
+						</div>
+					</div>
+
+					<!--
+					<div class="col-sm-auto">
+						<div class="d-grid gap-1">
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
+								<span class="icon-mbri-error"></span> Не активных 
+								<span class="badge text-bg-secondary bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
+							</button>
+							
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
+								<span class="icon-mbri-timer"></span> На согласовании 
+								<span class="badge text-bg-warning bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
+							</button>
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
+								<span class="icon-mbri-success"></span> Согласовано
+								<span class="badge text-bg-success bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
+							</button>
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
+								<span class="icon-mbri-close"></span> Отклонено 
+								<span class="badge text-bg-danger bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
+							</button>	
+						
+						</div>
+					</div>
+					-->
+					<div class="modal fade" id="docZN" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+
+						<div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+							<div class="modal-content">
+								<div class="modal-header">
+									<span class=""></span><h6 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Заказ - наряды за сегодня </h6>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+								<div class="modal-body">
+								
+									<div class="row g-1" id="rlks_trade_in" style="width: 100%; overflow-x: scroll;">
+										<div style="display: flex; text-align: start; margin-bottom: 1em;">
+											
+											<div class='timeline'>
+												<div class='start'></div>
+											</div>
+											
+											<div class='entries'>
+												{% for doc in params.rab_stol.docs_zn_in %}
+												
+												<div class='entry {% if doc.active %} life {% else %} project {% endif %}' style="background-color: white;">
+													
+													<div class='dot'>   </div>
+													<div class='label {% if doc.active %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10' style="width: 350px; text-align: left; border-radius: 0.375rem;" >
+														
+														<div class="card">
+															<div class="card-body">
+														{% if doc.active %} 
+															<p class="fs-5 fw-normal">
+																<span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-75">
+																	<span class="icon-mbri-success"> </span> {{ doc.ready_status_board }} 
+																	<span class="visually-hidden"></span>
+																</span>
+															</p>
+														{% else %}
+															<p class="fs-5 fw-normal">
+																<span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger bg-opacity-75">
+																	<span class="icon-mbri-setting3"> </span> {{ doc.ready_status_board }} 
+																	<span class="visually-hidden"></span>
+																</span>
+															</p>
+														{% endif %}
+
+														<div class='detail'>
+															
+															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+																	
+																<div class="row row-cols-3">
+																	<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Заказ - наряд </span></div>
+																	<div class="col-2"></div>
+																	<div class="col-2"></div>
+																</div>
+
+															</div>
+
+															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																<div class="col text-start my-auto">{{doc.nomer}} / {{doc.dataTime|date:"H:i"}} / {% if doc.active %} Проведен {% else %} Не проведен {% endif %}</div>
+																</div>
+																
+																
+																<hr style="margin: 0px;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																	<div class="col text-start"> --> {{ doc.dateStart|date:"H:i" }} --> {{doc.dateEnd|date:"H:i"}}</div>
+																</div>
+
+																<hr style="margin: 0px;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																	<div class="col text-start"> {{doc.typeRemont}}</div>
+																</div>																				
+
+															</div>
+
+														</div>
+
+														<br>
+														
+														<div class='detail'>
+															
+															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+																	
+																<div class="row row-cols-3">
+																	<div class="card_name col-8 text-start text-white" style="border-radius:  10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Клиент </span></div>
+																	<div class="col-1"></div>
+																	<div class="col-3 text-center"> 
+																		{% if doc.rating_customer > 0 %}
+																			{% if doc.rating_customer > 8 %}
+																				<span class="badge text-bg-success bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>
+																			{% elif doc.rating_customer > 4 %}	
+																				<span class="badge text-bg-warning bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>	
+																			{% elif doc.rating_customer > 0 %}
+																				<span class="badge text-bg-danger bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>
+																			{% else %}
+																				<span class="badge text-bg-dark bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>
+																			{% endif %}
+																		{% endif %}
+																	</div>
+																</div>
+
+															</div>
+
+															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																<div class="col text-start my-auto">{% if doc.clientName|length > 0 %} {{doc.clientName}} {% else %} Не указан {% endif %}</div>
+																</div>
+																
+																{% if doc.customer != None %}
+																	<hr style="margin: 0px;">
+																	
+																	<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																		<div class="col text-start">{{doc.customer.phoneNorm|truncatechars:40}}</div>
+																	</div>
+
+																{% endif %}
+
+															</div>
+
+														</div>
+
+														<br>
+
+														<div class='detail'>
+															
+															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+																	
+																<div class="row row-cols-3">
+																	<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Автомобиль </span></div>
+																	<div class="col-2"></div>
+																	<div class="col-2"></div>
+																</div>
+
+															</div>
+
+															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																	<div class="col text-start my-auto">{{ doc.cars.mark }} {{ doc.cars.model }} {{ doc.cars.year }}</div>
+																</div>
+																
+																<hr style="margin: 0px;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																	<div class="col text-start">{{ doc.cars.vin }}</div>
+																</div>
+
+																<hr style="margin: 0px;">
+																
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																	<div class="col text-start">{{ doc.cars_grz_board }}</div>
+																</div>
+
+																<hr style="margin: 0px;">
+
+																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
+																	<div class="col text-start">{{ doc.run|floatformat:"0g" }} км.</div>
+																</div>
+																
+															</div>
+
+														</div>
+
+														<br>
+
+														<div class='detail'>
+															
+															
+
+															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 10px 10px 0 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
+																
+																<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
+																<div class="col my-auto">Работы</div>
+																<div class="col">{{ doc.works_count }}</div>
+																<div class="col text-end">{{ doc.works_amount|floatformat:"2g" }} &#8381;</div>
+																</div>
+																<hr style="margin: 0px;">
+																<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
+																	<div class="col">Товары</div>
+																	<div class="col">{{ doc.products_count }}</div>
+																	<div class="col text-end">{{ doc.products_amount|floatformat:"2g" }} &#8381;</div>
+																</div>
+
+															</div>
+
+															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+																	
+																<div class="row row-cols-3">
+																	<div class="col-2"></div>
+																	<div class="col-2"></div>
+																	<div class="price col-8 text-end text-white" style="border-radius: 0px 0px 10px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">{{ doc.amount|floatformat:"2g" }} &#8381; </span></div>
+																</div>
+
+															</div>
+															
+															
+														</div>
+
+														
+														
+														{% if doc.typeRemont.tizer %}
+															<br>	
+															<div class='detail'>
+																
+																<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+																		
+																	<div class="row row-cols-3">
+																		<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Расширения </span></div>
+																		<div class="col-2"></div>
+																		<div class="col-2"></div>
+																	</div>
+
+																</div>
+
+																<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 0 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
+																	
+																	
+																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
+																		<div class="col-8 my-auto text-start">Не активных</div>
+																		<div class="col-2 text-end">{{ doc.recomendations_customer_0_count}}</div>
+																	</div>
+																	
+																	<hr style="margin: 0px;">
+
+																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
+																		<div class="col-8 my-auto text-start">На согласовании</div>
+																		<div class="col-2 text-end">{{ doc.recomendations_customer_1_count}}</div>
+																	</div>
+
+																	<hr style="margin: 0px;">
+
+																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
+																		<div class="col-8 my-auto text-start">Согласовано</div>
+																		<div class="col-2 text-end">{{ doc.recomendations_customer_2_count}}</div>
+																	</div>
+
+																	<hr style="margin: 0px;">
+
+																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
+																		<div class="col-8 my-auto text-start">Отклонено</div>
+																		<div class="col-2 text-end">{{ doc.recomendations_customer_3_count}}</div>
+																	</div>
+
+																</div>
+
+																<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
+																		
+																	<div class="row row-cols-3">
+																		<div class="col-2"></div>
+																		<div class="col-2"></div>
+																		<div class="price col-8 text-end text-white" style="border-radius: 0px 0px 10px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">{{ doc.recomendations_count}} </span></div>
+																	</div>
+
+																</div>
+																
+																
+															</div>
+														{% endif %}
+														
+														<hr style="width: 75%;">
+													
+														<div class='detail' style="text-align: center">
+															
+															<a href="/docs_zn/{{doc.id}}" class="btn btn-block btn-outline-secondary">
+																<span class="icon-mbri-play"> </span> Подробнее
+															</a>
+
+														</div>
+													</div>
+													</div>
+													</div>
+												</div>	
+												
+												{% endfor %} 
+
+
+												<br>
+											</div>
+
+											<br>
+										</div>
+									</div>
+								
+								</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"> </span> Закрыть</button>
+							</div>
+						</div>
+						</div>
+					</div>
+
+				</div>
+				
+				<br>
+			</div>
+		</div>
+	{% endif %}
+
+	<!--
+	{% for doc in params.rab_stol.docs_zn_in %}
+		<div class="modal fade" id="exampleModalCenteredScrollable{{ forloop.counter }}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+			<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+				<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Документ - {{doc.nomer}} от {{doc.dataTime|date:"d.m.Y H:i"}} 
+						{% if doc.active %} 
+							<span class="badge text-bg-success"> <span class="icon-mbri-success"> </span> {{doc.ready_status_board}}</span>		
+						{% else %}
+							<span class="badge text-bg-danger"> <span class="icon-mbri-setting3"> </span> {{doc.ready_status_board}}</span>
+						{% endif %}
+					</h4>
+					<button type="button" class="btn-close" data-bs-toggle="modal" data-bs-target="#docZN" aria-label="Закрыть"></button>
+				</div>
+				<div class="modal-body">
+					<h4>Данные документа</h4>
+				
+						<table class="table table-striped">
+							<tbody>
+								<tr>
+									<td>Клиент:</td>
+									<td>{{doc.customer}}</td>
+								</tr>
+								<tr>
+									<td>Вид ремонта:</td>
+									<td>{{doc.typeRemont}}</td>
+								</tr>
+								<tr>
+									<td>Автомобиль:</td>
+									<td>{{doc.cars.mark}} {{doc.cars.model}} {{doc.cars.vin}} {{doc.cars.year}} г.</td>
+								</tr>
+								<tr>
+									<td>Гос.номер:</td>
+									<td>{{doc.cars_grz_board}}</td>
+								</tr>
+								<tr>
+									<td>Пробег:</td>
+									<td>{{doc.run|floatformat:"0g"}} км.</td>
+								</tr>
+								<tr>
+									<td>Сумма:</td>
+									<td>{{doc.amount|floatformat:"2g"}} &#8381;</td>
+								</tr>
+								<tr>
+									<td>Пришла в ремонт:</td>
+									<td>{{doc.dateStart}}</td>
+									
+								</tr>
+								<tr>
+									<td>Вышла из ремонта:</td>
+									<td>{{doc.dateEnd}}</td>
+								</tr>
+							</tbody>
+						</table>
+						
+						<hr style="width: 75%;">
+
+						{{doc.customerWords}}
+
+						<hr style="width: 75%;">
+
+						<div class="accordion accordion-flush" id="accordionFlushExample">
+							
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="flush-headingOne">
+								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+									Работы - {{doc.works|length}} - {{doc.works_amount|floatformat:"2g"}} &#8381;
+								</button>
+								</h2>
+								<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+									<div class="accordion-body">
+										{% if doc.works|length == 0 %} 
+											Работы в заказ наряде отсутствуют
+										{% else %}
+											<table class="table table-striped">
+												<tbody>
+													{% for work in doc.works %}
+													<tr>
+														<td>{{work.work}}</td>
+														<td>{{work.quantity}}</td>
+														<td>{{work.price|floatformat:"2g"}} &#8381;</td>
+														<td>{{work.amount|floatformat:"2g"}} &#8381;</td>
+													</tr>     
+													{% endfor %}
+												</tbody>
+											</table>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="flush-headingTwo">
+								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+								Товары - {{doc.products|length}} - {{doc.products_amount|floatformat:"2g"}} &#8381;
+								</button>
+								</h2>
+								<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+									<div class="accordion-body">
+										{% if doc.products|length == 0 %} 
+											Товары в заказ наряде отсутствуют
+										{% else %}
+											<table class="table table-striped">
+												<tbody>
+													{% for product in doc.products %}
+													<tr>
+														<td>{{product.product}}</td>
+														<td>{{product.quantity}}</td>
+														<td>{{product.price|floatformat:"2g"}} &#8381;</td>
+														<td>{{product.amount|floatformat:"2g"}} &#8381;</td>
+													</tr>     
+													{% endfor %}
+												</tbody>
+											</table>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="flush-headingThree">
+								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseThree">
+									Рекомендации - {{doc.recomendationsZN_count}}
+								</button>
+								</h2>
+								<div id="flush-collapseThree{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+									<div class="accordion-body">
+										{% if doc.recomendationsZN_count == 0 %} 
+											Рекомендации отстутсвуют    
+										{% else %}
+											
+											{% for recomendationZN in doc.recomendationsZN %}
+												
+												{% if recomendationZN.close %}
+													<span class="icon-mbri-success text-success" > {{recomendationZN.date|date:'d.m.Y'}} <br>{{recomendationZN.reasonClose}}</span>
+												{% else %}
+													<span class="icon-mbri-close text-danger"> {{recomendationZN.date|date:'d.m.Y'}} </span>
+												{% endif %}
+												
+												<br>  
+												<p class="text-sm-start text-wrap">{{recomendationZN.name}} </p>   
+												<hr style="width: 75%;">
+											{% endfor %}
+													
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							
+							{% if doc.typeRemont.tizer %}
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="flush-heading_dop">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_dop{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_dop">
+										Расширения заказ-наряда - {{doc.recomendations_count}}
+										</button>
+									</h2>
+									<div id="flush-collapse_dop{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_dop" data-bs-parent="#accordionFlushExample">
+										<div class="accordion-body">
+											
+											{% if doc.recomendations_count == 0 %}
+												Расширений по заказ - наряду нет.
+											{% else %}
+												
+												<div class="table-responsive-sm">	
+													<table class="table table-striped">
+														<tbody>
+						
+															{% for recomendation in doc.recomendations %}
+																<tr data-bs-toggle="modal" data-bs-target="#example_recomendation_{{forloop.counter}}">
+																	<td>
+																		{% if recomendation.status == 0 %} 
+																			<span class="icon-mbri-timer text-warning"></span>
+																		{% elif recomendation.status == 1 %} 
+																			<span class="icon-mbri-play text-warning"></span>
+																		{% elif recomendation.status == 2 %}
+																			<span class="icon-mbri-success text-success"></span>
+																		{% elif recomendation.status == 3 %} 
+																			<span class="icon-mbri-plus text-secondary"></span>
+																		{% else %} 
+																			<span class="icon-mbri-close"></span>
+																		{% endif %}
+																	</td>
+																	<td>
+																		{{recomendation.dataTime}}
+																	</td>
+																	<td>
+																		{{recomendation.name}}
+																	</td>
+																	<td>
+																		{% if recomendation.customerStatus == 0 %} Неактивна {% elif recomendation.customerStatus == 1 %} На согласовании {% elif recomendation.customerStatus == 2 %} Согласовано {% else %} Отклонена {% endif %}
+																	</td>	
+																	<td>
+																		{% if recomendation.status == 0 %} Новая {% elif recomendation.status == 1 %} Обрабатывается {% elif recomendation.status == 2 %} Добавлено в ЗН {% elif recomendation.status == 3 %} Добавлено в рекомендации  {% else %} Отменена {% endif %}
+																	</td>	
+																	<td>
+																		{{recomendation.recomendation_amount|floatformat:"2g"}} &#8381;
+																	</td>	
+																</tr>
+															{% endfor %}
+														</tbody>
+													</table>
+						
+													{% for recomendation in doc.recomendations %}
+														<div  class="modal fade" id="example_recomendation_{{forloop.counter}}" tabindex="-1" aria-labelledby="example_filter_label" aria-hidden="true">
+															<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+																<div class="modal-content">
+																	
+																	<div class="modal-header">
+																	<h5 class="modal-title" id="example_filter_window">
+																		{% if recomendation.status == 0 %} 
+																			<span class="icon-mbri-timer text-warning"></span>
+																		{% elif recomendation.status == 1 %} 
+																			<span class="icon-mbri-play text-warning"></span>
+																		{% elif recomendation.status == 2 %}
+																			<span class="icon-mbri-success text-success"></span>
+																		{% elif recomendation.status == 3 %} 
+																			<span class="icon-mbri-plus text-secondary"></span>
+																		{% else %} 
+																			<span class="icon-mbri-close"></span>
+																		{% endif %}
+																		{{recomendation.name}} 
+																	</h5>
+																	<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+																	</div>
+														
+																	<div class="modal-body">
+																	
+																		<div class="card-body">
+																		
+																			<div class="table-responsive-sm">
+																				<table class="table table-hover table-striped table-sm">
+																					<tbody>
+																						<tr>
+																							<td>Статус клиент</td>
+																							<td>
+																								<p class="text-start">
+																									{% if recomendation.customerStatus == 0 %} 
+																										<span class="icon-mbri-timer text-warning"> Неактивна </span>
+																									{% elif recomendation.customerStatus == 1 %} 
+																										<span class="icon-mbri-play text-warning"> На согласовании </span>
+																									{% elif recomendation.customerStatus == 2 %}
+																										<span class="icon-mbri-success text-success"> Согласовано </span>
+																									{% elif recomendation.customerStatus == 3 %} 
+																										<span class="icon-mbri-plus text-danger"> Отклонена </span>
+																									{% else %} 
+																										<span class="icon-mbri-close"></span>
+																									{% endif %}
+																								</p>
+																							</td>
+																						</tr>
+																						{% if recomendation.dataTimeCutomerEvent != '' %}
+																						<tr>
+																							<td>Дата обработки клиентом</td>
+																							<td>
+																								<p class="text-start">
+																									<span class="icon-mbri-timer">  
+																										{% if recomendation.dataTimeCutomerEvent  == None %}
+																											---
+																										{% else %}
+																											{{recomendation.dataTimeCutomerEvent}}
+																										{% endif %}
+																									</span>
+																								</p>
+																							</td>
+																						</tr> 
+																						{% endif %}
+																						<tr>
+																							<td>Статус мастер - консультант</td>
+																							<td>
+																								<p class="text-start">
+																									{% if recomendation.status == 0 %} 
+																										<span class="icon-mbri-timer text-warning"> Новая </span>
+																									{% elif recomendation.status == 1 %} 
+																										<span class="icon-mbri-play text-warning"> Обрабатывается </span>
+																									{% elif recomendation.status == 2 %}
+																										<span class="icon-mbri-success text-success"> Добавлено в ЗН </span>
+																									{% elif recomendation.status == 3 %} 
+																										<span class="icon-mbri-plus text-secondary"> Добавлено в рекомендации </span>
+																									{% else %} 
+																										<span class="icon-mbri-close"> Отменена </span>
+																									{% endif %}
+																									
+																								</p>
+																							</td>
+																						</tr>     
+																					</tbody>
+																				</table>
+																			</div>
+						
+																			<div class="accordion accordion-flush" id="accordionFlushExample_1_{{forloop.counter}}">
+																				<div class="accordion-item">
+																				<h2 class="accordion-header" id="flush-headingOne_1_{{forloop.counter}}">
+																					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne_1_{{forloop.counter}}" aria-expanded="false" aria-controls="flush-collapseOne_1_{{forloop.counter}}">
+																						Работы - {{recomendation.recomendation_works|length}} ({{recomendation.recomendation_works_amount|floatformat:"2g"}} &#8381;) 
+																					</button>
+																				</h2>
+																				<div id="flush-collapseOne_1_{{forloop.counter}}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne_1_{{forloop.counter}}" data-bs-parent="#accordionFlushExample_1_{{forloop.counter}}">
+																					<div class="accordion-body">
+																						
+																						{% if recomendation.recomendation_works|length == 0 %} 
+																							
+																							Работы в рекомендации расширении отсутствуют
+						
+																						{% else %}
+						
+																							<div class="table-responsive-sm">
+																								<table class="table table-hover table-striped table-sm">
+																									<tbody>
+																										{% for work in recomendation.recomendation_works %}
+																										<tr>
+																											<td>{{work.work}}</td>
+																											<td>{{work.quantity}}</td>
+																											<td>{{work.price|floatformat:"2g"}} &#8381;</td>
+																											<td>{{work.amount|floatformat:"2g"}} &#8381;</td>
+																										</tr>     
+																										{% endfor %}
+																									</tbody>
+																								</table>
+																							</div>
+						
+																						{% endif %}
+						
+																					</div>
+																				</div>
+																				</div>
+																				<div class="accordion-item">
+																				<h2 class="accordion-header" id="flush-headingTwo_1_{{forloop.counter}}">
+																					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo_1_{{forloop.counter}}" aria-expanded="false" aria-controls="flush-collapseTwo_1_{{forloop.counter}}">
+																						Товары - {{recomendation.recomendation_products|length}}  ({{recomendation.recomendation_products_amount}} &#8381;) 
+																					</button>
+																				</h2>
+																				<div id="flush-collapseTwo_1_{{forloop.counter}}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo_1_{{forloop.counter}}" data-bs-parent="#accordionFlushExample_1_{{forloop.counter}}">
+																					<div class="accordion-body">
+																						{% if recomendation.recomendation_products|length == 0 %} 
+																							
+																							Товары в рекомендации расширении отсутствуют
+						
+																						{% else %}
+																						
+																							<div class="table-responsive-sm">
+																								<table class="table table-hover table-striped table-sm">
+																									<tbody>
+																										{% for product in recomendation.recomendation_products %}
+																										<tr>
+																											<td>{{product.product}}</td>
+																											<td>{{product.quantity}}</td>
+																											<td>{{product.price|floatformat:"2g"}} &#8381;</td>
+																											<td>{{product.amount|floatformat:"2g"}} &#8381;</td>
+																										</tr>     
+																										{% endfor %}
+																									</tbody>
+																								</table>
+																							</div>
+						
+																						{% endif %}
+																					</div>
+																				</div>
+																				</div>
+																			</div>
+																			<hr style="width: 75%;">
+																			<p class="text-start">Итого: {{recomendation.recomendation_amount|floatformat:"2g"}} &#8381;</p>
+																			<hr style="width: 75%;">
+																			
+																			{% if recomendation.recomendation_files_count > 0 %}
+																			
+																	
+																				<div style="border-radius: 10px; height: auto; max-width: auto;" id="carouselExampleIndicatorsMesto{{forloop.counter0}}" class="carousel slide" data-interval="false" data-bs-interval="false" data-bs-ride="carousel">
+																					
+																					{% if recomendation.recomendation_files_count > 1 %}
+																						<div class="carousel-indicators">
+																							{% for img in recomendation.recomendation_files %}
+																								<button type="button" data-bs-target="#carouselExampleIndicatorsMesto{{forloop.counter0}}" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+																							{% endfor %}
+																						</div>
+																					{% endif %}
+						
+																					<div class="carousel-inner">
+																						
+																						{% for recomendation_object in recomendation.recomendation_files %}
+																						
+																							{% if recomendation_object.is_video %}
+																								<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																									<div class="video-responsive">
+																										<iframe width="auto" src="{{recomendation_object.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+																									</div>
+																								</div>
+																							{% else %}
+																								<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																									<div class="wrapper exmpl">
+																										<img class="d-block w-100" style="border-radius: 10px; max-width: auto;" src="{{recomendation_object.file.url}}" >
+																									</div>
+																								</div>
+																							{% endif %}
+																						{% endfor %}
+																						
+																					</div>
+																					
+																					{% if recomendation.recomendation_files_count > 1 %}
+																						
+																						<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto{{forloop.counter0}}"  data-bs-slide="prev">
+																							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+																							<span class="visually-hidden">Предыдущий</span>
+																						</button>
+																						
+																						<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto{{forloop.counter0}}"  data-bs-slide="next">
+																							<span class="carousel-control-next-icon" aria-hidden="true"></span>
+																							<span class="visually-hidden">Следующий</span>
+																						</button>
+						
+																					{% endif %}
+						
+																				</div>
+						
+																				<hr style="width: 75%;">
+																			{% endif %}
+																			
+																			
+																				
+																		</div>
+																		
+						
+																	</div>
+														
+																	<div class="modal-footer">
+																		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+																	</div>
+														
+																</div>
+															</div>
+														</div>    
+													{% endfor %}
+												</div>
+						
+											{% endif %}
+											
+											<hr style="width: 75%;">
+											
+											{% if not doc.active %}
+												<div class="d-grid gap-2">
+													<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal_dop" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить </button>
+												</div>
+							
+												<div class="col-sm-auto">
+													<div class="modal fade" id="exampleModal_dop" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+														<div class="modal-dialog modal-dialog-centered">
+															<div class="modal-content">
+															<div class="modal-header">
+																<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление расширения</h5>
+																<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+															</div>
+															
+																<div class="modal-body">
+																	<form id="uploadForm" action="" method="POST" enctype="multipart/form-data"> 
+																		
+																		{% csrf_token %}
+							
+																		<div class="form-floating mb-3">
+																			<input type="text" class="form-control" id="name" for="validationName" name="name" placeholder="" value="{{params.filtr.name}}" required autocomplete="off">
+																			<label for="validationName">Наименование</label>
+																		</div>
+														
+																		<hr style="width: 75%;">
+																		<input type="text" class="form-control" name="dop_new" name="dop_new" placeholder="" value="dop_new"  hidden>
+																		<div class="mb-3">
+																			<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
+																		</div>
+																				
+																		<hr style="width: 75%;">
+																		<div class="progress">
+																			<div class="progress-bar bg-success"></div>
+																		</div> 
+																		
+																		<div id="uploadStatus">
+												
+																		</div>
+																		
+																		<hr style="width: 75%;">
+							
+																		<div class="d-grid gap-2">
+																			<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_new" ><span class="icon-mbri-success"></span> Сохранить</button>
+																		</div>
+																		
+																	</form>
+																</div>
+											
+															</div>
+														</div>
+													</div>
+													
+												</div>
+											{% else %}
+												<span class="fs-6 fw-normal">Заказ - наряд закрыт. Добавление невозможно.</span>
+											{% endif %}
+
+										</div>
+									</div>
+								</div>
+						
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="flush-heading_dop_mcu">
+										<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_dop_mcu{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_dop_mcu">
+											Расширения малярно - кузовного участка - {{doc.recomendations_mcu_count}}
+										</button>
+									</h2>
+									<div id="flush-collapse_dop_mcu{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_dop_mcu" data-bs-parent="#accordionFlushExample">
+										<div class="accordion-body">
+											
+											{% if doc.recomendations_mcu_count == 0 %}
+											
+												Расширений по малярно - кузовному участку нет.
+											
+											{% else %}
+												
+												<div class="table-responsive-sm">	
+													<table class="table table-striped">
+														<tbody>
+						
+															{% for recomendation_mcu in doc.recomendations_mcu %}
+																<tr data-bs-toggle="modal" data-bs-target="#example_recomendation_mcu_{{forloop.counter}}">
+																	<td>
+																		{% if recomendation_mcu.customerStatus == 1 %} 
+																			<span class="icon-mbri-timer text-warning" style="color: orange;"> </span>
+																		{% elif recomendation_mcu.customerStatus == 2 %}
+																			<span class="icon-mbri-success text-success" style="color: green;"> </span>
+																		{% elif recomendation_mcu.customerStatus == 3 %}
+																			<span class="icon-mbri-close text-danger" style="color: red;"> </span>
+																		{% endif %}
+																	</td>
+																	<td>
+																		{{recomendation_mcu.dataTime}}
+																	</td>
+																	<td>
+																		{{recomendation_mcu.name}}
+																	</td>
+																</tr>
+															{% endfor %}
+														</tbody>
+													</table>
+						
+													{% for recomendation_mcu in params.doc.recomendations_mcu %}
+														<div  class="modal fade" id="example_recomendation_mcu_{{forloop.counter}}" tabindex="-1" aria-labelledby="example_filter_label" aria-hidden="true">
+															<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+																<div class="modal-content">
+																	
+																	<div class="modal-header">
+																	<h5 class="modal-title" id="example_filter_window">
+																		{% if recomendation_mcu.customerStatus == 1 %} 
+																			<span class="icon-mbri-timer text-warning" style="color: orange;"> </span>
+																		{% elif recomendation_mcu.customerStatus == 2 %}
+																			<span class="icon-mbri-success text-success" style="color: green;"> </span>
+																		{% elif recomendation_mcu.customerStatus == 3 %}
+																			<span class="icon-mbri-close text-danger" style="color: red;"> </span>
+																		{% endif %}
+																		{{recomendation_mcu.name}} 
+																	</h5>
+																	<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+																	</div>
+														
+																	<div class="modal-body">
+																	
+																		<div class="card-body">
+																		
+																			<div class="table-responsive-sm">
+																				<table class="table table-hover table-striped table-sm">
+																					<tbody>
+																						<tr>
+																							<td>Статус</td>
+																							<td>
+																								<p class="text-start">
+																									{% if recomendation_mcu.customerStatus == 1 %} 
+																										<span class="icon-mbri-timer text-warning"> На согласовании </span>
+																									{% elif recomendation_mcu.customerStatus == 2 %}
+																										<span class="icon-mbri-success text-success"> Согласовано </span>
+																									{% elif recomendation_mcu.customerStatus == 3 %} 
+																										<span class="icon-mbri-close text-danger"> Отклонена </span>
+																									{% else %} 
+																										<span class="icon-mbri-close"></span>
+																									{% endif %}
+																								</p>
+																							</td>
+																						</tr>
+																						<tr>
+																							<td>Дата обработки клиентом</td>
+																							<td>
+																								<p class="text-start">
+																									<span class="icon-mbri-timer">  
+																										{% if recomendation_mcu.dataTimeCutomerEvent  == None %}
+																											---
+																										{% else %}
+																											{{recomendation_mcu.dataTimeCutomerEvent}}
+																										{% endif %}
+																									</span>
+																								</p>
+																							</td>
+																						</tr> 
+																						
+																					</tbody>
+																				</table>
+																			</div>
+						
+																		
+																			{% if recomendation_mcu.recomendation_files_mcu_count > 0 %}
+																			
+																				<div style="border-radius: 10px; height: auto; max-width: auto;" id="carouselExampleIndicatorsMestoMCU{{forloop.counter0}}" class="carousel slide" data-bs-interval="false" data-interval="false" data-bs-ride="carousel">
+																					
+																					{% if recomendation_mcu.recomendation_files_mcu_count > 1 %}
+																						<div class="carousel-indicators">
+																							{% for img in recomendation_mcu.recomendation_mcu_files %}
+																								<button type="button" data-bs-target="#carouselExampleIndicatorsMestoMCU{{forloop.counter0}}" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+																							{% endfor %}
+																						</div>
+																					{% endif %}
+						
+																					<div class="carousel-inner">
+																						
+																						{% for recomendation_object_mcu in recomendation_mcu.recomendation_mcu_files %}
+																						
+																							{% if recomendation_object_mcu.is_video %}
+																								<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																									<div class="video-responsive">
+																										<iframe width="auto" src="{{recomendation_object_mcu.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+																									</div>
+																								</div>
+																							{% else %}
+																								<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																									<div class="wrapper exmpl">
+																										<img class="d-block w-100" style="border-radius: 10px; max-width: auto;" src="{{recomendation_object_mcu.file.url}}">
+																									</div>
+																								</div>
+																							{% endif %}
+																						{% endfor %}
+																						
+																					</div>
+																					
+																					{% if recomendation_mcu.recomendation_files_mcu_count > 1 %}
+																						<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMestoMCU{{forloop.counter0}}"  data-bs-slide="prev">
+																							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+																							<span class="visually-hidden">Предыдущий</span>
+																						</button>
+																						
+																						<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMestoMCU{{forloop.counter0}}"  data-bs-slide="next">
+																							<span class="carousel-control-next-icon" aria-hidden="true"></span>
+																							<span class="visually-hidden">Следующий</span>
+																						</button>
+																					{% endif %}
+						
+																				</div>
+						
+																			{% endif %}
+																			
+																			<hr style="width: 75%;">
+																				
+																		</div>
+																		
+																	</div>
+																	
+																	<div class="modal-footer">
+																		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+																	</div>
+														
+																</div>
+															</div>
+														</div>    
+													{% endfor %}
+												</div>
+						
+											{% endif %}
+											<hr style="width: 75%;">
+											{% if not doc.active %}
+												
+												<div class="d-grid gap-2">
+													<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить </button>
+												</div>
+							
+												<div class="col-sm-auto">
+													<div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+														<div class="modal-dialog modal-dialog-centered">
+															<div class="modal-content">
+															<div class="modal-header">
+																<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление расширения малярно - кузовного ремонта</h5>
+																<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+															</div>
+															
+																<div class="modal-body">
+																	<form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
+																		
+																		{% csrf_token %}
+							
+																		<div class="form-floating mb-3">
+																			<input type="text" class="form-control" id="name" for="validationName" name="dop_mcu_name" placeholder="" value="{{params.filtr.name}}" required autocomplete="off">
+																			<label for="validationName">Наименование</label>
+																		</div>
+														
+																		<hr style="width: 75%;">
+																		<input type="text" class="form-control" name="dop_mcu_new" name="dop_mcu_new" placeholder="" value="dop_mcu_new"  hidden>
+																		<div class="mb-3">
+																			<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
+																		</div>
+																				
+																		<hr style="width: 75%;">
+																		<div class="progressMCU">
+																			<div class="progress-bar bg-success"></div>
+																		</div> 
+																		
+																		<div id="uploadStatusMCU">
+												
+																		</div>
+																		
+																		<hr style="width: 75%;">
+							
+																		<div class="d-grid gap-2">
+																			<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_mcu_new" ><span class="icon-mbri-success"></span> Сохранить </button>
+																		</div>
+																		
+																	</form>
+																</div>
+											
+															</div>
+														</div>
+													</div>
+													
+												</div>
+
+											{% else %}
+												<span class="fs-6 fw-normal">Заказ - наряд закрыт. Добавление невозможно.</span>
+											{% endif %}
+										</div>
+									</div>
+								</div>
+							{% endif %}
+
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="flush-heading_video">
+									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_video{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_video">
+										
+										Видео выполненных работ - {% if doc.video %} 1 {% else %} 0 {% endif %}
+					
+									</button>
+								</h2>
+								<div id="flush-collapse_video{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_video" data-bs-parent="#accordionFlushExample">
+									<div class="accordion-body">
+									
+										{% if doc.video %}
+					
+											<div class="video-responsive">
+												<iframe width="auto" src="{{doc.video.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+											</div>
+					
+										{% else %}
+											{% if not doc.active %}
+												<div class="d-grid gap-2">
+													<button type="button" class="btn btn-outline-success"  data-bs-target="#exampleModal_video_{{forloop.counter}}" data-bs-toggle="modal" > <span class="icon-mbri-play"></span> Добавить </button>
+												</div>
+												
+												<div class="col-sm-auto">
+													<div class="modal fade" id="exampleModal_video_{{forloop.counter}}" data-bs-toggle="modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+															<div class="modal-dialog modal-dialog-centered">
+																<div class="modal-content">
+																<div class="modal-header">
+																	<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление видео подтверждения выполненных работ</h5>
+																	<button type="button" class="btn-close" data-bs-target="#exampleModalCenteredScrollable{{ forloop.counter }}" data-bs-toggle="modal" data-bs-dismiss="modal" aria-label="Close"></button>
+																</div>
+																
+																	<div class="modal-body">
+																		<form id='videoForm' action="" method="POST" enctype="multipart/form-data"> 
+																			
+																			{% csrf_token %}
+																			
+																			<input type="text" class="form-control" name="video" name="video" placeholder="" value="video"  hidden>
+																			
+																			<div class="mb-3">
+																				<input  class="form-control"  type="file" name="file_video" accept="video/*">
+																			</div>
+																			
+																			<hr style="width: 75%;">
+																			<div class="progress">
+																				<div class="progress-bar bg-success"></div>
+																			</div> 
+																			
+																			<div id="uploadStatus">
+													
+																			</div>
+																			
+																			
+																			<hr style="width: 75%;">
+																			
+																			<div class="d-grid gap-2">
+																				
+																				<button class="btn btn-block btn-outline-success" type="submit" name="video" data-bs-toggle="#exampleModalCenteredScrollable{{ forloop.counter }}" data-bs-target="#exampleModalCenteredScrollable{{ forloop.counter }}"><span class="icon-mbri-success"></span> Сохранить</button>
+																			</div>
+																			
+																			
+
+																		</form>
+																	</div>
+												
+																</div>
+															</div>
+														</div>
+													
+												</div>
+											{% else %}
+												<span class="fs-6 fw-normal">Заказ - наряд закрыт. Добавление невозможно.</span>
+											{% endif %}
+										{% endif %}
+					
+									</div>
+								</div>
+							</div>
+
+						</div>
+					<hr style="width: 75%;">
+					
+				</div>
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#docZN">Закрыть</button>
+				</div>
+
+				</div>
+			</div>
+		</div>
+	{% endfor %}
+	-->
+
+	{% if params.rab_stol.warning_list|length > 0 %}
+		
+		<br>
+		<div class="card mb-3">
+			<div class="row g-0">
+			
+			<div class="col-sm">
+			<div class="card-body">
+				<h5 class="card-title"> <span class="icon-mbri-home"> </span> Внимание </h5>
+				<p class="fs-6 fw-bold font-monospace">
+				<span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger bg-opacity-50">
+				<span class="icon-mbri-sad-face"> </span> {{params.rab_stol.warning_list|length}}
+				
+				<span class="visually-hidden"></span>
+				</span>
+			</p>
+				<div class="row g-4">
+				
+				
+	
+					{% for warning in params.rab_stol.warning_list %}
+					
+					<div class="col-sm-auto">
+						<div class="row g-1">
+							
+						<div class="col-sm-auto">
+							<div class="card border-success mb-3">
+							<div class="card-body">
+								<div class="card-title"><span class="icon-mbri-edit"></span>{{warning.text}}</div>
+								<hr style="width: 75%;">
+								<div>
+								<p><span>{{warning.text}}</span></p>
+								<a class="link-danger" href="{{warning.link}}"><p><span>{{warning.link_text}}</span></p></a>
+								</div>
+							</div>
+							</div>
+						</div>
+				
+				
+						</div>
+					</div>
+					
+					{% endfor %}
+
+				</div>
+				
+			</div>
+			</div>
+			</div>
+	  	</div>
+
+	{% endif %}
+
+	<br>
+
+	<div class="row">
+	
+		{% if params.rab_stol.doc_rlks|length > 0 %}
+	
+			<div class="col-sm">
+				<div class="card border-dark">
+					
+					<div class="card-body">
+						
+						<div class="d-grid gap-2">
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk"> <span class="icon-mbri-file"></span> Рабочий лист</button>	
+						</div>
+		
+						<div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+						<div class="modal-dialog modal-xl modal-dialog-scrollable">
+						<div class="modal-content">
+							<div class="modal-header">
+							<span class=""></span><h6 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Рабочий лист - {{params.rlk.nomer}} от {{params.rlk.dataTime}}</h6>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+							
+							<div class="row g-1" style="width: 100%; overflow-x: scroll;">
+								<div style="display: flex; text-align: start; margin-bottom: 2em;">
+								<div class='timeline'>
+									<div class='start'></div>
+								</div>
+								<div class='entries'>
+									{% for doc in params.rab_stol.doc_rlks %}
+									<div class='entry {% if doc.check_list.checkItog > 0  %} life {% else %} project {% endif %}'>
+										<div class='dot'></div>
+										<div class='label' style="text-align: left">
+										<div class='time'>
+											{{doc.doc.nomer}} / {{doc.doc.dataTime|date:"H:i"}}
+										</div>
+										
+										<div class='detail'>
+											{% if doc.doc.clientName|length > 0 %} {{doc.doc.clientName}} {% else %} Не указан {% endif %}
+										</div>
+										
+											
+											<div class='detail'>
+												{{ doc.doc.contacType }}
+											</div>
+											
+											<div class='detail'>
+												{{ doc.doc.phone }}
+											</div>
+					
+											<div class='detail'>
+												{% if doc.doc.archiveDayToDay %} Закрыт день в день {% else %} Не закрыт день в день {% endif %}
+											</div>
+						
+										<hr style="width: 75%;">
+										<div class='detail'>
+											<div class="progress">
+											{% if doc.check_list.checkItog > 0 %}
+												<div class="progress-bar bg-success" role="progressbar" aria-label="" style="width: {{doc.check_list.checkItog}}%;" aria-valuenow="{{doc.check_list.checkItog}}" aria-valuemin="0" aria-valuemax="100">{{doc.check_list.checkItog}} %</div>
+											{% else %}
+												<div class="progress-bar bg-secondary" role="progressbar" aria-label="" style="width: 100%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0 %</div>
+											{% endif %}
+											</div>
+										</div>
+										
+										<hr style="width: 75%;">
+										
+										<div class='detail' style="text-align: center">
+											
+											<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable{{ forloop.counter }}">
+											Подробнее
+											</button>
+											
+											
+											<div class="modal fade" id="exampleModalCenteredScrollable{{ forloop.counter }}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+											<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+												<div class="modal-content">
+												<div class="modal-header">
+													<h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Документ - {{doc.doc.nomer}} от {{doc.doc.dataTime|date:"d.m.Y H:i"}}</h4>
+													<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+												</div>
+												<div class="modal-body">
+													<h4>Данные документа</h4>
+													
+														
+													<table class="table table-striped">
+														<tbody>
+															<tr>
+															<td>Имя клиента:</td>
+															<td>{% if doc.doc.clientName|length > 0 %} {{doc.doc.clientName}} {% else %} Не указан {% endif %}</td>
+															</tr>
+															<tr>
+															<td>Вид контакта:</td>
+															<td>{{doc.doc.contacType}}</td>
+															</tr>
+															<tr>
+															<td>Закрыт день в день:</td>
+															<td>{% if doc.doc.archiveDayToDay %} Да {% else %} Нет {% endif %}</td>
+															</tr>
+															<tr>
+															<td>Комментарий администратора</td>
+															<td>{{doc.doc.commentAdministrator}}</td>
+															</tr> 
+															<tr>
+															<td>Комментарий менеджера</td>
+															<td>{{doc.doc.commentManager}}</td>
+															</tr> 
+														</tbody>
+														</table>
+						
+													<hr style="width: 75%;">
+							
+												</div>
+												
+												</div>
+											</div>
+											</div>
+											
+											
+						
+										</div>
+										</div>
+									</div>
+									{% endfor %} 
+									<br>
+								</div>
+								<br>
+								</div>
+							</div>
+
+							</div>
+							<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+							</div>
+						</div>
+						</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+
+		{% endif %}
+
+	</div>
+
+{% endblock %}
+
+
+<script type="text/javascript">
+	(function() {
+		function scrollHorizontally(e) {
+			e = window.event || e;
+			var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+			this.scrollLeft -= (delta * 40); // Multiplied by 40
+			e.preventDefault();
+		}
+		if (document.getElementById('rlks_trade_in').addEventListener) {
+			// IE9, Chrome, Safari, Opera
+			document.getElementById('rlks_trade_in').addEventListener('mousewheel', scrollHorizontally, false);
+			// Firefox
+			document.getElementById('rlks_trade_in').addEventListener('DOMMouseScroll', scrollHorizontally, false);
+		} else {
+			// IE 6/7/8
+			document.getElementById('rlks_trade_in').attachEvent('onmousewheel', scrollHorizontally);
+		}
+	})(); 
+</script>

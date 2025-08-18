@@ -1,0 +1,807 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} {{params.object.name}} {% endblock %}
+
+{% block title_navbar %} - {{params.object.name}}  {% endblock %}
+    
+{% block content %}
+
+
+<div style="padding-bottom: 5rem;">
+	{% if request.user.is_authenticated %}
+		<div class="row g-1">
+			<div class="col-auto">
+			<a href="/cars/" class="text-dark"> <span class="icon-mbri-minus"> </span> На главную </a>
+			</div>
+			<div class="col-auto">
+			<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.mark.name|lower|capfirst}} </a>
+			</div>
+			<div class="col-auto">
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.nameHuman|capfirst}} </a>
+			</div>
+			<div class="col-auto">
+			<span class="icon-mbri-minus fw-bold"> </span> {{params.object.name}}
+			</div>
+		
+	  </div>
+	  <hr>	
+	{% endif %}
+	
+	
+
+	<div class="row g-1 justify-content-center">
+	
+		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
+			<div class="gallery-container">
+			
+				{% for files in params.object.get_files %}
+										
+					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+						{% if files.file_mini %}
+							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
+							{% if forloop.first %}
+								<div class="gallery-count bg-count fw-bold">
+									1 / {{params.object.get_files|length}}
+								</div>
+								
+							{% endif %}
+						{% else %}
+							<img src={{files}} alt="{{files}}" src1="{{files}}">
+						{% endif %}						
+					</div>
+					
+				{% endfor %}
+				
+			</div>
+	
+			
+
+		{% if request.user_agent.is_pc %}
+			{% if params.object.dop_cars|length > 0 %}
+				
+				<hr style="width: 75%;">
+				<label class="fs-5">Может заинтересовать</label>
+
+				<div class="row g-3">
+					{% if params.object.dop_cars %}
+						{% for car in params.object.dop_cars %}
+								
+							<div class="col-12 col-sm-6">
+								<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}/'; return false" > 
+									<div class="card-body" style="padding: 0rem;">
+				
+										<div class="row" style="padding: 0rem;">
+											
+											<div class="col-12 col-sm-12">
+													
+												<img src="{{car.get_photo}}" class="item-img_up" >									
+													
+											</div>
+				
+											<div class="col-12 col-sm-12">
+												<div class="row "  style="padding: 0.2rem;">
+													<div class="col-sm-12 text-truncate" >
+														<label class="fs-5 text-truncate">{{car.modification_autoru.model.mark.name}}</label>
+														<br>
+														<label class="fs-5 text-truncate" style="padding-right: 0.5rem;">{{car.modification_autoru.model.name}}</label>
+														<br>
+														<label class="fs-6 text-truncate">{{car.year}}</label>
+														
+														<br>
+														<label class="fs-6">{{car.modification_autoru.engine_volume}} л. /
+														{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
+														{{car.modification_autoru.typeEngine.name}}
+														<br>
+														{{car.modification_autoru.typeGear.name}}
+														<br>
+														{{car.modification_autoru.typeBody.name}}</label>
+													</div>
+													
+													
+	
+													<div class="col-sm-12">
+														<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
+													</div>
+							
+													<div class="col-sm-12 text-end">
+														<label class="fs-5">{{car.unit.name_web}}</label>	
+													</div>
+							
+													<div class="col-sm-12 text-end">
+														<label class="fs-4 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
+													</div>
+												</div>
+											</div>
+																	
+										</div>
+				
+									</div>
+								</div>
+							</div>
+				
+						{% endfor %} 
+					{% endif %}
+					
+				</div>
+
+			{% endif %}
+		{% endif %}
+
+
+		</div>
+
+		<div class="col-sm-12 col-md-5 col-lg-5 content-head" >
+				
+			<div class="card" style="background-color: rgba(255,255,255,0.5);">
+				
+				<div class="card-body text-dark">
+					<div class="row" >
+						<div class="col-auto">
+							<img class="item-img-mini"  src="{{params.object.logo}}"> 
+						</div>
+						<div class="col-auto align-self-center" >
+							<label class="fs-3 text-start fw-normal">
+								{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
+							</label>
+						</div>
+					</div>
+					
+					
+
+					<div class="start_block"> </div>
+
+					<div class="row g-1">
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+								<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+									<label class="fs-6 text-secondary"> <span class="icon-mbri-engine fs-5"></span> Двигатель </label>
+									<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+									<span class="icon-mbri-minus text-dark  fs-5">
+										{{params.object.modification_autoru.engine_volume}} л. /
+										{{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
+										{{params.object.modification_autoru.typeEngine.name}}</span>	
+								</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-mbri-transmission1 fs-5"></span> Коробка передач </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									  {{params.object.modification_autoru.typeGear.name}}
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-mbri-drive fs-5"></span> Привод </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									 {{params.object.type_drive.name}}
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-calendar fs-5"></span> Год выпуска </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									 {{params.object.year}}
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-truck fs-5"></span> Кузов </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									 {{params.object.modification_autoru.typeBody.name}}
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-cd fs-5"></span> Пробег </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									 {{params.object.run|floatformat:"0g"|default_if_none:"---"}} км.
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-pencil fs-5"></span> Цвет </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark fs-5 text-capitalize">
+									 {{params.object.color|capfirst}}
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-user fs-5"></span> Владельцев </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									 {{params.object.owners}}
+								</span>	
+							</div>
+							</a>
+						</div>
+						
+						<div class="col-12 col-sm-6 text-start" >
+							<a  class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-megaphone fs-5"></span> Состояние </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									 {% if params.object.is_new %} Новый {% else %} С пробегом {% endif %}								
+								</span>	
+							</div>
+							</a>
+						</div>
+
+						<div class="col-12 col-sm-6 text-start">
+							<a href="specifications/" class="text-dark">
+							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
+								<label class="fs-6 text-secondary"> <span class="icon-mbri-setting3 fs-5"></span>  Характеристики </label>
+								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+								<span class="icon-mbri-minus text-dark  fs-5">
+									Детально								
+								</span>	
+							</div>
+							</a>
+						</div>
+
+					</div>
+					
+					
+					
+					{% if params.object.quantity > 0 and params.object.price > 0 %}
+						<br>
+						<div class="col text-end align-items-end start_block">
+							
+							<div class="row">
+								
+								<div class="col">
+									
+									<button type="submit" class="btn btn-dark display-7  bg-opacity-10">
+										<h3> 
+											{% if params.object.reserve == 0 %}
+												{{params.object.price|floatformat:"2g"}} &#8381;
+											{% else %}	
+												В резерве
+											{% endif %}
+										</h3>
+									</button>
+
+								</div>
+								
+							</div>
+
+							<div class="row justify-content-end">
+								
+								<div class="col-auto">
+									<span class="fs-6 icon-mbri-preview btn-outline-secondary"></span>
+									<label class="fs-6 text-end">{{params.object.view_card_cars}}</label>
+								</div>
+
+								<div class="col-auto">
+									<span class="fs-6 icon-mbri-update btn-outline-secondary"></span>
+									<label class="fs-6 text-end"> {{params.object.date_refresh}}</label>
+								</div>
+								
+							</div>
+
+						
+						</div> 
+					{% endif %}
+
+					<br>
+					<div class="row g-1"> 
+						
+						<div class="col-auto">
+							<button class="btn btn-outline-dark"> <span class="icon-mbri-left-right"> </span> Поменяться </button>
+						</div>
+
+						<div class="col-auto">
+							<button class="btn btn-outline-dark"> <span class="icon-mbri-numbered-list"> </span> История ремонтов </button>
+						</div>
+
+						<div class="col-auto">
+							<button class="btn btn-outline-dark"> <span class="icon-mbri-globe"> </span> Автотека </button>
+						</div>
+
+						<div class="col-auto">
+							<button class="btn btn-outline-dark"> <span class="icon-shop"> </span> Колеса к авто </button>
+						</div>
+
+					</div>
+
+				</div>	
+			</div>
+				
+
+				{% if params.object.quantity > 0 and params.object.price > 0 %}
+					<br>
+					<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+						<div class="modal-dialog modal-fullscreen">
+							<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.unit.name}} </h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							
+								<div class="modal-body">
+									
+									
+									<iframe src="{{params.object.store.link_site_map}}" frameborder="0" style="width: 100%; height: 100%;"></iframe>
+									
+					
+								</div>
+					
+							</div>
+						</div>
+					</div>	
+
+					<div class="start_block" >
+						<div class="card" style="background-color: rgba(255,255,255,0.5);">
+							<div class="card-body">
+							
+								<div class="row g-1 bg-dark text-white" style="border-radius: 0.5rem; padding: 0.2rem;" >
+									<div class="col-12 text-center">
+										<label class="fs-4"> <span class="fs-4 icon-mbri-home"> </span> {{params.object.unit.name}}</label>
+									</div>
+									<div class="col-12 text-end">
+										<a href="\cars\?store={{params.object.store.id}}" class="text-white">
+											<label class="fs-5"> <span class="fs-5 icon-mbri-delivery"> </span> {{params.object.store.cars_count}} автомобилей</label>
+										</a>
+									</div>
+								</div>
+								
+								<div class="row g-1 start_block justify-content-center">
+									
+									<div class="col align-self-center align-items-center text-center">
+										
+										<a  id="button_map" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children"   data-bs-toggle="modal" data-bs-target="#exampleModal">
+											
+												<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-pin"> </span></label><br>
+												<label class="fs-6 text-dark"> Показать</label>
+											
+										</a>
+		
+									</div>
+		
+									<div class="col align-self-center align-items-center text-center">
+										<a id="phone" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
+											
+											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-touch"> </span></label><br>
+											<label class="fs-6 text-dark"> Позвонить</label>
+										</a>
+									</div>
+		
+									<div class="col align-self-center align-items-center text-center">
+										<a href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
+											
+											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-chat"> </span></label><br>
+											<label class="fs-6 text-dark"> Написать</label>
+										</a>
+									</div>
+		
+								</div>
+							</div>
+
+							
+
+						</div>
+					</div>	
+				
+				{% endif %}
+
+
+				{% if request.user.is_authenticated %}
+
+					<div class="start_block"> </div>
+					
+					<div class="card start_block" style="background-color: rgba(255,255,255,0.1);">
+							
+						<div class="card-body text-dark">
+							
+							<div class="row g-2">
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="type_reception" name="type_reception" value="{{params.object.type_reception}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Тип приема автомобиля</label>
+									</div>	
+								</div>
+
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										{% if params.object.quantity == 0 %}
+											<input type="text" class="form-control  text-dark" id="status" name="status" value="Продан" placeholder="" readonly autocomplete="off">
+											<label for="floatingInput" class="text-dark">Статус автомобиля</label>
+										{% else %}
+											<input type="text" class="form-control  text-dark" id="status" name="status" value="{{params.object.status}}" placeholder="" readonly autocomplete="off">
+											<label for="floatingInput" class="text-dark">Статус автомобиля</label>
+										{% endif %}
+									</div>	
+								</div>
+								
+								<div class="col-sm ">
+									<div class="form-floating mb-3  border-dark">
+										<input type="text" class="form-control  text-dark" id="type_sale" name="type_sale" value="{{params.object.type_sale}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Тип продажи автомобиля</label>
+									</div>	
+								</div>
+								
+							</div> 
+
+							<div class="row g-2">
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="vin" name="vin" value="{{params.object.vin}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">VIN</label>
+									</div>	
+								</div>
+
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="vin" name="vin" value="{{params.object.vin2}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">VIN 2</label>
+									</div>	
+								</div>
+								
+								<div class="col-sm ">
+									<div class="form-floating mb-3  border-dark">
+										<input type="text" class="form-control  text-dark" id="plate_number" name="plate_number" value="{{params.object.plate_number}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Регистрационный знак</label>
+									</div>	
+								</div>
+								
+							</div> 
+
+							<div class="row g-2">
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="days_in_stok" name="days_in_stok" value="{{params.object.days_in_stok}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Дней на складе</label>
+									</div>	
+								</div>
+
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="outlay" name="outlay" value="{{params.object.outlay|floatformat:"2g"}} &#8381;" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Расходы на АМ</label>
+									</div>	
+								</div>
+								
+								<div class="col-sm ">
+									<div class="form-floating mb-3  border-dark">
+										<input type="text" class="form-control  text-dark" id="lo_link_number" name="lo_link_number" value="{{params.object.lo_link_number}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Лист оценки</label>
+									</div>	
+								</div>
+								
+							</div>
+							<div class="row g-2">
+								<div class="col-sm ">
+								<div class="mb-3">
+									<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела подготовки</label>
+									<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.description_podgotovka}}</textarea>
+								</div>
+								</div>
+								<div class="col-sm ">
+								<div class="mb-3">
+									<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела продаж</label>
+									<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.description_op}}</textarea>
+								</div>
+								</div>
+							</div> 
+
+							<div class="row g-2">
+								<div class="form-floating mb-3  border-dark">
+									<input type="text" class="form-control  text-dark" id="link_avtoteka_web" name="link_avtoteka_web" value="{{params.object.link_avtoteka_web}}" placeholder="" readonly autocomplete="off">
+									<label for="floatingInput" class="text-dark">Автотека</label>
+								</div>
+							</div> 
+
+						</div>	
+
+					</div>
+
+					<div class="start_block"> </div>
+					
+					<div class="card start_block" style="background-color: rgba(255,255,255,0.1);">
+					
+						<div class="card-body text-dark">
+							
+							<div class="row g-2">
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3">							
+										<select class="form-select bg-white" id="unit_group_id" name="unit_group_id" placeholder="" disabled>
+											<option></option>
+											{% for evaluation in params.selected.evaluations %}
+												<option value="{{evaluation.id}}" {% if params.object.evaluation.id == evaluation.id %} selected {% endif %}> {{evaluation.name}} </option>
+											{% endfor %}
+										</select>
+										<label for="floatingInput" class="text-dark">Вариант управления ценой</label>
+									</div>
+								</div>
+
+								<div class="col-sm">
+									<div class="form-floating mb-3">							
+										<select class="form-select bg-white" id="groupprices_id" name="groupprices_id" placeholder="" disabled>
+											<option></option>
+											{% for groupprice in params.selected.groupprices %}
+												<option value="{{groupprice.id}}" {% if params.object.group_price.id == groupprice.id %} selected {% endif %}> {{groupprice.name}} </option>
+											{% endfor %}
+										</select>
+										<label for="floatingInput" class="text-dark">Ценовая группа</label>
+									</div>
+								</div>
+
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3">							
+										<select class="form-select bg-white" id="stageprices_id" name="stageprices_id" placeholder="" disabled>
+											<option></option>
+											{% for stageprice in params.selected.stageprices %}
+												<option value="{{stageprice.id}}" {% if params.object.stage_price.id == stageprice.id %} selected {% endif %}> {{stageprice.name}} </option>
+											{% endfor %}
+										</select>
+										<label for="floatingInput" class="text-dark">Этап установки цены</label>
+									</div>
+								</div>
+
+							</div> 
+
+							<div class="row g-2">
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3 ">							
+										<select class="form-select bg-white" id="ratings_id" name="ratings_id" placeholder="" disabled>
+											<option></option>
+											{% for rating in params.selected.ratings %}
+												<option value="{{rating.id}}" {% if params.object.rating.id == rating.id %} selected {% endif %}> {{rating.name}} </option>
+											{% endfor %}
+										</select>
+										<label for="floatingInput" class="text-dark">Привлекательность</label>
+									</div>
+								</div>
+
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="days_next_stage" name="days_next_stage" value="{{params.object.days_next_stage}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Дней до следующего этапа</label>
+									</div>	
+								</div>
+
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control  text-dark" id="task" name="task" value="{{params.object.task}}" placeholder="" readonly autocomplete="off">
+										<label for="floatingInput" class="text-dark">Задач по автомобилю</label>
+									</div>	
+								</div>
+								
+							</div> 
+
+							{% if request.user.profiles.korsavto_settings %}
+							
+								<div class="row">
+									<div class="col-12 col-sm-auto text-center" >
+										<a href="price_edit/" class="text-dark">
+											<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
+												<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Управление<br>ценообразованием
+											</div>
+										</a>
+									</div>
+								</div>
+
+
+							
+							{% endif %}
+
+						</div>	
+
+					</div>
+
+				{% endif %}
+
+				{% if request.user_agent.is_mobile %}
+					{% if params.object.dop_cars|length > 0 %}
+						
+						<hr style="width: 75%;">
+						<label class="fs-5">Может заинтересовать</label>
+
+						<div class="row g-3">
+							{% if params.object.dop_cars %}
+								{% for car in params.object.dop_cars %}
+										
+									<div class="col-12 col-sm-6">
+										<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}/'; return false" > 
+											<div class="card-body" style="padding: 0rem;">
+						
+												<div class="row" style="padding: 0rem;">
+													
+													<div class="col-12 col-sm-12">
+															
+														<img src="{{car.get_photo}}" class="item-img_up" >									
+															
+													</div>
+						
+													<div class="col-12 col-sm-12">
+														<div class="row text-truncate" style="padding: 0.2rem;">
+															
+															<div class="col-sm-12 text-truncate">
+																<label class="fs-5">{{car.modification_autoru.model.mark.name}}</label>
+																<br>
+																<label class="fs-5 text-truncate">{{car.modification_autoru.model.name}} </label>
+																<br>
+																<label class="fs-6 text-truncate">{{car.year}}</label>
+																<br>
+																<label class="fs-6">{{car.modification_autoru.engine_volume}} л. /
+																{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
+																{{car.modification_autoru.typeEngine.name}}
+																<br>
+																{{car.modification_autoru.typeGear.name}}
+																<br>
+																{{car.modification_autoru.typeBody.name}}</label>
+															</div>
+															
+															<div class="col-sm-12">
+																<label> {{car.type_drive}} </label>
+																
+															</div>
+									
+															<div class="col-sm-12">
+																<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
+															</div>
+									
+															<div class="col-sm-12 text-end">
+																<label class="fs-5">{{car.unit.name_web}}</label>	
+															</div>
+									
+															<div class="col-sm-12 text-end">
+																<label class="fs-4 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
+															</div>
+														</div>
+													</div>
+																			
+												</div>
+						
+											</div>
+										</div>
+									</div>
+						
+								{% endfor %} 
+							{% endif %}
+							
+						</div>
+
+					{% endif %}
+				{% endif %}
+
+		</div>
+			
+	</div>
+
+</div>
+
+
+</div>
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasRightLabel">Чат</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+</div>
+
+<div class="offcanvas-body">
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
+        <div class="container">
+        
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+                
+                {% if params.messages|length > 0 %}
+                    
+                    {% for message in params.messages %}
+                    
+                        <div class="item-chat-message{% if message.user == params.user %}-owner text-end{% endif %} col-12">
+                            <div class="item-chat-body{% if message.user == params.user %}-owner text-end{% endif %} " >
+                                <div class="item-content-chat">
+                                    <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                        {{message.content}}
+                                    </h6>
+                                </div>
+
+                                <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} ">{{message.user.last_name}} {{message.user.first_name}} / {{message.date}}</p>
+                                
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="item features-image col-12" id="no-message">
+                        <div class="item-wrapper-chat">
+                            <div class="item-content-chat">
+                                <h6 class="item-title mbr-fonts-style display-9 text-count">
+                                    
+                                </h6>
+                                <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                    В чате пока нет сообщений. Напишите мы обязательно ответим.
+                                </h6>
+                            </div>
+                            
+                            
+                        </div>
+                    </div>
+                {% endif %}
+               
+            </div>
+        </div>
+    </section>
+
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  style="position:absolute;
+    bottom:0.25rem; padding: 0rem; width: -webkit-fill-available; margin-left: 0.25rem; margin-right: 0.25rem;">
+       
+       <form id="post-form">
+        
+        {% csrf_token %}
+                
+            <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
+            <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
+               
+            <div class="input-group  form-control bg-primary" style="padding: 0rem;">
+                <input type="text" class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off">
+                <button class="btn btn-dark text-secondary" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+                
+            </div>
+   
+        </form>
+
+    </section>
+
+
+	<script>
+
+		$('#button_map').click(
+			function(){
+				$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=2', function (json){});
+			
+				$('#exampleModal').show();
+			})
+		
+		$('#phone').click(
+		function(){
+			$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=3', function (json){});
+		
+		})
+	</script>
+{% endblock %}

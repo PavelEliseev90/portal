@@ -1,0 +1,1 @@
+python D:\kors_group\portal\manage.py process_tasks --queue cvc_get_info --duration 10

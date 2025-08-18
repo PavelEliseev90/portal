@@ -1,0 +1,212 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - речевая аналитика звонков {% endblock %}
+
+{% block title_navbar %} - речевая аналитика звонков {% endblock %}
+
+
+{% block content %}
+
+<div class="row g-1 align-items-center">
+  <div class="col-sm-auto my-auto">
+    <div class="form-floating mb-3">
+      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+      <label for="floatingInput">С</label>
+    </div>
+  </div>
+  
+  <div class="col-sm-auto my-auto">
+    <div class="form-floating mb-3">
+      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+      <label for="floatingInput">По</label>
+    </div>
+  </div>
+  
+  <div class="col-sm-auto my-auto ">
+    <div class="form-floating mb-3">
+      <div class="d-grid gap-2 my-auto">
+        <button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Обновить </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="card mb-3">
+  <div class="row g-0">
+    
+    <div class="col-md-1 my-auto text-center">
+      <h1><span class="icon-mbri-play"> </span> KG</h1>
+    </div>
+    <div class="col-md-11">
+      <div class="card-body">
+        <h5 class="card-title">ОП новых автомобилей</h5>
+        
+        <div class="row g-4">
+          
+          <div class="col-sm-auto">
+            <div class="row g-1">
+                  
+              <div class="col-sm-auto">
+                <a class="nav-link text-dark" href='success/?direction=1&date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}'>
+                <div class="card border-success mb-3 text-center">
+                  <div class="card-body">
+                    <h5 class="card-title"><span class="icon-mbri-play"></span></h5>
+                    Распознано
+                    <hr>
+                    {{params.op_queue_doc_succsecc}}
+                  </div>
+                </div>
+                </a>
+              </div>
+              
+              <div class="col-sm-auto">
+                <a class="nav-link text-dark" href="queue/?direction=1">
+                  <div class="card border-success mb-3 text-center">
+                    <div class="card-body">
+                      <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
+                      В очереди
+                      <hr>
+                      {% if params.op_queue == 0 %}
+                        - / -
+                      {% else %}
+                        {{params.op_queue_doc}} / {{params.op_queue}}
+                      {% endif %}
+                    </div>
+                  </div>
+                </a>
+              </div>
+    
+            </div>
+          </div>
+
+
+          <div class="col-sm-auto">
+            <div class="row g-1">
+                  
+              <div class="col-sm-auto">
+                <a class="nav-link text-dark" href="questions/?direction=1">
+                  <div class="card border-success mb-3 text-center">
+                    <div class="card-body">
+                      <h5 class="card-title"><span class="icon-mbri-question"></span></h5>
+                      Вопросы
+                      <hr>
+                      {{params.questions_count}}
+                    </div>
+                  </div>
+                </a>
+              </div>
+              
+              <div class="col-sm-auto">
+                <a class="nav-link text-dark" href="tematiks/?direction=1">
+                  <div class="card border-success mb-3 text-center">
+                    <div class="card-body">
+                      <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
+                      Тематики
+                      <hr>
+                      {{params.tematiks_count}}
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<div class="card mb-3">
+  <div class="row g-0">
+    
+    <div class="col-md-1 my-auto text-center">
+      <h1><span class="icon-mbri-extension"> </span> KG</h1>
+    </div>
+    <div class="col-md-11">
+      <div class="card-body">
+        <h5 class="card-title">Справочники</h5>
+        
+        <div class="row g-4">
+          
+        
+          <div class="col-sm-auto">
+            <div class="row g-1">
+                  
+              <div class="col-sm-auto">
+                <a class="nav-link text-dark" href="tematiks/?direction=1">
+                  <div class="card border-success mb-3 text-center">
+                    <div class="card-body">
+                      <h5 class="card-title"><span class="icon-mbri-bold"></span></h5>
+                      Словари модели
+                      <hr>
+                      <span class="icon-mbri-menu text-success"></span>{{params.dictonary_model_count}} / <span class="icon-mbri-success text-success"></span> {{params.dictonary_model_count_success}} / <span class="icon-mbri-close text-danger"></span> {{params.dictonary_model_count_fail}}
+                    </div>
+                  </div>
+                </a>
+              </div>
+              
+              <div class="col-sm-auto">
+                <a class="nav-link text-dark" href='dictonarys/'>
+                <div class="card border-success mb-3 text-center">
+                  <div class="card-body">
+                    <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
+                    Словари автозамены
+                    <hr>
+                    {{params.dictonary_count}}
+                  </div>
+                </div>
+                </a>
+              </div>
+              
+    
+            </div>
+          </div>
+
+        </div>
+
+
+        
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script language="JavaScript">
+	
+	function change_link(){
+		
+    var url 	= new URL(document.location.href);
+		
+		find_date = document.getElementById('date_start').value;
+		if (find_date.length > 0){
+			url.searchParams.set('date_start', find_date);
+		}else{
+			url.searchParams.delete('date_start')
+		}
+		find_date_end = document.getElementById('date_end').value;
+		if (find_date_end.length > 0){
+			url.searchParams.set('date_end', find_date_end);
+		}else{
+			url.searchParams.delete('date_end')
+		}
+
+		document.location.href  = url.href;
+
+	}
+
+</script>
+
+
+{% endblock %}
+

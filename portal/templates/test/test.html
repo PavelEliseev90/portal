@@ -1,0 +1,285 @@
+ {% extends 'base_web.html' %}
+
+{% block title %} Kors - group - тест отправки данных в CVC {% endblock %}
+
+{% block content %}
+
+    <body>
+	    <div class="container-fluid bg-white">    
+        
+        <div class="row g-1">
+          <div class="card">
+            
+            <div class="card-header">
+              Фильтр
+            </div>
+            
+            <div class="card-body">
+              <div class="row g-1">
+                
+                <div class="col-sm">
+                  <div class="form-floating mb-3">
+                    <select class="form-select" name = "select_direction" id = "direction"  onChange="reload()">
+                      <option> </option>
+                      {% for direction in params.selected.directions %}
+                        {% if params.filtr.direction_id|lower == direction.id|lower %}
+                          <option id={{direction.id}} value="{{direction.id}}" selected> {{direction.name}} </option>
+                        {% else %}
+                          <option id={{direction.id}} value="{{direction.id}}"> {{direction.name}} </option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Направление</label>
+                  </div>				
+                </div>
+    
+                <div class="col-sm-2">
+                  <div class="form-floating mb-3">
+                    <input onchange="reload()" id='date' class="form-control form-control-sm" type="month" name="date" value="{{params.filtr.date|date:"Y-m"}}">
+                    <label for="floatingInput">Месяц</label>
+                  </div>			
+                </div>
+                
+                <div class="col-sm-2">
+                  <div class="form-floating mb-3">
+                    <select class="form-select" name = "select_city" id = "city"  onChange="reload()">
+                      <option> </option>
+                      {% for city in params.selected.citys %}
+                        {% if params.filtr.city_id|lower == city.id|lower %}
+                          <option id={{city.id}} value="{{city.id}}" selected> {{city.name}} </option>
+                        {% else %}
+                          <option id={{city.id}} value="{{city.id}}"> {{city.name}} </option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Город</label>
+                  </div>
+                </div>
+
+                <div class="col-sm">
+                  <div class="form-floating mb-3">
+                    <select class="form-select" name = "select_unit" id = "unit"  onChange="reload()">
+                      <option> </option>
+                      {% for unit in params.selected.units %}
+                        {% if params.filtr.unit_id|lower == unit.id|lower %}
+                          <option id={{unit.id}} value="{{unit.id}}" selected> {% if unit.buauto %} БУ - {% endif %} {{unit.name}} </option>
+                        {% else %}
+                          <option id={{unit.id}} value="{{unit.id}}"> {% if unit.buauto %} БУ - {% endif %}  {{unit.name}} </option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Подразделение</label>
+                  </div>
+                </div>
+                
+                <div class="col-sm">
+                  <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="floatingInput" name="key" placeholder="" value="Ga8FQ0dgmALiA1bFr7k7tqIym84rnLM0">
+                    <label for="floatingInput">Ключ</label>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+    
+          </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row g-1">
+    
+                
+              <div class="col-sm">
+              
+                  
+                      <br>
+ 
+                      <div class="table-responsive-sm">
+                        <table class="table table-hover table-sm align-middle">	
+                          <thead>
+                            <tr>
+                              <th>
+                                Дата записи
+                              </th>
+                              <th>
+                                ИД записи
+                              </th>
+                              <th>
+                                Наименование
+                              </th>
+                             
+                              <th>
+                                Продолжительность
+                              </th>
+                              <th>
+                                Сотрудник
+                              </th>
+                              <th>
+                                Количество документов
+                              </th>
+                              <th>
+                                Данные
+                              </th>
+                              <th>
+                                Статус
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for record in params.records %}
+                              <tr> 
+                                <td>
+                                  {{record.date}}
+                                </td>
+                                <td>
+                                  {{record.id}}
+                                </td>
+                                <td>
+                                  {{record.name}}
+                                </td>
+                                <td>
+                                  {{record.time}}
+                                </td>     
+                                <td>
+                                  {{record.user.first_name}} {{record.user.last_name}}
+                                </td>
+                                <td>
+                                  {{record.docs_count}}
+                                </td>
+                                <td>
+                                  <button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#exampleModal_{{record.id}}" data-bs-whatever="@mdo"> <span class="icon-mbri-cursor-click"> </span> Информация</button>
+                                </td>
+                                <td>
+                                  {% if record.docs_count > 0 and record.send.send == False %}
+                                     <button onclick="location.href='{{params.url}}&send_record={{record.id}}'" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable" data-bs-whatever="@mdo" id="form_redirect" class="btn btn-warning"> <span class="icon-mbri-right"> </span>  Отправить</button>
+                                  {% elif record.time == "00:00" %}
+                                    <button class="btn btn-dark" disabled> <span class="icon-mbri-close"> </span> Запись некоректна </button>
+                                  {% elif record.docs_count == 0 %}
+                                    <button class="btn btn-danger" disabled> <span class="icon-mbri-close"> </span> Нет документов для отправки </button>
+                                  {% else %}
+                                    <button class="btn btn-success" disabled> <span class="icon-mbri-success"> </span> Отправлено </button>
+                                  {% endif %}
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                     
+                  
+
+              </div>
+          
+                
+        
+            </div>
+
+        </div>  
+
+     </body>      	
+		  
+     {% for record in params.records %}
+
+      <div class="modal fade" id="exampleModal_{{record.id}}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+            
+            <div class="modal-header">
+              <h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Информация о записи</h4>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+        
+            <div class="modal-body">
+              
+              <span class="icon-mbri-calendar"> </span> {{record.date}} <br>
+
+              <span class="icon-mbri-timer"> </span> {{record.name}} <br>
+
+              <span class="icon-mbri-timer"> </span> {{record.time}} <br>
+              
+              <span class="icon-mbri-user"> </span> {{record.user.first_name}} {{record.user.last_name}} <br>
+              
+              <span class="mbri-flag"> </span> <a class="link" href="/voice_recorders/{{record.id}}/" > Перейти к записи диктофона</a> <br>
+
+              <hr>
+                {{record}}
+              <hr>
+              
+            </div>
+        
+            <div class="modal-footer">
+            
+        
+            </div>
+        
+            </div>
+          </div>
+        </div>
+
+     {% endfor %}
+
+
+     <div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+        
+        <div class="modal-header">
+          <h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Отправка</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+    
+        <div class="modal-body">
+          
+          <span> Отправляем данные, ожидайте, страница после отправки обновиться автоматически </span>
+          
+          <hr>
+          
+          <img src="/static/images/loading.gif"/>
+          
+          <hr>
+           
+        </div>
+    
+        <div class="modal-footer">
+        
+    
+        </div>
+    
+        </div>
+      </div>
+    </div>
+
+     <script>
+     function reload(){
+		
+      $('#exampleModal').modal('show');
+  
+        var url = new URL(document.location.href);
+        
+        url.searchParams.delete('select_city');
+        url.searchParams.delete('date');
+        url.searchParams.delete('select_direction');
+        url.searchParams.delete('select_unit');
+
+        var direction_id = document.getElementById('direction').value;
+            url.searchParams.set('select_direction', direction_id);
+          
+        var date_id = document.getElementById('date').value;
+            url.searchParams.set('date', date_id);
+        
+        var date_id = document.getElementById('date').value;
+            url.searchParams.set('date', date_id);
+    
+        var city_id = document.getElementById('city').value;
+            url.searchParams.set('select_city', city_id);
+        
+        var unit_id = document.getElementById('unit').value;
+            url.searchParams.set('select_unit', unit_id);
+
+        document.location.href  = url.href;
+      }      
+
+    </script>
+
+{% endblock %}

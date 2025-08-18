@@ -1,0 +1,92 @@
+{% extends 'base_web_new_chat_company.html' %}
+
+
+{% block url %} {% endblock %} 
+
+{% block meta_description %}
+  
+{% endblock %}
+
+{% block meta_keywords %}
+    
+{% endblock %}
+
+{% block title %}
+
+    Выбор пользователя
+
+{% endblock %} 
+
+{% block title_navbar %}
+    
+    Выбор пользователя
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+  
+    <!-- Content wrapper start -->
+    <div class="content-wrapper">
+
+        <!-- Row start -->
+        <div class="row gutters">
+
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 bg-silver">
+
+                <div class="card m-0">
+
+                    <div class="row no-gutters">
+                         
+                        <div class="col position-relative chat-body-users">
+                            <div class="users-container ">
+                                <ul class="users scroll-container">
+                                    {% if not params.cookie %}
+                                       <script >
+                                            window.setTimeout('location.reload()', 1);
+                                       </script>
+                                    {% endif %}
+
+                                    {% for cookie in params.cookie %}
+                                    
+                                        <li class="person active-user" data-chat="person1" style="margin-top: 0.5rem;">
+                                            <a class="text-dark" href="/chats/c/a/edit/{{cookie.id}}">
+                                                <div class="user">
+                                                    <img src="https://www.bootdey.com/img/Content/avatar/avatar1.png" alt="Retail Admin">
+                                                    <span class="status away"></span>
+                                                </div>
+                                                <p class="name-time">
+                                                    <span class="name fs-4">{{cookie.name}} </span>
+                                                </p>
+                                            </a>
+                                        </li>
+
+                                    {% endfor %}
+
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                 
+                </div>
+
+            </div>
+
+        </div>
+        <!-- Row end -->
+
+    </div>
+    <!-- Content wrapper end -->
+
+</div>
+
+<script>
+
+
+</script>
+
+  
+
+  {% endblock %}

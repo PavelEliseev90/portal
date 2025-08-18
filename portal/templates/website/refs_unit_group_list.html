@@ -1,0 +1,102 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - группы подразделений {% endblock %}
+
+{% block title_navbar %} - группы подразделений {% endblock %}
+    
+{% block content %}
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+		<div class="modal-header">
+			<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Добавление новой группы подразделений </h5>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+			<form name="add_group" method="post" id="add_group">
+				
+				{% csrf_token %}
+				
+				<div class="modal-body">
+				
+					<div class="form-floating mb-3">
+						<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
+						<label for="floatingInput">Наименование</label>
+					</div>
+
+
+					<div class="d-grid gap-2">
+						<button class="btn btn-block btn-outline-success" type="sumbit"><span class="icon-mbri-success"></span> Сохранить </button>
+					</div>
+
+				</div>
+
+			</form>
+
+		</div>
+	</div>
+</div>
+
+
+<div class="row">
+
+	<div class="col-sm-auto my-auto">
+		<div class="form-floating mb-3">
+			<button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"><span class="icon-mbri-plus"> </span></button>
+		</div>
+	</div>
+
+	<div class="col-sm">
+		<div class="form-floating mb-3">
+			<input type="text" class="form-control" id="name" name="name" placeholder="Наименование" value="" autocomplete="off">
+			<label for="floatingInput">Наименование</label>
+		</div>
+	</div>
+
+</div>
+
+{% if params.object_list|length == 0 %}
+	
+	<div class="row g-1">
+						
+		<div class="col-sm">
+			<div class="card mb-3 border-danger">
+				<div class="card-body">
+					
+					<div style="text-align: center;" class="row g-1">
+						<p class="fs-5 fw-normal"><span class="icon-mbri-sad-face"></span> Нет созданных групп подразделений</p>
+					</div>
+			
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+{% else %}
+
+	<div class="table-responsive-sm">
+		
+		<table class="table table-hover table-sm table-striped">
+			{% for object in params.object_list %}
+				<tr>
+					<div class="card" style="margin: 0.5em;">
+						<div class="card-body">
+							<span class="fs-5 fw-normal"> {{object.name}}</span>
+						</div>
+					</div>
+				</tr>
+			{% endfor %}
+		</table>
+
+	</div>
+
+{% endif %}
+
+
+
+	
+
+{% endblock %}

@@ -1,0 +1,281 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - записи диктофона {% endblock %}
+    
+{% block title_navbar %} - записи диктофона {% endblock %}
+
+{% block content %}
+
+<div class="modal fade" id="exampleModalKGSounds" tabindex="-1" aria-labelledby="exampleModalKGSounds" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-paper-plane"></span> Помощник работы с диктофоном</h5>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+			
+			<div class="row g-3">
+
+				<div class="col-12">
+					<p class="fs-6">Программа для работы с аудиозаписями диктофона.</p>
+					<p class="fs-6">Позволяет конвертировать запись в правильный формат и уменьшает размер файла перед отправкой на портал, что уменьшает время загрузки записи.</p>
+					<a href="/media/share/KORS Records v3.exe" class="btn btn-outline-success"> <span class="icon-mbri-download"></span> скачать KG Records V3 (65 MB)</a>
+					<hr style="width: 75%;">
+				</div>
+
+				<div class="col-12">
+					<p class="fs-6">Инструкциия по установке и работе с программой.</p>
+					<p class="fs-6">Особенности и возможности программы.</p>
+					
+					<a href="/manuals/zagruzka_zapisej_diktofonov_na_portal_v1/" class="btn btn-outline-success"> <span class="icon-mbri-bookmark"></span> Инструкция </a>
+					<hr style="width: 75%;">
+				</div>
+
+			</div>
+			
+			<br>
+			
+			
+
+			
+		</div>
+	  </div>
+	</div>
+</div>
+
+<form id="uploadForm" enctype="multipart/form-data">
+	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-download"></span> Загрузка записи диктофона</h5>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+			<div class="container-fluid bg-white">
+				
+				<div class="mb-3">
+					<input type="file" class="form-control" name="file_audio" multiple="multiple" accept=".wav,.mp3">
+				</div>
+									
+				<div class="progress">
+					<div class="progress-bar bg-success"></div>
+				</div> 
+				
+				<div id="uploadStatus">
+
+				</div>
+				
+				<hr>
+				
+				<div class="d-grid gap-2">
+					<input class="btn btn-outline-success" type="submit" id ='send' value=" Загрузить">
+				</div>
+				
+				<br>
+				
+				<div class="modal-footer">
+					<p style="text-align: center;">Не закрывайте окно, после успешной загрузки страница будет обновлена автоматически</p>
+				</div>
+
+			</div>
+		</div>
+	  </div>
+	</div>
+	  </div>
+</form>
+
+<div class="row g-2">
+
+	<div class="col-sm">
+		<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-plus"></span> Загрузить</button>
+	</div>
+
+	<div class="col-sm">
+		<form method="get">
+			<div class="input-group mb-3">
+				<input type="text" class="form-control" placeholder="" aria-label="" aria-describedby="button-addon1" name="name" value="{{request.GET.name}}">
+				<button class="btn btn-outline-success" type="submit" id="button-addon1"> <span class="icon-mbri-search"></span> Найти</button>	
+			</div>
+		</form>
+	</div>
+
+</div>	
+
+	<br>
+
+		<div class="table-responsive-sm">
+			<table class="table table-hover table-sm table-striped">
+			<thead>
+				<tr>
+					<th scope="col">Дата</th>
+					<th scope="col">Дата загрузки</th>
+					<th scope="col">Наименование</th>
+					<th scope="col">Продолжительность</th>
+					<th scope="col">Ошибка</th>
+				</tr>
+			</thead>
+			<tbody>
+			
+				{% if params.paginator.object_list %}
+					{% for voice_recorder in params.paginator.object_list %}
+						<tr onclick="window.location.href='{{voice_recorder.id}}/'; return false">
+							<td>{{voice_recorder.date}}</td>
+							<td><label>{{voice_recorder.date_create}}</label></td>
+							<td><label>{{voice_recorder.name}}</label></td>
+							<td><label>{{voice_recorder.time_human}}</label></td>
+							<td>
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" value="" id="flexCheckCheckedDisabled" {% if voice_recorder.error %} checked {% endif %}  disabled>
+								</div>
+							</td>
+						</tr>
+					{% endfor %} 
+				{% endif %}
+			</tbody>
+			</table>
+		</div>
+
+		
+	<div class="row align-self-center align-items-center">
+		
+		<div class="col-auto">
+			<p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
+		</div>
+
+
+		<div class="col-auto align-items-center align-self-center justify-content-center">
+			<nav aria-label="Page navigation example">
+				<ul class="pagination justify-content-center">
+				
+					{% if params.paginator.has_previous %}
+						<li class="page-num mbr-section-btn">
+							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+						</li>
+					{% endif %}
+			
+					{% for p in params.paginator.paginator.page_range %}
+						{% if params.paginator.number == p %}
+							<li class="page-num mbr-section-btn disabled">
+								<a class="btn btn-secondary display-7">
+									<b>{{p}}</b>
+								</a>
+							</li>
+						{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+							<li class="page-num mbr-section-btn">
+								<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+							</li>
+						{% endif %}
+					{% endfor %}
+						
+					{% if params.paginator.has_next %}
+						<li class="page-num mbr-section-btn">
+							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+						</li>
+					{% endif %}
+		
+				</ul>
+			</nav>
+		</div>
+
+		<div class="col-sm">
+		
+			<div class="hstack gap-3">
+				<div class="p-2"></div>
+				<div class="p-2 ms-auto"></div>
+				<div class="vr"></div>
+				<div class="p-2">Помощник загрузки записей на портал</div>
+				<div class="p-2"><button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModalKGSounds" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> KG Records</button></div>
+			</div>
+	
+		</div>
+	</div>
+	
+	
+	
+
+
+	
+
+
+
+<script>
+	$(document).ready(function(){
+		
+		$("#uploadForm").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progress", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#uploadForm')[0].reset();
+						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+		
+		// File type validation
+		$("#fileInput").change(function(){
+			var allowedTypes = ['audio/wav', 'audio/mp3'];
+			var file = this.files[0];
+			var fileType = file.type;
+			if(!allowedTypes.includes(fileType)){
+				alert('Please select a valid file (mp3/wav/).');
+				$("#fileInput").val('');
+				return false;
+			}
+		});
+	});
+</script>
+
+<script language="JavaScript">
+	function change_link(){
+		link_1= document.getElementById("unit");
+		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
+	}
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

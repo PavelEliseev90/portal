@@ -1,0 +1,30 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - {{params.page.name}} {% endblock %}
+
+{% block title_navbar %} - {{params.page.name}} {% endblock %}
+    
+{% block content %}
+
+<main class="container">
+  
+  <p class="fs-5">{{params.text}}</p>
+ <a href="http://autoload.avito.ru/format/Autocatalog.xml"> Каталог </a>
+  <form enctype="multipart/form-data" method="post">
+      
+    {% csrf_token %}
+
+    <input type="file" name="xmlfile">
+
+    <input type="submit" value="загрузить">
+    
+  </form>
+
+</main>
+
+
+  
+
+  {% endblock %}

@@ -1,0 +1,220 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - выгрузки автомобилей для площадок {% endblock %}
+
+{% block title_navbar %} - выгрузки автомобилей для площадок {% endblock %}
+    
+{% block content %}
+ 	
+<div class="row">
+
+
+<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+
+<div class="col-sm-auto">
+	
+	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				
+					<div class="modal-body">
+					
+						<div class="col-sm-auto my-auto">
+							<div class="form-floating mb-3">
+							  <select class="form-select" name = "unit_id" id = "unit_id" >
+								<option></option>
+								{% for unit in params.selected.units %}
+								  {% if params.filtr.unit_id|lower == unit.id|lower %}
+									<option id={{unit.id}} value="{{unit.id}}" selected>{{unit.name}} </option>
+								  {% else %}
+									<option id={{unit.id}} value="{{unit.id}}"> {{unit.name}} </option>
+								  {% endif %}
+								{% endfor %}
+							  </select>
+							  <label for="floatingInput">Подразделение</label>
+							</div>
+						  </div>
+
+						  <div class="col-sm-auto my-auto">
+							<div class="form-floating mb-3">
+							  <select class="form-select" name = "type_id" id = "type_id">
+								<option></option>
+								{% for type in params.selected.type %}
+								  {% if params.filtr.type|lower == type.id|lower %}
+									<option id={{type.id}} value="{{type.id}}" selected>{{type.name}} </option>
+								  {% else %}
+									<option id={{type.id}} value="{{type.id}}"> {{type.name}} </option>
+								  {% endif %}
+								{% endfor %}
+							  </select>
+							  <label for="floatingInput">Назначение выгрузки</label>
+							</div>
+						  </div>
+						
+						  <hr>
+						
+						<div class="d-grid gap-2">
+							<button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>
+						</div>
+
+					</div>
+
+				</div>
+			</div>
+	</div>
+	<br>
+
+
+</div>
+<hr>
+<!-- Второй столбец !-->
+	<div class="col-sm">
+		
+		<div class="table-responsive-sm">
+			<table class="table table-hover table-sm table-striped">
+			<thead>
+				<tr>
+					<th scope="col">Подразделение ДЦ</th>
+					<th scope="col">Назначение</th>
+					<th scope="col">Марка</th>
+					<th scope="col">Адрес</th>
+					<th scope="col">Город</th>
+					<th scope="col">Ссылка</th>								
+				</tr>
+			</thead>
+			<tbody>
+			
+				{% if params.paginator.object_list %}
+					{% for doc in params.paginator.object_list %}
+						<tr class="align-middle">	
+							<td class="align-middle">{{doc.unit.name}}</td>
+							<td class="align-middle">{{doc.type_exchange.name}}</td>
+							<td class="align-middle">{{doc.mark_filter}}</td>
+							<td class="align-middle">{{doc.adress}}</td>
+							<td class="align-middle">{{doc.city_name}}</td>
+							<td class="align-middle">{{doc.link}}</td>
+						</tr>
+					{% endfor %} 
+				{% endif %}
+				
+			</tbody>
+			</table>
+		</div>
+
+		<nav aria-label="Page navigation example bg-secondary">
+      
+			<ul class="pagination justify-content-center">
+			  
+			  {% if  params.paginator.has_previous %}
+				<li class="page-num">
+						<a class="page-link bg-secondary text-white"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
+				</li>
+			  {% endif %}
+	  
+			  {% for p in params.paginator.paginator.page_range %}
+				{% if  params.paginator.number == p %}
+				<li class="page-item bg-secondary text-white disabled"><a class="page-link">{{p}}</a></li>
+						  {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+				<li class="page-item">
+					<a class="page-link bg-secondary text-white" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+				</li>
+				{% endif %}
+			  {% endfor %}
+				
+			  {% if params.paginator.has_next %}
+				<li class="page-num">
+					<a class="page-link bg-secondary text-white" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
+				</li>
+			  {% endif %}
+	  
+			</ul>
+	  
+		</nav>
+	
+	</div>
+
+</div>
+	
+</form>
+
+<script>
+	document.forms.upload.onsubmit = function() {
+	  var input = this.elements.file_audio;
+	  var file = input.files[0];
+	  if (file) {
+		upload(file);
+	  }
+	  return false;
+	}
+  
+	function upload(file) {
+
+	var xhr = new XMLHttpRequest();
+
+	// обработчик для отправки
+	xhr.upload.onprogress = function(event) {
+		console.log(event.loaded + ' / ' + event.total);
+	}
+
+	// обработчики успеха и ошибки
+	// если status == 200, то это успех, иначе ошибка
+	xhr.onload = xhr.onerror = function() {
+	if (this.status == 200) {
+		console.log("success");
+	} else {
+		console.log("error " + this.status);
+	}
+	};
+
+	xhr.open("POST", "", true);
+	xhr.send(file);
+
+	}
+  </script>
+
+  
+
+<script language="JavaScript">
+	
+	function change_link(){
+		
+		var url 	= new URL(document.location.href);
+		
+		type_id 	= document.getElementById('type_id').value;
+		if (type_id.length > 0){
+			url.searchParams.set('type_id', type_id);
+		}else{
+			url.searchParams.delete('type_id')
+		}
+		
+		unit_id = document.getElementById('unit_id').value;
+		if (unit_id.length > 0){
+			url.searchParams.set('unit_id', unit_id);
+		}else{
+			url.searchParams.delete('unit_id')
+		}
+
+		document.location.href  = url.href;
+
+	}
+
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

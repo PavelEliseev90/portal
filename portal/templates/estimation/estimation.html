@@ -1,0 +1,3758 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - оценка {{params.estimation.rlk.nomer}} от {{params.estimation.rlk.dataTime}} {% endblock %}
+
+{% block title_navbar %} - оценка {{params.estimation.rlk.nomer}} от {{params.estimation.rlk.dataTime}} {% endblock %}
+
+{% block content %}
+
+
+{% if params.estimation.type_estimation == 0 %}
+  
+  <div class="hidesite" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; " >
+    <br>
+    <div class="row-1 g-1 btn-block text-white" >
+  
+      <label class="fs-4"> <span class="icon-mbri-right"></span> Выберите вариант оценки </label>
+    </div>
+    <br> 
+    <br>
+  </div>
+  
+
+  <div class="hidemobile">
+    <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
+  
+      <label class="fs-3"> <span class="icon-mbri-right"></span> Выберите вариант оценки </label>
+    </div>
+    <br>
+  </div>
+
+  <br>
+  
+  <div class="row g-1">
+
+    <div class="col-12 col-sm-6">
+      <a class="card bg-dark bg-opacity-75" href="?type_estimation=1">
+        <div class="card-body  text-white ">
+          <label class="fs-4"> <span class="icon-mbri-like"></span> Стандартная оценка </label>
+          <hr style="width: 75%;">
+          <label class="fs-6">Оценка автомобиля с наличием VIN номера. <br>Примерное время оценки: 15 мин. </label>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-12 col-sm-6">
+      <a class="card bg-dark bg-opacity-50" href="?type_estimation=3">
+        <div class="card-body  text-white ">
+          <label class="fs-4"> <span class="icon-mbri-preview"></span> Дистанционная оценка </label>
+          <hr style="width: 75%;">
+          <label class="fs-6">Оценка автомобиля с наличием VIN номера. <br>Примерное время оценки: 5 мин. </label>
+        </div>
+      </a>
+    </div>
+
+  </div>
+
+  <br>
+
+  <div class="row g-1">
+    <div class="col col-sm-6">
+      <a class="card bg-dark bg-opacity-75" href="?type_estimation=2">
+        <div class="card-body  text-white ">
+          <label class="fs-4"> <span class="icon-mbri-left-right"></span> Праворульный авто </label>
+          <hr style="width: 75%;">
+          <label class="fs-6">Оценка праворульного авто без VIN номера. <br>Поиск и подбор информации осществляется по номеру кузова.</label>
+        </div>
+      </a>
+    </div>
+  </div>
+
+{% elif  params.estimation.type_estimation == 1 or params.estimation.type_estimation == 3 or params.estimation.type_estimation == 2  %}
+
+
+  <div class="hidesite" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; " >
+    <br>
+    <div class="row-1 g-1 btn-block text-white" >
+
+      <label class="fs-4"> <span class="icon-mbri-right"></span> Укажите VIN автомобиля </label>
+    </div>
+    <br> 
+    <br>
+  </div>
+
+
+  <div class="hidemobile">
+    <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
+      <label class="fs-3"> <span class="icon-mbri-right"></span> Укажите VIN автомобиля </label>
+    </div>
+    <br>
+  </div>
+
+  <br>
+
+  <div class="row g-1">
+
+    <div class="col-sm ">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body ">
+          <form method="get">
+          <div class="form-floating mb-3">
+            <input class="form-control form-control-sm" minlength="17" type="text" id="vin" name="vin" value="{{params.estimation.vin}}" {% if params.estimation.vin|length > 16 %} readonly {% endif %} required autocomplete="off">
+            <label for="floatingInput">VIN</label>
+          </div>
+
+          <input class="form-control form-control-sm" hidden type="text" id="start_vin" name="start_vin" value="yes">
+            
+          {% if params.estimation.vin|length < 17 %}
+            <button type="submit" class="btn btn-secondary text-end align-self-end"><span class="icon-mbri-play"></span> Проверить</button>
+          {% endif %}
+
+          {% if params.car != None %}
+            <label class="fs-4 text-white"> <span class="icon-mbri-info"></span> Автомобиль</label>
+              <hr style="width: 75%;" class="text-white">
+            <label class="fs-6 text-white">{{params.car.mark}} {{params.car.model}} {{params.car.year}} г.в.</label>
+          {% endif %}
+
+          </form>
+        </div>
+      </div>
+    </div>
+  
+  </div>
+
+  <br>
+    
+
+  <div class="row g-1">
+
+    <div class="col-sm">
+      <a class="card bg-dark bg-opacity-75" href="s/">
+        <div class="card-body text-white ">
+          <label class="fs-4"> <span class="icon-mbri-delivery"></span> Подбор из каталога</label>
+          <hr style="width: 75%;">
+          <label class="fs-6">Заполнение информации по автомобилю</label>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-sm "  data-bs-target="#exampleModalRepairHistory" data-bs-toggle="modal">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body text-white ">
+          <label class="fs-4"> <span class="icon-mbri-edit"></span> История ремонтов - {{params.list_repair_hisory_vin|length }}</label>
+          <hr style="width: 75%;">
+          <label class="fs-6">История ремонтов по холдингу КорсГрупп </label>
+        </div>
+      </div>
+
+      <div class="modal fade" id="exampleModalRepairHistory" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+          <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">История ремонтов - {{params.list_repair_hisory_vin|length }}</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-1">
+              {% if params.list_repair_hisory_vin|length %}
+                {% for doc in params.list_repair_hisory_vin %}
+                    
+                  <div class="card"> 
+                    <div class="card-body" style="padding: 0;">
+                      
+                      <div class="row" style="padding: 0.2em;">
+                        <div class="col-sm">
+                          {{doc.dataTime}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.nomer}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.typeRemont}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.customer.name}} 
+                          <span class="icon-mbri-star"></span> {{doc.rating_customer}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.cars.mark}} {{doc.cars.model}} / {{doc.cars.vin}} 
+                        </div>
+                        <div class="col-sm">
+                          {{doc.cars_grz_board}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.run|floatformat:"0g"}} км.
+                        </div>
+                      </div>
+                      <hr style="width: 75%;">
+                      {{doc.customerWords}}
+                      <hr style="width: 75%;">
+
+                      <div class="row">
+                        <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+                                            
+                          <label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+                            
+                            <span class="icon-mbri-shopping-bag"></span> {{doc.products_count}}
+                            <div class="vr"></div>
+                            <span class="icon-mbri-setting3"></span> {{doc.works_count}}
+                            <div class="vr"></div>
+                            <span class="icon-mbri-add-submenu"></span> {{doc.recomendations_customer_count}}
+                            <div class="vr"></div>
+                            <span class="icon-mbri-website-theme"></span> {{doc.recomendations_mcu_count}}
+            
+                          </label>
+                          
+                        </div>
+
+                        <div class="col text-end">
+                          <label class="fs-4 
+                            {% if doc.recomendations_new > 0 %}
+                              bg-warning
+                            {% elif doc.closed %} 
+                              bg-success
+                            {% else %}
+                              bg-danger
+                            {% endif %} 
+                          bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{doc.amount|floatformat:"2g"}} &#8381;</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                    
+                {% endfor %} 
+              {% endif %}
+              
+            </div>
+          </div>
+          
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-sm" data-bs-target="#exampleModalEstimationsHistory" data-bs-toggle="modal">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body  text-white ">
+          <label class="fs-4"> <span class="icon-mbri-sale"></span> История оценок - {{params.list_estimations_vin|length }}</label>
+          <hr style="width: 75%;">
+          <label class="fs-6">История оценок автомобиля</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="exampleModalEstimationsHistory" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">История оценок - {{params.list_estimations_vin|length }}</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-1">
+            {% if params.list_estimations_vin|length %}
+              {% for doc in params.list_estimations_vin %}
+                  
+              <div class="card {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %}" style="margin: 0.2rem;" > 
+                <div class="card-body" >
+                  
+                  <div class="row">
+                    <div class="col-sm-auto">
+                      {% if doc.active %}  
+                        <span class="icon-mbri-success"></span>
+                      {% else %} 
+                        <span class="icon-mbri-close"></span>
+                      {% endif %}
+                    </div>
+
+                    <div class="col-sm">
+                      <div class="row" style="padding: 0.2em;">
+                    
+                        <div class="col-sm">
+                          {{doc.dataTime}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.nomer}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.store}}
+                        </div>
+                        
+                        <div class="col-sm">
+                          {{doc.type_reception}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.clientName}}                       
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.carsGRZ}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.run|floatformat:"0g"}} км.
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.staff}}
+                        </div>
+    
+                      </div>
+    
+                      <hr style="width: 75%;">
+    
+                      {{doc.description_podgotovka|default_if_none:"-"}}
+    
+                      <hr style="width: 75%;">
+    
+                      {{doc.description_op|default_if_none:"-"}}
+                    </div>
+
+                  </div>
+
+                  
+
+                  
+                  </div>
+              </div>
+                  
+              {% endfor %} 
+            {% endif %}
+            
+          </div>
+        </div>
+        
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% elif params.estimation.vin == 0 and params.estimation.type_estimation == 2  %}
+
+
+  <div class="hidesite" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; " >
+    <br>
+    <div class="row-1 g-1 btn-block text-white" >
+
+      <label class="fs-4"> <span class="icon-mbri-right"></span> Укажите VIN автомобиля </label>
+    </div>
+    <br> 
+    <br>
+  </div>
+
+
+  <div class="hidemobile">
+    <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
+      <label class="fs-3"> <span class="icon-mbri-right"></span> Укажите VIN автомобиля </label>
+    </div>
+    <br>
+  </div>
+
+  <br>
+
+  <div class="row g-1">
+
+    <div class="col-sm ">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body ">
+          <form method="get">
+          <div class="form-floating mb-3">
+            <input class="form-control form-control-sm" minlength="17" type="text" id="vin" name="vin" value="{{params.estimation.vin}}" {% if params.estimation.vin|length > 16 %} readonly {% endif %} required autocomplete="off">
+            <label for="floatingInput">VIN</label>
+          </div>
+
+          <input class="form-control form-control-sm" hidden type="text" id="start_vin" name="start_vin" value="yes">
+            
+          {% if params.estimation.vin|length < 17 %}
+            <button type="submit" class="btn btn-secondary text-end align-self-end"><span class="icon-mbri-play"></span> Проверить</button>
+          {% endif %}
+
+          </form>
+        </div>
+      </div>
+    </div>
+  
+  </div>
+
+  <br>
+    
+
+  <div class="row g-1">
+
+    <div class="col-sm">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body text-white ">
+          <label class="fs-4"> <span class="icon-mbri-delivery"></span> Подбор из каталога</label>
+          <hr style="width: 75%;">
+          <label class="fs-6">Заполнение информации по автомобилю</label>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-sm "  data-bs-target="#exampleModalRepairHistory" data-bs-toggle="modal">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body text-white ">
+          <label class="fs-4"> <span class="icon-mbri-edit"></span> История ремонтов - {{params.list_repair_hisory_vin|length }}</label>
+          <hr style="width: 75%;">
+          <label class="fs-6">История ремонтов по холдингу КорсГрупп </label>
+        </div>
+      </div>
+
+      <div class="modal fade" id="exampleModalRepairHistory" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+          <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">История ремонтов - {{params.list_repair_hisory_vin|length }}</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-1">
+              {% if params.list_repair_hisory_vin|length %}
+                {% for doc in params.list_repair_hisory_vin %}
+                    
+                  <div class="card"> 
+                    <div class="card-body" style="padding: 0;">
+                      
+                      <div class="row" style="padding: 0.2em;">
+                        <div class="col-sm">
+                          {{doc.dataTime}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.nomer}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.typeRemont}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.customer.name}} 
+                          <span class="icon-mbri-star"></span> {{doc.rating_customer}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.cars.mark}} {{doc.cars.model}} / {{doc.cars.vin}} 
+                        </div>
+                        <div class="col-sm">
+                          {{doc.cars_grz_board}}
+                        </div>
+                        <div class="col-sm">
+                          {{doc.run|floatformat:"0g"}} км.
+                        </div>
+                      </div>
+                      <hr style="width: 75%;">
+                      {{doc.customerWords}}
+                      <hr style="width: 75%;">
+
+                      <div class="row">
+                        <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+                                            
+                          <label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+                            
+                            <span class="icon-mbri-shopping-bag"></span> {{doc.products_count}}
+                            <div class="vr"></div>
+                            <span class="icon-mbri-setting3"></span> {{doc.works_count}}
+                            <div class="vr"></div>
+                            <span class="icon-mbri-add-submenu"></span> {{doc.recomendations_customer_count}}
+                            <div class="vr"></div>
+                            <span class="icon-mbri-website-theme"></span> {{doc.recomendations_mcu_count}}
+            
+                          </label>
+                          
+                        </div>
+
+                        <div class="col text-end">
+                          <label class="fs-4 
+                            {% if doc.recomendations_new > 0 %}
+                              bg-warning
+                            {% elif doc.closed %} 
+                              bg-success
+                            {% else %}
+                              bg-danger
+                            {% endif %} 
+                          bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{doc.amount|floatformat:"2g"}} &#8381;</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                    
+                {% endfor %} 
+              {% endif %}
+              
+            </div>
+          </div>
+          
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-sm" data-bs-target="#exampleModalEstimationsHistory" data-bs-toggle="modal">
+      <div class="card bg-dark bg-opacity-75">
+        <div class="card-body  text-white ">
+          <label class="fs-4"> <span class="icon-mbri-sale"></span> История оценок - {{params.list_estimations_vin|length }}</label>
+          <hr style="width: 75%;">
+          <label class="fs-6">История оценок автомобиля</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="exampleModalEstimationsHistory" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">История оценок - {{params.list_estimations_vin|length }}</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-1">
+            {% if params.list_estimations_vin|length %}
+              {% for doc in params.list_estimations_vin %}
+                  
+              <div class="card {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %}" style="margin: 0.2rem;" > 
+                <div class="card-body" >
+                  
+                  <div class="row">
+                    <div class="col-sm-auto">
+                      {% if doc.active %}  
+                        <span class="icon-mbri-success"></span>
+                      {% else %} 
+                        <span class="icon-mbri-close"></span>
+                      {% endif %}
+                    </div>
+
+                    <div class="col-sm">
+                      <div class="row" style="padding: 0.2em;">
+                    
+                        <div class="col-sm">
+                          {{doc.dataTime}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.nomer}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.store}}
+                        </div>
+                        
+                        <div class="col-sm">
+                          {{doc.type_reception}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.clientName}}                       
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.carsGRZ}}
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.run|floatformat:"0g"}} км.
+                        </div>
+    
+                        <div class="col-sm">
+                          {{doc.staff}}
+                        </div>
+    
+                      </div>
+    
+                      <hr style="width: 75%;">
+    
+                      {{doc.description_podgotovka|default_if_none:"-"}}
+    
+                      <hr style="width: 75%;">
+    
+                      {{doc.description_op|default_if_none:"-"}}
+                    </div>
+
+                  </div>
+
+                  
+
+                  
+                  </div>
+              </div>
+                  
+              {% endfor %} 
+            {% endif %}
+            
+          </div>
+        </div>
+        
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+{% endif %}
+
+
+
+
+  {% if params.menu_visible %}
+
+  <div class="row g-1">
+
+    <div class="col-2 text-center hidemobile">
+      <div class="sticky-top" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
+        
+          {% if params.estimation.staff_eco_1 != None %}
+              <div class="col-sm">
+              <div class="form-floating ">
+                <input class="form-control form-control-sm bg-opacity-25 bg-success" type="text" id="staff_eco_1" name="staff_eco_1" value="{% if params.estimation.staff_eco_1.profiles.eco_name != None %} {{params.estimation.staff_eco_1.profiles.eco_name}} {% else %} {{params.estimation.staff_eco_1.last_name}} {{params.estimation.staff_eco_1.first_name}} {% endif %}" readonly>
+                <label for="floatingInput">Согласующий</label>
+              </div>
+            </div>
+            <hr>
+          {% else %}
+            <div class="col-sm">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" id="staff_eco_1" name="staff_eco_1" value="Не принят в работу" readonly>
+                <label for="floatingInput">Согласующий</label>
+              </div>
+            </div>
+            <hr>
+          {% endif %}
+
+            <a class="d-block btn btn-outline-secondary  brd    justify-content-between align-items-center text-start {% if params.tabindex == 0 or not params.tabindex %} active opacity-75{% endif %}"  onclick="reload(0)">Главная</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 1 %} active opacity-75{% endif %}" onclick="reload(1)">Документы {% if params.estimation.page_documents == None %}<span class="badge bg-danger rounded-pill justify-content-end">!</span> {% endif %}</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 2 %} active opacity-75{% endif %}" onclick="reload(2)">Салон {% if params.estimation.page_salon == None %}<span class="badge bg-danger rounded-pill justify-content-end">!</span> {% endif %}</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 3 %} active opacity-75{% endif %}"  onclick="reload(3)">Внешний осмотр {% if params.estimation.page_documents == None %}<span class="badge bg-danger rounded-pill justify-content-end">!</span> {% endif %}</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 4 %} active opacity-75{% endif %}"  onclick="reload(4)" >Комплектность</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 5 %} active opacity-75{% endif %}" onclick="reload(5)">Колеса</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 6 %} active opacity-75{% endif %}" onclick="reload(6)">Тест - драйв</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 7 %} active opacity-75{% endif %}" onclick="reload(7)">Проверки</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 8 %} active {% endif %}"  onclick="reload(8)">История оценок <span class="badge bg-success rounded-pill justify-content-end">{{params.tab_estimations_count}}</span></a>
+            <!--
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start  {% if params.tabindex == 9 %} active opacity-75{% endif %} " >Не принятые</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start  {% if params.tabindex == 10 %} active opacity-75{% endif %} " >Продажи</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 11 %} active opacity-75{% endif %} " >Склад</a>
+            -->
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start {% if params.tabindex == 13 %} active {% endif %}"  onclick="reload(13)">История ремонтов <span class="badge bg-success rounded-pill justify-content-end">{{params.tab_repairs_count}}</span></a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start  {% if params.tabindex == 14 %} active opacity-75{% endif %} " >Автотека</a>
+            <!--
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start  text-start {% if params.tabindex == 15 %} active opacity-75{% endif %} " >Анализ рынка</a>
+            -->
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start  {% if params.tabindex == 9 %} active opacity-75{% endif %} " onclick="reload(9)">Согласование</a>
+            <a class="d-block btn btn-outline-secondary  brd    d-flex justify-content-between align-items-center text-start  {% if params.tabindex == 17 %} active opacity-75{% endif %} " onclick="reload(17)">Все фото по оценке</a>
+          
+        </div>
+     
+    </div>
+
+    <main class="col col-sm">
+      
+      <div class="hidesite fixed-top" style="margin-top: 3.2rem; z-index: 1;">
+        <div class="col">
+          <select class="form-select" aria-label="" id="select_page">
+            <option {% if params.tabindex == 0 or not params.tabindex %} selected {% endif %} value="0">Главная</option>
+            <option {% if params.tabindex == 1 %} selected {% endif %} value="1">Документы</option>
+            <option {% if params.tabindex == 2 %} selected {% endif %} value="2">Салон</option>
+            <option {% if params.tabindex == 3 %} selected {% endif %} value="3">Внешний осмотр</option>
+            <option {% if params.tabindex == 4 %} selected {% endif %} value="4">Комплектность</option>
+            <option {% if params.tabindex == 5 %} selected {% endif %} value="5">Колеса</option>
+            <option {% if params.tabindex == 6 %} selected {% endif %} value="6">Тест - драйв</option>
+            <option {% if params.tabindex == 6 %} selected {% endif %} value="7">Проверки</option>
+            <option {% if params.tabindex == 8 %} selected {% endif %} value="8">История оценок - {{params.tab_estimations_count}}</option>
+            <option {% if params.tabindex == 13 %} selected {% endif %} value="13">История ремонтов - {{params.tab_repairs_count}}</option>
+            <option {% if params.tabindex == 9 %} selected {% endif %} value="9">Согласование</option>
+            <option {% if params.tabindex == 17 %} selected {% endif %} value="17">Все фото осмотра</option>
+          </select>
+          <p> </p>
+        </div>
+       
+      </div>
+      
+      <div class="hidesite" style="padding-top: 3.5rem;">
+        
+        
+      </div>
+
+      <div class="tab-content">
+       
+        <div class="tab-pane {% if params.tabindex == 0 or not params.tabindex %} active {% endif %}" id="home" role="tabpanel" aria-labelledby="home-tab">
+          
+          {% if params.tabindex == 0 %}
+
+          <div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+              <span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Рабочий лист - {{params.rlk.nomer}} от {{params.rlk.dataTime}}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="table-responsive-sm">
+                  <table class="table table-sm table-striped table-hover">
+                    <tbody>
+                    <tr class="align-middle">
+                      <td class="align-middle">Имя клиента:</td>
+                      <td class="align-middle">{% if params.rlk.clientName|length > 0 %} {{params.rlk.clientName}} {% else %} Не указан {% endif %}</td>
+                    </tr>
+                    <tr class="align-middle">
+                      <td class="align-middle">Телефон:</td>
+                      <td class="align-middle">{% if params.rlk.phone|length > 0 %} {{params.rlk.phone}} {% else %} Не указан {% endif %}</td>
+                    </tr>
+                    <tr class="align-middle">
+                      <td class="align-middle">Вид контакта:</td>
+                      <td class="align-middle">{{params.rlk.contacType}}</td>
+                    </tr>
+                    
+                    <tr class="align-middle">
+                      <td class="align-middle">Дата создания:</td>
+                      <td class="align-middle">{{params.rlk.dataTimeCreate}}</td>
+                    </tr>
+
+                    <tr class="align-middle">
+                      <td class="align-middle">Дата окончания:</td>
+                      <td class="align-middle">{{params.rlk.dataEnd}}</td>
+                    </tr>
+
+                    <tr class="align-middle">
+                      <td class="align-middle">Продолжительность:</td>
+                      <td class="align-middle">{{params.rlk.time_visit}}</td>
+                    </tr>
+
+                    
+                    <tr class="align-middle">
+                      <td class="align-middle">Закрыт день в день:</td>
+                      <td class="align-middle">{% if params.rlk.archiveDayToDay %} Да {% else %} Нет {% endif %}</td>
+                    </tr>
+                    <tr class="align-middle">
+                      <td class="align-middle">Комментарий администратора</td>
+                      <td class="align-middle">{{params.rlk.commentAdministrator}}</td>
+                    </tr> 
+                    <tr class="align-middle">
+                      <td class="align-middle">Комментарий менеджера</td>
+                      <td class="align-middle">{{params.rlk.commentManager}}</td>
+                    </tr> 
+                    </tbody>
+                  </table>
+                </div>
+                <hr>
+                <div class="table-responsive-sm">
+                  <table class="table table-sm table-striped table-hover">
+                    <tbody> 
+                      {% for event in params.rlk.events %}
+                      <tr class="align-middle"> 
+                        <td class="align-middle">{{event.dataTime}}</td>
+                        <td class="align-middle">{{event.dataTimeEvent}}</td>
+                        <td class="align-middle">{{event.contacType}}</td>
+                        <td class="align-middle">{{event.comment}}</td>
+                        <td class="align-middle">{{event.contacType}}</td>
+                        <td class="align-middle">{{event.staff}}</td>
+                        <td class="align-middle">{{event.status}}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+              </div>
+            </div>
+            </div>
+          </div>
+
+          <div class=""> 
+            <h5>Рабочий лист  
+              <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk"> <span class="icon-mbri-file"></span></button>	
+            </h5>
+            
+            <hr style="width: 75%;">
+
+            <div class="">
+              
+              <div class="row g-1">
+
+                <div class="col-sm">
+                  
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.rlk.dataTime}}">
+                    <label for="floatingInput">Дата</label>
+                  </div>
+            
+                </div>
+            
+                <div class="col-sm">
+            
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.rlk.nomer}}">
+                    <label for="floatingInput">Номер</label>
+                  </div>
+            
+                </div>
+            
+                <div class="col-sm">
+                  
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.rlk.staff}}">
+                    <label for="floatingInput">Оценщик</label>
+                  </div>
+            
+                </div>
+
+              </div>
+
+
+              <div class="row g-1">
+
+                <div class="col-sm">
+                  
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.rlk.clientName}}">
+                    <label for="floatingInput">Клиент</label>
+                  </div>
+            
+                </div>
+                
+                <div class="col-sm">
+                  
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.rlk.phone}}">
+                    <label for="floatingInput">Телефон</label>
+                  </div>
+            
+                </div>
+                
+            
+              </div>
+
+              <div class="row g-1">
+
+                <div class="col-sm">
+                  
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.rlk.commentAdministrator}}">
+                    <label for="floatingInput">Комментарий администратора</label>
+                  </div>
+            
+                </div>
+                
+                <div class="col-sm">
+                  
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.rlk.commentManager}}">
+                    <label for="floatingInput">Комментарий менеджера</label>
+                  </div>
+            
+                </div>
+                
+            
+              </div>
+
+              <br>
+              <div class="col"> 
+                
+                {% if params.Kredit %}
+                  <button style="padding: 5px 10px;" type="button"class="btn btn-dark">
+                    В кредите
+                  </button>
+                {% endif %}
+
+                {% if params.AutoRu %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Размещен на AUTO.RU
+                  </button>
+                {% endif %}
+
+                {% if params.Avito %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Размещен на AVITO.RU
+                  </button>
+                {% endif %}
+
+                {% if params.Drom %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Размещен на DROM.RU
+                  </button>
+                {% endif %}
+                
+                {% if params.Krashenyj %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Есть крашеные элементы
+                  </button>
+                {% endif %}
+
+                {% if params.Krashenyj %}
+                  <button style="padding: 5px 10px;" type="button" class="btn btn-dark">
+                    Есть расхождения в пробегах 
+                  </button>
+                {% endif %}
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class=""> 
+            <h5>Данные оценки</h5>
+            <hr style="width: 75%;">
+
+            <div class="">
+              
+              <div class="row g-1">
+                
+                <div class="col-sm">
+                  
+                  <div class="row g-1">
+
+                    <div class="col-sm">
+                
+                      <div class="form-floating mb-3">
+                        <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.type_reception|default_if_none:"-"}}">
+                        <label for="floatingInput">Тип оценки</label>
+                      </div>
+                
+                    </div>
+                    
+                    
+                    <div class="col-sm">
+                
+                      <div class="form-floating mb-3">
+                        <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.new_car|default_if_none:"-"}}">
+                        <label for="floatingInput">Модель нового АМ</label>
+                      </div>
+                
+                    </div>
+
+                    
+                    <div class="col-sm">
+                
+                      <div class="form-floating mb-3">
+                        <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.new_staff_name|default_if_none:"-"}}">
+                        <label for="floatingInput">Менеджер ОП</label>
+                      </div>
+                
+                    </div>
+                    
+            
+                  </div>
+
+                  <div class="row g-1">
+                
+                    <div class="col-sm">
+                      
+                      <div class="row g-1">
+  
+                        <div class="col-sm">
+                          
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_documents.organization|default_if_none:"-"}}">
+                            <label for="floatingInput">Организация</label>
+                          </div>
+                    
+                        </div>
+  
+                        <div class="col-sm">
+                          
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_documents.unit.name}}">
+                            <label for="floatingInput">Подразделение</label>
+                          </div>
+                    
+                        </div>
+                    
+                        <div class="col-sm">
+                          
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_documents.filial|default_if_none:"-"}}">
+                            <label for="floatingInput">Филиал</label>
+                          </div>
+                    
+                        </div>
+  
+                        <div class="col-sm">
+                    
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.store|default_if_none:"-"}}">
+                            <label for="floatingInput">Стоянка</label>
+                          </div>
+                    
+                        </div>
+                
+                      </div>
+  
+                    </div>
+          
+                  </div>
+
+                  <div class="row g-1">
+                
+                    <div class="col-sm">
+                      
+                      <div class="form-floating">
+                        <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}}">
+                        <label for="floatingInput">Автомобиль</label>
+                      </div>
+  
+                      <br>
+
+                      <div class="row g-1">
+  
+                        <div class="col-sm">
+                          <div class="form-floating">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.vin}}">
+                            <label for="floatingInput">VIN</label>
+                          </div>
+                        </div>
+                        <div class="col-sm"> 
+                          <div class="form-floating">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.year}}">
+                            <label for="floatingInput">Год выпуска</label>
+                          </div>
+                        </div>
+  
+                        <div class="col-sm"> 
+                          <div class="form-floating">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.type_drive}}">
+                            <label for="floatingInput">Привод</label>
+                          </div>
+                        </div>
+  
+                        <div class="col-sm"> 
+                          <div class="form-floating">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_salon.run|floatformat:"0g"}}">
+                            <label for="floatingInput">Пробег</label>
+                          </div>
+                        </div>
+  
+                      </div>
+                    
+                      <br>
+
+                      <div class="row g-1">
+
+                        <div class="col-sm">
+                      
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.start_estimation|default_if_none:"-"}}">
+                            <label for="floatingInput">Начало оценки</label>
+                          </div>
+                    
+                        </div>
+  
+                        <div class="col-sm">
+                          
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.end_estimation|default_if_none:"-"}}">
+                            <label for="floatingInput">Конец оценки</label>
+                          </div>
+                    
+                        </div>
+
+                        <div class="col-sm">
+                
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.staff|default_if_none:"-"}}">
+                            <label for="floatingInput">Оценивал</label>
+                          </div>
+                    
+                        </div>
+                      </div>
+
+                    </div>
+          
+                  </div>
+  
+                </div>
+
+                <div class="col-sm">
+                  {% if params.estimation.fotos_car_all|length %}
+
+                    <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                          
+                      <div class="carousel-indicators">
+                        {% for img in params.estimation.fotos_car_all %}
+                          <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                        {% endfor %}
+                      </div>
+                      
+                      <div class="carousel-inner">
+                        
+                        {% for img in params.estimation.fotos_car_all %}
+                        
+                          <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          </div>
+
+                        {% endfor %}
+                        
+                      </div>
+                      
+                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    </div>
+                
+                  {% endif %}
+                </div>
+
+              </div>
+
+              <br>
+
+              <div class=""> 
+                
+                <div class="table-responsive table-responsive-sm">
+                  <table class="table-sm table-fit">
+                    <tr>
+
+                      
+                    {% if params.estimation.car_repaint %}
+                      <td>
+                        <button style="padding: 5px 10px;" type="button" class="btn btn-danger opacity-75 text-nowrap">
+                          Есть крашеные элементы
+                        </button>
+                      </td>
+                    {% endif %}
+
+                    {% if params.estimation.dachboard_critical_error > 0 %}
+                      <td>
+                        <button style="padding: 5px 10px;" type="button" class="btn btn-danger opacity-75 text-nowrap">
+                          Критические ошибки на приборной панели - {{params.estimation.dachboard_critical_error}}
+                        </button>
+                      </td>
+                    {% endif %}
+                      
+
+                    {% if params.estimation.page_documents.car_credit %}
+                      <td class="col-auto">
+                        <button style="padding: 5px 10px;" type="button"class="btn btn-warning opacity-75 text-nowrap">
+                          В кредите
+                        </button>
+                      </td>
+                    {% endif %}
+
+                    {% if params.estimation.page_documents.sale_auto_ru %}
+                      <td>
+                        <button style="padding: 5px 10px;" type="button" class="btn btn-warning opacity-75 text-nowrap">
+                          Размещен на AUTO.RU
+                        </button>
+                      </td>
+                    {% endif %}
+
+                    {% if params.estimation.page_documents.sale_avito_ru %}
+                      <td>  
+                        <button style="padding: 5px 10px;" type="button" class="btn btn-warning opacity-75 text-nowrap">
+                          Размещен на AVITO.RU
+                        </button>
+                      </td>
+                    {% endif %}
+
+                    {% if params.estimation.page_documents.sale_drom_ru %}
+                    <td>
+                      <button style="padding: 5px 10px;" type="button" class="btn btn-warning opacity-75 text-nowrap">
+                        Размещен на DROM.RU
+                      </button>
+                    </td>
+                    {% endif %}
+                    
+                    {% if params.Krashenyj %}
+                    <td>
+                      <button style="padding: 5px 10px;" type="button" class="btn btn-danger opacity-75 text-nowrap">
+                        Есть крашеные элементы
+                      </button>
+                    </td>
+                    {% endif %}
+
+                    {% if params.Krashenyj %}
+                    <td>
+                      <button style="padding: 5px 10px;" type="button" class="btn btn-dark text-nowrap">
+                        Есть расхождения в пробегах 
+                      </button>
+                    </td>
+                    {% endif %}
+
+                    </tr>
+                  </table>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+            
+          <br>            
+
+        
+          {% endif %}
+
+        </div>
+        
+        
+        <div class="tab-pane {% if params.tabindex == 1 %} active {% endif %}" id="document" role="tabpanel" aria-labelledby="document-tab">
+      
+          <h5>Документы</h5>
+
+          <hr style="width: 75%;">
+
+          {% if params.tabindex == 1 %}
+            {% if params.estimation.page_documents != None %}
+              <div class="row">
+                <div class="col-sm-6">
+                  <table class="table table-hover">
+                    <thead>
+                    </thead>
+                    <tbody>
+                    
+                      <tr>
+                        <td>Марка, модель по ПТС</td>
+                        <td><label>{{params.estimation.page_documents.pts_mark_model}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Гос номер</td>
+                        <td><label>{{params.estimation.page_documents.plate_number}}</label></td>
+                      </tr>
+                      <tr>
+                        <td>Номер двигателя</td>
+                        <td><label>{{params.estimation.page_documents.engine_number}} </label></td>
+                      </tr>   
+                      <tr>
+                        <td>Цвет по ПТС</td>
+                        <td><label>{{params.estimation.page_documents.pts_color}} </label></td>
+                      </tr> 
+                      <tr>
+                        <td>Владельцев</td>
+                        <td><label>{{params.estimation.page_documents.count_owners}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>Владелец</td>
+                        <td><label>{{params.estimation.page_documents.customer_family}} {{params.estimation.page_documents.customer_name}} {{params.estimation.page_documents.customer_patronymic}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>Область</td>
+                        <td><label>{{params.estimation.page_documents.customer_region}}</label></td>
+                      </tr><tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>СТС номер</td>
+                        <td><label>{{params.estimation.page_documents.sts_number}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>СТС дата</td>
+                        <td><label>{{params.estimation.page_documents.sts_date|date:"d.m.Y"}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td></td>
+                        <td><label></label></td>
+                      </tr>
+                      <tr>
+                        <td>ПТС номер</td>
+                        <td><label>{{params.estimation.page_documents.pts_number}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>ПТС дата</td>
+                        <td><label>{{params.estimation.page_documents.pts_date|date:"d.m.Y"}}</label></td>
+                      </tr> 
+                      <tr>
+                        <td>ПТС оригинал</td>
+                        <td>
+                          <div>
+                            <input class="form-check-input" type="checkbox" id="checkboxNoLabel" value="" {% if params.estimation.page_documents.pts_original %} checked {% endif %} aria-label="...">
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div class="col-sm-6">
+
+                  {% if params.estimation.fotos_documents|length %}
+
+                    <div style="border-radius: 10px; max-height: 720px; max-width: 480px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                          
+                      <div class="carousel-indicators">
+                        {% for img in params.estimation.fotos_documents %}
+                          <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                        {% endfor %}
+                      </div>
+                      
+                      <div class="carousel-inner">
+                        
+                        {% for img in params.estimation.fotos_documents %}
+                        
+                          <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                            <img class="d-block w-100" style="border-radius: 10px; max-height: 720px; max-width: 480px;" src="{{img.get_absolute_url}}" >
+                              {% if img.type_file == 'sts' %}
+                              
+                              <div class="carousel-caption d-md-block bg-title-slider">
+                                  <label class="fs-6">СТС<label>
+                              </div>
+                          
+                            {% elif img.type_file == 'pts' %}
+                            
+                              <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">ПТС<label>
+                              </div>
+
+                            
+                            {% endif %}
+                          </div>
+
+                        {% endfor %}
+                        
+                      </div>
+                      
+                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Предыдущий</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Следующий</span>
+                      </button>
+                    </div>
+                
+                  {% endif %}
+
+                </div>   
+              </div>
+
+            {% else %}
+              <div class="card text-danger"> 
+                <div class="card-body">
+                  Нет данных по документам
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+
+        </div>
+        
+
+        <div class="tab-pane {% if params.tabindex == 2 %} active {% endif %}" id="salon" role="tabpanel" aria-labelledby="salon-tab">
+          
+          {% if params.tabindex == 2 %}
+          
+          <h5>Салон</h5>
+
+          <hr style="width: 75%;">
+
+          <div class="row g-1 ">
+
+            <div class="col-sm">
+
+              <div class="col-sm-auto"> 
+                
+                <div class="row g-1">
+                
+                  <div class="col-sm"> 
+                    <div class="form-floating">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_salon.run|floatformat:"0g"}}">
+                      <label for="floatingInput">Пробег</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm align-self-center"> 
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="checkboxNoLabel" value="" {% if params.estimation.page_salon.run_confirmed %} checked {% endif %} aria-label="...">
+                      <label for="floatingInput">Подтвержден</label>
+                    </div>
+                  </div>
+
+                </div>  
+
+              </div>
+              
+
+              <div class="col-sm"> 
+                
+                <br>
+                <div class="form-floating">
+                  <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_salon.run_confirmed_comment}}">
+                  <label for="floatingInput">Комментарий к пробегу</label>
+                </div>
+
+              </div>
+
+
+              <div class="col-sm"> 
+                <br>
+                <h5>Ошибки на приборной панели</h5>
+
+                <hr style="width: 75%;">
+                
+                {% if params.estimation.page_salon.dashboard_error.all|length > 0 %}
+                
+                  {% for error in params.estimation.page_salon.dashboard_error.all %}
+
+                    <img src="{{error.get_absolute_url}}" data-bs-toggle="modal" data-bs-target="#{{error.uin}}"  width="120" height="120">
+                  
+                    <div class="modal fade" id="{{error.uin}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                        <span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Ошибка приборной панели</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="table-responsive-sm">
+                            
+                            {% if error.critical %}
+                              <h5 class="text-danger">Критическая неисправность!</h5>
+                            {% endif %}
+
+                            <img src="{{error.get_absolute_url}}"  width="120" height="120">
+                            <br>
+                            {{error.description}}
+                          </div>
+                          <hr>
+                          
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+
+                  {% endfor %}
+                  
+                {% else %}
+
+                  <div class="table-responsive">
+                    <table class="table table-fit">
+                      <tr>
+                        <td class="col-auto">
+                          <button style="padding: 5px 10px;" type="button"class="btn btn-success opacity-75">
+                            Ошибок на приборной панели нет, или они не отмечены! 
+                          </button>
+                        </td>
+                        
+                      </tr>
+                    </table>
+                  </div>
+
+                {% endif %}
+
+              </div>
+              
+
+            </div>
+
+            <div class="col-sm">
+
+              {% if params.estimation.fotos_salon|length %}
+
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                        
+                    <div class="carousel-indicators">
+                      {% for img in params.estimation.fotos_salon %}
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.estimation.fotos_salon %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          
+                          {% if img.type_file == 'run' %}
+                            
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">Пробег автомобиля<label>
+                            </div>
+                        
+                          {% elif img.type_file == 'salon_all' %}
+                           
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                              <label class="fs-6">Салон автомобиля<label>
+                            </div>
+
+                          
+                          {% elif img.type_file == 'salon_error' %}
+                           
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                              <label class="fs-6">Повреждения салона<label>
+                            </div>
+
+                          {% endif %}
+
+                        </div>
+
+                      {% endfor %}
+                      
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  </div>
+              
+              {% endif %}
+
+            </div>
+
+            
+
+          </div>
+
+          <br>
+
+          <div class="row g-3">
+
+            <div class="col-sm">
+
+              <h5>Замечания по салону автомобиля</h5>
+              <hr style="width: 75%;">
+              
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="cleaning">Требуется химчистка салона</label>
+                </div>
+                <div class="col-sm">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="cleaning" value="" {% if params.estimation.page_salon.cleaning %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>              
+              <hr>
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="checked">Повреждения рычага кпп</label>
+                </div>
+                <div class="col-sm">              
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_salon.damage_kpp %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="damage_wheel">Повреждения / затертый руль</label>
+                </div>
+                <div class="col-sm">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="damage_wheel" value="" {% if params.estimation.page_salon.damage_wheel %} checked {% endif %} aria-label="...">                
+                  </div>      
+                </div>
+              </div>
+              <hr>
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="damage_pedal">Повреждения / затертые педали</label>
+                </div>
+                <div class="col-sm">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="damage_pedal" value="" {% if params.estimation.page_salon.damage_pedal %} checked {% endif %} aria-label="...">                
+                  </div>    
+                </div>
+              </div>
+              <hr>
+              
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="damage_door">Повреждения / затертые карты дверей</label>
+                </div>
+                <div class="col-sm">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="damage_door" value="" {% if params.estimation.page_salon.damage_door %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+              
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="damage_seat">Повреждения / затертые сиденья</label>
+                </div>
+                <div class="col-sm">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="damage_seat" value="" {% if params.estimation.page_salon.damage_seat %} checked {% endif %} aria-label="...">              
+                  </div>
+                </div>
+              </div>
+              <hr>
+
+            </div>
+
+            <div class="col-sm">
+              <h5>Работоспособность элементов</h5>
+              <hr style="width: 75%;">
+          
+          <div class="">
+            <div class="card-body">
+
+              <div class="row">
+                <div class="col-sm-3">
+                  <label>Ручной тормоз </label>
+                </div> 
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_success" type="radio" name="radio_rt" id="inlineRadio1_rt" value="option1" {% if params.estimation.page_salon.hand_brake == 1 %} checked {% endif %} >
+                    <label class="form-check-label" for="inlineRadio1_rt">Работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_danger" type="radio" name="radio_rt" id="inlineRadio2_rt" value="option2" {% if params.estimation.page_salon.hand_brake == 0 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio2_rt">Не работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_warning" type="radio" name="radio_rt" id="inlineRadio3_rt" value="option3" {% if params.estimation.page_salon.hand_brake == 2 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio3_rt">Не проверен</label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <hr>
+          
+          <div class="">
+            <div class="card-body">
+
+              <div class="row">
+                <div class="col-sm-3">
+                  <label>Кондиционер </label>
+                </div> 
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_success" type="radio" name="radio_conductor" id="inlineRadio1_conductor" value="option1" {% if params.estimation.page_salon.conductor == 1 %} checked {% endif %} >
+                    <label class="form-check-label" for="inlineRadio1_conductor">Работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_danger" type="radio" name="radio_conductor" id="inlineRadio2_conductor" value="option2" {% if params.estimation.page_salon.conductor == 0 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio2_conductor">Не работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_warning" type="radio" name="radio_conductor" id="inlineRadio3_conductor" value="option3" {% if params.estimation.page_salon.conductor == 2 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio3_conductor">Не проверен</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr>
+          
+          <div class="">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-sm-3">
+                  <label>Стеклоочистители </label>
+                </div>  
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_success" type="radio" name="radio_wiper" id="inlineRadio1_wiper" value="option1" {% if params.estimation.page_salon.wiper == 1 %} checked {% endif %} >
+                    <label class="form-check-label" for="inlineRadio1_wiper">Работает</label>
+                  </div>  
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_danger" type="radio" name="radio_wiper" id="inlineRadio2_wiper" value="option2" {% if params.estimation.page_salon.wiper == 0 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio2_wiper">Не работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_warning" type="radio" name="radio_wiper" id="inlineRadio3_wiper" value="option3" {% if params.estimation.page_salon.wiper == 2 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio3_wiper">Не проверен</label>
+                  </div>
+      
+                </div>
+            </div>
+            </div>
+          </div>
+          <hr>
+
+          <div class="">
+            <div class="card-body">
+
+              <div class="row">
+                <div class="col-sm-3">
+                  <label>Сигнал </label>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_success" type="radio" name="radio_signal" id="inlineRadio1_signal" value="option1" {% if params.estimation.page_salon.signal == 1 %} checked {% endif %} >
+                    <label class="form-check-label" for="inlineRadio1_signal">Работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_danger" type="radio" name="radio_signal" id="inlineRadio2_signal" value="option2" {% if params.estimation.page_salon.signal == 0 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio2_signal">Не работает</label>
+                  </div>
+                </div>
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_warning" type="radio" name="radio_signal" id="inlineRadio3_signal" value="option3" {% if params.estimation.page_salon.signal == 2 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio3_signal">Не проверен</label>
+                  </div>
+                </div>
+                
+                
+              </div>
+              
+
+            </div>
+          </div>
+          <hr>
+         
+          <div class="">
+            <div class="card-body">
+              <div class="row">
+                
+                <div class="col-sm-3">
+                  <label>Стеклоподьемники </label>
+                </div>
+
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_success" type="radio" name="radio_power_windows" id="inlineRadio1_power_windows" value="option1" {% if params.estimation.page_salon.power_windows == 1 %} checked {% endif %} >
+                    <label class="form-check-label" for="inlineRadio1_power_windows">Работает</label>
+                  </div>
+                </div>
+
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_danger" type="radio" name="radio_power_windows" id="inlineRadio2_power_windows" value="option2" {% if params.estimation.page_salon.power_windows == 0 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio2_power_windows">Не работает</label>
+                  </div>
+                </div>
+
+                <div class="col-sm-auto">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input input_radio_warning" type="radio" name="radio_power_windows" id="inlineRadio3_power_windows" value="option3" {% if params.estimation.page_salon.power_windows == 2 %} checked {% endif %}>
+                    <label class="form-check-label" for="inlineRadio3_power_windows">Не проверен</label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <hr>
+         
+          <div class="">
+            <div class="card-body">
+
+              <div class="row">
+                  <div class="col-sm-3">
+                    <label>Ремни безопасности</label>
+                  </div>  
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_seat_belt" id="inlineRadio1_seat_belt" value="option1" {% if params.estimation.page_salon.seat_belt == 1 %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_seat_belt">Работает</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_seat_belt" id="inlineRadio2_seat_belt" value="option2" {% if params.estimation.page_salon.seat_belt == 0 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_seat_belt">Не работает</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_warning" type="radio" name="radio_seat_belt" id="inlineRadio3_seat_belt" value="option3" {% if params.estimation.page_salon.seat_belt == 2 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio3_seat_belt">Не проверен</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+
+          </div>
+
+          {% endif%}
+
+        </div>
+        
+
+        <div class="tab-pane {% if params.tabindex == 3 %} active {% endif %}" id="vnesh" role="tabpanel" aria-labelledby="vnesh-tab">
+          
+          {% if params.tabindex == 3 %}
+            
+          <h5>Внешний осмотр</h5>
+
+          <hr style="width: 75%;">
+
+          <div class="row g-1">
+            
+            <div class="col-sm-6">
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="checked">Проверка VIN номера и номера ДВС</label>
+                </div>
+                <div class="col-sm">              
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_vnesh.check_vin %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+              
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="checked">Проверка ДВС и КПП на месте</label>
+                </div>
+                <div class="col-sm">              
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_vnesh.check_engine %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+  
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="checked">Следы подтекания масла</label>
+                </div>
+                <div class="col-sm">              
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_vnesh.oil_error %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="checked">Следы подтекания охлаждающей жидкости</label>
+                </div>
+                <div class="col-sm">              
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_vnesh.water_error %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+
+                    
+              <div class="row">
+                  <div class="col-sm-6">
+                    <label for="checked">Лобовое стекло с повреждениями</label>
+                  </div>
+                  <div class="col-sm">              
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_vnesh.windshield_error %} checked {% endif %} aria-label="...">
+                    </div>
+                  </div>
+              </div>
+              <hr>
+                  
+                    
+              <div class="row">
+                <div class="col-sm-6">
+                  <label for="checked">Световые приборы есть проблемы</label>
+                </div>
+                <div class="col-sm">              
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="checked" value="" {% if params.estimation.page_vnesh.light_error %} checked {% endif %} aria-label="...">
+                  </div>
+                </div>
+              </div>
+              <hr>
+
+            </div> 
+
+            <div class="col-sm">
+              <div style="object-fit: cover; border-radius: 10px; max-height: 320px;" id="JsonArrayArrayImagesPered" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                <div class="carousel-indicators">
+                  {% for img in params.estimation.fotos_vnesh_all %}
+                    {% if img.path != "" %} 
+                      <button type="button" data-bs-target="#JsonArrayArrayImagesPered" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                
+                <div class="carousel-inner">
+                  
+                  {% for img in params.estimation.fotos_vnesh_all %}
+                  
+                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                      {% if img.path != "" %} 
+                        <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; max-height: 320px;" src="{{img.get_absolute_url}}" >
+                        <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                          
+                          {% if img.type_file == 'vin' %}
+                            <h6>Фотографии VIN номера</h6>
+                          {% elif img.type_file == 'pod_capot' %}
+                            <h6>Фотографии подкапотного пространства</h6>
+                          {% elif img.type_file == 'vnesh_windows_error' %}
+                            <h6>Световые приборы есть проблемы</h6>
+                          {% elif img.type_file == 'vnesh_light_error' %}
+                            <h6>Световые приборы есть проблемы</h6>
+                          {% endif %}
+                          
+                        </div>
+                      {% endif %}
+                    </div>
+
+                  {% endfor %}
+                  
+                </div>
+                {% for img in params.estimation.fotos_vnesh_all %}
+                  
+                    <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesPered"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesPered"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  
+                {% endfor %}
+              </div>
+            </div>
+
+          </div>
+
+          <br>
+
+          <div class="row g-1">
+            
+            <div class="col-sm">
+              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_pered.get_absolute_url}}"> 
+            </div>
+            
+            <div class="col-sm">
+              <div style="object-fit: cover; border-radius: 10px; max-height: 320px;" id="JsonArrayArrayImagesPered" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                <div class="carousel-indicators">
+                  {% for img in params.estimation.fotos_array_images_pered %}
+                    <button type="button" data-bs-target="#JsonArrayArrayImagesPered" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                  {% endfor %}
+                </div>
+                
+                <div class="carousel-inner">
+                  
+                  {% for img in params.estimation.fotos_array_images_pered %}
+                  
+                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                      {% if img.path != "" %} 
+                        <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; max-height: 320px;" src="{{img.get_absolute_url}}" >
+                        <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                          {% if img.kraska %}
+                            <h6>Показание толщиномера - {{img.text}}</h6>
+                          {% else %}
+                            <h6>{{img.text}}</h6>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    </div>
+
+                  {% endfor %}
+                  
+                </div>
+                {% for img in params.estimation.fotos_array_images_pered %}
+                  
+                    <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesPered"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesPered"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                 
+                {% endfor %}
+              </div>
+            </div>   
+      
+          </div>
+            
+          <br>
+
+          <div class="row g-1">
+            
+            <div class="col-sm">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 400px;" src="{{params.estimation.fotos_vnesh_vod.get_absolute_url}}"> 
+            </div>
+            
+            <div class="col-sm">
+              <div style="object-fit: fill; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                <div class="carousel-indicators">
+                  {% for img in params.estimation.fotos_array_images_vod %}
+                    
+                      <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                    
+                  {% endfor %}
+                </div>
+                
+                <div class="carousel-inner">
+                  
+                  {% for img in params.estimation.fotos_array_images_vod %}
+                  
+                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                        <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                        <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                          {% if img.kraska %}
+                            <h6>Показание толщиномера - {{img.text}}</h6>
+                          {% else %}
+                            <h6>{{img.text}}</h6>
+                          {% endif %}
+                        </div>
+                      
+                    </div>
+
+                  {% endfor %}
+                  
+                </div>
+                {% for img in params.estimation.fotos_array_images_vod %}
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  
+                {% endfor %}
+
+              </div>
+            </div>   
+      
+          </div>
+            
+          <br>
+
+          <div class="row g-1">
+            
+            <div class="col-sm">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 400px;" src="{{params.estimation.fotos_vnesh_zad.get_absolute_url}}"> 
+            </div>
+            
+            <div class="col-sm">
+              <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="JsonArrayArrayImagesZad" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                <div class="carousel-indicators">
+                  {% for img in params.estimation.fotos_array_images_zad %}
+                    
+                      <button type="button" data-bs-target="#JsonArrayArrayImagesZad" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                    
+                  {% endfor %}
+                </div>
+                
+                <div class="carousel-inner">
+                  
+                  {% for img in params.estimation.fotos_array_images_zad %}
+                  
+                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                      
+                        <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                        <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                          {% if img.kraska %}
+                            <h6>Показание толщиномера - {{img.text}}</h6>
+                          {% else %}
+                            <h6>{{img.text}}</h6>
+                          {% endif %}
+                        </div>
+                      
+                    </div>
+
+                  {% endfor %}
+                  
+                </div>
+
+                {% for img in params.estimation.fotos_array_images_zad %}
+                  
+                    <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesZad"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesZad"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  
+                {% endfor %}
+
+              </div>
+            </div>   
+      
+          </div>
+          
+          <br>
+
+          <div class="row g-1">
+            
+            <div class="col-sm">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 400px;" src="{{params.estimation.fotos_vnesh_pass.get_absolute_url}}"> 
+            </div>
+            
+            <div class="col-sm">
+              <div style="object-fit: fill; border-radius: 10px; max-height: 450px;" id="JsonArrayArrayImagesPas" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                <div class="carousel-indicators">
+                  {% for img in params.estimation.fotos_array_images_pass %}
+                    
+                      <button type="button" data-bs-target="#JsonArrayArrayImagesPas" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                    
+                  {% endfor %}
+                </div>
+                
+                <div class="carousel-inner">
+                  
+                  {% for img in params.estimation.fotos_array_images_pass %}
+                  
+                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                      
+                        <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                        <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                          {% if img.kraska %}
+                            <h6>Показание толщиномера - {{img.text}}</h6>
+                          {% else %}
+                            <h6>{{img.text}}</h6>
+                          {% endif %}
+                        </div>
+                      
+                    </div>
+
+                  {% endfor %}
+                  
+                </div>
+                {% for img in params.estimation.fotos_array_images_pass %}
+                
+                    <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesPas"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesPas"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  
+                {% endfor %}
+              </div>
+            </div>              
+          </div>
+      
+          <br>
+
+          <div class="row g-1">
+            
+            <div class="col-sm">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 400px;" src="{{params.estimation.fotos_vnesh_up.get_absolute_url}}"> 
+            </div>
+            
+            <div class="col-sm">
+              <div style="object-fit: fill; border-radius: 10px; max-height: 450px;" id="JsonArrayArrayImagesPas" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                <div class="carousel-indicators">
+                  {% for img in params.estimation.fotos_array_images_up %}
+                    <button type="button" data-bs-target="#JsonArrayArrayImagesPas" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                    
+                  {% endfor %}
+                </div>
+                
+                <div class="carousel-inner">
+                  
+                  {% for img in params.estimation.fotos_array_images_up %}
+                  
+                    <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                      <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                        <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                          {% if img.kraska %}
+                            <h6>Показание толщиномера - {{img.text}}</h6>
+                          {% else %}
+                            <h6>{{img.text}}</h6>
+                          {% endif %}
+                        </div>
+                      
+                    </div>
+
+                  {% endfor %}
+                  
+                </div>
+
+                {% for img in params.estimation.fotos_array_images_up %}
+                  
+                    <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesPas"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesPas"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  
+                {% endfor %}
+
+              </div>
+            </div>              
+          </div>
+      
+        {% endif %}
+
+        </div>
+
+
+        <div class="tab-pane {% if params.tabindex == 4 %} active {% endif %}" id="page_complectnost" role="tabpanel" aria-labelledby="page_complectnost-tab">
+
+          {% if params.tabindex == 4 %}
+            <h5>Комплектность</h5>
+            <hr style="width: 75%;">
+            
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Прикуриватель </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_prikur" id="radio_rt_prikur" value="option1" {% if params.estimation.page_complectnost.prikur %} checked {% endif %} >
+                      <label class="form-check-label" for="radio_rt_prikur">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_prikur" id="radio_rt_prikur_no" value="option2" {% if not params.estimation.page_complectnost.prikur %} checked {% endif %}>
+                      <label class="form-check-label" for="radio_rt_prikur_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Огнетушитель </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_ognet" id="inlineRadio1_rt_ognet" value="option1" {% if params.estimation.page_complectnost.ognet %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_ognet">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_ognet" id="inlineRadio1_rt_ognet_no" value="option2" {% if not params.estimation.page_complectnost.ognet %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio1_rt_ognet_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Коврики </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_kovrik" id="inlineRadio1_rt_kovrik" value="option1" {% if params.estimation.page_complectnost.kovrik %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_kovrik">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_kovrik" id="inlineRadio2_rt_kovrik_no" value="option2" {% if not params.estimation.page_complectnost.kovrik %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_rt_kovrik_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Трос </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_tros" id="inlineRadio1_rt_tros" value="option1" {% if params.estimation.page_complectnost.tros %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_tros">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_tros" id="inlineRadio2_rt_tros_no" value="option2" {% if not params.estimation.page_complectnost.tros %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_rt_tros_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Домкрат </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_domkrat" id="radio_rt_domkrat" value="option1" {% if params.estimation.page_complectnost.prikur %} checked {% endif %} >
+                      <label class="form-check-label" for="radio_rt_domkrat">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_domkrat" id="radio_rt_domkrat_no" value="option2" {% if not params.estimation.page_complectnost.prikur %} checked {% endif %}>
+                      <label class="form-check-label" for="radio_rt_domkrat_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Знак аварийной остановки</label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_znak" id="inlineRadio1_rt_znak" value="option1" {% if params.estimation.page_complectnost.znak_av %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_znak">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_znak" id="inlineRadio1_rt_znak_no" value="option2" {% if not params.estimation.page_complectnost.znak_av %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio1_rt_znak_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Баллоный ключ </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_ball_key" id="inlineRadio1_rt_ball_key" value="option1" {% if params.estimation.page_complectnost.ball_key %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_ball_key">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_ball_key" id="inlineRadio1_rt_ball_key_no" value="option2" {% if not params.estimation.page_complectnost.ball_key %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio1_rt_ball_key_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Запасное колесо / докатка </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_zapas" id="inlineRadio1_rt_zapas" value="option1" {% if params.estimation.page_complectnost.zapas %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_zapas">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_zapas" id="inlineRadio2_rt_zapas_no" value="option2" {% if not params.estimation.page_complectnost.zapas %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_rt_zapas_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+
+                <div class="row">
+                  <div class="col-sm-3">
+                    <label>Аптечка </label>
+                  </div> 
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_rt_aptechka" id="inlineRadio1_rt_aptechka" value="option1" {% if params.estimation.page_complectnost.aptechka %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_rt_aptechka">В наличии</label>
+                    </div>
+                  </div>
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_rt_aptechka" id="inlineRadio2_rt_aptechka_no" value="option2" {% if not params.estimation.page_complectnost.aptechka %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_rt_aptechka_no">Отсутствует</label>
+                    </div>
+                  </div>
+                
+                </div>
+
+              </div>
+            </div>
+            <hr>
+          {% endif %}
+
+        </div>
+
+
+        <div class="tab-pane {% if params.tabindex == 5 %} active {% endif %}" id="page_kolesa" role="tabpanel" aria-labelledby="page_kolesa-tab">
+         
+          {% if params.tabindex == 5 %}
+            
+            <h5>Колеса</h5>
+            <hr style="width: 75%;">
+        
+            <h6>На автомобиле</h6>
+
+            <div class="row g-1">
+              
+              <div class="col-sm-6">
+                
+                <div class="col-sm"> 
+                
+                  <div class="form-floating mb-3">
+                    <select class="form-select" aria-label="mark_tyre" name="" id="mark_tyre" >
+                      <option value="0"></option>
+                      
+                      {% for mark_tyre in params.selected.mark_tyres %}
+                        <option {% if mark_tyre.id == params.estimation.page_kolesa.mark_tyre.id %} selected {% endif %} value="{{mark_tyre.id}}">{{mark_tyre.name}}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Марка резины</label>
+                  </div>
+  
+                </div>
+                
+                <div class="col-sm"> 
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="text" id="model_tyre" name="model_tyre" value="{{params.estimation.page_kolesa.model_tyre}}">
+                    <label for="floatingInput">Модель резины</label>
+                  </div>
+                  <br>
+                </div>
+                
+                <div class="row g-1">
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="width_tyre" name="" id="width_tyre" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.width_tyres %}
+                          <option {% if object.id == params.estimation.page_kolesa.width_tyre.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Ширина резины</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="profil_tyre" name="" id="profil_tyre" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.profil_tyres %}
+                          <option {% if object.id == params.estimation.page_kolesa.profil_tyre.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Профиль резины</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="radius" name="" id="radius" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.radiuses %}
+                          <option {% if object.id == params.estimation.page_kolesa.radius.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Радиус резины</label>
+                    </div>
+    
+                  </div>
+                </div>
+
+                <div class="col-sm"> 
+                  
+                  <div class="form-floating mb-3">
+                    <select class="form-select" aria-label="sezon" name="" id="sezon" >
+                      <option value="0"></option>
+                      
+                      {% for object in params.selected.sezons %}
+                        <option {% if object.id == params.estimation.page_kolesa.sezon.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Сезон резины</label>
+                  </div>
+  
+                </div>
+  
+                <div class="row g-1">
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="disk_type" name="" id="disk_type" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.disk_types %}
+                          <option {% if object.id == params.estimation.page_kolesa.disk_type.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Вид дисков</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    <div class="form-floating">
+                      <input class="form-control form-control-sm" type="text" id="model_disk" name="model_disk" value="{{params.estimation.page_kolesa.model_disk}}">
+                      <label for="floatingInput">Модель дисков</label>
+                    </div>
+                    <br>
+                  </div>
+                </div>
+
+                <div class="row g-1">
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="et_disk" name="" id="et_disk" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.et_disks %}
+                          <option {% if object.id == params.estimation.page_kolesa.et_disk.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">ET дисков</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="dia_disk" name="" id="dia_disk" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.dia_disks %}
+                          <option {% if object.id == params.estimation.page_kolesa.dia_disk.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">DIA дисков</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="psd_disk" name="" id="psd_disk" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.psd_disks %}
+                          <option {% if object.id == params.estimation.page_kolesa.psd_disk.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">PSD дисков</label>
+                    </div>
+    
+                  </div>
+                </div>
+
+              </div>
+              
+              <div class="col">
+
+                {% if params.estimation.fotos_kolesa|length %}
+
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                        
+                    <div class="carousel-indicators">
+                      {% for img in params.estimation.fotos_kolesa %}
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.estimation.fotos_kolesa %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          
+                          {% if img.type_file == 'kolesa' %}
+                            
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">Колеса на авто<label>
+                            </div>
+                        
+                          {% endif %}
+
+                        </div>
+
+                      {% endfor %}
+                      
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  </div>
+              
+              {% endif %}
+
+              </div>
+              
+            </div> 
+
+            <hr style="width: 75%;">
+
+            <h6>Второй комплект <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="" id="flexCheckDisabled1" {% if params.estimation.page_kolesa.kolesa2 %} checked {% endif %}  disabled>
+            </div> </h6>
+
+             {% if params.estimation.page_kolesa.kolesa2 %}
+
+            <div class="row g-1">
+              
+              <div class="col-sm-6">
+                
+                <div class="col-sm"> 
+                
+                  <div class="form-floating mb-3">
+                    <select class="form-select" aria-label="mark_tyre2" name="" id="mark_tyre2" >
+                      <option value="0"></option>
+                      
+                      {% for mark_tyre in params.selected.mark_tyres %}
+                        <option {% if mark_tyre.id == params.estimation.page_kolesa.mark_tyre2.id %} selected {% endif %} value="{{mark_tyre.id}}">{{mark_tyre.name}}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Марка резины</label>
+                  </div>
+  
+                </div>
+                
+                <div class="col-sm"> 
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="text" id="model_tyre2" name="model_tyre2" value="{{params.estimation.page_kolesa.model_tyre2}}">
+                    <label for="floatingInput">Модель резины</label>
+                  </div>
+                  <br>
+                </div>
+                
+                <div class="row g-1">
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="width_tyre2" name="" id="width_tyre2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.width_tyres %}
+                          <option {% if object.id == params.estimation.page_kolesa.width_tyre2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Ширина резины</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="profil_tyre2" name="" id="profil_tyre2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.profil_tyres %}
+                          <option {% if object.id == params.estimation.page_kolesa.profil_tyre2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Профиль резины</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="radius2" name="" id="radius2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.radiuses %}
+                          <option {% if object.id == params.estimation.page_kolesa.radius2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Радиус резины</label>
+                    </div>
+    
+                  </div>
+                </div>
+
+                <div class="col-sm"> 
+                  
+                  <div class="form-floating mb-3">
+                    <select class="form-select" aria-label="sezon2" name="" id="sezon2" >
+                      <option value="0"></option>
+                      
+                      {% for object in params.selected.sezons %}
+                        <option {% if object.id == params.estimation.page_kolesa.sezon2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="floatingInput">Сезон резины</label>
+                  </div>
+  
+                </div>
+  
+                <div class="row g-1">
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="disk_type2" name="" id="disk_type2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.disk_types %}
+                          <option {% if object.id == params.estimation.page_kolesa.disk_type2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">Вид дисков</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    <div class="form-floating">
+                      <input class="form-control form-control-sm" type="text" id="model_disk2" name="model_disk2" value="{{params.estimation.page_kolesa.model_disk2}}">
+                      <label for="floatingInput">Модель дисков</label>
+                    </div>
+                    <br>
+                  </div>
+                </div>
+
+                <div class="row g-1">
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="et_disk2" name="" id="et_disk2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.et_disks %}
+                          <option {% if object.id == params.estimation.page_kolesa.et_disk2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">ET дисков</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="dia_disk2" name="" id="dia_disk2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.dia_disks %}
+                          <option {% if object.id == params.estimation.page_kolesa.dia_disk2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">DIA дисков</label>
+                    </div>
+    
+                  </div>
+    
+                  <div class="col-sm"> 
+                    
+                    <div class="form-floating mb-3">
+                      <select class="form-select" aria-label="psd_disk2" name="" id="psd_disk2" >
+                        <option value="0"></option>
+                        
+                        {% for object in params.selected.psd_disks %}
+                          <option {% if object.id == params.estimation.page_kolesa.psd_disk2.id %} selected {% endif %} value="{{object.id}}">{{object.name}}</option>
+                        {% endfor %}
+                      </select>
+                      <label for="floatingInput">PSD дисков</label>
+                    </div>
+    
+                  </div>
+                </div>
+
+              </div>
+              
+              <div class="col">
+
+                {% if params.estimation.fotos_kolesa2|length %}
+
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsKoleso2" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                        
+                    <div class="carousel-indicators">
+                      {% for img in params.estimation.fotos_kolesa2 %}
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsKoleso2" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.estimation.fotos_kolesa2 %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          
+                          {% if img.type_file == 'kolesa2' %}
+                            
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">Второй комплект<label>
+                            </div>
+                        
+                          {% endif %}
+
+                        </div>
+
+                      {% endfor %}
+                      
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsKoleso2"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsKoleso2"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  </div>
+              
+              {% endif %}
+
+              </div>
+              
+            </div> 
+
+            {% endif %}
+
+          {% endif %}
+
+        </div>
+
+        <div class="tab-pane {% if params.tabindex == 6 %} active {% endif %}" id="page_test_drive" role="tabpanel" aria-labelledby="page_test_drive-tab">
+
+          {% if params.tabindex == 6 %}
+            <h5>Тест - драйв</h5>
+            <hr style="width: 75%;">
+            
+          
+            <div class="row align-items-center align-self-center">
+              <div class="col-sm-auto">
+                <label for="no_test">Тест - драйв не производился</label>
+              </div>
+              <div class="col-sm-auto">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="no_test" value="" {% if params.estimation.page_test_drive.no_test %} checked {% endif %} aria-label="...">              
+                </div>
+              </div>
+              <div class="col-sm">
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control  text-secondary" id="comment" name="comment" value="{{params.estimation.page_test_drive.comment}}" placeholder="" disabled autocomplete="off">
+                  <label for="floatingInput">Комментарий</label>
+                </div>	
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+                <div class="row">
+                  
+                  <div class="col-sm-2">
+                    <label class="fw-bold">Двигатель </label>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_engine" id="inlineRadio1_engine" value="option1" {% if params.estimation.page_test_drive.engine == 1 %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_engine">Исправлен</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_engine" id="inlineRadio2_engine" value="option2" {% if params.estimation.page_test_drive.engine == 0 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_engine">Не исправен</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_warning" type="radio" name="radio_engine" id="inlineRadio3_engine" value="option3" {% if params.estimation.page_test_drive.engine == 2 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio3_engine">Есть замечания</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control  text-secondary" id="comment_engine" name="comment_engine" value="{{params.estimation.page_test_drive.comment_engine}}" placeholder="" disabled autocomplete="off">
+                  <label for="floatingInput">Комментарий</label>
+                </div>	
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+                <div class="row">
+                  
+                  <div class="col-sm-2">
+                    <label class="fw-bold">Система выпуска ОГ </label>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_system_og" id="inlineRadio1_system_og" value="option1" {% if params.estimation.page_test_drive.system_og == 1 %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_system_og">Исправна</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_system_og" id="inlineRadio2_system_og" value="option2" {% if params.estimation.page_test_drive.system_og == 0 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_system_og">Не исправна</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_warning" type="radio" name="radio_system_og" id="inlineRadio3_system_og" value="option3" {% if params.estimation.page_test_drive.system_og == 2 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio3_system_og">Есть замечания</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control  text-secondary" id="comment_system_og" name="comment_system_og" value="{{params.estimation.page_test_drive.comment_system_og}}" placeholder="" disabled autocomplete="off">
+                  <label for="floatingInput">Комментарий</label>
+                </div>	
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+                
+                <div class="row">
+                  
+                  <div class="col-sm-2">
+                    <label class="fw-bold">Коробка передач</label>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_gear" id="inlineRadio1_gear" value="option1" {% if params.estimation.page_test_drive.gear == 1 %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_gear">Исправна</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_gear" id="inlineRadio2_gear" value="option2" {% if params.estimation.page_test_drive.gear == 0 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_gear">Не исправна</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_warning" type="radio" name="radio_gear" id="inlineRadio3_gear" value="option3" {% if params.estimation.page_test_drive.gear == 2 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio3_gear">Есть замечания</label>
+                    </div>
+                  </div>
+                </div>
+
+                
+                  <div class="form-floating mb-3">
+                    <input type="text" class="form-control  text-secondary" id="comment_gear" name="comment_gear" value="{{params.estimation.page_test_drive.comment_gear}}" placeholder="" disabled autocomplete="off">
+                    <label for="floatingInput">Комментарий</label>
+                  </div>	
+                
+                
+
+              </div>
+            </div>
+            <hr>
+
+            <div class="">
+              <div class="card-body">
+                <div class="row align-items-center align-self-center">
+                  
+                  <div class="col-sm-2">
+                    <label class=" fw-bold">Подвеска</label>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_success" type="radio" name="radio_suspension" id="inlineRadio1_suspension" value="option1" {% if params.estimation.page_test_drive.suspension == 1 %} checked {% endif %} >
+                      <label class="form-check-label" for="inlineRadio1_suspension">Исправна</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_danger" type="radio" name="radio_suspension" id="inlineRadio2_suspension" value="option2" {% if params.estimation.page_test_drive.suspension == 0 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio2_suspension">Не исправна</label>
+                    </div>
+                  </div>
+
+                  <div class="col-sm-auto">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input input_radio_warning" type="radio" name="radio_suspension" id="inlineRadio3_suspension" value="option3" {% if params.estimation.page_test_drive.suspension == 2 %} checked {% endif %}>
+                      <label class="form-check-label" for="inlineRadio3_suspension">Есть замечания</label>
+                    </div>
+                  </div>
+
+
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control  text-secondary" id="comment_suspension" name="comment_suspension" value="{{params.estimation.page_test_drive.comment_suspension}}" placeholder="" disabled autocomplete="off">
+                  <label for="floatingInput">Комментарий</label>
+                </div>	
+
+              </div>
+            </div>
+            <hr>
+
+          {% endif %}
+
+        </div>
+
+        <div class="tab-pane {% if params.tabindex == 7 %} active {% endif %}" id="page_proverki" role="tabpanel" aria-labelledby="page_proverki-tab">
+
+          {% if params.tabindex == 7 %}
+            <h5>Проверки по автомобилю</h5>
+            <hr style="width: 75%;">
+            
+            <h6>ГИБДД</h6>
+            
+            <div class="row g-1">
+              
+              <div class="col-sm-6">
+                
+                
+                
+                <div class="col-sm"> 
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="text" id="model_tyre" name="model_tyre" value="{{params.estimation.page_proverki.count_dtp}}">
+                    <label for="floatingInput">ДТП</label>
+                  </div>
+                  <br>
+                </div>
+                
+              </div>
+              
+              <div class="col">
+
+                {% if params.estimation.fotos_gibdd|length %}
+
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsGibdd" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                        
+                    <div class="carousel-indicators">
+                      {% for img in params.estimation.fotos_gibdd %}
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsGibdd" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.estimation.fotos_gibdd %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          
+                          {% if img.type_file == 'gibdd' %}
+                            
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">ГИБДД<label>
+                            </div>
+                        
+                          {% endif %}
+
+                        </div>
+
+                      {% endfor %}
+                      
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsGibdd"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsGibdd"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  </div>
+              
+              {% endif %}
+
+              </div>
+              
+            </div> 
+            
+            <hr style="width: 75%;">
+
+            <h6>Реестр залогов</h6>
+            
+            <div class="row g-1">
+              
+              <div class="col-sm-6">
+                
+                
+                
+                <div class="col-sm"> 
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="car_credit" {% if params.page_proverki.car_credit %} checked {% endif %}  disabled>
+                  </div> 
+                  <br>
+                </div>
+                
+              </div>
+              
+              <div class="col">
+
+                {% if params.estimation.fotos_reestr|length %}
+
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsReestr" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                        
+                    <div class="carousel-indicators">
+                      {% for img in params.estimation.fotos_reestr %}
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsReestr" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.estimation.fotos_reestr %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          
+                          {% if img.type_file == 'reestr' %}
+                            
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">Реестр залогов<label>
+                            </div>
+                        
+                          {% endif %}
+
+                        </div>
+
+                      {% endfor %}
+                      
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsReestr"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsReestr"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  </div>
+              
+              {% endif %}
+
+              </div>
+              
+            </div> 
+
+            <hr style="width: 75%;">
+
+            <h6>Рынок</h6>
+            
+            <div class="row g-1">
+              
+          
+              <div class="col">
+
+                {% if params.estimation.fotos_market|length %}
+
+                  <div style="object-fit: cover; border-radius: 10px; max-height: 450px;" id="carouselExampleIndicatorsMarket" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                        
+                    <div class="carousel-indicators">
+                      {% for img in params.estimation.fotos_market %}
+                        <button type="button" data-bs-target="#carouselExampleIndicatorsMarket" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                      {% endfor %}
+                    </div>
+                    
+                    <div class="carousel-inner">
+                      
+                      {% for img in params.estimation.fotos_market %}
+                      
+                        <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px;" src="{{img.get_absolute_url}}" >
+                          
+                          {% if img.type_file == 'reestr' %}
+                            
+                            <div class="carousel-caption d-md-block bg-title-slider">
+                                <label class="fs-6">Реестр залогов<label>
+                            </div>
+                        
+                          {% endif %}
+
+                        </div>
+
+                      {% endfor %}
+                      
+                    </div>
+                    
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMarket"  data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMarket"  data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                    </button>
+                  </div>
+              
+              {% endif %}
+
+              </div>
+              
+            </div> 
+
+
+          {% endif %}
+
+        </div>
+
+        <div class="tab-pane {% if params.tabindex == 8 %} active {% endif %}" id="estimation_history" role="tabpanel" aria-labelledby="confim-tab">
+
+          {% if params.tabindex == 8 %}
+            <h5>История оценок</h5>
+            <hr style="width: 75%;">
+            
+              {% if params.estimations_info %}
+                {% for doc in params.estimations_info %}
+                    
+                  <div class="card {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %}" style="margin: 0.2rem;" > 
+                    <div class="card-body" >
+                      
+                      <div class="row">
+                        <div class="col-sm-auto">
+                          {% if doc.active %}  
+                            <span class="icon-mbri-success"></span>
+                          {% else %} 
+                            <span class="icon-mbri-close"></span>
+                          {% endif %}
+                        </div>
+
+                        <div class="col-sm">
+                          <div class="row" style="padding: 0.2em;">
+                        
+                            <div class="col-sm">
+                              {{doc.dataTime}}
+                            </div>
+        
+                            <div class="col-sm">
+                              {{doc.nomer}}
+                            </div>
+        
+                            <div class="col-sm">
+                              {{doc.store}}
+                            </div>
+                            
+                            <div class="col-sm">
+                              {{doc.type_reception}}
+                            </div>
+        
+                            <div class="col-sm">
+                              {{doc.clientName}}                       
+                            </div>
+        
+                            <div class="col-sm">
+                              {{doc.carsGRZ}}
+                            </div>
+        
+                            <div class="col-sm">
+                              {{doc.run|floatformat:"0g"}} км.
+                            </div>
+        
+                            <div class="col-sm">
+                              {{doc.staff}}
+                            </div>
+        
+                          </div>
+        
+                          <hr style="width: 75%;">
+        
+                          {{doc.description_podgotovka|default_if_none:"-"}}
+        
+                          <hr style="width: 75%;">
+        
+                          {{doc.description_op|default_if_none:"-"}}
+                        </div>
+
+                      </div>
+
+                      
+
+                      
+                      </div>
+                  </div>
+                  
+                    
+                {% endfor %} 
+              {% endif %}
+          {% endif %}
+
+        </div>
+
+        <div class="tab-pane {% if params.tabindex == 13 %} active {% endif %}" id="repair_history" role="tabpanel" aria-labelledby="confim-tab">
+
+          {% if params.tabindex == 13 %}
+            <h5>История ремонтов</h5>
+            <hr style="width: 75%;">
+            
+            {% if params.repairs_info %}
+              {% for doc in params.repairs_info %}
+                  
+                <div class="card {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %}" style="margin: 0.2rem;"> 
+                  <div class="card-body" style="padding: 0;">
+                    
+                    <div class="row" style="padding: 0.2em;">
+                      <div class="col-sm">
+                        {{doc.dataTime}}
+                      </div>
+                      <div class="col-sm">
+                        {{doc.nomer}}
+                      </div>
+                      <div class="col-sm">
+                        {{doc.unit.name}}
+                      </div>
+                      <div class="col-sm">
+                        {{doc.typeRemont}}
+                      </div>
+                      <div class="col-sm">
+                        {{doc.cars_grz_board}}
+                      </div>
+                      <div class="col-sm">
+                        {{doc.run|floatformat:"0g"}} км.
+                      </div>
+                    </div>
+
+                    <hr style="width: 75%;">
+
+                    {{doc.customerWords}}
+
+                    <hr style="width: 75%;">
+
+                    <div class="row">
+                      <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+                                          
+                        <label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+                          
+                          <span class="icon-mbri-shopping-bag"></span> {{doc.products_count}}
+                          <div class="vr"></div>
+                          <span class="icon-mbri-setting3"></span> {{doc.works_count}}
+                          <div class="vr"></div>
+                          <span class="icon-mbri-add-submenu"></span> {{doc.recomendations_customer_count}}
+                          <div class="vr"></div>
+                          <span class="icon-mbri-website-theme"></span> {{doc.recomendations_mcu_count}}
+
+                        </label>
+                        
+                      </div>
+
+                      <div class="col text-end">
+                        <label class="fs-4 
+                          {% if doc.recomendations_new > 0 %}
+                            bg-warning
+                          {% elif doc.closed %} 
+                            bg-success
+                          {% else %}
+                            bg-danger
+                          {% endif %} 
+                        bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{doc.amount|floatformat:"2g"}} &#8381;</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                  
+              {% endfor %} 
+            {% endif %}
+          {% endif %}
+
+        </div>
+
+        <div class="tab-pane {% if params.tabindex == 9 %} active {% endif %}" id="page_soglasovanie" role="tabpanel" aria-labelledby="confim-tab">
+
+          {% if params.tabindex == 9 %}
+            <h5>Согласование</h5>
+            <hr style="width: 75%;">
+            
+            <div class="row g-1">
+              
+              <div class="col-sm">
+                <div class="form-floating">
+                  <input class="form-control form-control-sm" type="text" id="price_reception" name="price_reception" value="{{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381;">
+                  <label for="floatingInput">Цена приема</label>
+                </div>
+                <br>
+
+                <div class="form-floating">
+                  <input class="form-control form-control-sm" type="text" id="price_sale" name="price_sale" value="{{params.estimation.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381;">
+                  <label for="floatingInput">Цена продажи</label>
+                </div>
+                <br>
+
+              </div>
+
+              <div class="col-sm">
+                <div class="form-group">
+                  <label for="exampleFormControlTextarea1">Комментарий оценщика</label>
+                  <textarea class="form-control" id="exampleFormControlTextarea1" rows="4">{{params.estimation.page_soglasovanie.comment}}</textarea>
+                </div>
+              </div>
+
+            </div>
+
+            <hr style="width: 75%;">
+            <h5>Участники <button style="padding: 5px 10px;" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#exampleModalUsers" data-bs-whatever="@mdo">
+              <span class="icon-mbri-edit2" ></span> 
+            </button></h5>
+            
+            {% for access_user in params.estimation.access_user.all %}
+              <button style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
+                {% if access_user.profiles.eco_name != '' %} {{access_user.profiles.eco_name}} {% else %} {{access_user.last_name}} {{access_user.first_name}} {% endif %}
+              </button>
+            {% endfor %}
+              
+            
+            
+            
+            <div class="modal fade" id="exampleModalUsers" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                <div class="modal-content">
+                <div class="modal-header">
+                  <input class="form-control form-control-sm" type="text" id="filter_user" name="filter_user" value="" onkeyup="myFunction()" placeholder="Поиск...">
+            
+                  <hr>
+
+                </div>
+                
+                  <div class="modal-body">
+
+                    <ul id="myUL" style="margin: 0rem; padding: 0rem;">
+                      
+                  
+                      {% for user_add in params.users %}
+                      
+                        
+                          <li style="margin-bottom: 0.2rem; padding: 0.3rem;" class="btn text-start container-fluid btn-outline-secondary">
+                            <a href="{{request.get_full_path}}&add_u={{user_add.id}}" class="text-dark" >
+                              <div class="row g-1">
+                                <div class="col-1 align-self-center">
+                                  <span class="icon-mbri-plus"></span>
+                                </div>
+                                <div class="col-11">
+                                  {% if user_add.profiles__eco_name != None and user_add.profiles__eco_name|length > 4 %}
+
+                                    {{user_add.profiles__eco_name}} <br> -
+
+                                  {% else %}
+                                    
+                                    {{user_add.last_name}} {{user_add.first_name}} <br> {{user_add.email}}
+
+                                  {% endif %}
+                                </div>
+                              </div>
+                            </a>
+                          </li>
+                        
+
+                      {% endfor %}
+
+                    </ul>
+                    
+                    <script>
+                      function myFunction() {
+                        // Объявлять переменные
+                        var input, filter, ul, li, a, i, txtValue;
+                        input = document.getElementById('filter_user');
+                        filter = input.value.toUpperCase();
+                        ul = document.getElementById("myUL");
+                        li = ul.getElementsByTagName('li');
+                      
+                        // Выполните цикл по всем элементам списка и скройте те, которые не соответствуют запросу поиска
+                        for (i = 0; i < li.length; i++) {
+                          a = li[i].getElementsByTagName("a")[0];
+                          txtValue = a.textContent || a.innerText;
+                          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            li[i].style.display = "";
+                          } else {
+                            li[i].style.display = "none";
+                          }
+                        }
+                      }
+                      </script>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr style="width: 75%;">
+            
+            <div class="row g-1">
+              
+
+              <div class="col-sm-6">
+                <form method="post" name="save_price_before_kd">
+                  {% csrf_token %}
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="number" id="price_before_kd" name="price_before_kd" value="{{params.estimation.page_soglasovanie.price_before_kd}}" {% if params.estimation.staff_eco_1 != request.user %} readonly {% endif %} >
+                    <label for="floatingInput">Цена до диагностики &#8381;</label>
+                  </div>
+
+                  <br>
+                  
+                  {% if params.estimation.staff_eco_1 != None and params.estimation.staff_eco_2 == None %}
+                    <button type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Сохранить</button>
+                  {% endif %}
+
+                </form>
+                
+              </div>
+
+              {% if params.estimation.staff_eco_1 != None %}
+                <div class="col-sm-6">
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="text" id="staff_eco_1" name="staff_eco_1" value="{% if params.estimation.staff_eco_1.profiles.eco_name != None %} {{params.estimation.staff_eco_1.profiles.eco_name}} {% else %} {{params.estimation.staff_eco_1.last_name}} {{params.estimation.staff_eco_1.first_name}} {% endif %}" readonly>
+                    <label for="floatingInput">Согласующий</label>
+                  </div>
+                </div>
+              {% else %}
+                {% if request.user.profiles.eco %}
+                    {% if params.estimation.staff_eco_1 == None %}  
+                      <div class="col-sm-6">
+                        <a href="{{request.get_full_path}}&start_eco_1=1" class="btn btn-outline-success"><span class="icon-mbri-play"></span> Принять в работу </a>
+                      </div>
+                    {% endif %}  
+                {% endif %}
+              {% endif %}
+
+            </div>
+
+            
+            {% if params.estimation.page_soglasovanie.price_before_kd > 0 %}
+            
+            <hr style="width: 75%;">
+
+            <div class="row g-1 ">
+              
+              
+              <div class="col-sm-6">
+                
+                <form method="post" name="save_price_after_kd">
+                  {% csrf_token %}
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="number" id="price_after_kd" name="price_after_kd" value="{{params.estimation.page_soglasovanie.price_after_kd}}">
+                    <label for="floatingInput">Цена после диагностики &#8381;</label>
+                  </div>
+                
+                  <br>
+                  
+                  {% if params.estimation.staff_eco_2 != None %}
+                    <button type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Сохранить</button>
+                  {% endif %} 
+
+                </form>
+
+              </div>
+
+              {% if params.estimation.staff_eco_2 != None %}
+                <div class="col-sm-6">
+                  <div class="form-floating">
+                    <input class="form-control form-control-sm" type="text" id="staff_eco_1" name="staff_eco_2" value="{% if params.estimation.staff_eco_2.profiles.eco_name != None %} {{params.estimation.staff_eco_2.profiles.eco_name}} {% else %} {{params.estimation.staff_eco_2.last_name}} {{params.estimation.staff_eco_2.first_name}} {% endif %}" readonly>
+                    <label for="floatingInput">Согласующий</label>
+                  </div>
+                </div>
+              {% else %}
+                {% if request.user.profiles.eco %}
+                  {% if params.estimation.staff_eco_2 == None %}  
+                    <div class="col-sm-6">
+                      <a href="{{request.get_full_path}}&start_eco_2=2" class="btn btn-outline-success"><span class="icon-mbri-play"></span> Принять в работу </a>
+                    </div>
+                  {% endif %}  
+                {% endif %}
+              {% endif %}
+
+            </div>
+            {% endif %}
+
+
+          {% endif %}
+
+        </div>
+
+
+        <div class="tab-pane {% if params.tabindex == 17 %} active {% endif %}" id="repair_history" role="tabpanel" aria-labelledby="confim-tab">
+          
+          {% if params.tabindex == 17 %}
+            <h5>Все фотографии осмотра автомобиля</h5>
+            <hr style="width: 75%;">
+            
+              <div class="row justify-content-center" style="padding: 0; width: 100%;">
+                <div class="col-sm content-head" style="padding: 0;">
+                  <div class="gallery-container">
+                  
+                    {% for files in params.estimation.get_files_all %}
+                                
+                      <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+                        
+                          <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
+                          {% if forloop.first %}
+                            <div class="gallery-count bg-count fw-bold">
+                              1 / {{params.estimation.get_files_all|length}}
+                            </div>
+                          {% endif %}
+                        
+                      </div>
+                      
+                    {% endfor %}
+                    
+                  </div>
+                </div>
+              </div>
+                
+            
+          {% endif %}
+
+        </div>
+
+
+      </div>
+
+    </main>
+    
+  </div>
+	         
+  <br>
+  
+  <script>
+    $(".js-for-modal-open").click(function(){
+      alert("Got it!");
+    });
+
+    $(document).ready(function(){
+      $('#select_page').change(function(){
+        reload($(this).val());
+      });
+    });
+  </script>
+
+
+  <script language="JavaScript">
+    function reload(id){
+      var url = new URL(document.location.href);
+      url.searchParams.set('page', id)
+      document.location.href  = url.href;
+    }
+  </script>
+
+
+{% endif %}
+<!--
+<div class="card"> 
+  <h5 class="card-header">Интерактивная оценка</h5>
+  <div class="card-body text-success">
+  
+  </div>
+</div>
+-->
+
+{% endblock %}

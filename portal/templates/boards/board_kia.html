@@ -1,0 +1,130 @@
+{% extends 'base_web_board.html' %}
+
+{% block refresh %}content="60;URL={{params.url_next}}"{% endblock %} 
+
+{% block title %} Добро пожаловать {% endblock %}
+
+
+{% block content %}
+
+<style>
+
+.table_style {
+  border-collapse: collapse;
+  width: 100%;  
+}
+
+.table_td {
+  border: 1px solid white;
+  text-align: center;
+}
+
+.table_td_left {
+  text-align: left;
+}
+</style>
+
+<body >
+  <script language="JavaScript">
+     function zero_first_format(value)
+     {
+         if (value < 10)
+         {
+             value='0'+value;
+         }
+         return value;
+     }
+     function fulltime () {
+       var time = new Date();
+       var hours = zero_first_format(time.getHours());
+       var minutes = zero_first_format(time.getMinutes());
+       var seconds = zero_first_format(time.getSeconds());
+       
+       var day = zero_first_format(time.getDate());
+       var month = zero_first_format(time.getMonth()+1);
+       var year = time.getFullYear()
+
+       var clockW = hours + ":" + minutes;
+       document.getElementById('clock').innerHTML = clockW;
+       setTimeout('fulltime()', 500)
+   }
+   </script>
+   
+   <script language="JavaScript">
+     fulltime ();
+   </script>
+   
+   
+   <div id="page">
+     <div id="list">
+      <div style="divGreen">
+        {% if params.unit %}
+    <table class="table_style">
+      <tr>
+        <th style="width: 200px">
+          {% if params.unit.main_photo %}
+            <img style="max-width: 200px; max-height: 150px" src = "{{params.unit.main_photo.url}}">
+        {% endif %}
+          
+        </th>
+        <th style="text-align: left; vertical-align: center;">
+          <b>
+            <label style="text-align: left; font-size:30px;"> Добро пожаловать!</label>    
+          </b>
+        </th>
+        <th style="width: 250px; text-align: right; vertical-align: top;">
+          <b><big><label style = 'font-size:30px;' id = "clock"></label></big></b>
+        </th>
+      </tr>
+    </table>
+
+  <script language="JavaScript">
+    fulltime ();
+  </script>
+
+{% if params.docs %}
+
+          <table class="table_style">
+          
+            <tr>
+              <th>Время</th>
+              <th>Модель</th>
+              <th>Гос. номер</th>
+              <th>Сервисный-консультант</th>
+              <th>Статус</th>
+              <th>Время выдачи</th>
+            </tr>
+            
+            {% for doc in params.docs %}
+              <tr>
+                <td class="table_td">{{doc.timeStr}}</td>
+                <td class="table_td">{{doc.carsName}}</td>
+                <td class="table_td">{{doc.carsGRZ}}</td>
+                <td class="table_td">
+                  {% if doc.master.main_photo %}
+                    <img class = 'imgLogo' style="max-height: 100px;" src = "{{doc.master.main_photo.url}}">
+                  {% endif %}
+                  <label style="text-align: center;"> {{doc.master}}</label>
+                </td>
+                <td class="table_td">{{doc.status}}</td>
+                <td class="table_td"></td>
+              </tr>
+              
+            {% endfor %}
+        
+          </table>
+      
+            {% endif %}
+  {% endif %}
+        
+       </div> 
+     </div>
+
+ 
+   </div>  
+
+</body>
+
+  
+
+{% endblock %}

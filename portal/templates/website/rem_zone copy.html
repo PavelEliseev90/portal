@@ -1,0 +1,734 @@
+{% extends 'base_web.html' %}
+
+{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+
+{% block title %} ремонтная зона {% endblock %}
+    
+{% block content %}
+
+
+<div class="row g-1">
+  <div class="row g-1">
+    <div class="col-sm">
+      <div class="card" style="border-color: #5D9B9B;">
+        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-secondary bg-opacity-75">
+          <span class="icon-mbri-play"> </span> Приемка 
+          <span class="visually-hidden"></span>
+        </span>
+        <div class="card-body">
+          <div class="row">
+
+          {% for doc_zn in params.docs_zn %}
+          
+            {% if doc_zn.performers_count == 0 %}
+              <div class="col-sm">
+                
+                <div class="card mb-1" data-bs-toggle="modal" data-bs-target="#example_priemka_{{forloop.counter}}">
+                  <div class="card-body bg-light">
+                    
+                      <p class="fs-6 fw-bold" style = "margin-bottom: 0px;">{{doc_zn.carsGRZ}}</p>
+                      <p class="fs-6 fw-normal" style = "margin-bottom: 0px;">{{doc_zn.cars.mark}} {{doc_zn.cars.model}}</p>
+                      <p class="fs-6 fw-normal" style = "margin-bottom: 0px;">{{doc_zn.typeRemont|truncatechars:20}}</p>
+                    
+                  </div>
+                </div>
+                
+              </div>
+
+              <div class="modal fade" id="example_priemka_{{forloop.counter}}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h6 class="modal-title" id="exampleModalCenteredScrollableTitle">Заказ - наряд - {{doc_zn.nomer}} от {{doc_zn.dataTime|date:"d.m.Y H:i"}}</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                    
+                      
+
+                        <div class="row justify-content-center" style="padding: 15px;">
+      
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #E4717A; border-radius: 100px; padding: 10px; margin: 10px;">
+                            <p class="fs-6 fw-bold text-center" style="color: #E4717A; margin-bottom: 0px;"> Приемка </p> 
+                          </div>
+                          <div class="col-sm-auto align-self-center justify-content-center" style="margin: 10px; text-align: center;">
+                            <div class="progress " style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px dashed #FFCF48; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #FFCF48; margin-bottom: 0px;"> Мойка </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center justify-content-center" style="outline: 3px dashed #FFCF48; border-radius: 100px; margin: 10px;" >
+                            <p class="fs-6 fw-normal text-center" style="color: #FFCF48; margin-bottom: 0px;"> Ожидание ремонта </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center justify-content-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px dashed #FFCF48; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #FFCF48; margin-bottom: 0px;"> Ремонт </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px dashed #FFCF48; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #FFCF48; margin-bottom: 0px;"> Выдача </p> 
+                          </div> 
+                        
+                      </div>
+
+            
+                      <hr>
+                        {{doc_zn.customerWords}}
+                      <hr>
+                      
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="icon-mbri-edit"></span> Данные документа
+                            </div>
+                            <div class="card-body">
+                                
+                                <div class="table-responsive-sm">
+                                    <table class="table table-hover table-striped table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td>Вид ремонта:</td>
+                                                <td>{{doc_zn.typeRemont}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Автомобиль:</td>
+                                                <td>{{doc_zn.cars.mark}} {{doc_zn.cars.model}} {{doc_zn.cars.vin}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Гос.номер:</td>
+                                                <td>{{doc_zn.carsGRZ}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Пробег:</td>
+                                                <td>{{doc_zn.run}} км.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Сумма:</td>
+                                                <td>{{doc_zn.amount}} &#8381;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <hr>
+
+                                <div class="accordion accordion-flush" id="accordionFlushExample">
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                                        Работы - {{doc_zn.works|length}} ({{doc_zn.works_amount}} &#8381;) 
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                        {% if doc_zn.works|length == 0 %} 
+                                            Работы в заказ наряде отсутствуют
+                                        {% else %}
+                                            <div class="table-responsive-sm">
+                                                <table class="table table-hover table-striped table-sm">
+                                                    <tbody>
+                                                        {% for work in doc_zn.works %}
+                                                        <tr>
+                                                            <td>{{work.work}}</td>
+                                                            <td>{{work.quantity}}</td>
+                                                            <td>{{work.price}}</td>
+                                                            <td>{{work.amount}}</td>
+                                                        </tr>     
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingTwo">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                                        Товары - {{doc_zn.products|length}}  ({{doc_zn.products_amount}} &#8381;) 
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                        {% if doc_zn.products|length == 0 %} 
+                                            Товары в заказ наряде отсутствуют
+                                        {% else %}
+                                            <div class="table-responsive-sm">
+                                                <table class="table table-hover table-striped table-sm">
+                                                    <tbody>
+                                                        {% for product in doc_zn.products %}
+                                                        <tr>
+                                                        <td>{{product.product}}</td>
+                                                        <td>{{product.quantity}}</td>
+                                                        <td>{{product.price}}</td>
+                                                        <td>{{product.amount}}</td>
+                                                        </tr>     
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+                                            Рекомендации - 0
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                            Извините рекомендации будут чуть позже - они еще не настроены
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    
+                
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+
+                </div>
+                </div>
+              </div>
+
+            {% endif %}
+          {% endfor %}
+
+        </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row g-1">
+    <div class="col-sm">
+      <div class="card" style="border-color: #E6E6FA;">
+        <div class="card-header text-center bg-white">
+          Мойка
+        </div>
+        <div class="card-body bg-primary50">
+          <div class="row">
+
+          
+
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm">
+      <div class="card" style="border-color: #FFCF48;">
+        <div class="card-header text-center bg-white  border-white">
+          Ожидает ремонта
+        </div>
+        <div class="card-body">
+          
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row g-1">
+
+    <div class="col-sm">
+      <div class="card" style="border-color: #E4717A;">
+        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger bg-opacity-75">
+          <span class="icon-mbri-setting3"> </span> Ремонт 
+          <span class="visually-hidden"></span>
+        </span>
+        <div class="card-body">
+          {% for doc_zn in params.docs_zn %}
+            {% if doc_zn.performers_count > 0 and doc_zn.active == False %}
+              <div class="col-sm">
+                
+                <div class="card mb-1" data-bs-toggle="modal" data-bs-target="#example_priemka_{{forloop.counter}}">
+                  <div class="card-body bg-light">
+                    
+                      <p class="fs-6 fw-bold" style = "margin-bottom: 0px;">{{doc_zn.carsGRZ}}</p>
+                      <p class="fs-6 fw-normal" style = "margin-bottom: 0px;">{{doc_zn.cars.mark}} {{doc_zn.cars.model}}</p>
+                      <p class="fs-6 fw-normal" style = "margin-bottom: 0px;">{{doc_zn.typeRemont|truncatechars:15}}</p>
+                    
+                  </div>
+                </div>
+                
+              </div>
+
+              <div class="modal fade" id="example_priemka_{{forloop.counter}}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h6 class="modal-title" id="exampleModalCenteredScrollableTitle">Заказ - наряд - {{doc_zn.nomer}} от {{doc_zn.dataTime|date:"d.m.Y H:i"}}</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                    
+                      
+
+                        <div class="row justify-content-center" style="padding: 15px;">
+      
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #3EB489; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #3EB489; margin-bottom: 0px;"> Приемка </p> 
+                          </div>
+                          <div class="col-sm-auto align-self-center justify-content-center" style="margin: 10px; text-align: center;">
+                            <div class="progress " style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #3EB489; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #3EB489; margin-bottom: 0px;"> Мойка </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center justify-content-center" style="outline: 3px solid #3EB489; border-radius: 100px; margin: 10px;" >
+                            <p class="fs-6 fw-normal text-center" style="color: #3EB489; margin-bottom: 0px;"> Ожидание ремонта </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center justify-content-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #E4717A; border-radius: 100px; margin: 10px; padding: 10px;">
+                            <p class="fs-6 fw-bold text-center" style="color: #E4717A; margin-bottom: 0px;"> Ремонт </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px dashed #FFCF48; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #FFCF48; margin-bottom: 0px;"> Выдача </p> 
+                          </div> 
+                        
+                      </div>
+
+            
+                    <hr>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="icon-mbri-edit"></span> Данные документа
+                            </div>
+                            <div class="card-body">
+                                
+                                <div class="table-responsive-sm">
+                                    <table class="table table-hover table-striped table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td>Вид ремонта:</td>
+                                                <td>{{doc_zn.typeRemont}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Автомобиль:</td>
+                                                <td>{{doc_zn.cars.mark}} {{doc_zn.cars.model}} {{doc_zn.cars.vin}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Гос.номер:</td>
+                                                <td>{{doc_zn.carsGRZ}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Пробег:</td>
+                                                <td>{{doc_zn.run}} км.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Сумма:</td>
+                                                <td>{{doc_zn.amount}} &#8381;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <hr>
+
+                                <div class="accordion accordion-flush" id="accordionFlushExample">
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                                        Работы - {{doc_zn.works|length}} ({{doc_zn.works_amount}} &#8381;) 
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                        {% if doc_zn.works|length == 0 %} 
+                                            Работы в заказ наряде отсутствуют
+                                        {% else %}
+                                            <div class="table-responsive-sm">
+                                                <table class="table table-hover table-striped table-sm">
+                                                    <tbody>
+                                                        {% for work in doc_zn.works %}
+                                                        <tr>
+                                                            <td>{{work.work}}</td>
+                                                            <td>{{work.quantity}}</td>
+                                                            <td>{{work.price}}</td>
+                                                            <td>{{work.amount}}</td>
+                                                        </tr>     
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingTwo">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                                        Товары - {{doc_zn.products|length}}  ({{doc_zn.products_amount}} &#8381;) 
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                        {% if doc_zn.products|length == 0 %} 
+                                            Товары в заказ наряде отсутствуют
+                                        {% else %}
+                                            <div class="table-responsive-sm">
+                                                <table class="table table-hover table-striped table-sm">
+                                                    <tbody>
+                                                        {% for product in doc_zn.products %}
+                                                        <tr>
+                                                        <td>{{product.product}}</td>
+                                                        <td>{{product.quantity}}</td>
+                                                        <td>{{product.price}}</td>
+                                                        <td>{{product.amount}}</td>
+                                                        </tr>     
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+                                            Рекомендации - {{doc_zn.recomendationsZN_count}}
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                          {% if doc_zn.recomendationsZN|length == 0 %} 
+                                              Рекомендации отсутствуют
+                                          {% else %}
+                                              <div class="table-responsive-sm">
+                                                  <table class="table table-hover table-striped table-sm">
+                                                      <tbody>
+                                                          {% for recomendation in doc_zn.recomendationsZN %}
+                                                            <tr>
+                                                              <td>{{product.product}}</td>
+                                                              <td>{{product.quantity}}</td>
+                                                              <td>{{product.price}}</td>
+                                                              <td>{{product.amount}}</td>
+                                                            </tr>     
+                                                          {% endfor %}
+                                                      </tbody>
+                                                  </table>
+                                              </div>
+                                          {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    
+                
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+
+                </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm">
+      <div class="card" style="border-color: #3EB489;">
+        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-75">
+          <span class="icon-mbri-success"> </span> Выдан 
+          <span class="visually-hidden"></span>
+        </span>
+        <div class="card-body">
+          {% for doc_zn in params.docs_zn %}
+            {% if doc_zn.performers_count > 0 and doc_zn.active == True %}
+              <div class="col-sm">
+                
+                <div class="card mb-1" data-bs-toggle="modal" data-bs-target="#example_priemka_{{forloop.counter}}">
+                  <div class="card-body bg-light">
+                    
+                      <p class="fs-6 fw-bold" style = "margin-bottom: 0px;">{{doc_zn.carsGRZ}}</p>
+                      <p class="fs-6 fw-normal" style = "margin-bottom: 0px;">{{doc_zn.cars.mark}} {{doc_zn.cars.model}}</p>
+                      <p class="fs-6 fw-normal" style = "margin-bottom: 0px;">{{doc_zn.typeRemont|truncatechars:15}}</p>
+                    
+                  </div>
+                </div>
+                
+              </div>
+
+              <div class="modal fade" id="example_priemka_{{forloop.counter}}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h6 class="modal-title" id="exampleModalCenteredScrollableTitle">Заказ - наряд - {{doc_zn.nomer}} от {{doc_zn.dataTime|date:"d.m.Y H:i"}}</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                    
+                      
+
+                        <div class="row justify-content-center" style="padding: 15px;">
+      
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #3EB489; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #3EB489; margin-bottom: 0px;"> Приемка </p> 
+                          </div>
+                          <div class="col-sm-auto align-self-center justify-content-center" style="margin: 10px; text-align: center;">
+                            <div class="progress " style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #3EB489; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #3EB489; margin-bottom: 0px;"> Мойка </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center justify-content-center" style="outline: 3px solid #3EB489; border-radius: 100px; margin: 10px;" >
+                            <p class="fs-6 fw-normal text-center" style="color: #3EB489; margin-bottom: 0px;"> Ожидание ремонта </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center justify-content-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px solid #E4717A; border-radius: 100px; margin: 10px; padding: 10px;">
+                            <p class="fs-6 fw-bold text-center" style="color: #E4717A; margin-bottom: 0px;"> Ремонт </p> 
+                          </div> 
+                          <div class="col-sm-auto align-self-center" style="margin: 10px; text-align: center;">
+                            <div class="progress" style="height: 3px; width: 4rem;">
+                              <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-sm-auto align-self-center" style="outline: 3px dashed #FFCF48; border-radius: 100px; margin: 10px;">
+                            <p class="fs-6 fw-normal text-center" style="color: #FFCF48; margin-bottom: 0px;"> Выдача </p> 
+                          </div> 
+                        
+                      </div>
+
+            
+                    <hr>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="icon-mbri-edit"></span> Данные документа
+                            </div>
+                            <div class="card-body">
+                                
+                                <div class="table-responsive-sm">
+                                    <table class="table table-hover table-striped table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td>Вид ремонта:</td>
+                                                <td>{{doc_zn.typeRemont}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Автомобиль:</td>
+                                                <td>{{doc_zn.cars.mark}} {{doc_zn.cars.model}} {{doc_zn.cars.vin}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Гос.номер:</td>
+                                                <td>{{doc_zn.carsGRZ}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Пробег:</td>
+                                                <td>{{doc_zn.run}} км.</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Сумма:</td>
+                                                <td>{{doc_zn.amount}} &#8381;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <hr>
+
+                                <div class="accordion accordion-flush" id="accordionFlushExample">
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                                        Работы - {{doc_zn.works|length}} ({{doc_zn.works_amount}} &#8381;) 
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                        {% if doc_zn.works|length == 0 %} 
+                                            Работы в заказ наряде отсутствуют
+                                        {% else %}
+                                            <div class="table-responsive-sm">
+                                                <table class="table table-hover table-striped table-sm">
+                                                    <tbody>
+                                                        {% for work in doc_zn.works %}
+                                                        <tr>
+                                                            <td>{{work.work}}</td>
+                                                            <td>{{work.quantity}}</td>
+                                                            <td>{{work.price}}</td>
+                                                            <td>{{work.amount}}</td>
+                                                        </tr>     
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingTwo">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                                        Товары - {{doc_zn.products|length}}  ({{doc_zn.products_amount}} &#8381;) 
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                        {% if doc_zn.products|length == 0 %} 
+                                            Товары в заказ наряде отсутствуют
+                                        {% else %}
+                                            <div class="table-responsive-sm">
+                                                <table class="table table-hover table-striped table-sm">
+                                                    <tbody>
+                                                        {% for product in doc_zn.products %}
+                                                        <tr>
+                                                        <td>{{product.product}}</td>
+                                                        <td>{{product.quantity}}</td>
+                                                        <td>{{product.price}}</td>
+                                                        <td>{{product.amount}}</td>
+                                                        </tr>     
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                    <h2 class="accordion-header" id="flush-headingThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+                                            Рекомендации - {{doc_zn.recomendationsZN_count}}
+                                        </button>
+                                    </h2>
+                                    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                        <div class="accordion-body">
+                                          {% if doc_zn.recomendationsZN|length == 0 %} 
+                                              Рекомендации отсутствуют
+                                          {% else %}
+                                              <div class="table-responsive-sm">
+                                                  <table class="table table-hover table-striped table-sm">
+                                                      <tbody>
+                                                          {% for recomendation in doc_zn.recomendationsZN %}
+                                                            <tr>
+                                                              <td>{{product.product}}</td>
+                                                              <td>{{product.quantity}}</td>
+                                                              <td>{{product.price}}</td>
+                                                              <td>{{product.amount}}</td>
+                                                            </tr>     
+                                                          {% endfor %}
+                                                      </tbody>
+                                                  </table>
+                                              </div>
+                                          {% endif %}
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    
+                
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+
+                </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+
+  <br>
+  <br>
+  <br>
+  <br>
+
+
+</div>
+
+
+
+
+
+
+
+
+ 
+{% endblock %}

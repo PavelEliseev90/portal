@@ -1,0 +1,1167 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - единный центр оценки онлайн {% endblock %}
+{% block title_navbar %} - единный центр оценки онлайн {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+
+
+<!--
+<form method="get">
+  
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+      <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+        <div class="modal-body">
+          
+          <div class="row">
+
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+                <label for="floatingInput">Дата начала</label>
+              </div>
+        
+            </div>
+        
+            <div class="col-sm">
+        
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+                <label for="floatingInput">Дата окончания</label>
+              </div>
+        
+            </div>
+        
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
+                <label for="floatingInput">Номер РЛК</label>
+              </div>
+        
+            </div>
+        
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.filtr.customer}}">
+                <label for="floatingInput">Клиент</label>
+              </div>
+        
+            </div>
+            </div>
+        
+            <div class="row">
+            
+              <div class="col-sm">
+                <div class="form-floating mb-3">							
+                  <select class="form-select" id="status_id" name="status_id" placeholder="">
+                    <option></option>
+                    {% for status in params.selected.statuses %}
+                      <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
+                    {% endfor %}
+                  </select>
+                  <label for="floatingInput">Статус</label>
+                </div>
+              </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">							
+                <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
+                  <option></option>
+                  {% for type_reception in params.selected.type_receptions %}
+                    <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+                  {% endfor %}
+                </select>
+                <label for="floatingInput">Тип приема</label>
+              </div>
+            </div>
+        
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">							
+                <select class="form-select" id="unit_id" name="unit_id" placeholder="">
+                  <option></option>
+                  {% for unit in params.selected.units %}
+                    <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
+                  {% endfor %}
+                </select>
+                <label for="floatingInput">Подразделение ДЦ</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.filtr.staff}}">
+                <label for="floatingInput">Оценщик</label>
+              </div>
+        
+            </div>
+        
+          </div>  
+          
+          {% if params.filters_user|length > 0 %}
+            
+            <hr>
+            
+            <div class="table-responsive">
+              <table class="table table-fit">
+                <tbody>
+                  <tr>
+                    {% for filter in params.filters_user %}
+                
+                      <td>
+                        <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn  {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
+                      </td>
+                    
+                    {% endfor %}
+                    
+                    <td>
+                      <button class="btn btn-outline-success" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
+                    </td>
+
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          {% endif %}
+        
+        </div>
+      
+        <div class="modal-footer">
+          <div class="row">
+            <div class="col-auto">
+              <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
+            </div>
+            <div class="col">
+              <button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
+          <label for="floatingInput">Наименование</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" name="save_filtr" type="submit" >Сохранить</button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+</form>
+
+<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			{% if params.filters_user|length > 0 %}
+					<div class="table-responsive">
+						<table class="table">
+						  <tbody>
+								
+							{% for filter in params.filters_user %}
+							<tr>
+								<td>
+									{{filter.name}}
+								</td>
+								<td>
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								</td>
+							</tr>
+							{% endfor %}
+								
+						  </tbody>
+						</table>
+					  </div>
+				{% endif %}
+		</div>
+		
+	  </div>
+	</div>
+</div>
+
+
+<form method="get" class="hidemobile">
+  
+  <div class="modal fade" id="exampleModalToggleNewFiltr" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
+          <label for="floatingInput">Наименование</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" name="save_filtr" type="submit" ><span class="icon-mbri-download"></span> Сохранить</button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+        <label for="floatingInput">Дата начала</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+        <label for="floatingInput">Дата окончания</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
+        <label for="floatingInput">Номер РЛК</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.filtr.customer}}">
+        <label for="floatingInput">Клиент</label>
+      </div>
+
+    </div>
+    </div>
+
+    <div class="row">
+      
+      <div class="col-sm">
+      
+        <div class="form-floating mb-3">
+          <input class="form-control form-control-sm" type="text" id="search" name="search" value="{{params.filtr.search}}">
+          <label for="floatingInput">VIN, Марка, Модель, Модификация, Оценщик</label>
+        </div>
+  
+      </div>
+
+      <div class="col-sm">
+        <div class="form-floating mb-3">							
+          <select class="form-select" id="status_id" name="status_id" placeholder="">
+            <option></option>
+            {% for status in params.selected.statuses %}
+              <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
+            {% endfor %}
+          </select>
+          <label for="floatingInput">Статус</label>
+        </div>
+      </div>
+
+    <div class="col-sm">
+      <div class="form-floating mb-3">							
+        <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
+          <option></option>
+          {% for type_reception in params.selected.type_receptions %}
+            <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+          {% endfor %}
+        </select>
+        <label for="floatingInput">Тип приема</label>
+      </div>
+    </div>
+
+
+    <div class="col-sm">
+      <div class="form-floating mb-3">							
+        <select class="form-select" id="unit_id" name="unit_id" placeholder="">
+          <option></option>
+          {% for unit in params.selected.units %}
+            <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
+          {% endfor %}
+        </select>
+        <label for="floatingInput">Подразделение ДЦ</label>
+      </div>
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.filtr.staff}}">
+        <label for="floatingInput">Оценщик</label>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="row">
+    
+    <div class="col-sm-auto align-self-center">
+      <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
+    </div>
+    
+    <div class="col-sm align-self-center">
+
+      <div class="row g-1">
+          
+        <div class="col-sm-auto align-self-center">
+          <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggleNewFiltr" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
+        
+          
+        </div>
+        
+        <div class="col-sm align-self-center">
+          
+          <div class="table-responsive">
+            <table class="table table-fit" style="margin: 0px;">
+              <tbody>
+                <tr>
+                  
+                  <td>
+                    <div class="vr"></div>
+                  </td>
+
+                  {% for filter in params.filters_user %}
+              
+                    <td>
+                      
+                        <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
+
+                    </td>
+                  
+                  {% endfor %}
+                  
+                  <td>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
+                  </td>
+    
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> 
+      
+    </div>
+
+  </div>
+  
+  <hr>
+
+</form>
+-->
+
+<div class="row g-1 align-self-center">
+  
+  <div class="col-sm">
+                
+    <div class="form-floating mb-3">
+      <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="">
+      <label for="floatingInput">VIN</label>
+    </div>
+
+  </div>
+  
+  <div class="col">
+    
+    <div class="form-floating mb-3">
+      <input class="form-control form-control-sm" type="text" id="search" name="search" value="{{params.filtr.search}}">
+      <label for="floatingInput">Марка, Модель, Модификация</label>
+    </div>
+
+  </div>
+  
+  <div class="col-auto align-items-center ">
+    <button class="btn btn-outline-dark justify-content-center" id="btn_start_search"><span class="icon-mbri-play" > </span></button>
+  </div>
+
+</div>
+
+<div class="hidemobile" style="position: fixed;
+bottom: 0px;
+right: 0px; 
+padding: 20px;
+z-index: 1030;">
+    <button type="button" class="btn bg-dark text-white" id="chat_open" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><span class="icon-mbri-chat"></span> Список чатов</button>
+</div>
+
+
+<div class="hidesite" style="position: fixed;
+bottom: 0px;
+right: 0px; 
+padding: 20px;
+z-index: 1044;">
+    <button type="button" class="btn bg-dark text-white" id="chat_open" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><span class="icon-mbri-chat"></span></button>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+    <h6 class="offcanvas-title" id="offcanvasRightLabel">Список чатов</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+</div>
+
+<div id="div_reconect" class="d-none align-items-center align-self-center">
+    <hr>
+    <label class="fs-6 fw-bold"> Соединение потеряно...</label>
+    <button class="btn btn-outline-danger" id="btn_reconect"><span class="icon-mbri-close"> </span> Переподключится</button>
+    <hr>
+</div>
+
+<div class="offcanvas-body">
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
+        <div class="container">
+        
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+                
+                {% if params.chats|length > 0 %}
+                    
+                    {% for message in params.chats %}
+                        <a href="{{message.name}}/" class="text-dark">
+                            <div class="item-chat-message{% if message.user == params.user %}-owner text-end{% endif %} col-12">
+                                <div class="item-chat-body{% if message.user == params.user %}-owner text-end{% endif %} " >
+                                    
+                                    <div class="item-content-chat">
+                                        <label class="item-subtitle">
+                                            {{message.rlk_unit}}
+                                            <br>
+                                            {{message.mark}} {{message.model}} {{message.modification}}
+                                            <br>
+                                            {{message.vin}}
+                                        </label>  
+                                        <hr>                                  
+                                    </div>
+                                    
+                                    <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} id='chat_m_id_{{message.id}}'">{{message.content}} <br> {{message.max_date}}</p>
+                                    
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+
+                {% endif %}
+               
+            </div>
+        </div>
+    </section>
+
+</div>
+</div>
+
+<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+
+<script>
+
+
+  function refresh_data(){
+        
+        document.querySelector('#message-list').innerHTML = '';
+
+        $.get( "js/get_chats_list/", function( data, status ) { 
+            
+            let i = data.length;
+           
+            for (s = 0; s < i; s++) { // используем существующую переменную
+
+            } 
+            
+	    })
+
+    }
+
+    $('#chat_open').click(function() {
+        scrollToBottom();
+    });
+   
+    $('#btn_reconect').click(function() {   
+        console.log('reconect');
+        connect_ws();
+        
+        $("#div_reconect").addClass('d-none');
+        
+        refresh_data();
+
+    });
+
+    function scrollToBottom(){
+        const divs = document.getElementById("message-list");
+        divs.scrollIntoViewIfNeeded();  
+    };
+
+    scrollToBottom();
+
+    function scrollIntoViewIfNotVisible(target) { 
+        if (target.getBoundingClientRect().bottom > window.innerHeight) {
+            target.scrollIntoView(false);
+        }
+        
+        if (target.getBoundingClientRect().top < 0) {
+            target.scrollIntoView();
+        } 
+    };
+
+    
+
+</script>
+
+<div class="toast-container position-fixed top-0 start-50 p-3" id="container_toast"  >
+
+</div>
+
+<div id="div_reconect_list" class="d-none align-items-center align-self-center">
+  <hr>
+  <label class="fs-6 fw-bold"> Соединение потеряно...</label>
+  <button class="btn btn-outline-danger" id="btn_reconect"><span class="icon-mbri-close"> </span> Переподключится</button>
+  <hr>
+</div>
+
+<div id="list_estimations">
+  
+</div>
+
+<div id="showmore-triger" data-page="1" data-max="15">
+	<img src="/media/loading.gif" alt="">
+</div>
+
+<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+
+   <script type="text/javascript">
+    
+    var page = 1;
+
+    var da = '';
+    
+     $(document).ready ( function(){
+        
+        refresh_data_online();
+        
+        connect_ws();
+        
+    });
+
+    $('#btn_start_search').click(function() {
+      
+      page = 1;
+      
+      document.querySelector('#list_estimations').innerHTML = '';    
+      
+      refresh_data_online(); 
+
+    });
+
+    function refresh_data_online(){
+        
+        var search  = $("#search").val();
+        var vin     = $("#vin").val();
+        
+        var url     = 'js/get_chats_list_online/?search=' + search + '&vin='+vin + '&page='+page;
+
+        $.get(url, function( data, status ) { 
+            
+            let i = data.length;
+            da = data;
+            for (s = 0; s < i; s++) { 
+                
+                let obj = data[s];
+                
+                var id  = obj.id;
+
+                var html = '';
+                
+                var mark            = obj.mark;
+                var model           = obj.model;
+                var modification    = obj.modification;
+                
+                var unit    = '';
+                if (obj.rlk_unit !== null){
+                    unit = obj.rlk_unit;
+                } else {
+                    unit = obj.rlk_unit_dc;
+                }
+
+                if (document.getElementById('list_data_' + id) === null ){
+
+                } else
+                {
+                  document.getElementById('list_data_' + id).remove();
+                };
+
+                
+                if (document.getElementById('chat_list_data_' + id) === null ){
+
+                } else
+                {
+                  document.getElementById('chat_list_data_' + id).remove();
+                };
+
+                if (mark !== null) {
+
+                } else {
+                    mark = '---';
+                    model = '';
+                    modification = '';
+                }
+
+                var h_status_estimation_id  = ' border_blue ';
+                var h_card_id               = ' bg-primary bg-opacity-25 ';
+                var bcp                   = '';
+
+                if (obj.status_estimation_id == 1 ){
+                  h_status_estimation_id = " border_gray  ";
+                  h_card_id = " bg-secondary bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 2 || obj.status_estimation_id == 9){
+                  h_status_estimation_id = " border_red " ;
+                  h_card_id = " bg-danger bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 3 ){
+                  h_card_id = " bg-warning bg-opacity-25  ";
+                  h_status_estimation_id = ' border_yeloow';
+                } else if (obj.status_estimation_id == 4 ){
+                  h_status_estimation_id = ' border_green';
+                  h_card_id = " bg-success bg-opacity-25  ";
+                  bcp = '<br>БЦП: ' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_bcp,)  + ' ₽';
+                } else if (obj.status_estimation_id == 5 ){
+                  h_status_estimation_id = ' border_blue';
+                  h_card_id = " bg-primary bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 6 ){
+                  h_status_estimation_id = ' border_orange';
+                  h_card_id = " bg-warning bg-opacity-50 ";
+                } else if (obj.status_estimation_id == 8){
+                  h_status_estimation_id = ' border_green';
+                  h_card_id = " bg-success bg-opacity-75 ";
+                  bcp = '<br>БЦП: ' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_bcp,)  + ' ₽';
+                };
+
+                var status_estimation = 'Новый';
+                if (obj.status_estimation.length > 0){
+                  status_estimation = obj.status_estimation;
+                };
+             
+                var date = new Date(obj.rlk_date);
+                var formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                var car_run = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_run,);
+                
+                var car_price_reception = "-";
+                if ( obj.car_price_reception != null){
+                  car_price_reception = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_reception,);
+                };
+
+                var car_price_before_kd = "-";
+                if ( obj.car_price_before_kd != null){
+                  car_price_before_kd = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_before_kd,);
+                };
+
+                var car_price_sale = "-";
+                if ( obj.car_price_sale != null){
+                  car_price_sale = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_sale,);
+                }
+                
+                var visible_badge = " d-none ";
+                if (obj.eco == false){
+                  visible_badge = "";  
+                };
+
+                html += '';
+                html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
+                html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
+                html += '      <div class="row g-1" style="padding:0;">        ';
+                html += '       <div class="col-sm"> <div class="row g-1 text-dark" style="padding:0;">';
+                html += '        ';
+                html += '        <div class="col-sm">';
+                html += '          <span class="icon-mbri-clock"></span> '  + status_estimation + '<br>' + obj.rlk_number + '<br>от ' + formattedDate + ' ';
+                html += '        </div>        ';
+                html += '';
+                html += '        <div class="col-sm ">';
+                html += '          <span class="icon-mbri-home"></span> ' + obj.type_estimation_ocenka + ' <br> ';
+                html += '          <span class="icon-mbri-home"></span> ' + unit + ' <br> ';
+                html += '        <span class="icon-mbri-user"></span> ' +  obj.staff_name + ' ';
+                html += '        </div>        ';
+                html += '   ';
+                html += '      <div class="col-sm-3 ">';
+                html += '          <hr class="hidesite" style="width: 75%;">';
+                html += '          ' + obj.mark + ' ' + obj.model + ' ' + obj.modification + ' ';
+                html += '          <br>' + obj.vin + ' / ' + obj.car_year  + ' г.в.  ';
+                html += '          <br>' + car_run  + ' км.  ';
+                html += '        </div>        ';
+                html += '      <div class="col-sm-2 ">';
+                html += '          <hr class="hidesite" style="width: 75%;">';
+                html += '          Прием: ' + car_price_reception + ' ₽';
+                html += '          <br>Продажа: ' + car_price_sale  + ' ₽';
+                html += '          ' + bcp  + '';
+                html += '          ';
+                html += '        </div>        ';
+                html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
+                html += '          ';
+                html += '        </div>';
+                html += '';
+                html += '';
+                html += '      </div> ';
+                html += '      <div class="" style="position : absolute; bottom:0; right:0"> ';
+                html += '       <a target="_blank" class="text-end text-dark d-flex justify-content-end" href="' + obj.rlk_id +'/?page=9" ><span class="icon-mbri-play"></span> Перейти</a> ';
+                html += '      </div> ';
+                html += '    </div></div>        ';
+                html += '  </div>  ';
+                html += '';
+
+                document.querySelector('#list_estimations').innerHTML = document.querySelector('#list_estimations').innerHTML  + html ;
+
+                
+                var html = '';
+                
+                var mark            = obj.mark;
+                var model           = obj.model;
+                var modification    = obj.modification;
+                
+                if (mark !== null) {
+
+                } else {
+                    mark = '---';
+                    model = '';
+                    modification = '';
+                }
+                var date_list = new Date(obj.max_date);
+                var formattedDate_list = date_list.toLocaleDateString() + ' ' + date_list.toLocaleTimeString();
+
+                html_list = '<a id="chat_list_data_' + id + '" href="' + obj.name + '/" target="_blank" class="text-dark" style="padding:0">'
+                html_list += '   <div class="item-chat-message col-12">'
+                html_list += '                <div class="item-chat-body " >'
+                html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p><hr style="margin:0.1rem;"><p class="item-time-chat" style="margin:0.1rem;">' + unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
+                html_list += '                    <div class="item-content-chat" style="margin:0.1rem;">'
+                html_list += '                        <hr style="margin:0.1rem;"> <label class="fs-6 item-subtitle">'
+                html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
+                html_list += '                         </label>  '
+                html_list += '                                                        '
+                html_list += '                    </div>'
+                html_list += '                </div>'
+                html_list += '            </div>'
+                html_list += '        </a>'
+
+                document.querySelector('#message-list').innerHTML = document.querySelector('#message-list').innerHTML  + html_list ;
+
+            } 
+            
+	    })
+
+    }
+
+    function connect_ws(){
+        
+      var wsProtocol = 'wss://';
+      var ws_url = 'ah.kors-group.com';
+
+      var chatSocket = new WebSocket(
+          wsProtocol
+          + ws_url
+          + '/ws/'
+          + 'rlk_list_eco'
+          + '/'
+      );
+        
+        chatSocket.onopen = function() {
+          
+          $("#div_reconect_list").addClass('d-none');
+          
+          refresh_data_online();
+
+        };
+
+        chatSocket.onmessage = function(e){
+            
+          document.getElementById('notif').play();
+          
+          const data = JSON.parse(e.data);
+
+          if (data.message){
+              
+            var link = '/eco/' + data.chat.replace('rlk_','') + '/';
+              
+            toast(data.chat, data.message , '22:10', link, ' ');
+            
+            refresh_info(data.chat);
+
+          };
+
+        };
+
+        chatSocket.onclose = function(e){
+            console.log('OFF');
+            setTimeout(function() {
+              connect_ws();
+
+            }, 1000);
+
+            $("#div_reconect_list").removeClass('d-none');
+            
+        };
+
+    };
+
+    function refresh_info(chat){
+      
+      $.get( "js/get_chats_list_online_info/" + chat + "/", function( data, status ) { 
+            
+            let i = data.length;
+            da = data;
+            for (s = 0; s < i; s++) { 
+                
+                let obj = data[s];
+                
+                var id  = obj.id;
+
+                var html = '';
+                
+                var mark            = obj.mark;
+                var model           = obj.model;
+                var modification    = obj.modification;
+                
+                if (document.getElementById('list_data_' + id) === null ){
+
+                } else
+                {
+                  document.getElementById('list_data_' + id).remove();
+                };
+
+                
+                if (document.getElementById('chat_list_data_' + id) === null ){
+
+                } else
+                {
+                  document.getElementById('chat_list_data_' + id).remove();
+                };
+
+                if (mark !== null) {
+
+                } else {
+                    mark = '---';
+                    model = '';
+                    modification = '';
+                }
+
+                var h_status_estimation_id = ' border_blue ';
+                var h_card_id = ' bg-primary bg-opacity-25 ';
+
+                if (obj.status_estimation_id == 1 ){
+                  h_status_estimation_id = " border_gray  ";
+                  h_card_id = " bg-secondary bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 2 || obj.status_estimation_id == 9){
+                  h_status_estimation_id = " border_red " ;
+                  h_card_id = " bg-danger bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 3 ){
+                  h_card_id = " bg-warning bg-opacity-25  ";
+                  h_status_estimation_id = ' border_yeloow';
+                } else if (obj.status_estimation_id == 4 ){
+                  h_status_estimation_id = ' border_green';
+                  h_card_id = " bg-success bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 5 ){
+                  h_status_estimation_id = ' border_blue';
+                  h_card_id = " bg-primary bg-opacity-25  ";
+                } else if (obj.status_estimation_id == 6 ){
+                  h_status_estimation_id = ' border_orange';
+                  h_card_id = " bg-warning bg-opacity-50 ";
+                } else if (obj.status_estimation_id == 8 ){
+                  h_status_estimation_id = ' border_green';
+                  h_card_id = " bg-success bg-opacity-75 ";
+                };
+
+                var status_estimation = 'Новый';
+                if (obj.status_estimation.length > 0){
+                  status_estimation = obj.status_estimation;
+                };
+             
+                var date = new Date(obj.rlk_date);
+                var formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                var car_run = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_run,);
+                
+                var car_price_reception = "-";
+                if ( obj.car_price_reception != null){
+                  car_price_reception = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_reception,);
+                };
+
+                var car_price_before_kd = "-";
+                if ( obj.car_price_before_kd != null){
+                  car_price_before_kd = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_before_kd,);
+                };
+
+                var car_price_sale = "-";
+                if ( obj.car_price_sale != null){
+                  car_price_sale = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_sale,);
+                };
+
+                var visible_badge = " d-none ";
+                if (obj.eco == false){
+                  visible_badge = "";  
+                };
+                
+                html += '';
+                html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
+                html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
+                html += '      <div class="row g-1" style="padding:0;">        ';
+                html += '       <div class="col-sm"> <div class="row g-1 text-dark" style="padding:0;">';
+                html += '        ';
+                html += '        <div class="col-sm">';
+                html += '          <span class="icon-mbri-clock"></span> '  + status_estimation + '<br>' + obj.rlk_number + '<br>от ' + formattedDate + ' ';
+                html += '        </div>        ';
+                html += '';
+                html += '        <div class="col-sm ">';
+                html += '          <span class="icon-mbri-home"></span> ' + obj.type_estimation_ocenka + ' <br> ';
+                html += '          <span class="icon-mbri-home"></span> ' + obj.unit_name + ' <br> ';
+                html += '        <span class="icon-mbri-user"></span> ' +  obj.staff_name + ' ';
+                html += '        </div>        ';
+                html += '   ';
+                html += '      <div class="col-sm-3 ">';
+                html += '          <hr class="hidesite" style="width: 75%;">';
+                html += '          ' + obj.mark + ' ' + obj.model + ' ' + obj.modification + ' ';
+                html += '          <br>' + obj.vin + ' / ' + obj.car_year  + ' г.в.  ';
+                html += '          <br>' + car_run  + ' км.  ';
+                html += '        </div>        ';
+                html += '      <div class="col-sm-2 ">';
+                html += '          <hr class="hidesite" style="width: 75%;">';
+                html += '          Прием: ' + car_price_reception + ' ₽';
+                html += '          <br>Продажа: ' + car_price_sale  + ' ₽';
+                html += '          ';
+                html += '        </div>        ';
+                html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
+                html += '          ';
+                html += '        </div>';
+                html += '';
+                html += '';
+                html += '      </div> ';
+                html += '      <div class="" style="position : absolute; bottom:0; right:0"> ';
+                html += '       <a target="_blank" class="text-end text-dark d-flex justify-content-end" href="' + obj.rlk_id +'/?page=9" ><span class="icon-mbri-play"></span> Перейти</a> ';
+                html += '      </div> ';
+                html += '    </div></div>        ';
+                html += '  </div></div>  ';
+                html += '';
+
+                var html_before = document.querySelector('#list_estimations').innerHTML;
+                document.querySelector('#list_estimations').innerHTML = html + html_before;
+
+                
+                var html = '';
+                
+                var mark            = obj.mark;
+                var model           = obj.model;
+                var modification    = obj.modification;
+                
+                if (mark !== null) {
+
+                } else {
+                    mark = '---';
+                    model = '';
+                    modification = '';
+                }
+                var date_list = new Date(obj.max_date);
+                var formattedDate_list = date_list.toLocaleDateString() + ' ' + date_list.toLocaleTimeString();
+
+                html_list = '<a id="chat_list_data_' + id + '" href="' + obj.name + '/" target="_blank" class="text-dark" style="padding:0">'
+                html_list += '   <div class="item-chat-message col-12">'
+                html_list += '                <div class="item-chat-body " >'
+                html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + '</p><hr style="margin:0.1rem;"><p class="item-time-chat" style="margin:0.1rem;">' + obj.rlk_unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
+                html_list += '                    <div class="item-content-chat" style="margin:0.1rem;">'
+                html_list += '                        <hr style="margin:0.1rem;"> <label class="fs-6 item-subtitle">'
+                html_list += '                            ' + obj.content + ''
+                html_list += '                         </label>  '
+                html_list += '                                                        '
+                html_list += '                    </div>'
+                html_list += '                </div>'
+                html_list += '            </div>'
+                html_list += '        </a>'
+
+                var html_before = document.querySelector('#message-list').innerHTML;
+                document.querySelector('#message-list').innerHTML = html_list + html_before;
+
+            } 
+            
+	    })
+
+    
+
+    };
+
+    function toast(id, text, time, link, style){
+
+        if (document.getElementById('toast_' + id) === null ){
+
+        } else
+        {
+          document.getElementById('toast_' + id).remove();
+        };
+
+        time = getDateTime();
+        
+        var html = ''
+        html = '<div id="toast_' + id + '" class="toast ' + style + '" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">';
+        html += '   <div class="toast-header">';
+        html += '    <strong class="rounded me-2"><span class="icon-mbri-speed "></span></strong>';
+        html += '    ';
+        html += '    <strong class="me-auto">АХ Корс</strong>';
+        html += '<small>' + time + '</small>';
+        html += '<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>';
+        html += '</div>';
+        html += '<div class="toast-body">';
+        html += '' + text + '';
+        if (link == ''){
+
+        }else {
+          html += '<hr style="width=75%"><a target="_blank" href="' + link + '" class="text-end link-dark" style=""> <span class="icon-mbri-right"> Открыть </span> </a>';
+        }
+        html += '</div>';
+        html += '</div>';
+        
+        document.querySelector('#container_toast').innerHTML += html;
+        
+        $('#toast_' + id).toast('show');
+
+     }
+     
+    function getDateTime() {
+        var now     = new Date(); 
+        var year    = now.getFullYear();
+        var month   = now.getMonth()+1; 
+        var day     = now.getDate();
+        var hour    = now.getHours();
+        var minute  = now.getMinutes();
+        var second  = now.getSeconds(); 
+        if(month.toString().length == 1) {
+             month = '0'+month;
+        }
+        if(day.toString().length == 1) {
+             day = '0'+day;
+        }   
+        if(hour.toString().length == 1) {
+             hour = '0'+hour;
+        }
+        if(minute.toString().length == 1) {
+             minute = '0'+minute;
+        }
+        if(second.toString().length == 1) {
+             second = '0'+second;
+        }   
+        var dateTime = '' + hour + ':'+ minute;   
+         return dateTime;
+    }
+
+      
+    function validate_form(){
+      
+      
+      var select_unit = document.getElementById("select_unit");
+      var select_unit = select_unit.value
+
+      var url = new URL(document.location.href);
+      if (select_unit.length > 0){
+        url.searchParams.set('select_unit', select_unit)
+        document.cookie = 'select_unit=' + select_unit;
+      }
+      else {
+        url.searchParams.delete('select_unit')
+        document.cookie = 'select_unit=' + "";
+      }
+
+      var select_status = document.getElementById("select_status").value;
+      if (select_status.length > 0){
+        url.searchParams.set('select_status', select_status)
+        document.cookie = 'select_status=' + select_status;
+      }
+      else {
+        url.searchParams.delete('select_status')
+        document.cookie = 'select_status=' + "";
+      }
+     // document.location.href  = url.href;
+      window.location.assign(url.href);
+
+      valid = true
+      
+      //saveCookie();
+
+      return valid
+
+    }
+
+    $('#btn_reconect').click(function() {   
+        
+        connect_ws();
+        
+        $("#div_reconect").addClass('d-none');
+        
+        //refresh_data_online();
+        
+    });
+
+    $(window).scroll(function(){
+      scrollMore();
+    });
+
+    function scrollMore(){
+      
+      var $target = $('#showmore-triger');
+      
+   
+      var wt = $(window).scrollTop();
+      var wh = $(window).height();
+      var et = $target.offset().top;
+      var eh = $target.outerHeight();
+      var dh = $(document).height();   
+    
+      if (wt + wh >= et || wh + wt == dh || eh + et < wh){
+        
+        page = $target.attr('data-page');	
+        page++;
+        
+        refresh_data_online();
+        $target.attr('data-page', page);
+        
+      }
+    }
+
+  </script>
+
+<script language="JavaScript">
+ 
+
+
+</script>
+             
+{% endblock %}

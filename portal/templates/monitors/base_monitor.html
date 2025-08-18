@@ -1,0 +1,191 @@
+{% extends 'base_web_board.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block refresh %} content="60;URL={{params.url_next}}" {% endblock %} 
+
+{% block title %} Добро пожаловать в {{params.board.name_title}} {% endblock %}
+  
+{% block head %}
+
+  
+
+{% endblock %}
+
+
+{% block content %}
+<style>
+
+  html { 
+    overflow-y: hidden;
+    overflow-x: hidden; 
+  }
+  
+  .table_style {
+    border-collapse: collapse;
+    width: 100%;  
+  }
+  
+  .table_td {
+    border: 1px solid white;
+    text-align: center;
+  }
+  
+  .table_td_left {
+    text-align: left;
+  }
+  .wrapper {
+          max-height: 400px;
+          
+        }
+        .exmpl {
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .exmpl img {
+          height: 100%;
+          width: auto;
+        }
+  </style>
+
+  <script language="JavaScript">
+    fulltime();
+  </script>
+
+  <div class="row g-2">
+
+    <div class="col-sm-2">
+        {% if params.board.main_photo %}
+          <div class="wrapper exmpl">
+            <img src="{{params.board.main_photo.url}}" class="card-img-top" style="border: 10px; max-height: 300px;">
+          </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-sm">
+        <p class="fs-3 fw-bold">Добро пожаловать в {{params.board.name_title}}</p>
+        <p class="fs-4 fw-bold">Спасибо что приехали вовремя.</p>
+    </div>
+    
+    <div class="col-sm-2">
+        <p class="fs-3 fw-bold" id="clock"> - - - </p>
+        <p class="fs-4 fw-bold" id="year"> - - - </p>
+    </div>
+
+  </div>
+
+  <hr>
+
+<div class="row g-1">
+
+  <div class="col-sm-2">
+
+    {% for staff in params.staffs %}
+      <br>
+      {{staff.image_img}}
+      <br>
+      <p class="fs-6 text-center">{{staff.name}}</p> 
+      <hr>
+
+    {% endfor %}
+
+  </div>
+
+  <div class="col-sm">
+    <div class="table-responsive-sm">
+			<table class="table table-hover table-sm">
+        <tbody>
+        
+          {% if params.objects %}
+            {% for doc in params.objects %}
+              <tr>
+                <td>{{doc.dateStart|date:"H:i"}}</td>
+
+                {% if params.board.table_view_status %} 
+                  <td>{{doc.type}}</td>
+                {% endif %}
+                
+                
+                {% if params.board.table_view_plate_number %} 
+                  <td>{{doc.serviceRequest.cars_grz_board|capfirst}}</td>
+                {% endif %}
+                
+                {% if params.board.table_view_vin %} 
+                  <td>{{doc.serviceRequest.cars.vin}}</td>
+                {% endif %}
+
+                {% if params.board.table_view_mark %} 
+                  <td>{{doc.serviceRequest.cars.mark}}</td>
+                {% endif %}
+
+                {% if params.board.table_view_model %} 
+                  <td>{{doc.serviceRequest.cars.model}}</td>
+                {% endif %}
+              
+                {% if params.board.table_view_customer %} 
+                  <td>{{doc.serviceRequest.customer.name}}</td>
+                {% endif %}
+
+                {% if params.board.table_view_staff %} 
+                  <td>{{doc.staff}}</td>
+                {% endif %}
+               
+              </tr>
+            {% endfor %} 
+          {% endif %}
+          
+        </tbody>
+			</table>
+		</div>
+
+  </div>
+
+</div>
+
+
+
+
+
+<div class="fixed-bottom">
+			
+  <div class="row" style="padding: 15px;"> 
+       
+    <div class="card style="padding: 25px;">
+      
+      <div class="row">
+        
+        {% if params.board.phone|length > 0 %}
+          <div class="col-sm-3">
+            <span class="icon-mbri-mobile">
+              <a class="link-dark" href=tel:{{params.doc.unit.phone_normalize}}>{{params.board.phone}}</a>
+            </span>
+          </div>  
+        {% endif %}
+
+        {% if params.board.email|length > 0 %}
+            <div class="col-sm-3">
+              <span class="icon-mbri-letter">
+                  <a class="link-dark">{{params.board.email}}</a>
+              </span>
+            </div>
+        {% endif %}
+
+        {% if params.board.adress|length > 0 %}
+          <div class="col-sm">
+            <span class="icon-mbri-pin">
+              <a class="link-dark">{{params.board.adress}}</a>
+            </span>
+          </div>
+        {% endif %}
+
+      </div>
+    
+    </div>
+    
+  </div>
+    
+</div>
+
+{% endblock %}

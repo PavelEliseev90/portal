@@ -1,0 +1,205 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} склад автомобилей {% endblock %}
+
+{% block title_navbar %} - склад автомобилей   {% endblock %}
+    
+{% block content %}
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+		<div class="modal-header">
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		
+			<div class="modal-body">
+				<form action="GET">
+					<div class="form-floating mb-3">							
+						<select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
+							<option></option>
+							{% for store in params.selected.stores %}
+								<option value="{{store.id}}" {% if params.filtr.store_id == store.id %} selected {% endif %}> {{store.name}} </option>
+							{% endfor %}
+						</select>
+						<label for="floatingInput">Дилерский центр</label>
+					</div>
+					
+					<div class="row">
+						<div class="col">
+							<button class="btn btn_block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>	
+						</div>
+					</div>
+				</form>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			<div class="form-floating mb-3">
+				<input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="" required>
+				<label for="floatingInput">Наименование</label>
+			</div>
+		</div>
+		<div class="modal-footer">
+		  <button class="btn btn-success" type="button" onclick="change_link()" >Сохранить</button>
+		</div>
+	  </div>
+	</div>
+</div>
+
+<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			{% if params.filters_user|length > 0 %}
+					<hr>
+					<div class="table-responsive">
+						<table class="table">
+						  <tbody>
+								
+							{% for filter in params.filters_user %}
+							<tr>
+								<td>
+									{{filter.name}}
+								</td>
+								<td>
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn  btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								</td>
+							</tr>
+							{% endfor %}
+								
+						  </tbody>
+						</table>
+					  </div>
+				{% endif %}
+		</div>
+		
+	  </div>
+	</div>
+</div>
+
+<div class="hidemobile">
+	
+	<div class="d-grid gap-2 col-12 mx-auto">
+		<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+	</div>
+
+	<hr>
+
+</div>
+
+
+
+<div class="row g-3">
+	{% if params.paginator.object_list %}
+		{% for car in params.paginator.object_list %}
+				
+			<div class="col-sm-3">
+				<div class="card" onclick="window.location.href='{{car.slug}}'; return false" > 
+					<div class="card-body" style="padding: 0rem;">
+
+						<div class="row" style="padding: 0rem; padding-top: 0.2rem;">
+							
+							<div class="col-12 col-sm-12">
+									
+								<img src="{{car.get_photo}}" style="border-radius: 0.3rem 0 0.3rem; min-width: 11rem; ">									
+									
+							</div>
+
+							<div class="col-12 col-sm-12">
+								<div class="row">
+									<div class="col-sm-12">
+										<span class="fs-5"> {{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}} </span>
+										<br>
+										{{car.modification_autoru.engine_volume}} л. /
+										{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
+										{{car.modification_autoru.typeEngine.name}}
+										<br>
+										{{car.modification_autoru.typeGear.name}}
+										<br>
+										{{car.modification_autoru.typeBody.name}}
+									</div>
+									
+									<div class="col-sm-12">
+										<label> {{car.type_drive}} </label>
+										<br>
+										<label class="fs-5">{{car.color|capfirst}}</label>
+									</div>
+			
+									<div class="col-sm-12">
+										<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
+									</div>
+			
+									<div class="col-sm-12 text-end">
+										<label class="fs-5">{{car.unit.name_web}}</label>	
+									</div>
+			
+									<div class="col-sm-12 text-end">
+										<label class="fs-5 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
+									</div>
+								</div>
+							</div>
+													
+						</div>
+
+						<div class="row start_block">
+							
+							<div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+								
+								<div class="table-responsive">
+									<table class="table table-fit">
+									<tr>
+										<td> 
+											<span class="icon-mbri-preview"></span> {{car.view_card_cars}}
+											<div class="vr"></div>
+											<span class="icon-mbri-update"></span> {{car.date_refresh}}
+											<div class="vr"></div>
+										</td>
+										
+										{% if car.history_success > 0 %}
+											<td> 
+												<span class="icon-mbri-edit"></span> История ремонтов
+												<div class="vr"></div>
+											</td>
+										{% endif %}
+
+										{% if car.history_success > 0 %}
+											<td> 
+												<span class="icon-mbri-sites"></span> Данные Автотека
+												<div class="vr"></div>
+											</td>
+										{% endif %}
+
+									</tr>
+									</table>
+								</div>
+								
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+
+		{% endfor %} 
+	{% endif %}
+	
+</div>
+
+{% endblock %}

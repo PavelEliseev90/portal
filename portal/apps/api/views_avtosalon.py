@@ -1,0 +1,456 @@
+from django.shortcuts import render
+from asyncio.windows_events import NULL
+import random
+import os
+from itertools import groupby
+from django.utils.translation import activate
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from collections import defaultdict
+from django.contrib.auth.models import Group
+from decimal import Decimal
+from django.conf import settings
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import render
+from django.http.response import JsonResponse
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.parsers import JSONParser
+from rest_framework import status
+from rest_framework.decorators import api_view
+import json
+
+import datetime as DT
+import base64
+from email import header
+from itertools import product
+import requests
+from fake_headers import Headers
+import fake_proxy
+import qrcode
+import urllib.parse
+import io
+from django.views.decorators.csrf import csrf_exempt
+from django.core.serializers import serialize
+from refs.models import RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
+from avtosalon.models import Avtohub, RefreshCarsLog
+from avtosalon.serializers import AvtohubSerializer
+from api.views import get_unit, get_organization, get_store, get_stage_price, get_group_price, get_model_object
+import tempfile
+from django.core import files
+from register.models import RegRefCarsOrganizationsCalculationPrice, RegEstimationRefCarsOrganizations, RegViewsCarsOrganization, RegRefCarsOrganizationsPrice
+from datetime import datetime
+from django.db.models import Q
+
+
+def add_statistic_cars_organization(cars, store, type):
+    new_view        = RegViewsCarsOrganization()
+    new_view.cars   = cars
+    new_view.store  = store
+    new_view.type   = RefEventCarsOrganization.objects.get(pk = type)
+    new_view.date   = datetime.now()
+    new_view.quantity   = cars.quantity
+    new_view.reserve    = cars.reserve    
+    new_view.save()
+
+@api_view(['GET', 'POST'])
+def zna_info(request):
+    
+    list_info   = list()
+    
+    objects         = RegEstimationRefCarsOrganizations.objects.all()
+
+    date_start      = request.GET.get('date_start', '')
+    if date_start != '':
+        objects = objects.filter(date__gte = date_start)
+    date_end        = request.GET.get('date_end', '')
+    if date_end != '':
+        objects = objects.filter(date__lte = date_end)
+    vin             = request.GET.get('vin', '')
+    if vin != '':
+        objects = objects.filter(car__vin = vin)
+        
+        
+    for object in objects:
+        car_inf = {
+            'date'      : object.date,
+            'uin'       : object.car.lo_uin,
+            'zna'       : object.avg_price,
+            'total'     : object.total,
+            'price'     : object.price,
+            'position'  : object.position,
+            'days'      : object.avg_days
+            }
+        list_info.append(car_inf)
+        
+    info = {
+        'data' : list_info
+    }
+    return JsonResponse(info, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def avtohub_info(request):
+    
+    list_info   = list()
+    
+    objects         = Avtohub.objects.all()
+
+    date_start      = request.GET.get('date_start', '')
+    if date_start != '':
+        objects = objects.filter(date__gte = date_start)
+    date_end        = request.GET.get('date_end', '')
+    if date_end != '':
+        objects = objects.filter(date__lte = date_end)
+    vin             = request.GET.get('vin', '')
+    if vin != '':
+        objects = objects.filter(vin = vin)
+        
+    list_info = serialize('json', objects)
+    info = {
+        'data' : list_info
+    }
+    return JsonResponse(info, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def get_image_change(request):
+    '''
+    files = RefCarsOrganizationFiles.objects.filter(processed = True)
+    for file in files:
+        file.processed = False
+        file.car = False
+        file.save()
+    '''
+
+    files = RefCarsOrganizationFiles.objects.filter(processed = False)[:1]
+    if len(files)> 0:
+        file = files[0]
+
+        answer = {
+            'url'           : file.file.url,
+            'pk'            : file.pk
+        }
+        return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
+    
+    answer = {
+        'ok'        : 'ok',
+        'url'       : ''
+    }
+    return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
+
+@api_view(['GET', 'POST'])
+def post_image_change(request):
+    
+    body_unicode    = request.body.decode().replace("'", '"')
+    data            = json.loads(body_unicode) 
+    
+    pk              = data['pk']
+    image           = data['image']
+    processed       = data['processed']
+    
+    cars_organization_files = RefCarsOrganizationFiles.objects.get(pk = pk)
+    if len(image) > 0:
+        file_name = cars_organization_files.name.replace('.jpg','.png')
+        file_name = file_name.replace('.jpeg','.png')
+        decoded_image = ContentFile(base64.b64decode(image), name = file_name)
+        cars_organization_files.car         = True
+        cars_organization_files.file_bak    = decoded_image
+    cars_organization_files.processed       = True
+    cars_organization_files.save()
+    
+    answer = {
+           'ok' : True
+        }
+    return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
+
+
+@api_view(['GET', 'POST'])
+def post_image_autoru_mark(request):
+    
+    body_unicode    = request.body.decode().replace("'", '"')
+    data            = json.loads(body_unicode) 
+    
+    name        = data['name']
+    image      = data['image']
+    
+    decoded_image = ContentFile(base64.b64decode(image), name=name)
+    names = name.split(".")
+    mark_name = names[0]
+
+    count = AutoruMark.objects.filter(name__icontains = mark_name).count()
+    if count > 0 :
+        marks = AutoruMark.objects.filter(name__icontains = mark_name)
+        for mark in marks:
+            mark.file = decoded_image
+            mark.save()
+
+    answer = {
+           'ok' : True
+        }
+    return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
+
+
+@api_view(['GET', 'POST'])
+def post_image_avito_mark(request):
+    
+    body_unicode    = request.body.decode().replace("'", '"')
+    data            = json.loads(body_unicode) 
+    
+    name        = data['name']
+    image      = data['image']
+    
+    decoded_image = ContentFile(base64.b64decode(image), name=name)
+    names = name.split(".")
+    mark_name = names[0]
+
+    count = RefAvito.objects.filter(parent = None).filter(name__icontains = mark_name).count()
+    if count > 0 :
+        marks = RefAvito.objects.filter(parent = None).filter(name__icontains = mark_name)
+        for mark in marks:
+            mark.file = decoded_image
+            mark.save()
+
+    answer = {
+           'ok' : True
+        }
+    return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
+
+
+@api_view(['GET', 'POST'])
+def info_cars_organization(request):
+    slug = request.GET.get('slug')
+    try:
+        cars_organization = RefCarsOrganization.objects.get(slug= slug)
+        store = cars_organization.store
+        add_statistic_cars_organization(cars_organization, store= store, type=request.GET.get('type'))
+        
+    except:
+        s=1
+
+    answer = {
+        'ok': '200'
+    }   
+    return JsonResponse(answer, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def refresh_cars(request):
+
+    list_cars = list()
+
+    data = json.loads(request.body)
+
+    unit_json   = data['Unit']
+    unit        = get_unit(unit_json)
+    
+    count_add   = 0
+    count_del   = 0
+    count_stock = 0
+
+    list_del = list()
+    cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0)
+    for car in cars_update:
+        car.quantity = 0
+        car.save()
+        list_del.append(car.pk)
+
+    list_load_photo = list()
+    cars_json       = data['Cars']
+    for car in cars_json:
+
+        vin             = car.get('Vin', '').upper()
+        lo_link_number  = car.get('Lo_link_number', '').upper()
+        lo_uin          = car.get('Lo_uin', '').upper()
+
+        car_object, created = RefCarsOrganization.objects.filter(Q(vin = vin) 
+                                                                 and Q(lo_link_number = lo_link_number) 
+                                                                 and Q(lo_uin = lo_uin),).get_or_create(vin = vin,
+                lo_link_number = lo_link_number,
+                lo_uin = lo_uin
+            )
+        
+        if created:
+            count_add = count_add + 1
+        else:
+            try:
+                list_del.remove(car_object.pk)
+            except:
+                s = 1
+
+        car_object.date_refresh     = datetime.now()    
+        car_object.organization     = get_organization(car['Organization'])    
+        car_object.unit             = unit
+        car_object.store            = get_store(car['Store'])
+        car_object.is_new           = car['Is_new']
+        car_object.vin              = car.get('Vin', '').upper()
+        car_object.vin2             = car['Vin2']
+        car_object.name             = car['Name']
+        car_object.year             = car['Year']
+        car_object.mark             = car['Mark']
+        car_object.model            = car['Model']
+        car_object.modification     = car['Modification']
+        car_object.color            = car['Color']
+        car_object.run              = car['Run']
+        car_object.plate_number     = car['Plate_number']
+        car_object.cost_price       = car['Cost_price']
+        car_object.outlay           = car['Outlay']
+        car_object.days_in_stok     = car['Days_in_stok']
+        car_object.price            = car['Price']
+        car_object.quantity         = car['Quantity']
+        car_object.lo_link              = car['Lo_link']
+        car_object.lo_link_date         = car['Lo_link_date']
+        car_object.lo_link_number       = car.get('Lo_link_number', '').upper()
+        car_object.lo_uin               = car.get('Lo_uin', '').upper()
+        car_object.type_drive           = get_model_object('RefTypeDrive', car['Type_drive'])
+        car_object.stage_price          = get_stage_price(car['Stage_price'])
+        car_object.group_price          = get_group_price(car['Group_price'])
+        car_object.type_sale            = get_model_object('RefTypeSaleCarsOrganization', car['Type_sale'])
+        car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
+        car_object.type_reception       = get_model_object('RefTypeReceptionCarsOrganization', car['Type_reception'])
+        car_object.evaluation           = get_model_object('RefTypeEvaluationCarsOrganization', car['Evaluation'])
+        car_object.rating               = get_model_object('RefRatingCarsOrganization', car['Rating'])
+        
+        car_object.owners               = car['Owners']
+        car_object.keys                 = car['Keys']
+        car_object.task                 = car['Task']  
+        car_object.reserve              = car['Reserve']             
+
+        car_object.days_next_stage      = car['Days_next_stage']
+        car_object.link_avtoteka_web    = car['Link_avtoteka_web']
+        car_object.link_avtoteka_pdf    = car['Link_avtoteka_pdf']
+        car_object.bcp                  = car['BCP']
+        
+        id_avito = car['ID_avitoru']
+        try:
+            if id_avito > 0:
+                car_object.modification_avito = RefAvito.objects.get(avito_id = id_avito)
+        except:
+            s=1
+            
+        id_avtoru = car['ID_autoru']
+        try:
+            if id_avtoru > 0:
+                car_object.modification_autoru = AutoruModification.objects.get(idSite = id_avtoru)
+        except:
+            s=1
+
+        car_object.engine_power         = car['Engine_power']
+        car_object.engine_volume        = car['Engine_volume']
+
+        car_object.description_podgotovka   = car['Description_podgotovka']
+        car_object.description_op           = car['Description_op']
+
+        car_object.save()
+
+        if 'Prices_list' in car:
+            RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()
+            for car_price in car['Prices_list']:
+                new_price = RegRefCarsOrganizationsPrice()
+                new_price.car   = car_object
+                new_price.date  = car_price['Date']
+                new_price.price = car_price['Price']
+                new_price.save()  
+
+        if 'Prices_calculation_list' in car:
+            RegRefCarsOrganizationsCalculationPrice.objects.filter(car= car_object).delete()
+            for car_price in car['Prices_calculation_list']:
+                new_price = RegRefCarsOrganizationsCalculationPrice()
+                new_price.car           = car_object
+                new_price.date          = car_price['Date']
+                new_price.price         = car_price['Price']
+                new_price.evaluation    = get_model_object('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
+                new_price.rule          = car_price['Rule']
+                new_price.save()     
+
+        info_car = {
+            'Car_object'        : car_object,
+            'Lo_uin'            : car['Lo_uin'],
+            'Photos'            : car['Photos']
+        }
+        list_load_photo.append(info_car)
+        
+    count_del   = len(list_del)
+    count_stock = len(cars_json)
+
+    refresh_log = RefreshCarsLog()
+    refresh_log.unit = unit
+    refresh_log.count_add   = count_add
+    refresh_log.count_del   = count_del
+    refresh_log.count_stock = count_stock
+    refresh_log.save()
+
+    for car in list_load_photo:
+        
+        car_object = car['Car_object']
+        load_photos(car_object, car['Photos'])
+
+        image           = car_object.qr.open()
+        image_content   = image.read()
+        image_base64    = base64.b64encode(image_content)
+        car_link        = 'https://ah.kors-group.com/cars/' + str(car_object.slug) + '/'
+        
+        car_info = {
+            'Lo_Uin'    : car['Lo_uin'],
+            'QR_Base64' : str(image_base64.decode()),
+            'Lo_link'   : car_link
+        }
+        
+        list_cars.append(car_info)
+
+
+    info = {
+        'list_cars' : list_cars
+    }
+    return JsonResponse(info, status=status.HTTP_200_OK)
+
+
+def load_photos(car, photos):
+    
+    ref_photos = RefCarsOrganizationFiles.objects.filter(сars_organization = car)
+    for ref_photo in ref_photos:
+        name    = ref_photo.name
+        delite  = True
+        for photo in photos:
+            if name == photo['Name']:
+                delite = False
+        if delite:
+            ref_photo.delete()
+
+    for photo in photos:
+        ref_photos = RefCarsOrganizationFiles.objects.filter(сars_organization = car)
+        add = True
+        for ref_photo in ref_photos:
+            if ref_photo.name == photo['Name']:
+                add = False
+        if add:
+            photo_object                    = RefCarsOrganizationFiles()
+            photo_object.сars_organization  = car
+            photo_object.name               = photo['Name']
+            photo_object.url                = photo['Url']
+            photo_object.url_mini           = photo['UrlMini']
+            photo_object.main               = photo['Main']
+            
+            image_url   = photo['Url']
+            response    = requests.get(image_url, stream=True)
+            if response.status_code != requests.codes.ok:
+                continue 
+            file_name = image_url.split('/')[-1]
+            lf = tempfile.NamedTemporaryFile()
+            for block in response.iter_content(1024 * 8):
+                if not block:
+                    break
+                lf.write(block)
+            photo_object.file.save(file_name, files.File(lf)) 
+
+            image_url   = photo['UrlMini']
+            response    = requests.get(image_url, stream=True)
+            if response.status_code != requests.codes.ok:
+                continue 
+            file_name = image_url.split('/')[-1]
+            lf = tempfile.NamedTemporaryFile()
+            for block in response.iter_content(1024 * 8):
+                if not block:
+                    break
+                lf.write(block)
+            photo_object.file_mini.save(file_name, files.File(lf)) 
+
+            photo_object.save()

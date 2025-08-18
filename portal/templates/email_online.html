@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+      <meta charset="utf-8" />
+      <title>ГК КорсГрупп - запись на сервис - {{params.customer}} </title>
+      <link rel="stylesheet" href="/static/style.css">
+  </head>
+  
+  <body>
+    
+    <div class="grid"> 
+      
+      <div>
+        ГК КорсГрупп - запись на сервис 
+      </div>
+      
+      <div class="header">
+        <div class="header-content">
+          Онлайн запись на сервис
+          <br>
+          <br>
+          Информация о записи:
+          <br>
+          
+          <table>
+
+            {% if params.сall %}
+          
+              <tr><td>Заказан обратный звонок</td></tr> 
+            
+            {% else %}
+               
+                <tr><td>Дилерский центр</td><td>-</td><td>{{params.unit}}</td></tr> 
+                <tr><td>Дата записи</td><td>-</td><td>{{params.date}}</td></tr> 
+                <tr><td>Время записи</td><td>-</td><td>{{params.time}}</td></tr>
+
+            {% endif %}
+          
+          </table>
+
+          <br>
+          Данные клиента:
+          <br>
+          <table>  
+            <tr><td>Клиент</td><td>-</td><td>{{params.customer}}</td></tr> 
+            <tr><td>Телефон</td><td>-</td><td>{{params.phone}}</td></tr> 
+          </table>
+         
+          <br>
+          Данные по автомобилю:
+          <br>
+          <table>  
+            <tr><td>VIN</td><td>-</td><td>{{params.vin}}</td></tr> 
+            <tr><td>Марка</td><td>-</td><td>{{params.mark}}</td></tr> 
+            <tr><td>Модель</td><td>-</td><td>{{params.model}}</td></tr> 
+          </table>
+
+          <br>
+          Служебная информация:
+          <br>
+          <table>  
+            <tr><td>Дилерский центр отправитель</td><td>-</td><td>{{params.unit_send}}</td></tr> 
+            <tr><td>Дата отправки СМС</td><td>-</td><td>{{params.date_send}}</td></tr> 
+          </table>
+
+
+          <br>
+          {% if params.сall %}
+          
+          {% else %}
+               
+          <img style="border-radius: 1em; max-width: 300px;" src="http://opros.kors-group.com/media/img/FINISH.jpg">
+
+          {% endif %}
+
+        </div>  
+      </div>
+      
+      <br>
+      
+      <div style="text-align: center;">
+          
+      </div>
+    </div>
+
+  </body>
+
+</html> 

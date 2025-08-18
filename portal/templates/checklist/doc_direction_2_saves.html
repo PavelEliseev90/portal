@@ -1,0 +1,1241 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - чек лист {% endblock %}
+
+{% block title_navbar %} - чек лист {% endblock %}
+
+    
+{% block content %}
+ 	
+	<form action="" method="POST" enctype="multipart/form-data">	
+
+		<div class="row g-1">
+
+			<div class="col-sm-3">
+				<div class="card border-secondary">
+					<div class="card-header bg-secondary text-white border-secondary">
+							Параметры
+							</div>
+							<div class="card-body">
+								
+									{% csrf_token %}
+									<label>Подразделение</label>
+									<p>{{params.checkListO.zn.unit}}</p>
+									<label>Сотрудник</label>
+									<p>{{params.checkListO.zn.master}}</p>
+									<label>Номер заказ наряда</label>
+									<p>{{params.checkListO.zn.nomer}}</p>
+									<label>Дата заказ наряда</label>
+									<p>{{params.checkListO.zn.dataTime}}</p>
+									
+									<hr>
+
+									<div class="d-grid gap-2">
+										<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable">
+											Подробнее
+										</button>
+									</div>
+														
+							</div>
+						</div>
+
+						<br>
+						
+						<div class="card border-secondary">
+							<div class="card-header bg-secondary text-white border-secondary">
+							Показатели
+							</div>
+							<div class="card-body">
+								<table class="table">
+			<thead>
+				<tr>
+				<th scope="col">#</th>
+				<th class="w-50">Раздел</th>
+				<th scope="col">МАХ</th>
+				<th scope="col">Check</th>
+				<th scope="col">%</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+				<th scope="row">1</th>
+				<td>Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</td>
+				<td><label id="itog_v1M">32</label></td>
+				<td><label id="itog_v1">0</label></td>
+				<td><label id="itog_v1P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">2</th>
+				<td>Общая оценка навыков коммуникации</td>
+				<td><label id="itog_v2M">14</label></td>
+				<td><label id="itog_v2">0</label></td>
+				<td><label id="itog_v2P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">3</th>
+				<td>Презентация дополнительных товаров/услуг</td>
+				<td><label id="itog_v3M">24</label></td>
+				<td><label id="itog_v3">0</label></td>
+				<td><label id="itog_v3P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">4</th>
+				<td>Работа с возражениями</td>
+				<td><label id="itog_v4M">8</label></td>
+				<td><label id="itog_v4">0</label></td>
+				<td><label id="itog_v4P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">5</th>
+				<td>Резюмирование сделки (заезда на обслуживание)</td>
+				<td><label id="itog_v5M">22</label></td>
+				<td><label id="itog_v5">0</label></td>
+				<td><label id="itog_v5P">0</label></td>
+				</tr>
+			</tbody>
+			</table>
+					<div class="row g-3">
+						<div class="col">
+							<label id="itogText"> Цель 80% - текущий чек -</label> <label id="itog"> 0 </label><label id="itogText">% </label>
+						</div>
+					</div>
+					<br> 	
+
+
+							</div>
+						</div>
+					
+						<br>
+						
+						<div class="card">
+							<div class="card-header bg-secondary text-white">
+								<span class="icon-mbri-timer"></span> История изменений
+							</div>
+							<div class="card-body">
+								<div class="d-grid gap-2">
+									<button type="button" class="btn btn-block btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#staticBackdrop"> <span class="icon-mbri-timer"></span> Просмотреть {{params.versions|length}} версий</button>	
+								</div>
+								
+								<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+									<div class="modal-dialog modal-xl modal-dialog-scrollable">
+									<div class="modal-content">
+										<div class="modal-header">
+										<span class=""></span><h5 class="modal-title" id="staticBackdropLabel"> <span class="icon-mbri-timer"></span> история изменений</h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+										</div>
+										<div class="modal-body">
+											<div class="table-responsive-sm">
+												<table class="table table-sm table-striped table-hover">
+													<thead>
+													<tr>
+														<th scope="col">
+															Дата изменения <br> 
+															Пользователь <br>
+															Тип изменения</th>
+														<th scope="col">Измененные данные</th>
+													</tr>
+													</thead>
+													<tbody>
+														{% for version in params.versions %}
+															<tr>
+																<td>{{version.changed}} <br>
+																	{{version.user}} <br>
+																	{{version.action_on_model}} 
+																</td>
+																<td>
+																	<table class="table table-sm table-striped">
+																		<tbody>
+																			{% for change in version.get_change_human %}
+																				<tr>
+																					<td>{{change.name}}</td>
+																					<td>{{change.value}}</td>
+																				</tr>
+																			{% endfor%}
+																		</tbody>
+																	</table>
+																</td>
+															</tr>
+														{% endfor %}
+													</tbody>
+												</table>
+											</div>
+										</div>
+										<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+										</div>
+									</div>
+									</div>
+								</div>
+															
+							</div>
+						</div>
+
+			</div>
+
+			<div class="col-sm-9">
+				<div class="card border-secondary">
+					<div class="card-header bg-secondary text-white border-secondary">
+						Чек лист
+					</div>
+					<div class="card-body">
+						
+						{% if params.rlkID|length == 0 %}
+
+							<p class="card-text">Заполнение будет доступно после заполнения всех полей параметров.</p>
+						
+						{% else %}
+							
+						
+						<div class="row g-1">
+								
+							<div class="col">
+								<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white border-secondary">1. Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</div>
+										<div class="card-body">
+											<div class="panel-body">
+												<table class="table" style="vertical-align: middle;">
+													<tr>
+														<td>
+															<label class="form-label">Заранее создана калькуляция, исходя из причины обращения клиента и истории обслуживания автомобиля</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test1()">
+																
+																<input hidden type="text" name="v1_1" id="v1_1" value='{{params.checkListO.v1_1}}'>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_1_1" id="v1_1_0" value="0" {% if params.checkListO.v1_1 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v1_1_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_1_1" id="v1_1_10" value="10" {% if params.checkListO.v1_1 == 10 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_1_10">10</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Произнес свою должность и представился сам. Поблагодарил за пунктуальность (если клиент не опоздал)</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test1()"> 
+																
+																<input hidden type="text" name="v1_2" id="v1_2" value='{{params.checkListO.v1_2}}'>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_2_1" id="v1_2_0" value="0" {% if params.checkListO.v1_2 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v1_2_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_2_1" id="v1_2_3" value="3" {% if params.checkListO.v1_2 == 3 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_2_3">3</label>
+															
+															</div>
+														</td>
+													</tr>
+												
+													<tr>
+														<td>
+															<label class="form-label">Консультант вежливо выяснил имя клиента либо сразу обратился по имени</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test1()">
+																
+																<input hidden type="text" name="v1_3" id="v1_3" value='{{params.checkListO.v1_3}}''>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_3_1" id="v1_3_0" value="0" {% if params.checkListO.v1_3 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v1_3_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_3_1" id="v1_3_3" value="3" {% if params.checkListO.v1_3 == 3 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_3_3">3</label>
+															
+															</div>
+														</td>
+													</tr>
+												
+													<tr>
+														<td>
+															<label class="form-label">Консультант уточнил у клиента: ФИО собственника автомобиля / личный контактный номер телефона / адрес эл. почты (в т.ч. актуальность внесенного адреса ранее)</label>
+														</td>
+														<td >
+															<div class="btn-group" role="group" onChange="test1()">
+																<input hidden type="text" name="v1_4" id="v1_4" value='{{params.checkListO.v1_4}}''>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_4_1" id="v1_4_0" value="0" {% if params.checkListO.v1_4 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v1_4_0">0</label>
+																
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_4_1" id="v1_4_2" value="2" {% if params.checkListO.v1_4 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_4_2">2</label>
+																
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_4_1" id="v1_4_4" value="4" {% if params.checkListO.v1_4 == 4 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_4_4">4</label>
+																
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_4_1" id="v1_4_6" value="6" {% if params.checkListO.v1_4 == 6 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_4_6">6</label>
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Консультант выяснил объем работ, интересующих клиента с обязательным уточнением пожеланий о дополнительных работах/жалобах. Вся информация полученная от клиента зафиксирована в ЗН (поле "заявка со слов клиента")</label>
+														</td>
+														<td >
+															<div class="btn-group" role="group" onChange="test1()">
+																<input hidden type="text" name="v1_5" id="v1_5" value='{{params.checkListO.v1_5}}''>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_5_1" id="v1_5_0" value="0" {% if params.checkListO.v1_5 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v1_5_0">0</label>
+																
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_5_1" id="v1_5_5" value="5" {% if params.checkListO.v1_5 == 5 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_5_5">5</label>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_5_1" id="v1_5_8" value="8" {% if params.checkListO.v1_5 == 8 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_5_8">8</label>
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">МК напомнил клиенту, что центр не несет ответственности за денежные средства и вещи оставленные в автомобиле, а так же уточнил, куда положить замененные з/ч (при их наличии)</label>
+														</td>
+														<td >
+															<div class="btn-group" role="group" onChange="test1()">
+																<input hidden type="text" name="v1_6" id="v1_6" value='{{params.checkListO.v1_1}}''>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_6_1" id="v1_6_0" value="0" {% if params.checkListO.v1_6 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v1_6_0">0</label>
+																
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_6_1" id="v1_6_1" value="1" {% if params.checkListO.v1_6 == 1 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_6_1">1</label>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v1_6_1" id="v1_6_2" value="2" {% if params.checkListO.v1_6 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v1_6_2">2</label>
+															</div>
+														</td>
+													</tr>
+
+												</table>
+										
+											</div>
+										</div>
+								</div>
+							</div>
+							
+							<div class="col">
+								<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white">2. Общая оценка навыков коммуникации</div>
+										<div class="card-body">
+											<div class="panel-body">
+												<table class="table" style="vertical-align: middle;">
+													<tr>
+														<td>
+															<label class="form-label">Не отвлекается во время общения с клиентом на посторонние дела и разговоры</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_1" id="v2_1" value='{{params.checkListO.v2_1}}''>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_1_1" id="v2_1_0" value="0" {% if params.checkListO.v2_1 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_1_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_1_1" id="v2_1_2" value="2" {% if params.checkListO.v2_1 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_1_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">В презентации работ и услуг консультант ведет клиента/ уверен в себе</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_2" id="v2_2" value='{{params.checkListO.v2_2}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_2_1" id="v2_2_0" value="0" {% if params.checkListO.v2_2 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_2_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_2_1" id="v2_2_2" value="2" {% if params.checkListO.v2_2 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_2_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+													
+													<tr>
+														<td>
+															<label class="form-label">Презентация на основе потребностей клиента / отталкиваясь от того что было озвучено клиентом ранее</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_3" id="v2_3" value='{{params.checkListO.v2_3}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_3_1" id="v2_3_0" value="0" {% if params.checkListO.v2_3 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_3_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_3_1" id="v2_3_2" value="2" {% if params.checkListO.v2_3 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_3_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Грамотность речи</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_4" id="v2_4" value='{{params.checkListO.v2_4}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_4_1" id="v2_4_0" value="0" {% if params.checkListO.v2_4 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_4_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_4_1" id="v2_4_2" value="2" {% if params.checkListO.v2_4 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_4_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Получение обратной связи от клиента/ согласие клиента с мнением консультанта/мнение клиента</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_5" id="v2_5" value='{{params.checkListO.v2_5}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_5_1" id="v2_5_0" value="0" {% if params.checkListO.v2_5 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_5_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_5_1" id="v2_5_2" value="2" {% if params.checkListO.v2_5 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_5_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Консультант не перебивает клиента</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_6" id="v2_6" value='{{params.checkListO.v2_6}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_6_1" id="v2_6_0" value="0" {% if params.checkListO.v2_6 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_6_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_6_1" id="v2_6_2" value="2" {% if params.checkListO.v2_6 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_6_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Преобладают открытые вопросы</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test2()">
+																
+																<input hidden type="text" name="v2_7" id="v2_7" value='{{params.checkListO.v2_7}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_7_1" id="v2_7_0" value="0" {% if params.checkListO.v2_7 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v2_7_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v2_7_1" id="v2_7_2" value="2" {% if params.checkListO.v2_7 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v2_7_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+												</table>
+										
+											</div>
+										</div>
+								</div>
+							</div>
+
+						</div>
+
+						<br>
+						
+						<div class="row g-1">
+
+							<div class="col">
+								<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white">3. Презентация дополнительных товаров/услуг</div>
+										<div class="card-body">
+											<div class="panel-body">
+												
+												<div class="row g-2">
+
+													<div class="col">
+														<table class="table" style="vertical-align: middle;">
+															<tr>
+																<td>
+																	<label class="form-label">Предложение проведения услуги "Интерактивная приемка"/ "Диалоговая приемка"</label>
+																</td>
+																<td>
+																	<div class="btn-group" role="group" onChange="test3()">
+																		
+																		<input hidden type="text" name="v3_1" id="v3_1" value='{{params.checkListO.v3_1}}''>
+					
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_1_1" id="v3_1_0" value="0" {% if params.checkListO.v3_1 == 0 %} checked {% endif %}>
+																		<label class="btn btn-outline-danger" for="v3_1_0">0</label>
+																	
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_1_1" id="v3_1_1" value="1" {% if params.checkListO.v3_1 == 1 %} checked {% endif %}>
+																		<label class="btn btn-outline-success" for="v3_1_1">1</label>
+																	
+																	</div>
+																</td>
+															</tr>
+					
+															<tr>
+																<td>
+																	<label class="form-label">Проведен осмотр автомобиля совместно с клиентом</label>
+																</td>
+																<td>
+																	<div class="btn-group" role="group" onChange="test3()">
+																		
+																		<input hidden type="text" name="v3_2" id="v3_2" value='{{params.checkListO.v3_2}}''>
+					
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_2_1" id="v3_2_0" value="0" {% if params.checkListO.v3_2 == 0 %} checked {% endif %}>
+																		<label class="btn btn-outline-danger" for="v3_2_0">0</label>
+																	
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_2_1" id="v3_2_8" value="8" {% if params.checkListO.v3_2 == 8 %} checked {% endif %}>
+																		<label class="btn btn-outline-success" for="v3_2_8">8</label>
+																	
+																	</div>
+																</td>
+															</tr>
+					
+															<tr>
+																<td>
+																	<label class="form-label">МК предложил не менее 2х дополнительных услуг сервиса к основной причине обращения клиента (доп.оборудование; слесарные работы и\или аксессуары)</label>
+																</td>
+																<td>
+																	<div class="btn-group" role="group" onChange="test3()">
+																		
+																		<input hidden type="text" name="v3_3" id="v3_3" value='{{params.checkListO.v3_3}}''>
+					
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_3_1" id="v3_3_0" value="0" {% if params.checkListO.v3_3 == 0 %} checked {% endif %}>
+																		<label class="btn btn-outline-danger" for="v3_3_0">0</label>
+																	
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_3_1" id="v3_3_15" value="15" {% if params.checkListO.v3_3 == 15 %} checked {% endif %}>
+																		<label class="btn btn-outline-success" for="v3_3_15">15</label>
+																	
+																	</div>
+																</td>
+															</tr>
+														</table>
+												
+														<label for="exampleDataList_v3_4" class="form-label">Предлагает с ХПВ дополнительное оборудование: установку сетки в решетку переднего бампера, установку секретных гаек (болтов), установку подкрылков и брызговиков. Не менее 2-х предложений по ДОП или профилактик.</label>
+														<input {% if profiles.view_checklist %} disabled {% endif %} class="form-control" name="v3_4" id="exampleDataList_v3_4" {% if params.checkListO %} value ='{{params.checkListO.v3_4}}' {% endif %} placeholder="Введите текст..." >
+														
+														<hr>
+														
+														<label for="exampleDataList_v3_5" class="form-label">Поднимает капот и проводит осмотр моторного отсека. Проверяет утечку и комментирует: уровни моторного масла, тормозной и охлаждающей жидкостей, рабочей жидкости рулевого управления, а также наличие подтеков на двигателе и патрубках.</label>
+														<input {% if profiles.view_checklist %} disabled {% endif %} class="form-control" name="v3_5" id="exampleDataList_v3_5" {% if params.checkListO %} value ='{{params.checkListO.v3_5}}' {% endif %} placeholder="Введите текст..." >
+														
+														<hr>
+													</div>
+
+													<div class="col">
+														<label for="exampleDataList_v3_6" class="form-label">Предлагает : 1л масла с собой, долить жидкость омывателя (при отсутствии у клиента - купить нашу и на запас), мойку подкапотного пространства, газовые упоры капота, чистку дросселя, регулировку света фар, промывку инжектора, чистку форсунок стеклоомывателя, промывку ДВС перед сменой масла. Не менее 2-х предложений по ДОП или профилактик.</label>
+														<input {% if profiles.view_checklist %} disabled {% endif %} class="form-control" name="v3_6" id="exampleDataList_v3_6" {% if params.checkListO %} value ='{{params.checkListO.v3_6}}' {% endif %} placeholder="Введите текст..." >
+									
+														<hr>
+
+														<label for="exampleDataList_v3_7" class="form-label">Консультант продает: детали экстерьера, защитная накладка порога заднего бампера, нанесение антидождя, проведение антибактериальной обработки - озонирования, покрытие керамика, тонировку, бронировку, дефлектора окон, легкосплавные диски. Минимум 1 предложение.</label>
+														<input {% if profiles.view_checklist %} disabled {% endif %} class="form-control" name="v3_7" id="exampleDataList_v3_7" {% if params.checkListO %} value ='{{params.checkListO.v3_7}}' {% endif %} placeholder="Введите текст..." >
+														
+														<hr>
+
+														<label for="exampleDataList_v3_8" class="form-label">Предлагает: набор автомобилиста (или комплектующие), ковер в багажник, уборку в багажнике, компрессор, органайзер в багажник (сетка). Минимум 1 предложение.</label>
+														<input {% if profiles.view_checklist %} disabled {% endif %} class="form-control" name="v3_8" id="exampleDataList_v3_8" {% if params.checkListO %} value ='{{params.checkListO.v3_8}}' {% endif %} placeholder="Введите текст..." >
+														
+														<hr>
+														
+														<table class="table" style="vertical-align: middle;">
+															<tr>
+																<td>
+																	<label class="form-label">Предложено купить сертификат "Продленная гарантия на автомобиль от Корс Групп"</label>
+																</td>
+																<td>
+																	<div class="btn-group" role="group" onChange="test3()">
+																		
+																		<input hidden type="text" name="v3_9" id="v3_9" value='{{params.checkListO.v3_9}}''>
+
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_9_1" id="v3_9_0" value="0" {% if params.checkListO.v3_9 == 0 %} checked {% endif %}>
+																		<label class="btn btn-outline-danger" for="v3_9_0">Нет</label>
+																	
+																		<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v3_9_1" id="v3_9_1" value="1" {% if params.checkListO.v3_9 == 1 %} checked {% endif %}>
+																		<label class="btn btn-outline-success" for="v3_9_1">Да</label>
+																	
+																	</div>
+																</td>
+															</tr>
+														</table>
+													</div>
+
+												</div>
+
+											</div>
+										</div>
+								</div>
+							</div>
+
+						</div>
+						
+						<br>
+						
+						<div class="row g-1">
+
+							<div class="col">
+									<div class="card border-secondary">
+										<div class="card-header bg-secondary text-white">4. Работа с возражениями</div>
+											<div class="card-body">
+												<div class="panel-body">
+													<table class="table" style="vertical-align: middle;">
+														<tr>
+															<td>
+																<label class="form-label">Принятие стороны клиента (важности, уместности…., я раньше тоже так думал)</label>
+															</td>
+															<td>
+																<div class="btn-group" role="group" onChange="test4()">
+																
+																	<input hidden type="text" name="v4_1" id="v4_1" value='{{params.checkListO.v4_1}}''>
+				
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_1_1" id="v4_1_0" value="0" {% if params.checkListO.v4_1 == 0 %} checked {% endif %}>
+																	<label class="btn btn-outline-danger" for="v4_1_0">0</label>
+																
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_1_1" id="v4_1_2" value="2" {% if params.checkListO.v4_1 == 2 %} checked {% endif %}>
+																	<label class="btn btn-outline-success" for="v4_1_2">2</label>
+																
+																</div>
+															</td>
+														</tr>
+				
+														<tr>
+															<td>
+																<label class="form-label">Уточнение (В сравнении с чем? Откуда такая информация? Не могли бы Вы объяснить…? Что именно Вы имеете ввиду говоря о …? Правильно ли я Вас понимаю…?)</label>
+															</td>
+															<td>
+																<div class="btn-group" role="group" onChange="test4()">
+																	
+																	<input hidden type="text" name="v4_2" id="v4_2" value='{{params.checkListO.v4_2}}''>
+														
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_2_1" id="v4_2_0" value="0" {% if params.checkListO.v4_2 == 0 %} checked {% endif %}>
+																	<label class="btn btn-outline-danger" for="v4_2_0">0</label>
+																
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_2_1" id="v4_2_3" value="3" {% if params.checkListO.v4_2 == 3 %} checked {% endif %}>
+																	<label class="btn btn-outline-success" for="v4_2_3">3</label>
+																
+																</div>
+															</td>
+														</tr>
+														
+														<tr>
+															<td>
+																<label class="form-label">Убедительность аргументации на основании мнения клиента</label>
+															</td>
+															<td>
+																<div class="btn-group" role="group" onChange="test4()">
+																	
+																	<input hidden type="text" name="v4_3" id="v4_3" value='{{params.checkListO.v4_3}}''>
+														
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_3_1" id="v4_3_0" value="0" {% if params.checkListO.v4_3 == 0 %} checked {% endif %}>
+																	<label class="btn btn-outline-danger" for="v4_3_0">0</label>
+																
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_3_1" id="v4_3_2" value="3" {% if params.checkListO.v4_3 == 3 %} checked {% endif %}>
+																	<label class="btn btn-outline-success" for="v4_3_2">3</label>
+																
+																</div>
+															</td>
+														</tr>
+														
+														<tr>
+															<td>
+																<label class="form-label">Была работа с возражением при отказе от покупки сертификата "Продленная гарантия на автомобиль от Корс Групп"</label>
+															</td>
+															<td>
+																<div class="btn-group" role="group" onChange="test4()">
+																	
+																	<input hidden type="text" name="v4_4" id="v4_4" value='{{params.checkListO.v4_4}}''>
+														
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_4_1" id="v4_4_0" value="0" {% if params.checkListO.v4_4 == 0 %} checked {% endif %}>
+																	<label class="btn btn-outline-danger" for="v4_4_0">Нет</label>
+																
+																	<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v4_4_1" id="v4_4_1" value="1" {% if params.checkListO.v4_4 == 1 %} checked {% endif %}>
+																	<label class="btn btn-outline-success" for="v4_4_1">Да</label>
+																
+																</div>
+															</td>
+														</tr>
+				
+													</table>
+											
+												</div>
+											</div>
+									</div>
+							</div>		
+								
+							<div class="col">
+								<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white">5. Резюмирование сделки (заезда на обслуживание)</div>
+										<div class="card-body">
+											<div class="panel-body">
+												<table class="table" style="vertical-align: middle;">
+													<tr>
+														<td>
+															<label class="form-label">Согласовывает с клиентом итоговый заказ-наряд. Разъясняет, какие работы будут проводиться на автомобиле, что будет меняться. Получает согласие клиента на сумму. Подписывают документы</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test5()">
+															
+																<input hidden type="text" name="v5_1" id="v5_1" value='{{params.checkListO.v5_1}}''>
+
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v5_1_1" id="v5_1_0" value="0" {% if params.checkListO.v5_1 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v5_1_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v5_1_1" id="v5_1_10" value="10" {% if params.checkListO.v5_1 == 10 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v5_1_10">10</label>
+															
+															</div>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<label class="form-label">Ориентирует о точном времени ремонта и выдачи а\м.</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test5()">
+																
+																<input hidden type="text" name="v5_2" id="v5_2" value='{{params.checkListO.v5_2}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v5_2_1" id="v5_2_0" value="0" {% if params.checkListO.v5_2 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v5_2_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v5_2_1" id="v5_2_10" value="10" {% if params.checkListO.v5_2 == 10 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v5_2_10">10</label>
+															
+															</div>
+														</td>
+													</tr>
+													
+													<tr>
+														<td>
+															<label class="form-label">Уточнение способа получения согласования (например: в ДЦ, телефон, ВотсАпп)</label>
+														</td>
+														<td>
+															<div class="btn-group" role="group" onChange="test5()">
+																
+																<input hidden type="text" name="v5_3" id="v5_3" value='{{params.checkListO.v5_3}}''>
+													
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v5_3_1" id="v5_3_0" value="0" {% if params.checkListO.v5_3 == 0 %} checked {% endif %}>
+																<label class="btn btn-outline-danger" for="v5_3_0">0</label>
+															
+																<input type="radio" {% if params.profiles.view_checklist %} disabled {% endif %} class="btn-check" name="v5_3_1" id="v5_3_2" value="2" {% if params.checkListO.v5_3 == 2 %} checked {% endif %}>
+																<label class="btn btn-outline-success" for="v5_3_2">2</label>
+															
+															</div>
+														</td>
+													</tr>
+
+
+												</table>
+										
+											</div>
+										</div>
+								</div>
+							</div>
+
+						</div>
+
+						
+						<br>
+						<div class="card border-secondary">
+							<div class="card-header bg-secondary text-white">Запись с диктофона</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+										{% if params.checkListO %} 
+											
+											{% if params.checkListO.audio %}	
+												
+												<audio controls>
+													<source src="http://opros.kors-group.com/{{params.checkListO.audio.url}}">
+													<p>Ваш браузер не поддерживает HTML5 аудио. Вот взамен
+														<a href="http://opros.kors-group.com/{{params.checkListO.audio.url}}">ссылка на аудио</a></p>
+												</audio>
+											
+											{% endif %}
+										{% endif %}
+
+										
+
+										{% if params.profiles.view_checklist %}
+										{% else %}
+										
+										<hr>
+										<div class="form-file">
+											<input type="file" name="audio" accept="audio/*" class="form-file-input" id="audio">
+											<label class="form-file-label" for="audio">
+											<span class="form-file-text">Приложите запись с диктофона...</span>
+											<span class="form-file-button">Выбрать файл</span>
+											</label>
+										</div>
+									
+										{% endif %}
+
+								</div>
+							</div>
+						</div>
+				
+					<br>
+					<div class="card border-secondary">
+						<div class="card-header bg-secondary text-white">Комментарий</div>
+							<div class="card-body">
+								<div class="panel-body">
+									<textarea name="comment" class="form-control" id="exampleFormControlTextarea1" rows="3">{% if params.checkListO %} {{params.checkListO.comment}}  {% endif %}</textarea>
+								</div>
+							</div>
+					</div>
+
+					<br>
+					<div class="card border-secondary">
+						<div class="card-header bg-secondary text-white">Дополнительно</div>
+							<div class="card-body">
+								<div class="panel-body">
+									<div class="form-check">
+										<input class="form-check-input" name="canceled" type="checkbox" {% if params.checkListO.canceled %}  checked {% endif %} value="True" id="flexCheckIndeterminate2">
+										<label class="form-check-label" for="flexCheckIndeterminate2">
+										Аппелирован (отменен)
+										</label>
+									</div>
+								
+								</div>
+							</div>
+						</div>
+
+						{% if not params.profiles.view_checklist %}
+							<br>
+							<div class="row g-1">	
+								<div class="col">
+								<div class="card border-secondary">
+									<div class="card-body">
+										<div class="panel-body">
+												
+											{% if params.profiles.view_checklist %}
+												<button type="submit" value="submit" name="save" class="btn btn-success" data-toggle="button"  disabled >Сохранить</button>
+											{% else %}
+												<button type="submit" value="submit" name="save" class="btn btn-success" data-toggle="button" >Сохранить</button>
+											{% endif %}
+																		
+										</div>
+									</div>
+								</div>
+
+							</div>
+						{% endif %}
+
+						{% endif %}
+
+						</div>
+					</div>
+
+			</div>
+		</div>
+
+	</form>
+
+	<div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+			<h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Заказ наряд - № {{params.checkListO.zn.nomer}} от {{params.checkListO.zn.dataTime|date:"d.m.Y H:i"}}</h4>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body">
+			<h4>Данные документа</h4>
+			
+				
+				<table class="table table-striped">
+					<tbody>
+					<tr>
+						<td>Клиент:</td>
+						<td>{{params.checkListO.zn.customer}}</td>
+						</tr>
+					<tr>
+						<td>Вид ремонта:</td>
+						<td>{{params.checkListO.zn.typeRemont}}</td>
+					</tr>
+					<tr>
+						<td>Автомобиль:</td>
+						<td>{{params.checkListO.zn.cars}}</td>
+					</tr>
+					<tr>
+						<td>Гос.номер:</td>
+						<td>{{params.checkListO.zn.carsGRZ}}</td>
+					</tr>
+					<tr>
+						<td>Пробег:</td>
+						<td>{{params.checkListO.zn.run}}</td>
+					</tr>
+					<tr>
+						<td>Сумма:</td>
+						<td>{{params.checkListO.zn.amount}}</td>
+					</tr>
+					<tr>
+						<td>Пришла в ремонт:</td>
+						<td>{{params.checkListO.zn.dateStart}}</td>
+					</tr>
+					<tr>
+						<td>Вышла из ремонта:</td>
+						<td>{{params.checkListO.zn.dateEnd}}</td>
+					</tr>
+					</tbody>
+				</table>
+				
+				<hr>
+
+				{{params.checkListO.zn.customerWords}}
+
+				<hr>
+
+				<div class="accordion accordion-flush" id="accordionFlushExample">
+					<div class="accordion-item">
+					<h2 class="accordion-header" id="flush-headingOne">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+						Работы - {{params.works|length}} 
+						</button>
+					</h2>
+					<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+						<div class="accordion-body">
+						{% if params.works|length == 0 %} 
+							Работы в заказ наряде отсутствуют
+						{% else %}
+							<table class="table table-striped">
+							<tbody>
+								{% for work in params.works %}
+								<tr>
+									<td>{{work.get_type}}</td>
+									<td>{{work.work}}</td>
+									<td>{{work.quantity}}</td>
+									<td>{{work.price}}</td>
+									<td>{{work.amount}}</td>
+								</tr>     
+								{% endfor %}
+							</tbody>
+							</table>
+						{% endif %}
+						</div>
+					</div>
+					</div>
+					<div class="accordion-item">
+					<h2 class="accordion-header" id="flush-headingTwo">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+						Товары - {{params.products|length}} 
+						</button>
+					</h2>
+					<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+						<div class="accordion-body">
+						{% if params.products|length == 0 %} 
+							Товары в заказ наряде отсутствуют
+						{% else %}
+							<table class="table table-striped">
+							<tbody>
+								{% for product in params.products %}
+								<tr>
+									<td>{{product.get_type}}</td>
+									<td>{{product.product}}</td>
+									<td>{{product.quantity}}</td>
+									<td>{{product.price}}</td>
+									<td>{{product.amount}}</td>
+								</tr>     
+								{% endfor %}
+							</tbody>
+							</table>
+						{% endif %}
+						</div>
+					</div>
+					</div>
+					<div class="accordion-item">
+					<h2 class="accordion-header" id="flush-headingThree">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseThree">
+						Рекомендации - 0
+						</button>
+					</h2>
+					<div id="flush-collapseThree{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+						<div class="accordion-body">
+						Извините рекомендации будут чуть позже - они еще не настроены
+						</div>
+					</div>
+					</div>
+				</div>
+				
+
+				<hr>
+				{% if params.checkListO.checkItog > 0 %}
+				<h4>Чек лист {{params.checkListO.id}} от {{params.checkListO.dataTimeCreate}}</h4>
+				
+				<div class="progress">
+					<div class="progress-bar bg-success" role="progressbar" aria-label="" style="width: {{params.checkListO.checkItog}}%;" aria-valuenow="{{params.checkListO.checkItog}}" aria-valuemin="0" aria-valuemax="100">{{params.checkListO.checkItog}} %</div>
+				</div>
+
+					
+					<div class="progress">
+					<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{params.checkListO..checkItog_v1}}%" aria-valuenow="{{params.checkListO.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+					<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{params.checkListO.checkItog_v2}}%" aria-valuenow="{{params.checkListO.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+					<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.checkListO.checkItog_v3}}%" aria-valuenow="{{params.checkListO.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+					<div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.checkListO.checkItog_v4}}%" aria-valuenow="{{params.checkListO.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+					<div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{params.checkListO.checkItog_v5}}%" aria-valuenow="{{params.checkListO.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+					</div>
+
+					<br>
+					
+					<div class="row">
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v1_P}}%;">
+								<span class="sr-only">{{params.checkListO.checkItog_v1_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v2_P}}%;">
+								<span class="sr-only">{{params.checkListO.checkItog_v2_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v3_P}}%;">
+								<span class="sr-only">{{params.checkListO.checkItog_v3_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v4_P}}%;">
+								<span class="sr-only">{{params.checkListO.checkItog_v4_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar  bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v5_P}}%;">
+								<span class="sr-only">{{params.checkListO.checkItog_v5_P}} %</span>
+							</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="row">
+						<div class="col-md-2">
+						<span class="sr-only">Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Общая оценка навыков коммуникации</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Презентация дополнительных товаров/услуг</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Работа с возражениями</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Резюмирование сделки (заезда на обслуживание)</span>
+						</div>
+					</div>
+
+				
+				
+				<br>
+				
+				<table class="table align-middle" >
+					<tbody>
+					<tr>
+						<td>
+						<audio controls style="width: 640px;">
+							{% if params.checkListO.audio %}
+							<source src="http://opros.kors-group.com/{{params.checkListO.audio.url}}">
+							{% else %}
+							<source src="http://opros.kors-group.com/{{params.checkListO.audio_voice_recorder.audio.url}}">
+							{% endif %}
+						</audio>
+						</td>
+
+					</tr>
+					</tbody>
+				</table>
+				
+				{% endif %}
+				
+			<hr>
+			
+			
+			
+			
+			
+			</div>
+
+			<div class="modal-footer">
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		
+		function test1(){ 
+			
+			var v1_1 = $("input[type='radio'][name='v1_1_1']:checked").val()
+			$('#v1_1').val(v1_1);
+
+			var v1_2 = $("input[type='radio'][name='v1_2_1']:checked").val()
+			$('#v1_2').val(v1_2);
+
+			var v1_3 = $("input[type='radio'][name='v1_3_1']:checked").val()
+			$('#v1_3').val(v1_3);
+
+			var v1_4 = $("input[type='radio'][name='v1_4_1']:checked").val()
+			$('#v1_4').val(v1_4);
+
+			var v1_5 = $("input[type='radio'][name='v1_5_1']:checked").val()
+			$('#v1_5').val(v1_5);
+
+			var v1_6 = $("input[type='radio'][name='v1_6_1']:checked").val()
+			$('#v1_6').val(v1_6);
+
+			document.getElementById('itog_v1').innerHTML = Number(document.getElementById('v1_1').value) + Number(document.getElementById('v1_2').value) + Number(document.getElementById('v1_3').value) + Number(document.getElementById('v1_4').value) + Number(document.getElementById('v1_5').value) + Number(document.getElementById('v1_6').value);
+			
+			document.getElementById('itog_v1P').innerHTML = div(Number(document.getElementById('itog_v1').innerHTML), Number(document.getElementById('itog_v1M').innerHTML)) 
+
+			itog();
+
+		}
+
+		function test2(){ 
+			
+			var v2_1 = $("input[type='radio'][name='v2_1_1']:checked").val()
+			$('#v2_1').val(v2_1);
+
+			var v2_2 = $("input[type='radio'][name='v2_2_1']:checked").val()
+			$('#v2_2').val(v2_2);
+
+			var v2_3 = $("input[type='radio'][name='v2_3_1']:checked").val()
+			$('#v2_3').val(v2_3);
+
+			var v2_4 = $("input[type='radio'][name='v2_4_1']:checked").val()
+			$('#v2_4').val(v2_4);
+
+			var v2_5 = $("input[type='radio'][name='v2_5_1']:checked").val()
+			$('#v2_5').val(v2_5);
+
+			var v2_6 = $("input[type='radio'][name='v2_6_1']:checked").val()
+			$('#v2_6').val(v2_6);
+
+			var v2_7 = $("input[type='radio'][name='v2_7_1']:checked").val()
+			$('#v2_7').val(v2_7);
+
+			document.getElementById('itog_v2').innerHTML = Number(document.getElementById('v2_1').value) + Number(document.getElementById('v2_2').value) + Number(document.getElementById('v2_3').value) + Number(document.getElementById('v2_4').value) + Number(document.getElementById('v2_5').value) + Number(document.getElementById('v2_6').value)  + Number(document.getElementById('v2_7').value);
+			
+			document.getElementById('itog_v2P').innerHTML = div(Number(document.getElementById('itog_v2').innerHTML), Number(document.getElementById('itog_v2M').innerHTML)) 
+
+			itog();
+		}
+
+		function test3(){ 
+			
+			var v3_1 = $("input[type='radio'][name='v3_1_1']:checked").val()
+			$('#v3_1').val(v3_1);
+
+			var v3_2 = $("input[type='radio'][name='v3_2_1']:checked").val()
+			$('#v3_2').val(v3_2);
+
+			var v3_3 = $("input[type='radio'][name='v3_3_1']:checked").val()
+			$('#v3_3').val(v3_3);
+
+			var v3_9 = $("input[type='radio'][name='v3_9_1']:checked").val()
+			$('#v3_9').val(v3_9);
+
+			document.getElementById('itog_v3').innerHTML = Number(document.getElementById('v3_1').value) + Number(document.getElementById('v3_2').value) + Number(document.getElementById('v3_3').value);
+			
+			document.getElementById('itog_v3P').innerHTML = div(Number(document.getElementById('itog_v3').innerHTML), Number(document.getElementById('itog_v3M').innerHTML)) 
+
+			itog();
+		}
+
+		function test4(){ 
+			
+			var v4_1 = $("input[type='radio'][name='v4_1_1']:checked").val()
+			$('#v4_1').val(v4_1);
+
+			var v4_2 = $("input[type='radio'][name='v4_2_1']:checked").val()
+			$('#v4_2').val(v4_2);
+
+			var v4_3 = $("input[type='radio'][name='v4_3_1']:checked").val()
+			$('#v4_3').val(v4_3);
+
+			var v4_4 = $("input[type='radio'][name='v4_4_1']:checked").val()
+			$('#v4_4').val(v4_4);
+
+			document.getElementById('itog_v4').innerHTML = Number(document.getElementById('v4_1').value) + Number(document.getElementById('v4_2').value) + Number(document.getElementById('v4_3').value);
+
+			document.getElementById('itog_v4P').innerHTML = div(Number(document.getElementById('itog_v4').innerHTML), Number(document.getElementById('itog_v4M').innerHTML)) 
+
+			itog();
+		} 
+
+		function test5(){ 
+			
+			var v5_1 = $("input[type='radio'][name='v5_1_1']:checked").val()
+			$('#v5_1').val(v5_1);
+
+			var v5_2 = $("input[type='radio'][name='v5_2_1']:checked").val()
+			$('#v5_2').val(v5_2);
+
+			var v5_3 = $("input[type='radio'][name='v5_3_1']:checked").val()
+			$('#v5_3').val(v5_3);
+
+			document.getElementById('itog_v5').innerHTML = Number(document.getElementById('v5_1').value) + Number(document.getElementById('v5_2').value) + Number(document.getElementById('v5_3').value);
+
+			document.getElementById('itog_v5P').innerHTML = div(Number(document.getElementById('itog_v5').innerHTML), Number(document.getElementById('itog_v5M').innerHTML)) 
+
+			itog();
+		}
+
+		function div(val, by){
+			return Math.floor(val/by*100);
+		}
+
+		function itog(){
+			document.getElementById('itog').innerHTML = Number(document.getElementById('itog_v1').innerHTML) +
+			Number(document.getElementById('itog_v2').innerHTML) + 
+			Number(document.getElementById('itog_v3').innerHTML) +
+			Number(document.getElementById('itog_v4').innerHTML) +
+			Number(document.getElementById('itog_v5').innerHTML)
+		}
+
+
+	</script>
+
+{% endblock %}

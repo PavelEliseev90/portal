@@ -1,0 +1,450 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - заказ наряды {% endblock %}
+
+{% block title_navbar %} - заказ наряды {% endblock %}
+    
+{% block content %}
+
+<form method="get">
+
+	<div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+				<h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+				</div>
+				<div class="modal-body">
+			
+					<div class="form-floating mb-3">
+						<input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="" value="" autocomplete="off">  
+						<label for="floatingInput">Наименование</label>
+					</div>
+				</div>
+			
+				<div class="modal-footer">
+					<button class="btn btn-success" type="submit" name="save_filter_new" id="save_filter_new">Сохранить</button>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			
+				<div class="modal-body">
+					
+						
+					<div class="form-floating mb-3">							
+						<select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
+							<option></option>
+							{% for unit_group in params.selected.units_group %}
+								<option value="{{unit_group.id}}" {% if params.filtr.unit_group_id == unit_group.id %} selected {% endif %}> {{unit_group.name}} </option>
+							{% endfor %}
+						</select>
+						<label for="floatingInput">Группа ДЦ</label>
+					</div>
+
+					<div class="form-floating mb-3">
+						<div class="card">
+							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Подразделение ДЦ</label><br>
+							
+							<div class="checkselect form-floating" style="padding-left: 0rem;">
+								
+								<div class="sticky-top bg-white">
+								<input class="form-control" type="text" id="search_units_name" value="" style="left: 0;" placeholder="Поиск" autocomplete="off">
+								<br>
+								<br>
+								</div>
+								
+								{% for unit_name in params.selected.units_name %}
+									{% if unit_name.name_search|length > 0 %}
+										<label style="margin: 0.2rem;" class="fs-6" id="label_search {{unit_name.name_search}}">
+											<input type="checkbox" name="units_name[]" value="{{unit_name.name_search}}" id="dc_units_name{{unit_name.name_search}}" {% if unit_name.name_search|join:"" in params.filtr.list_units_name %} checked {% endif %} > {{unit_name.name_search}}</label>
+									{% endif %}
+								{% endfor %}
+							
+								<script>
+								$('#search_units_name').on('input', function() {
+									var search = $(this).val();
+									if (search.length === 0){
+										$('[id*="label_search"]').removeClass('d-none');
+									}
+									else {
+										$('[id*="label_search"]').addClass('d-none');
+										var search_lower = search.toLowerCase();
+										var labels = $('[id*="label_search"]');
+										for (let i = 0; i < labels.length; i++) {
+										label = labels[i];
+										var id_name = label.id.toLowerCase();
+										if (id_name.indexOf(search_lower) >= 0){
+											console.log(label.id);
+											$('[id*="' + label.id + '"]').removeClass('d-none');                        
+										};
+										};
+									};                  
+								});              
+								</script>
+					
+							</div> 
+
+							</div>					
+						</div>
+					</div>
+
+					<div class="form-floating mb-3">
+						<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
+						<label for="floatingInput">Клиент, Номер ЗН или АМ, Марка или модель АМ</label>
+					</div>
+
+					<div class="form-floating mb-3">
+						<input class="form-control form-control-sm" type="month" id="date" name="date" value="{{params.filtr.date|date:"Y-m"}}">
+						<label for="floatingInput">Месяц</label>
+					</div>
+					
+					<div class="form-check form-switch">
+						<input class="form-check-input" type="checkbox" role="switch" name="new" id="new" {% if params.filtr.new %} checked {% endif %}>
+						<label class="form-check-label" for="new">Только с новыми событиями</label>
+					</div>
+					<hr>
+					
+					<div class="form-check form-switch">
+						<input class="form-check-input" type="checkbox" role="switch" name="organization" id="organization" {% if params.filtr.organization %} checked {% endif %}>
+						<label class="form-check-label" for="organization">Показывать юридические лица</label>
+					</div>
+					
+					{% if params.filters_user|length > 0 %}
+						
+						<hr>
+						
+						<div class="table-responsive">
+							<table class="table table-fit">
+							<tbody>
+									<tr>
+										{% for filter in params.filters_user %}
+								
+											<td>
+												<a href="{{filter.page}}{{filter.path}}" class="btn  btn-outline-success">{{filter.name}}</a>
+											</td>
+										
+										{% endfor %}
+										
+										<td>
+											<button type="button" class="btn btn-outline-success" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
+										</td>
+
+									</tr>
+							</tbody>
+							</table>
+						</div>
+
+					{% endif %}
+					
+					<hr>
+					
+					<div class="row">
+						<div class="col-auto">
+							
+							<button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
+							
+						</div>
+						<div class="col">
+							<button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
+						</div>
+					</div>
+				
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+</form>
+
+<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			{% if params.filters_user|length > 0 %}
+					<hr>
+					<div class="table-responsive">
+						<table class="table">
+						  <tbody>
+								
+							{% for filter in params.filters_user %}
+							<tr>
+								<td>
+									{{filter.name}}
+								</td>
+								<td>
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn  btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								</td>
+							</tr>
+							{% endfor %}
+								
+						  </tbody>
+						</table>
+					  </div>
+				{% endif %}
+		</div>
+		
+	  </div>
+	</div>
+</div>
+
+
+<div class="hidemobile">
+	
+	<div class="d-grid gap-2 col-12 mx-auto">
+		<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+	</div>
+
+	<hr>
+
+</div>
+
+
+<div class="row g-1">
+	{% if params.paginator.object_list %}
+		{% for doc in params.paginator.object_list %}
+				
+			<div class="card" onclick="window.location.href='{{doc.id}}/'; return false"> 
+				<div class="card-body" style="padding: 0;">
+					
+					<div class="row" style="padding: 0.2em;">
+						<div class="col-sm">
+							{{doc.dataTime}}
+						</div>
+						<div class="col-sm">
+							{{doc.nomer}}
+						</div>
+						<div class="col-sm">
+							{{doc.typeRemont}}
+						</div>
+						<div class="col-sm">
+							{{doc.customer.name}} 
+							<span class="icon-mbri-star"></span> {{doc.rating_customer}}
+						</div>
+						<div class="col-sm">
+							{{doc.cars.mark}} {{doc.cars.model}} / {{doc.cars.vin}} 
+						</div>
+						<div class="col-sm">
+							{{doc.cars_grz_board}}
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+																
+							<label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+								
+								<span class="icon-mbri-shopping-bag"></span> {{doc.products_count}}
+								<div class="vr"></div>
+								<span class="icon-mbri-setting3"></span> {{doc.works_count}}
+								<div class="vr"></div>
+								<span class="icon-mbri-add-submenu"></span> {{doc.recomendations_customer_count}}
+								<div class="vr"></div>
+								<span class="icon-mbri-website-theme"></span> {{doc.recomendations_mcu_count}}
+
+							</label>
+							
+						</div>
+						<div class="col text-end">
+							<label class="fs-4 
+								{% if doc.recomendations_new > 0 %}
+									bg-warning
+								{% elif doc.closed %} 
+									bg-success
+								{% else %}
+									bg-danger
+								{% endif %} 
+							bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{doc.amount|floatformat:"2g"}} &#8381;</label>
+						</div>
+					</div>
+				</div>
+			</div>
+				
+		{% endfor %} 
+	{% endif %}
+	
+</div>
+		
+
+<div class="row g-1">
+	<div class="col-auto"><label class="bg-danger text-danger">-</label> - в работе</div>
+	<div class="col-auto"><label class="bg-success text-success">-</label> - закрыт</div>
+	<div class="col-auto"><label class="bg-warning text-warning">-</label> - есть расширение</div>
+</div>
+
+
+<div class="row align-self-center align-items-center">
+	
+	<div class="col-auto">
+		<p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
+	</div>
+
+	<div class="col-auto align-items-center align-self-center justify-content-center">
+		<nav aria-label="Page navigation example">
+			<ul class="pagination justify-content-center">
+			
+				{% if params.paginator.has_previous %}
+					<li class="page-num mbr-section-btn">
+						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+					</li>
+				{% endif %}
+		
+				{% for p in params.paginator.paginator.page_range %}
+					{% if params.paginator.number == p %}
+						<li class="page-num mbr-section-btn disabled">
+							<a class="btn btn-secondary display-7">
+								<b>{{p}}</b>
+							</a>
+						</li>
+					{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+						<li class="page-num mbr-section-btn">
+							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+						</li>
+					{% endif %}
+				{% endfor %}
+					
+				{% if params.paginator.has_next %}
+					<li class="page-num mbr-section-btn">
+						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+					</li>
+				{% endif %}
+	
+			</ul>
+		</nav>
+	</div>
+
+	<div class="col justify-content-center">
+		
+		<div class="form-floating mb-3">
+			<select class="form-select" id="select_count" name="select_count" onchange="change_link()">
+			<option {% if params.select_count == 25 %} selected {% endif %}>25</option>
+			<option {% if params.select_count == 50 %} selected {% endif %}>50</option>
+			<option {% if params.select_count == 100 %} selected {% endif %}>100</option>
+			<option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
+			</select>
+			<label for="floatingInput">Выводить</label>
+		</div>
+		</div>
+
+</div>
+	
+
+<div class="hidesite">
+	
+	<br>
+	<br>
+	<br>
+	<div class="" style="position: fixed;
+	bottom: 0px;
+	right: 0px; 
+	left: 0px; 
+	padding: 20px;
+	z-index: 1030;">
+		<div class="d-grid gap-2 col-8 mx-auto">
+			<button type="button" class="btn btn-success bg-opacity-50" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+		</div>
+	</div>
+	
+</div>
+
+
+<script language="JavaScript">
+	
+	function change_link(){
+		
+		var url 	= new URL(document.location.href);
+
+		find_unit_group_id 	= document.getElementById('unit_group_id').value;
+		if (find_unit_group_id.length > 0){
+			url.searchParams.set('unit_group_id', find_unit_group_id);
+		}else{
+			url.searchParams.delete('unit_group_id')
+		}
+
+		find_unit_id 	= document.getElementById('unit_id').value;
+		if (find_unit_id.length > 0){
+			url.searchParams.set('unit_id', find_unit_id);
+		}else{
+			url.searchParams.delete('unit_id')
+		}
+
+		find_name 	= document.getElementById('name').value;
+		if (find_name.length > 0){
+			url.searchParams.set('name', find_name);
+		}else{
+			url.searchParams.delete('name')
+		}
+		
+		find_date = document.getElementById('date').value;
+		if (find_date.length > 0){
+			url.searchParams.set('date', find_date);
+		}else{
+			url.searchParams.delete('date')
+		}
+		
+		if (document.getElementById('organization').checked == true){
+			url.searchParams.set('organization', 'true');
+		}else{
+			url.searchParams.delete('organization')
+		}
+		
+		find_select_count = document.getElementById('select_count').value;
+		if (find_select_count.length > 0){
+			url.searchParams.set('select_count', find_select_count);
+		}else{
+			url.searchParams.delete('select_count')
+		}
+
+		if (document.getElementById('new').checked == true){
+			url.searchParams.set('new', 'true');
+		}else{
+			url.searchParams.delete('new')
+		}
+		
+		find_new_filtr 	= document.getElementById('new_filtr').value;
+		if (find_new_filtr.length > 0){
+			url.searchParams.set('new_filtr', find_new_filtr);
+			url.searchParams.delete('page')
+		}else{
+			url.searchParams.delete('new_filtr')
+		}
+
+		document.location.href  = url.href;
+
+	}
+
+</script>
+
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

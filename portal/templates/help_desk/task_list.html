@@ -1,0 +1,243 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - список задач {% endblock %}
+
+{% block title_navbar %} - список задач {% endblock %}
+    
+{% block content %}
+
+
+
+<form method="GET" id="form" name="form">
+	
+	<div class="row">
+
+		<div class="col-sm">
+			
+				<div class="card border-secondary">
+					
+					<div class="card-header bg-secondary text-white">
+						<span class="icon-mbri-arrow-down"  id="collapse_filtr_" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры</span>  
+					</div>
+					
+					<div class="collapse {% if params.filtr_count > 0 %} show {% endif %}" id="collapse_filtr" style="transition: 0.25s;">
+						<div class="card-body">
+							{% csrf_token %}
+							<div class="row g-2">
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control" name="nomer" {% if params.filtr.nomer %} value = {{params.filtr.nomer}} {% endif %} onchange="this.form.submit()" autocomplete="off">
+										<label for="floatingInput">Номер</label>
+									</div>
+								</div>
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<select class="form-select" name = "status" id = "unit" onchange="this.form.submit()" onChange="change_link()">
+											<option></option>
+											<option id="ВРаботе" value="ВРаботе" {% if params.filtr.status == "ВРаботе" %} selected {% endif %}>В работе</option>
+											<option id="Выполнено" value="Выполнено" {% if params.filtr.status == "Выполнено" %} selected {% endif %}>Выполнено</option>
+											<option id="Оценка" value="Оценка" {% if params.filtr.status == "Оценка" %} selected {% endif %}>Требуется оценить</option>
+										</select>
+										<label for="floatingInput">Статус</label>
+									</div>
+								</div>
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										{% if params.filtr.dateStart %}
+											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date" value="{{params.filtr.dateStart}}">
+										{% else %}
+											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date">
+										{% endif%}
+										<label for="floatingInput">Дата от</label>
+									</div>
+								</div>
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										{% if params.filtr.dateEnd %}
+											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end" value="{{params.filtr.dateEnd}}">
+										{% else %}
+											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end">
+										{% endif%}
+										<label for="floatingInput">Дата по</label>
+									</div>
+								</div>
+							</div>
+
+						</div>
+					</div>
+
+				</div>
+		</div>
+	</div>
+	<hr>	
+	<div class="row">
+		
+		<div class="col-sm">
+			
+			<div class="table-wrapper-scroll-y my-custom-scrollbar">
+				<div class="table-responsive-sm">
+					<table class="table table-sm table-striped table-hover">
+					<thead style="position: sticky;top: 0;">
+						<tr>
+							<th class='header_table bg-light' scope="col"></th>
+							<th class='header_table bg-light' scope="col">Дата</th>
+							<th class='header_table bg-light' scope="col">Номер</th>
+							<th class='header_table bg-light' scope="col">Тема</th>
+							<th class='header_table bg-light' scope="col">Инициатор</th>
+							<th class='header_table bg-light' scope="col">Исполнитель</th>
+							<th class='header_table bg-light' scope="col">Статус</th>
+							<th class='header_table bg-light' scope="col">Процесс</th>
+						</tr>
+					</thead>
+					<tbody>
+					
+						{% if params.answer %}
+							{% for task in params.answer.tasks %}
+								<tr onclick="window.location.href='task/{{task.Номер}}/'; return false">
+									<td>
+										{% if task.ТекущийЭтап == "Регистрация" %}
+											<span class="icon-mbri-idea"></span>
+										{% elif task.ТекущийЭтап == "Выполнено" %}
+											<span class="icon-mbri-success"></span>
+										{% elif task.ТекущийЭтап == "Отменено" %}
+											<span class="icon-mbri-close"></span>
+										{% elif task.ТекущийЭтап == "Новый" %}
+											<span class="icon-mbri-briefcase"></span>
+										{% elif task.ТекущийЭтап == "Выполнение" %}
+											<span class="icon-mbri-play"></span>
+										{% endif %}
+									</td>
+									<td>{{task.Дата}}</td>
+									<td>{{task.Номер}}</td>
+									<td><label>{{task.Тема|truncatechars:100}}</label></td>
+									<td><label>{{task.Инициатор}}</label></td>
+									<td><label>{{task.ТекущийИсполнитель}}</label></td>
+									<td><label>{{task.ТекущийЭтап}}</label></td>
+									<td><label>{{task.Процесс}}</label></td>
+								</tr>
+							{% endfor %} 
+						{% endif %}
+					</tbody>
+					</table>
+				</div>
+			</div>
+
+			<hr>
+
+			<div class="row g-1">
+				
+				<div class="col-sm justify-content-center">
+					<div class="form-floating mb-3">
+						<select class="form-select" name = "count" onchange="this.form.submit()">
+							<option {% if params.filtr.rcount == '25' %} selected {% endif %}>25</option>
+							<option {% if params.filtr.count == '50' %} selected {% endif %}>50</option>
+							<option {% if params.filtr.count == '100' %} selected {% endif %}>100</option>
+							<option {% if params.filtr.count == '200' %} selected {% endif %}> 200</option>
+						</select>
+						<label for="floatingInput">Выводить</label>
+					</div>
+				</div>
+				
+				<div class="col-sm justify-content-center">
+					
+					<nav aria-label="Page navigation example">
+						<ul class="pagination justify-content-center">
+							
+							{% if params.filtr.page or params.filtr.page == 1 %}
+								
+								{% if params.filtr.page|add:-1  > 0 %}
+									<li class="page-item">
+										<a class="page-link text-secondary" OnClick="a( {{params.filtr.page|add:-1}}  )"; name="page" value = "{{params.filtr.page|add:-1}}"> {{params.filtr.page|add:-1}} </a>
+									</li>
+								{% endif %}
+
+								<li class="page-item">
+									<a class="page-link bg-secondary text-white disabled" OnClick="a( {{params.filtr.page}})"; name="page" value = "{{params.filtr.page}}"> {{params.filtr.page}} </a>
+								</li>
+								
+								{% if params.answer.pages_count > params.filtr.page %}
+								
+									<li class="page-num">
+										<a class="page-link text-secondary" OnClick="a( {{ params.filtr.page|add:1}})"; name="page" value = "{{params.filtr.page|add:1}}">&gt;</a>
+									</li>
+
+								{% endif %}
+								
+							{% else %}
+								<li class="page-item">
+									<a class="page-link bg-secondary text-white disabled" OnClick="a( {{1}})"; name="page" value = "1"> 1 </a>
+								</li>
+								{% if params.answer.pages_count > 1 %}
+									<li class="page-num">
+										<a class="page-link text-secondary" OnClick="a( {{ 2 }})"; name="page" value = "2">&gt;</a>
+									</li>
+								{% endif %}
+							{% endif %}
+
+							
+
+							{% if  params.page_obj.has_previous %}
+								<li class="page-num">
+									<a class="page-link text-secondary"  OnClick="a( {{ params.page_obj.previous_page_number }})"; name="page" value = " {{ params.page_obj.previous_page_number }} ">&lt;</a>
+								</li>
+							{% endif %}
+					
+							{% for p in params.answer.paginator.page_range %}
+								{% if  params.page_obj.number == p %}
+								<li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
+										{% elif p >=  params.page_obj.number|add:-2 and p <=  params.page_obj.number|add:2  %}
+								<li class="page-item">
+									<a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+								</li>
+								{% endif %}
+							{% endfor %}
+								
+							{% if params.page_obj.has_next %}
+								<li class="page-num">
+									<a class="page-link text-secondary" OnClick="a( {{ params.page_obj.next_page_number }})"; name="page" value = " {{ params.page_obj.next_page_number }} ">&gt;</a>
+								</li>
+							{% endif %}
+					
+						</ul>
+					</nav>
+				</div>
+				
+				<div class="col-sm justify-content-center" >
+					Выведено : {{params.answer.tasks|length}} из {{params.answer.tasks_count}}
+				</div>
+
+			</div>
+		
+		</div>
+
+	</div>
+	
+</form>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+<script language="JavaScript">
+	$(document).ready(function() {
+		$("#collapse_filtr_").click(function(){
+			var class_filtr = $("#collapse_filtr_").attr('class');
+			if (class_filtr == 'icon-mbri-arrow-down'){
+				$('#collapse_filtr_').attr('class', 'icon-mbri-arrow-up');
+			}
+			else{
+				$('#collapse_filtr_').attr('class', 'icon-mbri-arrow-down');	
+			}
+		});
+	});
+</script>
+
+{% endblock %}

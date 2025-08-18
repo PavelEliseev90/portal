@@ -1,0 +1,64 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+
+{% block title %} - интерактивная оценка {{params.rlk}} {% endblock %}
+
+{% block title_navbar %} - интерактивная оценка {{params.rlk}} {% endblock %}
+
+{% block content %}
+
+<div class="carda">
+  <div class="card-body" style="padding: 0rem;"> 
+    <div class="row" style="border-radius: 0px 1% 1% 0px; ">
+      
+      <div class="col-12 col-md-4 col-lg-4 text-center" style=" max-height: 20rem; background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(255,255,255,1) 30%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0.8) 100%);">
+        <div style="border-radius: 0px 50% 50% 0px; max-height: 20rem; background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 20%, rgba(254,145,47,1) 20%, rgba(254,145,47,1) 100%); border-radius: 0px 50% 50% 0px; ">
+          <img src="/media/images/1.png" style="padding-right: 1rem; padding-top: 1.5rem; padding-bottom: 1.5rem; max-height: 20rem;">
+        </div>  
+      </div>
+  
+      <div class="col text-white" style="padding-top: 0.5rem; padding-left: 1rem; background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.8) 10%, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.8) 100%);">
+          
+        <div class="row">
+          <div class="col h4 text-warning" style="padding: 0rem;">AUDI Q8</div>
+        </div>  
+  
+        <div class="row">
+          <div class="col-auto h6" style="padding: 0rem;">
+            <div style="padding: 0; background: linear-gradient(90deg, rgba(254,145,47,1) 0%, rgba(254,145,47,1) 20%, rgba(254,145,47,0) 20%, rgba(0,0,0,0) 100%);" ><button type="button" class="btn btn-outline-warning text-start btn_autoinfo" style="background-color: rgba(51,51,51,1); margin-top: 1px; margin-bottom: 1px;"> <span class="h4 icon-mbri-calendar"></span> 2019</button></div>
+            
+          </div>
+        </div> 
+  
+        <div class="row">
+          <div class="col-auto h6" style="padding: 0rem;">
+            <div class="table-responsive">
+              <table class="table table-borderless table-fit">
+                <tr>
+                  <td class="col-auto" style="padding: 0; background: linear-gradient(90deg, rgba(254,145,47,1) 0%, rgba(254,145,47,1) 20%, rgba(254,145,47,0) 20%, rgba(0,0,0,0) 100%);" ><button type="button" class="btn btn-outline-warning text-start btn_autoinfo" style="background-color: rgba(51,51,51,1); margin-top: 1px; margin-bottom: 1px;"> <span class="h4 icon-mbri-delivery"></span> 108 000 км.</button></td>
+                  <td class="col-auto" style="padding: 0;"><button type="button" class="btn btn-outline-warning text-start btn_autoinfo"> <span class="h4 icon-mbri-delivery"></span> AT</button> </td>
+                  <td class="col-auto" style="padding: 0;"><button type="button" class="btn btn-outline-warning text-start btn_autoinfo"> <span class="h4 icon-mbri-delivery"></span> Полный привод</button> </td>
+                </tr> 
+              </table>
+            </div>
+          </div>
+        </div> 
+  
+        <div class="row">
+          <div class="col h5" style="padding: 0rem;">
+            <button type="button" class="btn btn-outline-warning text-start btn_autoinfo"> <span class="h4 icon-mbri-sale"></span> 5 596 000 руб.</button>
+          </div>
+        </div>  
+  
+      </div>
+  
+    </div>
+
+  </div>
+
+</div>
+  
+
+{% endblock %}

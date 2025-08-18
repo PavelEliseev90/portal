@@ -1,0 +1,109 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - чек листы отдела продаж новых ДЦ {% endblock %}
+
+{% block title_navbar %} - чек листы отдела продаж новых ДЦ {% endblock %}
+    
+{% block content %}
+ 	
+<div class="row g-2">
+
+	<div class="col-sm">
+		<div class="row g-3">
+			<div class="card">
+				<div class="card-header">
+				Фильтр
+				</div>
+				<div class="card-body">
+					<div class="row g-1">
+						<div class="col-sm-1">
+							<label>Месяц</label>
+							{% csrf_token %}
+							<input onchange="reload()" id='date' class="form-control form-control-sm" type="month" name="date" value="{{params.filtr.date|date:"Y-m"}}">		
+						</div>
+						
+						<div class="col-sm-1">
+							<label>Город</label>
+							<select class="form-select" name = "select_city" id = "city"  onChange="reload()">
+								<option> </option>
+								{% for city in params.selected.citys %}
+									{% if params.filtr.city_id|lower == city.id|lower %}
+										<option id={{city.id}} value="{{city.id}}" selected> {{city.name}} </option>
+									{% else %}
+										<option id={{city.id}} value="{{city.id}}"> {{city.name}} </option>
+									{% endif %}
+								{% endfor %}
+							</select>
+						</div>
+	
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<br>
+
+		<div class="accordion" id="accordionExample">
+			{% for unit_data in params.answer_list %}
+				<div class="accordion-item">
+				<h2 class="accordion-header" id="headingOne{{forloop.counter}}">
+					<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne{{forloop.counter}}" aria-expanded="true" aria-controls="collapseOne{{forloop.counter}}">
+					{{unit_data.unit.name}} {{unit_data.count}} / {{unit_data.countActive}} / {{unit_data.countNoActive}}
+					</button>
+				</h2>
+				<div id="collapseOne{{forloop.counter}}" class="accordion-collapse collapse show" aria-labelledby="headingOne{{forloop.counter}}" data-bs-parent="#accordionExample">
+					<div class="accordion-body">
+						
+						<div class="table-responsive-sm">
+							<table class="table table-hover table-sm">
+							<thead>
+								<tr>
+									<th scope="col">Сотрудник</th>
+									<th scope="col">Документов</th>
+									<th scope="col">Активных</th>
+									<th scope="col">Не активных</th>
+								</tr>
+							</thead>
+							<tbody>
+							
+								{% for staffs in unit_data.staffs %}
+									<tr>
+										<td>{{staffs.staff}}</td>
+										<td>{{staffs.countStaffDoc}}</td>
+										<td>{{staffs.countActive}}</td>
+										<td>{{staffs.countNoActive}}</td>
+									</tr>
+								{% endfor %} 
+								
+							</tbody>
+							</table>
+						</div>
+
+					</div>
+				</div>
+				</div>
+			{% endfor %}
+		</div>
+
+	</div>
+
+</div>
+
+<script language="JavaScript">
+   
+    function reload(){
+      	var url = new URL(document.location.href);
+		url.searchParams.delete('select_city');
+		url.searchParams.delete('date');
+		var city_id = document.getElementById('city').value;
+       	console.log(city_id);
+		url.searchParams.set('select_city', city_id);
+       	document.location.href  = url.href;
+    }
+  
+  </script>
+
+
+{% endblock %}

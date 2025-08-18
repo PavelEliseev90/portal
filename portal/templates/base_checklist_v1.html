@@ -1,0 +1,884 @@
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <!-- Обязательные метатеги -->
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <script src="/static/css/wNumb.min.js"></script>
+    <script src="/static/css/nouislider.min.js"></script>
+    <link href="/static/css/nouislider.min.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <link href="/static/css/style.css" rel='stylesheet' type='text/css' />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+    <title>{% block title %}Проект чек-лист - Главная{% endblock %}</title>
+    
+    <link rel="shortcut icon" type="image/x-icon" href="/static/images/fav-icon.ico" />
+
+    <script>
+      function loadPage() {
+         test1();
+         test2();
+         test3();
+         test4();
+         test5();
+         test6();
+         test7();
+         test8();
+      }
+    </script>
+
+    <style>
+          
+      .my-custom-scrollbar {
+        position: relative;
+        height: 80vh;
+        overflow: auto;
+      }
+      .table-wrapper-scroll-y {
+        display: block;
+      }
+      .btn-secondary{transition-property: background-color;
+        transition-duration: 1s;
+      }
+      A { font-size: 14px; color: blue; }
+      A.link-green { font-size: 14px; color: green; }
+      A.link-dark { font-size: 14px; color: dark; }
+      A.link-blue { font-size: 14px; color: blue; }
+      A:link { text-decoration: none; }
+      A:visited { text-decoration: none; }
+      A:active { text-decoration: none; }
+      
+      html {
+        font-size: 82.5%; /* font-size 1em = 10px on default browser settings */
+      }
+      
+      @import url(https://fonts.googleapis.com/css?family=PT+Sans);
+
+      body {
+      margin: 0;
+      font-family: PT Sans, sans-serif;
+      background-color: #fcfcfc;
+      color: #000;
+    }
+
+    .container {
+      max-width: 100%;
+      position: relative;
+
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+    }
+    .container::-webkit-scrollbar {
+      height: 45px;
+    }
+    .container::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      background-clip: content-box;
+      border-radius: 100%;
+      border: 20px solid transparent;
+    }
+
+    .entries {
+      margin-right: -10000px;
+      margin-left: 1rem;
+    }
+
+    .timeline {
+      position: fixed;
+      box-sizing: border-box;
+      width: 100%;
+      height: 0.7rem;
+      background-color: beige;
+      background-clip: content-box;
+      border-width: 0.2rem 0;
+      border-style: solid;
+      border-color: #fff;
+      box-shadow: 0 0 2rem 0 rgba(0, 0, 0, 0.1), inset 0 0 0.4em rgba(0, 0, 0, 0.1);
+    }
+
+    .entry {
+      float: left;
+      max-width: 350px;
+      position: relative;
+      text-align: center;
+      margin: 0 1rem;
+      margin-top: 0.7rem;
+    }
+    .entry .dot {
+      position: absolute;
+      width: 1.5rem;
+      height: 1.5rem;
+      background-color: powderblue;
+      left: 50%;
+      margin-left: -0.6rem;
+      margin-top: -0.95rem;
+      border-radius: 100%;
+      box-sizing: border-box;
+      background-clip: content-box;
+      border-width: 0.16rem;
+      border-style: solid;
+      border-color: #fff;
+      box-shadow: 0 0.1rem 1rem 0 rgba(0, 0, 0, 0.1), inset 0 0 0.4em rgba(255, 255, 255, 0.1), inset 0 0.4rem 0.1rem rgba(255, 255, 255, 0.3);
+      -moz-transition: height 0.2s linear, width 0.2s linear, margin 0.2s linear, background-color 0.3s ease-out;
+      -o-transition: height 0.2s linear, width 0.2s linear, margin 0.2s linear, background-color 0.3s ease-out;
+      -webkit-transition: height 0.2s linear, width 0.2s linear, margin 0.2s linear, background-color 0.3s ease-out;
+      transition: height 0.2s linear, width 0.2s linear, margin 0.2s linear, background-color 0.3s ease-out;
+    }
+
+    .entry:hover .dot {
+      width: 1.9rem;
+      height: 1.9rem;
+      margin-left: -0.8rem;
+      margin-top: -1.15rem;
+      background-color: thistle;
+    }
+    .entry:hover .label {
+      margin-top: 2.5rem;
+      background-color: #d0e8e4;
+      border-bottom: 0.5rem solid transparent;
+    }
+
+    .label {
+      display: inline-block;
+      position: relative;
+      background-color: #E1F0EE;
+      background-clip: padding-box;
+      margin-top: 3rem;
+      padding: 0.4rem 0.8rem 0.8rem;
+      border-radius: 0.2rem;
+      -moz-transition: margin-top 0.2s linear, background-color 0.2s linear, border-bottom 0.2s linear;
+      -o-transition: margin-top 0.2s linear, background-color 0.2s linear, border-bottom 0.2s linear;
+      -webkit-transition: margin-top 0.2s linear, background-color 0.2s linear, border-bottom 0.2s linear;
+      transition: margin-top 0.2s linear, background-color 0.2s linear, border-bottom 0.2s linear;
+      border-bottom: 0 solid transparent;
+    }
+    .label .time {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      margin: 0 0 0.4rem;
+      padding: 0 0.3rem 0.3rem;
+      letter-spacing: 1px;
+      display: inline-block;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+    }
+    .label .detail {
+      font-size: 0.8rem;
+    }
+    .label:before {
+      content: '';
+      display: block;
+      position: absolute;
+      background-color: inherit;
+      background-clip: content-box;
+      box-sizing: border-box;
+      width: 1rem;
+      height: 1rem;
+      left: 50%;
+      margin-top: -0.9rem;
+      margin-left: -0.5rem;
+      transform-origin: center;
+      -moz-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+      -webkit-transform: rotate(45deg);
+      transform: rotate(45deg);
+      z-index: -1;
+    }
+    .label a {
+      color: #000;
+      text-decoration: none;
+    }
+    .label a:before {
+      content: '';
+    }
+    .label a:after {
+      content: '';
+    }
+
+    .entry.life .label {
+      background-color: #e1f0e4;
+    }
+
+    .entry.life:hover .label {
+      background-color: #d0e8d5;
+    }
+
+    .entry.study .label {
+      background-color: #e1e8f0;
+    }
+
+    .entry.study:hover .label {
+      background-color: #d0dbe8;
+    }
+
+    .example::-webkit-scrollbar {
+      display: none;
+    }
+
+    .progress-bar-vertical {
+      width: 30px;
+      min-height: 100px;
+      margin-right: 20px;
+      float: left;
+      display: -webkit-box;  /* OLD - iOS 6-, Safari 3.1-6, BB7 */
+      display: -ms-flexbox;  /* TWEENER - IE 10 */
+      display: -webkit-flex; /* NEW - Safari 6.1+. iOS 7.1+, BB10 */
+      display: flex;         /* NEW, Spec - Firefox, Chrome, Opera */
+      align-items: flex-end;
+      -webkit-align-items: flex-end; /* Safari 7.0+ */
+    }
+
+    .progress-bar-vertical .progress-bar {
+      width: 100%;
+      height: 0;
+      -webkit-transition: height 0.6s ease;
+      -o-transition: height 0.6s ease;
+      transition: height 0.6s ease;
+    }
+
+    </style>
+
+
+  </head>
+  
+  <body onload="loadPage()" class="bg-light">
+    
+    <div class="container-fluid">
+      <!---start-wrap---->
+        <!---start-header---->
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">{{request.user}}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if request.user.is_authenticated %}
+              
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 0 %} active {% endif %}" aria-current="page" href="/">Рабочий стол</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if params.type == 1 %} active {% endif %}" href="/checklists/">Прослушка диктофонов</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if params.type == 12 %} active {% endif %}" href="/voice_recorders/">Записи диктофона</a>
+            </li>
+           
+            {% if request.user.is_staff %}
+              <li class="nav-item">
+                  <a class="nav-link {% if params.type == 5 %} active {% endif %}" href="/monitorings/">Мониторинг</a>
+              </li>
+            {% endif %}
+          
+            <li class="nav-item">
+                <a class="nav-link {% if params.type == 11 %} active {% endif %}" href="/docs_zn/">Заказ - наряды</a>
+            </li>
+         
+              
+            <!--  
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 2 %} active {% endif %}" href="/eco">ЕЦО</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 3 %} active {% endif %}" href="/manuals">Инструкции</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 4 %} active {% endif %}" href="/mylk/bronys">Обновления 1С</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 6 %} active {% endif %}" href="/mylk/comments">Обучающий портал</a>
+            </li>
+            
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 10 %} active {% endif %}" href="/">Опросы клиентов</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if params.type == 11 %} active {% endif %}" href="/doc">Доски приветсвия</a>
+            </li>
+          -->
+            <li class="nav-item">
+              <a class="nav-link" href="/logout">Выйти</a>
+            </li>
+          {% endif %}
+        </ul>
+        
+      </div>
+    </div>
+      </nav>   
+      
+    <header class="p-1 bg-secondary text-white">
+      <div class="container-fluid">
+        <div class="d-flex flex-wrap align-items-start justify-content justify-content-lg-start">
+          
+          <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-start mb-md-0">
+            <li><a href="/checklists/glav_new/" class="nav-link px-2 {% if params.nav_selected == 0 %} text-black {% else %} text-white {% endif %}">Главная</a></li>
+            <li><a href="/checklists/glav/op" class="nav-link px-2 {% if params.nav_selected == 1 %} text-black {% else %} text-white {% endif %}">Отдел продаж</a></li>
+            <li><a href="/checklists/glav/service_in" class="nav-link px-2 {% if params.nav_selected == 2 %} text-black {% else %} text-white {% endif %}">Сервис (прием авто)</a></li>
+            <li><a href="/checklists/glav/service_out" class="nav-link px-2 {% if params.nav_selected == 3 %} text-black {% else %} text-white {% endif %}">Сервис (выдача авто)</a></li>
+            <li><a href="/checklists/glav/trade_in" class="nav-link px-2 {% if params.nav_selected == 4 %} text-black {% else %} text-white {% endif %}">Отдел оценки (Корс - авто)</a></li>
+            <li><a href="/checklists/glav/op_kors" class="nav-link px-2 {% if params.nav_selected == 5 %} text-black {% else %} text-white {% endif %}">Отдел продаж (Корс - авто)</a></li>
+          </ul>
+
+        </div>
+      </div>
+    </header>
+      
+  <br>
+  
+  <div class="container-fluid bg-white"  id="content" {% if params.audio_voice %} style="padding-bottom: 200px;" {% endif %}>
+    
+    {% block content %}
+    {% endblock %}
+  
+  </div>
+
+  
+  {% if params.audio_voice %}
+     
+      <div class="fixed-bottom">
+          <div class="row g-1" style="background-color: white;">
+          
+              <span class="icon-mbri-arrow-down" style="padding-bottom: 25px; background-color: white;" id="colapse_player" data-bs-toggle="collapse" data-bs-target="#collapse_player" aria-expanded="false" aria-controls="collapse_player"> Скрыть плеер </span>
+
+              <div class="collapse show" id="collapse_player">
+                  
+                  <figure class="d-none">		
+                  <audio id="audio_voice"
+                  controls
+                  src="{{params.audio_voice.audio.url}}">
+                      Your browser does not support the
+                      <code>audio_voice</code> element.
+                  </audio>	
+                  </figure>
+
+                  <div class="row" style="padding: 10px;"> 
+                  
+                    <div class="col">
+                  
+                      <form name="form" method="post">
+                      
+                      <div class="card">
+                          
+                          <div class="col-sm-auto"  style="padding-left: 20px; padding-right: 20px; padding-bottom: 10px;">
+                            <div id="slider-pips">
+                            </div>
+                          </div>
+                          
+                          <div class="row g-2" style="padding-left: 5px; padding-right: 5px; padding-bottom: 10px;">
+                          
+                            <div class="col-sm-auto">
+                              {% if params.checkListO.audio %}
+                                <a class="btn btn-outline-primary" href="{{params.audio_voice.audio.url}}" target="_blank"> <span class="icon-mbri-download"></span> </a>
+                              {% endif %}
+                            </div>
+                            
+                            <div class="col-sm-auto" style="text-align: center;">
+                              
+                              <input type="hidden" name="audio_times" id="audio_times" value=''>
+                              
+                              <div class="btn-group me-2" role="group" aria-label="">
+                                  <button id="second_to" name="second_to" type="button" class="btn btn-outline-info">--:--:--</button>
+                              </div>
+                              
+                              <div class="btn-group me-2" role="group" aria-label="">
+                                              
+                                  <input type="radio" class="btn-check" name="btnradio" id="play" autocomplete="off">
+                                  <label class="btn btn-outline-success" for="play"><span class="icon-mbri-play"></span></label>
+                                  
+                                  <input type="radio" class="btn-check" name="btnradio" id="pause" autocomplete="off">
+                                  <label class="btn btn-outline-success" for="pause"><span class="icon-mbri-pause-1"></span></label>
+                                  
+                                  <input type="radio" class="btn-check" name="btnradio" id="restart" autocomplete="off">
+                                  <label class="btn btn-outline-success" for="restart"><span class="icon-mbri-undo"></span></label>
+                              </div>
+                              
+                              <div class="btn-group me-2" role="group" aria-label="">
+                                              
+                                <input type="radio" class="btn-check" name="btnradio" id="back" autocomplete="off">
+                                <label class="btn btn-outline-success" for="back"><span class="icon-mbri-play-back"></span></label>
+                                
+                                <input type="radio" class="btn-check" name="btnradio" id="plus" autocomplete="off">
+                                <label class="btn btn-outline-success" for="plus"><span class="icon-mbri-play-plus"></span></label>
+                                
+                              </div>
+
+                              <div class="btn-group" role="group" aria-label="">
+                                  <select class="form-select" id="speed" aria-label="Disabled select example">
+                                  <option value="0.25">x 0.25</option>
+                                  <option value="0.5">x 0.5</option>
+                                  <option value="0.75">x 0.75</option>
+                                  <option selected value="1">x 1</option>
+                                  <option value="1.25">x 1.25</option>
+                                  <option value="1.5">x 1.5</option>
+                                  <option value="1.75">x 1.75</option>
+                                  <option value="2">x 2</option>
+                                  </select>
+                              </div>
+                            
+                            </div>
+
+                            <div class="col-sm-1" style="padding-bottom: 35px; padding-left: 10px; padding-right: 10px;">
+                            
+                              <div id="slider-pips-volume"></div>
+                            </div>
+                            
+                            <div class="col-sm-auto" style="text-align: center;">  
+                                <div class="btn-toolbar" role="toolbar" aria-label="">
+                                
+                                  <input hidden name="audio_id_strip" value="{{params.audio_voice.id}}">
+                                  <input hidden name="select_unit" value="{{params.doc.unit.id}}">
+                                  <input hidden name="select_staff" value="{{params.doc.staff.id}}">
+                                  <input hidden name="date" value="{{params.doc.dataTime|date:"Y-m-d"}}">
+                                  <input hidden name="select_rlk" value="{{params.doc.id}}">
+                                  
+                                  {% csrf_token %}
+                                  
+                                  <div class="row g-1 align-items-top">
+                                    
+                                    <div class="col  align-self-center">
+                                        <div class="form-floating mb-3">
+                                        <input type="time" name="appt-time" step="2" class="form-control" id="second_from_record" name="second_from_record" placeholder="" value="-">
+                                        <label for="floatingInput">Начало</label>
+                                        </div>
+                                    </div> 
+                                    <div class="col align-self-center">
+                                        <div class="form-floating mb-3">
+                                        <input type="time" name="appt-time" step="2" class="form-control" id="second_to_record" name="second_to_record" max="01:00:00" placeholder="" value="-">
+                                        <label for="floatingInput">Конец</label>
+                                        </div>
+                                    </div>
+                                      
+                                    <div class="col align-self-top">
+                                        <button type="submit" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable1"> <span class="icon-mbri-left-right"></span> Обрезать</button>
+                                    </div> 
+
+                                  </div>
+
+                                </div>
+                            </div>
+                            
+                            <div class="col-sm-auto" style="text-align: center;">
+                              <div class="btn-group me-2" role="group" aria-label="">                         
+                                <button  class="btn btn-outline-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling"> <span class="icon-mbri-edit"></span> Вывести текст</button>
+                              </div>
+                            </div>
+                            
+                            <div class="col-sm-auto" style="text-align: center;">
+                              <div class="btn-group me-2" role="group" aria-label="">
+                                <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable">
+                                  <span class="icon-mbri-refresh"></span> Выбрать другую запись
+                                </button>
+                              </div>
+                            </div>
+
+                          </div>
+                      
+                      </div>
+                      
+                      </form>
+    
+                    </div>
+                  
+                  </div>
+              
+              </div>
+
+          </div>
+      </div>
+
+      <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Текст аудио записи</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+        </div>
+        <div class="offcanvas-body">
+          <hr>
+          
+          <table id="table_text" class="table" style="vertical-align: middle;">
+            <tbody id="scrollContent">
+            {% for data in params.data_list %}
+            
+            <tr id='{{data.sec}}'>
+              <td class="align-middle">
+                <label class="form-label">{{data.time}}</label>
+              </td>
+              <td class="align-middle">
+                <label class="form-label">{{data.text}}</label>
+              </td>
+            </tr>
+    
+            {% endfor %}
+          </tbody>
+          </table>
+          
+        </div>
+      </div>
+      
+      <div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Записи сотрудника {{params.doc.staff}} от {{params.doc.dataTime|date:"d.m.Y"}}</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <span>Для выбора записи(-ей) нажмите на строку, для выбора нескольких записей нажмите на них в порядке очереди (очередь отображена в столбце "№"), в последующем они будут соеденены в одну запись. Повторное нажатие на строку удаляет № все остальные записи перенумеруются согласно очередности нажатия на них.</span>
+            <hr>
+            <table id="audio_user" class="table table-striped">
+              <thead>
+                <tr>
+                  <th scope="col">№</th>
+                  <th scope="col">Дата и время</th>
+                  <th scope="col">Имя файла</th>
+                    <th scope="col">Продолжительность</th>
+                  <th scope="col"></th>
+                </tr>
+                </thead>
+              <tbody>
+                {% for audio_voice_record in params.audios %}
+                <tr id="{{audio_voice_record.audio.id}}">
+                  <td class="align-middle">
+                    <label id={{audio_voice_record.audio.id}}' type="checkbox" value="{{audio_voice_record.audio.id}}"> </label>
+                  </td>
+                  <td class="align-middle">{{audio_voice_record.audio.date}}</td>	
+                  <td class="align-middle">{{audio_voice_record.audio.name}}</td>
+                  <td class="align-middle">{{audio_voice_record.audio.time}}</td>
+                  <td class="align-middle"><audio id="audio_voice"
+                    controls
+                    src="{{audio_voice_record.audio.audio.url}}">
+                      Your browser does not support the
+                      <code>audio_voice</code> element.
+                  </audio>
+                  </td>
+                </tr>
+                {% endfor %} 
+              </tbody>
+              </table>
+              <hr>
+              <span>Спасибо что воспользовались нашим сервисом :)</span>
+          </div>
+
+          <div class="modal-footer">
+            <form name="form" method="post">
+            {% csrf_token %}
+            <input hidden type='text' id="audio_user_cheked" name="audio_user_cheked" value=""> 
+            <input hidden name="select_unit" value="{{params.doc.unit.id}}">
+            <input hidden name="select_staff" value="{{params.doc.staff.id}}">
+            <input hidden name="date" value="{{params.doc.dataTime|date:"Y-m-d"}}">
+            <input hidden name="select_rlk" value="{{params.doc.id}}">
+                
+            <button type="submit" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable1" id="audio_user_sends_button" class="btn btn-success" style="visibility: hidden;" data-bs-dismiss="modal">Выбрать записи</button>
+            </form>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+          </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal fade" id="exampleModalCenteredScrollable1" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="exampleModalCenteredScrollableTitle1">Выполняется обработка аудио записи...</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <div class="modal-body" style="text-align: center;">
+          <h3>Выполняется обработка аудио записи... не обновляйте страничку и не закрывайте вкладку браузера.</h3>
+          <br>
+          <hr>
+          <h3>По завершению операции страница обновится автоматически.</h3>
+        </div>
+
+        <div class="modal-footer">
+          
+        </div>
+        </div>
+      </div>
+      </div>
+    
+    {% if params.data_list|length > 0 %}
+
+      <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Текст аудио записи</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+        </div>
+        <div class="offcanvas-body">
+          <hr>
+          
+          <table id="table_text" class="table" style="vertical-align: middle;">
+            <tbody id="scrollContent">
+            {% for data in params.data_list %}
+            
+            <tr id='{{data.sec}}'>
+              <td>
+                <label class="form-label">{{data.time}}</label>
+              </td>
+              <td>
+                <label class="form-label">{{data.text}}</label>
+              </td>
+            </tr>
+
+            {% endfor %}
+          </tbody>
+          </table>
+          
+        </div>
+      </div>
+
+    {% endif %}
+
+
+    <script language="JavaScript">
+        function reload(id){
+            var url = new URL(document.location.href);
+                url.searchParams.set('tag_id', id)
+                document.location.href  = url.href;
+            }
+    </script>
+
+    <script language="JavaScript">
+        $(document).ready(function() {
+            $("#colapse_player").click(function(){
+                var textlabel = $("#colapse_player").text();
+                if (textlabel == ' Скрыть плеер '){
+                    $('#colapse_player').attr('class', 'icon-mbri-arrow-up');
+                    $("#colapse_player").text(' Показать плеер ');
+                    $("#content").css({"padding-bottom":"25px"});
+                }
+                else{
+                    $('#colapse_player').attr('class', 'icon-mbri-arrow-down');
+                    $("#colapse_player").text(' Скрыть плеер ');
+                    $("#content").css({"padding-bottom":"200px"});
+                }
+            });
+        });
+    </script>
+
+    <script language="JavaScript">
+
+        var duration 	= {{params.audio_voice.time}}
+
+        var end 		= {{params.audio_voice.time}}
+
+        $(document).ready(function() {
+            
+            var audioElement    = document.getElementById('audio_voice');
+            
+            duration = audioElement.duration;
+            
+            audioElement.addEventListener('ended', function() {
+                this.play();
+            }, false);
+            
+            audioElement.addEventListener("canplay",function(){
+                $("#length").text("Duration:" + audioElement.duration + " seconds");
+                $("#source").text("Source:" + audioElement.src);
+                $("#status").text("Status: Ready to play").css("color","green");
+            });
+            
+            audioElement.addEventListener("timeupdate",function(){
+                $("#currentTime").text("Current second:" + audioElement.currentTime);
+                pipsSlider.noUiSlider.setHandle(1, audioElement.currentTime);
+                $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+                if (audioElement.currentTime > end){
+                    audioElement.pause();
+                };
+                $('#table_text tr').addClass(function(){
+                    var classToToggle = '';
+                    if ($(this)[0].id < audioElement.currentTime && $(this).hasClass('')) {
+                        var classToToggle = 'table-danger';
+                        var rowpos = $(this).position(); 
+                        $('#table2').scrollTop(rowpos.top - 20);
+                    }
+                    return classToToggle;
+                });
+                
+            });
+            
+            $('#play').click(function() {
+                audioElement.play();
+                $("#status").text("Status: Playing");
+            });
+            
+            $('#pause').click(function() {
+                audioElement.pause();
+                $("#status").text("Status: Paused");
+            });
+            
+            $("select").change(function () {
+                var value = $( "select#speed option:checked" ).val();
+                audioElement.playbackRate = value;
+            });
+
+            $('#restart').click(function() {
+                audioElement.currentTime = 0;
+                $('#table_text tr').removeClass();
+            });
+            
+            function times(timestamp){
+                var hours = Math.floor(timestamp / 60 / 60);
+                var minutes = Math.floor(timestamp / 60) - (hours * 60);
+                var seconds = timestamp % 60;
+                var formatted = [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                seconds.toString().padStart(2, '0')
+                ].join(':');
+                return  formatted
+            }
+
+            });
+
+        $("#table_text tr").click(function() {
+            $('#table_text tr').removeClass();
+            var current 				= $(this)[0].id;
+            var audioElement    		= document.getElementById('audio_voice');
+            audioElement.currentTime 	= current;
+        });
+
+        $("#audio_user tr").click(function() {
+            
+            var current 	= $(this)[0].id;
+            var audios = $("#audio_user_cheked").val()
+            
+            if (audios.indexOf(current) > 0)
+            {
+                audios = audios.replace('|' + current, "")
+                $("#audio_user_cheked").val(audios);
+            }
+            else{
+                $("#audio_user_cheked").val(audios + '|' + current);
+            }
+            
+            var audios = $("#audio_user_cheked").val()
+            if (audios.length > 0){
+                document.getElementById('audio_user_sends_button').style.visibility = 'visible';
+            }else{
+                document.getElementById('audio_user_sends_button').style.visibility = 'hidden';
+            }
+            
+            $('#audio_user label').text('');
+            
+            ids = audios.split('|');
+            for (let i = 0; i < ids.length; i++) { // выведет 0, затем 1, затем 2
+                if (ids[i].length > 0){
+                    id = '#' + ids[i] + ' label';
+                    
+                    $(id).text(i);	
+                }
+            }
+
+        });
+
+        var format = {
+            to: function(value) {
+                console.log(value);
+                return secondsToHHMM(value);
+            },
+            from: function (value) {
+                return HHMMtoMinutes(value);
+            }
+        };
+
+        var pipsSlider = document.getElementById('slider-pips');
+
+        noUiSlider.create(pipsSlider, {
+            start: [0, 0, duration],
+            connect: [false, true, true, false],
+            tooltips: [{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},],
+            range: {
+                'min': 0,
+                'max': duration
+            }
+        });
+
+        var classes = ['c-1-color', 'c-2-color', 'c-3-color', 'c-4-color', 'c-5-color'];
+
+        var pipsSliderConnect = pipsSlider.querySelectorAll('.noUi-connect');
+        for (var i = 0; i < pipsSliderConnect.length; i++) {
+            pipsSliderConnect[i].classList.add(classes[i]);
+        }
+
+        var clickPipsSlider = document.getElementById('slider-pips-volume');
+        noUiSlider.create(clickPipsSlider, {
+            range: {
+                min: 0,
+                max: 100
+            },
+            connect: [true, false],
+            start: [80],
+            pips: {mode: 'count', values: 5}
+        });
+
+        var clickPipsSliderConnect = clickPipsSlider.querySelectorAll('.noUi-connect');
+        for (var i = 0; i < clickPipsSliderConnect.length; i++) {
+            clickPipsSliderConnect[i].classList.add(classes[i]);
+        }
+
+        function secondsToHHMM(value) {
+            return new Date(value * 1000).toISOString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");      
+        }
+
+        function minutesToHHMM(value) {
+                value = Math.round(value);
+                var hour = Math.floor(value / 60);
+                var min = value - hour * 60;
+                //console.log("value:" + value + "\thour: " + hour + "\tmin: " + min)
+                return ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
+            }
+
+        function HHMMtoMinutes(value) {
+                var split = value.toString().split(":");
+                var hour = parseInt(split[0], 10) * 60;
+                var min = parseInt(split[1], 10);
+                //console.log("value: " + value + "\thour: " + hour + "\tmin " + min);
+                return hour + min;
+            }
+
+        clickPipsSlider.noUiSlider.on('update', function (values) {
+            var audioElement    = document.getElementById('audio_voice');
+            audioElement.volume = values[0]/100;
+        });
+
+        pipsSlider.noUiSlider.on('update', function (values, handle, unencoded, drag, positions) {
+            $("#second_from_record").val(secondsToHHMM(values[0]));
+        $("#second_to_record").val(secondsToHHMM(values[2]));
+
+            $("#audio_times").val(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+            end = values[2]; 
+        });
+
+        pipsSlider.noUiSlider.on('change', function (values, handle, unencoded, drag, positions) { 
+            var audioElement = document.getElementById('audio_voice');
+            audioElement.currentTime = values[1]
+            $('#table_text tr').removeClass();
+        });
+
+        function reload(id){
+    var url = new URL(document.location.href);
+        url.searchParams.set('tag_id', id)
+        document.location.href  = url.href;
+    }
+
+    </script>
+
+{% endif %}
+
+
+  </body>
+  
+</html>

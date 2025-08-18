@@ -1,0 +1,175 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - чек листы  {% if params.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %} {% endblock %}
+
+{% block title_navbar %} - чек листы {% if params.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %} {% endblock %}
+
+{% block content %}
+
+<form method="GET" id="form" name="form">
+  
+  <div class="row g-1">
+    
+    <div class="col-sm-auto my-auto">
+      <div class="form-floating mb-3">
+        <select class="form-select" id="direction" name="direction" aria-label="Направление">
+          <option value="1" {% if params.filtr.direction == 1 %} selected {% endif %}>ОП новых автомобилей</option>
+          <option value="5" {% if params.filtr.direction == 5 %} selected {% endif %}>ОП КорсАвто автомобили с пробегом</option>
+        </select>
+        <label for="floatingInput">Направление</label>
+      </div>
+    </div>
+
+    <div class="col-sm">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
+          <label for="floatingInput">Наименование</label>
+      </div>
+    </div>
+
+    <div class="col-sm-auto my-auto">
+      <div class="form-floating mb-3">
+          <button class="btn btn-outline-success" title="Отобрать чек листы"><span class="icon-mbri-search"> </span></button>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<form method="POST" id="save_check" name="save_check">
+  {% csrf_token %}
+  <input type="hidden" name='direction_id' value="{{params.filtr.direction}}">
+  <div class="row g-1">
+    <div class="col-sm my-auto">
+      <div class="form-floating mb-3">
+        <select class="form-select" id="check_id" name="check_id" aria-label="Чек лист">
+          <option selected> Не указан</option>
+          {% for check in params.check_settings_list %}
+            <option value="{{check.pk}}" {% if params.filtr.settings_check_records == check.pk %} selected {% endif %}>{{check.name}}</option>
+          {% endfor %}
+        </select>
+        <label for="floatingInput">Текущий чек лист для записей диктофонов {% if params.filtr.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %}</label>
+      </div>
+    </div>
+    <div class="col-sm-auto my-auto">
+      <div class="col-sm-auto my-auto">
+        <div class="form-floating mb-3">
+            <button type="submit" name='save_check' class="btn btn-outline-success" title="Сохранить изменения активного чек листа по направлению"><span class="icon-mbri-success"> </span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>      
+
+
+  <div class="card mb-3">
+    
+    <div class="row g-0">
+    
+    <div class="col-sm">
+      <div class="card-body">
+        <h5 class="card-title"> <span class="icon-mbri-home"> </span> Настройки чек листов {% if params.filtr.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %} <a href="0?direction={{params.filtr.direction}}" class="link-success"><span class="icon-mbri-plus"></span></a></h5>
+        
+        <div class="row g-4">
+          
+          {% if params.check_settings_list|length > 0 %}
+
+            {% for check in params.check_settings_list %}
+              {% if params.filtr.settings_check_records == check.pk %} 
+                <div class="col-sm-auto">
+                  <div class="row g-1">
+                    {% if check.estimation > 0 %}    
+                        <div class="col-sm-auto">
+                          <a class="nav-link" href='{{check.pk}}'>
+                          <div class="card border-success mb-3" style="max-width: 22rem;">
+                            <div class="card-body">
+                              <div class="card-title"><span class="icon-mbri-close"></span><b>{{check.name}} </b></div>
+                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
+                              <hr>
+                              <div class="book">
+                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
+                              </div>
+                            </div>
+                          </div>
+                          </a>
+                        </div>
+                      {% else %}
+                        <div class="col-sm-auto">
+                          <a class="nav-link text-success" href='{{check.pk}}'>
+                          <div class="card border-success mb-3">
+                            <div class="card-body">
+                              <div class="card-title"><span class="icon-mbri-play"></span><b>{{check.name}} </b></div>
+                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
+                              <hr>
+                              <div class="book">
+                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
+                              </div>
+                            </div>
+                          </div>
+                          </a>
+                        </div>
+                      {% endif %}
+            
+                  </div>
+                </div>
+              {% endif %}    
+            {% endfor %}
+            
+            {% for check in params.check_settings_list %}
+              {% if params.filtr.settings_check_records != check.pk %} 
+                <div class="col-sm-auto">
+                  <div class="row g-1">
+                    {% if check.estimation > 0 %}    
+                        <div class="col-sm-auto">
+                          <a class="nav-link" href='{{check.pk}}'>
+                          <div class="card border-danger mb-3" style="max-width: 20rem;">
+                            <div class="card-body">
+                              <div class="card-title"><span class="icon-mbri-close"></span><b>{{check.name}} </b></div>
+                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
+                              <hr>
+                              <div class="book">
+                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
+                              </div>
+                            </div>
+                          </div>
+                          </a>
+                        </div>
+                      {% else %}
+                        <div class="col-sm-auto">
+                          <a class="nav-link text-danger" href='{{check.pk}}'>
+                          <div class="card border-danger mb-3">
+                            <div class="card-body">
+                              <div class="card-title"><span class="icon-mbri-close"></span><b>{{check.name}} </b></div>
+                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
+                              <hr>
+                              <div class="book">
+                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
+                              </div>
+                            </div>
+                          </div>
+                          </a>
+                        </div>
+                      {% endif %}
+            
+                  </div>
+                </div>
+              {% endif %}               
+            {% endfor %}
+
+          {% else %}
+              <div style="text-align: center;" class="row g-1">
+                <p class="fs-5 fw-normal">Пока нет чек листов.</p>
+              </div>
+          {% endif %}
+        </div>
+        
+      </div>
+    </div>
+    </div>
+  </div>
+
+
+
+{% endblock %}
+

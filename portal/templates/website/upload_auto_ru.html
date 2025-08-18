@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+  
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    
+
+    </body>
+</html>
+
+
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - загрузка / обновление каталога авто ру {% endblock %}
+
+{% block title_navbar %} - загрузка / обновление каталога авто ру {% endblock %}
+    
+{% block content %}
+
+<div class="grid"> 
+  
+  <p style = "text-align: center;"> 
+    <b>
+      Загрузка / обновление каталогов <a href="https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml">авто.ру</a>
+    </b>
+  </p>
+  
+  <div style="text-align: center;">
+    
+    <div style="text-align: center;" class="row g-1">
+      <p class="fs-5 fw-normal">{{params.text}}</p>
+    </div>
+
+    <form action="post/" enctype="multipart/form-data" method="post">
+      
+      {% csrf_token %}
+      <input type="file" name="xmlfile">
+
+      <input type="submit" value="загрузить">
+      
+    </form>
+
+  </div>
+		
+
+{% endblock %}

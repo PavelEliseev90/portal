@@ -1,0 +1,883 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - Рабочий лист {{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
+
+{% block title_navbar %} - Рабочий лист {{params.doc.nomer}} от {{params.doc.dataTime}}  {% endblock %}
+
+
+{% block content %}
+<style>
+  .highcharts-figure .chart-container {
+    width: 250px;
+    height: 175px;
+    float: inline-block;
+}
+
+
+
+@media (max-width: 600px) {
+    .highcharts-figure,
+    .highcharts-data-table table {
+        width: 100%;
+    }
+
+    .highcharts-figure .chart-container {
+        width: 250px;
+        float: none;
+        margin: 0 auto;
+    }
+}
+
+</style>
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+
+<div class="row g-1">
+
+  <div class="col-sm">
+    
+    <div class="row">
+      
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.dataTime}}" autocomplete="off" readonly>
+          <label for="floatingInput">Дата</label>
+        </div>
+      </div>
+      
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.nomer}}" autocomplete="off" readonly>
+          <label for="floatingInput">Номер</label>
+        </div>
+      </div>
+
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.contacType}}" autocomplete="off" readonly>
+          <label for="floatingInput">Вид контакта</label>
+        </div>
+      </div>
+
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{% if params.doc.archiveDayToDay %} Да {% else %} Нет {% endif %}" autocomplete="off" readonly>
+          <label for="floatingInput">Закрыт день в день</label>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="row">
+      
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.unit.name}}" autocomplete="off" readonly>
+          <label for="floatingInput">Подразделение</label>
+        </div>
+      </div>
+      
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.staff}}" autocomplete="off" readonly>
+          <label for="floatingInput">Менеджер</label>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <div class="row">
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{% if params.doc.clientName|length > 0 %} {{params.doc.clientName}} {% else %} Не указан {% endif %}" autocomplete="off" readonly>
+          <label for="floatingInput">Клиент</label>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{% if params.doc.phone|length > 0 %} {{params.doc.phone}} {% else %} Не указан {% endif %}" autocomplete="off" readonly>
+          <label for="floatingInput">Телефон</label>
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="row">
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.dataTimeCreate}}" autocomplete="off" readonly>
+          <label for="floatingInput">Дата создания</label>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.dataEnd}}" autocomplete="off" readonly>
+          <label for="floatingInput">Дата окончания</label>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.doc.time_visit}}" autocomplete="off" readonly>
+          <label for="floatingInput">Продолжительность</label>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="row">
+      <div class="col-sm">
+        <div class="mb-3">
+          <label for="exampleFormControlTextarea1" class="form-label">Комментарий администратора</label>
+          <textarea class="form-control" id="exampleFormControlTextarea1" rows="8" readonly>{{params.doc.commentAdministrator}}</textarea>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="mb-3">
+          <label for="exampleFormControlTextarea1" class="form-label">Комментарий менеджера</label>
+          <textarea class="form-control" id="exampleFormControlTextarea1" rows="8" readonly>{{params.doc.commentManager}}</textarea>
+        </div>
+      </div>
+    </div>
+  
+  </div>
+
+  <div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px;">
+    
+    <div class="card text-center align-self-center text-center">
+      <div class="card-body text-center align-self-center text-center">
+        <figure class="highcharts-figure">
+          <div id="container-kg" class="chart-container"></div>
+        </figure>
+        
+        {% if params.cheklist == None %}
+        
+          {% if params.cheklist_direction == 5 %}
+            <a class="btn btn-block btn-outline-success" href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.doc.id}}">Создать</a>
+          {% else %}
+            <a class="btn btn-block btn-outline-success" href="/checklists/glav/op/doc/?checkid={{params.doc.id}}">Создать</a>
+          {% endif %}
+
+        {% else %}
+
+          {% if params.cheklist_direction == 5 %}
+            <a class="btn btn-block btn-outline-secondary" href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.doc.id}}">Открыть</a>
+          {% else %}
+            <a class="btn btn-block btn-outline-secondary" href="/checklists/glav/op/doc/?checkid={{params.doc.id}}">Открыть</a>
+          {% endif %}
+
+        {% endif %}
+
+      </div>
+    </div>
+
+    <br>
+
+    <div class="card text-center align-self-center text-center">
+      <div class="card-body text-center align-self-center text-center">
+        <figure class="highcharts-figure">
+          <div id="container-cvc" class="chart-container"></div>
+        </figure>
+        
+
+      </div>
+    </div>
+
+  </div>
+
+ 
+
+</div>
+
+<nav>
+  <div class="nav nav-tabs" id="nav-tab" role="tablist">
+    <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true">Записи - {{params.audio_list|length}}</button>
+    <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">События РЛК - {{params.doc.events|length}}</button>
+    
+  </div>
+</nav>
+
+<div class="tab-content" id="nav-tabContent">
+  
+  <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab" tabindex="0">
+    <br>
+    
+    
+    <div class="collapse show" id="collapse_player" style="transition: 0.25s;">
+          
+          
+      <figure class="d-none">		
+          <audio id="audio_voice"
+              controls
+              src="{{params.audio.audio_record.audio.url}}">
+                  Your browser does not support the
+                  <code>audio_voice</code> element.
+          </audio>	
+      </figure>
+
+      <div class="row" style="padding: 10px;"> 
+      
+          <div class="col">
+      
+              <form name="form" method="post">
+              
+                  <div class="card" style="padding-top: 30px;">
+                      
+                      <div class="col-sm-auto"  style="padding-left: 20px; padding-right: 20px; padding-bottom: 10px;" >
+                          <!--
+                          <div class="row" style="padding-bottom: 2px; padding-top: 2px;">
+                              <img src="media/logo/1.png" style="height: 50px;">
+                          </div>
+                      -->
+                          <div id="slider-pips">
+                          </div>
+                        
+                      </div>
+                      
+                      <div class="row g-1" style="padding-left: 2px; padding-right: 2px; padding-bottom: 10px;">
+                      
+                          <div class="col-sm-auto">
+                              {% if params.audio %}
+                                  <div class="d-grid gap-2" role="group" aria-label="Базовая группа переключателей радио">
+                                      <a class="btn btn-outline-primary btn-block" href="{{params.audio.audio_record.audio.url}}" target="_blank"> cкачать запись </a>
+                                  </div>
+                              {% endif %}
+                          </div>
+                      
+                          <div class="col-sm-auto" style="text-align: center;">
+                          
+                              <input type="hidden" name="audio_times" id="audio_times" value=''>
+                              
+                              <div class="btn-group me-2" role="group" aria-label="Третья группа">
+                                  <button id="second_to" name="second_to" type="button" class="btn btn-outline-info">--:--:--</button>
+                              </div>
+                              
+                              <div class="btn-group me-2" role="group" aria-label="Базовая группа переключателей радио">
+                                              
+                                  <input type="radio" class="btn-check" name="btnradio" id="play" autocomplete="off">
+                                  <label class="btn btn-outline-success" for="play"><span class="icon-mbri-play"></span></label>
+                                  
+                                  <input type="radio" class="btn-check" name="btnradio" id="pause" autocomplete="off">
+                                  <label class="btn btn-outline-success" for="pause"><span class="icon-mbri-pause-1"></span></label>
+                                  
+                                  <input type="radio" class="btn-check" name="btnradio" id="restart" autocomplete="off">
+                                  <label class="btn btn-outline-success" for="restart"><span class="icon-mbri-undo"></span></label>
+
+                              </div>
+                              
+                              <div class="btn-group" role="group" aria-label="Базовая группа переключателей радио">
+                                  <select class="form-select" id="speed" aria-label="Disabled select example">
+                                  <option value="0.25">x 0.25</option>
+                                  <option value="0.5">x 0.5</option>
+                                  <option value="0.75">x 0.75</option>
+                                  <option selected value="1">x 1</option>
+                                  <option value="1.25">x 1.25</option>
+                                  <option value="1.5">x 1.5</option>
+                                  <option value="1.75">x 1.75</option>
+                                  <option value="2">x 2</option>
+                                  </select>
+                              </div>
+                              
+                          </div>
+
+                          <div class="col-sm-1" style="padding-bottom: 35px; padding-left: 10px; padding-right: 10px;">
+                              <div id="slider-pips-volume">
+                                  
+                              </div>
+                          </div>
+                          <div class="col-sm-auto my-auto">
+                            <div class="form-floating mb-3">
+                              <input class="form-control form-control-sm" type="text" id="date_start" name="date_start" value="{{params.audio.start_record_seconds_human}}" readonly>
+                              <label for="floatingInput">Старт оценки</label>
+                            </div>
+                          </div><div class="col-sm-auto my-auto">
+                            <div class="form-floating mb-3">
+                              <input class="form-control form-control-sm" type="text" id="date_start" name="date_start" value="{{params.audio.end_record_seconds_human}}" readonly>
+                              <label for="floatingInput">Конец оценки</label>
+                            </div>
+                          </div>
+                          
+                  
+                      </div>
+                      
+                  </div>
+              
+              </form>
+          
+          </div>
+      
+      </div>
+  
+    </div>
+    
+    <br>
+    <div class="card {%if audio.success %} text-success {% else %} text-danger {% endif %}">
+      <div class="card-body">
+        <div class="row g-1">
+        
+          <div class="col-sm-auto">
+            <span class="icon-mbri-play text-white"></span>
+          </div>
+
+          <div class="col-sm">
+            Имя файла
+          </div>
+          <div class="col-sm">
+            Загружен
+          </div>
+          <div class="col-sm">
+            Конвертирован
+          </div>
+          
+          <div class="col-sm">
+            Начало записи
+          </div>
+          <div class="col-sm">
+            Окончание записи
+          </div>
+          <div class="col-sm">
+            Продолжительность
+          </div>
+          <div class="col-sm">
+            Документов по записи
+          </div>
+          <div class="col-sm-auto">
+            {%if audio.success %} 
+              <span class="icon-mbri-success"> </span>
+            {% else %}  
+              <span class="icon-mbri-close"> </span>
+            {% endif %}
+          </div>
+          
+        </div>
+      </div>
+    </div>  
+    <br>
+    {% for audio in params.audio_list %}
+      <div class="card {%if audio.success %} text-success {% else %} text-danger {% endif %}">
+        <div class="card-body">
+          <div class="row g-1">
+          
+            <div class="col-sm-auto">
+              <span class="icon-mbri-play"></span>
+            </div>
+
+            <div class="col-sm">
+              {{audio.audio_record.name}}
+            </div>
+            <div class="col-sm">
+              {{audio.audio_record.date_create}}
+            </div>
+            <div class="col-sm">
+              {{audio.audio_record.dateRecognitions}}
+            </div>
+            
+            <div class="col-sm">
+              {{audio.audio_record.date}}
+            </div>
+            <div class="col-sm">
+              {{audio.audio_record.date_end}}
+            </div>
+            <div class="col-sm">
+              {{audio.audio_record.time_human}}
+            </div>
+            
+            <div class="col-sm" data-bs-toggle="modal" data-bs-target="#exampleModalAudio{{forloop.counter}}">
+              {{audio.fragments|length}}
+            </div>
+
+            <div class="col-sm-auto">
+              {%if audio.success %} 
+                <span class="icon-mbri-success">OK</span>
+              {% else %}  
+                <span class="icon-mbri-close">No</span>
+              {% endif %}
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="exampleModalAudio{{forloop.counter}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-xl">
+          <div class="modal-content">
+          <div class="modal-header">
+            
+            <span class="icon-mbri-play"> &nbsp; {{audio.audio_record.name}}</span> 
+
+          </div>
+          
+            <div class="modal-body">
+
+              {% if audio.fragments|length > 0 %}
+               
+                {% for fragment in audio.fragments %}
+                  <div class="card {%if audio.success %} text-success {% else %} text-danger {% endif %}" style="margin: 0.2rem;">
+                    <div class="card-body">
+                      <div class="row g-1">
+                      
+                        <div class="col-sm-auto">
+                          <span class="icon-mbri-play"></span>
+                        </div>
+            
+                        <div class="col-sm">
+                          {{fragment.event_id}}
+                        </div>
+
+                        <div class="col-sm">
+                          {{fragment.event_nomer}}
+                        </div>
+
+                        <div class="col-sm">
+                          {{fragment.manager}}
+                        </div>  
+
+                        <div class="col-sm">
+                          {{fragment.fragment_time_start}}
+                        </div>
+
+                        <div class="col-sm">
+                          {{fragment.fragment_time_end}}
+                        </div>
+
+                        <div class="col-sm">
+                          {{fragment.time_human}}
+                        </div>
+                        
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+
+                  <hr>
+                  <form method="post">
+                    {% csrf_token %}
+                    <input hidden id="record_replace_send_id" name="record_replace_send_id" value="{{audio.audio_record.id}}">
+                    <button id="replace_send" name="replace_send" type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Переотправить</button>
+                  </form>
+              {% else %}
+                <p class="fs-6"> Нет документов по данной записи диктофона</p>
+              {% endif %}
+
+              
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <br>
+    {% endfor %}
+  </div>
+  
+  <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab" tabindex="0">
+    <div class="table-responsive-sm">
+      <table class="table table-sm table-striped table-hover">
+        <tbody> 
+          {% for event in params.doc.events %}
+            <tr class="align-middle"> 
+              <td class="align-middle">{{event.dataTime}}</td>
+              <td class="align-middle">{{event.dataTimeEvent}}</td>
+              <td class="align-middle">{{event.contacType}}</td>
+              <td class="align-middle">{{event.comment}}</td>
+              <td class="align-middle">{{event.staff}}</td>
+              <td class="align-middle">{{event.status}}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  
+</div>
+
+
+
+<script language="JavaScript">
+ 
+  var array_record = jQuery.parseJSON({{params.audio_list_array|safe}}); 
+  
+  var duration 	= {{params.audio.audio_record.time}}
+
+  var end 		= {{params.audio.audio_record.time}}
+
+  $(document).ready(function() {
+      
+      var audioElement    = document.getElementById('audio_voice');
+      
+      duration = audioElement.duration;
+      
+      {% if params.audio.start_record_seconds %}
+          audioElement.currentTime = {{params.audio.start_record_seconds}} ;
+          pipsSlider.noUiSlider.setHandle(0, {{params.audio.start_record_seconds}} - 100 );    
+          pipsSlider.noUiSlider.setHandle(1, {{params.audio.start_record_seconds}});
+          $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+      {% endif %}
+
+      {% if params.audio.end_record_seconds %}
+          pipsSlider.noUiSlider.setHandle(2, {{params.audio.end_record_seconds}}); 
+      {% endif %}
+
+      audioElement.addEventListener('ended', function() {
+          this.play();
+      }, false);
+      
+      audioElement.addEventListener("canplay",function(){
+          $("#length").text("Duration:" + audioElement.duration + " seconds");
+          $("#source").text("Source:" + audioElement.src);
+          $("#status").text("Status: Ready to play").css("color","green");
+      });
+      
+      audioElement.addEventListener("timeupdate",function(){
+          $("#currentTime").text("Current second:" + audioElement.currentTime);
+          pipsSlider.noUiSlider.setHandle(1, audioElement.currentTime);
+          $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+          if (audioElement.currentTime > end){
+              audioElement.pause();
+          };
+          $('#table_text tr').addClass(function(){
+              var classToToggle = '';
+              if ($(this)[0].id < audioElement.currentTime && $(this).hasClass('')) {
+                  var classToToggle = 'table-danger';
+                  var rowpos = $(this).position(); 
+                  $('#table2').scrollTop(rowpos.top - 20);
+              }
+              return classToToggle;
+          });
+          
+      });
+      
+      $('#play').click(function() {
+          audioElement.play();
+          $("#status").text("Status: Playing");
+      });
+      
+      $('#pause').click(function() {
+          audioElement.pause();
+          $("#status").text("Status: Paused");
+      });
+      
+      $("select").change(function () {
+          var value = $( "select#speed option:checked" ).val();
+          audioElement.playbackRate = value;
+      });
+
+      $('#restart').click(function() {
+          audioElement.currentTime = 0;
+          $('#table_text tr').removeClass();
+      });
+      
+      function times(timestamp){
+          var hours = Math.floor(timestamp / 60 / 60);
+          var minutes = Math.floor(timestamp / 60) - (hours * 60);
+          var seconds = timestamp % 60;
+          var formatted = [
+          hours.toString().padStart(2, '0'),
+          minutes.toString().padStart(2, '0'),
+          seconds.toString().padStart(2, '0')
+          ].join(':');
+          return  formatted
+      }
+
+      });
+
+  $("#table_text tr").click(function() {
+      $('#table_text tr').removeClass();
+      var current 				= $(this)[0].id;
+      var audioElement    		= document.getElementById('audio_voice');
+      audioElement.currentTime 	= current;
+  });
+
+  $("#audio_user tr").click(function() {
+      
+      var current 	= $(this)[0].id;
+      var audios = $("#audio_user_cheked").val()
+      
+      if (audios.indexOf(current) > 0)
+      {
+          audios = audios.replace('|' + current, "")
+          $("#audio_user_cheked").val(audios);
+      }
+      else{
+          $("#audio_user_cheked").val(audios + '|' + current);
+      }
+      
+      var audios = $("#audio_user_cheked").val()
+      if (audios.length > 0){
+          document.getElementById('audio_user_sends_button').style.visibility = 'visible';
+      }else{
+          document.getElementById('audio_user_sends_button').style.visibility = 'hidden';
+      }
+      
+      $('#audio_user label').text('');
+      
+      ids = audios.split('|');
+      for (let i = 0; i < ids.length; i++) { // выведет 0, затем 1, затем 2
+          if (ids[i].length > 0){
+              id = '#' + ids[i] + ' label';
+              
+              $(id).text(i);	
+          }
+      }
+
+  });
+
+  var format = {
+      to: function(value) {
+          console.log(value);
+          return secondsToHHMM(value);
+      },
+      from: function (value) {
+          return HHMMtoMinutes(value);
+      }
+  };
+
+  var pipsSlider = document.getElementById('slider-pips');
+
+  noUiSlider.create(pipsSlider, {
+      start: [0, 0, duration],
+      connect: [false, true, true, false],
+      tooltips: [{to: secondsToHHMM,
+                  from: HHMMtoMinutes},{to: secondsToHHMM,
+                  from: HHMMtoMinutes},{to: secondsToHHMM,
+                  from: HHMMtoMinutes},],
+      range: {
+          'min': 0,
+          'max': duration
+      }
+  });
+
+  var classes = ['c-1-color', 'c-2-color', 'c-3-color', 'c-4-color', 'c-5-color'];
+
+  var pipsSliderConnect = pipsSlider.querySelectorAll('.noUi-connect');
+  for (var i = 0; i < pipsSliderConnect.length; i++) {
+      pipsSliderConnect[i].classList.add(classes[i]);
+  }
+
+  var clickPipsSlider = document.getElementById('slider-pips-volume');
+  noUiSlider.create(clickPipsSlider, {
+      range: {
+          min: 0,
+          max: 100
+      },
+      connect: [true, false],
+      start: [80],
+      pips: {mode: 'count', values: 5}
+  });
+
+  var clickPipsSliderConnect = clickPipsSlider.querySelectorAll('.noUi-connect');
+  for (var i = 0; i < clickPipsSliderConnect.length; i++) {
+      clickPipsSliderConnect[i].classList.add(classes[i]);
+  }
+
+  function secondsToHHMM(value) {
+      return new Date(value * 1000).toISOString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");      
+  }
+
+  function minutesToHHMM(value) {
+          value = Math.round(value);
+          var hour = Math.floor(value / 60);
+          var min = value - hour * 60;
+          //console.log("value:" + value + "\thour: " + hour + "\tmin: " + min)
+          return ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
+      }
+
+  function HHMMtoMinutes(value) {
+          var split = value.toString().split(":");
+          var hour = parseInt(split[0], 10) * 60;
+          var min = parseInt(split[1], 10);
+          //console.log("value: " + value + "\thour: " + hour + "\tmin " + min);
+          return hour + min;
+      }
+
+  clickPipsSlider.noUiSlider.on('update', function (values) {
+      var audioElement    = document.getElementById('audio_voice');
+      audioElement.volume = values[0]/100;
+  });
+
+  pipsSlider.noUiSlider.on('update', function (values, handle, unencoded, drag, positions) {
+      $("#second_from_record").val(secondsToHHMM(values[0]));
+  $("#second_to_record").val(secondsToHHMM(values[2]));
+
+      $("#audio_times").val(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+      end = values[2]; 
+  });
+
+  pipsSlider.noUiSlider.on('change', function (values, handle, unencoded, drag, positions) { 
+      var audioElement = document.getElementById('audio_voice');
+      audioElement.currentTime = values[1]
+      $('#table_text tr').removeClass();
+  });
+
+  function reload(id){
+      var url = new URL(document.location.href);
+      url.searchParams.set('tag_id', id)
+      document.location.href  = url.href;
+  }
+
+</script>
+
+<script>
+  function play_record(record, record_array_elem){
+    var audioElement    = document.getElementById('audio_voice_call');
+    var src             = audioElement.src;
+    if (src.indexOf(record) >= 0){
+      console.log('текущая запись');
+    }
+    else{
+      $(".btn-check").removeAttr('checked').prop('checked', false).parent().removeClass('active');
+      $(".btn-group button").removeClass("active");
+      var duration 	= record_array_elem.duration;
+      var end 		  = record_array_elem.duration;
+
+      audioElement.duration     = record_array_elem.duration;
+      audioElement.src          = record_array_elem.path;
+      audioElement.currentTime  = 0;
+      
+      var pipsSlider = document.getElementById('slider-pips');
+      pipsSlider.noUiSlider.destroy()
+      noUiSlider.create(pipsSlider, {
+      start: [0, 0, duration],
+      connect: [false, true, true, false],
+      tooltips: [{to: secondsToHHMM,
+                  from: HHMMtoMinutes},{to: secondsToHHMM,
+                  from: HHMMtoMinutes},{to: secondsToHHMM,
+                  from: HHMMtoMinutes},],
+      range: {
+          'min': 0,
+          'max': duration
+        }
+      });
+
+      refresh_pips();
+      
+  }
+</script>
+
+<script>
+
+var gaugeOptions = {
+  chart: {
+      type: 'solidgauge'
+  },
+
+  title: null,
+
+  pane: {
+      center: ['50%', '85%'],
+      size: '140%',
+      startAngle: -90,
+      endAngle: 90,
+      background: {
+          backgroundColor:
+              Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+          innerRadius: '60%',
+          outerRadius: '100%',
+          shape: 'arc'
+      }
+  },
+
+  exporting: {
+      enabled: false
+  },
+
+  tooltip: {
+      enabled: false
+  },
+
+  // the value axis
+  yAxis: {
+      stops: [
+          [0.3, '#DF5353'], // green
+          [0.5, '#DDDF0D'], // yellow
+          [0.7, '#55BF3B'] // red
+      ],
+      lineWidth: 0,
+      tickWidth: 0,
+      minorTickInterval: null,
+      tickAmount: 2,
+      title: {
+          y: -70
+      },
+      labels: {
+          y: 16
+      }
+  },
+
+  plotOptions: {
+      solidgauge: {
+          dataLabels: {
+              y: 5,
+              borderWidth: 0,
+              useHTML: true
+          }
+      }
+  }
+};
+
+// The speed gauge
+var chart_cvc = Highcharts.chart('container-cvc', Highcharts.merge(gaugeOptions, {
+  yAxis: {
+      min: 0,
+      max: 100,
+      title: {
+          text: 'CVC'
+      }
+  },
+
+  credits: {
+      enabled: false
+  },
+
+  series: [{
+      name: 'CVC',
+      data: [{{params.doc.check_list_cvc_result}}],
+      dataLabels: {
+          format:
+              '<div style="text-align:center">' +
+              '<span style="font-size:25px">{y}</span><br/>' +
+              '<span style="font-size:12px;opacity:0.4">%</span>' +
+              '</div>'
+      }
+  }]
+
+}));
+
+
+var chartRpm = Highcharts.chart('container-kg', Highcharts.merge(gaugeOptions, {
+  yAxis: {
+      min: 0,
+      max: 100,
+      title: {
+          text: 'KG'
+      }
+  },
+
+  series: [{
+      name: 'KG',
+      data: [{{params.doc.check_list_kg_result}}],
+      dataLabels: {
+        format:
+              '<div style="text-align:center">' +
+              '<span style="font-size:25px">{y}</span><br/>' +
+              '<span style="font-size:12px;opacity:0.4">%</span>' +
+              '</div>'
+      }
+  }]
+
+}));
+  
+</script>
+
+{% endblock %}
+

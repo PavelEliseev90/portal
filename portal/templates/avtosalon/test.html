@@ -1,0 +1,19 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} склад автомобилей {% endblock %}
+
+{% block title_navbar %} - склад автомобилей {{params.object.name}}  {% endblock %}
+    
+{% block content %}
+
+<form method="post">
+	{% csrf_token %}
+	<textarea name="data" id="data"></textarea>
+
+	<button type="submit">Ds</button>
+
+</form>
+
+{% endblock %}

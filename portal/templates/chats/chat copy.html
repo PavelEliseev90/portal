@@ -1,0 +1,277 @@
+{% extends 'base_web.html' %}
+
+
+{% block url %} {% endblock %} 
+
+{% block meta_description %}
+  
+{% endblock %}
+
+{% block meta_keywords %}
+    
+{% endblock %}
+
+{% block title %}
+
+    Чат {{params.chat.name}}
+
+{% endblock %} 
+
+{% block title_navbar %}
+    
+    Чат {{params.chat.name}}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="hidemobile bg-silver">
+    <section class="features035 cid-tYUDzovvlA" id="call-to-action-11-tYUDzovvlA" style="padding-top: 5rem;">
+        
+        <div class="container">
+            
+            <div class="hidemobile">
+                
+                <br>
+        
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a class="text-white" href="/chats/"><span class="icon-mbri-left"></span> К списку чатов</a></li>                            
+                    </ol>
+                </nav> 
+
+                {% if params.chat.product == None %}
+                    <span class="time fs-6">Общий</span>
+                {% else %}    
+                    <a href="/product/{{params.chat.product.slug}}/"> <span class="time fs-6">{{params.chat.product.name}} для {{params.chat.product.get_name_avito}} за {{params.chat.product.price|floatformat:"2g"}} &#8381; </span></a>
+                {% endif %}
+
+            </div>
+            
+        </div>
+       
+    </section>
+</div>  
+
+{% if params.cookie.name == params.cookie.cookie %}
+<form action="" method="POST">
+    <div class="modal fade " id="exampleModal" tabindex="-1" data-show="true" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="exampleModalLabel" aria-hidden="false" >
+        <div class="modal-dialog modal-dialog-centered">
+           
+                <div class="modal-content">
+                    
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-user"></span> Как к Вам обращатся?</h5>
+                    </div>
+                    
+                    <div class="modal-body">
+                        
+                        
+                        <div class="form-floating mb-3">
+                            <input type='text' class="form-control" name="name"  value ="" autocomplete="off" required>
+                            <label for="name"></label>
+                        </div>
+
+                    </div>
+                    
+                    <div class="modal-footer">
+                        
+                        {% csrf_token %}
+                        <button class="btn btn-block btn-outline-success" name="name_ok" type="submit"><span class="icon-mbri-success"></span> Ok </button>
+                        
+                    </div>
+
+                </div>
+            
+        </div>
+    </div>
+</form> 
+    <script type="text/javascript">
+        $(window).on('load',function(){
+            $('#exampleModal').modal('show');
+        });
+    </script>
+
+{% endif %}
+  
+
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
+        <div class="container">
+        
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+                
+                {% if params.messages|length > 0 %}
+                    
+                    {% for message in params.messages %}
+                    
+                        <div class="item features-image col-12">
+                            <div class="item-wrapper-chat{% if not message.cookie.admin %}-owner{% endif %}" >
+                                <div class="item-content-chat">
+                                    <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                        {{message.content}}
+                                    </h6>
+                                </div>
+                                <p class="item-time-chat text-end">{{message.date}}</p>
+                                
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="item features-image col-12" id="no-message">
+                        <div class="item-wrapper-chat">
+                            <div class="item-content-chat">
+                                <h6 class="item-title mbr-fonts-style display-9 text-count">
+                                    
+                                </h6>
+                                <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                    В чате пока нет сообщений. Напишите мы обязательно ответим.
+                                </h6>
+                            </div>
+                            
+                            
+                        </div>
+                    </div>
+                {% endif %}
+               
+            </div>
+        </div>
+    </section>
+
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1  fixed-bottom"   style="padding: 0rem;">
+       
+       <form id="post-form">
+        
+        {% csrf_token %}
+                
+            <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
+            <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
+               
+            <div class="input-group mb-3 form-control bg-primary" style="padding: 0rem;">
+                <input type="text" class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off">
+                <button class="btn btn-primary-send" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+                
+            </div>
+   
+        </form>
+
+    </section>
+
+    <script>
+        const chat_id  = '{{params.chat.pk}}';
+        const name_user = '{{params.user.name}}';
+        const chatName  = '{{params.chat.slug}}';
+        const chatC     = '{{params.cookie.cookie}}';
+        var one         = true;
+
+        if (window.location.protocol == 'https:') {
+            wsProtocol = 'wss://'
+        } else {
+            wsProtocol = 'ws://'
+        };
+        
+        wsProtocol = 'wss://';
+        var ws_url = '127.0.0.1:8000';
+
+        const chatSocket = new WebSocket(
+            wsProtocol
+            + ws_url
+            + '/ws/'
+            + chatName + chatC
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e){
+            console.log('ON');
+
+            const data = JSON.parse(e.data);
+
+            if (data.message){
+                let now = new Date()
+                var html = ''
+                if (data.admin == true){
+                    var style = "style='margin-right: 0rem; margin-left: 4rem'";
+                
+                    html = '<div class="item features-image col-12">';
+                    html += '   <div class="item-wrapper-chat">';
+                    html += '      <div class="item-content-chat">';
+                    html += '          <h6 class="item-title mbr-fonts-style display-9">';
+                    html += '          ' + data.message + '';
+                    html += '          </h6>';
+                    html += '           <p class="item-time-chat text-end">' + now.getHours() + ':' + now.getMinutes() + '</p>'
+                    html += '       </div>';
+                    html += '   </div>';
+                    html += '</div>';
+                }
+                else{
+                    var style = "style='margin-right: 4rem; margin-left: 0rem'";
+                    html = '<div class="item features-image col-12">';
+                    html += '<div class="item-wrapper-chat-owner">';
+                    html += '<div class="item-content-chat">';
+                   
+                    html += '<h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">';
+                    html += data.message;
+                    html += '</h6>';
+                    html += '<p class="item-time-chat text-end">' + now.getHours() + ':' + now.getMinutes() + '</p>'
+                    html += '</div>';
+                    html += '</div> ';
+                    html += '</div>';
+                }
+                
+                document.querySelector('#message-list').innerHTML += html;  
+                
+                scrollToBottom();
+
+            }
+        }
+
+        chatSocket.onclose = function(e){
+            console.log('OFF');
+        }
+        
+        //
+
+        document.querySelector('#form-sumbit').onclick = function(e){
+            e.preventDefault();
+
+            const messageInputDom = document.querySelector('#message');
+            const message = messageInputDom.value;
+
+            chatSocket.send(
+                JSON.stringify(
+                    {
+                        'chat_id': chat_id,
+                        'name': name_user,
+                        'chat': chatName,
+                        'message': message,
+                        'username': '{{params.cookie.cookie}}',
+                        'chat_cookie' : ""
+                    }
+                )
+            );
+
+            messageInputDom.value = '';
+            if (one == true){
+                const no_message = document.getElementById("no-message");
+                no_message.style.display = 'none';
+                one = false;
+            }
+            return false;
+
+        }
+
+        function scrollToBottom(){
+            const divs = document.getElementById("message-list");
+            divs.scrollIntoViewIfNeeded(); 
+        }
+
+        scrollToBottom();
+
+    </script>
+
+  {% endblock %}
+
+    
+
+   

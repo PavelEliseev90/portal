@@ -1,0 +1,202 @@
+{% extends 'base_web_board_lada.html' %}
+
+{% block refresh %}content="{{params.time}};URL={{params.url_next}}"{% endblock %} 
+
+{% block title %} Добро пожаловать {% endblock %}
+
+
+{% block content %}
+
+<style>
+
+html { 
+  overflow-y: hidden;
+  overflow-x: hidden; 
+}
+
+.table_style {
+  border-collapse: collapse;
+  width: 100%;  
+}
+
+.table_td {
+  border: 1px solid white;
+  text-align: center;
+}
+
+.table_td_left {
+  text-align: left;
+}
+.wrapper1 {
+      width: 100%;
+      height: 90%;
+       border: 2px solid #515151;
+      }
+  .exmp3 img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+
+  
+  <script language="JavaScript">
+     function zero_first_format(value)
+     {
+         if (value < 10)
+         {
+             value='0'+value;
+         }
+         return value;
+     }
+     function fulltime () {
+       var time = new Date();
+       var hours = zero_first_format(time.getHours());
+       var minutes = zero_first_format(time.getMinutes());
+       var seconds = zero_first_format(time.getSeconds());
+       
+       var day = zero_first_format(time.getDate());
+       var month = zero_first_format(time.getMonth()+1);
+       var year = time.getFullYear()
+
+       var clockW = hours + ":" + minutes +":" + seconds;
+       document.getElementById('clock').innerHTML = clockW;
+       setTimeout('fulltime()', 500)
+   }
+   </script>
+   
+   <script language="JavaScript">
+     fulltime ();
+   </script>
+   
+  <div class="row g-1 bg-secondary" style="padding: 40px;">
+
+    <div class="col-sm-3">
+      <div class="d-flex justify-content-center align-items-center" style="height: 80px;">
+        <h1 style="color: orange;"><label style = 'font-size: 2.1em'>LADA</label></h1>
+       
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="d-flex align-items-center" style="height: 80px;">
+        <div class="p-2">
+          <h1 style="color: white; font-size: 40px;">ДОБРО ПОЖАЛОВАТЬ!</h1>
+          <h4 style="color: white;">Спасибо что приехали вовремя.</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-3">
+      <div class="d-flex bg-dark justify-content-center align-items-center" style="height: 80px; border-radius: 20px;">
+        <h1 style="color: orange;"><label style = 'font-size: 1.5em' id = "clock"></label></h1>
+      </div>
+    </div>
+
+
+  </div>
+
+  <script language="JavaScript">
+    fulltime ();
+  </script>
+
+         
+<div class="row g-1">
+
+  <div class="col-sm-3" style="padding: 15px;">
+
+    {% for staff in params.staffs %}
+      <br>
+      {% if staff.main_photo %}
+        <div class="wrapper1 exmp3">
+          <img src="{{staff.main_photo.url}}" >
+        </div>
+      {% endif %}
+      <br>
+        <b>{{staff.name}}</b>
+        <br>
+        Мастер-консультант
+      <hr>
+
+    {% endfor %}
+
+  </div>
+  
+
+  <div class="col-sm">
+    <div class="table-responsive-sm">
+			<table class="table table-hover table-striped table-sm" style="font-size: 1.5em;">
+        
+        <thead style="position: sticky;top: 0;">
+          <tr>
+            <th class='header_table' scope="col">Время<br>приемки</th>
+            <th class='header_table' style="text-align: center;" scope="col">Клиент</th>
+            <th class='header_table' scope="col">Госномер<br>Модель а/м</th>     
+          </tr>
+        </thead>
+
+        <tbody>
+        
+          {% if params.docs %}
+            {% for doc in params.docs %}
+              {% if not doc.active %}
+                
+                <tr>
+                  
+                  <td style="text-align: center; max-width: 300px;">{{doc.dataTime|date:"H:i"}}</td>
+                
+                  <td> {{doc.customer.name}}</td>
+
+                  <td style="width: 400px;"> {{doc.carsGRZ|upper}} <br> {{doc.cars.model|title}}</td>
+                  
+                </tr>
+
+              {% endif %}
+            {% endfor %} 
+          {% endif %}
+
+          {% if params.docs_online %}
+          {% for doc in params.docs_online %}
+           
+              
+              <tr>
+                
+                <td style="text-align: center; max-width: 300px;">{{doc.dataTimeRecord|date:"H:i"}}</td>
+              
+                <td> {{doc.clientName}}</td>
+
+                <td style="width: 400px;"> --- <br> {{doc.cars.model|title}}</td>
+                
+              </tr>
+
+         
+          {% endfor %} 
+        {% endif %}
+          
+        </tbody>
+			</table>
+		</div>
+
+  </div>
+
+</div>
+
+<div class="fixed-bottom">
+			
+  
+
+  <div class="row" style="padding: 2px;"> 
+  
+    <div class="col-sm-4">
+
+    </div>
+
+    <div class="col-sm">
+        <h2>{{params.name}}</h2>
+    </div>
+  </div>
+
+</div>
+  
+
+{% endblock %}

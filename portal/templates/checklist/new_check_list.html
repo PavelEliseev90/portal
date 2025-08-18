@@ -1,0 +1,1350 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - чек лист помощник {% endblock %}
+
+{% block title_navbar %} - чек лист помощник {% endblock %}
+    
+{% block content %}
+                      
+
+    {% if params.step == 1 %}
+        
+      <div class="row g-1">
+        
+        <div class="col-sm">
+          <p class="fs-2">Приветствую. </p>
+          <p class="fs-3">Для начала давайте выберем город</p>  
+        </div>
+          
+        <div class="col-sm text-center">
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-success" onclick="step(1)"> Город {{params.city_name}}</button>
+            <button type="button" class="btn btn-secondary" onclick="step(2)"> Направление </button>
+            <button type="button" class="btn btn-secondary" onclick="step(3)"> ДЦ </button>
+            <button type="button" class="btn btn-secondary" onclick="step(4)"> Дата</button>
+            <button type="button" class="btn btn-secondary" onclick="step(5)"> Сотрудник</button>
+          </div>  
+        </div>
+      </div>
+
+      <hr>
+      <div class="row g-3">
+        {% for city in params.citys %}
+          {% if city.name|length  > 0 %}
+            <div class="col-sm-auto" onclick="reload('city',{{city.id}})"> 
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="card-title"><span class="icon-mbri-map-pin"></span> {{city.name}}</h5>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}  
+      </div>
+        
+    {% endif %}
+
+
+    {% if params.step == 2 %}
+        
+      <div class="row g-1">
+        
+        <div class="col-sm">
+          <p class="fs-2">Отлично.  {{params.city_name}} хороший выбор.</p>
+          <p class="fs-3">А вот какие направления мы знаем, выберите подходящее</p>  
+        </div>
+          
+        <div class="col-sm text-center">
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-success" onclick="step(1)"> {{params.city_name}}</button>
+            <button type="button" class="btn btn-secondary" onclick="step(2)"> Направление {{params.direction_name}}</button>
+            <button type="button" class="btn btn-secondary" onclick="step(3)"> ДЦ {{params.unit.name}}</button>
+            <button type="button" class="btn btn-secondary" onclick="step(4)"> Дата {{params.date}}</button>
+            <button type="button" class="btn btn-secondary" onclick="step(5)">Сотрудник</button>
+          </div>  
+        </div>
+
+      </div>
+
+      <hr>
+      
+      <div class="row g-3">
+        
+        <div class="col-sm-auto" onclick="reload('direction',1)"> 
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title"></span><span class="icon-mbri-extension"></span> Отдел продаж</h5>
+            </div>
+          </div>
+        </div> 
+
+        <div class="col-sm-auto" onclick="reload('direction',2)"> 
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title"></span><span class="icon-mbri-extension"></span> Сервис (прием авто)</h5>
+            </div>
+          </div> 
+        </div> 
+        
+        <div class="col-sm-auto" onclick="reload('direction',3)"> 
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title"></span><span class="icon-mbri-extension"></span> Сервис (выдача авто)</h5>
+            </div>
+          </div> 
+        </div> 
+
+
+        <div class="col-sm-auto" onclick="reload('direction',4)"> 
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title"></span><span class="icon-mbri-extension"></span> Отдел оценки (Корс-авто)</h5>
+            </div>
+          </div> 
+        </div> 
+
+
+        <div class="col-sm-auto" onclick="reload('direction',5)"> 
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title"></span><span class="icon-mbri-extension"></span> Отдел продаж (Корс-авто)</h5>
+            </div>
+          </div> 
+        </div> 
+      </div>
+    
+  {% endif %}
+
+
+  {% if params.step == 3 %}
+        
+      <div class="row g-1">
+        
+        <div class="col-sm">
+          <p class="fs-2">Ах значит {{params.direction_name}}</p>
+          <p class="fs-3">Мы подумали и по {{params.direction_name}} можем предложить Вам на выбор следующее:</p>  
+        </div>
+          
+        <div class="col-sm text-center">
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-success" onclick="step(1)"> {{params.city_name}} </button>
+            <button type="button" class="btn btn-success" onclick="step(2)"> {{params.direction_name}} </button>
+            <button type="button" class="btn btn-secondary" onclick="step(3)"> ДЦ </button>
+            <button type="button" class="btn btn-secondary" onclick="step(4)"> Дата </button>
+            <button type="button" class="btn btn-secondary" onclick="step(5)"> Сотрудник </button>
+          </div>  
+        </div>
+      </div>
+      
+      <hr>
+      <div class="row g-3">
+        {% for unit in params.units %}
+          {% if unit.unit__name|length  > 0 %}
+            <div class="col-sm-auto" onclick="reload('unit',{{unit.unit}})"> 
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="card-title"><span class="icon-mbri-home"></span> {{unit.unit__name}}</h5>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}  
+      </div>
+        
+    {% endif %}
+
+    {% if params.step == 4 %}
+        
+      <div class="row g-1">
+        
+        <div class="col-sm">
+          <p class="fs-2">Замечательно. Но нам еще чего то не хватает.</p>
+          <p class="fs-3">Точно, нам бы еще дату выбрать</p>  
+        </div>
+          
+        <div class="col-sm text-center">
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-success" onclick="step(1)"> {{params.city_name}} </button>
+            <button type="button" class="btn btn-success" onclick="step(2)"> {{params.direction_name}} </button>
+            <button type="button" class="btn btn-success" onclick="step(3)"> {{params.unit.name}} </button>
+            <button type="button" class="btn btn-secondary" onclick="step(4)"> Дата </button>
+            <button type="button" class="btn btn-secondary" onclick="step(5)"> Сотрудник </button>
+          </div>  
+        </div>
+        
+      </div>
+      
+      <hr>
+
+      <div class="row g-3">
+        {% for day in params.days %}
+         <div class="col-sm-auto" onclick="reload('date','{{day.days|date:"Y-m-d"}}')"> 
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title"><span class="icon-mbri-calendar"></span> {{day.days}}</h5>
+                <div class="d-flex justify-content-center">
+                  <table class="table-sm">
+                    <tr>
+                      <td>
+                        <p>Всего документов</p>
+                      </td>
+                      <td>
+                        <p> / </p>
+                      </td>
+                      <td>
+                        <p>Прослушано</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <p>{{day.count_docs}}</p> 
+                      </td>
+                      <td>
+                        <p> / </p>
+                      </td>
+                      <td>
+                        <p>{{day.count_listened}}</p> 
+                      </td>
+                    </tr>
+                  </table>
+                  
+                </div>
+                
+              </div>
+            </div>
+          </div>
+         
+        {% endfor %}  
+      </div>
+        
+    {% endif %}
+
+  {% if params.step == 5 %}
+      
+    <div class="row g-1">
+      <div class="col-sm">
+        <p class="fs-2">Отлично с датой определились!</p>
+        <p class="fs-3">Укажите кто виновник торжества?</p>  
+      </div>
+        
+      <div class="col-sm text-center">
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="button" class="btn btn-success" onclick="step(1)">{{params.city_name}}</button>
+          <button type="button" class="btn btn-success" onclick="step(2)">{{params.direction_name}}</button>
+          <button type="button" class="btn btn-success" onclick="step(3)">{{params.unit.name}}</button>
+          <button type="button" class="btn btn-success" onclick="step(4)">{{params.date}}</button>
+          <button type="button" class="btn btn-secondary" onclick="step(5)">Сотрудник</button>
+        </div>  
+      </div>
+    </div>
+
+    <hr>
+    
+    <div class="row g-3">
+      {% for staff in params.staffs %}
+        {% if staff.staff__name|length  > 0 %}
+          <div class="col-sm-auto" onclick="reload('staff',{{staff.staff}})"> 
+            <div class="card text-center" >
+              <div class="card-body">
+                <h5 class="card-title"><span class="icon-mbri-user"></span> {{staff.staff__name}}</h5>
+                <div class="d-flex justify-content-center">
+                  <table>
+                    <tr>
+                      <td>
+                        <p> Всего документов </p>
+                      </td>
+                      <td>
+                        <p> / </p>
+                      </td>
+                      <td>
+                        <p> Прослушано </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <p>{{staff.count_docs}} </p> 
+                      </td>
+                      <td>
+                        <p> / </p>
+                      </td>
+                      <td>
+                        <p> {{staff.count_listened}} </p> 
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}  
+    </div>
+      
+  {% endif %}
+
+  {% if params.step == 6 %}
+      
+    <div class="row g-1">
+          <div class="col-sm">
+            <p class="fs-2">Отлично! Остался один шаг!</p>
+            <p class="fs-3">Вот что мы нашли для оценки!</p>
+            
+          </div>
+          <div class="col-sm text-center" >
+            
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <button type="button" class="btn btn-success" onclick="step(1)">{{params.city_name}}</button>
+              <button type="button" class="btn btn-success" onclick="step(2)">{{params.direction_name}}</button>
+              <button type="button" class="btn btn-success" onclick="step(3)">{{params.unit.name}}</button>
+              <button type="button" class="btn btn-success" onclick="step(4)">{{params.date}}</button>
+              <button type="button" class="btn btn-success" onclick="step(5)">{{params.staff.name}}</button>
+            </div>
+            
+          </div>
+
+    </div>
+      
+    <hr>
+    
+    <div class="row g-1" style="width: 100%; overflow-x: scroll;">
+      <div style="display: flex; text-align: start; margin-bottom: 2em;">
+        <div class='timeline'>
+          <div class='start'></div>
+        </div>
+        <div class='entries'>
+          {% for doc in params.docs %}
+            <div class='entry {% if doc.check_list.checkItog > 0  %} life {% else %} project {% endif %}'>
+              <div class='dot'></div>
+              <div class='label' style="text-align: left">
+                <div class='time'>
+                  {{doc.doc.nomer}} / {{doc.doc.dataTime|date:"H:i"}} {% if params.direction_id == '2' or params.direction_id == '3' %} ( --> {{ doc.doc.dateStart|date:"H:i" }} --> {{doc.doc.dateEnd|date:"H:i"}} ){% endif %}
+                </div>
+                
+                <div class='detail'>
+                  {% if doc.doc.clientName|length > 0 %} {{doc.doc.clientName}} {% else %} Не указан {% endif %}
+                </div>
+                
+                {% if params.direction_id == '1' or params.direction_id == '4' %}
+                  
+                    <div class='detail'>
+                      {{ doc.doc.contacType }} 
+                      {% if doc.doc.dataEnd > doc.doc.dataTimeCreate %} 
+
+                      <span class="icon-mbri-timer"> </span> {{ doc.doc.time_visit }} 
+                      
+                      {% endif %}
+                    </div>
+
+                    <div class='detail'>
+                      {% if doc.doc.archiveDayToDay %} Закрыт день в день {% else %} Не закрыт день в день {% endif %}
+                    </div>
+
+                {% elif params.direction_id == '2' or params.direction_id == '3' %}
+                  
+                  <br>
+                  <div class='detail'>
+                                
+                    {{ doc.doc.typeRemont }}
+                    
+                  </div>
+                  <br>
+                  <div class='detail'>
+                                
+                    {{ doc.doc.cars }}
+                    
+                  </div>
+                  
+                  <br>
+                  <div class='detail'>
+                                
+                    {{ doc.doc.carsGRZ }}
+                    
+                  </div>
+
+                {% endif %}
+
+                <hr>
+                <div class='detail'>
+                  <div class="progress">
+                    {% if doc.check_list.checkItog > 0 %}
+                      <div class="progress-bar bg-success" role="progressbar" aria-label="" style="width: {{doc.check_list.checkItog}}%;" aria-valuenow="{{doc.check_list.checkItog}}" aria-valuemin="0" aria-valuemax="100">{{doc.check_list.checkItog}} %</div>
+                    {% else %}
+                      <div class="progress-bar bg-secondary" role="progressbar" aria-label="" style="width: 100%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0 %</div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <hr>
+                
+                <div class='detail' style="text-align: center">
+                  
+                  <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable{{ forloop.counter }}">
+                    Подробнее
+                  </button>
+                  
+                  
+                  <div class="modal fade" id="exampleModalCenteredScrollable{{ forloop.counter }}" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Документ - {{doc.doc.nomer}} от {{doc.doc.dataTime|date:"d.m.Y H:i"}}</h4>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                        </div>
+                        <div class="modal-body">
+                          <h4>Данные документа</h4>
+                          
+                              
+                            {% if params.direction_id == '1' or params.direction_id == '4' %}
+                              
+                            <table class="table table-striped">
+                                <tbody>
+                                  <tr>
+                                    <td>Имя клиента:</td>
+                                    <td>{% if doc.doc.clientName|length > 0 %} {{doc.doc.clientName}} {% else %} Не указан {% endif %}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Телефон:</td>
+                                    <td>{% if doc.doc.phone|length > 0 %} {{doc.doc.phone}} {% else %} Не указан {% endif %}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Вид контакта:</td>
+                                    <td>{{doc.doc.contacType}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Дата создания:</td>
+                                    <td>{{doc.doc.dataTimeCreate}}</td>
+                                  </tr>
+      
+                                  <tr>
+                                    <td>Дата окончания:</td>
+                                    <td>{{doc.doc.dataEnd}}</td>
+                                  </tr>
+      
+                                  <tr>
+                                    <td>Продолжительность:</td>
+                                    <td>{{doc.doc.time_visit}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Закрыт день в день:</td>
+                                    <td>{% if doc.doc.archiveDayToDay %} Да {% else %} Нет {% endif %}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Комментарий администратора</td>
+                                    <td>{{doc.doc.commentAdministrator}}</td>
+                                  </tr> 
+                                  <tr>
+                                    <td>Комментарий менеджера</td>
+                                    <td>{{doc.doc.commentManager}}</td>
+                                  </tr> 
+                                </tbody>
+                              </table>
+
+                              <hr>
+
+                              <div class="accordion accordion-flush" id="accordionFlushExample">
+                                <div class="accordion-item">
+                                  <h2 class="accordion-header" id="flush-headingOne">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+                                      События рабочего листа - {{doc.events|length}} 
+                                    </button>
+                                  </h2>
+                                  <div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body">
+                                      {% if doc.events|length == 0 %} 
+                                        Нет события по рабочему листу
+                                      {% else %}
+                                        <table class="table table-striped">
+                                          <tbody>
+                                            {% for event in doc.events %}
+                                            <tr>
+                                              <td>{{event.dataTimeEvent}}</td>
+                                              <td>{{event.contacType}}</td>
+                                              <td>{{event.staff}}</td>
+                                              <td>{{event.comment}}</td>
+                                              <td>{{event.status}}</td>
+                                            </tr>     
+                                            {% endfor %}
+                                          </tbody>
+                                        </table>
+                                      {% endif %}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                            {% elif params.direction_id == '2' or params.direction_id == '3' %}
+                            
+                              <table class="table table-striped">
+                                <tbody>
+                                  <tr>
+                                    <td>Клиент:</td>
+                                    <td>{{doc.doc.customer}}</td>
+                                    </tr>
+                                  <tr>
+                                    <td>Вид ремонта:</td>
+                                    <td>{{doc.doc.typeRemont}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Автомобиль:</td>
+                                    <td>{{doc.doc.cars}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Гос.номер:</td>
+                                    <td>{{doc.doc.carsGRZ}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Пробег:</td>
+                                    <td>{{doc.doc.run}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Сумма:</td>
+                                    <td>{{doc.doc.amount}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Пришла в ремонт:</td>
+                                    <td>{{doc.doc.dateStart}}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Вышла из ремонта:</td>
+                                    <td>{{doc.doc.dateEnd}}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              
+                              <hr>
+
+                              {{doc.doc.customerWords}}
+
+                              <hr>
+
+                              <div class="accordion accordion-flush" id="accordionFlushExample">
+                                <div class="accordion-item">
+                                  <h2 class="accordion-header" id="flush-headingOne">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+                                      Работы - {{doc.works|length}} 
+                                    </button>
+                                  </h2>
+                                  <div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body">
+                                      {% if doc.works|length == 0 %} 
+                                        Работы в заказ наряде отсутствуют
+                                      {% else %}
+                                        <table class="table table-striped">
+                                          <tbody>
+                                            {% for work in doc.works %}
+                                            <tr>
+                                              <td>{{work.work}}</td>
+                                              <td>{{work.quantity}}</td>
+                                              <td>{{work.price}}</td>
+                                              <td>{{work.amount}}</td>
+                                            </tr>     
+                                            {% endfor %}
+                                          </tbody>
+                                        </table>
+                                      {% endif %}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="accordion-item">
+                                  <h2 class="accordion-header" id="flush-headingTwo">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+                                      Товары - {{doc.products|length}} 
+                                    </button>
+                                  </h2>
+                                  <div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body">
+                                      {% if doc.products|length == 0 %} 
+                                        Товары в заказ наряде отсутствуют
+                                      {% else %}
+                                        <table class="table table-striped">
+                                          <tbody>
+                                            {% for product in doc.products %}
+                                            <tr>
+                                              <td>{{product.product}}</td>
+                                              <td>{{product.quantity}}</td>
+                                              <td>{{product.price}}</td>
+                                              <td>{{product.amount}}</td>
+                                            </tr>     
+                                            {% endfor %}
+                                          </tbody>
+                                        </table>
+                                      {% endif %}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="accordion-item">
+                                  <h2 class="accordion-header" id="flush-headingThree">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseThree">
+                                      Рекомендации - 0
+                                    </button>
+                                  </h2>
+                                  <div id="flush-collapseThree{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                    <div class="accordion-body">
+                                      Извините рекомендации будут чуть позже - они еще не настроены
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+
+                            
+                            {% endif %}
+                            
+                            <hr>
+                            {% if doc.check_list.checkItog > 0 %}
+                              <h4>Чек лист {{doc.check_list.id}} от {{doc.check_list.dataTimeCreate}}</h4>
+                              
+                              <div class="progress">
+                                <div class="progress-bar bg-success" role="progressbar" aria-label="" style="width: {{doc.check_list.checkItog}}%;" aria-valuenow="{{doc.check_list.checkItog}}" aria-valuemin="0" aria-valuemax="100">{{doc.check_list.checkItog}} %</div>
+                              </div>
+
+                              {% if params.direction_id == '1'%}
+                              
+                                <div class="progress">
+                                  <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{doc.check_list.checkItog_v1}}%" aria-valuenow="{{doc.check_list.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{doc.check_list.checkItog_v2}}%" aria-valuenow="{{doc.check_list.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v3}}%" aria-valuenow="{{doc.check_list.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v4}}%" aria-valuenow="{{doc.check_list.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-success bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v5}}%" aria-valuenow="{{doc.check_list.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v6}}%" aria-valuenow="{{doc.check_list.checkItog_v6}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v7}}%" aria-valuenow="{{doc.check_list.checkItog_v7}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v8}}%" aria-valuenow="{{doc.check_list.checkItog_v8}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                
+                                </div>
+
+                                <br>
+                                  
+                                <div class="row">
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v1_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v1_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v2_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v2_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v3_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v3_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v4_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v4_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v5_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v5_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-warning bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v6_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v6_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v6_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-secondary bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v7_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v7_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v7_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-primary bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v8_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v8_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v8_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Встреча клиента (100%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Выявление потребностей клиента (80%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Презентация а/м (90%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Общая оценка навыков коммуникации (75%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Презентация дополнительных товаров/услуг (100%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Работа с возражениями (60%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Закрытие сделки (70%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Результат (60%)</span>
+                                  </div>
+                                </div>
+
+                              {% elif params.direction_id == '2' %}
+                                
+                                <div class="progress">
+                                  <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{doc.check_list.checkItog_v1}}%" aria-valuenow="{{doc.check_list.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{doc.check_list.checkItog_v2}}%" aria-valuenow="{{doc.check_list.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v3}}%" aria-valuenow="{{doc.check_list.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v4}}%" aria-valuenow="{{doc.check_list.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v5}}%" aria-valuenow="{{doc.check_list.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+
+                                <br>
+                                  
+                                <div class="row">
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v1_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v1_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v2_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v2_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v3_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v3_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v4_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v4_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar  bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v5_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v5_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                </div>
+                                  
+                                <div class="row">
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Общая оценка навыков коммуникации</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Презентация дополнительных товаров/услуг</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Работа с возражениями</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Резюмирование сделки (заезда на обслуживание)</span>
+                                    </div>
+                                </div>
+
+                              {% elif params.direction_id == '3' %}
+                                  
+                                <div class="progress">
+                                  <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{doc.check_list.checkItog_v1}}%" aria-valuenow="{{doc.check_list.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{doc.check_list.checkItog_v2}}%" aria-valuenow="{{doc.check_list.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v3}}%" aria-valuenow="{{doc.check_list.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v4}}%" aria-valuenow="{{doc.check_list.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+
+                                <br>
+                                  
+                                <div class="row">
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v1_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v1_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v2_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v2_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v3_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v3_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v4_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v4_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>               
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Общая оценка навыков коммуникации</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Презентация рекомендаций/моб.приложения</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Резюмирование сделки (заезда на обслуживание)</span>
+                                    </div>
+                                    
+                                </div>
+
+                              {% elif params.direction_id == '4' %}
+                                  
+                                <div class="progress">
+                                  <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{doc.check_list.checkItog_v1}}%" aria-valuenow="{{doc.check_list.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{doc.check_list.checkItog_v2}}%" aria-valuenow="{{doc.check_list.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v3}}%" aria-valuenow="{{doc.check_list.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v4}}%" aria-valuenow="{{doc.check_list.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-info bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v5}}%" aria-valuenow="{{doc.check_list.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v6}}%" aria-valuenow="{{doc.check_list.checkItog_v6}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+
+                                <br>
+                                  
+                                <div class="row">
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v1_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v1_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v2_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v2_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v3_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v3_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v4_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v4_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div> 
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v5_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v5_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-2">
+                                        <div class="progress progress-bar-vertical">
+                                          <div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v6_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v6_P}}%;">
+                                            <span class="sr-only">{{doc.check_list.checkItog_v6_P}} %</span>
+                                          </div>
+                                        </div>
+                                      </div>              
+                                </div>
+                                  
+                                <div class="row">
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Приветствие</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Заполнение листа осмотра / мобильного приложения</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Презентация услуги</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Осмотр автомобиля</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Согласование оценочной стоимости</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                      <span class="sr-only">Аргументация предварительной оценочной стоимости</span>
+                                    </div>
+                                </div>
+
+                              {% elif params.direction_id == '5' %}
+
+                                <div class="progress">
+                                  <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{doc.check_list.checkItog_v1}}%" aria-valuenow="{{doc.check_list.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{doc.check_list.checkItog_v2}}%" aria-valuenow="{{doc.check_list.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v3}}%" aria-valuenow="{{doc.check_list.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v4}}%" aria-valuenow="{{doc.check_list.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-success bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v5}}%" aria-valuenow="{{doc.check_list.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-warning bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v6}}%" aria-valuenow="{{doc.check_list.checkItog_v6}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-secondary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v7}}%" aria-valuenow="{{doc.check_list.checkItog_v7}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{doc.check_list.checkItog_v8}}%" aria-valuenow="{{doc.check_list.checkItog_v8}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                
+                                </div>
+
+                                <br>
+                                  
+                                <div class="row">
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v1_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v1_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v2_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v2_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v3_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v3_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v4_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v4_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v5_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v5_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-warning bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v6_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v6_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v6_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-secondary bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v7_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v7_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v7_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                      <div class="progress progress-bar-vertical">
+                                        <div class="progress-bar  bg-primary bg-opacity-75" role="progressbar" aria-valuenow="{{doc.check_list.checkItog_v8_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{doc.check_list.checkItog_v8_P}}%;">
+                                          <span class="sr-only">{{doc.check_list.checkItog_v8_P}} %</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Встреча клиента (100%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Выявление потребностей клиента (80%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Презентация а/м (90%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Общая оценка навыков коммуникации (75%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Презентация дополнительных товаров/услуг (100%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Работа с возражениями (60%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Закрытие сделки (70%)</span>
+                                  </div>
+                                  <div class="col-md-1">
+                                    <span class="sr-only">Результат (60%)</span>
+                                  </div>
+                                </div>
+
+                              {% endif %}
+                              
+                              <br>
+                              
+                              <table class="table align-middle" >
+                                <tbody>
+                                  <tr>
+                                    <td>
+                                      <audio controls style="width: 640px;">
+                                        {% if doc.check_list.audio %}
+                                          <source src="{{doc.check_list.audio.url}}">
+                                        {% else %}
+                                          <source src="{{doc.check_list.audio_voice_recorder.audio.url}}">
+                                        {% endif %}
+                                      </audio>
+                                    </td>
+
+                                    <td align="right">
+
+                                        {% if params.direction_id == '1' %}
+                                          <a class="btn btn-block btn-outline-success" href="/checklists/glav/op/doc/?checkid={{doc.check_list.id}}">Перейти к подробному просмотру чек листа</a>
+                                        {% elif params.direction_id == '2' %}
+                                          <a class="btn btn-block btn-outline-success" href="/checklists/glav/service_in/doc/?checkid={{doc.check_list.id}}">Перейти к подробному просмотру чек листа</a>
+                                        {% elif params.direction_id == '3' %}
+                                          <a class="btn btn-block btn-outline-success" href="/checklists/glav/service_out/doc/?checkid={{doc.check_list.id}}">Перейти к подробному просмотру чек листа</a>
+                                        {% elif params.direction_id == '4' %}
+                                          <a class="btn btn-block btn-outline-success" href="/checklists/glav/trade_in/doc/?checkid={{doc.check_list.id}}">Перейти к подробному просмотру чек листа</a>
+                                        {% elif params.direction_id == '5' %}
+                                          <a class="btn btn-block btn-outline-success" href="/checklists/glav/op_kors/op_kors_doc/?checkid={{doc.check_list.id}}">Перейти к подробному просмотру чек листа</a>
+                                        {% endif %}
+
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            
+                            {% else %}
+                              <h4>Чек лист по данному документу не создан</h4>
+                            {% endif %}
+                            
+                          <hr>
+                          
+                          {% if not doc.check_list %}
+                            
+                            <br>
+                            <h4>Автоматически подобранная запись</h4>
+                            <p>Извините нечего не нашлось автоматически по данному документу</p>
+                            <hr>
+                            <br>
+                          
+                            <h4>Все записи сотрудника за этот день</h4>
+                            
+                            {% if params.audios|length == 0 %}
+                            
+                              <p>Извините нечего не нашлось автоматически по данному документу</p>
+                            
+                            {% else %}
+                              
+                              <div class="post-info-rate-share-no-border">
+                                <div class="table-responsive">
+                                  <table class="table">
+                                    <thead>
+                                      <tr>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr>
+                                      
+                                        {% for audio_data in params.audios %}	
+                        
+                                          <td class="w-25">
+                                            <div class="card {% if audio.recognition %} border-success {% endif %}">
+                                                <div class="card-body">
+                                                  {% if audio_data.audio.audio %}
+                                                  <audio controls>
+                                                    <source src="{{audio_data.audio.audio.url}}">
+                                                  </audio>
+                                                  {% endif %}
+                                                  <h6>Дата - {{audio_data.audio.date}} </h6>
+                                                  <h6>Имя - {{audio_data.audio.name}} </h6>
+                                                  <h6>Номер - {{audio_data.audio.nomer}}</h6>
+                                                  <h6>Комментарий - {{audio_data.audio.comment}}</h6>
+                                                  <h6>Длительность - {{audio_data.audio.get_time_str}}
+                                                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBothOptions_{{forloop.parentloop.counter}}_{{ forloop.counter }}" aria-controls="offcanvasWithBothOptions_{{forloop.parentloop.counter}}_{{ forloop.counter }}">?</button>
+                                                  </h6>
+                                                  
+                                                  <div class="row">
+                                                    <div class="col">                                      
+                                                      <a class="btn btn-block btn-outline-secondary" href="/start/audio_edit/{{audio_data.audio.id}}">Редактировать аудио</a>                                                
+                                                    </div> 
+                                                    <div class="col-auto">
+                                                      {% if not doc.check_list %}
+                            
+                                                      {% if params.direction_id == '1' %}
+                                                          
+                                                          <form action="/checklists/glav/op/op_doc_new/" method="POST" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input hidden name="select_unit"  value="{{doc.doc.unit.id}}">
+                                                            <input hidden name="select_staff" value="{{doc.doc.staff.id}}">
+                                                            <input hidden name="date"         value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                                            <input hidden name="select_rlk"   value="{{doc.doc.id}}">
+                                                            <input hidden name="audio_id"     value="{{audio_data.audio.id}}">
+                                                            
+                                                            <button type="submit" class="btn btn-block btn-outline-success">Начать оценку</button>
+                                                          </form>
+                                                        
+                                                        {% elif params.direction_id == '2' %}
+                                                          
+                                                          <form action="/checklists/glav/service_in/service_in_doc_new/" method="POST" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input hidden name="select_unit"  value="{{doc.doc.unit.id}}">
+                                                            <input hidden name="select_staff" value="{{doc.doc.master.id}}">
+                                                            <input hidden name="date"         value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                                            <input hidden name="select_zn"    value="{{doc.doc.id}}">
+                                                            <input hidden name="audio_id"     value="{{audio_data.audio.id}}">                                                
+                                                            <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                                                          </form>
+                                                        
+                                                        {% elif params.direction_id == '3' %}
+                                                          
+                                                          <form action="/checklists/glav/service_out/service_out_doc_new/" method="POST" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                                            <input hidden name="select_staff" value="{{doc.doc.masterOut.id}}">
+                                                            <input hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                                            <input hidden name="select_zn" value="{{doc.doc.id}}">
+                                                            <input hidden name="audio_id" value="{{audio_data.audio.id}}">
+                                                            <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                                                          </form>
+                                                        
+                                                        {% elif params.direction_id == '4' %}
+                                                          
+                                                          <form action="/checklists/glav/trade_in/trade_in_new/" method="POST" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input  hidden name="select_city" value="{{doc.doc.unit.city.id}}">
+                                                            <input  hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                                            <input  hidden name="select_staff" value="{{doc.doc.staff.id}}">
+                                                            <input  hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                                            <input  hidden name="select_rlk" value="{{doc.doc.id}}">
+                                                            <input  hidden name="city" value="{{audio_data.audio.id}}">
+                                                            <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                                                          </form>
+  
+                                                        {% elif params.direction_id == '5' %}
+  
+                                                          <form action="/checklists/glav/op_kors/op_kors_doc_new/" method="POST" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input  hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                                            <input  hidden name="select_staff" value="{{doc.doc.staff.id}}">
+                                                            <input  hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                                            <input  hidden name="select_rlk" value="{{doc.doc.id}}">
+                                                            <input  hidden name="audio_id" value="{{audio_data.audio.id}}">
+                                                            <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                                                          </form>
+  
+                                                        {% endif %}
+                                                      
+                                                      {% endif %}
+                                                    </div>
+                                                      
+                                                  </div>
+                                                
+                                                  
+                                                </div>
+                                              
+                                              </div>
+                                        
+                                          </td>
+                                          
+                                          <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions_{{forloop.parentloop.counter}}_{{ forloop.counter }}" aria-labelledby="offcanvasWithBothOptionsLabel_{{forloop.parentloop.counter}}_{{ forloop.counter }}">
+                                            <div class="offcanvas-header">
+                                              <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Диалог</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+                                            </div>
+                                            <div class="offcanvas-body">
+                                              
+                                              
+                                              <audio controls>
+                                                <source src="{{audio_data.audio.audio.url}}">
+                                              </audio> 
+
+                                              <div class="container-fluid">
+                                                
+                                                {% for text in audio_data.text %}
+                                                  
+                                                  <div class="row {% if text.operator == 1%} bg-warning {% endif %}">
+                                                    <div class="col-md-1">{{text.start}}</div>
+                                                    <div class="col-md">{{text.words}}</div>
+                                                  </div>
+                                                    
+                                                {% endfor %} 
+
+                                              </div>
+                                            
+                                            </div>
+                                          </div>
+
+                                        {% endfor %}
+                                        
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div> 
+                              </div>
+
+                            {% endif %}    
+
+                          {% endif %}
+                          
+                          
+                        
+                        </div>
+
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                          
+                          {% if not doc.check_list %}
+                            
+                            {% if params.direction_id == '1' %}
+                              
+                              <form action="/checklists/glav/op/op_doc_new/" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                <input hidden name="select_staff" value="{{doc.doc.staff.id}}">
+                                <input hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                <input hidden name="select_rlk" value="{{doc.doc.id}}">
+                                <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                              </form>
+                            
+                            {% elif params.direction_id == '2' %}
+                              
+                              <form action="/checklists/glav/service_in/service_in_doc_new/" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                <input hidden name="select_staff" value="{{doc.doc.master.id}}">
+                                <input hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                <input hidden name="select_zn" value="{{doc.doc.id}}">
+                                <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                              </form>
+                            
+                            {% elif params.direction_id == '3' %}
+                              
+                              <form action="/checklists/glav/service_out/service_out_doc_new/" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                <input hidden name="select_staff" value="{{doc.doc.masterOut.id}}">
+                                <input hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                <input hidden name="select_zn" value="{{doc.doc.id}}">
+                                <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                              </form>
+                            
+                            {% elif params.direction_id == '4' %}
+                              
+                              <form action="/checklists/glav/trade_in/trade_in_new/" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input  hidden name="select_city" value="{{doc.doc.unit.city.id}}">
+                                <input  hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                <input  hidden name="select_staff" value="{{doc.doc.staff.id}}">
+                                <input  hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                <input  hidden name="select_rlk" value="{{doc.doc.id}}">
+                                <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                              </form>
+
+                            {% elif params.direction_id == '5' %}
+
+                              <form action="/checklists/glav/op_kors/op_kors_doc_new/" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input  hidden name="select_unit" value="{{doc.doc.unit.id}}">
+                                <input  hidden name="select_staff" value="{{doc.doc.staff.id}}">
+                                <input  hidden name="date" value="{{doc.doc.dataTime|date:"Y-m-d"}}">
+                                <input  hidden name="select_rlk" value="{{doc.doc.id}}">
+                                <button type="submit" class="btn btn-block btn-success">Начать оценку</button>
+                              </form>
+
+                            {% endif %}
+                            
+                          
+                          {% endif %}
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  
+
+              </div>
+              </div>
+            </div>
+          {% endfor %} 
+          <br>
+      </div>
+      <br>
+      </div>
+
+      
+    <br>
+
+  {% endif %}
+
+<br>
+  
+  <script language="JavaScript">
+    
+    function step(page){
+      var url = new URL(document.location.href);
+      if (page ==1) {
+        url.searchParams.delete('city')
+        url.searchParams.delete('direction')
+        url.searchParams.delete('unit')
+        url.searchParams.delete('date')
+        url.searchParams.delete('staff') 
+      } else if (page == 2){
+        url.searchParams.delete('direction')
+        url.searchParams.delete('unit')
+        url.searchParams.delete('date')
+        url.searchParams.delete('staff') 
+      } else if (page == 3){
+        url.searchParams.delete('unit')
+        url.searchParams.delete('date')
+        url.searchParams.delete('staff') 
+      } else if (page == 4){
+        url.searchParams.delete('date')
+        url.searchParams.delete('staff') 
+      } else if (page == 5){
+         url.searchParams.delete('staff') 
+      } 
+      document.location.href  = url.href;
+    }
+
+    function reload(tag, id){
+      var url = new URL(document.location.href);
+       url.searchParams.set(tag, id)
+       document.location.href  = url.href;
+    }
+  
+  </script>
+
+{% endblock %}

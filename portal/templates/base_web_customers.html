@@ -1,0 +1,323 @@
+
+<!DOCTYPE HTML>
+
+<html>
+  
+    <head>
+        
+        <title> Kors - group {% block title %}  {% endblock %}</title>
+      
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="shortcut icon" type="image/x-icon" href="/static/images/fav-icon.ico" />
+        
+     
+        <link href="/static/css/style.css" rel='stylesheet' type='text/css' />
+        <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+        <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet' type='text/css'>
+        
+        {% block head %} {% endblock %}
+
+        <style>
+
+            .mobile-nav {
+                background: #000;
+                position: fixed;
+                bottom: 0;
+                height: 65px;
+                width: 100%;
+                display: flex;
+                justify-content: space-around;
+                z-index: 19999999999;
+            }
+            .bloc-icon {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .bloc-icon img {
+                width: 30px;
+            }
+
+            .gallery-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                background-color: #fff;
+                border-radius: 0.2rem;
+                width: 100%;
+                margin: 0 auto;
+                z-index: 2500;
+            }
+            .gallery-item {
+                flex-basis: 32.7%;
+                margin: 0px;
+                opacity: 1;
+                cursor: pointer;
+            }
+            .gallery-item:hover {
+                opacity: 1;
+            }
+            .gallery-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 0.2rem;
+            }
+            .gallery-content {
+                font-size: .8em;
+            }
+
+            .lightbox {
+                position: fixed;
+                display: none;
+                background-color: rgba(0, 0, 0, 0.8);
+                width: 100%;
+                height: 100%;              
+                overflow: auto;
+                top: 0;
+                left: 0;
+            }
+            .lightbox-content {
+                position: relative;
+                width: 70%;
+                height: 70%;
+                margin: 5% auto;
+            }
+            .lightbox-content img {
+                border-radius: 7px;
+                box-shadow: 0 0 3px 0 rgba(225, 225, 225, .25);
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            
+            
+            .lightbox-close,
+            .lightbox-prev,
+            .lightbox-next {
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: #fff;
+                padding: 7px;
+                top: 45%;
+                cursor: pointer;
+            }
+            .lightbox-close {
+                right: 0;
+                top:0;
+                border-radius: 0 7px 0 7px;
+            }
+            .lightbox-prev {
+                left: 0;
+                border-radius: 0 7px 7px 0;
+            }
+            .lightbox-next {
+                right: 0;
+                border-radius: 7px 0  0 7px;
+            }
+            .lightbox-prev:hover,
+            .lightbox-next:hover {
+                opacity: .8;
+            }
+
+            @media (max-width: 767px) {
+                .gallery-container {
+                    width: 100%;
+                }
+                
+                .lightbox-content {
+                    width: 80%;
+                    height: 60%;
+                    margin: 15% auto;
+                }
+            }
+            @media (max-width: 480px) {
+                
+                .lightbox-content {
+                    width: 90%;
+                    margin: 20% auto;
+                }
+            }
+
+
+
+            .navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
+                color: #6c757d;
+            }
+            .nav-link{
+                color: #6c757d;
+            }
+
+            div.scroll {
+                overflow-x: auto;
+                overflow-y: hidden;
+                white-space: nowrap;
+            }
+            div.sticky {
+                position: -webkit-sticky; /* for browser compatibility */
+                position: sticky;
+                bottom: 1px;
+                background-color: #fff;
+                z-index: 5;
+                overflow-y: hidden;
+            }
+            
+            .nbsp {
+                white-space: nowrap;
+            }
+            .card {
+                background:transparent;
+                
+            }
+            
+            
+            .bg-filter{
+               backdrop-filter: blur(10px);
+               
+            }
+
+            .modal-body {
+                padding: 0.2em;
+            }
+            .accordion {
+                background:transparent;
+            }
+            .accordion-item {
+                background:transparent;
+            }
+            .accordion-button {
+                background:transparent;
+            }
+            .row {
+                background:transparent;
+            }
+            .span {
+                background:transparent;
+            }
+            .bodys_data {
+                
+                padding-left: 0.2em; 
+                padding-right: 0.2em; 
+                padding-top: 0.2em; 
+                padding-bottom: 75px;
+                opacity: 1;
+                background-color: rgba(255,255,255, 1);
+                
+            }
+            
+            html {
+                position: relative;
+                min-height: 100hv;
+            }
+            
+
+            html:before {
+                content: ' ';
+                display: block;
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                opacity: 0.1;
+
+                background: linear-gradient(to right, transparent, mistyrose);
+                
+                background-image: url('/media/images/kg.png');
+                background-attachment: fixed;
+                background-repeat:  repeat;
+                background-position-x: center;
+                background-position-y: center;
+                background-size: cover;
+                z-index: 0;
+                }
+
+            .demo-content {
+                position: relative;
+            }
+
+        </style>
+
+    </head>
+  
+    
+
+    <body>
+        
+        
+        <div style="min-height: 89vh;">  
+    
+            <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>	
+            
+            <nav class="navbar fixed-bottom flex-nowrap overflow-auto bg-dark">
+                
+                <div class="nav nav-tabs flex-nowrap overflow-auto" id="nav-tab" role="tablist" style="width: 100%;">
+                   
+                    <a href="/cars/" class="fs-7 text-center nav-link nbsp bg-dark " style="width: 100%; margin: 0; padding: 0;" id="nav-zn-tab" href="#z" data-bs-toggle="tab" data-bs-target="#z" type="button" role="tab" aria-controls="z" aria-selected="false">
+                        
+                        <span class="icon-mbri-home"></span>  
+                        
+                        <br> Главная
+    
+                    </a>
+    
+                    <a href="/cars/" class="fs-7 text-center nav-link nbsp bg-dark text-white" style="width: 100%; margin: 0; padding: 0;">
+                        
+                        <span class="icon-truck"></span>    
+                        
+                        <br> Автомобили
+    
+                    </a>
+    
+                    <a href="/cars/" class="fs-7 text-center nav-link nbsp bg-dark text-white" style="width: 100%; margin: 0; padding: 0;" id="nav-recomendation-tab" href="#r" data-bs-toggle="tab" data-bs-target="#r" type="button" role="tab" aria-controls="r" aria-selected="false">
+                        
+                        <span class="icon-mbri-setting3"></span>
+                        
+                        <br> Сервис 
+    
+                    </a>
+                    
+                    <a href="/cars/" class="fs-7 text-center nav-link nbsp bg-dark text-white" style="width: 100%; margin: 0; padding: 0;" id="nav-recomendation-tab" href="#r" data-bs-toggle="tab" data-bs-target="#r" type="button" role="tab" aria-controls="r" aria-selected="false">
+                        
+                        <span class="icon-mbri-users"></span>
+                        
+                        <br> 
+                        <label class="fs-7"> Войти </label> 
+    
+                    </a>
+        
+                </div>
+        
+            </nav>
+        
+            <div class="demo-wrap">
+            
+                <div class="bodys_data">
+                      
+                     <div class="card">
+                                <div class="card-body">
+
+                                    {% block content %}
+        
+                                    {% endblock %} 
+
+                                </div>
+
+                            </div>
+           
+                    
+                
+                </div>
+            
+            </div>
+        
+        </div>
+
+    </body>
+       
+    
+</html>
+
+

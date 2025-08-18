@@ -1,0 +1,1632 @@
+
+<!DOCTYPE HTML>
+
+
+<!doctype html>
+<html lang="ru" >
+ 
+    <head>
+
+        <meta charset="utf-8">
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="shortcut icon" type="image/x-icon" href="/static/images/fav-icon.ico" />
+       
+        <link href="/static/css/style.css" rel='stylesheet' type='text/css' />
+        
+        <script src="/static/css/nouislider.min.js"></script>
+        <link href="/static/css/nouislider.min.css" rel="stylesheet">
+
+        <script src="/static/css/wNumb.min.js"></script>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+        <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+        <script src="/static/js/bootstrap.bundle.min.js"></script>
+        <link rel="stylesheet" href="/static/css/select2.css">
+        
+       
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+        <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+        <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    
+
+        {% block head %} {% endblock %}
+        
+            <title> Kors - group {% block title %}  {% endblock %}</title>
+
+        {% if params.type == 'checklists' %}
+
+            <script>
+                function loadPage() {
+                    test1();
+                    test2();
+                    test3();
+                    test4();
+                    test5();
+                    test6();
+                    test7();
+                    test8();
+                }
+            </script>  
+
+        {% endif %}
+
+        <style>
+
+#showmore-triger {
+	text-align: center;
+	padding: 10px;
+	background: #ffdfdf;
+}
+.carousel-control-prev, .carousel-control-next{
+    z-index: 0 !important;
+}
+
+.btn-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+    font-size: 16px;
+}
+
+.progress_circle {
+  width: 100px;
+  height: 100px !important;
+  float: left; 
+  line-height: 100px;
+  background: none;
+  margin: 10px;
+  box-shadow: none;
+  position: relative;
+}
+.progress_circle:after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 12px solid #fff;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.progress_circle>span {
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  z-index: 1;
+}
+.progress_circle .progress-left {
+  left: 0;
+}
+.progress_circle .progress-bar {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border-width: 12px;
+  border-style: solid;
+  position: absolute;
+  top: 0;
+}
+.progress_circle .progress-left .progress-bar {
+  left: 100%;
+  border-top-right-radius: 80px;
+  border-bottom-right-radius: 80px;
+  border-left: 0;
+  -webkit-transform-origin: center left;
+  transform-origin: center left;
+}
+.progress_circle .progress-right {
+  right: 0;
+}
+.progress_circle .progress-right .progress-bar {
+  left: -100%;
+  border-top-left-radius: 80px;
+  border-bottom-left-radius: 80px;
+  border-right: 0;
+  -webkit-transform-origin: center right;
+  transform-origin: center right;
+  animation: loading-1 1.8s linear forwards;
+}
+.progress_circle .progress-value {
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  background: #000;
+  font-size: 24px;
+  color: #fff;
+  line-height: 90px;
+  text-align: center;
+  position: absolute;
+  top: 5%;
+  left: 5%;
+}
+.progress_circle.blue .progress-bar {
+  border-color: #049dff;
+}
+.progress_circle.blue .progress-left .progress-bar {
+  animation: loading-2 1.5s linear forwards 1.8s;
+}
+.progress_circle.yellow .progress-bar {
+  border-color: #fdba04;
+}
+.progress_circle.yellow .progress-right .progress-bar {
+  animation: loading-3 1.8s linear forwards;
+}
+.progress_circle.yellow .progress-left .progress-bar {
+  animation: none;
+}
+@keyframes loading-1 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(180deg);
+    transform: rotate(180deg);
+  }
+}
+@keyframes loading-2 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(144deg);
+    transform: rotate(144deg);
+  }
+}
+@keyframes loading-3 {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(135deg);
+    transform: rotate(135deg);
+  }
+}
+
+
+            .price{
+                background: linear-gradient(45deg, white 25%, 30%, rgb(108,117,125) 90%);
+            }
+
+            .card_title{
+                padding: 0;
+            }
+            @media (max-width: 768px) {
+                .card_title{
+                    padding-left: calc(var(--bs-gutter-x) * .5)
+                }
+            }
+
+            .card_name{
+
+                background: linear-gradient(-135deg, white 25%, 30%, rgb(108,117,125) 90%);
+            }
+
+            .book {
+                max-width: 300px;
+            }
+            .book p {
+                overflow: hidden;
+            }
+            .book p:after {  
+                content:'.........................................................................................................................................................';
+                padding-left: 0.2rem;
+                padding-right: 0.2rem;
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+            .book p::before {  
+                padding-right: 0.2rem;
+            }
+            .book p span:first-of-type {
+                float:left;
+                
+            }
+            .book p span:last-of-type {
+                padding-left: 0.2rem;
+                float:right;
+            }
+
+            @keyframes blink {
+                0% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+            .fixOverlayDiv{
+                position: relative;
+                width:100%; 
+                padding:0px;
+            }
+            .OverlayText{
+                width: 36px;
+                height: 36px;
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                color: #fff;
+                background-color: #00000025;
+                border: dotted;
+                border-radius: 20px;
+                border-width: 3px;
+                border-color: #fff;
+                padding: 5px;
+                animation: blink 1s;
+                animation-iteration-count: infinite;
+            }
+            .wrapper1 {
+                width: 100%;
+                height: 90%;
+                border-radius: 10px 10px 10px 10px;
+                max-width: 701px;
+                }
+            .exmp3 img {
+                object-fit: cover;
+                width: 100%;
+                height: 100%;
+                border-radius: 10px 10px 10px 10px;
+                max-width: 701px;
+            }
+
+            .bd-placeholder-img {
+                font-size: 1.125rem;
+                text-anchor: middle;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                user-select: none;
+            }
+
+            @media (min-width: 768px) {
+                .bd-placeholder-img-lg {
+                    font-size: 3.5rem;
+                }
+            }
+            body {
+                font-size: .875rem;
+            }
+
+            .feather {
+                width: 16px;
+                height: 16px;
+                vertical-align: text-bottom;
+            }
+
+            /*
+            * Sidebar
+            */
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                /* rtl:raw:
+                right: 0;
+                */
+                bottom: 0;
+                /* rtl:remove */
+                left: 0;
+                z-index: 100; /* Behind the navbar */
+                padding: 48px 0 0; /* Height of navbar */
+                box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+                overflow: scroll; 
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+
+            @media (max-width: 767.98px) {
+                .sidebar {
+                    top: 0rem;
+                    transition: 0.25s;
+                    overflow: scroll; 
+                    overflow-x: hidden;
+                    overflow-y: auto;
+                }
+                
+                .container-fluid {
+                    padding-left: 0px; 
+                     
+                }
+
+            }
+        
+            @media (max-width: 767.98px) {
+                .action-menu-close-0 {
+                    display: none;
+                }
+            }
+
+            .action-menu-close-1 {
+                display: none;
+            }
+
+            @media (max-width: 767.98px) {
+                .menu-close-0 {
+                    display: block;
+                }
+            }
+
+            .menu-close-1 {
+                display: none;
+            }
+            @media (max-width: 767.98px) {
+                .menu-close-1 {
+                    display: block;
+                }
+            }
+
+            .sidebar-sticky {
+                position: relative;
+                top: 0;
+                height: calc(100vh );
+                padding-top: .5rem;
+                overflow-x: hidden;
+                overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+            }
+
+            .sidebar .nav-link {
+                font-weight: 500;
+                color: #333;
+            }
+
+            .sidebar .nav-link .feather {
+                margin-right: 4px;
+                color: #727272;
+            }
+
+            .sidebar .nav-link.active {
+                color: #007bff;
+            }
+
+            .sidebar .nav-link:hover .feather,
+            .sidebar .nav-link.active .feather {
+                color: inherit;
+            }
+
+            .sidebar-heading {
+                font-size: .75rem;
+                text-transform: uppercase;
+            }
+
+            .sidebar-heading-no-transform {
+                font-size: .75rem;
+            
+            }
+
+            /*
+            * Navbar
+            */
+
+            @media (max-width: 767.98px) {
+                .navbar-brand {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+            }
+
+            .navbar-brand {
+                padding-top: .75rem;
+                padding-bottom: .75rem;
+                font-size: 1rem;
+            
+            }
+
+            .navbar .navbar-toggler {
+                top: .25rem;
+                right: 1rem;
+            }
+
+            html_sdad {
+                content: '';
+                display: block;
+                position: absolute;
+                width: 100%;
+                height: 100vh;
+                opacity: 0.08;
+                background-size: contain;
+                background: linear-gradient(to right, transparent, mistyrose);
+                
+                background-image: url('/media/images/kg.png');
+                background-attachment: fixed;
+                background-repeat: repeat-y;
+                background-position-x: center;
+                background-position-y: center;
+                background-size: cover;
+                z-index: -5;
+                }
+
+                body {
+                    background-image: url('/media/images/kg.png');
+                    min-height: 600px;
+                    background-attachment: fixed;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: cover;
+                    
+                }
+                body::after {
+                    background-color: white;
+                    content: "";
+                    opacity: 0.9;
+                    position: fixed;
+                    top: 0;
+                    bottom: 0;
+                    right: 0;
+                    left: 0;
+                    z-index: -1;   
+                    width:auto;
+                    height: 100%;
+                }
+            
+        </style>
+
+    </head>
+  
+  <body>
+
+    {% if request.user.is_authenticated %} 
+        <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        
+        <a class="navbar-brand col-10 col-lg-10 me-0 px-2" href="#">Корс Групп {% block title_navbar %}  {% endblock %}</a>
+        
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        </header>
+    {% endif %}
+
+<div class="container-fluid">
+  <div class="row">
+    
+    {% if request.user.is_authenticated %}
+        
+        <div {% if request.COOKIES.menu == '1' %} class="div-menu-close-1" {% else %} class="div-menu-close-0" {% endif %} id="action-menu-open">
+            <div class="col-md col-lg d-md-block bg-dark text-white sidebar collapse">    
+                <span class="icon-mbri-arrow-next"> </span> 
+            </div>
+        </div>
+
+        <div {% if request.COOKIES.menu == '1' %} class="menu-close-1" {% else %} class="menu-close-0" {% endif %} id="menu" style="transition: 0.5s;">
+            <nav id="sidebarMenu" class="col-md-2 col-lg-2 d-md-block bg-dark text-white sidebar collapse" data-bs-spy="scroll">
+                
+                <div {% if request.COOKIES.menu == '1' %} class="action-menu-close-1" {% else %} class="action-menu-close-0" {% endif %} id="action-menu-close">
+                    <span class="icon-mbri-arrow-prev"> </span> 
+                </div>
+
+                <div class="position-sticky" id="position-sticky">
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-{% if params.type == 'desctop' %}secondary active {% else %}white {% endif %}" aria-current="page" href="/">
+                            <span class="icon-mbri-play"></span>
+                                Рабочий стол
+                            </a>
+                        </li>
+                        
+                        {% if request.user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="/admin">
+                            <span class="icon-mbri-globe"> </span>
+                                Админка
+                                <!--<span class="badge bg-danger rounded-pill">1</span>-->
+                            </a>
+                        </li>
+                        
+                       
+                         <!--
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_refs" aria-expanded="false" aria-controls="collapse_refs">
+                            <span class="icon-mbri-globe"> </span>
+                                Справочники
+                            </a>
+                        </li>
+                            <div class="collapse {% if params.type == 'units_group' or params.type == 'units' %} show {% endif %}" id="collapse_refs" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'units_group' %}secondary active {% else %}white {% endif %}" href="/refs/units_group/">
+                                    <span class="icon-mbri-video-play"></span>
+                                        Группы подразделений
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'units' %}secondary active {% else %}white {% endif %}" href="/refs/units/">
+                                    <span class="icon-mbri-cust-feedback"></span>
+                                        Подразделения
+                                    </a>
+                                </li>
+                            </div>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link text-{% if params.type == 'help' %}secondary active {% else %}white {% endif %}" href="/help_desk/">
+                            <span class="icon-mbri-help"> </span>
+                                Help Desk
+                            </a>
+                        </li>
+                        -->
+                        {% endif %}
+
+                        {% if request.user.profiles.eco or request.user.profiles.eco_visible %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_eco" aria-expanded="false" aria-controls="collapse_eco">
+                                <span class="icon-mbri-delivery"></span>
+                                    Единный центр оценки
+                                </a>
+                            </li>
+                            <div class="collapse {% if params.type == 'eco' or params.type == 'eco_monitors' or params.type == 'korsavto_settings' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'eco' %}secondary active {% else %}white {% endif %}" href="/eco/">
+                                    <span class="icon-mbri-video-play"></span>
+                                    Листы оценки
+                                    </a>
+                                </li>
+                                <!--
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'eco_monitors' %}secondary active {% else %}white {% endif %}" href="/eco/monitors/">
+                                    <span class="icon-mbri-cust-feedback"></span>
+                                    Монитор
+                                    </a>
+                                </li>
+                                -->
+                                {% if request.user.profiles.korsavto_settings %}
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'korsavto_settings' %}secondary active {% else %}white {% endif %}" href="/korsavto/settings/">
+                                        <span class="icon-mbri-cust-feedback"></span>
+                                        КорсАвто
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </div>
+                            
+                        {% endif %}
+
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_recorder" aria-expanded="false" aria-controls="collapse_recorder">
+                            <span class="icon-mbri-music"> </span>
+                                Диктофоны
+                            </a>
+                        </li>
+                            <div class="collapse {% if params.type == 'recognitions' or params.type == 'voice_recorders' or params.type == 'checklists' %} show {% endif %}" id="collapse_recorder" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'voice_recorders' %}secondary active {% else %}white {% endif %}" href="/voice_recorders/">
+                                    <span class="icon-mbri-video-play"></span>
+                                    Записи диктофона
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'checklists' %}secondary active {% else %}white {% endif %}" href="/checklists/">
+                                    <span class="icon-mbri-cust-feedback"></span>
+                                    Прослушка диктофонов
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'recognitions' %}secondary active {% else %}white{% endif %}" href="/recognitions/">
+                                    <span class="icon-mbri-wifi"></span>
+                                    Речевая аналитика
+                                    </a>
+                                </li>
+                            </div>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_telephony" aria-expanded="false" aria-controls="collapse_telephony">
+                            <span class="icon-mbri-music"> </span>
+                                Звонки
+                            </a>
+                        </li>
+                            <div class="collapse {% if params.type == 'telephony_calls' or params.type == 'telephony_group' or params.type == 'telephony_numbers' or params.type == 'telephony_recognitions' %} show {% endif %}" id="collapse_telephony" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <!--
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'telephony_calls' %}secondary active {% else %}white {% endif %}" href="/voice_recorders/">
+                                    <span class="icon-mbri-video-play"></span>
+                                    История звонков
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'telephony_group' %}secondary active {% else %}white {% endif %}" href="/voice_recorders/">
+                                    <span class="icon-mbri-video-play"></span>
+                                    Группы
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'telephony_numbers' %}secondary active {% else %}white{% endif %}" href="/checklists/">
+                                    <span class="icon-mbri-cust-feedback"></span>
+                                    Номера
+                                    </a>
+                                </li>
+                                 -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'telephony_recognitions' %}secondary active {% else %}white{% endif %}" href="/telephony/recognitions/">
+                                    <span class="icon-mbri-wifi"></span>
+                                    Речевая аналитика
+                                    </a>
+                                </li>
+                               
+                            </div>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_tradein" aria-expanded="false" aria-controls="collapse_tradein">
+                                <span class="icon-mbri-key"></span>
+                                Отдел оценки
+                                </a>
+                            </li>
+                                <div class="collapse {% if params.type == 'rlks_trade_in' or params.type == 'korsavto_settings' %} show {% endif %}" id="collapse_tradein" style="transition: 0.5s; padding-left: 1.5rem;">
+                                    
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'rlks_trade_in' %}secondary active {% else %}white{% endif %}" href="/rlks_trade_in/">
+                                        <span class="icon-mbri-features"></span>
+                                            Рабочие листы
+                                        </a>
+                                    </li>
+
+                                    {% if request.user.profiles.korsavto_settings_dc %}
+                                        <li class="nav-item">
+                                            <a class="nav-link text-{% if params.type == 'korsavto_settings' %}secondary active {% else %}white {% endif %}" href="/korsavto/settings/">
+                                            <span class="icon-mbri-cust-feedback"></span>
+                                            Дашборд
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                </div>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_op" aria-expanded="false" aria-controls="collapse_op">
+                            <span class="icon-mbri-key"></span>
+                            Отдел продаж
+                            </a>
+                        </li>
+                            <div class="collapse {% if params.type == 'cars' or params.type == 'doc_car_agreement' or params.type == 'doc_car_shipment' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
+                                
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'cars' %}secondary active {% else %}white{% endif %}" href="/cars/">
+                                    <span class="icon-mbri-features"></span>
+                                        Склад автомобилей
+                                    </a>
+                                </li>
+                                <!--
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'docs_zn' %}secondary active {% else %}white{% endif %}" href="/docs_zn/">
+                                    <span class="icon-mbri-video-play"></span>
+                                        Диспозиция 
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'online_doc' %}secondary active {% else %}white{% endif %}" href="/online_doc/">
+                                    <span class="icon-mbri-video-play"></span>
+                                        Рабочие листы
+                                    </a>
+                                </li>
+                                -->
+                                {% if request.user.profiles.korsavto_settings %}
+                                    
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'doc_car_agreement' %}secondary active {% else %}white{% endif %}" href="/docs_car_agreement/">
+                                        <span class="icon-mbri-features"></span>
+                                            Соглашение о покупке АМ
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'doc_car_shipment' %} secondary active {% else %}white{% endif %}" href="/docs_car_shipment/">
+                                        <span class="icon-mbri-features"></span>
+                                            Отгрузки АМ
+                                        </a>
+                                    </li>
+
+                                {% endif %}
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'links' %}secondary active {% else %}white{% endif %}" href="/links_dc/">
+                                    <span class="icon-mbri-features"></span>
+                                        Фиды новых автомобилей
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'sms_opros_op' %}secondary active {% else %}white{% endif %}" href="/sms_opros_op/">
+                                    <span class="icon-mbri-letter"></span>
+                                        СМС - опросы
+                                    </a>
+                                </li>
+                                <!--
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'dashboard_sms_opros' %}secondary active {% else %}white{% endif %}" href="/dashboard_sms_opros/">
+                                    <span class="icon-mbri-growing-chart"></span>
+                                        Дашборд опросов
+                                    </a>
+                                </li>
+                                -->
+                                {% if request.user.is_superuser %}
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'avito' %}secondary active {% else %}white{% endif %}" href="/upload_avito_ru/">
+                                        <span class="icon-mbri-database"></span>
+                                        Avito.RU
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if request.user.is_superuser %}
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'autoru' %}secondary active {% else %}white{% endif %}" href="/upload_auto_ru/">
+                                        <span class="icon-mbri-database"></span>
+                                        AUTO.RU
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </div>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_tizer" aria-expanded="false" aria-controls="collapse_tizer">
+                            <span class="icon-mbri-file"></span>
+                            Сервис
+                            </a>
+                        </li>
+                            <div class="collapse {% if params.type == 'catalog_products' or params.type == 'monitors' or params.type == 'prices' or params.type == 'docs_zn' or params.type == 'dashboard_sms_opros' or params.type == 'online_doc' or params.type == 'records_online_doc' or params.type == 'docs_zn_report_tizer' or params.type == 'docs_zn_report_tizer_mcu' or params.type == 'sms_opros_service' %} show {% endif %}" id="collapse_tizer" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'docs_zn' %}secondary active {% else %}white{% endif %}" href="/docs_zn/">
+                                    <span class="icon-mbri-video-play"></span>
+                                    Заказ - наряды
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'online_doc' %}secondary active {% else %}white{% endif %}" href="/online_doc/">
+                                    <span class="icon-mbri-video-play"></span>
+                                        Онлайн запись
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'records_online_doc' %}secondary active {% else %}white{% endif %}" href="/records_online_doc/">
+                                    <span class="icon-mbri-video-play"></span>
+                                        Подтверждение записи
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'docs_zn_report_tizer' %}secondary active {% else %}white{% endif %}" href="/docs_zn_report_tizer/">
+                                    <span class="icon-mbri-cust-feedback"></span>
+                                    Отчет тизер 
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'docs_zn_report_tizer_mcu' %}secondary active {% else %}white{% endif %}" href="/docs_zn_report_tizer_mcu/">
+                                    <span class="icon-mbri-cust-feedback"></span>
+                                    Отчет тизер МКУ
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'sms_opros_service' %}secondary active {% else %}white{% endif %}" href="/sms_opros_service/">
+                                    <span class="icon-mbri-letter"></span>
+                                    СМС - опросы
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'dashboard_sms_opros' %}secondary active {% else %}white{% endif %}" href="/dashboard_sms_opros/">
+                                    <span class="icon-mbri-growing-chart"></span>
+                                    Дашборд опросов
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'prices' %}secondary active {% else %}white{% endif %}" href="/prices_lists/">
+                                    <span class="icon-mbri-numbered-list"></span>
+                                        Прайсы
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'catalog_products' %}secondary active {% else %}white{% endif %}" href="/catalog_products/">
+                                    <span class="icon-mbri-photos"></span>
+                                        Каталог товаров
+                                    </a>
+                                </li>
+                                
+                                {% if request.user.is_superuser %}
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'monitors' %}secondary active {% else %}white{% endif %}" href="http://k01srvanna/">
+                                        <span class="icon-mbri-features"></span>
+                                        Мониторы приветствия
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                </div>
+                        <!--
+                        <li class="nav-item">
+                            <a class="nav-link text-{% if params.type == 'stok_im' %}secondary active {% else %}white{% endif %}" href="/stok_im/">
+                            <span class="icon-mbri-globe"> </span>
+                                Интернет - магазин
+                                <span class="badge bg-danger rounded-pill">1</span>
+                            </a>
+                        </li>
+                        -->
+                        {% if request.user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link text-{% if params.type == 'monitorings' %}secondary active {% else %}white{% endif %}" href="/monitorings/">
+                                <span class="icon-mbri-growing-chart"></span>
+                                Мониторинг
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+            
+                        <li class="nav-item">
+                            <a class="nav-link text-nav-link text-{% if params.type == 'manuals' %}secondary active {% else %}white{% endif %}" href="/manuals/">
+                            <span class="icon-mbri-pages"></span>
+                            Инструкции
+                            </a>
+                        </li>
+
+                    </ul>
+
+                    <hr>
+
+                    {% if request.user.is_authenticated %}
+                        
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                            <span>Профиль</span>
+                        </h6>
+                        
+                        <h6 class="sidebar-heading-no-transform d-flex justify-content align-items-center px-4 mt-2 mb-1">
+                            <img class="img-fluid rounded-circle me-2"  width="32" height="32" src="{{request.user.profiles.image_logo}}">
+                            <span>{{request.user}}</span>
+                        </h6>
+
+                        <ul class="nav flex-column mb-2">
+                            <li class="nav-item">
+                                <a class="nav-link text-{% if params.type == 'profiles' %}secondary active {% else %}white {% endif %}" href="/profiles_edit/">
+                                <span class="icon-mbri-edit2"></span>
+                                Редактировать
+                                </a>
+                            </li>
+                            <li class="nav-item text-danger">
+                                <a class="nav-link text-danger" href="/logout">
+                                <span class="icon-mbri-logout"></span>
+                                    Выйти
+                                </a>
+                            </li>
+                        </ul>
+
+                    {% endif %}
+
+                    <!--
+                    <hr>
+                        
+                    <a href="/media/share/ah_kors_group.apk" class="text-white">
+                        <h6 class="sidebar-heading-no-transform d-flex justify-content align-items-center px-4 mt-2 mb-1">
+                            <span class="h4 icon-mbri-android"> </span> 
+                            <span>&nbsp; Мобильное приложение <br>&nbsp; Android<br>
+                                &nbsp;&nbsp;1.00.4 от 08.12.2024
+                            </span>
+                            
+                        </h6>
+                    </a>
+                    -->
+                    
+                </div>
+
+            </nav>
+        </div>
+
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+        <main {% if request.COOKIES.menu == '1' %} class="col-md ms-sm col-lg px-md-1" {% else %} class="col-md-10 ms-sm-auto col-lg-10 px-md-1" {% endif %} style="padding-left: 0; padding-right: 0;" id="content">
+    {% else %}
+        <main class="col-md ms-sm col-lg px-md-1" id="content"></main>
+    {% endif %}
+    
+        <div class="container-fluid" id="content" style="padding-left: 25px;  {% if params.audio_voice %} padding-bottom: 200px; {% endif %}">
+            
+            
+            {% if params.type == 'checklists' %}
+                
+                <div class="d-flex flex-wrap align-items-start justify-content justify-content-lg-start">
+                    
+                    <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-start mb-md-0">
+                        <li><a href="/checklists/glav_new/" class="nav-link px-2 {% if params.nav_selected == 0 %} text-secondary {% else %} text-dark {% endif %}">Главная</a></li>
+                        <li><a href="/checklists/glav/op" class="nav-link px-2 {% if params.nav_selected == 1 %} text-secondary {% else %} text-dark {% endif %}">Отдел продаж</a></li>
+                        <li><a href="/checklists/glav/service_in" class="nav-link px-2 {% if params.nav_selected == 2 %} text-secondary {% else %} text-dark {% endif %}">Сервис (прием авто)</a></li>
+                        <li><a href="/checklists/glav/service_out" class="nav-link px-2 {% if params.nav_selected == 3 %} text-secondary {% else %} text-dark {% endif %}">Сервис (выдача авто)</a></li>
+                        <li><a href="/checklists/glav/trade_in" class="nav-link px-2 {% if params.nav_selected == 4 %} text-secondary {% else %} text-dark {% endif %}">Отдел оценки (Корс - авто)</a></li>
+                        <li><a href="/checklists/glav/op_kors" class="nav-link px-2 {% if params.nav_selected == 5 %} text-secondary {% else %} text-dark {% endif %}">Отдел продаж (Корс - авто)</a></li>
+                        <li><a href="/checklists/reports/" class="nav-link px-2 {% if params.nav_selected == 6 %} text-secondary {% else %} text-dark {% endif %}">Отчеты</a></li>
+                    </ul>
+
+                </div>
+
+            {% else %}
+
+                <br>
+
+            {% endif %}
+        
+            {% block content %}
+             
+            {% endblock %} 
+            
+        </div>
+        
+    </main>
+
+  </div>
+</div>
+
+<script>
+	(function($) {
+	  function setChecked(target) {
+		var checked = $(target).find("input[type='checkbox']:checked").length;
+		if (checked) {
+		  $(target).find('select option:first').html('Выбрано: ' + checked);
+		} else {
+		  $(target).find('select option:first').html('Выберите из списка');
+		}
+	  }
+	
+	  $.fn.checkselect = function() {
+		this.wrapInner('<div class="checkselect-popup" style="display: none;"></div>');
+		this.prepend(
+		  '<div class="checkselect-control">' +
+			'<select class="form-control "><option></option></select>' +
+			'<div class="checkselect-over"></div>' +
+		  '</div>'
+		);	
+	
+		this.each(function(){
+		  setChecked(this);
+		});		
+		this.find('input[type="checkbox"]').click(function(){
+		  setChecked($(this).parents('.checkselect'));
+		});
+	
+		this.parent().find('.checkselect-control').on('click', function(){
+		  $popup = $(this).next();
+		  $('.checkselect-popup').not($popup).css('display', 'hidden');
+		  if ($popup.is(':hidden')) {
+			$popup.css('display', 'block');
+			$(this).find('select').focus();
+		  } else {
+			$popup.css('display', 'none');
+		  }
+		});
+	
+		$('html, body').on('click', function(e){
+		  if ($(e.target).closest('.checkselect').length == 0){
+			$('.checkselect-popup').css('display', 'none');
+		  }
+		});
+	  };
+	})(jQuery);	
+	
+	$('.checkselect').checkselect();
+  
+  
+  </script>
+
+<script language="JavaScript">
+    
+    
+
+    $('form').submit(function(e){
+        var emptyinputs = $(this).find('input').filter(function(){
+            return !$.trim(this.value).length;  // get all empty fields
+        }).prop('disabled',true);    
+    });
+    
+    $(document).ready(function() {
+        $("#action-menu-close").click(function(){
+            document.cookie = "menu=1; path=/";
+            $('#menu').attr('class','menu-close-1');
+            $('#content').attr('class', 'col-md ms-sm col-lg px-md-1');
+        });
+        $("#action-menu-open").click(function(){
+            document.cookie = "menu=0; path=/";
+            $('#menu').attr('class','menu-close-0');
+            $('#content').attr('class', 'col-md-10 ms-sm-auto col-lg-10 px-md-1');
+ 
+        });
+    });
+   
+    function hide() {
+        $('#menu').css('class','menu-open');
+        $('#content').attr('class', 'col-md-10 ms-sm-auto col-lg-10 px-md-1');
+        document.cookie = "menu=0; path=/";
+    }
+
+    function getCookie(name) {
+        let matches = document.cookie.match(new RegExp(
+            "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+        ));
+        return matches ? decodeURIComponent(matches[1]) : undefined;
+    }
+
+    function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+    
+</script>  
+
+</body>
+</html>
+
+
+{% if params.audio_voice %}
+     
+    <div class="fixed-bottom">
+        <div class="row g-1" style="background-color: white;">
+        
+            <span class="icon-mbri-arrow-down" style="padding-bottom: 1px; background-color: white;" id="colapse_player" data-bs-toggle="collapse" data-bs-target="#collapse_player" aria-expanded="true" aria-controls="collapse_player">{% if request.COOKIES.player == '1' %} Скрыть плеер {% else %} Показать плеер {% endif %}</span>
+
+            <div class="collapse {% if request.COOKIES.player == '1' %} show {% endif %}" id="collapse_player" style="transition: 0.25s;">
+                
+                
+                <figure class="d-none">		
+                    <audio id="audio_voice"
+                        controls
+                        src="{{params.audio_voice.audio.url}}">
+                            Your browser does not support the
+                            <code>audio_voice</code> element.
+                    </audio>	
+                </figure>
+
+                <div class="row" style="padding: 10px;"> 
+                
+                    <div class="col">
+                
+                        <form name="form" method="post">
+                        
+                            <div class="card">
+                                
+                                <div class="col-sm-auto"  style="padding-left: 20px; padding-right: 20px; padding-bottom: 10px;">
+                                    
+                                    <div class="row" style="padding-bottom: 2px; padding-top: 2px;">
+                                        <img src="media/logo/1.png" style="height: 50px;">
+                                    </div>
+                                
+                                    <div id="slider-pips">
+                                    </div>
+                                  
+                                </div>
+                                
+                                <div class="row g-1" style="padding-left: 2px; padding-right: 2px; padding-bottom: 1px;">
+                                
+                                    <div class="col-sm-auto">
+                                        {% if params.audio_voice %}
+                                            <div class="d-grid gap-2" role="group" aria-label="Базовая группа переключателей радио">
+                                                <a class="btn btn-outline-primary btn-block" href="{{params.audio_voice.audio.url}}" target="_blank"> cкачать запись </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                
+                                    <div class="col-sm-auto" style="text-align: center;">
+                                    
+                                        <input type="hidden" name="audio_times" id="audio_times" value=''>
+                                        
+                                        <div class="btn-group me-2" role="group" aria-label="Третья группа">
+                                            <button id="second_to" name="second_to" type="button" class="btn btn-outline-info">--:--:--</button>
+                                        </div>
+                                        
+                                        <div class="btn-group me-2" role="group" aria-label="Базовая группа переключателей радио">
+                                                        
+                                            <input type="radio" class="btn-check" name="btnradio" id="play" autocomplete="off">
+                                            <label class="btn btn-outline-success" for="play"><span class="icon-mbri-play"></span></label>
+                                            
+                                            <input type="radio" class="btn-check" name="btnradio" id="pause" autocomplete="off">
+                                            <label class="btn btn-outline-success" for="pause"><span class="icon-mbri-pause-1"></span></label>
+                                            
+                                            <input type="radio" class="btn-check" name="btnradio" id="restart" autocomplete="off">
+                                            <label class="btn btn-outline-success" for="restart"><span class="icon-mbri-undo"></span></label>
+
+                                        </div>
+                                        
+                                        <div class="btn-group" role="group" aria-label="Базовая группа переключателей радио">
+                                            <select class="form-select" id="speed" aria-label="Disabled select example">
+                                            <option value="0.25">x 0.25</option>
+                                            <option value="0.5">x 0.5</option>
+                                            <option value="0.75">x 0.75</option>
+                                            <option selected value="1">x 1</option>
+                                            <option value="1.25">x 1.25</option>
+                                            <option value="1.5">x 1.5</option>
+                                            <option value="1.75">x 1.75</option>
+                                            <option value="2">x 2</option>
+                                            </select>
+                                        </div>
+                                        
+                                    </div>
+
+                                    <div class="col-sm-1" style="padding-bottom: 35px; padding-left: 10px; padding-right: 10px;">
+                                        <div id="slider-pips-volume">
+                                            
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col" style="text-align: center;">  
+                                        <div class="btn-toolbar" role="toolbar" aria-label="">
+                                        
+                                            <input hidden name="audio_id_strip" value="{{params.audio_voice.id}}">
+                                            <input hidden name="select_unit" value="{{params.doc.unit.id}}">
+                                            <input hidden name="select_staff" value="{{params.doc.staff.id}}">
+                                            <input hidden name="date" value="{{params.doc.dataTime|date:"Y-m-d"}}">
+                                            <input hidden name="select_rlk" value="{{params.doc.id}}">
+                                            
+                                            {% csrf_token %}
+                                            
+                                            <div class="row g-1 align-items-center">
+                                                <div class="col align-self-center">
+                                                    <div class="form-floating mb-3">
+                                                    <input type="time" name="appt-time" step="2" class="form-control" id="second_from_record" name="second_from_record" placeholder="" value="-">
+                                                    <label for="floatingInput">Начало</label>
+                                                    </div>
+                                                </div> 
+                                                <div class="col align-self-center">
+                                                    <div class="form-floating mb-3">
+                                                    <input type="time" name="appt-time" step="2" class="form-control" id="second_to_record" name="second_to_record" max="01:00:00" placeholder="" value="-">
+                                                    <label for="floatingInput">Конец</label>
+                                                    </div>
+                                                </div> 
+                                                <div class="col align-self-center my-auto">
+                                                    <div class="form-floating mb-3">
+                                                        <button type="submit" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable1">Обрезать</button>
+                                                    </div>
+                                                </div> 
+                                            </div>
+
+                                        </div>
+                                    </div>
+                            
+                                </div>
+                                
+                            </div>
+                        
+                        </form>
+                    
+                    </div>
+                
+                </div>
+            
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="exampleModalCenteredScrollable1" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="exampleModalCenteredScrollableTitle1">Выполняется обработка аудио записи...</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+            
+                <div class="modal-body" style="text-align: center;">
+                    <h3>Выполняется обработка аудио записи... не обновляйте страничку и не закрывайте вкладку браузера.</h3>
+                    <br>
+                    <hr>
+                    <h3>По завершению операции страница обновится автоматически.</h3>
+                </div>
+
+                <div class="modal-footer">
+                
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script language="JavaScript">
+        function reload(id){
+            var url = new URL(document.location.href);
+                url.searchParams.set('tag_id', id)
+                document.location.href  = url.href;
+            }
+    </script>
+
+    <script language="JavaScript">
+        $(document).ready(function() {
+            $("#colapse_player").click(function(){
+                var textlabel = $("#colapse_player").text();
+                if (textlabel == ' Скрыть плеер '){
+                    $('#colapse_player').attr('class', 'icon-mbri-arrow-up');
+                    $("#colapse_player").text(' Показать плеер ');
+                    $("#content").css({"padding-bottom":"25px"});
+                    document.cookie = "player=0; path=/";
+                }
+                else{
+                    $('#colapse_player').attr('class', 'icon-mbri-arrow-down');
+                    $("#colapse_player").text(' Скрыть плеер ');
+                    $("#content").css({"padding-bottom":"200px"});
+                    document.cookie = "player=1; path=/";
+                }
+            });
+        });
+    </script>
+
+    <script language="JavaScript">
+
+        var duration 	= {{params.audio_voice.time}}
+
+        var end 		= {{params.audio_voice.time}}
+
+        $(document).ready(function() {
+            
+            var audioElement    = document.getElementById('audio_voice');
+            
+            duration = audioElement.duration;
+            
+            {% if params.start_record_seconds %}
+                audioElement.currentTime = {{params.start_record_seconds}} ;
+                pipsSlider.noUiSlider.setHandle(0, {{params.start_record_seconds}} - 100 );    
+                pipsSlider.noUiSlider.setHandle(1, {{params.start_record_seconds}});
+                $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+            {% endif %}
+
+            {% if params.end_record_seconds %}
+                pipsSlider.noUiSlider.setHandle(2, {{params.end_record_seconds}}); 
+            {% endif %}
+
+            audioElement.addEventListener('ended', function() {
+                this.play();
+            }, false);
+            
+            audioElement.addEventListener("canplay",function(){
+                $("#length").text("Duration:" + audioElement.duration + " seconds");
+                $("#source").text("Source:" + audioElement.src);
+                $("#status").text("Status: Ready to play").css("color","green");
+            });
+            
+            audioElement.addEventListener("timeupdate",function(){
+                $("#currentTime").text("Current second:" + audioElement.currentTime);
+                pipsSlider.noUiSlider.setHandle(1, audioElement.currentTime);
+                $("#second_to").text(secondsToHHMM(audioElement.currentTime));
+                if (audioElement.currentTime > end){
+                    audioElement.pause();
+                };
+                $('#table_text tr').addClass(function(){
+                    var classToToggle = '';
+                    if ($(this)[0].id < audioElement.currentTime && $(this).hasClass('')) {
+                        var classToToggle = 'table-danger';
+                        var rowpos = $(this).position(); 
+                        $('#table2').scrollTop(rowpos.top - 20);
+                    }
+                    return classToToggle;
+                });
+                
+            });
+            
+            $('#play').click(function() {
+                audioElement.play();
+                $("#status").text("Status: Playing");
+            });
+            
+            $('#pause').click(function() {
+                audioElement.pause();
+                $("#status").text("Status: Paused");
+            });
+            
+            $("select").change(function () {
+                var value = $( "select#speed option:checked" ).val();
+                audioElement.playbackRate = value;
+            });
+
+            $('#restart').click(function() {
+                audioElement.currentTime = 0;
+                $('#table_text tr').removeClass();
+            });
+            
+            function times(timestamp){
+                var hours = Math.floor(timestamp / 60 / 60);
+                var minutes = Math.floor(timestamp / 60) - (hours * 60);
+                var seconds = timestamp % 60;
+                var formatted = [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                seconds.toString().padStart(2, '0')
+                ].join(':');
+                return  formatted
+            }
+
+            });
+
+        $("#table_text tr").click(function() {
+            $('#table_text tr').removeClass();
+            var current 				= $(this)[0].id;
+            var audioElement    		= document.getElementById('audio_voice');
+            audioElement.currentTime 	= current;
+        });
+
+        $("#audio_user tr").click(function() {
+            
+            var current 	= $(this)[0].id;
+            var audios = $("#audio_user_cheked").val()
+            
+            if (audios.indexOf(current) > 0)
+            {
+                audios = audios.replace('|' + current, "")
+                $("#audio_user_cheked").val(audios);
+            }
+            else{
+                $("#audio_user_cheked").val(audios + '|' + current);
+            }
+            
+            var audios = $("#audio_user_cheked").val()
+            if (audios.length > 0){
+                document.getElementById('audio_user_sends_button').style.visibility = 'visible';
+            }else{
+                document.getElementById('audio_user_sends_button').style.visibility = 'hidden';
+            }
+            
+            $('#audio_user label').text('');
+            
+            ids = audios.split('|');
+            for (let i = 0; i < ids.length; i++) { // выведет 0, затем 1, затем 2
+                if (ids[i].length > 0){
+                    id = '#' + ids[i] + ' label';
+                    
+                    $(id).text(i);	
+                }
+            }
+
+        });
+
+        var format = {
+            to: function(value) {
+                console.log(value);
+                return secondsToHHMM(value);
+            },
+            from: function (value) {
+                return HHMMtoMinutes(value);
+            }
+        };
+
+        var pipsSlider = document.getElementById('slider-pips');
+
+        noUiSlider.create(pipsSlider, {
+            start: [0, 0, duration],
+            connect: [false, true, true, false],
+            tooltips: [{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},{to: secondsToHHMM,
+                        from: HHMMtoMinutes},],
+            range: {
+                'min': 0,
+                'max': duration
+            }
+        });
+
+        var classes = ['c-1-color', 'c-2-color', 'c-3-color', 'c-4-color', 'c-5-color'];
+
+        var pipsSliderConnect = pipsSlider.querySelectorAll('.noUi-connect');
+        for (var i = 0; i < pipsSliderConnect.length; i++) {
+            pipsSliderConnect[i].classList.add(classes[i]);
+        }
+
+        var clickPipsSlider = document.getElementById('slider-pips-volume');
+        noUiSlider.create(clickPipsSlider, {
+            range: {
+                min: 0,
+                max: 100
+            },
+            connect: [true, false],
+            start: [80],
+            pips: {mode: 'count', values: 5}
+        });
+
+        var clickPipsSliderConnect = clickPipsSlider.querySelectorAll('.noUi-connect');
+        for (var i = 0; i < clickPipsSliderConnect.length; i++) {
+            clickPipsSliderConnect[i].classList.add(classes[i]);
+        }
+
+        function secondsToHHMM(value) {
+            return new Date(value * 1000).toISOString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");      
+        }
+
+        function minutesToHHMM(value) {
+                value = Math.round(value);
+                var hour = Math.floor(value / 60);
+                var min = value - hour * 60;
+                //console.log("value:" + value + "\thour: " + hour + "\tmin: " + min)
+                return ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
+            }
+
+        function HHMMtoMinutes(value) {
+                var split = value.toString().split(":");
+                var hour = parseInt(split[0], 10) * 60;
+                var min = parseInt(split[1], 10);
+                //console.log("value: " + value + "\thour: " + hour + "\tmin " + min);
+                return hour + min;
+            }
+
+        clickPipsSlider.noUiSlider.on('update', function (values) {
+            var audioElement    = document.getElementById('audio_voice');
+            audioElement.volume = values[0]/100;
+        });
+
+        pipsSlider.noUiSlider.on('update', function (values, handle, unencoded, drag, positions) {
+            $("#second_from_record").val(secondsToHHMM(values[0]));
+        $("#second_to_record").val(secondsToHHMM(values[2]));
+
+            $("#audio_times").val(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+            end = values[2]; 
+        });
+
+        pipsSlider.noUiSlider.on('change', function (values, handle, unencoded, drag, positions) { 
+            var audioElement = document.getElementById('audio_voice');
+            audioElement.currentTime = values[1]
+            $('#table_text tr').removeClass();
+        });
+
+        function reload(id){
+            var url = new URL(document.location.href);
+            url.searchParams.set('tag_id', id)
+            document.location.href  = url.href;
+        }
+
+    </script>
+
+{% endif %}
+
+
+
+
+<script language="JavaScript">
+    
+    $(document).keyup(function(e) {
+        if ($('.gallery-item').length > 0){
+            if (e.keyCode == 39 ){
+                slideImage(1);
+            } else if (e.keyCode == 37 ){
+                slideImage(-1);
+            };
+        };
+        
+      });
+    var rotate = 0;
+    var image_cover = true;
+    const galleryItem = document.getElementsByClassName("gallery-item");
+    var lightBoxContainer = document.createElement("div");
+    lightBoxContainer.style.display=    'relation';
+    lightBoxContainer.style.zIndex  = 15000;
+    const lightBoxContent = document.createElement("div");
+    const lightBoxImg = document.createElement("img");
+    const lightBoxPrev = document.createElement("div");
+    const lightBoxNext = document.createElement("div");
+    const lightBoxClose = document.createElement("div");
+    const lightBoxCover = document.createElement("div");
+    const lightBoxCount = document.createElement("span");
+    const lightBoxTransformRight = document.createElement("div");
+    const lightBoxTransformLeft = document.createElement("div");
+
+    lightBoxContainer.classList.add("lightbox");
+    
+    lightBoxContent.classList.add("lightbox-content");
+    
+    lightBoxPrev.classList.add("fs-5","fa", "fa-angle-left", "lightbox-prev", 'icon-mbri-left');
+    lightBoxNext.classList.add("fs-5", "fa", "fa-angle-right", "lightbox-next", 'icon-mbri-right');
+    lightBoxClose.classList.add("fs-5","fa", "fa-angle-close", "lightbox-close", 'icon-mbri-close');
+    lightBoxCount.classList.add("fa", "fa-angle-count", "lightbox-count", 'icon-mbri-image-slider');
+    lightBoxCover.classList.add("fa", "fa-angle-cover", "lightbox-cover", 'icon-mbri-preview');
+    lightBoxTransformRight.classList.add("fa", "fa-angle-transform", "lightbox-transform", 'icon-mbri-update');
+    //lightBoxTransformLeft.classList.add("fa", "fa-angle-count", "lightbox-count", 'icon-mbri-image-slider');
+
+    lightBoxContainer.appendChild(lightBoxContent);
+    lightBoxContent.appendChild(lightBoxImg);
+    
+    if (galleryItem.length > 1){
+        lightBoxContainer.appendChild(lightBoxPrev);
+        lightBoxContainer.appendChild(lightBoxNext);
+    }
+    
+    lightBoxContainer.appendChild(lightBoxClose);
+    lightBoxContainer.appendChild(lightBoxCount);
+    lightBoxContainer.appendChild(lightBoxCover);
+    lightBoxContainer.appendChild(lightBoxTransformRight);
+    
+    document.body.appendChild(lightBoxContainer);
+
+    let index = 1;
+
+    function showLightBox(n) {
+        if (n > galleryItem.length) {
+            index = 1;
+        } else if (n < 1) {
+            index = galleryItem.length;
+        }
+        let imageLocation = galleryItem[index-1].children[0].getAttribute("src1");
+        lightBoxImg.setAttribute("src", imageLocation);
+        //lightBoxContent.style.backgroundImage = 'url("' + imageLocation + '")';
+        lightBoxCount.innerHTML = ' ' + index + ' / ' + galleryItem.length;
+    }
+
+    function currentImage() {
+        lightBoxContainer.style.display = "block";
+
+        let imageIndex = parseInt(this.getAttribute("data-index"));
+        showLightBox(index = imageIndex);
+    }
+    for (let i = 0; i < galleryItem.length; i++) {
+        galleryItem[i].addEventListener("click", currentImage);
+    }
+
+    function slideImage(n) {
+        rotate = 0;
+        showLightBox(index += n);
+    }
+    function prevImage() {
+        rotate = 0;
+        slideImage(-1);
+    }
+    function nextImage() {
+        rotate = 0;
+        slideImage(1);
+    }
+    if (galleryItem.length > 1){
+        lightBoxPrev.addEventListener("click", prevImage);
+        lightBoxNext.addEventListener("click", nextImage);
+    }
+    
+    function transform_image() {
+        
+        if (this === event.target) {
+            rotate = rotate + 90;
+            lightBoxImg.style.transform = 'rotate(' + rotate + 'deg)';        
+        }
+    }
+    function cover_image() {
+        
+        if (this === event.target) {
+            image_cover = !image_cover;
+            if (image_cover){
+                lightBoxContent.style.width     = "99%";
+                lightBoxContent.style.height    = "99%";
+                lightBoxImg.style.objectFit     = "contain";
+            }else{
+                lightBoxContent.style.width     = "auto";
+                lightBoxContent.style.height    = "auto";
+                lightBoxImg.style.objectFit     = "cover";
+                
+            }
+            
+        }
+    }
+
+    function closeLightBox() {
+        if (this === event.target) {
+            lightBoxContainer.style.display = "none";
+            rotate = 0;
+            lightBoxImg.style.transform     = 'rotate(' + rotate + 'deg)';
+            lightBoxContent.style.width     = "99%";
+            lightBoxContent.style.height    = "99%";
+            lightBoxImg.style.objectFit     = "contain";
+        }
+    }
+    lightBoxClose.addEventListener("click", closeLightBox);
+    lightBoxContainer.addEventListener("click", closeLightBox);
+    lightBoxCover.addEventListener("click", cover_image);
+    lightBoxTransformRight.addEventListener("click", transform_image);
+
+    {% if params.type == 'checklists' %}
+        $(document).ready(function() {
+            loadPage();
+        });
+    {% endif %}
+    
+
+    $(document).ready(function() {
+        $('.nav-link-collapse').on('click', function() {
+            $('.nav-link-collapse').not(this).removeClass('nav-link-show');
+            $(this).toggleClass('nav-link-show');
+        });
+    });
+
+</script>
+
+

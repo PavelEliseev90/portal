@@ -1,0 +1,1050 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - чек лист создание {% endblock %}
+
+{% block title_navbar %} - чек лист создание {% endblock %}
+    
+{% block content %}
+ 	
+ 	<form action="" method="POST" enctype="multipart/form-data" >	
+		{{params.audio_voice.id}}
+		<div class="row g-1">
+
+			<!-- Первый столбец !-->
+			<div class="col-sm-3">
+					
+					
+				{% if params.units %}
+						<div class="card">
+							<div class="card-header bg-secondary text-white">
+							Параметры
+							</div>
+							<form action="" method="GET" enctype="multipart/form-data">
+								<div class="card-body">
+								
+									{% csrf_token %}
+									
+									<label>Подразделение</label>
+									
+									<select class="form-select" name = "select_unit" onchange="this.form.submit()">
+										<option></option>
+										{% for unit in params.units %}
+											{% if params.unitID|lower == unit.id|lower %}
+												<option id={{unit.id}} value="{{unit.id}}" selected>{{unit.name}} </option>
+											{% else %}
+												<option id={{unit.id}} value="{{unit.id}}"> {{unit.name}} </option>
+											{% endif %}
+										{% endfor %}
+									</select>
+									
+									
+									{% if params.stafs %}
+										<label>Сотрудник</label>
+										<br>
+										<select class="form-select" name = "select_staff" onchange="this.form.submit()">
+											<option></option>
+											{% for staf in params.stafs %}
+												{% if params.stafID|lower == staf.id|lower %}
+													<option id={{staf.id}} value="{{staf.id}}" selected>{{staf.name}} </option>
+												{% else %}
+													<option id={{staf.id}} value="{{staf.id}}">{{staf.name}} </option>
+												{% endif %}
+											{% endfor %}
+										</select>
+									{% endif %}
+									
+									
+									{% if params.stafID %}
+									<label>Дата</label>
+									
+										{% if params.date %}
+											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date" value="{{params.date}}">
+										{% else %}
+											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date">
+										{% endif%}
+									{% endif%}
+
+									{% if params.rlks %}
+										
+										
+										<label>Рабочие листы</label>
+										
+										<select class="form-select" name = "select_rlk" onchange="this.form.submit()">
+											<option></option>
+											{% for rlk in params.rlks %}
+												{% if params.rlkID|lower == rlk.id|lower %}
+													<option {% if rlk.listened %} style = "background-color: RGB(152, 251, 152)" {% endif %} id={{rlk.id}} value="{{rlk.id}}" selected> {% if rlk.listened %} V {% endif %} - {{rlk.nomer}} - {{rlk.dataTime}}</option>
+												{% else %}
+													<option {% if rlk.listened %} style = "background-color: RGB(152, 251, 152)" {% endif %} id={{rlk.id}} value="{{rlk.id}}"> {% if rlk.listened %} V {% endif %} {{rlk.nomer}} - {{rlk.dataTime}}</option>
+												{% endif %}
+											{% endfor %}
+										</select>
+									{% endif%}
+								
+									
+							</div>
+						</div>
+					{% endif %}	
+				
+					
+					{% if params.units %}
+						<div class="card">
+							<div class="card-header bg-secondary text-white">
+							Показатели
+							</div>
+							<div class="card-body">
+								<table class="table .table-responsive">
+			<thead>
+				<tr>
+				<th scope="col">#</th>
+				<th class="w-50">Раздел</th>
+				<th scope="col">МАХ</th>
+				<th scope="col">Check</th>
+				<th scope="col">%</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+				<th scope="row">1</th>
+				<td>Встреча клиента (100%)</td>
+				<td><label id="itog_v1M">10</label></td>
+				<td><label id="itog_v1">0</label></td>
+				<td><label id="itog_v1P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">2</th>
+				<td>Выявление потребностей клиента (80%)</td>
+				<td><label id="itog_v2M">15</label></td>
+				<td><label id="itog_v2">0</label></td>
+				<td><label id="itog_v2P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">3</th>
+				<td>Презентация а/м (90%)</td>
+				<td><label id="itog_v3M">14</label></td>
+				<td><label id="itog_v3">0</label></td>
+				<td><label id="itog_v3P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">4</th>
+				<td>Общая оценка навыков коммуникации (75%)</td>
+				<td><label id="itog_v4M">8</label></td>
+				<td><label id="itog_v4">0</label></td>
+				<td><label id="itog_v4P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">5</th>
+				<td>Презентация дополнительных товаров/услуг (100%)</td>
+				<td><label id="itog_v5M">16</label></td>
+				<td><label id="itog_v5">0</label></td>
+				<td><label id="itog_v5P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">6</th>
+				<td>Работа с возражениями (60%)</td>
+				<td><label id="itog_v6M">7</label></td>
+				<td><label id="itog_v6">0</label></td>
+				<td><label id="itog_v6P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">7</th>
+				<td>Закрытие сделки (70%)</td>
+				<td><label id="itog_v7M">15</label></td>
+				<td><label id="itog_v7">0</label></td>
+				<td><label id="itog_v7P">0</label></td>
+				</tr>
+				<tr>
+				<th scope="row">8</th>
+				<td>Результат (60%)</td>
+				<td><label id="itog_v8M">15</label></td>
+				<td><label id="itog_v8">0</label></td>
+				<td><label id="itog_v8P">0</label></td>
+				</tr>
+			</tbody>
+			</table>
+								<div class="row g-3">
+									<div class="col">
+										<label id="itogText"> Цель 70% - текущий чек -</label> <label id="itog"> 0 </label><label id="itogText">% </label>
+									</div>
+								</div>
+								<br> 	
+							</div>
+						</div>
+					{% endif %}
+				</div>
+
+			<!-- Второй столбец !-->
+			<div class="col-sm-9">
+				<div class="card">
+					<div class="card-header  bg-secondary text-white">
+						Чек лист
+					</div>
+					
+					<div class="card-body">
+						
+						{% if params.rlkID|length == 0 %}
+
+							<p class="card-text">Заполнение будет доступно после заполнения всех полей параметров.</p>
+						
+						{% else %}
+							<!-- 
+								Тут будет весь чек лист
+							-->
+							<div class="row">
+
+							<!-- Первый столбец !-->
+								<div class="col">
+									<div class="card border-secondary">
+										<div class="card-header bg-secondary text-white">1. Встреча клиента</div>
+											<div class="card-body">
+												<div class="panel-body">
+												
+													<label class="form-label">МОП спросил имя клиента первым</label>
+													<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v1_1" id = "exampleDataList_v1_1" onChange="test1()">
+														<option value="0" {% if params.checkListO %} {% if params.checkListO.v1_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+														<option value="2" {% if params.checkListO %} {% if params.checkListO.v1_1 == 2 %} selected {% endif %}{% endif %} >2</option>
+													</select>
+													
+													<label class="form-label">Обращался к клиенту по имени не менее 3-х раз</label>
+													<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v1_2" id = "exampleDataList_v1_2" onChange="test1()">
+														<option value="0" {% if params.checkListO %} {% if params.checkListO.v1_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+														<option value="3" {% if params.checkListO %} {% if params.checkListO.v1_2 == 3 %} selected {% endif %}{% endif %} >3</option>
+													</select>
+														
+												
+													<label class="form-label">Small talk</label>
+													<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v1_3" id = "exampleDataList_v1_3" onChange="test1()">
+														<option value="0" {% if params.checkListO %} {% if params.checkListO.v1_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+														<option value="1" {% if params.checkListO %} {% if params.checkListO.v1_3 == 1 %} selected {% endif %}{% endif %} >1</option>
+													</select>
+														
+												
+													<label class="form-label">МОП управляет процессом беседы</label>
+													<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v1_4" id = "exampleDataList_v1_4" onChange="test1()">
+														<option value="0" {% if params.checkListO %} {% if params.checkListO.v1_4 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+														<option value="4" {% if params.checkListO %} {% if params.checkListO.v1_4 == 4 %} selected {% endif %}{% endif %} >4</option>
+													</select>
+										
+												</div>
+											</div>
+									</div>
+								</div>
+							
+								<div class="col">
+								<div class="card border-secondary">
+								<div class="card-header bg-secondary text-white">2. Выявление потребностей клиента</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+										<label for="exampleDataList_v2_1" class="form-label">Сроки приобретения</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v2_1" id = "exampleDataList_v2_1" onChange="test2()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v2_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="1" {% if params.checkListO %} {% if params.checkListO.v2_1 == 1 %} selected {% endif %}{% endif %} >1</option>
+										</select>
+
+										<label class="form-label">Сравнение с конкурентами/отработка возражений</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v2_2" id = "exampleDataList_v2_2" onChange="test2()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v2_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="5" {% if params.checkListO %} {% if params.checkListO.v2_2 == 5 %} selected {% endif %}{% endif %} >5</option>
+										</select>
+										
+										<label class="form-label">Уточнил ключевые потребности у клиента /динамика/комфорт/цена/безопастность/экономичность</label>									
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v2_3" id = "exampleDataList_v2_3" onChange="test2()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v2_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="5" {% if params.checkListO %} {% if params.checkListO.v2_3 == 5 %} selected {% endif %}{% endif %} >5</option>
+										</select>
+										
+										<label class="form-label">Получил ли подтверждение от клиента / Резюмирование</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v2_4" id = "exampleDataList_v2_4" onChange="test2()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v2_4 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="1" {% if params.checkListO %} {% if params.checkListO.v2_4 == 1 %} selected {% endif %}{% endif %} >1</option>
+										</select>
+										
+										<label class="form-label">Финансовые условия прибретения / наличные/кредит/трейд-ин</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v2_5" id = "exampleDataList_v2_5" onChange="test2()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v2_5 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="1" {% if params.checkListO %} {% if params.checkListO.v2_5 == 1 %} selected {% endif %}{% endif %} >1</option>
+										</select>
+										
+										<label class="form-label">Пожелания к модификации/ комплектация/цвет/функционал/модель/коробка</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v2_6" id = "exampleDataList_v2_6" onChange="test2()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v2_6 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="2" {% if params.checkListO %} {% if params.checkListO.v2_6 == 2 %} selected {% endif %}{% endif %} >2</option>
+										</select>			
+
+										
+
+									</div>
+
+											
+										</div>
+									</div>
+								</div>
+							
+								<div class="col">
+									<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white">3. Презентация а/м</div>
+									<div class="card-body">
+										<div class="panel-body">
+											
+											<label class="form-label">Презентации автомобиля в шоурум / без 6 точек в шоу рум</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v3_1" id = "exampleDataList_v3_1" onChange="test3()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v3_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v3_1 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+											
+											<label class="form-label">В презентации менеджер ведет клиента/ уверенность</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v3_2" id = "exampleDataList_v3_2" onChange="test3()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v3_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="3" {% if params.checkListO %} {% if params.checkListO.v3_2 == 3 %} selected {% endif %}{% endif %} >3</option>
+											</select>
+											
+											
+											<label class="form-label">Презентация на основе потребностей клиента / отталкиваясь от того что говорил клиент ранее (логика)</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v3_3" id = "exampleDataList_v3_3" onChange="test3()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v3_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="4" {% if params.checkListO %} {% if params.checkListO.v3_3 == 4 %} selected {% endif %}{% endif %} >4</option>
+											</select>
+
+											<label class="form-label">Проведение Тест-драйва </label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v3_4" id = "exampleDataList_v3_4" onChange="test3()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v3_4 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v3_4 == 2 %} selected {% endif %}{% endif %} >2</option>
+												<option value="4" {% if params.checkListO %} {% if params.checkListO.v3_4 == 4 %} selected {% endif %}{% endif %} >4</option>
+											</select>
+
+											<label class="form-label">Предложение альтернативных вариантов/из наличия/транзит /заказ/ модель </label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v3_5" id = "exampleDataList_v3_5" onChange="test3()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v3_5 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="1" {% if params.checkListO %} {% if params.checkListO.v3_5 == 1 %} selected {% endif %}{% endif %} >1</option>
+											</select>
+
+										</div>
+									</div>
+									</div>
+								</div>
+
+								<div class="col">
+									<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white">4. Общая оценка навыков коммуникации</div>
+									<div class="card-body">
+										<div class="panel-body">
+											
+											<label class="form-label">Грамотность речи</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v4_1" id = "exampleDataList_v4_1" onChange="test4()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v4_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v4_1 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+											
+											<label class="form-label">Получение обратной связи от клиента/ согласие клиента с мнением менеджера/мнение клиента</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v4_2" id = "exampleDataList_v4_2" onChange="test4()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v4_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v4_2 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+											
+											<label class="form-label">Менеджер не перебивает клиента</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v4_3" id = "exampleDataList_v4_3" onChange="test4()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v4_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v4_3 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+
+											<label class="form-label">Преобладают открытые вопросы</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v4_4" id = "exampleDataList_v4_4" onChange="test4()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v4_4 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v4_4 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+
+										</div>
+									</div>
+									</div>
+								</div>
+
+							</div>
+
+							<br>
+
+							<div class="row">
+
+								<div class="col">
+									<div class="card border-secondary">
+									<div class="card-header bg-secondary text-white">5. Презентация дополнительных товаров/услуг</div>
+									<div class="card-body">
+										<div class="panel-body">
+											
+											<label class="form-label">Презентация  дополнительного оборудования</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v5_1" id = "exampleDataList_v5_1" onChange="test5()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v5_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="4" {% if params.checkListO %} {% if params.checkListO.v5_1 == 4 %} selected {% endif %}{% endif %} >4</option>
+											</select>
+
+											<label class="form-label">Презентация кредитного продукта</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v5_2" id = "exampleDataList_v5_2" onChange="test5()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v5_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v5_2 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+											
+											<label class="form-label">Презентация страховых услуг (ОСАГО, КАСКО)</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v5_3" id = "exampleDataList_v5_3" onChange="test5()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v5_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="2" {% if params.checkListO %} {% if params.checkListO.v5_3 == 2 %} selected {% endif %}{% endif %} >2</option>
+											</select>
+
+											<label class="form-label">Презентация Госрегистрация</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v5_4" id = "exampleDataList_v5_4" onChange="test5()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v5_4 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="4" {% if params.checkListO %} {% if params.checkListO.v5_4 == 4 %} selected {% endif %}{% endif %} >4</option>
+											</select>
+
+											<label class="form-label">Предложение услуги Traid-in</label>
+											<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v5_5" id = "exampleDataList_v5_5" onChange="test5()">
+												<option value="0" {% if params.checkListO %} {% if params.checkListO.v5_5 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+												<option value="4" {% if params.checkListO %} {% if params.checkListO.v5_5 == 4 %} selected {% endif %}{% endif %} >4</option>
+											</select>
+
+										</div>
+									</div>
+									</div>
+								</div>
+							<!-- Первый столбец !-->
+							<div class="col">
+								<div class="card border-secondary">
+								<div class="card-header bg-secondary text-white">6. Работа с возражениями</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+										<label class="form-label">Присутствует отработка возражений по кредиту (согласие на кредит)</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v6_1" id = "exampleDataList_v6_1" onChange="test6()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v6_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="2" {% if params.checkListO %} {% if params.checkListO.v6_1 == 2 %} selected {% endif %}{% endif %} >2</option>
+										</select>
+
+										<label class="form-label">Присутствует отработка возражений по Trade-In (согласие на Trade-In)</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v6_2" id = "exampleDataList_v6_2" onChange="test6()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v6_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="2" {% if params.checkListO %} {% if params.checkListO.v6_2 == 2 %} selected {% endif %}{% endif %} >2</option>
+										</select>
+										
+										<label class="form-label">Отработка возражений / не спорит с клиентом/ не уходит от ответа на возражение </label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v6_3" id = "exampleDataList_v6_3" onChange="test6()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v6_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="3" {% if params.checkListO %} {% if params.checkListO.v6_3 == 3 %} selected {% endif %}{% endif %} >3</option>
+										</select>
+
+									</div>
+								</div>
+								</div>
+							</div>
+
+							<div class="col">
+								<div class="card border-secondary">
+								<div class="card-header bg-secondary text-white">7. Закрытие сделки</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+										<label class="form-label">Предложение заключения сделки</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v7_1" id = "exampleDataList_v7_1" onChange="test7()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v7_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="5" {% if params.checkListO %} {% if params.checkListO.v7_1 == 5 %} selected {% endif %}{% endif %} >5</option>
+										</select>
+
+										<label class="form-label">Выяснение причины отказа</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v7_2" id = "exampleDataList_v7_2" onChange="test7()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v7_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="5" {% if params.checkListO %} {% if params.checkListO.v7_2 == 5 %} selected {% endif %}{% endif %} >5</option>
+										</select>
+										
+										<label class="form-label">Предложение решения (случае сомнения клиента)</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v7_3" id = "exampleDataList_v7_3" onChange="test7()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v7_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="4" {% if params.checkListO %} {% if params.checkListO.v7_3 == 4 %} selected {% endif %}{% endif %} >4</option>
+										</select>
+
+										<label class="form-label">Получение контактов клиента</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v7_4" id = "exampleDataList_v7_4" onChange="test7()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v7_4 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="1" {% if params.checkListO %} {% if params.checkListO.v7_4 == 1 %} selected {% endif %}{% endif %} >1</option>
+										</select>
+
+									</div>
+								</div>
+								</div>
+							</div>
+
+							<div class="col">
+								<div class="card border-secondary">
+								<div class="card-header bg-secondary text-white">8. Результат</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+										<label class="form-label">Договоренность ДСК на звонок с точной датой в течение недели</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v8_1" id = "exampleDataList_v8_1" onChange="test8()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v8_1 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="5" {% if params.checkListO %} {% if params.checkListO.v8_1 == 5 %} selected {% endif %}{% endif %} >5</option>
+										</select>
+
+										<label class="form-label">ДСК на визит с точной датой в течение недели</label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v8_2" id = "exampleDataList_v8_2" onChange="test8()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v8_2 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="10" {% if params.checkListO %} {% if params.checkListO.v8_2 == 10 %} selected {% endif %}{% endif %} >10</option>
+										</select>
+										
+										<label class="form-label">Сделка состоялась </label>
+										<select {% if params.profiles.view_checklist %} disabled {% endif %} class="form-select" name = "v8_3" id = "exampleDataList_v8_3" onChange="test8()">
+											<option value="0" {% if params.checkListO %} {% if params.checkListO.v8_3 == 0 %} selected {% endif %} {% else %} selected {% endif %} >0</option>
+											<option value="15" {% if params.checkListO %} {% if params.checkListO.v8_3 == 15 %} selected {% endif %}{% endif %} >15</option>
+										</select>
+
+									</div>
+								</div>
+								</div>
+							</div>
+
+							</div>
+				
+							<br>
+						
+							<!--
+							<div class="col">
+								<div class="card border-secondary">
+								<div class="card-header bg-secondary text-white">Запись с диктофона</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+									{% if params.checkListO %} 
+										{% if params.checkListO.audio %}	
+											<label>Текущая запись - </label><a href="http://opros.kors-group.com/{{params.checkListO.audio.url}}" target="_blank"> cкачать запись {{params.checkListO.audio.url}} </a>
+											<br>
+											<audio controls>
+											<source src="http://opros.kors-group.com/{{params.checkListO.audio.url}}">
+											<p>Ваш браузер не поддерживает HTML5 аудио. Вот взамен
+												<a href="http://opros.kors-group.com/{{params.checkListO.audio.url}}">ссылка на аудио</a></p>
+											</audio>
+											
+											
+
+											{% if params.profiles.view_checklist %}
+											{% else %}
+											<br><hr>
+												<div class="form-file">
+													<input type="file" name="audio" accept="audio/*" class="form-file-input" id="audio">
+													<label class="form-file-label" for="audio">
+												<span class="form-file-text">Приложите запись с диктофона...</span>
+												<span class="form-file-button">Выбрать файл</span>
+													</label>
+												</div>
+											{% endif %}
+										{% endif %}
+										{% else %}
+											<br><hr>
+												<div class="form-file">
+													<input type="file" name="audio" accept="audio/*" class="form-file-input" id="audio">
+													<label class="form-file-label" for="audio">
+												<span class="form-file-text">Приложите запись с диктофона...</span>
+												<span class="form-file-button">Выбрать файл</span>
+													</label>
+												</div>
+											
+									{% endif %}
+
+									</div>
+								</div>
+								</div>
+							</div>
+
+							<br>
+						-->
+							<div class="col">
+								<div class="card border-secondary">
+								<div class="card-header bg-secondary text-white">Комментарий</div>
+								<div class="card-body">
+									<div class="panel-body">
+										
+										<textarea name="comment" class="form-control" id="exampleFormControlTextarea1" rows="3">{% if params.checkListO %}{{params.checkListO.comment}}{% endif %}</textarea>
+
+									</div>
+								</div>
+								</div>
+							</div>
+
+							<br>
+				
+							{% if params.profiles.view_checklist %}
+
+							{% else %}
+								
+								<div class="row g-2">	
+									<div class="col">
+									<div class="card border-secondary">
+										<div class="card-header bg-secondary text-white">Дополнительно</div>
+										<div class="card-body">
+										<div class="panel-body">
+												
+												<div class="form-check form-check-inline">
+													<input class="form-check-input" name="canceled" type="checkbox" {% if params.checkListO.canceled %}  checked {% endif %} value="True" id="flexCheckIndeterminate2">
+													<label class="form-check-label" for="flexCheckIndeterminate2">
+														Аппелирован (отменен)
+													</label>
+												</div>
+												
+												<div class="form-check form-check-inline">
+													<input class="form-check-input" name="close_to_day" type="checkbox" {% if params.checkListO.rlk.archiveDayToDay %}  checked {% endif %} value="True" id="flexCheckIndeterminate1">
+													<label class="form-check-label" for="flexCheckIndeterminate1">
+														Отправлен в архив день в день
+													</label>
+												</div>
+
+										</div>
+										</div>
+									</div>
+
+									</div>
+								</div>
+								
+								<br>
+
+								<div class="row g-2">	
+									<div class="col">
+									<div class="card border-secondary">
+										<div class="card-body">
+										<div class="panel-body">
+												
+											<div class="form-check form-check-inline">
+												
+													{% if save %}
+														<button type="button" class="btn btn-success" name="save" data-toggle="button" onclick="this.form.submit()" disabled >Сохранить</button>
+													{% else %}
+														<button type="button" class="btn btn-success" name="save" data-toggle="button" onclick="this.form.submit()">Сохранить</button>
+													{% endif %}
+																					
+											</div>
+
+										</div>
+										</div>
+									</div>
+
+									</div>
+					
+							{% endif %}
+				
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+		</div>
+		<br> <br> <br> <br> <br> <br> <br> <br>
+	</form>
+
+{% if params.audio_voice %}
+
+	<div class="fixed-bottom">
+			
+		<figure class="d-none">		
+			<audio id="audio_voice"
+				controls
+				src="http://opros.kors-group.com/{{params.audio_voice.audio.url}}">
+					Your browser does not support the
+					<code>audio_voice</code> element.
+			</audio>	
+		</figure>
+
+		<div class="row" style="padding: 25px;"> 
+			<div class="col">
+			  
+			  <form name="form" method="post">
+				
+				<div class="card style="padding: 55px;">
+				  
+				  <div id="slider-pips">
+				  </div>
+				  
+				  <br>
+				  
+				  <div class="row g-2">
+					<div class="col-sm-1" style="padding-right: 25px;">
+					  <select class="form-select" id="speed" aria-label="Disabled select example">
+						<option value="0.25">Скорость x 0.25</option>
+						<option value="0.5">Скорость x 0.5</option>
+						<option value="0.75">Скорость x 0.75</option>
+						<option selected value="1">Скорость x 1</option>
+						<option value="1.25">Скорость x 1.25</option>
+						<option value="1.5">Скорость x 1.5</option>
+						<option value="1.75">Скорость x 1.75</option>
+						<option value="2">Скорость x 2</option>
+					  </select>
+					</div>
+					
+		
+					<div class="col-sm-1" style="padding-right: 25px;">
+					  <div id="slider-pips-volume"></div>
+					</div>
+				  
+					<div class="col-sm-auto">  
+					  <div class="btn-toolbar" role="toolbar" aria-label="Панель инструментов с группами кнопок">
+						
+						<input hidden name="audio_id_strip" value="{{params.audio_voice.id}}">
+						<input hidden name="select_unit" value="{{params.doc.unit.id}}">
+						<input hidden name="select_staff" value="{{params.doc.staff.id}}">
+						<input hidden name="date" value="{{params.doc.dataTime|date:"Y-m-d"}}">
+						<input hidden name="select_rlk" value="{{params.doc.id}}">
+						
+						<div class="btn-group me-2" role="group" aria-label="Базовая группа переключателей радио">
+						  <input type="radio" class="btn-check" name="btnradio" id="play" autocomplete="off">
+						  <label class="btn btn-outline-success" for="play">Воспроизвести</label>
+						
+						  <input type="radio" class="btn-check" name="btnradio" id="pause" autocomplete="off">
+						  <label class="btn btn-outline-success" for="pause">Пауза</label>
+						
+						  <input type="radio" class="btn-check" name="btnradio" id="restart" autocomplete="off">
+						  <label class="btn btn-outline-success" for="restart">С начала</label>
+						</div>
+						
+						  {% csrf_token %}
+						  <input type="hidden" name="audio_times" id="audio_times" value=''>
+						  <div class="btn-group me-2" role="group" aria-label="Третья группа">
+							<button id="second_to" name="second_to" type="button" class="btn btn-outline-info">-</button>
+						  </div>
+		
+						  <div class="btn-group me-2" role="group" aria-label="Четвертая группа">
+							<button id="second_from" type="button" class="btn btn-outline-secondary">-</button>
+							<button type="submit" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable1">Обрезать аудио запись</button>
+						  </div> 
+						
+						  <div class="btn-group me-2" role="group" aria-label="Базовая группа переключателей радио"> 
+							<a class="btn btn-outline-primary" href="http://opros.kors-group.com/{{params.audio_voice.audio.url}}" target="_blank"> cкачать запись {{params.checkListO.audio.url}} </a>
+						  </div>
+
+						  <div class="btn-group me-2" role="group" aria-label="Базовая группа переключателей радио">
+							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable">
+								Выбрать дргую запись сотрудника
+							</button>
+						  </div>
+						
+					  </div>
+					</div>
+				
+		
+				  </div>
+				
+				</div>
+				
+			  </form>
+			  
+			  
+			
+			</div>
+			
+		  </div>
+		  
+	</div>
+
+	<div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+		  <div class="modal-content">
+			<div class="modal-header">
+			  <h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Записи сотрудника {{params.doc.staff}} от {{params.doc.dataTime|date:"d.m.Y"}}</h4>
+			  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th scope="col">Дата и время</th>
+							<th scope="col">Имя файла</th>
+						  	<th scope="col">Продолжительность</th>
+						</tr>
+					  </thead>
+					<tbody>
+					  {% for audio_voice_record in params.audios %}
+						<tr>
+							<td>{{audio_voice_record.audio.date}}</td>	
+							<td>{{audio_voice_record.audio.name}}</td>
+							<td>{{audio_voice_record.audio.time}}</td>
+						</tr>
+					  {% endfor %} 
+					</tbody>
+				  </table>
+			</div>
+
+			<div class="modal-footer">
+			  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+			</div>
+		  </div>
+		</div>
+	  </div>
+
+	  <div class="modal fade" id="exampleModalCenteredScrollable1" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle1" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+		  <div class="modal-content">
+			<div class="modal-header">
+			  <h4 class="modal-title" id="exampleModalCenteredScrollableTitle1">Выполняется обрезка аудио записи...</h4>
+			  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			
+			<div class="modal-body">
+				<h3>Выполняется обрезка аудио записи... не обновляйте страничку и не закрывайте вкладку браузера</h3>
+			</div>
+
+			<div class="modal-footer">
+			 
+			</div>
+		  </div>
+		</div>
+	  </div>
+
+{% endif %}
+
+<script type="text/javascript">
+	
+	function test1(){ 
+		
+		document.getElementById('itog_v1').innerHTML = Number(document.getElementById('exampleDataList_v1_1').value) + Number(document.getElementById('exampleDataList_v1_2').value) + Number(document.getElementById('exampleDataList_v1_3').value) + Number(document.getElementById('exampleDataList_v1_4').value);
+		
+		document.getElementById('itog_v1P').innerHTML = div(Number(document.getElementById('itog_v1').innerHTML), Number(document.getElementById('itog_v1M').innerHTML)) 
+
+		itog();
+
+	}
+
+	function test2(){ 
+		
+		document.getElementById('itog_v2').innerHTML = Number(document.getElementById('exampleDataList_v2_1').value) + Number(document.getElementById('exampleDataList_v2_2').value) + Number(document.getElementById('exampleDataList_v2_3').value) + Number(document.getElementById('exampleDataList_v2_4').value) + Number(document.getElementById('exampleDataList_v2_5').value) + Number(document.getElementById('exampleDataList_v2_6').value);
+		
+		document.getElementById('itog_v2P').innerHTML = div(Number(document.getElementById('itog_v2').innerHTML), Number(document.getElementById('itog_v2M').innerHTML)) 
+
+		itog();
+	}
+
+	function test3(){ 
+		
+		document.getElementById('itog_v3').innerHTML = Number(document.getElementById('exampleDataList_v3_1').value) + Number(document.getElementById('exampleDataList_v3_2').value) + Number(document.getElementById('exampleDataList_v3_3').value) + Number(document.getElementById('exampleDataList_v3_4').value) + Number(document.getElementById('exampleDataList_v3_5').value);
+		
+		document.getElementById('itog_v3P').innerHTML = div(Number(document.getElementById('itog_v3').innerHTML), Number(document.getElementById('itog_v3M').innerHTML)) 
+
+		itog();
+	}
+
+	function test4(){ 
+		
+		document.getElementById('itog_v4').innerHTML = Number(document.getElementById('exampleDataList_v4_1').value) + Number(document.getElementById('exampleDataList_v4_2').value) + Number(document.getElementById('exampleDataList_v4_3').value) + Number(document.getElementById('exampleDataList_v4_4').value);
+		
+		document.getElementById('itog_v4P').innerHTML = div(Number(document.getElementById('itog_v4').innerHTML), Number(document.getElementById('itog_v4M').innerHTML)) 
+
+		itog();
+	} 
+
+	function test5(){ 
+		
+		document.getElementById('itog_v5').innerHTML = Number(document.getElementById('exampleDataList_v5_1').value) + Number(document.getElementById('exampleDataList_v5_2').value) + Number(document.getElementById('exampleDataList_v5_3').value) + Number(document.getElementById('exampleDataList_v5_4').value) + Number(document.getElementById('exampleDataList_v5_5').value);
+		
+		document.getElementById('itog_v5P').innerHTML = div(Number(document.getElementById('itog_v5').innerHTML), Number(document.getElementById('itog_v5M').innerHTML)) 
+
+		itog();
+	}
+
+	function test6(){ 
+		
+		document.getElementById('itog_v6').innerHTML = Number(document.getElementById('exampleDataList_v6_1').value) + Number(document.getElementById('exampleDataList_v6_2').value) + Number(document.getElementById('exampleDataList_v6_3').value);
+		
+		document.getElementById('itog_v6P').innerHTML = div(Number(document.getElementById('itog_v6').innerHTML), Number(document.getElementById('itog_v6M').innerHTML)) 
+
+		itog();
+	}
+
+	function test7(){ 
+		
+		document.getElementById('itog_v7').innerHTML = Number(document.getElementById('exampleDataList_v7_1').value) + Number(document.getElementById('exampleDataList_v7_2').value) + Number(document.getElementById('exampleDataList_v7_3').value) + Number(document.getElementById('exampleDataList_v7_4').value);
+		
+		document.getElementById('itog_v7P').innerHTML = div(Number(document.getElementById('itog_v7').innerHTML), Number(document.getElementById('itog_v7M').innerHTML)) 
+
+		itog();
+	}
+
+	function test8(){ 
+		
+		document.getElementById('itog_v8').innerHTML = Number(document.getElementById('exampleDataList_v8_1').value) + Number(document.getElementById('exampleDataList_v8_2').value) + Number(document.getElementById('exampleDataList_v8_3').value);
+		
+		document.getElementById('itog_v8P').innerHTML = div(Number(document.getElementById('itog_v8').innerHTML), Number(document.getElementById('itog_v8M').innerHTML)) 
+
+		itog();
+	} 
+
+	function div(val, by){
+	    return Math.floor(val/by*100);
+	}
+
+	function itog(){
+	    document.getElementById('itog').innerHTML = Number(document.getElementById('itog_v1').innerHTML) +
+	    Number(document.getElementById('itog_v2').innerHTML) + 
+	    Number(document.getElementById('itog_v3').innerHTML) +
+	    Number(document.getElementById('itog_v4').innerHTML) +
+	    Number(document.getElementById('itog_v5').innerHTML) + 
+	    Number(document.getElementById('itog_v6').innerHTML) +
+	    Number(document.getElementById('itog_v7').innerHTML) +
+	    Number(document.getElementById('itog_v8').innerHTML);
+	}
+
+
+</script>
+
+<script language="JavaScript">
+
+	var duration = {{params.audio_voice.time}}
+  
+	var end 	= {{params.audio_voice.time}}
+  
+	$(document).ready(function() {
+		
+		var audioElement    = document.getElementById('audio_voice');
+		
+		duration = audioElement.duration;
+		
+		audioElement.addEventListener('ended', function() {
+			this.play();
+		}, false);
+		
+		audioElement.addEventListener("canplay",function(){
+			$("#length").text("Duration:" + audioElement.duration + " seconds");
+			$("#source").text("Source:" + audioElement.src);
+			$("#status").text("Status: Ready to play").css("color","green");
+		});
+		
+		audioElement.addEventListener("timeupdate",function(){
+			$("#currentTime").text("Current second:" + audioElement.currentTime);
+			pipsSlider.noUiSlider.setHandle(1, audioElement.currentTime);
+			$("#second_to").text(secondsToHHMM(audioElement.currentTime));
+			if (audioElement.currentTime > end){
+			  audioElement.pause();
+			};
+			
+		});
+		
+		$('#play').click(function() {
+			audioElement.play();
+			$("#status").text("Status: Playing");
+		});
+		
+		$('#pause').click(function() {
+			audioElement.pause();
+			$("#status").text("Status: Paused");
+		});
+		
+		$("select").change(function () {
+		  var value = $( "select#speed option:checked" ).val();
+		  audioElement.playbackRate = value;
+		});
+  
+		$('#restart').click(function() {
+			audioElement.currentTime = 0;
+		});
+		
+		function times(timestamp){
+		  var hours = Math.floor(timestamp / 60 / 60);
+		  var minutes = Math.floor(timestamp / 60) - (hours * 60);
+		  var seconds = timestamp % 60;
+		  var formatted = [
+			hours.toString().padStart(2, '0'),
+			minutes.toString().padStart(2, '0'),
+			seconds.toString().padStart(2, '0')
+		  ].join(':');
+		  return  formatted
+		}
+  
+	  });
+  
+	var format = {
+		to: function(value) {
+		  console.log(value);
+			return secondsToHHMM(value);
+		},
+		from: function (value) {
+			return HHMMtoMinutes(value);
+		}
+	};
+  
+	var pipsSlider = document.getElementById('slider-pips');
+  
+	noUiSlider.create(pipsSlider, {
+		start: [0, 0, duration],
+		connect: [false, true, true, false],
+		tooltips: [{to: secondsToHHMM,
+					from: HHMMtoMinutes},{to: secondsToHHMM,
+					from: HHMMtoMinutes},{to: secondsToHHMM,
+					from: HHMMtoMinutes},],
+		range: {
+			'min': 0,
+			'max': duration
+		}
+	});
+  
+	var classes = ['c-1-color', 'c-2-color', 'c-3-color', 'c-4-color', 'c-5-color'];
+  
+	var pipsSliderConnect = pipsSlider.querySelectorAll('.noUi-connect');
+	for (var i = 0; i < pipsSliderConnect.length; i++) {
+	  pipsSliderConnect[i].classList.add(classes[i]);
+	}
+  
+	var clickPipsSlider = document.getElementById('slider-pips-volume');
+	noUiSlider.create(clickPipsSlider, {
+		range: {
+			min: 0,
+			max: 100
+		},
+		connect: [true, false],
+		start: [80],
+		pips: {mode: 'count', values: 5}
+	});
+  
+	var clickPipsSliderConnect = clickPipsSlider.querySelectorAll('.noUi-connect');
+	for (var i = 0; i < clickPipsSliderConnect.length; i++) {
+	  clickPipsSliderConnect[i].classList.add(classes[i]);
+	}
+  
+	function secondsToHHMM(value) {
+		return new Date(value * 1000).toISOString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");      
+	}
+  
+	function minutesToHHMM(value) {
+			value = Math.round(value);
+			var hour = Math.floor(value / 60);
+			var min = value - hour * 60;
+			//console.log("value:" + value + "\thour: " + hour + "\tmin: " + min)
+			return ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
+		}
+  
+	function HHMMtoMinutes(value) {
+			var split = value.toString().split(":");
+			var hour = parseInt(split[0], 10) * 60;
+			var min = parseInt(split[1], 10);
+			//console.log("value: " + value + "\thour: " + hour + "\tmin " + min);
+			return hour + min;
+		}
+  
+	clickPipsSlider.noUiSlider.on('update', function (values) {
+	  var audioElement    = document.getElementById('audio_voice');
+	  audioElement.volume = values[0]/100;
+	});
+  
+	pipsSlider.noUiSlider.on('update', function (values, handle, unencoded, drag, positions) {
+	  $("#second_from").text(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+	  $("#audio_times").val(secondsToHHMM(values[0]) + " - " + secondsToHHMM(values[2]));
+	  end = values[2]; 
+	});
+  
+	pipsSlider.noUiSlider.on('change', function (values, handle, unencoded, drag, positions) { 
+		var audioElement = document.getElementById('audio_voice');
+		audioElement.currentTime = values[1]
+		
+	});
+  
+	function reload(id){
+	var url = new URL(document.location.href);
+	  url.searchParams.set('tag_id', id)
+	  document.location.href  = url.href;
+  }
+	
+  </script>
+  
+{% endblock %}

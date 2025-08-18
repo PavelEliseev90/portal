@@ -1,0 +1,684 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+
+{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+
+{% block title %} - СМС опрос сервиса {% endblock %}
+
+{% block title_navbar %} - СМС опрос сервиса {% endblock %}
+    
+{% block content %}
+
+
+{% if params.answer_change|length > 0 %}
+
+
+<div class="modal fade show" id="exampleModal" tabindex="-1" data-show="true" aria-labelledby="exampleModalLabel" aria-hidden="false">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable">
+		<div class="modal-content">
+			
+			<div class="modal-header">
+				<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-bookmark"></span> Ошибка сохранения данных</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			
+			<div class="modal-body">
+				
+				<p class="fs-6" style="padding: 0.2rem;"> <span class="icon-mbri-close"> </span> Ошибка </p>
+				<hr style="width: 75%;">
+				
+				<p class="fs-6" style="padding: 0.2rem;"> <span class="icon-mbri-chat"> </span>{{params.answer_change.Text}}</p>
+				<hr style="width: 75%;">
+				
+			</div>
+			
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	
+	$(window).on('load',function(){
+		$('#exampleModal').modal('show');
+	});
+
+</script>
+
+
+{% endif %}
+
+<div class="row">
+
+	<div class="col-sm">
+
+		<label class="fs-4 text-start fw-normal">
+			Опрос по ЗН № {{params.object.zn.nomer}} от {{params.object.zn.dataTime}} 
+			{% if params.object.canceled %}
+				<span class="badge text-bg-danger bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-close"> </span> Отменен</span>
+			{% elif params.object.close %}	
+				<span class="badge text-bg-success bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-success"> </span> Пройден</span>
+			{% else %}
+				<span class="badge text-bg-secondary bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-timer"> </span> Не пройден</span>
+			{% endif %}
+		</label><br>
+		
+		<br>
+		
+		<div class="card"> 
+			<div class="card-body" style="padding: 0;">
+				<p class="fs-6" style="padding: 0.2rem;"> <span class="icon-mbri-home"> </span>{{params.object.zn.unit.name}} <span class="icon-mbri-pin"></span> г. {{params.object.zn.unit.city}}</p>
+				<hr style="width: 75%;">
+				<p class="fs-6" style="padding: 0.2rem;"> <span class="icon-mbri-chat"> </span>{{params.object.zn.customerWords}}</p>
+				<hr style="width: 75%;">
+				<div class="row" style="padding: 0.2em;">
+					<div class="col-sm">
+						{{params.object.zn.dataTime}} <br>
+						{{params.object.zn.nomer}}
+					</div>
+					<div class="col-sm">
+						{{params.object.zn.typeRemont}}
+					</div>
+					<div class="col-sm">
+						{{params.object.zn.customer.name}} <br>
+						<span class="icon-mbri-star"></span> {{params.object.zn.rating_customer}}
+					</div>
+					<div class="col-sm">
+						{{params.object.zn.cars.mark}} {{params.object.zn.cars.model}} / {{params.object.zn.cars.vin}} 
+					</div>
+					<div class="col-sm">
+						{{params.object.zn.cars_grz_board}}
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+														   
+						<label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+							
+							<span class="icon-mbri-shopping-bag"></span> {{params.object.zn.products_count}}
+							<div class="vr"></div>
+							<span class="icon-mbri-setting3"></span> {{params.object.zn.works_count}}
+							<div class="vr"></div>
+							<span class="icon-mbri-add-submenu"></span> {{params.object.zn.recomendations_customer_count}}
+							<div class="vr"></div>
+							<span class="icon-mbri-website-theme"></span> {{params.object.zn.recomendations_mcu_count}}
+
+						</label>
+						
+					</div>
+					<div class="col text-end">
+						<label class="fs-4 
+							{% if params.object.zn.recomendations_new > 0 %}
+								bg-warning
+							{% elif params.object.zn.active %} 
+								bg-success
+							{% else %}
+								bg-danger
+							{% endif %} 
+						bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0 0.2em; padding: 0.2em;">  {{params.object.zn.amount|floatformat:"2g"}} &#8381;</label>
+					</div>
+				</div>
+
+				<hr style="width: 75%;">
+
+				<div class="row justify-content-end">
+					<div class="col align-self-end text-end">
+						<a href="/docs_zn/{{params.object.zn.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		
+		<br>
+
+		<table class="table" style="vertical-align: middle;">
+			<tr class="align-middle" id="tr_v1">
+				<td class="align-middle">
+					<label class="form-label" name="v1" id="v1">
+						{% if params.object.v1 == 0 %}
+							<span name="ev1" id="ev1" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev1" id="ev1" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						Как бы вы оценили общую удовлетворенность обслуживанием в дилерском центре
+					</label>
+				</td>
+				<td class="align-middle col-3"> 
+					<div class="btn-group" role="group">
+						<input type="radio" disabled class="btn-check" name="v1" id="v1" value="{{params.object.v1}}" checked>							
+						{% if params.object.v1 == 0 %}
+							<label class="btn text-white btn-secondary">{{params.object.v1}}</label>
+						{% elif params.object.v1 < 4 %}
+							<label class="btn text-white btn-danger">{{params.object.v1}}</label>
+						{% elif params.object.v1 < 8 %}
+							<label class="btn text-white btn-warning">{{params.object.v1}}</label>
+						{% else %}
+							<label class="btn text-white btn-success">{{params.object.v1}}</label>
+						{% endif %}
+					</div>
+				</td>
+			</tr>
+
+			<tr class="align-middle" id="tr_v2">
+				<td class="align-middle">
+					<label class="form-label" name="v2" id="v2">
+						{% if params.object.v2 == 0 %}
+							<span name="ev2" id="ev2" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev2" id="ev2" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						С какой вероятностью Вы порекомендовали бы нас своим друзьям или знакомым
+					</label>
+				</td>
+				<td class="align-middle"> 
+					<div class="btn-group" role="group">
+						<input type="radio" disabled class="btn-check" name="v2" id="v2" value="{{params.object.v2}}" checked>
+						{% if params.object.v2 == 0 %}
+							<label class="btn text-white btn-secondary">{{params.object.v2}}</label>
+						{% elif params.object.v2 < 4 %}
+							<label class="btn text-white btn-danger">{{params.object.v2}}</label>
+						{% elif params.object.v2 < 8 %}
+							<label class="btn text-white btn-warning">{{params.object.v2}}</label>
+						{% else %}
+							<label class="btn text-white btn-success">{{params.object.v2}}</label>
+						{% endif %}
+					</div>
+				</td>
+			</tr>
+
+			<tr class="align-middle" id="tr_v3">
+				<td class="align-middle">
+					<label class="form-label" name="v3" id="v3">
+						{% if params.object.v3 == 0 %}
+							<span name="ev3" id="ev3" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev3" id="ev3" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						Скорость обслуживания: работы были выполнены в оговоренное время
+					</label>
+				</td>
+				<td class="align-middle"> 
+					<div class="btn-group" role="group">
+						<input type="radio" disabled class="btn-check" name="v3" id="v3" value="{{params.object.v3}}" checked>
+						{% if params.object.v3 == 0 %}
+							<label class="btn text-white btn-secondary">{{params.object.v3}}</label>
+						{% elif params.object.v3 < 4 %}
+							<label class="btn text-white btn-danger">{{params.object.v3}}</label>
+						{% elif params.object.v3 < 8 %}
+							<label class="btn text-white btn-warning">{{params.object.v3}}</label>
+						{% else %}
+							<label class="btn text-white btn-success">{{params.object.v3}}</label>
+						{% endif %}
+					</div>
+				</td>
+			</tr>
+
+			<tr class="align-middle" id="tr_v4">
+				<td class="align-middle">
+					<label class="form-label" name="v4" id="v4">
+						{% if params.object.v4 == 0 %}
+							<span name="ev4" id="ev4" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev4" id="ev4" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						Оцените вежливость и внимательность персонала
+					</label>
+				</td>
+				<td class="align-middle"> 
+					<div class="btn-group" role="group">
+						<input type="radio" disabled class="btn-check" name="v4" id="v4" value="{{params.object.v4}}" checked>
+						{% if params.object.v4 == 0 %}
+							<label class="btn text-white btn-secondary">{{params.object.v4}}</label>
+						{% elif params.object.v4 < 4 %}
+							<label class="btn text-white btn-danger">{{params.object.v4}}</label>
+						{% elif params.object.v4 < 8 %}
+							<label class="btn text-white btn-warning">{{params.object.v4}}</label>
+						{% else %}
+							<label class="btn text-white btn-success">{{params.object.v4}}</label>
+						{% endif %}
+					</div>
+				</td>
+			</tr>
+
+			<tr class="align-middle" id="tr_v5">
+				<td class="align-middle">
+					<label class="form-label" name="v5" id="v5">
+						{% if params.object.v5 == 0 %}
+							<span name="ev5" id="ev5" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev5" id="ev5" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						Доступно ли разъяснили Вам перечень и стоимость работ
+					</label>
+				</td>
+				<td class="align-middle"> 
+					<div class="btn-group" role="group">
+						<input type="radio" disabled class="btn-check" name="v5" id="v5" value="{{params.object.v5}}" checked>
+						{% if params.object.v5 == 0 %}
+							<label class="btn text-white btn-secondary">{{params.object.v5}}</label>
+						{% elif params.object.v5 < 4 %}
+							<label class="btn text-white btn-danger">{{params.object.v5}}</label>
+						{% elif params.object.v5 < 8 %}
+							<label class="btn text-white btn-warning">{{params.object.v5}}</label>
+						{% else %}
+							<label class="btn text-white btn-success">{{params.object.v5}}</label>
+						{% endif %}
+					</div>
+				</td>
+			</tr>
+
+			<tr class="align-middle" id="tr_v6">
+				<td class="align-middle">
+					<label class="form-label" name="v6" id="v6">
+						{% if params.object.v6 == 0 %}
+							<span name="ev6" id="ev6" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev6" id="ev6" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						Качество оказанной услуги/работ
+					</label>
+				</td>
+				<td class="align-middle"> 
+					<div class="btn-group" role="group">
+						<input type="radio" disabled class="btn-check" name="v6" id="v6" value="{{params.object.v6}}" checked>
+						{% if params.object.v6 == 0 %}
+							<label class="btn text-white btn-secondary">{{params.object.v6}}</label>
+						{% elif params.object.v6 < 4 %}
+							<label class="btn text-white btn-danger">{{params.object.v6}}</label>
+						{% elif params.object.v6 < 8 %}
+							<label class="btn text-white btn-warning">{{params.object.v6}}</label>
+						{% else %}
+							<label class="btn text-white btn-success">{{params.object.v6}}</label>
+						{% endif %}
+					</div>
+				</td>
+			</tr>
+
+			<tr class="align-middle" id="tr_v7">
+				<td class="align-middle">
+					<label class="form-label" name="v7" id="v7">
+						{% if params.object.v7 == '' %}
+							<span name="ev7" id="ev7" class="icon-mbri-close text-danger"></span>
+						{% else %}
+							<span name="ev6" id="ev6" class="icon-mbri-success text-danger"></span>
+						{% endif %}
+						
+						Откуда вы узнали о нашем сервисном центре
+					</label>
+				</td>
+				<td class="align-middle"> 
+					<div class="btn-group" role="group">
+						{% if params.object.v7 == '' %}
+							<input type="radio" disabled class="btn-check" name="v7" id="v7" value="{{params.object.v7}}" checked>
+							<label class="btn text-white btn-secondary">---</label>
+						{% else %}
+							<input type="radio" disabled class="btn-check" name="v7" id="v7" value="{{params.object.v7}}" checked>
+							<label class="btn text-white btn-success">{{params.object.v7}}</label>
+						{% endif %}
+						
+					
+					</div>
+				</td>
+			</tr>
+
+		</table>
+
+		<div class="mb-3">
+			<label for="exampleFormControlTextarea1" class="form-label">Если у вас есть пожелания/замечания вы можете поделиться с нами</label>
+			<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.v8}}</textarea>
+		</div>
+
+		{% if params.object.close %}
+			<hr>
+
+			
+			<p class="fs-6"><span class="icon-mbri-clock"></span> Опрос пройден: {{params.object.dataClose}} &nbsp;&nbsp;&nbsp;   
+				{% if params.object.get_rating < 4 %}
+					<label class="btn btn-danger"> 
+						<span class="btn-danger icon-mbri-star"></span> {{params.object.get_rating}}
+					</label>
+				{% elif params.object.get_rating < 8 %}
+					<label class="btn btn-warning"> 
+						<span class="btn-warning icon-mbri-star"></span> {{params.object.get_rating}}
+					</label>
+				{% else %}
+					<label class="btn btn-success"> 
+						<span class="btn-success icon-mbri-star"></span> {{params.object.get_rating}}
+					</label>
+				{% endif %}
+			</p> 
+
+			<hr>
+			
+			<div class="row g-1">
+				
+				<div class="col">
+					<form class="form-floating">
+						<input type="text" class="form-control" id="floatingInputValue" placeholder="Категория клиента" value="{{params.object.date_base|default_if_none:''}}">
+						<label for="floatingInputValue">Дата опроса в 1С</label>
+					</form>
+				</div>
+				<div class="col">
+					<form class="form-floating">
+						<input type="text" class="form-control" id="floatingInputValue" placeholder="Категория негатива" value="{{params.object.number_base|default_if_none:''}}">
+						<label for="floatingInputValue">Номер опроса в 1С</label>
+					</form>
+				</div>
+				
+			</div>
+
+			<br>
+
+			<div class="row g-1">
+				<div class="col">
+					<form class="form-floating">
+						<input type="text" class="form-control" id="floatingInputValue" placeholder="Категория клиента" value="{{params.object.category_customer|default_if_none:''}}">
+						<label for="floatingInputValue">Категория клиента</label>
+					</form>
+				</div>
+				<div class="col">
+					<form class="form-floating">
+						<input type="text" class="form-control" id="floatingInputValue" placeholder="Категория негатива" value="{{params.object.category_negative|default_if_none:''}}">
+						<label for="floatingInputValue">Категория негатива</label>
+					</form>
+				</div>
+				
+			</div>
+			
+			<div class="mb-3">
+				<label for="exampleFormControlTextarea1" class="form-label">Комментарий ДЦ</label>
+				<textarea class="form-control" id="exampleFormControlTextarea1" name="comment_dc" rows="3" readonly >{{params.object.comment_tech_dir|default_if_none:''}}</textarea>
+			</div>
+		
+			<hr>
+
+			<form method="post" id="myform">
+
+				{% csrf_token %}
+
+				<div class="row g-1">
+					<div class="col-sm-auto my-auto">
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" id="canceled" name="canceled" type="checkbox" {% if params.object.canceled %} checked {% endif %} value="True" id="flexCheckIndeterminate2" {% if not request.user.profiles.edit_sms_opros %} disabled {% endif %}>
+							<label class="form-check-label" for="canceled">
+								Апеллирован
+							</label>
+						</div>
+					</div>
+					
+					<div class="col-sm my-auto">
+						<div class="form-floating mb-3">
+							
+							<select class="form-select" id="select_type_canceled" name="select_type_canceled" {% if not request.user.profiles.edit_sms_opros %} disabled {% endif %}>
+								<option></option>
+								{% for type in params.selected.type_canceled %}
+								<option value="{{type.id}}" {% if params.object.canceled_type.id == type.id %} selected {% endif %}> {{type.name}}</option>	
+								{% endfor %}
+							</select>
+							<label class="form-check-label" for="status">Причина апелляции</label>
+							
+						</div>
+					</div>
+				</div>
+
+				<div class="mb-3">
+					<label for="exampleFormControlTextarea1" class="form-label">Комментарий к апелляции</label>
+					<textarea class="form-control" id="exampleFormControlTextarea1" name="canceled_comment" rows="3" {% if not request.user.profiles.edit_sms_opros %} readonly {% endif %} >{{params.object.canceled_comment|default_if_none:''}}</textarea>
+				</div>
+
+				{% if params.object.canceled %}
+					<label class="form-label">Апеллирован, подтвердил апеляцию {{params.object.canceled_user.first_name}} {{params.object.canceled_user.last_name}}</label>
+					<br>
+				{% endif %}
+				
+				{% if request.user.profiles.edit_sms_opros %}
+					<button type="submit" value="submit" name="save_canceled" class="btn btn-success" data-toggle="button" ><span class="icon-mbri-success"></span>  Сохранить</button>
+				{% endif %}
+				
+			</form>
+
+		{% endif %}
+
+	</div>
+
+	<div class="col-sm">
+		
+		<br>
+		<div class="card"> 		
+			<div class="card-body">
+				
+				<p class="fs-6"><span class="icon-mbri-user"></span>   {{params.object.zn.master}}</p>
+
+				<div class="row g-1 my-auto">
+					
+					<div class="col-sm-auto">
+						<img src="{{params.object.zn.master.photo}}" style="border-radius: 0.2em; max-height: 250px;"> 
+					</div>
+
+					<div class="col-sm-auto">
+						
+						<div class="card" style="margin: 0.2rem;">
+							<table class="table table-borderless">
+								<tr class="tr">
+									<td class="td">
+										Последние 30 дней 
+									</td>
+									<td class="td">
+										{% if params.rating > 8 %}
+											<span class="fs-2 text-success"><span class="icon-mbri-star"></span> {{params.rating}} </span>
+										{% elif params.rating > 3 %}
+											<span class="fs-2 text-warning"><span class="icon-mbri-star"></span> {{params.rating}} </span>
+										{% else %}
+											<span class="fs-2 text-danger"><span class="icon-mbri-star"></span> {{params.rating}} </span>
+										{% endif %}
+									</td>
+								</tr>
+								<tr class="tr">
+									<td class="td">
+										Общий 
+									</td>
+									<td class="td">
+										{% if params.rating_common > 8 %}
+											<span class="fs-5 text-success"><span class="icon-mbri-star"></span> {{params.rating_common}} </span> 
+										{% elif params.rating_common > 3 %}
+											<span class="fs-5 text-warning"><span class="icon-mbri-star"></span> {{params.rating_common}} </span>
+										{% else %}
+											<span class="fs-5 text-danger"><span class="icon-mbri-star"></span> {{params.rating_common}} </span>
+										{% endif %} 
+									</td>
+								</tr>
+							</table>
+						</div> 
+
+					</div>
+
+				</div>
+
+			</div>
+		</div>
+
+		{% if params.check_in != None %}
+				
+			<br>
+			<div class="card"> 		
+				<div class="card-body">
+					
+					<p class="fs-6"><span class="icon-mbri-right"></span> Прием авто - {{params.object.zn.dateStart}} - {{params.check_in.checkItog}} %</p>
+
+					<div class="progress">
+						<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{params.check_in.checkItog_v1}}%" aria-valuenow="{{params.check_in.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{params.check_in.checkItog_v2}}%" aria-valuenow="{{params.check_in.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.check_in.checkItog_v3}}%" aria-valuenow="{{params.check_in.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.check_in.checkItog_v4}}%" aria-valuenow="{{params.check_in.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-primary bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{params.check_in.checkItog_v5}}%" aria-valuenow="{{params.check_in.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+					</div>
+
+					<br>
+					
+					<div class="row justify-content-center">
+						<div class="col-md-2 align-items-center">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_in.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_in.checkItog_v1_P}}%;">
+								<span class="sr-only">{{params.check_in.checkItog_v1_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_in.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_in.checkItog_v2_P}}%;">
+								<span class="sr-only">{{params.check_in.checkItog_v2_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_in.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_in.checkItog_v3_P}}%;">
+								<span class="sr-only">{{params.check_in.checkItog_v3_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_in.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_in.checkItog_v4_P}}%;">
+								<span class="sr-only">{{params.check_in.checkItog_v4_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar  bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_in.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_in.checkItog_v5_P}}%;">
+								<span class="sr-only">{{params.check_in.checkItog_v5_P}} %</span>
+							</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="row justify-content-center">
+						<div class="col-md-2">
+						<span class="sr-only">Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Общая оценка навыков коммуникации</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Презентация дополнительных товаров/услуг</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Работа с возражениями</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Резюмирование сделки (заезда на обслуживание)</span>
+					</div>
+					</div>
+
+					<div class="row justify-content-end">
+						<div class="col align-self-end text-end">
+							<a href="/checklists/glav/service_in/doc/?checkid={{params.check_in.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
+						</div>
+					</div>
+
+				</div>
+			</div>
+			
+		{% endif%}
+
+		{% if params.check_in != None %}
+			
+			<br>
+			<div class="card"> 
+				<div class="card-body">
+					
+					<p class="fs-6"><span class="icon-mbri-left"></span> Выдача авто - {{params.object.zn.dateEnd}} - {{params.check_out.checkItog}} %</p>
+
+					<div class="progress">
+						<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{params.check_out.checkItog_v1}}%" aria-valuenow="{{params.check_out.checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{params.check_out.checkItog_v2}}%" aria-valuenow="{{params.check_out.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.check_out.checkItog_v3}}%" aria-valuenow="{{params.check_out.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+						<div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.check_out.checkItog_v4}}%" aria-valuenow="{{params.check_out.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+					</div>
+
+					<br>
+						
+					<div class="row justify-content-center">
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_out.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_out.checkItog_v1_P}}%;">
+								<span class="sr-only">{{params.check_out.checkItog_v1_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_out.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_out.checkItog_v2_P}}%;">
+								<span class="sr-only">{{params.check_out.checkItog_v2_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_out.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_out.checkItog_v3_P}}%;">
+								<span class="sr-only">{{params.check_out.checkItog_v3_P}} %</span>
+							</div>
+							</div>
+						</div>
+						<div class="col-md-2">
+							<div class="progress progress-bar-vertical">
+							<div class="progress-bar bg-primary bg-opacity-50" role="progressbar" aria-valuenow="{{params.check_out.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.check_out.checkItog_v4_P}}%;">
+								<span class="sr-only">{{params.check_out.checkItog_v4_P}} %</span>
+							</div>
+							</div>
+						</div>               
+					</div>
+
+					<div class="row justify-content-center">
+						<div class="col-md-2">
+						<span class="sr-only">Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Общая оценка навыков коммуникации</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Презентация рекомендаций/моб.приложения</span>
+						</div>
+						<div class="col-md-2">
+						<span class="sr-only">Резюмирование сделки (заезда на обслуживание)</span>
+						</div>
+						
+					</div>
+
+					<div class="row justify-content-end">
+						<div class="col align-self-end text-end">
+							<a href="/checklists/glav/service_out/doc/?checkid={{params.check_out.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+		{% endif%}
+
+
+	</div>
+
+</div>
+	
+</form>
+
+
+<script>
+
+
+	$('#canceled').click(function(){
+		if ($(this).is(':checked')){
+			$("#select_type_canceled").attr('required', 'required');
+		} else {
+			$("#select_type_canceled").removeAttr('required'); 
+		}
+	});
+
+</script>
+
+{% endblock %}

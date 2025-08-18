@@ -1,0 +1,376 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - отчет по прослушке ДЦ {% endblock %}
+
+{% block title_navbar %} - отчет по прослушке ДЦ {% endblock %}
+    
+{% block content %}
+ 	
+<div class="row g-1">
+
+	<div class="col-sm">
+		
+		<div class="row g-1">
+			<div class="card">
+				
+				<div class="card-header">
+					Фильтр
+				</div>
+				
+				<div class="card-body">
+					<div class="row g-1">
+						
+						<div class="col-sm-2">
+							<div class="form-floating mb-3">
+								<select class="form-select" name = "select_direction" id = "direction"  onChange="reload()">
+									<option> </option>
+									{% for direction in params.selected.directions %}
+										{% if params.filtr.direction_id|lower == direction.id|lower %}
+											<option id={{direction.id}} value="{{direction.id}}" selected> {{direction.name}} </option>
+										{% else %}
+											<option id={{direction.id}} value="{{direction.id}}"> {{direction.name}} </option>
+										{% endif %}
+									{% endfor %}
+								</select>
+								<label for="floatingInput">Направление</label>
+							</div>				
+						</div>
+
+						<div class="col-sm-2">
+							<div class="form-floating mb-3">
+								<input onchange="reload()" id='date' class="form-control form-control-sm" type="month" name="date" value="{{params.filtr.date|date:"Y-m"}}">
+								<label for="floatingInput">Месяц</label>
+							</div>			
+						</div>
+						
+						<div class="col-sm-2">
+							<div class="form-floating mb-3">
+								<select class="form-select" name = "select_city" id = "city"  onChange="reload()">
+									<option> </option>
+									{% for city in params.selected.citys %}
+										{% if params.filtr.city_id|lower == city.id|lower %}
+											<option id={{city.id}} value="{{city.id}}" selected> {{city.name}} </option>
+										{% else %}
+											<option id={{city.id}} value="{{city.id}}"> {{city.name}} </option>
+										{% endif %}
+									{% endfor %}
+								</select>
+								<label for="floatingInput">Город</label>
+							</div>
+						</div>
+<!--
+						<div class="col-sm-2">
+							<div class="form-floating mb-3">
+								<select class="form-select" name = "select_unit" id = "unit"  onChange="reload()">
+									<option> </option>
+									{% for unit in params.selected.units %}
+										{% if params.filtr.unit_id|lower == unit.id|lower %}
+											<option id={{unit.id}} value="{{unit.id}}" selected> {{unit.name}} </option>
+										{% else %}
+											<option id={{unit.id}} value="{{unit.id}}"> {{unit.name}} </option>
+										{% endif %}
+									{% endfor %}
+								</select>
+								<label for="floatingInput">Подразделение ДЦ</label>
+							</div>
+						</div>
+	-->
+					</div>
+				</div>
+
+			</div>
+		</div>
+		
+		<br>
+		
+		<div class="modal fade" id="exampleModal" tabindex="-1" data-show="true"  aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+			  <div class="modal-content">
+				<div class="modal-header">
+				  <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-numbered-list"></span> Формируем отчет</h5>
+				  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="container-fluid bg-white">
+						
+						<br>
+							Формируем отчет, складываем, делим, думаем и пересчитываем, не перезагружайте страницу скоро выведем данные...
+						<br>
+						<img src="/static/images/loading.gif"/>
+	
+					</div>
+				</div>
+			  </div>
+			</div>
+		</div>
+
+		{% if params.error %}
+			
+			<div class="card border-success mb-3">
+				<div class="card-header">
+					{{params.error}}
+				</div>     
+			</div>
+		
+		{% else %}
+
+			<div class="table-responsive-sm">
+				<table class="table table-hover table-sm align-middle">	
+					<thead style="position: sticky;top: 48px;">
+					<tr>
+						<th class='header_table' scope="col" style="text-align: center; background: white;">Подразделение</th>
+						<th class='header_table' scope="col" style="text-align: center; background: white;">Итог</th>
+						{% for dates in params.dates_list %}
+							<th class='header_table' scope="col" style="text-align: center; background: white;">
+								{{dates.date|date:"d"}}
+								{% if dates.date|date:"w" == '0' %}
+									<hr style="color: red; height: 0.3em;">
+								{% elif dates.date|date:"w" == '6' %}
+									<hr style="color: red; height: 0.3em;">
+								{% else %}
+									<hr style="color: blue; height: 0.3em;">
+								{% endif %}
+
+								{{dates.date|date:"D"}}
+							</th>
+						{% endfor %}
+					</tr>
+					</thead>
+						<tbody>
+					
+							{% for units_info in params.units_data %}
+								
+								<tbody class="labels">
+									<tr style="background-color: antiquewhite;">
+										
+										<th scope="row">
+											<label for="dc{{units_info.unit_id}}"><span class="icon-mbri-arrow-down" id="span-dc{{units_info.unit_id}}"> </span> {{units_info.unit_name}}</label>
+											<input type="checkbox" name="dc{{units_info.unit_id}}" id="dc{{units_info.unit_id}}" data-toggle="toggle">
+										</th>
+										
+										<td style="text-align: center;">{{units_info.sum_docs}} / {{units_info.sum_check}} <!--<br> {{units_info.sum_percent}} % <hr style="margin: 2px;">-->  
+											<div class="progress" style="height: 1px;">
+												<div class="progress-bar bg-secondary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+											</div>
+											{{units_info.sum_check_percent}} %</td>
+
+										{% for info_date in units_info.info_dates %}
+											
+											{% if info_date.docs > 0 %}
+												<td style="text-align: center;"> {{info_date.docs}} / {{info_date.check}} <!--<br> {{info_date.percent}} %-->
+													 <!--<hr style="margin: 2px;"> -->
+														<div class="progress" style="height: 1px;">
+															<div class="progress-bar bg-secondary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+														</div>
+													 {{info_date.percent_check}} %</td>
+											{% else %}
+												<td style="text-align: center;"> - </td>
+											{% endif %}
+										{% endfor %}
+
+									</tr>
+								</tbody>
+								
+								<tbody class="hide">
+									{% for staff in units_info.staffs %}
+										<tr style="background-color: whitesmoke;">
+											<th scope="row">{{staff.staff.staff__name}}</th>
+											<td style="text-align: center;">{{staff.sum_docs_staff}} / {{staff.sum_check_staff}} <br> <!--{{staff.sum_percent_staff}} % -->
+												<div class="progress" style="height: 1px;">
+													<div class="progress-bar bg-secondary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+												</div>
+												<!--<hr style="margin: 3px;">--> {{staff.sum_check_percent_staff}} %</td>
+											{% for staff_date in staff.dates %}
+												{% if staff_date.docs > 0 %}
+													<td onclick="click_new_check_list('{{staff_date.direction}}', '{{units_info.unit_city_id}}' ,'{{units_info.unit_id}}', '{{staff.staff.staff}}', '{{staff.staff.staff__name}}', '{{staff_date.date|date:"Y-m-d"}}', '{{staff_date.docs}}', '{{staff_date.check}}' , '{{staff_date.percent}}' )" style="text-align: center; {% if staff_date.check == 0 %} background-color: #f1e1cd; {% endif %}"> 
+														{{staff_date.docs}} / {{staff_date.check}} <!--<br> {{staff_date.percent}} % --> 
+														<div class="progress" style="height: 0.3em;">
+															<div class="progress-bar {% if staff_date.sounds > 0 %} bg-success {% else %} bg-danger {% endif %}" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+														</div>
+														 
+														{{staff_date.percent_check}} %
+													</td>
+												{% else %}
+													<td style="text-align: center;"> - </td>
+												{% endif %}
+											{% endfor %}
+										</tr>
+									{% endfor %}
+								</tbody>
+
+							{% endfor %}
+
+						</tbody>
+				</table>
+			</div>
+		
+		{% endif %}
+
+	</div>
+
+</div>
+
+<div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+	<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+	  <div class="modal-content">
+		
+		<div class="modal-header">
+		  <h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Перейти к выбору документов</h4>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+
+		<div class="modal-body">
+			
+			<span> Давайте сверимся с данными, если все верно то можете перейти к списку документов сотрудника </span>
+			
+			<hr>
+			
+			<table class="table table-striped">
+				<tbody>
+				  	<tr>
+						<td class="align-middle">
+							<span class="icon-mbri-extension"></span> Направление
+						</td>
+						<td class="align-middle">
+							<label id="td-direction"> </label>
+						</td>	
+					</tr>
+					<tr>
+						<td class="align-middle">
+							<span class="icon-mbri-user"></span> Сотрудник
+						</td>
+						<td class="align-middle">
+							<label id="td-user"> </label>
+						</td>	
+					</tr>
+					
+					<tr>
+						<td class="align-middle">
+							<span class="icon-mbri-calendar"></span> Дата
+						</td>
+						<td class="align-middle">
+							<label id="td-date"> </label>
+						</td>	
+					</tr>
+				</tbody>
+			  </table>
+
+			  <div class="row g-2">
+				<div class="col-sm">
+					<div class="card">
+						<div class="card-header">
+							<span class="icon-mbri-help"> </span> Всего документов
+						</div>
+						<div class="card-body">
+						  <h5 class="card-title"> <label id="td-docs"> </label> </h5>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm">
+					<div class="card">
+						<div class="card-header">
+							<span class="icon-mbri-star"> </span> Оценено
+						</div>
+						<div class="card-body">
+						  <h5 class="card-title"> <label id="td-check"> </label> </h5>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm">
+					<div class="card">
+						<div class="card-header">
+							<span class="icon-mbri-speed"> </span> % оценок
+						</div>
+						<div class="card-body">
+						  <h5 class="card-title"> <label id="td-percent"> </label> </h5>
+						</div>
+					</div>
+				</div>
+				
+			  </div>
+
+
+			  <hr>
+			  <span>PS... Помощник доступен в любое время, хорошего Вам дня!</span>
+		</div>
+
+		<div class="modal-footer">
+			
+			<a href="" id="form_redirect" class="btn btn-success"> <span class="icon-mbri-right"> </span>  Перейти к списку документов</a>
+
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> <span class="icon-mbri-close"> </span> Закрыть</button>
+
+		</div>
+
+	  </div>
+	</div>
+</div>
+
+
+<script language="JavaScript">
+   
+	$(document).ready(function() {
+		$('[data-toggle="toggle"]').change(function(){
+			
+			var check = !$(this).is(':checked');
+			var id = 'span-' + $(this)[0].id;
+			if (String(check).toLowerCase() === "true"){
+				$(this).prop('checked', false);
+				$('#'+ id).attr('class', 'icon-mbri-arrow-down');
+			}else{
+				$(this).prop('checked', true);
+				$('#'+ id).attr('class', 'icon-mbri-arrow-up');
+			}
+
+			$(this).parents().next('.hide').toggle();
+			
+		});
+	});
+
+    function reload(){
+		
+		$('#exampleModal').modal('show');
+
+		var url = new URL(document.location.href);
+		
+		url.searchParams.delete('select_city');
+		url.searchParams.delete('date');
+		url.searchParams.delete('select_direction');
+
+		var direction_id = document.getElementById('direction').value;
+       	url.searchParams.set('select_direction', direction_id);
+		   
+		var date_id = document.getElementById('date').value;
+       	url.searchParams.set('date', date_id);
+		
+		var date_id = document.getElementById('date').value;
+       	url.searchParams.set('date', date_id);
+
+		var city_id = document.getElementById('city').value;
+       	url.searchParams.set('select_city', city_id);
+       	
+		document.location.href  = url.href;
+    }
+  
+
+	function click_new_check_list(direction, city_id, unit_id, user_id, user_name, date, docs, check, percent){
+		
+		$('#td-direction').text($('#direction option:selected').text());
+		$('#td-date').text(date);
+		$('#td-user').text(user_name);
+		$('#td-docs').text(docs);
+		$('#td-check').text(check);
+		$('#td-percent').text(percent);
+		var page_link = '/checklists/new_check_list/?direction=' + direction + '&city=' + city_id +'&unit=' + unit_id + '&date=' + date + '&staff='+ user_id;
+		$('#form_redirect').attr('href', page_link);
+		
+		$('#exampleModalCenteredScrollable').modal('show');
+
+	}
+
+</script>
+
+
+{% endblock %}

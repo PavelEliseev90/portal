@@ -1,0 +1,1 @@
+python D:\kors_group\portal\manage.py process_tasks --queue start_swap_estimation --duration 1

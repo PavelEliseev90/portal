@@ -1,0 +1,394 @@
+ {% extends 'base_web_old_delite.html' %}
+
+{% block title %} Опрос о покупке автомобиля {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<script type="text/javascript">
+    
+    function clickAnswer(id, groups){
+        
+        var codes = document.querySelectorAll("#main" + groups + " .btn");
+        for (let elem of codes) {
+            elem.className  = "btn btn-dark"
+        }
+        var id_elem = "#v" + groups + "_" + id
+        var button = document.querySelector(id_elem);
+       
+        var input = document.querySelector('#a' + groups);
+        input.value = id
+        
+        if (groups == 7){
+            input.value = button.textContent 
+        }
+        
+        starsClear(1, id, groups)
+        
+        stars(1, id, groups)
+        
+    }
+
+    function starsClear(from, to, groups) {
+            let current = from;
+            let timer1 = setInterval(function() {    
+                    var id_elem = "#v" + groups + "_" + current
+                    var button = document.querySelector(id_elem);
+                    if (current != to){
+                        if (current < 4){
+                            button.className  = "btn btn-dark"   
+                        } else if (current < 8){
+                            button.className  = "btn btn-dark"
+                        } else {
+                            button.className  = "btn btn-dark" 
+                        }
+                    }
+                   
+                    if (current == 10) {
+                        clearInterval(timer1);
+                    }
+                    current++;
+                }, 150);
+                clearError(groups)
+            }
+
+    function stars(from, to, groups) {
+            let current = from;
+            let timer = setInterval(function() {    
+                    var id_elem = "#v" + groups + "_" + current
+                    var button = document.querySelector(id_elem);
+                   
+                    if (groups == 7){
+                        button.className  = "btn btn-success" 
+                    } else if (current < 4){
+                        button.className  = "btn btn-danger"   
+                    } else if (current < 8){
+                        button.className  = "btn btn-warning"
+                    } else {
+                        button.className  = "btn btn-success" 
+                    }
+
+                    prev = current - 1
+                    if (prev > 0){
+                        var id_elem = "#v" + groups + "_" + prev
+                        var button = document.querySelector(id_elem);
+                        button.className  = "btn btn-dark"
+                    }
+                    
+                    if (current == to) {
+                        clearInterval(timer);
+                    }
+                    current++;
+                }, 150);
+                clearError(groups)
+            }
+
+    function clearError(groups){
+        errorLabel =document.querySelector('#e' + groups);
+        errorLabel.innerHTML = ""
+    }
+
+    function validate_form(){
+        
+        let answer = 1
+        let answers = 4
+        valid = true
+
+        while (answer < answers +1){
+            var input = document.querySelector('#a' + answer);   
+            var error = document.querySelector('#e' + answer);
+            if (input.value == ""){
+                error.innerHTML = "Пожалуйста выберите значение"
+                valid = false
+            }else{
+                error.innerHTML = ""
+            }
+            answer++ 
+        }
+        
+        return valid
+    }
+
+</script>
+
+<form name="form" method="post" onsubmit="return validate_form();">
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>	
+    
+    <div class="container-fluid bg-white"> 
+    
+        <div class="row g-1">
+            
+            <div class="col-sm"></div>
+                
+            {% if params.doc.get_opros_close %}
+                <div class="col-sm-8">
+                    <div class="card mb-3">
+                    <div class="card-body">
+                            
+                            <div style="text-align: center;" class="row g-1">
+                                <div class="col-sm">
+                                    <img  style="max-width: 300px;" src="/media/{{params.opros.document.unit.main_photo}}" class="card-img-top" alt="...">
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center;" class="row g-1">
+                                <h5 class="card-title">Спасибо. Вы прошли опрос.</h5>
+                            </div>
+                            <hr>
+                            <div style="text-align: center;" class="row g-1">
+                                <h5 class="card-title">Мобильное приложение "КорсГрупп.Помощь автомобилисту"</h5>
+                            </div>
+                            <div style="text-align: center;" class="row g-1">
+                                <div class="col-sm">
+                                    <a href='https://play.google.com/store/apps/details?id=com.brightbox.dm.avtoshina&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1' style="display: inline-block; overflow: hidden; border-radius: 13px; width: 280px; height: 110px;"><img style="border-radius: 13px; width: 280px; height: 110px;" alt='Доступно в Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/ru_badge_web_generic.png'/></a>
+                                </div>
+                                <div class="col-sm">
+                                    <a href="https://apps.apple.com/ru/app/%D0%BA%D0%BE%D1%80%D1%81%D0%B3%D1%80%D1%83%D0%BF%D0%BF-%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C-%D0%B0%D0%B2%D1%82%D0%BE%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D0%B8%D1%81%D1%82%D1%83/id1160120600?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/ru-ru?size=250x83&amp;releaseDate=1475193600&h=aad92fe95591c413da0f3b47f10bab9d" alt="Download on the App Store" style="border-radius: 13px; width: 250px; height: 83px;"></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                
+                <div class="col-sm-8">
+                    
+                    <div class="card mb-3">
+                    
+                        {% if params.opros.document.unit.main_photo %}
+                            <img style="max-width: 300px;" src="/media/{{params.opros.document.unit.main_photo}}" class="card-img-top" alt="...">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">Спасибо за покупку автомобиля в дилерском центре {{params.opros.unit.name}}</h5>
+                            <p class="card-text">Оцените нашу работу</p>
+                        </div>
+                    
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                1. Насколько в целом Вы удовлетворены работой менеджера отдела продаж дилерского центра?
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main1">
+                                        <div class="container">
+                                            <div class="row">
+                                                <div class="col text-center" style="padding: 0px;" style="padding: 0px;">
+                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                        {% for i in '0123456789'|make_list %}
+                                                            <button type="button" class="btn btn-dark" id="v1_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 1)">{{ forloop.counter }}</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <label  name="e1" id="e1"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="a1" id="a1" value="">
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                2. С какой вероятностью Вы порекомендовали бы нас своим друзьям или знакомым? 
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main2">
+                                        <div class="container">
+                                            <div class="row">
+                                                <div class="col text-center" style="padding: 0px;">
+                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                        {% for i in '0123456789'|make_list %}
+                                                            <button type="button" class="btn btn-dark" id="v2_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 2)">{{ forloop.counter }}</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <label  name="e2" id="e2"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="a2" id="a2" value="">
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                3. Насколько Вы остались довольны процессом покупки автомобиля?
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main3">
+                                        <div class="container">
+                                            <div class="row">
+                                                <div class="col text-center" style="padding: 0px;">
+                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                        {% for i in '0123456789'|make_list %}
+                                                            <button type="button" class="btn btn-dark" id="v3_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 3)">{{ forloop.counter }}</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <label  name="e3" id="e3"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="a3" id="a3" value="">
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                4. Насколько вы удовлетворены процессом выдачи автомобиля?
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main4">
+                                        <div class="container">
+                                            <div class="row">
+                                                <div class="col text-center" style="padding: 0px;">
+                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                        {% for i in '0123456789'|make_list %}
+                                                            <button type="button" class="btn btn-dark" id="v4_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 4)">{{ forloop.counter }}</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <label name="e4" id="e4"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="a4" id="a4" value="">
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                5.	Вы воспользовались услугой трейд ин (принятия старого автомобиля в зачет при покупке нового)? Если Да Насколько Вы остались довольны услугой трейд ин, если нет то перейдите к следующему вопросу? 
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main5">
+                                        <div class="container">
+                                            <div class="row">
+                                                <div class="col text-center" style="padding: 0px;">
+                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                        {% for i in '0123456789'|make_list %}
+                                                            <button type="button" class="btn btn-dark" id="v5_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 5)">{{ forloop.counter }}</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <label name="e5" id="e5"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="a5" id="a5" value="">
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                6.	Где вы подбирали автомобиль перед покупкой?
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main7">
+                                        <div class="container">
+                                            <div class="row g-1">
+                                                <button type="button" class="btn btn-dark" id="v7_1" onclick="clickAnswer(1, 7)">На Авито</button> 
+                                                <button type="button" class="btn btn-dark" id="v7_2" onclick="clickAnswer(2, 7)">На Авто ру</button> 
+                                                <button type="button" class="btn btn-dark" id="v7_3" onclick="clickAnswer(3, 7)">На двух этих сайтах</button> 
+                                                <button type="button" class="btn btn-dark" id="v7_4" onclick="clickAnswer(4, 7)">На сайте КорсАвто</button> 
+                                                <button type="button" class="btn btn-dark" id="v7_5" onclick="clickAnswer(5, 7)">Я не подбирал авто на сайтах, приехал и выбрал</button> 
+                                                <button type="button" class="btn btn-dark" id="v7_6" onclick="clickAnswer(6, 7)">Другой вариант ответа</button> 
+                                            
+                                                <label style="text-align: center;" name="e7" id="e7"> </label>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="a7" id="a7" value="">
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-1">
+                        <div class="col">
+                            <div class="card-sm-0">
+                            <div class="card-header">
+                                7.	Если у вас есть пожелания/замечания вы можете поделиться с нами.
+                            </div>
+                                <div class="card-body text-danger">
+                                    
+                                    <div class="btn-toolbar" role="toolbar" id="main6">
+                                        <div class="container">
+                                            <div class="row">
+                                                <div class="col text-center" style="padding: 0px;">
+                                                    <div class="input-group">
+                                                        <textarea class="form-control" aria-label="With textarea" name="a6"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                        
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% csrf_token %}
+                
+                    <button id="send" name="send_opros" type="submit" value="submit" class="btn btn-dark">Отправить</button>
+                    
+                    </div>
+                </div>
+                
+            {% endif %}
+            
+            <div class="col-sm"></div>
+        </div>
+    
+    </div>
+
+</form>
+
+      
+
+             
+{% endblock %}
+
+

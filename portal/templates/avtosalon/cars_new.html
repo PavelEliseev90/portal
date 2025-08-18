@@ -1,0 +1,802 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} склад автомобилей {% endblock %}
+
+{% block title_navbar %} - склад автомобилей {{params.object.name}}  {% endblock %}
+    
+{% block content %}
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+		<div class="modal-header">
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		
+			<div class="modal-body">
+				<form action="GET">
+					<div class="form-floating mb-3">							
+						<select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
+							<option></option>
+							{% for store in params.selected.stores %}
+								<option value="{{store.id}}" {% if params.filtr.store_id == store.id %} selected {% endif %}> {{store.name}} </option>
+							{% endfor %}
+						</select>
+						<label for="floatingInput">Дилерский центр</label>
+					</div>
+					
+					<div class="row">
+						<div class="col">
+							<button class="btn btn_block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>	
+						</div>
+					</div>
+				</form>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			<div class="form-floating mb-3">
+				<input type="text" class="form-control " id="new_filtr" name="new_filtr" placeholder="" required>
+				<label for="floatingInput">Наименование</label>
+			</div>
+		</div>
+		<div class="modal-footer">
+		  <button class="btn btn-success" type="button" onclick="change_link()" >Сохранить</button>
+		</div>
+	  </div>
+	</div>
+</div>
+
+<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			{% if params.filters_user|length > 0 %}
+					<hr>
+					<div class="table-responsive">
+						<table class="table">
+						  <tbody>
+								
+							{% for filter in params.filters_user %}
+							<tr>
+								<td>
+									{{filter.name}}
+								</td>
+								<td>
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn  btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								</td>
+							</tr>
+							{% endfor %}
+								
+						  </tbody>
+						</table>
+					  </div>
+				{% endif %}
+		</div>
+		
+	  </div>
+	</div>
+</div>
+
+<!--
+<div class="row g-2 justify-content-center">
+	
+	<div class="col-auto">
+		<div class="card1">
+			<div class="card-body1 div_class_kors">
+				<a class="fs-6 text-dark" href="catalog/"><span class="icon-wallet"></span> Каталог &nbsp;</a>
+			</div>
+		</div>                       
+	</div>
+
+	<div class="col-auto">
+		<div class="card1">
+			<div class="card-body1 div_class_kors">
+				<a class="fs-6 text-dark" href="catalog/{{mark_info.nameEn}}/"><span class="icon-wallet"></span> Выкуп автомобилей &nbsp;</a>
+			</div>
+		</div>                       
+	</div>
+	
+	<div class="col-auto">
+		<div class="card1">
+			<div class="card-body1 div_class_kors">
+				<a class="fs-6 text-dark" href="catalog/{{mark_info.nameEn}}/"><span class="icon-search"></span> Подбор автомобиля &nbsp;</a>
+			</div>
+		</div>                       
+	</div>
+
+	<div class="col-auto">
+		<div class="card1">
+			<div class="card-body1 div_class_kors">
+				<a class="fs-6 text-dark" href="catalog/{{mark_info.nameEn}}/"><span class="icon-cd"></span> Комплекты колес &nbsp;</a>
+			</div>
+		</div>                       
+	</div>
+
+	<div class="col-auto">
+		<div class="card1">
+			<div class="card-body1 div_class_kors">
+				<a class="fs-6 text-dark" href="catalog/{{mark_info.nameEn}}/"><span class="icon-wallet"></span> Страхование &nbsp;</a>
+			</div>
+		</div>                       
+	</div>
+
+	<div class="col-auto">
+		<div class="card1">
+			<div class="card-body1 div_class_kors bg-success bg-opacity-25">
+				<a class="fs-6 text-dark" href="catalog/{{mark_info.nameEn}}/"><span class="icon-mbri-login"></span> Войти &nbsp;</a>
+			</div>
+		</div>                       
+	</div>
+
+</div>
+
+<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+-->
+
+<!--
+<div class="col-6 col-sm-6 col-md-4 col-xl-3 col-xxl-2">
+	<div class="card1">
+		<div class="card-body" style="padding: 0.2rem;">
+			<a class="fs-6 text-dark" href="catalog/{{mark_info.nameEn}}/">{{mark_info.name}} - <label class="fw-6 text-secondary">{{mark_info.cars_count}}</label></a>
+		</div>
+	</div>                       
+</div>
+-->
+
+<!--
+<div class="row justify-content-center">
+	{% for mark_info in params.catalog %}
+		<div class="col-6 col-sm-6 col-md-4 col-xl-3 col-xxl-2">
+			<a class="text-dark animate__animated animate__delay-1s animate__fadeIn" href="catalog/{{mark_info.nameEn}}/">
+				<div class="row align-items-center">
+				<div class="col-2" style="height: 76px; width: 76px;">
+					<img src="{{mark_info.logo}}" style="object-fit: contain; height: 76px; width: 76px;">
+				</div>
+				<div class="col">
+					{{mark_info.name}} - 
+					<span class="">{{mark_info.cars_count}} </span>
+				</div>
+				</div>
+			</a>
+		</div>				
+	{% endfor %}
+</div>
+
+<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+
+-->
+
+<form method="get">
+	<div class="card bg-white bg-opacity-75">
+		<div class="card-body">
+
+			<div class="row g-1">
+
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
+						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Город</label><br>
+						
+							<div class="checkselect" style="padding-left: 0rem;">
+							
+							<div class="sticky-top bg-white">
+								<input class="form-control" type="text" id="search_city" value="" style="left: 0;" style="left: 0;">
+								<br>
+								<br>
+							</div>
+							
+							{% for city in params.selected.citys %}
+								{% if city.city__name|length > 0 %}
+									<label style="margin: 0.2rem;" class="fs-6" id="city_select_{{city.city__name}}"><input type="checkbox" name="city[]" value="{{city.city}}" id="city_filtr_{{city.city}}" {% if city.city in params.filtr.filter_city %} checked {% endif %} > {{city.city__name}}</label>
+								{% endif %}
+							{% endfor %}
+						
+							<script>
+								$('#search_city').on('input', function() {
+								var search = $(this).val();
+								if (search.length === 0){
+									$('[id*="city_select_"]').removeClass('d-none');
+								}
+								else {
+									$('[id*="city_select_"]').addClass('d-none');
+									var search_lower = search.toLowerCase();
+									var labels = $('[id*="city_select_"]');
+									for (let i = 0; i < labels.length; i++) {
+									label = labels[i];
+									var id_name = label.id.toLowerCase();
+									if (id_name.indexOf(search_lower) >= 0){
+										$('[id*="' + label.id + '"]').removeClass('d-none');                        
+									};
+									};
+								};                  
+							});              
+							</script>
+				
+							</div> 
+						</div>
+						
+					</div>
+				</div>
+				
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Марка</label><br>
+						<div class="checkselect " style="padding-left: 0rem;">
+							
+							<div class="sticky-top bg-white">
+								<input class="form-control " type="text" id="search_marks" value="" style="left: 0;">
+								<br>
+								<hr>
+							</div>
+							
+							{% for mark in params.selected.marks %}
+							
+								<label style="margin: 0.2rem;" class="" id="marks_select_{{mark.name}}"><input type="checkbox" name="mark[]" value="{{mark.pk}}" id="mark_filtr_{{mark.pk}}" {% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %} > {{mark.name}}</label>
+					
+							{% endfor %}
+						
+							<script>
+							$('#search_marks').on('input', function() {
+								var search = $(this).val();
+								if (search.length === 0){
+									$('[id*="marks_select_"]').removeClass('d-none');
+								}
+								else {
+									$('[id*="marks_select_"]').addClass('d-none');
+									var search_lower = search.toLowerCase();
+									var labels = $('[id*="marks_select_"]');
+									for (let i = 0; i < labels.length; i++) {
+									label = labels[i];
+									var id_name = label.id.toLowerCase();
+									if (id_name.indexOf(search_lower) >= 0){
+										$('[id*="' + label.id + '"]').removeClass('d-none');                        
+									};
+									};
+								};                  
+							});              
+							</script>
+				
+						</div> 
+						</div>
+						
+					</div>
+				</div>
+
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Коробка передач</label><br>
+						<div class="checkselect " style="padding-left: 0rem;">
+							
+							<div class="sticky-top bg-white">
+							<input class="form-control  " type="text" id="search_gear" value="">
+							<br>
+							<hr>
+							</div>
+							
+							{% for gear in params.selected.gears %}
+							
+							<label style="margin: 0.2rem;" class="" id=" {{gear.name}}"><input type="checkbox" name="gear[]" value="{{gear.pk}}" id="gear_filtr_{{unit.pk}}" {% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %} > {{gear.name}}</label>
+					
+							{% endfor %}
+						
+							<script>
+							$('#search_gear').on('input', function() {
+								var search = $(this).val();
+								if (search.length === 0){
+									$('[id*="label_search"]').removeClass('d-none');
+								}
+								else {
+									$('[id*="label_search"]').addClass('d-none');
+									var search_lower = search.toLowerCase();
+									var labels = $('[id*="label_search"]');
+									for (let i = 0; i < labels.length; i++) {
+									label = labels[i];
+									var id_name = label.id.toLowerCase();
+									if (id_name.indexOf(search_lower) >= 0){
+										$('[id*="' + label.id + '"]').removeClass('d-none');                        
+									};
+									};
+								};                  
+							});              
+							</script>
+				
+						</div> 
+						</div>
+						
+					</div>
+				</div>
+
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Кузов</label><br>
+						<div class="checkselect " style="padding-left: 0rem;">
+							
+							<div class="sticky-top bg-white">
+							<input class="form-control  " type="text" id="search_body" value="">
+							<br>
+							<hr>
+							</div>
+							
+							{% for body in params.selected.bodys %}
+							
+							<label style="margin: 0.2rem;" class="" id="label_search {{body.name}}"><input type="checkbox" name="body[]" value="{{body.pk}}" id="city_body_{{unit.pk}}" {% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %} > {{body.name}}</label>
+					
+							{% endfor %}
+						
+							<script>
+							$('#search_body').on('input', function() {
+								var search = $(this).val();
+								if (search.length === 0){
+									$('[id*="label_search"]').removeClass('d-none');
+								}
+								else {
+									$('[id*="label_search"]').addClass('d-none');
+									var search_lower = search.toLowerCase();
+									var labels = $('[id*="label_search"]');
+									for (let i = 0; i < labels.length; i++) {
+									label = labels[i];
+									var id_name = label.id.toLowerCase();
+									if (id_name.indexOf(search_lower) >= 0){
+										$('[id*="' + label.id + '"]').removeClass('d-none');                        
+									};
+									};
+								};                  
+							});              
+							</script>
+				
+						</div> 
+						</div>
+						
+					</div>
+				</div>
+			
+			</div>
+
+			<br>
+
+			<div class="row g-1">
+				
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Привод</label><br>
+						
+						<div class="checkselect form-floating" style="padding-left: 0rem;">
+							
+							<div class="sticky-top bg-white">
+							<input class="form-control" type="text" id="search_drives" value="" style="left: 0;">
+							<br>
+							<br>
+							</div>
+							
+							{% for drive in params.selected.drives %}
+								{% if drive.name|length > 0 %}
+									<label style="margin: 0.2rem;" class="fs-6" id="drive_select_{{drive.name}}"><input type="checkbox" name="drive[]" value="{{drive.pk}}" id="drive_filtr_{{drive.pk}}" {% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %} > {{drive.name}}</label>
+								{% endif %}
+							{% endfor %}
+						
+							<script>
+							$('#search_drives').on('input', function() {
+								var search = $(this).val();
+								if (search.length === 0){
+									$('[id*="drive_select"]').removeClass('d-none');
+								}
+								else {
+									$('[id*="drive_select_"]').addClass('d-none');
+									var search_lower = search.toLowerCase();
+									var labels = $('[id*="drive_select_"]');
+									for (let i = 0; i < labels.length; i++) {
+									label = labels[i];
+									var id_name = label.id.toLowerCase();
+									if (id_name.indexOf(search_lower) >= 0){
+										$('[id*="' + label.id + '"]').removeClass('d-none');                        
+									};
+									};
+								};                  
+							});              
+							</script>
+				
+						</div> 
+
+						</div>
+						
+					</div>
+				</div>
+
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Год выпуска</label><br>
+							<div class="row" style="margin: 0; padding: 0;">
+								<div class="col" style="margin: 0; padding: 0;">
+									<div class="form-floating  form-floating-kors" style="margin: 0; padding: 0;">
+										<input type="number" class="form-control form-control-kors text-dark" id="year_start" name="year_start" value="{{params.filtr.year_start}}" placeholder="1950"  autocomplete="off">
+										<label for="floatingInput" class="text-dark"> от</label>
+									</div>
+								</div>
+								<div class="col" style="margin: 0; padding: 0;">
+									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
+										<input type="number" class="form-control form-control-kors text-dark" id="year_end" name="year_end" value="{{params.filtr.year_end}}" placeholder="2025"  autocomplete="off">
+										<label for="floatingInput" class="text-dark"> до</label>
+									</div>	
+								</div>
+							</div>											
+						</div>					  
+					</div>					
+				</div>
+				
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Пробег</label><br>
+							<div class="row" style="margin: 0; padding: 0;">
+								<div class="col" style="margin: 0; padding: 0;">
+									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
+										<input type="number" class="form-control form-control-kors text-dark" id="run_start" name="run_start" value="{{params.filtr.run_start}}"  autocomplete="off">
+										<label for="floatingInput" class="text-dark"> от</label>
+									</div>
+								</div>
+								<div class="col" style="margin: 0; padding: 0;">
+									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
+										<input type="number" class="form-control  form-control-kors text-dark" id="run_end" name="run_end" value="{{params.filtr.run_end}}" autocomplete="off">
+										<label for="floatingInput" class="text-dark"> до</label>
+									</div>	
+								</div>
+							</div>											
+						</div>					  
+					</div>					
+				</div>
+
+				<div class="col-12 col-sm-3">
+					<div class="card">
+						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Цена</label><br>
+							<div class="row" style="margin: 0; padding: 0;">
+								<div class="col" style="margin: 0; padding: 0;">
+									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
+										<input type="number" class="form-control form-control-kors text-dark" id="price_start" name="price_start" value="{{params.filtr.price_start}}" autocomplete="off">
+										<label for="floatingInput" class="text-dark"> от</label>
+									</div>
+								</div>
+								<div class="col" style="margin: 0; padding: 0;">
+									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
+										<input type="number" class="form-control form-control-kors text-dark" id="price_end" name="price_end" value="{{params.filtr.price_end}}" autocomplete="off">
+										<label for="floatingInput" class="text-dark"> до</label>
+									</div>	
+								</div>
+							</div>											
+						</div>					  
+					</div>					
+				</div>
+
+			</div>
+			<br>
+
+			{% if request.user.is_authenticated %}
+
+				<div class="row g-1">
+
+					<div class="col-12 col-sm-3">
+						<div class="card">
+							<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
+								<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">VIN</label><br>
+								<div class="row" style="margin: 0; padding: 0;">
+									<div class="col" style="margin: 0; padding: 0;">
+										<div class="form-floating  form-floating-kors" style="margin: 0; padding: 0;">
+											<input type="text" class="form-control form-control-kors text-dark" id="vin" name="vin" value="{{params.filtr.vin}}"  autocomplete="off">
+											<label for="floatingInput" class="text-dark"></label>
+										</div>
+									</div>
+								</div>											
+							</div>					  
+						</div>
+					</div>
+					
+					<div class="col-12 col-sm-3">
+						<div class="card">
+							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Статус</label><br>
+							<div class="checkselect " style="padding-left: 0rem;">
+								
+								<div class="sticky-top bg-white">
+									<input class="form-control " type="text" id="search_status" value="" style="left: 0;">
+									<br>
+									<hr>
+								</div>
+								
+								{% for status in params.selected.statuses %}
+								
+									<label style="margin: 0.2rem;" class="" id="status_select_{{status.name}}"><input type="checkbox" name="status[]" value="{{status.pk}}" id="status_filtr_{{status.pk}}" {% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %} > {{status.name}}</label>
+						
+								{% endfor %}
+							
+								<script>
+								$('#search_status').on('input', function() {
+									var search = $(this).val();
+									if (search.length === 0){
+										$('[id*="status_select_"]').removeClass('d-none');
+									}
+									else {
+										$('[id*="status_select_"]').addClass('d-none');
+										var search_lower = search.toLowerCase();
+										var labels = $('[id*="status_select_"]');
+										for (let i = 0; i < labels.length; i++) {
+										label = labels[i];
+										var id_name = label.id.toLowerCase();
+										if (id_name.indexOf(search_lower) >= 0){
+											$('[id*="' + label.id + '"]').removeClass('d-none');                        
+										};
+										};
+									};                  
+								});              
+								</script>
+					
+							</div> 
+							</div>
+							
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-3">
+						<div class="card">
+							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Этап УС</label><br>
+							<div class="checkselect " style="padding-left: 0rem;">
+								
+								<div class="sticky-top bg-white">
+								<input class="form-control  " type="text" id="search_stage_price" value="">
+								<br>
+								<hr>
+								</div>
+								
+								{% for stage_price in params.selected.stage_prices %}
+								
+								<label style="margin: 0.2rem;" class="" id="stage_price_select_{{stage_price.name}}"><input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" id="stages_price_filtr_{{stage_price.pk}}" {% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %} > {{stage_price.name}}</label>
+						
+								{% endfor %}
+							
+								<script>
+								$('#search_stage_price').on('input', function() {
+									var search = $(this).val();
+									if (search.length === 0){
+										$('[id*="stage_price_select_"]').removeClass('d-none');
+									}
+									else {
+										$('[id*="stage_price_select_"]').addClass('d-none');
+										var search_lower = search.toLowerCase();
+										var labels = $('[id*="stage_price_select_"]');
+										for (let i = 0; i < labels.length; i++) {
+										label = labels[i];
+										var id_name = label.id.toLowerCase();
+										if (id_name.indexOf(search_lower) >= 0){
+											$('[id*="' + label.id + '"]').removeClass('d-none');                        
+										};
+										};
+									};                  
+								});              
+								</script>
+					
+							</div> 
+							</div>
+							
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-3">
+						<div class="card">
+							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
+							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Вид продажи</label><br>
+							<div class="checkselect " style="padding-left: 0rem;">
+								
+								<div class="sticky-top bg-white">
+								<input class="form-control  " type="text" id="search_type_sale" value="">
+								<br>
+								<hr>
+								</div>
+								
+								{% for type_sale in params.selected.type_sales %}
+								
+								<label style="margin: 0.2rem;" class="" id="type_sale_select_{{type_sale.name}}"><input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{unit.pk}}" {% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %} > {{type_sale.name}}</label>
+						
+								{% endfor %}
+							
+								<script>
+								$('#search_type_sale').on('input', function() {
+									var search = $(this).val();
+									if (search.length === 0){
+										$('[id*="type_sale_select_"]').removeClass('d-none');
+									}
+									else {
+										$('[id*="type_sale_select_"]').addClass('d-none');
+										var search_lower = search.toLowerCase();
+										var labels = $('[id*="type_sale_select_"]');
+										for (let i = 0; i < labels.length; i++) {
+										label = labels[i];
+										var id_name = label.id.toLowerCase();
+										if (id_name.indexOf(search_lower) >= 0){
+											$('[id*="' + label.id + '"]').removeClass('d-none');                        
+										};
+										};
+									};                  
+								});              
+								</script>
+					
+							</div> 
+							</div>
+							
+						</div>
+					</div>
+				
+				</div>
+
+			{% endif %}
+
+			<div class="row">
+				<div class="col">
+					
+					<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+					
+					<div class="row">
+						<div class="col">
+					
+							<a href="catalog/" class="btn btn-outline-secondary"><span class="icon-mbri-home"></span> Каталог</a>
+					
+						</div>
+					</div>
+						
+				</div>
+
+				<div class="col-auto">
+					<div class="row justify-content-end">
+						<div class="col-auto">
+							<button class="btn btn-outline-dark"><span class="icon-mbri-play"></span> Показать</button>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+			
+		</div>
+	</div>
+</form>
+
+
+<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+
+<div class="row g-4 align-self-center align-items-center cars_list">
+		
+	{% if params.paginator.object_list %}
+		
+		{% for car in params.paginator.object_list %}
+
+			<div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4" >		
+				<div class="card bg-white bg-opacity-75" onclick="window.location.href='{{car.slug}}'; return false" > 
+					
+					<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
+
+						<div>
+							<img class="item-img" src="{{car.get_photo}}" >
+						</div>
+
+						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+						
+							<div class="col-3" style="height: 60px;">
+								<img class="item-img-mini"  src="{{car.logo}}" > <br>
+							</div>
+	
+							<div class="col text-end align-self-center">
+								<span class="fs-6  icon-mbri-pin"> {{car.unit.name}}</span>
+							</div>
+						</div>
+			
+						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+							
+							<div class="col text-truncate">
+								
+								<span class="fs-5"> {{car.modification_autoru.model.mark.name}} 
+									<br> 
+									{{car.modification_autoru.model.name}}
+								</span>
+
+							</div>
+	
+							<div class="col text-end align-self-center">
+								<span class="fs-4 fw-bold"> {{car.price|floatformat:"2g"}} </span> &#8381;
+							</div>
+						</div>
+	
+						<div class="row g-1 text-secondary align-self-center align-items-center" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+							<div class="col-8 text-truncate">
+								<span class="fs-6 text-secondary" >
+									{{car.modification_autoru.engine_volume}} л. /
+									{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
+									{{car.modification_autoru.typeEngine.name}}
+									<br>
+									{{car.modification_autoru.typeGear.name}}
+									<br>
+									{{car.modification_autoru.typeBody.name}}</span>
+							</div>
+							<div class="col text-end align-self-center align-items-center">
+								<span class="fs-6"> {{car.year}}</span>
+									<br>
+								<span class="fs-6"> {{car.run|floatformat:"0g"|default_if_none:"---"}} км. </span>
+							</div>
+						</div>
+	
+						
+
+					</div>
+				</div>
+			</div>	
+			
+		{% endfor %} 
+
+	{% endif %}
+	
+</div>
+
+
+<div class="row align-self-center align-items-center justify-content-center" style="width: 100%;">
+	
+
+	<div class="col-auto align-items-center align-self-center justify-content-center">
+		<nav aria-label="Page navigation example">
+			<ul class="pagination justify-content-center">
+			
+				{% if params.paginator.has_previous %}
+					<li class="page-num mbr-section-btn">
+						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+					</li>
+				{% endif %}
+		
+				{% for p in params.paginator.paginator.page_range %}
+					{% if params.paginator.number == p %}
+						<li class="page-num mbr-section-btn disabled">
+							<a class="btn btn-secondary display-7">
+								<b>{{p}}</b>
+							</a>
+						</li>
+					{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+						<li class="page-num mbr-section-btn">
+							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+						</li>
+					{% endif %}
+				{% endfor %}
+					
+				{% if params.paginator.has_next %}
+					<li class="page-num mbr-section-btn">
+						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+					</li>
+				{% endif %}
+	
+			</ul>
+		</nav>
+	</div>
+
+
+</div>
+
+
+{% endblock %}

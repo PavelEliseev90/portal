@@ -1,0 +1,385 @@
+{% extends 'base_web_board_new.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block refresh %} content="{{params.time_refresh}}; URL={{params.url_next}}" {% endblock %} 
+
+{% block title %} Добро пожаловать в {{params.board.name_title}} {% endblock %}
+  
+{% block head %}
+
+
+
+<style>
+  
+  html { 
+    overflow-y: hidden;
+    overflow-x: hidden; 
+  }
+  
+  .table_style {
+    border-collapse: collapse;
+    width: 100%;  
+  }
+  
+  .table_td {
+    border: 1px solid white;
+    text-align: center;
+  }
+  
+  .table_td_left {
+    text-align: left;
+  }
+  .wrapper {
+          max-height: 400px;
+          
+        }
+        .exmpl {
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .exmpl img {
+          height: 100%;
+          width: auto;
+        }
+  .start{
+  
+    width: 10dp;
+    min-height: 10dp;
+    -webkit-clip-path: polygon( 0 100%, 100% 100%, 100% 25%, 75% 0, 0 0);
+    clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 25%, 75% 0);
+    background: lightblue;
+  }
+
+  
+
+  .fs7 {
+    font-size: 0.50rem;
+  }
+
+  .fs6 {
+    font-size: 0.65rem;
+  }
+
+  .fs5 {
+    font-size: 0.75rem;
+  }
+
+  .fs4 {
+    font-size: 18pt;
+  }
+
+  .fs3 {
+    font-size: 44pt;
+  }
+
+  div {
+    padding: 0;
+    margin: 0; 
+  }
+
+  .rows {
+    margin: 0;
+    padding: 0;
+  }
+
+  .d10 {
+    width: 0; 
+    height: 0;
+    clip-path: polygon(0 100%, 100% 0, 100% 100%, 0 100%);
+    background: white;
+  }
+
+  .d12 {
+    margin-left: 1rem; 
+    width: 1rem; 
+    height: 1rem;
+    transform: skew(145deg);
+    background: white;
+    
+  }
+
+  .d13 {
+  margin-left: 1rem; 
+  width: 1rem; 
+  height: 1rem;
+  transform: skew(145deg);
+  background: #44b8b6;
+}
+
+ </style>
+
+<script language="JavaScript">
+   // clip-path: polygon(0 100%, 100% 0, 100% 100%, 0 100%);
+  function zero_first_format(value)
+  {
+      if (value < 10)
+      {
+          value='0'+value;
+      }
+      return value;
+  }
+
+  function fulltime () {
+    
+    var days = [
+      'Воскресенье',
+      'Понедельник',
+      'Вторник',
+      'Среда',
+      'Четверг',
+      'Пятница',
+      'Суббота'
+    ];
+    var d = new Date();
+    var n = d.getDay();
+    
+    document.getElementById('days').innerHTML   = days[n];
+
+    var time = new Date();
+
+    var hours   = zero_first_format(time.getHours());
+    var minutes = zero_first_format(time.getMinutes());
+    var seconds = zero_first_format(time.getSeconds());
+    
+    var day     = zero_first_format(time.getDate());
+    var month   = zero_first_format(time.getMonth()+1);
+    var year    = time.getFullYear()
+
+    var clockW  = hours + ":" + minutes; 
+    var dateW   = day + "." + month + "." + year;
+    
+    document.getElementById('clock').innerHTML  = clockW;
+    
+    document.getElementById('year').innerHTML   = dateW;
+    
+    setTimeout('fulltime()', 500);
+
+}
+
+</script>
+
+{% endblock %}
+
+
+{% block content %}
+
+
+<body onload="fulltime();" style="padding: 0.2rem; margin:0px; background-color: black;">
+        
+    <script language="JavaScript">
+      fulltime();
+    </script>
+   
+    <div>
+
+      
+
+      <div class="row">
+        
+        <div class="col-auto align-self-center justify-content-center">
+            
+            <div class="row" >
+              <div class="col-auto align-self-center justify-content-center" >
+                <div>
+                  <label class="text-white fs3"  id="clock" > - - - </label>
+                </div>
+              </div>
+              <div class="col-auto align-self-center">
+                <label  class=" text-white fs4"  id="days" > - - - </label>
+                <br>
+                <label  class=" text-white fs4 align-text-bottom" id="year"> - - - </label>
+              </div>              
+            </div>
+
+        </div>
+
+        <div class="col-auto align-self-center justify-content-center" style="padding-left: 3rem;">
+
+              <label  class=" text-white fs4"> {{params.board.name_title|upper }} </label>
+              <br>
+              <label  class=" text-white fs4 align-text-bottom"> КорсГрупп</label>
+          
+        </div>
+
+        <div class="col text-end align-self-center justify-content-center">
+          
+          <label  class=" text-white align-text-bottom" > {{params.board.adress}}</label>
+
+            {% if params.board.phone != '' %}
+            <br>
+            <label  class=" text-white align-text-bottom"> {{params.board.phone}}</label>
+            
+            {% endif %}
+
+            {% if params.board.webSite != '' %}
+              
+              <br>
+              <label  class=" text-white align-text-bottom"> {{params.board.webSite}}</label>
+            
+            {% endif %}
+
+         
+
+        </div>
+
+      </div>
+
+      <div style="height: 0.5rem;" ></div>
+
+      <div class="row">
+
+        <div class="col-auto fs6">
+          
+          
+  
+            {% for staff in params.staffs %}
+            <div class="row rows align-self-center justify-content-center">
+             
+              <div class="col-auto text-center align-self-center justify-content-center">
+              
+                <img style="object-fit: cover; width:4rem;" src="{{ staff.image_img_url}}"/>
+
+              <br>
+              
+              {% autoescape off %}
+                <label class="text-white text-start"> {{ staff.name_lines }} </label>
+              {% endautoescape %}
+              
+              <br>
+  
+              <label class="text-white"> {{ staff.phone }} </label>             
+             </div>
+            </div>
+            {% endfor %}
+  
+          
+  
+        </div>
+
+        <div class="col">
+
+          <table class="table text-white">
+        
+            <thead>
+              <tr class="fs7">
+                <th scope="col text-white" style=" ">Время<br>записи</th>
+                <th scope="col text-white " style="">Время<br>выдачи</th>
+                
+                {% if params.board.table_view_plate_number %} 
+                  <th scope="col text-white " style=" ">Гос. номер<br>автомобиля</th>
+                {% endif %}
+    
+                {% if params.board.table_view_vin %} 
+                  <th scope="col text-white" style=" ">VIN</th>
+                {% endif %}
+                
+                {% if params.board.table_view_mark and params.board.table_view_model %} 
+                  <th scope="col text-white" style="">Модель<br>автомобиля</th>
+                {% elif params.board.table_view_mark %} 
+                  <th scope="col text-white" style="">Марка<br>автомобиля</th>
+                {% elif params.board.table_view_model %}                     
+                  <th scope="col text-white" style=" ">Модель<br>автомобиля</th>    
+                {% endif %}
+    
+                {% if params.board.table_view_customer %} 
+                  <th scope="col text-white" style=" ">Клиент</th>
+                {% endif %}
+    
+                {% if params.board.table_view_staff %} 
+                  <th scope="col text-white" style=" ">Мастер<br>-консультант</th>
+                 {% endif %}
+    
+                {% if params.board.table_view_status %} 
+                  <th scope="col text-white" style=" ">Статус<br>готовности</th>
+                {% endif %}
+                
+              </tr>
+            </thead>
+    
+    
+            <tbody>
+            
+              {% if params.objects %}
+                {% for doc in params.objects %}
+                  <tr class="fs5 text-white">
+                    
+                    <td>{{doc.dateStart|date:"H:i"}}</td>
+                  
+                    <td>{{doc.date_end|date:"H:i"}}</td>
+                  
+                    {% if params.board.table_view_plate_number %} 
+                      <td>{{doc.serviceRequest.cars_grz_board}}</td>
+                    {% endif %}
+                    
+                    {% if params.board.table_view_vin %} 
+                      <td>{{doc.serviceRequest.cars.vin}}</td>
+                    {% endif %}
+    
+                    {% if params.board.table_view_mark and params.board.table_view_model %} 
+                      <td>{{doc.serviceRequest.cars.mark}} {{doc.serviceRequest.cars.model}}</td>
+                    {% elif params.board.table_view_mark %} 
+                      <td>{{doc.serviceRequest.cars.mark}}</td>
+    
+                    {% elif params.board.table_view_model %} 
+                    
+                      <td>{{doc.serviceRequest.cars.model}}</td>
+    
+                    {% endif %}
+    
+                    {% if params.board.table_view_customer %} 
+                      <td>{{doc.serviceRequest.customer.name}}</td>
+                    {% endif %}
+                    
+                    {% if params.board.table_view_staff %} 
+                      <td>{{doc.staff}}</td>
+                    {% endif %}
+    
+                    {% if params.board.table_view_status %} 
+    
+                      {% if doc.status == None %} 
+    
+                        <td style="color: #d6d6d6;"> <label style="background-color: #d6d6d6;">&nbsp;&nbsp;</label> ждем авто</td>
+    
+                      {% elif doc.status == True %} 
+                    
+                        <td style="color: #48b5b8;"> <label style="background-color: #48b5b8;">&nbsp;&nbsp;</label> выполнен</td>
+                      
+                      {% else %}
+                        
+                        <td style="color: #efa319;"> <label style="background-color: #efa319;">&nbsp;&nbsp;</label> в работе</td>
+    
+                      {% endif %}
+    
+                    {% endif %}
+                  
+                  
+                  </tr>
+                {% endfor %} 
+              {% endif %}
+              
+            </tbody>
+          </table>
+
+        </div>
+
+      </div>
+
+
+     
+
+      
+	
+
+    </div>
+
+    	
+     
+      
+  
+
+</body>
+
+{% endblock %}

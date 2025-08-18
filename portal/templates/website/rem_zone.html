@@ -1,0 +1,111 @@
+{% extends 'base_web.html' %}
+
+{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+
+{% block title %} Подготовка автомобилей {% endblock %}
+    
+{% block content %}
+
+<div class="row g-1">
+  {% for unit in params.units %}
+
+    <div class="col-auto">
+      <div class="card">
+        <div class="card-body">
+          <span class="icon-mbri-home"> {{unit.name}} </span>
+        </div>
+      </div>
+    </div>
+
+  {% endfor %}
+</div>
+
+<br>
+
+<div class="row g-3">
+  <div class="col-sm">
+    <div class="card" style="border-color: #3EB489;">
+      <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-75">
+        <span class="icon-mbri-success"> </span> Простаивают {{params.estimations_start|length}}
+        <span class="visually-hidden"></span>
+      </span>
+      <div class="card-body">
+        
+        {% for estimation_st in params.estimations_start %}
+
+          <div class="row">
+            <div class="col-12 col-sm-2">
+              <img class="item-img-mini"  src="{{estimation_st.modification.model.mark.logo}}" >
+            </div>
+            <div class="col-12 col-sm-4 text-truncate">
+
+              {{estimation_st.modification.model.mark.name}} <br> {{estimation_st.modification.model.name}} <br> {{estimation_st.modification}}
+
+            </div>
+            <div class="col-12 col-sm-4 text-truncate">
+
+              {{estimation_st.vin}} <br> {{estimation_st.page_documents.plate_number}} <br> {{estimation_st.page_vnesh.color}}
+
+            </div>
+            <div class="col-12 col-sm-2 text-truncate">
+              <span class="icon-mbri-home"> </span> {{estimation_st.start_podgotovka}}
+              <br>
+              <span class="icon-mbri-setting3"> </span>{{estimation_st.start_ss}}
+              <br>
+              <span class="icon-mbri-change-style"> </span> {{estimation_st.start_mcu}}
+            </div>
+          </div>
+
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-sm">
+    <div class="card" style="border-color: #3EB489;">
+      <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-warning text-dark bg-opacity-25">
+        <span class="icon-mbri-home"> </span> Подготовка 
+        <span class="visually-hidden"></span>
+      </span>
+      <div class="card-body">
+        
+      </div>
+    </div>
+    <br>
+    <div class="card" style="border-color: #3EB489;">
+      <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-secondary text-dark bg-opacity-25">
+        <span class="icon-mbri-home"> </span> Слесарный участок 
+        <span class="visually-hidden"></span>
+      </span>
+      <div class="card-body">
+        
+      </div>
+    </div>
+    <br>
+    <div class="card" style="border-color: #3EB489;">
+      <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger text-dark bg-opacity-25">
+        <span class="icon-mbri-home"> </span> Кузовной участок 
+        <span class="visually-hidden"></span>
+      </span>
+      <div class="card-body">
+        
+      </div>
+    </div>
+    <br>
+    <div class="card" style="border-color: #AAA489;">
+      <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger text-dark bg-opacity-25">
+        <span class="icon-mbri-home"> </span> Подряд
+        <span class="visually-hidden"></span>
+      </span>
+      <div class="card-body">
+        
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - Каталог товаров {% endblock %}
+
+{% block title_navbar %} - Каталог товаров  {% endblock %}
+    
+{% block content %}
+
+    <form method="GET">
+      
+      <div class="row">
+
+        <div class="col">
+          <div class="form-floating mb-3">
+            <input type="text" list='options' class="form-control" id="manufacturen" name="manufacturen" placeholder="" value="{{params.manufacturen}}" >
+              <label for="floatingInput">Производитель</label>
+              <datalist id='options'>
+                {% for manufacture in params.manufacturer  %}
+                  <option value='{{manufacture.name}}'>
+                {% endfor %}              
+              </datalist>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="form-floating mb-3">
+            <input type="text" id="search" name="search" class="form-control" value="{{params.search}}">
+            <label for="search">Поиск артиикул, наименование</label>
+          </div>
+        </div>
+
+        <div class="col-auto align-self-center">
+          <div class="form-floating mb-3">
+            <button type="submit" class="btn btn-outline-success" > <span class="icon-mbri-success"></span> Найти </button>
+          </div>
+        </div>
+
+      </div>
+    
+
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th scope="col" class="text-nowrap">Производитель</th>
+            <th scope="col" class="text-nowrap">Артикул</th>
+            <th scope="col">Наименование</th>
+            <th scope="col" class="text-nowrap">Категория</th>
+            <th scope="col" class="text-nowrap">Группа</th>
+            <th scope="col" class="text-nowrap">Цена дилерская (мин)</th>
+            <th scope="col" class="text-nowrap">Цена</th>
+            <th scope="col" class="text-nowrap">Дата обновления</th>
+          </tr>
+        </thead>
+        <tbody>
+         
+          {% if params.paginator.object_list %}
+            {% for object in params.paginator.object_list %}
+                <tr>
+                  <td class="text-nowrap">{{object.manufacturer}}</td>
+                  <td class="text-nowrap">{{object.article}}</td>
+                  <td class="">{{object.name}}</td>
+                  <td class="text-nowrap">{{object.category|default_if_none:'-'}}</td>
+                  <td class="text-nowrap">{{object.group|default_if_none:'-'}}</td>
+                  <td class="text-end text-nowrap">{{object.price_min|floatformat:"2g"}} &#8381; </td>
+                  <td class="text-end text-nowrap">{{object.price|floatformat:"2g"}} &#8381; </td>
+                  <td class="text-end text-nowrap">{{object.date}}</td>
+                </tr>
+              {% endfor %} 
+            {% endif %} 
+        </tbody>
+        
+      </table>
+      </div>
+    
+      <hr style="width: 75%;">
+
+      <div class="row align-self-center align-items-center">
+      
+        <div class="col-auto align-self-center align-items-center">
+          <p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
+        </div>
+
+        <div class="col-auto align-self-center align-items-center">
+          <button type="submit" id="save" name="save" class="btn btn-outline-success"><span class="icon-mbri-download"></span> Сохранить в Excel</button>
+        </div>
+        
+        <div class="col-auto align-items-center align-self-center justify-content-center">
+          <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+            
+              {% if params.paginator.has_previous %}
+                <li class="page-num mbr-section-btn">
+                  <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+                </li>
+              {% endif %}
+          
+              {% for p in params.paginator.paginator.page_range %}
+                {% if params.paginator.number == p %}
+                  <li class="page-num mbr-section-btn disabled">
+                    <a class="btn btn-secondary display-7">
+                      <b>{{p}}</b>
+                    </a>
+                  </li>
+                {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+                  <li class="page-num mbr-section-btn">
+                    <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+                
+              {% if params.paginator.has_next %}
+                <li class="page-num mbr-section-btn">
+                  <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+                </li>
+              {% endif %}
+        
+            </ul>
+          </nav>
+        </div>
+      
+        
+      
+      </div>
+
+    </form>
+{% endblock %}

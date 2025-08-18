@@ -1,0 +1,144 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - Воронка выкупа {% endblock %}
+
+{% block title_navbar %} - Воронка выкупа {% endblock %}
+
+{% block content %}
+
+
+<div class="table-responsive-sm">
+  <table class="table">
+    {% for object in params.objects %}
+      <tr>
+        <td>
+          {{object.unit.name}}
+        </td>
+        <td>
+          {{object.name}}
+        </td>
+        <td class="text-end">
+          {{object.group_price.name}}
+        </td>
+        <td class="text-end">
+          {{object.days_in_stok}}
+        </td>
+        <td class="text-end">
+          {{object.year}}
+        </td>
+        <td class="text-end">
+          {{object.car_modification_store}}
+        </td>
+        <td class="text-end {% if object.run > 175000 %} bg-danger bg-opacity-25 {% endif %} ">
+          {{object.run|floatformat:"0g"}}
+        </td>
+        <td class="text-end">
+          {{object.agreement_cost_price|floatformat:"2g"}}
+        </td>
+        <td class="text-end">
+          {{object.agreement_kso_actual|floatformat:"2g"}}
+        </td>
+        <td class="text-end">
+          {{object.agreement_bu_wheels_actual|floatformat:"2g"}}
+        </td>
+        
+        <td class="text-end">
+          {{object.agreement_amount|floatformat:"2g"}}
+        </td>
+        <td class="text-end" title="КМ фактический">
+          {{object.agreement_cm|floatformat:"2g"}}
+        </td>
+        <td class="col-auto">
+          <a href="/cars/{{object.slug}}/" class="text-dark" target="_blank"> <span class="icon-truck" title="Карточка автомобиля"></span></a>
+        </td>
+        <td class="col-auto">
+          <a href="/docs_car_agreement/{{object.agreement_pk}}/" class="text-dark" target="_blank"><span class="icon-doc" title="Соглашение о покупке"></span></a>
+        </td>
+        <td class="col-auto">
+          <a class="text-dark" onclick="go_info('{{object.slug}}')"><span class="icon-mbri-info fw-bold" title="Информация"></span></a>
+        </td>
+      </tr>
+    {% endfor %}
+
+  </table>
+</div>
+  
+
+
+<div class="modal fade" id="modal_car_info" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+    <div class="modal-header">
+      <h1 class="modal-title fs-5" id="modal_car_info_title">Информация</h1>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+    </div>
+    
+    <div class="modal-body" id="modal_body_info">
+
+          ыывафывафывафы
+    </div>
+    
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function go_info(slug) {
+    
+    $('#modal_car_info').modal('show');
+
+    var modal_body_info = $('#modal_body_info');
+    var html = '<br>Формируем отчет, складываем, делим, думаем и пересчитываем, не перезагружайте страницу скоро выведем данные...<br><img src="/static/images/loading.gif"/>';
+    document.querySelector('#modal_body_info').innerHTML = html;
+    
+    $.ajax({
+      url: '/cars/' + slug + '/info_js/',        
+      method: 'get',            
+      dataType: 'json',          
+      data: '',
+      cache: false,
+      success: function(data){   
+       
+        html      = '';
+        let i     = data.car_list.length;
+        let title = data.title;
+        document.querySelector('#modal_car_info_title').innerHTML = title;
+
+        for (s = 0; s < i; s++) { 
+          let obj = data.car_list[s];
+          html += '<div class="card" style="margin-bottom: 0.2rem;">'
+            html += '<div class="card-body">'
+              html +=  '<div class="row">';
+                html +=  '<div class="col-12 col-sm-2">';
+                    html +=  '<img class="w-100" src="' + obj.photo  + '" style="border-radius: 0.3rem; max-height: 150px; object-fit:cover;">';                
+                html +=  '</div>';
+                html +=  '<div class="col-12 col-sm-2">';
+                    html +=  '<span class="fs-6">' + obj.unit_name + '</span><br>';                
+                    html +=  '<span class="fs-6">' + obj.days + '</span><br>';                
+                    html +=  '<span class="fs-6">' + obj.stage + '</span><br>';                
+                html +=  '</div>';
+                html +=  '<div class="col-12 col-sm-2 text-end">';
+                    html +=  '<span class="fs-5 fw-bold">' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.price,) + ' ₽</span><br>';                
+                    html +=  '<span class="fs-6">' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.cost_price,)  + ' ₽</span><br>';                
+                    html +=  '<span class="fs-6">' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.outlay,) + ' ₽</span><br>';                
+                html +=  '</div>';
+              html +=  '</div>';
+            html +=  '</div>';
+          html +=  '</div>';
+
+        };
+
+        document.querySelector('#modal_body_info').innerHTML = html;  
+        
+      }
+    });
+
+  }
+
+
+</script>
+
+{% endblock %}

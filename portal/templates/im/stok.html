@@ -1,0 +1,213 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - сток интернет магазин {% endblock %}
+
+{% block title_navbar %} - сток  интернет магазин {% endblock %}
+    
+{% block content %}
+ 	
+<div class="row">
+
+
+	<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr_count > 0 %} - {{params.filtr_count}} {% endif %}</button>
+	
+	<label class="icon-mbri-shopping-bag"> Всего товаров: {{params.answer|length}}</label>
+	
+	<div class="col-sm-auto">
+		
+		<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					
+						<div class="modal-body">
+							<form method="get">
+								<div class="form-floating mb-3">							
+									<select class="form-select" id="status" name="status" placeholder="">
+										<option></option>
+										<option value="active" {% if params.filtr.status == 'active' %} selected {% endif %}> active </option>
+										<option value="no" {% if params.filtr.status == 'no' %} selected {% endif %}> no </option>
+										<option value="Не_выгружался" {% if params.filtr.status == 'Не_выгружался' %} selected {% endif %}> Не выгружался </option>
+									</select>
+									<label for="floatingInput">Статус</label>
+								</div>
+								
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
+									<label for="floatingInput">Наименование</label>
+								</div>
+
+
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" id="articul" name="articul" placeholder="" value="{{params.filtr.articul}}" autocomplete="off">
+									<label for="floatingInput">Артикул</label>
+								</div>
+
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" id="cell" name="cell" placeholder="" value="{{params.filtr.cell}}" autocomplete="off">
+									<label for="floatingInput">Ячейка</label>
+								</div>
+
+								<div class="form-check form-switch">
+									<input class="form-check-input" type="checkbox" role="switch" id="no_foto" name="no_foto" {% if params.filtr.no_foto == 'on' %} checked {% endif %}>
+									<label class="form-check-label" for="no_foto">Без фото</label>
+								</div>
+								<hr>
+								
+								<div class="d-grid gap-2">
+									<button class="btn btn-block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>
+								</div>
+							</form>
+						</div>
+
+					</div>
+				</div>
+		</div>
+		<br>
+
+
+	</div>
+	
+	<hr>
+
+<!-- Второй столбец !-->
+		<div class="col-sm">
+			<div class="row g-1">
+				{% if params.answer %}
+					{% for product in params.answer %}
+						  
+						<div class="card"  onclick="window.location.href='product/?kod={{product.Код}}'; return false"> 
+							<div class="card-body" style="padding: 0;">
+								
+								<div class="row" style="padding: 0.2em;">
+									
+									<div class="col-sm-4">
+										{{product.Товар}}
+									</div>
+									
+									<div class="col-sm">
+										{{product.Артикул}} 
+									</div>
+									
+									<div class="col-sm">
+										{{product.Ячейка}} 
+									</div>
+
+									<div class="col-sm">
+										{{product.Производитель}} 
+									</div>
+
+									<div class="col-sm">
+										{{product.ПодкатегорияТовара}} 
+									</div>
+									
+									<div class="col-sm">
+										{{product.Статус}}
+									</div>
+									
+									<div class="col-sm">
+										{{product.Фото}} 
+									</div>
+
+								</div>
+
+								<div class="row">
+									<div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
+                                                                           
+										<label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
+											
+											<span class="icon-mbri-preview"></span> {{product.Просмотров}}
+											<div class="vr"></div>
+											<span class="icon-mbri-touch"></span> {{product.Контактов}}
+											<div class="vr"></div>
+											<span class="icon-mbri-hearth"></span> {{product.Избранное}}
+											
+										</label>
+
+									</div>
+
+									<div class="col text-end">
+										<label class="fs-4 
+											{% if product.Статус == 'Не выгружался' %}
+												bg-warning
+											{% elif product.Статус == 'active' %} 
+												bg-success
+											{% else %}
+												bg-danger
+											{% endif %} 
+										bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{product.Цена|floatformat:"2g"}} &#8381;</label>
+									</div>
+								</div>
+							</div>
+						</div>
+							
+					{% endfor %} 
+				{% endif %}
+				
+			</div>
+		</div>
+
+	</div>
+
+</div>
+	
+</form>
+
+<script>
+	document.forms.upload.onsubmit = function() {
+	  var input = this.elements.file_audio;
+	  var file = input.files[0];
+	  if (file) {
+		upload(file);
+	  }
+	  return false;
+	}
+  
+	function upload(file) {
+
+	var xhr = new XMLHttpRequest();
+
+	// обработчик для отправки
+	xhr.upload.onprogress = function(event) {
+		console.log(event.loaded + ' / ' + event.total);
+	}
+
+	// обработчики успеха и ошибки
+	// если status == 200, то это успех, иначе ошибка
+	xhr.onload = xhr.onerror = function() {
+	if (this.status == 200) {
+		console.log("success");
+	} else {
+		console.log("error " + this.status);
+	}
+	};
+
+	xhr.open("POST", "", true);
+	xhr.send(file);
+
+	}
+  </script>
+
+  
+
+<script language="JavaScript">
+	
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

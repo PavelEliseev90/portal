@@ -1,0 +1,156 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - сравнение показателей CVC и KG {% endblock %}
+
+{% block title_navbar %} - сравнение показателей CVC и KG {% endblock %}
+
+{% block content %}
+
+<form method="get">
+
+  <div class="row g-1  align-items-center">
+
+    <div class="col-sm-auto my-auto">
+      <div class="form-floating mb-3">
+        <select class="form-select" id="direction" name="direction" aria-label="Направление">
+          <option selected></option>
+          <option value="1" {% if params.filtr.direction == 1 %} selected {% endif %}>ОП новых автомобилей</option>
+          <option value="5" {% if params.filtr.direction == 5 %} selected {% endif %}>ОП КорсАвто автомобили с пробегом</option>
+        </select><label for="floatingInput">Направление</label>
+      </div>
+    </div>
+
+    <div class="col-sm-auto my-auto">
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+        <label for="floatingInput">С</label>
+      </div>
+    </div>
+    
+  <div class="col-sm-auto my-auto">
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+        <label for="floatingInput">По</label>
+      </div>
+    </div>
+    
+    <div class="col-sm-auto my-auto">
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="text" id="number" name="number" value="{{params.filtr.number}}">
+        <label for="floatingInput">Номер РЛК</label>
+      </div>
+    </div>
+
+    <div class="col-sm-auto my-auto ">
+      <div class="form-floating mb-3">
+        <div class="d-grid gap-2 my-auto">
+          <button class="btn btn-block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Обновить </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</form>
+
+  <div class="row g-1">
+    
+    <div class="table-responsive-sm">
+      <table class="table table-hover table-sm table-striped">
+      <thead>
+        <tr>
+          <th scope="col"></th>
+          <th scope="col">Дата РЛК</th>
+          <th scope="col">Номер РЛК</th>
+          <th scope="col">Подразделение</th>
+          <th scope="col">KG %</th>
+          <th scope="col">CVC %</th>
+          <th scope="col">Разница</th>
+                        
+        </tr>
+      </thead>
+      <tbody>
+      
+          {% for object in params.objects %}
+            
+            <tr class="align-middle">
+              <td class="align-middle">
+                {% if params.filtr.direction == 1 %}
+                  <a href="/checklists/glav/op/doc/?checkid={{object.id}}" class="text-success"><span class="icon-mbri-play"></span></a>
+                {% elif params.filtr.direction == 5 %}
+                  <a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{object.id}}" class="text-success"><span class="icon-mbri-play"></span></a>
+                {% endif %}
+              </td>
+              <td class="align-middle">{{object.dataTime}}</td>
+              <td class="align-middle">{{object.nomer}}</td>
+              <td class="align-middle">{{object.unit.name}}</td>
+              <td class="align-middle">{{object.result}}</td>
+              <td class="align-middle">{{object.cheklist_cvc}}</td>
+              <td class="align-middle">{{object.difference}}</td>
+              
+            </tr>
+
+          {% endfor %} 
+    
+        
+      </tbody>
+      </table>
+    </div>
+
+    <div class="row align-self-center align-items-center">
+      
+      <div class="col-auto">
+        <p class="fw-normal">Всего записей: {{params.objects.paginator.count}} / Выведено: {{params.objects|length}}</p>
+      </div>
+    
+      <div class="col-auto">
+        <a id="save" href="{{params.link_save}}" class="btn btn-outline-secondary"><span class="icon-mbri-file"></span> Сохранить</a>
+      </div>
+    
+      <div class="col-auto align-items-center align-self-center justify-content-center">
+        <nav aria-label="Page navigation example">
+          <ul class="pagination justify-content-center">
+          
+            {% if params.objects.has_previous %}
+              <li class="page-num mbr-section-btn">
+                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
+              </li>
+            {% endif %}
+        
+            {% for p in params.objects.paginator.page_range %}
+              {% if params.objects.number == p %}
+                <li class="page-num mbr-section-btn disabled">
+                  <a class="btn btn-secondary display-7">
+                    <b>{{p}}</b>
+                  </a>
+                </li>
+              {% elif p >=  params.objects.number|add:-2 and p <=  params.objects.number|add:2  %}
+                <li class="page-num mbr-section-btn">
+                  <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+              
+            {% if params.objects.has_next %}
+              <li class="page-num mbr-section-btn">
+                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.objects.next_page_number %}">&gt;</a>
+              </li>
+            {% endif %}
+      
+          </ul>
+        </nav>
+      </div>
+    
+    </div>
+    
+    
+    
+  </div>
+
+
+
+
+{% endblock %}
+

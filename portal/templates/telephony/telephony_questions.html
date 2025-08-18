@@ -1,0 +1,112 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - вопросы для опросов по направлению ОП новых автомобилей {% endblock %}
+
+{% block title_navbar %} - вопросы для опросов по направлению ОП новых автомобилей {% endblock %}
+
+{% block content %}
+<form method="GET" id="form" name="form">
+  
+  <div class="row g-1">
+      
+    <div class="col-sm">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
+          <label for="floatingInput">Наименование</label>
+      </div>
+    </div>
+
+      <div class="col-sm">
+        <div class="form-floating mb-3">
+            <select class="form-select" id="status" name="status" aria-label="Выбор статуса тематики">
+              <option selected></option>
+              <option value="1" {% if params.filtr.status == '1' %} selected {% endif %}>Активна</option>
+              <option value="2" {% if params.filtr.status == '2' %} selected {% endif %}>Отключена</option>
+            </select>
+            <label for="floatingInput">Статус</label>
+        </div>
+      </div>
+      
+      <div class="col-sm-auto my-auto">
+        <div class="form-floating mb-3">
+            <button class="btn btn-outline-success"><span class="icon-mbri-refresh"> </span></button>
+        </div>
+      </div>
+
+  </div>
+
+
+  <div class="card mb-3">
+    <div class="row g-0">
+    
+    <div class="col-sm">
+      <div class="card-body">
+        <h5 class="card-title"> <span class="icon-mbri-home"> </span> Вопросы отдела продаж новых автомобилей <a href="0" class="link-success"><span class="icon-mbri-plus"></span></a></h5>
+        <p class="fs-5 fw-bold font-monospace">
+        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-secondary bg-opacity-10">
+          <span class="icon-mbri-success text-success"> {{params.telephony_question_count_enabled}}</span> 
+          <span class="icon-mbri-close text-danger">{{params.telephony_question_count_not_enabled}} </span> 
+          <span class="visually-hidden"></span>
+        </span>
+      </p>
+        <div class="row g-4">
+          
+          {% if params.paginator|length > 0 %}
+
+            {% for question in params.paginator %}
+              
+              <div class="col-sm-auto">
+                <div class="row g-1">
+                  {% if question.estimation > 0 %}    
+                      <div class="col-sm-auto">
+                        <a class="nav-link text-success" href='{{question.pk}}'>
+                        <div class="card border-success mb-3">
+                          <div class="card-body">
+                            <div class="card-title"><span class="icon-mbri-success"></span><b>{{question.name}} </b></div>
+                            <hr>
+                            <div class="book">
+                              <p><span>Оценка</span><span>{{question.estimation}}</span></p>
+                              <p><span>Тематик</span><span>{{question.tematics.all|length}}</span></p>
+                             </div>
+                          </div>
+                        </div>
+                        </a>
+                      </div>
+                    {% else %}
+                      <div class="col-sm-auto">
+                        <a class="nav-link text-danger" href='{{question.pk}}'>
+                        <div class="card border-danger mb-3">
+                          <div class="card-body">
+                            <div class="card-title"><span class="icon-mbri-close"></span><b>{{question.name}} </b></div>
+                            <hr>
+                            <div class="book">
+                              <p><span>Оценка</span><span>{{question.estimation}}</span></p>
+                              <p><span>Тематик</span><span>{{question.tematics.all|length}}</span></p>
+                            </div>
+                          </div>
+                        </div>
+                        </a>
+                      </div>
+                    {% endif %}
+          
+                </div>
+              </div>
+              
+            {% endfor %}
+
+          {% else %}
+              <div style="text-align: center;" class="row g-1">
+                <p class="fs-5 fw-normal">Пока нет вопросов.</p>
+              </div>
+          {% endif %}
+        </div>
+        
+      </div>
+    </div>
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+

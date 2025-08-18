@@ -1,0 +1,54 @@
+{% extends 'base_web.html' %}
+
+
+{% block url %} {% endblock %} 
+
+{% block meta_description %}
+  
+{% endblock %}
+
+{% block meta_keywords %}
+    
+{% endblock %}
+
+{% block title %}
+
+    Список чатов
+
+{% endblock %} 
+
+{% block title_navbar %}
+    
+    Список чатов
+
+{% endblock %}
+
+{% block content %}
+
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe">
+        <div class="container">
+        
+            <div class="row" style="padding-top: 3rem;">
+                {% for chat in params.chats %}
+                    
+                    <div class="item features-image col-12">
+                        <a class="text-dark" href="{{chat.slug}}/">
+                        <div class="item-wrapper">
+                            <div class="item-content">
+                                <h5 class="item-title mbr-fonts-style display-5">
+                                    <strong>{{chat.name}}</strong>
+                                </h5>
+                                {{chat.last_message}}
+                            </div>
+                        </div> 
+                        </a>                       
+                    </div>
+                    
+                {% endfor %}
+            </div>
+
+        </div>
+    </section>
+
+
+  {% endblock %}

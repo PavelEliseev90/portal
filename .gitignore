@@ -1,0 +1,7 @@
+/.vs
+/.vscode
+/certificate.pem
+/key.crt
+/key.key
+/media
+/static.rar

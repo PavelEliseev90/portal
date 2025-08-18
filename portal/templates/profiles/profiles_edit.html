@@ -1,0 +1,94 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - редактирование профиля {% endblock %}
+
+{% block title_navbar %} - редактирование профиля {% endblock %}
+
+
+{% block content %}
+
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-photo"> </span> Изменение фотографии профиля </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    
+      <div class="modal-body">
+        <form id="update_logo" action="" method="POST" enctype="multipart/form-data"> 
+          {% csrf_token %}				
+          <div class="mb-3">
+            <input type="file" class="form-control" name="file" id="file" accept="image/*">
+          </div>
+              
+          <div class="d-grid gap-2">
+            <button class="btn btn-block btn-outline-success" id="update_logo" name="update_logo" type="submit"><span class="icon-mbri-success"></span> Сохранить </button>
+          </div>
+        
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="row g-1">
+
+  
+  <div class="row g-1">
+    
+    <div class="col-sm-auto">
+      <div class="fixOverlayDiv">
+        <div class="wrapper1 exmp3">
+          <img class="img-fluid " src="{{params.user.profiles.image_logo}}">
+        </div>
+        <div class="OverlayText" data-bs-toggle="modal" data-bs-target="#exampleModal"><span class="icon-mbri-edit2"> </span></div>
+      </div>
+    </div>
+
+    <div class="col-sm">
+      <form id="update_info" action="" method="POST" enctype=""> 
+        {% csrf_token %}
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="name" name="name" placeholder="" readonly value="{{params.user.first_name}} {{params.user.last_name}}" autocomplete="off">
+          <label for="floatingInput">ФИО</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="email" name="email" placeholder="" readonly value="{{params.user.email}}" autocomplete="off">
+          <label for="floatingInput">Email</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="phone" name="phone" placeholder="" value="{{params.user.profiles.phone}}" autocomplete="off">
+          <label for="floatingInput">Контактный номер</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="date" class="form-control" id="birth_date" name="birth_date" placeholder="" value="{{params.user.profiles.birth_date|date:'Y-m-d'}}" autocomplete="off">
+          <label for="floatingInput">Дата рождения</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="datetime" class="form-control" id="date_joined" name="date_joined" placeholder="" readonly value="{{params.user.date_joined|date:'d.m.Y H:i'}}" autocomplete="off">
+          <label for="floatingInput">Дата регистрации</label>
+        </div>
+        
+        <div class="d-grid gap-2">
+          <button class="btn btn-block btn-outline-success" type="submit" id="update_info" name="update_info"><span class="icon-mbri-success"></span> Сохранить </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <hr>
+
+  
+
+</div>
+
+
+{% endblock %}
+

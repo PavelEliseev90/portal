@@ -1,0 +1,59 @@
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+      <meta charset="utf-8" />
+      <title>ГК КорсГрупп - обновлен прайс - лист - {{task.manufacturer}} </title>
+      <link rel="stylesheet" href="/static/style.css">
+  </head>
+  
+  <body>
+    
+    <div class="grid"> 
+      
+      <div>
+        ГК КорсГрупп - обновлен прайс - лист - {{task.manufacturer}}  
+      </div>
+      
+      <div class="header">
+        <div class="header-content">
+          
+          <br>
+
+          Прайс - лист - {{task.manufacturer}}
+          
+          <br>
+          
+          <br>
+          
+          <br>
+          
+          <table>
+
+                <tr><td>Имя файла</td><td>-</td><td>{{task.file_name}}</td></tr> 
+                
+                <tr><td>Статус</td><td>-</td><td>{{task.status}}</td></tr> 
+
+                <tr><td>Всего строк / строк обработано</td><td>-</td><td>{{task.positions_all}} / {{task.positions_success}}</td></tr>
+
+          </table>
+
+
+          <br>
+          
+          Для дополнительной информации перейдите по ссылке <a href="{{page_price}}" >ТУТ </a>
+
+        </div>  
+      </div>
+      
+      <br>
+      
+      <div style="text-align: center;">
+          
+      </div>
+    </div>
+
+  </body>
+
+</html> 

@@ -1,0 +1,251 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - заказ наряды отчет по расширениям {% endblock %}
+
+{% block title_navbar %} - заказ наряды отчет по расширениям {% endblock %}
+    
+{% block content %}
+ 	
+<div class="row">
+
+<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Период с {{params.filtr.date_start|date:"d.m.Y"}} по {{params.filtr.date_end|date:"d.m.Y"}} {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+
+<div class="col-sm-auto">
+	
+	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				
+					<div class="modal-body">
+						<form method="get">
+						<div class="form-floating mb-3">
+							<input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+							<label for="floatingInput">С</label>
+						</div>
+						
+						<div class="form-floating mb-3">
+							<input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+							<label for="floatingInput">По</label>
+						</div>
+						
+						<div class="form-floating mb-3 d-flex justify-content-center">
+							<div class="btn-group" role="group" >
+								
+								<input type="radio"  class="btn-check" name="unit_group" id="v2_5_0" value="no" autocomplete="off" {% if params.filtr.unit_group == 'no' %} checked {% endif %}>
+								<label class="btn btn-outline-success" for="v2_5_0">Подразделения</label>
+								
+								<input type="radio" class="btn-check" name="unit_group" id="v2_5_1" value="yes" autocomplete="off" {% if params.filtr.unit_group == 'yes' %} checked {% endif %}>
+								<label class="btn btn-outline-success" for="v2_5_1">Группы подразделений</label>
+							
+							</div>
+						</div>
+
+						<div class="form-floating mb-3" id="form_select_unit_id">							
+							<select class="form-select" id="select_unit_id" name="select_unit_id" placeholder="">
+								<option></option>
+								{% for unit in params.selected.units %}
+									<option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} ({{unit.ib.base}})</option>
+								{% endfor %}
+							</select>
+							<label for="floatingInput">Подразделение ДЦ</label>
+						</div>
+
+						<div class="form-floating mb-3" id="form_select_unit_group_id">							
+							<select class="form-select" id="select_unit_group_id" name="select_unit_group_id" placeholder="">
+								<option></option>
+								{% for unit in params.selected.units_group %}
+									<option value="{{unit.id}}" {% if params.filtr.filter_group_unit_id == unit.id %} selected {% endif %}> {{unit.name_bi}} / {{unit.name}} </option>
+								{% endfor %}
+							</select>
+							<label for="floatingInput">Группа подразделений ДЦ</label>
+						</div>
+
+						<div class="d-grid gap-2">
+							<button class="btn btn-block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>
+						</div>
+					</form>
+					</div>
+
+				</div>
+			</div>
+	</div>
+	
+</div>
+
+<!-- Второй столбец !-->
+	<div class="col-sm">
+		
+		<div class="table-responsive-sm">
+			<table class="table table-hover table-sm align-middle">	
+				<thead style="position: sticky;top: 0;">
+				<tr>
+					<th class='header_table' scope="col" style="text-align: center; background: white;">
+						{% if params.filtr.unit_group == 'no' %}
+							Подразделение
+						{% else %}
+							Группа подразделений
+						{% endif %}
+					</th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом"></span></th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question"></span></th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;" title="Всего уникальных заказ - нарядов к которым отправлена хоть одна рекомендация)">Всего ЗН c отправленными рекомендациями<span class="icon-mbri-question"></span></th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question"></span></th>
+					
+					<th class='header_table' scope="col" style="text-align: center; background: white;" title="Общее количество рекомендаций по всем заказ нарядам" >Всего рекомендаций <span class="icon-mbri-question"></span></th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;">Не активных</th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;">На согласовании</th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;">Согласовано</th>
+					<th class='header_table' scope="col" style="text-align: center; background: white;">Отклонено</th>							
+				</tr>
+			</thead>
+
+			
+
+				{% for doc in params.docs %}
+					{% if doc.unit_name|length > 0 and doc.unit_name != "ЕЦО ГК" %}
+						<tbody class="labels">	
+							<tr class="align-middle">
+								<th>
+									<label for="dc{{doc.unit_id}}" title='{{doc.unit_info}}'><span class="icon-mbri-arrow-down" id="span-dc{{doc.unit_id}}"> </span> 
+										{{doc.unit_name}}
+									</label>
+									<input type="checkbox" name="dc{{doc.unit_id}}" id="dc{{doc.unit_id}}" data-toggle="toggle">
+								</th>
+								<td class="align-middle" style="text-align: center;">{{doc.zn_count_all}}</td>
+								<td class="align-middle" style="text-align: center;">{{doc.zn_count}} ({{doc.zn_percent}} %)</td>
+								<td class="align-middle" style="text-align: center;">{{doc.zn_send_count}} ({{doc.zn_send_count_sr}} %)</td>
+								<td class="align-middle" style="text-align: center;">{{doc.zn_success_count}} ({{doc.zn_success_count_sr}} %)</td>
+								<td class="align-middle" style="text-align: center;">{{doc.recomendations|length}}</td>
+								<td class="align-middle" style="text-align: center;">{{doc.recomendations_0}}</td>
+								<td class="align-middle" style="text-align: center;">{{doc.recomendations_1}}</td>
+								<td class="align-middle" style="text-align: center;">{{doc.recomendations_2}}</td>
+								<td class="align-middle" style="text-align: center;">{{doc.recomendations_3}}</td>
+							</tr>
+						</tbody>
+						
+						<tbody class="hide">
+							{% for doc_rec in doc.recomendations %}
+								<tr class="align-middle" style="background-color: whitesmoke;" onclick="window.location.href='/docs_recomendation/{{doc_rec.id}}'; return false">
+									
+									{% if params.filtr.unit_group == 'no' %}
+										<th scope="row">
+											№ {{doc_rec.zn.nomer}} / {{doc_rec.dataTime}} - {{doc_rec.name}}
+										</th>
+										<td colspan="4" style="text-align: left;"> - </td>
+									{% else %}
+										<th scope="row">
+											{{doc_rec.zn.unit.name}}
+											
+										</th>
+										<td colspan="4" style="text-align: left;"> № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime}} - {{doc_rec.name}} </td>
+										
+									{% endif %}	
+									
+									
+									<td style="text-align: center;"> 1 </td>
+									<td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 0 %} 1 {% else %} - {% endif %}</td>
+									<td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 1 %} 1 {% else %} - {% endif %}</td>
+									<td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 2 %} 1 {% else %} - {% endif %}</td>
+									<td class="align-middle"style="text-align: center;">{% if doc_rec.customerStatus == 3 %} 1 {% else %} - {% endif %}</td>
+
+								</tr>
+							{% endfor %}
+						</tbody>
+					{% endif %}
+				{% endfor %}	
+			
+			</table>
+		</div>
+		
+		
+		<nav aria-label="Page navigation example bg-secondary">
+      
+			<ul class="pagination justify-content-center">
+			  
+			  {% if  params.paginator.has_previous %}
+				<li class="page-num">
+						<a class="page-link bg-secondary text-white"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
+				</li>
+			  {% endif %}
+	  
+			  {% for p in params.paginator.paginator.page_range %}
+				{% if  params.paginator.number == p %}
+				<li class="page-item bg-secondary text-white disabled"><a class="page-link">{{p}}</a></li>
+						  {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+				<li class="page-item">
+					<a class="page-link bg-secondary text-white" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+				</li>
+				{% endif %}
+			  {% endfor %}
+				
+			  {% if params.paginator.has_next %}
+				<li class="page-num">
+					<a class="page-link bg-secondary text-white" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
+				</li>
+			  {% endif %}
+	  
+			</ul>
+	  
+		</nav>
+	
+	</div>
+
+</div>
+	
+</form>
+
+
+
+
+
+<script language="JavaScript">
+   
+	
+
+   	$('input[type=radio][name=unit_group]').change(function() {
+		visible_filtr_dc_and_group();
+	});
+
+	function visible_filtr_dc_and_group(){
+		let group = $('input[name="unit_group"]:checked').val();
+		if (group == 'yes') {
+			$('div[id="form_select_unit_id"]').hide();
+			$('div[id="form_select_unit_group_id"]').show();
+		}
+		else if (group == 'no') {
+			$('div[id="form_select_unit_id"]').show();
+			$('div[id="form_select_unit_group_id"]').hide();
+		}
+	}
+
+	$(document).ready(function() {
+		
+		visible_filtr_dc_and_group();
+
+		$('[data-toggle="toggle"]').change(function(){
+			
+			var check = !$(this).is(':checked');
+			var id = 'span-' + $(this)[0].id;
+			if (String(check).toLowerCase() === "true"){
+				$(this).prop('checked', false);
+				$('#'+ id).attr('class', 'icon-mbri-arrow-down');
+			}else{
+				$(this).prop('checked', true);
+				$('#'+ id).attr('class', 'icon-mbri-arrow-up');
+			}
+
+			$(this).parents().next('.hide').toggle();
+			
+		});
+	});
+
+
+</script>
+
+{% endblock %}

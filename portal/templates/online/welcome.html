@@ -1,0 +1,267 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} ГК КорсГрупп - запись на сервис {% endblock %}
+    
+{% block content %}
+
+<script>
+
+	function validate_form(){
+		
+		valid = true;
+		
+		if ($('span.icon-mbri-close').length > 0 ){
+			
+			valid = false;
+			var error = '';
+			var errors = $('span.icon-mbri-close')
+			for (var i = 0; i < errors.length; i++) {
+				var id = errors[i].id.replace('e', 'l');
+				error = error + '- ' + (i+1) + ' ' + $('#' + id).text() + '\n';
+			};
+			alert('Не все пункты заполнены. Проверьте форму заполнения!\n\n' + error);
+		}
+		
+		return valid;
+		
+	}
+
+	function validate(name){
+		
+		var name_e = name.replace('v', 'e');
+		var value = $('#' + name).val();
+		
+		var element_e = $('#'+ name_e);
+		
+		if (value.length > 0){
+			element_e.attr('class', 'icon-mbri-success text-success');
+		} else {
+			element_e.attr('class', 'icon-mbri-close text-danger');
+		}
+	}
+
+</script>
+
+
+	<br>
+
+		<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>	
+	
+		<div class="row">
+			
+			<div class="col-sm"></div>		
+			
+			<div class="col-sm-5">
+				
+				<div class="card">
+					
+					<div class="card-body">
+						
+						<h5 class="card-title">Добрый день!</h5>
+						
+						<form name="form" method="post">
+							
+							<input class="form-control form-control-sm"  type="text" name="selected" value="1" hidden>
+
+							{% if params.filt.selected == 0 or params.filt.selected == 1 %}
+							
+								Напоминаем Вам о приближении планового ТО. <br>
+								
+								Позаботьтесь о своей безопасности! <br>
+								
+								Запишитесь на удобное для Вас время и получите подарок от "КорсГрупп"! <br>
+								
+								{% if params.filt.selected == 0 %}
+									<button id="send" style="margin: 1.0em;" type="submit" value="submit" class="btn btn-outline-dark"><span class="icon-mbri-play"></span> Записаться на сервис</button>
+								{% endif %}
+
+								{% csrf_token %}
+								
+							{% endif %}
+
+						</form>	
+
+						{% if params.filt.selected == 1 %}
+							<form name="form" method="post">
+								
+								<hr>
+								<label>Записаться по телефону</label>
+								
+								<br>
+								<div class="row g-1">
+									<button id="send" name="call" type="submit" value="submit" class="btn btn-outline-success"><span class="icon-mbri-help"></span> Заказать обратный звонок</button>	
+								</div>
+							</form>
+
+							<form name="form" method="post" onsubmit="return validate_form();" >
+								
+								<input class="form-control form-control-sm"  type="text" name="selected" value="1" hidden>
+
+								<hr>
+								<label>Запишитесь на сервис онлайн</label>
+								<br>
+								
+								<br>
+								<label id="l1_1">Город</label>	
+								<div class="row g-2 justify-content-center align-self-center">
+									<div class="col-11" style="vertical-align: middle;">
+										<select class="form-select" id ="v1_1" name ="selected_city" onchange="this.form.submit()">
+											<option></option>
+											{% for city in params.select_citys %}
+												{% if params.filt.selected_city|lower == city.id|lower %}
+													<option id={{city.id}} value="{{city.id}}" selected>{{city.name}} </option>
+												{% else %}
+													<option id={{city.id}} value="{{city.id}}"> {{city.name}} </option>
+												{% endif %}
+											{% endfor %}
+										</select>
+									</div>
+									<div class="col-1 align-self-center">
+										{% if params.filt.selected_city|length == 0 %}
+											<span name="e1_1" id="e1_1" class="icon-mbri-close text-danger" ></span>
+										{% else %}
+											<span name="e1_1" id="e1_1" class="icon-mbri-success text-success" ></span>
+										{% endif %}
+									</div>
+								</div>
+								
+								
+								<br>
+								<label id="l1_2">Выберите дилерский центр</label>	
+								<div class="row g-2 justify-content-center align-self-center">
+									<div class="col-11" style="vertical-align: middle;">									
+										<select class="form-select" id = "v1_2" name = "selected_unit" onChange="validate('v1_2')">
+											<option></option>
+											{% for unit in params.select_units %}
+												{% if params.filt.selected_unit|lower == unit.id|lower %}
+													<option id={{unit.id}} value="{{unit.id}}" selected>{{unit.name_dop}} </option>
+												{% else %}
+													<option id={{unit.id}} value="{{unit.id}}"> {{unit.name_dop}} </option>
+												{% endif %}
+											{% endfor %}
+										</select>		
+									</div>
+									<div class="col-1 align-self-center">
+										<span name="e1_2" id="e1_2" class="icon-mbri-close text-danger" ></span>
+									</div>
+								</div>
+								
+
+								<br>
+								<label id="l1_3">Удобная для Вас дата</label>	
+								<div class="row g-2 justify-content-center align-self-center">
+									<div class="col-11" style="vertical-align: middle;">									
+										<input class="form-control form-control-sm" min="{{params.dt_now}}" type="date" id="v1_3" name="selected_date" value="{{params.filt.selected_date}}" onChange="validate('v1_3')">	
+									</div>
+									<div class="col-1 align-self-center">
+										<span name="e1_3" id="e1_3" class="icon-mbri-close text-danger" ></span>
+									</div>
+								</div>
+								
+								<br>
+								<label id="l1_4">Время</label>	
+								<div class="row g-2 justify-content-center align-self-center">
+									<div class="col-11" style="vertical-align: middle;">									
+										<select class="form-select" id="v1_4" name = "selected_time" onChange="validate('v1_4')">
+											<option></option>
+											{% for time in params.select_times %}
+												{% if params.filt.selected_time|lower == time|lower %}
+													<option  value="{{time}}" selected>{{time}} </option>
+												{% else %}
+													<option  value="{{time}}"> {{time}} </option>
+												{% endif %}
+											{% endfor %}
+										</select>	
+									</div>
+									<div class="col-1 align-self-center">
+										<span name="e1_4" id="e1_4" class="icon-mbri-close text-danger" ></span>
+									</div>
+								</div>
+								
+								<br>
+								<div class="row g-1">
+									<button id="send" name="record" type="submit" value="submit" class="btn btn-outline-dark"><span class="icon-mbri-success"></span> Записаться и получить подарок</button>	
+								</div>
+
+							</form>
+						{% endif %}
+
+						{% if params.filt.selected == 2 %}
+							
+							<hr>
+							<label>Администратор сервиса свяжется с Вами в ближайщее время</label>
+							<hr>
+
+						{% endif %}
+
+						{% if params.filt.selected == 3 %}
+							
+							<div class="row g-2">
+							
+								<div class="col-sm">
+									
+									<hr>
+									
+									<label>Ждем Вас на плановое ТО в {{params.online_doc.unitRecord.name}} {{params.online_doc.dataTimeRecord}} </label>
+									
+									{% if params.online_doc.unit.phone|length > 0 %}
+										<br>
+										<span class="icon-mbri-mobile">
+											<a class="link-dark" href=tel:{{params.doc.unit.phone_normalize}}>{{params.online_doc.unit.phone}}</a>
+										</span>
+									{% endif %}	
+									
+								
+									{% if params.online_doc.unit.email|length > 0 %}
+										<br>
+										<span class="icon-mbri-letter">
+											<a class="link-dark" href=mailto:{{params.doc.unit.email}}>{{params.online_doc.unit.email}}</a>
+										</span>
+									{% endif %}
+									
+									{% if params.online_doc.unit.adress|length > 0 %}
+										<br>
+										<span class="icon-mbri-pin">
+											<a class="link-dark">{{params.online_doc.unit.adress}}</a>
+										</span>
+									{% endif %}
+
+									
+									<hr>
+									<label>Спасибо! </label>
+
+									<!-- 
+									<br>
+								
+									<img style="border-radius: 1em; max-width: 300px;" src="http://opros.kors-group.com/media/img/FINISH.jpg">
+									
+									<br>
+									
+									
+
+									<hr>
+									-->
+
+								</div>
+
+							</div>
+
+						{% endif %}
+
+					</div>
+			
+				</div>
+				
+			</div>
+			
+			<div class="col-sm"></div>
+
+		</div>
+		
+		
+
+	
+
+{% endblock %}

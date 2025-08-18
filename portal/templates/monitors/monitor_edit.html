@@ -1,0 +1,402 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} монитор приветствия - {{params.board.name }} {% endblock %}
+
+{% block title_navbar %} монитор приветствия - {{params.board.name }} {% endblock %}
+  
+{% block content %}
+
+
+
+<div class="row">
+
+  <div class="col text-center hidemobile">
+    <ul class="nav nav-pills" id="myTab" role="tablist">
+      <button class="nav-link text-start  {% if params.tabindex == 0 or not params.tabindex %} active {% endif %} " id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true" onclick="reload(0)"><span class="icon-mbri-home"></span> Основная</button>
+      {% if params.board != None %}
+      <button class="nav-link text-start  {% if params.tabindex == 1 %} active {% endif %}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#units" type="button" role="tab" aria-controls="units" aria-selected="false" onclick="reload(1)"><span class="icon-mbri-numbered-list"></span> Подразделения</button>
+      <button class="nav-link text-start  {% if params.tabindex == 2 %} active {% endif %}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#staff" type="button" role="tab" aria-controls="staff" aria-selected="false" onclick="reload(2)"><span class="icon-mbri-users"></span> Сотрудники</button>
+      {% endif %}
+    </ul>  
+  </div>
+
+</div>
+
+<hr style="width: 75%;">
+
+  <main class="col">
+    
+    <div class="hidesite fixed-top" style="margin-top: 3.2rem; z-index: 1;">
+      <div class="col">
+        <select class="form-select" aria-label="" id="select_page">
+          <option {% if params.tabindex == 0 or not params.tabindex %} selected {% endif %} value="0"> Основная</option>
+          {% if params.board != None %}
+          <option {% if params.tabindex == 1 %} selected {% endif %} value="1">Подразделения</option>
+          <option {% if params.tabindex == 2 %} selected {% endif %} value="2">Сотрудники</option>
+          {% endif %}
+        </select>
+        <p> </p>
+      </div>
+     
+    </div>
+
+    <div class="hidesite" style="padding-top: 1rem;">
+      
+      
+    </div>
+    
+    <div class="tab-content">
+     
+      <div class="tab-pane {% if params.tabindex == 0 or not params.tabindex %} active {% endif %}" id="home" role="tabpanel" aria-labelledby="home-tab">
+        
+        <form action="" method="POST" enctype="multipart/form-data">	
+          <input hidden name="save_ass" id="save_ass" value="save_ass">
+          {% csrf_token %}
+          
+          <div class="row g-1">
+            
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="name" placeholder="" value="{{params.board.name}}" required>
+                <label for="floatingInput">Наименование</label>
+              </div>
+            </div>
+            
+            {% if params.board != None %}
+              <div class="col-sm">
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="floatingInput" name="ref" placeholder="" readonly value="http://k01srvdash/monitors/{{params.board.id}}/">
+                  <label for="floatingInput">Ссылка для телевизора</label>
+                </div>
+              </div>
+            {% endif %}
+
+          </div>
+        
+          <hr style="width: 75%;">
+          <p class="fs-6">Основные данные</p>
+        
+          <div class="row">
+            
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="name_title" placeholder="" value="{{params.board.name_title}}" required>
+                <label for="floatingInput">Заголовок (выводится на мониторе)</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="filter_mark" placeholder="" value="{{params.board.filter_mark}}" >
+                <label for="floatingInput">Фильтр по марке автомобилей</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="number" class="form-control" id="floatingInput" name="max_count_records_page" placeholder="" value="{{params.board.max_count_records_page}}" required>
+                <label for="floatingInput">Количество строк на странице</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="number" class="form-control" id="floatingInput" name="time_refresh" placeholder="" value="{{params.board.time_refresh}}" required>
+                <label for="floatingInput">Обновление каждые с.</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <select class="form-select" aria-label="" id="board_name" name="board_name" required>
+                  <option selected></option>
+                  <option value="base_monitor_haval" {% if params.board.board_name == "base_monitor_haval" %} selected {% endif %} >base_monitor_haval (Ипортер Хавал)</option>
+                  <option value="base_monitor_lada" {% if params.board.board_name == "base_monitor_lada" %} selected {% endif %}>base_monitor_lada (Ипортер Лада)</option>
+                  <option value="base_monitor_dark" {% if params.board.board_name == "base_monitor_dark" %} selected {% endif %}>base_monitor_dark (просто черный)</option>
+                  <option value="base_monitor_dark_pk" {% if params.board.board_name == "base_monitor_dark_pk" %} selected {% endif %}>base_monitor_dark_pk (черный для пк)</option>
+                  <option value="base_monitor_dark_jetour" {% if params.board.board_name == "base_monitor_dark_jetour" %} selected {% endif %}>base_monitor_dark_jetour (можно и этот)</option>
+                  <option value="base_monitor" {% if params.board.board_name == "base_monitor" %} selected {% endif %}>base_monitor</option>
+                </select>  
+                <label for="floatingInput">Шаблон монитора</label>
+              </div>
+            </div>
+             
+        
+          </div>
+        
+          <hr style="width: 75%;">
+          <p class="fs-6">Контактная информация дилерского центра</p>
+        
+          <div class="row">
+            
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="phone" placeholder="" value="{{params.board.phone}}">
+                <label for="floatingInput">Телефон</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="email" placeholder="" value="{{params.board.email}}">
+                <label for="floatingInput">Электронный адрес</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="webSite" placeholder="" value="{{params.board.webSite}}">
+                <label for="floatingInput">веб сайт</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="adress" placeholder="" value="{{params.board.adress}}">
+                <label for="floatingInput">Адрес</label>
+              </div>
+            </div>
+            
+        
+          </div>
+        
+          <hr style="width: 75%;">
+        
+          <p class="fs-6">Какие данные будут выведены в таблице</p>
+        
+          <div class="row">
+        
+              <div class="col-sm-auto">
+                <div class="form-check" >
+                  <input class="form-check-input" type="checkbox" value="{{params.board.table_view_customer}}" id="table_view_customer" name="table_view_customer" {% if params.board.table_view_customer %} checked {% endif %}>
+                  <label class="form-check-label" for="table_view_customer">
+                    ФИО клиента
+                  </label>
+                </div>
+              </div>
+              <div class="col-sm-auto">
+                <div class="form-check" >
+                  <input class="form-check-input" type="checkbox" value="{{params.board.table_view_staff}}" id="table_view_staff" name="table_view_staff" {% if params.board.table_view_staff %} checked {% endif %}>
+                  <label class="form-check-label" for="table_view_staff">
+                    ФИО Мастера - консультанта
+                  </label>
+                </div>
+                
+              </div>
+              <div class="col-sm-auto">
+                <td class="col justify-content-center">
+                  <div class="form-check" >
+                    <input class="form-check-input" type="checkbox" value="{{params.board.table_view_plate_number}}" id="table_view_plate_number" name="table_view_plate_number" {% if params.board.table_view_plate_number %} checked {% endif %}>
+                    <label class="form-check-label" for="table_view_plate_number">
+                      Гос. номер автомобиля
+                    </label>
+                  </div>
+                </td>
+              </div>
+              <div class="col-sm-auto">
+                <div class="form-check" >
+                  <input class="form-check-input" type="checkbox" value="{{params.board.table_view_status}}" id="table_view_status" name="table_view_status" {% if params.board.table_view_status %} checked {% endif %}>
+                  <label class="form-check-label" for="table_view_status">
+                    Статус ремонта
+                  </label>
+                </div>
+              </div>
+              <div class="col-sm-auto">
+                <div class="form-check" >
+                  <input class="form-check-input" type="checkbox" value="{{params.board.table_view_vin}}" id="table_view_vin" name="table_view_vin" {% if params.board.table_view_vin %} checked {% endif %}>
+                  <label class="form-check-label" for="table_view_vin">
+                    VIN номер автомобиля
+                  </label>
+                </div>
+              </div>
+              <div class="col-sm-auto">
+                <div class="form-check" >
+                  <input class="form-check-input" type="checkbox" value="{{params.board.table_view_mark}}" id="table_view_mark" name="table_view_mark" {% if params.board.table_view_mark %} checked {% endif %}>
+                  <label class="form-check-label" for="table_view_mark">
+                    Марка автомобиля
+                  </label>
+                </div>
+              </div>
+              <div class="col-sm-auto">
+                <div class="form-check" >
+                  <input class="form-check-input" type="checkbox" value="{{params.board.table_view_model}}" id="table_view_model" name="table_view_model" {% if params.board.table_view_model %} checked {% endif %}>
+                  <label class="form-check-label" for="table_view_model">
+                    Модель автомобиля
+                  </label>
+                </div>
+              </div>
+              
+        
+          </div>
+        
+          <hr style="width: 75%;">
+
+          <button type="submit" class="btn btn-outline-secondary"><span class="icon-mbri-save"></span> Сохранить </button>
+
+        </form>
+
+      </div>
+      
+      
+      <div class="tab-pane {% if params.tabindex == 1 %} active {% endif %}" id="units" role="tabpanel" aria-labelledby="profile-tab">
+    
+        <form method="post">
+          
+          <input hidden name="save_units" id="save_units" value="save_units">
+          {% csrf_token %}
+          
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+            
+              <thead>
+                <tr>
+                  <th scope="col">Включено</th>
+                  <th scope="col">Подразделение</th>
+                  <th scope="col">База данных</th>
+                </tr>
+              </thead>
+      
+      
+              <tbody>
+              
+                {% if params.units %}
+                  {% for unit_info in params.units %}
+                    <tr {% if unit_info.success %} class="bg-success bg-opacity-75" {% endif %}>
+                      
+                      <td class="col-auto"> 
+                        <div class="form-check" >
+                          <input class="form-check-input" type="checkbox" value="{{unit_info.success}}" id="unit_{{unit_info.unit.id}}" name="unit_{{unit_info.unit.id}}" {% if unit_info.success %} checked {% endif %}>
+                        </div>
+                      </td>
+                    
+                      <td>{{unit_info.unit.name}}</td>
+                    
+                      <td>{{unit_info.unit.ib}}</td>
+      
+                      
+                    </tr>
+                  {% endfor %} 
+                {% endif %}
+                
+              </tbody>
+            </table>
+          </div>
+          
+          <hr style="width: 75%;">
+
+          <button type="submit" class="btn btn-outline-secondary"><span class="icon-mbri-save"></span> Сохранить </button>
+
+        </form>
+      </div>
+      
+
+      <div class="tab-pane {% if params.tabindex == 2 %} active {% endif %}" id="staff" role="tabpanel" aria-labelledby="messages-tab">
+        
+
+        <div class="table-responsive-sm">
+          <table class="table  table-sm table-striped table-hover">
+          
+            <thead>
+              <tr>
+                
+                <th>Фото</th>
+                <th>Наименование</th>
+                <th>Телефон</th>
+                <th>Должность</th>
+
+              </tr>
+            </thead>
+    
+    
+            <tbody>
+            
+              {% if params.staffs %}
+                {% for staff in params.staffs %}
+                  <tr>
+                    
+                    <td  data-bs-toggle="modal" data-bs-target="#exampleModal{{forloop.counter}}"> 
+                      {{staff.image_img}} 
+                    </td>
+                  
+                    <td   >{{staff.name}}</td>
+                  
+                    <td  >{{staff.phone}}</td>
+                    
+                    <td  >{{staff.post}}</td>
+                    
+                  </tr>
+
+                  <div class="modal fade" id="exampleModal{{forloop.counter}}" tabindex="-1" aria-labelledby="exampleModalLabel{{forloop.counter}}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-user"></span> {{staff.name}} </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      
+                        <div class="modal-body">
+                          
+                          <form enctype="multipart/form-data" method="post"> 
+
+                            <input hidden  type="text" name="new_fotos_staff" value="{{staff.id}}" >
+                            <input hidden  type="text" name="staff_id" value="{{staff.id}}" >
+                            {% csrf_token %}
+                            {{staff.image_img_haval}} 
+                            
+                            <hr>
+                            <h6 class="modal-title"><span class="icon-mbri-user"></span> Новое фото </h6>
+                            <input type="file" class="form-control" id="image_staff" name="image_staff" accept="image/png, image/gif, image/jpeg" required/>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                              <div class="col">
+                                <button class="btn btn_block btn-outline-success" type="submit" onclick=""><span class="icon-mbri-success"></span> Сохранить</button>	
+                              </div>
+                            </div>
+                          </form> 
+
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
+
+                {% endfor %} 
+              {% endif %}
+              
+            </tbody>
+          </table>
+        </div>
+        
+
+      </div>
+      
+
+
+    </div>
+
+  </main>
+  
+
+
+<script language="JavaScript">
+  
+
+    $(document).ready(function(){
+      $('#select_page').change(function(){
+        reload($(this).val());
+      });
+    });
+    
+function reload(id){
+  var url = new URL(document.location.href);
+   url.searchParams.set('page', id)
+   document.location.href  = url.href;
+}
+</script>
+
+{% endblock %}

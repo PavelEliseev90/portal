@@ -1,0 +1,218 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} мониторы приветствия {% endblock %}
+
+{% block title_navbar %} мониторы приветствия {% endblock %}
+  
+{% block content %}
+<form action="" method="GET" enctype="multipart/form-data">	
+  {% csrf_token %}
+	
+  <div class="row g-1 align-items-center align-self-center">
+    <div class="col-sm-3 align-items-center align-self-center">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="floatingInput" name="name" placeholder="" value="{{params.filtr.name}}">
+        <label for="floatingInput">Наименование</label>
+      </div>
+    </div>
+    
+    <div class="col-sm-2 align-items-center align-self-center">
+      <div class="d-grid gap-1">
+        <button class="btn btn-block btn-outline-success" type="submit"><span class="icon-mbri-success"></span> Применить</button>
+      </div>
+    </div>
+    <div class="col-sm"></div>
+    <div class="col-sm-1 align-items-end ">
+      <div class="d-grid gap-1">
+        <a href="edit/0/" class="btn btn-block btn-outline-success"><span class="icon-mbri-plus"></span> Добавить</a>
+      </div>
+    </div>
+    
+  </div>
+
+  
+</form>
+
+<hr>
+
+<div class="col-sm">
+  
+  <div class="table-responsive-sm">
+    <table class="table table-hover table-sm table-striped">
+    
+      <thead>
+        
+        <th scope="col" ></th>
+
+        <th scope="col" >Наименование</th>
+
+        <th scope="col" >Шаблон</th>
+        
+        <th scope="col" >Фильтр марка</th>
+
+        <th scope="col" >Период обновления с.</th>
+
+        <th scope="col" >Строк на одной странице</th>
+
+        <th scope="col" >ФИО клиента</th>
+
+        <th scope="col" >Мастер консультант</th>
+
+        <th scope="col" >Номер автомобиля</th>
+
+        <th scope="col" >Статус заезда</th>
+
+        <th scope="col" >VIN автомобиля</th>
+        
+        <th scope="col" >Марка автомобиля</th>
+
+        <th scope="col" >Модель автомобиля</th>
+       
+        <th scope="col" >Адрес</th>
+
+        <th scope="col" >Телефон</th>
+
+        <th scope="col" >Email</th>
+
+        <th scope="col" >Веб - сайт</th>
+       
+      </thead>
+        
+    <tbody>
+    
+      {% if params.paginator.object_list %}
+        {% for monitor in params.paginator.object_list %}
+          <tr>
+            <td><a href="edit/{{monitor.pk}}/" class="icon-mbri-edit2"></a></td>
+            <td>{{monitor.name}}</td>
+            <td>{{monitor.board_name}}</td>
+            <td>{{monitor.filter_mark}}</td>
+            <td>{{monitor.time_refresh}}</td>
+            <td>{{monitor.max_count_records_page}}</td>
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_customer %} checked {% endif %}>
+              </div>
+            </td>
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_staff %} checked {% endif %}>
+              </div>
+            </td>
+
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_plate_number %} checked {% endif %}>
+              </div>
+            </td>
+
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_status %} checked {% endif %}>
+              </div>
+            </td>
+            
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_vin %} checked {% endif %}>
+              </div>
+            </td>
+
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_mark %} checked {% endif %}>
+              </div>
+            </td>
+
+            <td class="col justify-content-center">
+              <div class="form-check" style="text-align:center;">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" disabled {% if monitor.table_view_model %} checked {% endif %}>
+              </div>
+            </td>
+
+            <td>{{monitor.adress}}</td>
+
+            <td>{{monitor.phone}}</td>
+
+            <td>{{monitor.email}}</td>
+
+            <td>{{monitor.webSite}}</td>
+
+
+          </tr>
+        {% endfor %} 
+      {% endif %}
+      
+    </tbody>
+    </table>
+  </div>
+
+  <nav aria-label="Page navigation example bg-secondary">
+    
+    <ul class="pagination justify-content-center">
+      
+      {% if  params.paginator.has_previous %}
+      <li class="page-num">
+          <a class="page-link bg-secondary text-white"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
+      </li>
+      {% endif %}
+  
+      {% for p in params.paginator.paginator.page_range %}
+        {% if  params.paginator.number == p %}
+          <li class="page-item bg-secondary text-white disabled">
+            <a class="page-link">{{p}}</a>
+          </li>
+        {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+          <li class="page-item">
+            <a class="page-link bg-secondary text-white" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+      
+      {% if params.paginator.has_next %}
+      <li class="page-num">
+        <a class="page-link bg-secondary text-white" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
+      </li>
+      {% endif %}
+  
+    </ul>
+  
+  </nav>
+
+</div>
+
+  {% if params.unit %}
+    
+  
+
+  <table class="table table-striped">
+    <tbody>
+      
+        {% for init in params.units %}  
+        <tr onclick="window.location.href='{{init.id}}'; return false">
+          <td>{{init.id}}</td>
+          <td>{{init.name}}</td>
+          <td>{{init.city}}</td>
+          <td>
+            {% if init.main_photo %}
+              <img class = 'menu' style="max-height: 75px; max-width: 300px;" src = "{{init.main_photo.url}}">
+            {% else %}
+              <img class = 'menu' style="max-height: 75px; max-width: 300px;" src = "/media/logo_unit/no_foto.jpeg">
+            {% endif %}
+          </td>  
+        </tr> 
+        {% endfor %}
+
+        
+      
+     
+    </tbody>
+  </table>
+
+ {% endif %}
+
+
+
+{% endblock %}

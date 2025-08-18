@@ -1,0 +1,272 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - задача № {{params.answer.Задание.Номер}} от {{params.answer.Задание.Дата}} {% endblock %}
+
+{% block title_navbar %} - задача № {{params.answer.Задание.Номер}} от {{params.answer.Задание.Дата}} {% endblock %}
+    
+{% block content %}
+
+
+
+
+
+<div class="col-sm">
+	<div class="card">
+		
+		<div class="card-header">
+			<span class="icon-mbri-help"></span> Обращение № {{params.answer.Задание.Номер}} от {{params.answer.Задание.Дата}}
+		</div>
+		
+	
+			<ul class="nav nav-tabs" id="myTab" role="tablist">
+				<li class="nav-item" role="presentation">
+				  <button class="nav-link active text-secondary" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true"> <span class="icon-mbri-play"></span> Основное</button>
+				</li>
+				<li class="nav-item" role="presentation">
+				  <button class="nav-link text-secondary" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false"> <span class="icon-mbri-edit"></span> Комментарии - {{params.answer.Задание.Комментариев}}</button>
+				</li>
+				<li class="nav-item" role="presentation">
+				  <button class="nav-link text-secondary" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false"> <span class="icon-mbri-users"></span> Наблюдатели -  {{params.answer.Задание.Наблюдатели.Количество}}</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button class="nav-link text-secondary" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false"> <span class="icon-mbri-paperclip"></span> Вложения - {{params.answer.КоличествоВложений}}</button>
+				  </li>
+			  </ul>
+			  
+			  <div class="tab-content" id="myTabContent">
+				
+				<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+					
+						<div class="card-body">
+							
+							<div class="row g-1">
+								
+								<div class="col-sm">
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control form-control-sm"  value = '{{params.answer.Задание.Тема}}'  readonly>
+										<label for="floatingInput">Тема</label>
+									</div>
+						
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control form-control-sm"  value = '{{params.answer.Задание.Инициатор}}'  readonly >
+										<label for="floatingInput">Инициатор</label>
+									</div>
+								</div>
+				
+								<div class="col-sm">
+									
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control form-control-sm" value = '{{params.answer.Задание.ТекущийИсполнитель}}'  readonly>
+										<label for="floatingInput">Исполнитель</label>
+									</div>
+				
+									<div class="form-floating mb-3">
+										<input type="text" class="form-control form-control-sm" value = '{{params.answer.Задание.ТекущийЭтап}}'  readonly>
+										<label for="floatingInput">Статус</label>
+									</div>
+				
+								</div>
+							</div>
+							
+							<div class="card">
+								<div class="card-body">
+									<div class="mb-3">
+										{{params.answer.TEXTHTML|safe}}
+									</div>
+								</div>
+							</div>
+
+						</div>
+					
+				</div>
+
+				<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+					{% if params.answer.COMMENTS|length > 0 %}
+						{{params.answer.COMMENTS|safe}}
+					{% else %}
+						<div class="card-body text-secondary">
+							<div class="row g-1">
+								<p class="fs-5 fw-normal">Нет комментариев по задаче</p>
+								<p class="fs-6 fw-normal">Для добавления используйте кнопку "Добавить комментарий"</p>
+							</div>
+						</div>
+					{% endif %}
+					<hr>
+					<div class="card-body text-secondary">
+						<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-chat"></span> Добавить комментарий </button>
+					</div>
+
+						<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+							<div class="modal-dialog modal-dialog-centered">
+								<div class="modal-content">
+								<div class="modal-header">
+									<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Новый комментарий </h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+								
+									<div class="modal-body">
+									
+										<div class="mb-3">
+											<label for="exampleFormControlTextarea1" class="form-label">Комментарий</label>
+											<textarea class="form-control" id="exampleFormControlTextarea1" rows="10"></textarea>
+										</div>
+				
+										<div class="d-grid gap-2">
+											<button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Сохранить </button>
+										</div>
+				
+									</div>
+				
+								</div>
+							</div>
+					</div>
+				</div>
+
+				<div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+					
+						<div class="card-body">
+							
+							{% if params.answer.Задание.Наблюдатели.Адресаты|length > 0 %}
+								
+								<div class="table-wrapper-scroll-y my-custom-scrollbar">
+									<div class="table-responsive-sm">
+										<table class="table table-sm table-striped table-hover">
+											<tbody>
+												{% for адресат in params.answer.Задание.Наблюдатели.Адресаты %}
+													<tr><td>{{адресат}}</td></tr>
+												{% endfor %} 
+											</tbody>
+										</table>
+									</div>
+								</div>
+							{% else %}
+								<div class="card-body text-secondary">
+									<div class="row g-1">
+										<p class="fs-5 fw-normal">Наблюдателей по заданию нет.</p>
+									</div>
+								</div>
+							{% endif %}
+						</div>
+				
+					
+				</div>
+				
+				<div class="tab-pane fade" id="files" role="tabpanel" aria-labelledby="files-tab">
+					
+					<div class="card-body">
+						{% if params.answer.КоличествоВложений > 0 %}
+							{{params.answer.ATTACHMENTS|safe}}
+						{% else %}
+							<div class="card-body text-secondary">
+								<div class="row g-1">
+									<p class="fs-5 fw-normal">Нет вложенных файлов.</p>
+								</div>
+							</div>
+						{% endif %}
+					</div>
+
+				</div>
+
+			  </div>
+		
+		</div>
+
+	</div>
+</div>
+
+
+<script language="JavaScript">
+	
+	function change_link(){
+		link_1= document.getElementById("unit");
+		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
+	}
+	
+</script>
+
+<script language="JavaScript">
+	
+	function refresh_count_filtr(){
+		
+		var label = $('#filtr_count');
+		var count = $("input[type='text'][name^='v']").length
+		if (count > 0){
+			label.text(' - ' + count);
+		} else 
+		{
+			label.text('');
+		}
+		
+	}
+
+	function clear_fields(){
+		$("input[type='text'][id^='v']").each(function (i, el) {
+        	var input = $("input[type='text'][id='"+ el.id + "']");
+			input.attr('value', 0);
+			var label = $('#l_'+ el.id);
+			label.attr('class', 'btn btn-outline-secondary');
+			label.text('Не важно');
+			input.attr('name', '');
+     	});
+
+		refresh_count_filtr();
+
+	}
+	
+	function test_fields(field){
+		
+		var val_field = $("input[type='text'][id='" + field + "']").val()
+		
+		val_field = Number(val_field) + 1;
+		if (val_field > 2){
+			val_field = 0;
+		}
+		
+		$("input[type='text'][id='" + field + "']").attr('value', val_field);
+		
+		var input = $("input[type='text'][id='" + field + "']")
+		var label = $('#l_'+ field);
+		
+		if (val_field == 0){
+			label.attr('class', 'btn btn-outline-secondary');
+			label.text('Не важно');
+			input.attr('name', '');	 
+		}
+		else if (val_field == 1){
+			label.attr('class', 'btn btn-success');
+			label.text('Выполнен');
+			input.attr('name', field); 
+		}
+		else if (val_field == 2) {
+			label.attr('class', 'btn btn-danger');
+			label.text('Не выполнен');
+			input.attr('name', field); 
+		}
+		else if (val_field == 3){
+			label.attr('class', 'btn btn-success');
+			label.text('Выполнен (ИЛИ)');
+			input.attr('name', field); 
+		}
+		else {
+			label.attr('class', 'btn btn-danger');
+			label.text('Не выполнен (ИЛИ)');
+			input.attr('name', field); 
+		}
+		
+		refresh_count_filtr();
+		
+	}
+
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,252 @@
+{% extends 'base_web_new_chat_company.html' %}
+
+
+{% block url %} {% endblock %} 
+
+{% block meta_description %}
+  
+{% endblock %}
+
+{% block meta_keywords %}
+    
+{% endblock %}
+
+{% block title %}
+
+    Чат {{params.chat.name}}
+        
+{% endblock %} 
+
+{% block title_navbar %}
+    
+    Чат {{params.chat.name}}
+    
+    
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+  
+    <!-- Content wrapper start -->
+    <div class="content-wrapper">
+
+        <!-- Row start -->
+        <div class="row gutters">
+
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 bg-silver">
+
+                <div class="card m-0">
+
+                    <div class="row no-gutters">
+                         <!--
+                            <div class="col-xl-4 col-lg-4 col-md-4 col-sm-3 col-3 position-relative chat-body-users">
+                            <div class="users-container ">
+                                <ul class="users scroll-container">
+                                    
+                                    {% for chat in params.chats %}
+                                    
+                                        <li class="person {% if params.chat == chat %}active-{% endif %}user" data-chat="person1">
+                                            <a class="text-dark" href="/chats/c/a/r/{{chat.slug}}">
+                                                <div class="user">
+                                                    <img src="https://www.bootdey.com/img/Content/avatar/avatar3.png" alt="Retail Admin">
+                                                    <span class="status away"></span>
+                                                </div>
+                                                <p class="name-time">
+                                                    <span class="name">{{chat.name}}</span>
+                                                    <br>
+                                                    <span class="time">{{chat.last_message}}</span>
+                                                </p>
+                                            </a>
+                                        </li>
+
+                                    {% endfor %}
+
+                                </ul>
+                            </div>
+                        </div>
+                        -->
+                        <div class="col bg-silver">
+                            <div class="selected-user send-form fixed-top bg-white">
+                                <a href="/chats/c/a/r">  
+                                    <span class="icon-mbri-arrow-prev"> <-- </span>
+                                </a>
+                                <span>
+                                    Чат: <span class="name">{{params.chat.name}}
+                                
+                                    {% if params.chat.product == None %}
+                                        <span class="time fs-6">Общий</span>
+                                    {% else %}    
+                                        <span class="time fs-6">{{params.chat.product.name}} для {{params.chat.product.get_name_avito}} за {{params.chat.product.price|floatformat:"2g"}} ₽; - ({{params.chat.product.articul}})</span>
+                                    {% endif %}
+                                </span>
+                                
+                            </div>
+                            <div class="chat-container">
+                                <ul class="chat-box chatContainerScroll chat-body-messages" id="message-list" name="message-list">
+                                    
+                                    {% for message in params.messages %}
+                                        {% if not message.cookie.admin %}
+                                            <li class="chat-left">
+                                                <div class="chat-avatar">
+                                                    <img src="https://www.bootdey.com/img/Content/avatar/avatar2.png" alt="Retail Admin">
+                                                    <div class="chat-name"> {{message.cookie.name}}</div>
+                                                </div>
+                                                <div class="chat-text">
+                                                    {{message.content}}
+                                                </div>
+                                                <div class="chat-hour">{{message.date}} <span class="fa fa-check-circle"></span></div>
+                                            </li>
+                                        {% else %}
+                                            <li class="chat-right">
+                                                <div class="chat-hour">{{message.date}} <span class="fa fa-check-circle"></span>
+                                                </div>
+                                                <div class="chat-text">{{message.content}} </div>
+                                                    <div class="chat-avatar">
+                                                        <img src="https://www.bootdey.com/img/Content/avatar/avatar5.png" alt="Retail Admin">
+                                                    <div class="chat-name">{{message.cookie.name}}</div>
+                                                </div>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                </ul>
+                            </div>
+                            <div class="selected-user send-form fixed-bottom">
+                                <div class="form-group mt-3 mb-0 send-form ">
+                                    <form id="post-form">
+                                        {% csrf_token %}
+                                            
+                                        <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
+                                        <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
+                                            
+                                        <div class="input-group mb-3 form-control bg-primary" style="padding: 0rem;">
+                                            <input type="text" class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off">
+                                            <button class="btn btn-primary-send" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play "></span></button>
+                                        </div>
+                                   
+                                    </form>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <!-- Row end -->
+                </div>
+
+            </div>
+
+        </div>
+        <!-- Row end -->
+
+    </div>
+    <!-- Content wrapper end -->
+
+</div>
+
+<script>
+    const chat_id   = '{{params.chat.pk}}';
+    const name_user = '{{params.cookie.name}}';
+    const chatName  = '{{params.chat.slug}}';
+    const chatC     = '{{params.chat.cookie.cookie}}';
+    var one = true;
+
+    if (window.location.protocol == 'https:') {
+        wsProtocol = 'wss://'
+    } else {
+        wsProtocol = 'ws://'
+    };
+    
+    wsProtocol = 'wss://';
+    var ws_url = '127.0.0.1:8000';
+
+    const chatSocket = new WebSocket(
+        wsProtocol
+        + ws_url
+        + '/ws/'
+        + chatName + chatC
+        + '/'
+    );
+
+    chatSocket.onmessage = function(e){
+       
+        const data = JSON.parse(e.data);
+
+        if (data.message){
+            let now = new Date()
+            var html = ''
+            if (data.admin == true){
+                html =  '<li class="chat-right">';
+                html += '   <div class="chat-hour">' + now.getHours() + ':' + now.getMinutes() + ' <span class="fa fa-check-circle"></span></div>';
+                html += '   <div class="chat-text">' + data.message  + '</div>';
+                html += '   <div class="chat-avatar">';
+                html += '       <img src="https://www.bootdey.com/img/Content/avatar/avatar5.png" alt="Retail Admin">';
+                html += '       <div class="chat-name">' + data.name + '</div>';
+                html += '   </div>';
+                html += '</li>';
+            } else {
+                html = '<li class="chat-left">';
+                html += '   <div class="chat-avatar">';
+                html += '       <img src="https://www.bootdey.com/img/Content/avatar/avatar5.png" alt="Retail Admin">';
+                html += '       <div class="chat-name">' + data.name + '</div>';
+                html += '   </div>';
+                html += '   <div class="chat-text">' + data.message  + '</div>';                
+                html += '   <div class="chat-hour">' + now.getHours() + ':' + now.getMinutes() + ' <span class="fa fa-check-circle"></span></div>';            
+                html += '</li>';
+            }
+
+            document.querySelector('#message-list').innerHTML += html;  
+            
+            scrollToBottom();
+
+        }
+    }
+
+    chatSocket.onclose = function(e){
+        console.log('OFF');
+    }
+    
+    //
+
+    document.querySelector('#form-sumbit').onclick = function(e){
+        e.preventDefault();
+
+        const messageInputDom = document.querySelector('#message');
+        const message = messageInputDom.value;
+
+        chatSocket.send(
+            JSON.stringify(
+                {
+                    'chat_id' : chat_id,
+                    'name'      : name_user,
+                    'chat': chatName,
+                    'message': message,
+                    'username': '{{params.cookie.cookie}}',
+                    'chat_cookie' : '{{params.chat.cookie}}'
+                }
+            )
+        );
+
+        messageInputDom.value = '';
+        if (one == true){
+            const no_message = document.getElementById("no-message");
+            no_message.style.display = 'none';
+            one = false;
+        }
+        return false;
+
+    }
+
+    function scrollToBottom(){
+        const divs = document.getElementById("message-list");
+        divs.scrollIntoViewIfNeeded(); 
+    }
+
+    scrollToBottom();
+
+</script>
+
+  
+
+  {% endblock %}

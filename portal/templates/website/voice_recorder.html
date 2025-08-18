@@ -1,0 +1,179 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block head %} 
+
+	
+{% endblock %} 
+
+
+{% block title %} - запись диктофона {{params.audio_voice.name}} {% endblock %}
+
+{% block title_navbar %} - запись диктофона {{params.audio_voice.name}} {% endblock %}
+
+{% block content %}
+
+<!--
+
+<form>
+  
+	<div class="row"> 
+	  
+	  <div class="col-sm">
+		
+		<div class="row g-1">
+		  
+		  <div class="card" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"> 
+			<h5 class="card-header"><span class="icon-mbri-right"></span> Данные записи </h5>
+			<div class="collapse" id="collapseExample" style="transition: 0.25s;">
+			  <div class="card-body text-success">
+			  
+				<table class="table">
+				  <tbody>
+					<tr>
+					  <td>Дата </td>
+					  <td>{{params.audio_voice.date}}</td>
+					</tr>
+					<tr>
+					  <td>Наименование </td>
+					  <td>{{params.audio_voice.name}} </td>
+					</tr>
+					<tr>
+					  <td>Продолжительность </td>
+					  <td>{{params.audio_voice.time_human}} </td>
+					</tr>
+					<tr>
+					  <td>Сотрудник </td>
+					  <td>{{params.audio_voice.user.last_name}} {{params.recognition.user.first_name}}</td>
+					</tr>
+				  </tbody>
+				</table>
+  
+			   
+			  </div>
+			</div>
+		  </div>
+  
+		  <div class="card"  data-bs-toggle="collapse" data-bs-target="#collapse_data_recognition" aria-expanded="false" aria-controls="collapse_data_recognition"> 
+			<h5 class="card-header"><span class="icon-mbri-right"></span> Данные распознования </h5>
+			<div class="collapse" id="collapse_data_recognition" style="transition: 0.25s;">
+			  <div class="card-body text-success">
+				{% for info in params.data_json.info %}
+					{{info}} <br>
+				{% endfor %}
+				<hr>
+					kors-{{params.data_json.info_model.name}} v.{% if params.data_json.info_model.version %} {{params.data_json.info_model.version}} {% else %} 1.00.1t {% endif %}
+				<hr>
+			  </div>
+			</div>
+		  </div>
+
+		  <div class="card"  data-bs-toggle="collapse" data-bs-target="#collapse_data_docs" aria-expanded="false" aria-controls="collapse_data_docs"> 
+			<h5 class="card-header"><span class="icon-mbri-right"></span> Документы за этот день </h5>
+			<div class="collapse" id="collapse_data_docs" style="transition: 0.25s;">
+			  <div class="card-body text-success">
+				<label>Наименование</label>
+				<p>{{params.audio_voice.name}}</p>
+				<hr>
+				<label>Продолжительность</label>
+				<p>{{params.audio_voice.time_human}}</p>
+				<hr>
+			  </div>
+			</div>
+		  </div>
+
+		  <div class="card"  data-bs-toggle="collapse" data-bs-target="#collapse_data_recognition_other" aria-expanded="false" aria-controls="collapse_data_recognition_other"> 
+			<h5 class="card-header"><span class="icon-mbri-right"></span> Другие записи за этот день </h5>
+			<div class="collapse" id="collapse_data_recognition_other" style="transition: 0.25s;">
+			  <div class="card-body text-success">
+				<hr>
+			  </div>
+			</div>
+		  </div>
+
+		  <div class="card"  data-bs-toggle="collapse" data-bs-target="#collapse_data_recognition_success" aria-expanded="false" aria-controls="collapse_data_recognition_tematik_success"> 
+			<h5 class="card-header"><span class="icon-mbri-right"></span> Определены тематики </h5>
+			<div class="collapse" id="collapse_data_recognition_success" style="transition: 0.25s;">
+			  <div class="card-body text-success">
+				<hr>
+			  </div>
+			</div>
+		  </div>
+
+		  <div class="card"  data-bs-toggle="collapse" data-bs-target="#collapse_data_recognition_tematik_danger" aria-expanded="false" aria-controls="collapse_data_recognition_tematik_danger"> 
+			<h5 class="card-header"><span class="icon-mbri-right"></span> Не определены тематики </h5>
+			<div class="collapse" id="collapse_data_recognition_tematik_danger" style="transition: 0.25s;">
+			  <div class="card-body text-success">
+				<hr>
+			  </div>
+			</div>
+		  </div>
+
+		</div>
+  
+	  </div>
+  
+	  <div class="col-sm-9">
+		
+		<div class="row g-2">
+		  
+			<div class="card"> 
+				<h5 class="card-header"><span class="icon-mbri-edit"></span> Текст записи </h5>
+				<div class="card-body text-success">
+					{% if params.audio_voice.recognition %}
+						<div class="table-wrapper-scroll-y my-custom-scrollbar">
+							<div class="table-responsive-sm">
+								<table class="table table-sm table-striped table-hover">
+									<thead style="position: sticky;top: 0;">
+										<tr>
+										<th class='header_table bg-light' scope="col">Время</th>
+										<th class='header_table bg-light' scope="col">Текст</th>
+										</tr>
+									</thead>
+								
+									<tbody>
+				
+								{% for data_json in params.data_list %}
+									<tr>
+									{% if data_json.operator == 0%}
+										<td>{{data_json.time}}</td> 
+										<td>{{data_json.text}}</td> 
+										<td>{{data_json.words}}</td>  
+									{% else %}
+										<td>{{data_json.time}}</td> 
+										<td>{{data_json.text}}</td> 
+										<td>{{data_json.words}}</td> 
+									{% endif %}
+									</tr>
+								{% endfor %}
+									
+									</tbody>
+							
+								</table>
+						
+							</div>
+						</div>
+					{% else %}
+						<div class="row g-1">
+							<p class="fs-5 fw-normal">Нет текста.</p>
+							<p class="fs-6 fw-normal">СТРАНИЦА НАХОДИТСЯ В РЕЖИМЕ ИЗМЕНЕНИЯ</p>
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+	  </div>
+	</div>
+  
+  </form>	
+-->
+  <div class="row g-1">
+	<p class="fs-5 fw-normal">Нет текста.</p>
+	<p class="fs-6 fw-normal">СТРАНИЦА НАХОДИТСЯ В РЕЖИМЕ ИЗМЕНЕНИЯ</p>
+</div>
+
+	
+
+{% endblock %}

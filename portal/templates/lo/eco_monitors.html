@@ -1,0 +1,1115 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - единный центр оценки монитор {% endblock %}
+{% block title_navbar %} - единный центр оценки монитор {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+
+<style>
+	
+
+  .highcharts-figure .chart-container {
+	  width: 100%;
+	  height: 175px;
+	  float: inline-block;
+  }
+  
+  
+  
+  @media (max-width: 600px) {
+	  .highcharts-figure,
+	  .highcharts-data-table table {
+		  width: 100%;
+	  }
+  
+	  .highcharts-figure .chart-container {
+		  width: 100%;
+		  float: none;
+		  margin: 0 auto;
+	  }
+  }
+
+
+</style>
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-3d.js"></script>
+<script src="https://code.highcharts.com/modules/cylinder.js"></script>
+<script src="https://code.highcharts.com/modules/funnel3d.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+<form method="get">
+  
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+      <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+        <div class="modal-body">
+          
+          <div class="row">
+
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+                <label for="floatingInput">Дата начала</label>
+              </div>
+        
+            </div>
+        
+            <div class="col-sm">
+        
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+                <label for="floatingInput">Дата окончания</label>
+              </div>
+        
+            </div>
+        
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
+                <label for="floatingInput">Номер РЛК</label>
+              </div>
+        
+            </div>
+        
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.filtr.customer}}">
+                <label for="floatingInput">Клиент</label>
+              </div>
+        
+            </div>
+            </div>
+        
+            <div class="row">
+            
+              <div class="col-sm">
+                <div class="form-floating mb-3">							
+                  <select class="form-select" id="status_id" name="status_id" placeholder="">
+                    <option></option>
+                    {% for status in params.selected.statuses %}
+                      <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
+                    {% endfor %}
+                  </select>
+                  <label for="floatingInput">Статус</label>
+                </div>
+              </div>
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">							
+                <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
+                  <option></option>
+                  {% for type_reception in params.selected.type_receptions %}
+                    <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+                  {% endfor %}
+                </select>
+                <label for="floatingInput">Тип приема</label>
+              </div>
+            </div>
+        
+        
+            <div class="col-sm">
+              <div class="form-floating mb-3">							
+                <select class="form-select" id="unit_id" name="unit_id" placeholder="">
+                  <option></option>
+                  {% for unit in params.selected.units %}
+                    <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
+                  {% endfor %}
+                </select>
+                <label for="floatingInput">Подразделение ДЦ</label>
+              </div>
+            </div>
+        
+            <div class="col-sm">
+              
+              <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.filtr.staff}}">
+                <label for="floatingInput">Оценщик</label>
+              </div>
+        
+            </div>
+
+            <div class="col-sm">
+      
+              <div class="form-floating mb-3">
+                <select class="form-select" id="table_visible" name="table_visible" placeholder="">
+                  <option value="0" > Нет </option>
+                  <option value="1" > Да </option>
+                 
+                 
+                </select>
+                <label for="floatingInput">Данные диаграмм</label>
+              </div>
+              
+        
+            </div>
+        
+          </div>  
+          
+          {% if params.filters_user|length > 0 %}
+            
+            <hr>
+            
+            <div class="table-responsive">
+              <table class="table table-fit">
+                <tbody>
+                  <tr>
+                    {% for filter in params.filters_user %}
+                
+                      <td>
+                        <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn  {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
+                      </td>
+                    
+                    {% endfor %}
+                    
+                    <td>
+                      <button class="btn btn-outline-success" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
+                    </td>
+
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          {% endif %}
+        
+        </div>
+      
+        <div class="modal-footer">
+          <div class="row">
+            <div class="col-auto">
+              <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
+            </div>
+            <div class="col">
+              <button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
+          <label for="floatingInput">Наименование</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" name="save_filtr" type="submit" >Сохранить</button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+</form>
+
+<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			{% if params.filters_user|length > 0 %}
+					<div class="table-responsive">
+						<table class="table">
+						  <tbody>
+								
+							{% for filter in params.filters_user %}
+							<tr>
+								<td>
+									{{filter.name}}
+								</td>
+								<td>
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								</td>
+							</tr>
+							{% endfor %}
+								
+						  </tbody>
+						</table>
+					  </div>
+				{% endif %}
+		</div>
+		
+	  </div>
+	</div>
+</div>
+
+
+<form method="get" class="hidemobile">
+  
+  <div class="modal fade" id="exampleModalToggleNewFiltr" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
+          <label for="floatingInput">Наименование</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" name="save_filtr" type="submit" ><span class="icon-mbri-download"></span> Сохранить</button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+        <label for="floatingInput">Дата начала</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+        <label for="floatingInput">Дата окончания</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
+        <label for="floatingInput">Номер РЛК</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.filtr.customer}}">
+        <label for="floatingInput">Клиент</label>
+      </div>
+
+    </div>
+    </div>
+
+    <div class="row">
+      
+      <div class="col-sm">
+      
+        <div class="form-floating mb-3">
+          <input class="form-control form-control-sm" type="text" id="search" name="search" value="{{params.filtr.search}}">
+          <label for="floatingInput">VIN, Марка, Модель, Модификация, Оценщик</label>
+        </div>
+  
+      </div>
+
+      <div class="col-sm">
+        <div class="form-floating mb-3">							
+          <select class="form-select" id="status_id" name="status_id" placeholder="">
+            <option></option>
+            {% for status in params.selected.statuses %}
+              <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
+            {% endfor %}
+          </select>
+          <label for="floatingInput">Статус</label>
+        </div>
+      </div>
+
+    <div class="col-sm">
+      <div class="form-floating mb-3">							
+        <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
+          <option></option>
+          {% for type_reception in params.selected.type_receptions %}
+            <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+          {% endfor %}
+        </select>
+        <label for="floatingInput">Тип приема</label>
+      </div>
+    </div>
+
+
+    <div class="col-sm">
+      <div class="form-floating mb-3">							
+        <select class="form-select" id="unit_id" name="unit_id" placeholder="">
+          <option></option>
+          {% for unit in params.selected.units %}
+            <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
+          {% endfor %}
+        </select>
+        <label for="floatingInput">Подразделение ДЦ</label>
+      </div>
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.filtr.staff}}">
+        <label for="floatingInput">Оценщик</label>
+      </div>
+
+    </div>
+
+    <div class="col-sm">
+      
+      <div class="form-floating mb-3">
+        <select class="form-select" id="table_visible" name="table_visible" placeholder="">
+          <option value="0" > Нет </option>
+          <option value="1" > Да </option>
+         
+         
+        </select>
+        <label for="floatingInput">Данные диаграмм</label>
+      </div>
+  
+
+    </div>
+
+  </div>
+
+  
+  <div class="row">
+    
+    <div class="col-sm-auto align-self-center">
+      <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
+    </div>
+    
+    <div class="col-sm align-self-center">
+
+      <div class="row g-1">
+          
+        <div class="col-sm-auto align-self-center">
+          <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggleNewFiltr" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
+        
+          
+        </div>
+        
+        <div class="col-sm align-self-center">
+          
+          <div class="table-responsive">
+            <table class="table table-fit" style="margin: 0px;">
+              <tbody>
+                <tr>
+                  
+                  <td>
+                    <div class="vr"></div>
+                  </td>
+
+                  {% for filter in params.filters_user %}
+              
+                    <td>
+                      
+                        <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
+
+                    </td>
+                  
+                  {% endfor %}
+                  
+                  <td>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
+                  </td>
+    
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> 
+      
+    </div>
+
+  </div>
+  
+  <hr>
+
+</form>
+
+
+
+
+    <div class="row g-1">
+
+      <div class="col-sm" id="count_1">
+        <div class="card border_gray" >
+          <div class="card-body">
+            <h6><span class="icon-mbri-right"></span> Новый </h6>
+            <hr style="width: 50%;">
+            <div class="fs-4">   {{params.count_new}}</div>
+            <div id="count_1_detail" class="d-none">
+      
+              <br>
+              
+              <div class="card border_gray">
+        
+                  <div class="card-body">
+                    <h6><span class="icon-mbri-right"></span> Новый </h6>
+                    <hr style="width: 50%;">
+                    
+                    {% for object in params.count_1_detail %}
+                      <div class="card" style="margin-bottom: 0.2rem; padding: 0.2rem;">
+                        <div class="row">
+                          
+                            <div class="col-sm-2 align-self-center">
+                              {{object.status_estimation|default_if_none:"Новый"}} 
+                              <hr class=" text-end hidesite" style="width: 75%;">
+                            </div>        
+                            
+                            <div class="col-sm align-self-center">
+                              <span class="icon-mbri-clock"></span> {{object.nomer}} <br>от {{object.dataTime}}
+                            </div>        
+        
+                            <div class="col-sm align-self-center">
+                              <span class="icon-mbri-home"></span> {{object.unit_name|default_if_none:""}} {% if object.unit.name == '' %} {{object.unit_dc.name}} {% else %} {{object.unit.name}} {% endif %}
+                            </div>        
+        
+                            <div class="col-sm align-self-center">
+                              <span class="icon-mbri-extension"></span> {{object.type_estimation_ocenka|default_if_none:"-"}}
+                            </div>        
+        
+                            <div class="col-sm align-self-center">
+                              <hr class="hidesite" style="width: 75%;">
+                              {{object.mark|default_if_none:"Пока нет данных"}} {{object.model|default_if_none:""}} {{object.modification|default_if_none:""}} <br> {{object.vin|default_if_none:""}} / {{object.year|default_if_none:""}}
+                            </div>        
+        
+                            <div class="col-sm align-self-center">
+                              <hr class="hidesite" style="width: 75%;">
+                              <span class="icon-mbri-users"></span> {{object.clientName}} 
+                            </div>  
+                          
+                        </div>
+                      </div>
+                    {% endfor %}
+        
+                  </div>
+        
+              </div>
+        
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm" id="count_2">
+        <div class="card border_red" style="height: 8rem;">
+          <div class="card-body">
+            <h6><span class="icon-mbri-right"></span> Оценка </h6>
+            <hr style="width: 50%;">
+            <div class="fs-4">   {{params.count_estimations}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm">
+        <div class="card border_yeloow" style="height: 8rem;">
+          <div class="card-body">
+            <h6><span class="icon-mbri-right"></span> Согласование до КД </h6>
+            <hr style="width: 50%;">  
+            <div class="fs-4">   {{params.count_soglasovanie}}</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="col-sm">
+        <div class="card border_blue" style="height: 8rem;">
+          <div class="card-body">
+            <h6><span class="icon-mbri-right"></span> Диагностика </h6>
+            <hr style="width: 50%;">  
+            <div class="fs-4">   {{params.count_kd}}</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="col-sm">
+        <div class="card border_orange" style="height: 8rem;">
+          <div class="card-body">
+            <h6 class="fs-6"><span class="icon-mbri-right"></span> Согласование после КД</h6>
+            <hr style="width: 50%;">  
+            <div class="fs-4">   {{params.count_soglasovanie_kd}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm">
+        <div class="card border_green" style="height: 8rem;">
+          <div class="card-body">
+            <h6 class="fs-6"><span class="icon-mbri-right"></span> Согласовано </h6>
+            <hr style="width: 50%;">  
+            <div class="fs-4">   {{params.count_ok}}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    
+
+    <div id="count_2_detail" class="d-none">
+      
+      <br>
+      
+      <div class="card border_red">
+
+          <div class="card-body">
+            <h6><span class="icon-mbri-right"></span> Оценка </h6>
+            <hr style="width: 50%;">
+            
+            {% for object in params.count_2_detail %}
+              <div class="card" style="margin-bottom: 0.2rem; padding: 0.2rem;">
+                <div class="row">
+                  
+                    <div class="col-sm-2 align-self-center">
+                      {{object.status_estimation|default_if_none:"Новый"}} 
+                      <hr class=" text-end hidesite" style="width: 75%;">
+                    </div>        
+                    
+                    <div class="col-sm align-self-center">
+                      <span class="icon-mbri-clock"></span> {{object.nomer}} <br>от {{object.dataTime}}
+                    </div>        
+
+                    <div class="col-sm align-self-center">
+                      <span class="icon-mbri-home"></span> {{object.unit_name|default_if_none:""}} {% if object.unit.name == '' %} {{object.unit_dc.name}} {% else %} {{object.unit.name}} {% endif %}
+                    </div>        
+
+                    <div class="col-sm align-self-center">
+                      <span class="icon-mbri-extension"></span> {{object.type_estimation_ocenka|default_if_none:"-"}}
+                    </div>        
+
+                    <div class="col-sm align-self-center">
+                      <hr class="hidesite" style="width: 75%;">
+                      {{object.mark|default_if_none:"Пока нет данных"}} {{object.model|default_if_none:""}} {{object.modification|default_if_none:""}} <br> {{object.vin|default_if_none:""}} / {{object.year|default_if_none:""}}
+                    </div>        
+
+                    <div class="col-sm align-self-center">
+                      <hr class="hidesite" style="width: 75%;">
+                      <span class="icon-mbri-users"></span> {{object.clientName}} 
+                    </div>  
+                  
+                </div>
+              </div>
+            {% endfor %}
+
+          </div>
+
+      </div>
+
+    </div>
+
+    <br>
+
+    
+
+<br>
+
+<div class="row g-2"> 
+  
+  <div class="col-sm-4">
+    <div class="card">
+      <div class="card-body">
+        
+        <div class="row">
+    
+          <div id="data_voronka_list" class="col-sm d-none" >
+            
+              <div class="table-responsive">
+                <table class="table">
+                  <tbody>
+                    {% for unit in params.data_unit %}
+                    <tr>
+                      
+                      <td>{{unit.unit_name}}</td>
+                      <td>{{unit.count_data__sum}}</td>
+                      
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+    
+          </div>
+    
+          <div class="col-sm">
+            
+            <figure class="highcharts-figure">
+                <div id="container"></div>
+                <p class="highcharts-description">
+                    
+                </p>
+            </figure>
+    
+          </div>
+    
+    
+        </div>
+    
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-4 ">
+    <div class="card">
+      <div class="card-body">
+        
+        <div class="row">
+    
+          <div id="data_unit_list" class="col-sm d-none">
+           
+              <div class="table-responsive">
+                <table class="table">
+                  <tbody>
+                    {% for unit in params.data_unit %}
+                    <tr>
+                      
+                      <td>{{unit.unit_name}}</td>
+                      <td>{{unit.count_data__sum}}</td>
+                      
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+    
+          </div>
+    
+          <div class="col-sm">
+            
+            <figure class="highcharts-figure">
+                <div id="container_units"></div>
+                <p class="highcharts-description">
+                    
+                </p>
+            </figure>
+    
+          </div>
+    
+    
+        </div>
+    
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-4">
+    <div class="card">
+      <div class="card-body">
+        
+        <div class="row">
+    
+          <div id="data_estimations_list" class="col-sm d-none">
+            
+              <div class="table-responsive">
+                <table class="table">
+                  <tbody>
+                    {% for reception in params.data %}
+                    <tr>
+                      
+                      <td>{{reception.type_estimation_ocenka}}</td>
+                      <td>{{reception.count_data__sum}}</td>
+                      
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+    
+          </div>
+    
+          <div class="col-sm">
+            
+            <figure class="highcharts-figure">
+                <div id="container1"></div>
+                <p class="highcharts-description">
+                    
+                </p>
+            </figure>
+    
+          </div>
+    
+    
+        </div>
+    
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+<script type="text/javascript">
+
+// Set up the chart
+Highcharts.chart('container', {
+    chart: {
+        type: 'funnel3d',
+        options3d: {
+            enabled: true,
+            alpha: 10,
+            depth: 50,
+            viewDistance: 50
+        }
+    },
+    title: {
+        text: ''
+    },
+    accessibility: {
+        screenReaderSection: {
+            beforeChartFormat: '<{headingTagName}>' +
+                '{chartTitle}</{headingTagName}><div>{typeDescription}</div>' +
+                '<div>{chartSubtitle}</div><div>{chartLongdesc}</div>'
+        }
+    },
+    plotOptions: {
+        series: {
+            dataLabels: {
+                enabled: true,
+                format: '<b>{point.name}</b> ({point.y:,.0f})',
+                allowOverlap: true,
+                y: 10
+            },
+            neckWidth: '30%',
+            neckHeight: '25%',
+            width: '80%',
+            height: '80%'
+        }
+    },
+    series: [{
+        name: 'Оценки',
+        data: [
+            ['Новый', {{params.count_1}}],    
+            ['Оценка', {{params.count_2}}],
+            ['Согласование до КД', {{params.count_3}}],
+            ['Диагностика', {{params.count_4}}],
+            ['Согласование после КД', {{params.count_5}}],
+            ['Согласовано', {{params.count_6}}],
+            ['Принят', {{params.count_8}}]
+        ]
+    }]
+});
+
+Highcharts.chart('container1', {
+    chart: {
+        type: 'pie',
+        custom: {},
+        events: {
+            render() {
+                const chart = this,
+                    series = chart.series[0];
+                let customLabel = chart.options.chart.custom.label;
+
+                if (!customLabel) {
+                    customLabel = chart.options.chart.custom.label =
+                        chart.renderer.label(
+                            'Тип приема <br>' +
+                            '<strong>Итог: {% list_field_sum value_list=params.data name="count_data__sum" %} шт.</strong>'
+                        )
+                            .css({
+                                color: '#000',
+                                textAnchor: 'middle'
+                            })
+                            .add();
+                }
+
+                const x = series.center[0] + chart.plotLeft,
+                    y = series.center[1] + chart.plotTop -
+                    (customLabel.attr('height') / 2);
+
+                customLabel.attr({
+                    x,
+                    y
+                });
+                // Set font size based on chart diameter
+                customLabel.css({
+                    fontSize: `${series.center[2] / 12}px`
+                });
+            }
+        }
+    },
+    accessibility: {
+        point: {
+            valueSuffix: '%'
+        }
+    },
+    title: {
+        text: '{{params.filtr.date_start}} - {{params.filtr.date_end}}'
+    },
+    tooltip: {
+        pointFormat: '{series.name}:<b>{point.percentage:.0f}%</b>'
+    },
+    legend: {
+        enabled: false
+    },
+    plotOptions: {
+        series: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            borderRadius: 8,
+            dataLabels: [{
+                enabled: true,
+                distance: 20,
+                format: '{point.name} - {point.y} шт.'
+            }, {
+                enabled: true,
+                distance: -15,
+                format: '{point.percentage:.0f}%',
+                style: {
+                    fontSize: '0.9em'
+                }
+            }],
+            showInLegend: true
+        }
+    },
+    series: [{
+        name: 'Оценок',
+        colorByPoint: true,
+        innerSize: '75%',
+        
+        data: [
+          {% for reception in params.data %}
+              {
+                  name: '{{reception.type_estimation_ocenka}}',
+                  y: {{reception.count_data__sum}}
+              },
+          {% endfor %}
+        ]
+    }]
+});
+
+Highcharts.chart('container_units', {
+    chart: {
+        type: 'pie',
+        custom: {},
+        events: {
+            render() {
+                const chart = this,
+                    series = chart.series[0];
+                let customLabel = chart.options.chart.custom.label;
+
+                if (!customLabel) {
+                    customLabel = chart.options.chart.custom.label =
+                        chart.renderer.label(
+                            'ПДЦ <br>' +
+                            '<strong>Итог: {% list_field_sum value_list=params.data_unit name="count_data__sum" %} шт.</strong>'
+                        )
+                            .css({
+                                color: '#000',
+                                textAnchor: 'middle'
+                            })
+                            .add();
+                }
+
+                const x = series.center[0] + chart.plotLeft,
+                    y = series.center[1] + chart.plotTop -
+                    (customLabel.attr('height') / 2);
+
+                customLabel.attr({
+                    x,
+                    y
+                });
+                // Set font size based on chart diameter
+                customLabel.css({
+                    fontSize: `${series.center[2] / 12}px`
+                });
+            }
+        }
+    },
+    accessibility: {
+        point: {
+            valueSuffix: '%'
+        }
+    },
+    title: {
+        text: '{{params.filtr.date_start}} - {{params.filtr.date_end}}'
+    },
+    tooltip: {
+        pointFormat: '{series.name}:<b>{point.percentage:.0f}%</b>'
+    },
+    legend: {
+        enabled: false
+    },
+    plotOptions: {
+        series: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            borderRadius: 8,
+            dataLabels: [{
+                enabled: true,
+                distance: 20,
+                format: '{point.name} - {point.y} шт.'
+            }, {
+                enabled: true,
+                distance: -15,
+                format: '{point.percentage:.0f}%',
+                style: {
+                    fontSize: '0.9em'
+                }
+            }],
+            showInLegend: true
+        }
+    },
+    series: [{
+        name: 'Оценок',
+        colorByPoint: true,
+        innerSize: '75%',
+        
+        data: [
+          {% for unit in params.data_unit %}
+              {
+                  name: '{{unit.unit_name}}',
+                  y: {{unit.count_data__sum}}
+              },
+          {% endfor %}
+        ]
+    }]
+});
+
+
+
+</script>
+
+  
+<div class="hidesite">
+  <br>
+  <br>
+  <br>
+  
+<div class="" style="position: fixed;
+    bottom: 0px;
+    right: 0px; 
+    left: 0px; 
+    padding: 20px;
+    z-index: 1030;">
+  <div class="d-grid gap-2 col-8 mx-auto">
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+  </div>
+</div>
+</div>
+
+
+  <script language="JavaScript">
+    function a(page)
+    {
+      
+       var url = new URL(document.location.href);
+       url.searchParams.set('page', page)
+       document.location.href  = url.href;
+    }
+    
+  </script>
+   
+   <script type="text/javascript">
+      
+      $('#table_visible').on('change', function() {
+        var val = this.value;
+        if (val == 0){
+          
+          $("#data_unit_list").addClass('d-none');
+          $("#data_estimations_list").addClass('d-none');
+          $("#data_voronka_list").addClass('d-none');
+          
+          
+        }else {
+          $("#data_unit_list").removeClass('d-none');
+          $("#data_estimations_list").removeClass('d-none');
+          $("#data_voronka_list").removeClass('d-none');
+        };
+
+      });
+
+      $("#count_1").click(function(){
+        visible_detail(1);
+      });
+
+      $("#count_2").click(function(){
+        visible_detail(2);
+      });
+
+      function visible_detail(detail_number){
+        
+        if (detail_number == 1){
+          $("#count_1_detail").removeClass('d-none');
+          $("#count_2_detail").addClass('d-none');
+        } else if (detail_number == 2){
+          $("#count_1_detail").addClass('d-none');
+          $("#count_2_detail").removeClass('d-none');
+        }
+        
+      }
+
+    function validate_form(){
+      
+      
+      var select_unit = document.getElementById("select_unit");
+      var select_unit = select_unit.value
+
+      var url = new URL(document.location.href);
+      if (select_unit.length > 0){
+        url.searchParams.set('select_unit', select_unit)
+        document.cookie = 'select_unit=' + select_unit;
+      }
+      else {
+        url.searchParams.delete('select_unit')
+        document.cookie = 'select_unit=' + "";
+      }
+
+      var select_status = document.getElementById("select_status").value;
+      if (select_status.length > 0){
+        url.searchParams.set('select_status', select_status)
+        document.cookie = 'select_status=' + select_status;
+      }
+      else {
+        url.searchParams.delete('select_status')
+        document.cookie = 'select_status=' + "";
+      }
+     // document.location.href  = url.href;
+      window.location.assign(url.href);
+
+      valid = true
+      
+      //saveCookie();
+
+      return valid
+
+    }
+
+  </script>
+
+<script language="JavaScript">
+ 
+
+
+</script>
+             
+{% endblock %}

@@ -1,0 +1,706 @@
+{% extends 'base_web_old.html' %}
+
+{% block title %} - электронный заказ наряд {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+
+<script type="text/javascript">
+    
+    function clickAnswer(id, groups){
+        
+        var codes = document.querySelectorAll("#main" + groups + " .btn");
+        for (let elem of codes) {
+            elem.className  = "btn btn-dark"
+        }
+        var id_elem = "#v" + groups + "_" + id
+        var button = document.querySelector(id_elem);
+       
+        var input = document.querySelector('#a' + groups);
+        
+        if (groups == 7){
+          input.value = button.innerHTML
+        }else{
+          input.value = id
+        }
+      
+        starsClear(1, id, groups)
+        
+        stars(1, id, groups)
+        
+    }
+
+    function starsClear(from, to, groups) {
+            let current = from;
+            let timer1 = setInterval(function() {    
+                    var id_elem = "#v" + groups + "_" + current
+                    var button = document.querySelector(id_elem);
+                    if (current != to){
+                        if (current < 4){
+                            button.className  = "btn btn-dark"   
+                        } else if (current < 8){
+                            button.className  = "btn btn-dark"
+                        } else {
+                            button.className  = "btn btn-dark" 
+                        }
+                    }
+                    if (groups == 7){
+                        if (current == 5) {
+                            clearInterval(timer1);
+                        }
+                    } else if (current == 10) {
+                        clearInterval(timer1);
+                    }
+                    current++;
+                }, 150);
+                clearError(groups)
+            }
+
+    function stars(from, to, groups) {
+            let current = from;
+            let timer = setInterval(function() {    
+                    var id_elem = "#v" + groups + "_" + current
+                    var button = document.querySelector(id_elem);
+                   
+                    if (groups == 7){
+                        button.className  = "btn btn-success" 
+                    } else if (current < 7){
+                        button.className  = "btn btn-danger"   
+                    } else if (current < 9){
+                        button.className  = "btn btn-warning"
+                    } else {
+                        button.className  = "btn btn-success" 
+                    }
+                    
+                    prev = current - 1
+                    if (prev > 0){
+                        var id_elem = "#v" + groups + "_" + prev
+                        var button = document.querySelector(id_elem);
+                        button.className  = "btn btn-dark"
+                    }
+                    
+                    if (current == to) {
+                        clearInterval(timer);
+                    }
+                    current++;
+                }, 150);
+                clearError(groups)
+            }
+
+    function clearError(groups){
+        errorLabel =document.querySelector('#e' + groups);
+        errorLabel.innerHTML = ""
+    }
+
+    function validate_form(){
+        
+        let answer = 1
+        let answers = 7
+        valid = true
+
+        while (answer < answers +1){
+            var input = document.querySelector('#a' + answer);   
+            var error = document.querySelector('#e' + answer);
+            if (input.value == ""){
+                error.innerHTML = "Пожалуйста выберите значение"
+                valid = false
+            }else{
+                error.innerHTML = ""
+            }
+            answer++ 
+        }
+        
+        return valid
+    }
+
+   
+</script>
+
+
+<div style="min-height: 89vh;">  
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>	
+    
+    <nav class="navbar fixed-bottom flex-nowrap overflow-auto bg-white">
+        
+        <div class="nav nav-tabs flex-nowrap overflow-auto" id="nav-tab" role="tablist" style="width: 100%;">
+            
+            <button class="nav-link nbsp active" style="width: 100%; margin: 0; padding: 0;" id="nav-zn-tab" href="#z" data-bs-toggle="tab" data-bs-target="#z" type="button" role="tab" aria-controls="z" aria-selected="false">
+                
+                <span class="icon-mbri-home"></span>  
+                
+                <br> Заказ-наряд
+
+            </button>
+
+            {% if params.opros %}
+                
+                <button class="nav-link nbsp" style="width: 100%; margin: 0; padding: 0;" id="nav-opros-tab" href="#o" data-bs-toggle="tab" data-bs-target="#o" type="button" role="tab" aria-controls="o" aria-selected="false">
+                    
+                    {% if not params.opros_close %}
+                        <span class="icon-mbri-bookmark fs-bold text-danger"></span>
+                        <span class="badge text-bg-danger"> &nbsp;</span>
+                    {% else %}
+                        <span class="icon-mbri-bookmark"></span>
+                    {% endif %}
+                    
+                    <br> Опрос
+
+                </button>
+
+            {% endif %}
+            
+         
+
+        </div>
+
+    </nav>
+
+    <div class="demo-wrap">
+    
+        <div class="bodys_data">
+            
+                
+            <div class="tab-content" id="nav-tabContent">
+
+
+                <div class="tab-pane fade show active" id="z" role="tabpanel" aria-labelledby="nav-zn-tab" tabindex="0">
+                                    
+                        <div class="card">
+                            <div class="card-body">
+
+                                <table>
+                                    <tbody class="align-middle">
+                                        <tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
+                                           
+                                            <td class="align-middle" style="padding-left: 0.2em;">
+                                               
+                                                <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                    
+                                                    <label class="fs-4 text-start fw-normal">
+                                                        {% if params.doc.unit.name_dop|length > 0 %}
+                                                            {{params.doc.unit.name_dop}}
+                                                        {% else %}
+                                                            {{params.doc.unit.name}}
+                                                        {% endif %}
+                                                    </label>
+                                                    {% if params.doc.unit.city|length > 0  %}
+                                                        <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span> г. {{params.doc.unit.city}}</label>
+                                                    {% endif %}
+
+                                                    {% if params.doc.unit.phone|length > 0  %}
+                                                        <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-mobile"></span> {{params.doc.unit.phone}}</label>
+                                                    {% endif %}
+
+                                                    {% if params.doc.unit.email|length > 0  %}
+                                                        <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-paper-plane"></span> {{params.doc.unit.email}}</label>
+                                                    {% endif %}
+                                                    
+                                                </div>
+
+                                            </td>
+
+                                            {% if params.doc.unit.main_photo %}
+                                                <td class="align-middle col-5 bg-filter" >
+                                                    <div>
+                                                        <img src="{{params.doc.unit.main_photo.url}}" style="border-radius: 0.2em;"> 
+                                                    </div> 
+                                                </td>  
+                                            {% else %}
+                                                <td class="align-middle col-4 bg-image">
+                                                </td>  
+                                            {% endif %}
+                                            
+                                            
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <hr style="width: 75%;">
+
+                                <table>
+                                    <tbody class="align-middle">
+                                        <tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
+                                           
+                                            <td class="align-middle" style="padding-left: 0.2em;">
+                                               
+                                                <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                    
+                                                    <label class="fs-4 text-start fw-normal">
+                                                       {{params.doc.master}}
+                                                    </label>
+
+                                                    <label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span>{{params.doc.master.post}}</label>
+                                                    
+                                                </div>
+
+                                            </td>
+
+                                            {% if params.doc.master.main_photo %}
+                                                <td class="align-middle col-5 bg-filter" >
+                                                    <div>
+                                                        <img src="{{params.doc.master.main_photo.url}}" style="border-radius: 0.2em;"> 
+                                                    </div>
+                                                </td>  
+                                            {% else %}
+                                                <td class="align-middle col-4 bg-image">
+                                                </td>  
+                                            {% endif %}
+                                            
+                                            
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <hr style="width: 75%;">
+
+                                <label class="fs-4 text-start fw-normal">
+                                    № {{params.doc.nomer}} <br> от {{params.doc.dataTime}} 
+                                </label><br>
+
+                                <label class="fs-6 text-start fw-normal">
+                                    Вид ремонта: 
+                                </label> 
+                                <br>
+                                <label class="fs-6 text-start fw-normal">
+                                    <span class="icon-mbri-minus text-secondary">{{params.doc.typeRemont}}</span>
+                                </label>
+                                <br>
+                                <label class="fs-6 text-start fw-normal">
+                                    Автомобиль: 
+                                </label> <br>
+                                <label class="fs-6 text-start fw-normal">
+                                    <span class="icon-mbri-minus text-secondary">{{params.doc.cars.mark}} {{params.doc.cars.model}}</span><br>
+                                    <span class="icon-mbri-minus text-secondary">{{params.doc.cars.vin}}</span><br>
+                                    <span class="icon-mbri-minus text-secondary">{{params.doc.cars.year}} г.</span><br>
+                                    <span class="icon-mbri-minus text-secondary">{{params.doc.run|floatformat:"0g"}} км.</span><br>
+
+                                </label>
+
+                                <hr style="width: 75%;">
+
+                                <div class="table-responsive-sm">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                              <th scope="col text-nowrap nbsp">Позиция</th>
+                                              <th scope="col text-nowrap nbsp text-center">Колво</th>
+                                              <th scope="text-nowrap text-end align-middle" class="text-end align-middle">Сумма</th>
+                                            </tr>
+                                          </thead>
+                                        <tbody class="table-group-divider">
+                                            {% for work in params.doc.works %}
+                                                <tr>
+                                                    <td class="align-middle">{{work.work}}</td>
+                                                    <td class="text-nowrap text-center align-middle"> {{work.quantity|floatformat:"2g"}}</td>
+                                                    <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                </tr>     
+                                            {% endfor %} 
+                                            {% for product in params.doc.products %}
+                                                <tr>
+                                                    <td class="align-middle">{{product.product}}</td>
+                                                    <td class="text-nowrap text-center align-middle"> {{product.quantity|floatformat:"2g"}}</td>
+                                                    <td class="text-nowrap text-end align-middle"> {{product.amount|floatformat:"2g"}} &#8381;</td>
+                                                </tr>     
+                                            {% endfor %}    
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+                                                                
+                                    <div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
+                                       
+                                        <label class="fs-6 text-center" style="padding: 0.2em;">  
+                                            <table>
+                                                <tbody>
+                                                    <tr>
+                                                        <td><span class="icon-mbri-shopping-bag">Товары</td>
+                                                        <td> &nbsp;-&nbsp; </td>
+                                                        <td class="text-end">{{params.doc.products_amount|floatformat:"2g"}} &#8381;</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><span class="icon-mbri-setting3">Работы</td>
+                                                        <td> &nbsp;-&nbsp; </td>
+                                                        <td class="text-end">{{params.doc.works_amount|floatformat:"2g"}} &#8381;</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            
+                                        </label>
+                                        
+                                    </div>
+
+                                    <div class="col">
+
+                                    </div>
+
+                                    <div class="col-auto text-end bg-success bg-opacity-75" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+                                        <label class="fs-2 text-white" style="padding: 0.2em;">  {{params.doc.amount|floatformat:"2g"}} &#8381;</label>
+                                    </div>
+
+                                </div>
+
+                                <hr style="width: 75%;">
+
+                                <span class="icon-mbri-home" style="padding-bottom: 0.2rem;"> {{params.doc.organization.name}} </span> 
+                                <br>
+                                <span class="icon-mbri-sites" style="padding-bottom: 0.2rem;"> {{params.doc.organization.phone}} </span>  
+                                <br>
+                                <span class="icon-mbri-bookmark" style="padding-bottom: 0.2rem;"> {{params.doc.organization.inn}}  / {{params.doc.organization.kpp}} </span>  
+                                <br>
+                                <span class="icon-mbri-map-pin" style="padding-bottom: 0.2rem;"> {{params.doc.organization.adress}} </span> 
+                                <br>
+                                
+                                <hr style="width: 75%;">
+
+                                <label class="fs-4 text-start fw-normal">
+                                    КорсГрупп.Помощь автомобилисту
+                                </label><br>
+                                <label class="fs-6 text-start fw-normal text-secondary">
+                                    Мобильное приложение
+                                </label>
+
+                                <div class="d-flex justify-content-center">
+                                        
+                                    <a href='https://play.google.com/store/apps/details?id=com.brightbox.dm.avtoshina&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1' style="display: inline-block; overflow: hidden; border-radius: 13px; width: 180px; height: 60px"><img style="border-radius: 13px; width: 180px; height: 60px" alt='Доступно в Google Play' src='/static/images/google_play.svg'/></a>
+                                
+                                    <a href="https://apps.apple.com/ru/app/%D0%BA%D0%BE%D1%80%D1%81%D0%B3%D1%80%D1%83%D0%BF%D0%BF-%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C-%D0%B0%D0%B2%D1%82%D0%BE%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D0%B8%D1%81%D1%82%D1%83/id1160120600?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 176px; height: 60px;"><img src="/static/images/appstore.svg" alt="Download on the App Store" style="border-radius: 13px; width: 176px; height: 60px"></a>
+                                    
+                                </div>
+
+                            </div>
+
+                        </div>
+                </div>
+
+                {% if params.opros %}
+                
+                    <div class="tab-pane fade" id="o" role="tabpanel" aria-labelledby="nav-opros-tab" tabindex="0">
+                        
+                        {% if params.opros_close %}
+                            
+                            <div class="row g-1">
+                                <div class="col-1 my-auto text-center">
+                                    <p class="fs-5"><span class="icon-mbri-success"> </span></p>
+                                </div>
+                                
+                                <div class="col-11 my-auto text-center">
+                                    <div style="text-align: center;">
+                                        <p class="fs-5"> Спасибо. <br> Ваши ответы помогают нам стать лучше.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% elif params.doc.active and params.doc.typeIB == '' or params.doc.active and params.doc.typeIB == 'ALFA6DC' and not params.doc.get_opros_close and params.doc.readyStatus.name == "Закрыт" %}
+                            
+                            <form name="form" method="post" onsubmit="return validate_form();"> 
+                                
+                                <div class="card mb-3" style="padding-left: 0.3em; padding-right: 0.3em;">
+                                        
+                                    <div class="">
+                                       
+                                        <label class="fs-5 text-start fw-normal">
+                                            Оцените нашу работу
+                                        </label>
+
+                                    </div>
+                                    
+                                    <hr style="width: 75%;">
+                                    
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                1. Как бы вы оценили общую удовлетворенность обслуживанием в дилерском центре от 1 до 10?
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main1">
+                                                        <div class="container" style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v1_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 1)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label  name="e1" id="e1"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a1" id="a1" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                2. С какой вероятностью Вы порекомендовали бы нас своим друзьям или знакомым по шкале от 1 до 10?
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main2">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v2_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 2)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label  name="e2" id="e2"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a2" id="a2" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                3. Скорость обслуживания: работы были выполнены в оговоренное время
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main3">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v3_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 3)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label  name="e3" id="e3"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a3" id="a3" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                4. Оцените вежливость и внимательность персонала
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main4">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v4_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 4)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label name="e4" id="e4"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a4" id="a4" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                5. Доступно ли разъяснили Вам перечень и стоимость работ
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main5">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v5_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 5)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label name="e5" id="e5"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a5" id="a5" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                6. Качество оказанной услуги/работ
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main6">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="btn-group-sm mr-2" role="group""> 
+                                                                        {% for i in '0123456789'|make_list %}
+                                                                            <button type="button" class="btn btn-dark" id="v6_{{ forloop.counter }}" onclick="clickAnswer({{ forloop.counter }}, 6)">{{ forloop.counter }}</button>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    <label name="e6" id="e6"></label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="a6" id="a6" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                7. Откуда вы узнали о нашем сервисном центре
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main7">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row g-1">
+
+                                                                        <button type="button" class="btn btn-dark" id="v7_1" onclick="clickAnswer(1, 7)">2GIS</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_2" onclick="clickAnswer(2, 7)">От знакомых</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_3" onclick="clickAnswer(3, 7)">Уличная реклама /Радио реклама</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_4" onclick="clickAnswer(4, 7)">Покупал автомобиль в вашем ДЦ</button> 
+                                                                        <button type="button" class="btn btn-dark" id="v7_5" onclick="clickAnswer(5, 7)">Из интернета</button> 
+                                                                    
+                                                                        <label style="text-align: center;" name="e7" id="e7"> </label>
+                                                            </div>
+                                                            
+                                                        </div>
+                                                        
+                                                        <input type="hidden" name="a7" id="a7" value="">
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="width: 75%;">
+
+                                    <div class="row g-1">
+                                        <div class="col">
+                                            <div class="card-sm-0">
+                                            <div class="">
+                                                8. Если у вас есть пожелания/замечания вы можете поделиться с нами
+                                            </div>
+                                                <div class="card-body text-danger" style="padding: 0rem;">
+                                                    
+                                                    <div class="btn-toolbar" role="toolbar" id="main6">
+                                                        <div class="container"  style="padding: 0.3rem;">
+                                                            <div class="row">
+                                                                <div class="col text-center">
+                                                                    <div class="input-group">
+                                                                        <textarea class="form-control" aria-label="With textarea" name="a8"></textarea>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                        
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    {% csrf_token %}
+                                    
+                                    <button id="send" name="send_opros" type="submit" value="submit" class="btn btn-dark">Отправить</button>
+                                        
+                                </div>
+                            
+                            </form>
+
+                        {% else %}
+                           
+                            <div class="row g-1">
+                                <div class="col-1 my-auto text-center">
+                                    <p class="fs-5"><span class="icon-mbri-success"> </span></p>
+                                </div>
+                                
+                                <div class="col-11 my-auto text-center">
+                                    <div style="text-align: center;">
+                                        <p class="fs-5"> Немного терпения. <br> Работы по Вашему автомобилю выполняются.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+                
+                {% endif %}
+                
+            </div>
+
+            
+        
+        </div>
+    
+    </div>
+
+  </div>
+
+  <script>
+	jQuery(document).ready(function ($) {
+		var urlTab = window.location.hash;
+		$('.nav-link[href="' + urlTab + '"]' ).trigger('click');
+	});
+</script>
+
+         
+{% endblock %}
+
+

@@ -1,0 +1,286 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - рекомендация {{params.recomendation.id}} {% endblock %}
+
+{% block title_navbar %} - рекомендация {{params.recomendation.id}} {% endblock %}
+    
+{% block content %}
+ 	
+
+<div class="col-sm">
+	
+	<h4>Рекомендация МКУ №{{params.recomendation.id}} от {{params.recomendation.dataTime}} по заказ - наряду {{params.recomendation.zn.nomer}}
+		
+		<button type="button" class="btn btn-outline-dark btn-block" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable">
+			
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-text" viewBox="0 0 16 16">
+				<path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+				<path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+			</svg>
+			
+		</button>
+
+	</h4>
+	
+
+	<hr>
+
+	<div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+			<h6 class="modal-title" id="exampleModalCenteredScrollableTitle">Заказ - наряд - {{params.doc.nomer}} от {{params.doc.dataTime|date:"d.m.Y H:i"}}</h6>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body">
+			
+				<label class="fs-4 text-start fw-normal">
+					№ {{params.doc.nomer}} <br> от {{params.doc.dataTime}} 
+				</label><br>
+
+				<label class="fs-6 text-start fw-normal">
+					Вид ремонта: 
+				</label> 
+				
+				<br>
+				<label class="fs-6 text-start fw-normal">
+					<span class="icon-mbri-minus text-secondary">{{params.doc.typeRemont}}</span>
+				</label>
+				
+				<br>
+				<label class="fs-6 text-start fw-normal">
+					Клиент: 
+				</label> <br>
+				<label class="fs-6 text-start fw-normal">
+					<span class="icon-mbri-minus text-secondary">{{params.doc.customer}}</span><br>
+
+				</label>
+				
+				<br>
+				<label class="fs-6 text-start fw-normal">
+					Автомобиль: 
+				</label> <br>
+				<label class="fs-6 text-start fw-normal">
+					<span class="icon-mbri-minus text-secondary">{{params.doc.cars.mark}} {{params.doc.cars.model}}</span><br>
+					<span class="icon-mbri-minus text-secondary">{{params.doc.cars.vin}}</span><br>
+					<span class="icon-mbri-minus text-secondary">{{params.doc.cars.year}} г.</span><br>
+					<span class="icon-mbri-minus text-secondary">{{params.doc.run|floatformat:"0g"}} км.</span><br>
+
+				</label>
+
+				<br>
+				<label class="fs-6 text-start fw-normal">
+					Заявка со слов клиента: 
+				</label> <br>
+				<label class="fs-6 text-start fw-normal">
+					<span class="icon-mbri-minus text-secondary">{{params.doc.customerWords}}</span><br>
+				</label>
+
+				<hr style="width: 75%;">
+				
+				<table>
+					<tbody class="align-middle">
+						<tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
+						   
+							<td class="align-middle" style="padding-left: 0.2em;">
+							   
+								<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+									
+									<label class="fs-4 text-start fw-normal">
+										{% if params.doc.unit.name_dop|length > 0 %}
+											{{params.doc.unit.name_dop}}
+										{% else %}
+											{{params.doc.unit.name}}
+										{% endif %}
+									</label>
+									{% if params.doc.unit.city|length > 0  %}
+										<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span> г. {{params.doc.unit.city}}</label>
+									{% endif %}
+
+									{% if params.doc.unit.phone|length > 0  %}
+										<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-mobile"></span> {{params.doc.unit.phone}}</label>
+									{% endif %}
+
+									{% if params.doc.unit.email|length > 0  %}
+										<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-paper-plane"></span> {{params.doc.unit.email}}</label>
+									{% endif %}
+									
+								</div>
+
+							</td>
+
+							{% if params.doc.unit.main_photo %}
+								<td class="align-middle col-5 bg-filter" >
+									<div>
+										<img src="{{params.doc.unit.main_photo.url}}" style="border-radius: 0.2em;"> 
+									</div> 
+								</td>  
+							{% else %}
+								<td class="align-middle col-4 bg-image">
+								</td>  
+							{% endif %}
+							
+							
+
+						</tr>
+					</tbody>
+				</table>
+
+				<hr style="width: 75%;">
+
+				<table>
+					<tbody class="align-middle">
+						<tr class="align-middle" style="border-radius: 0.3em;" data-bs-toggle="modal" data-bs-target="#example_recomendation_service_{{forloop.counter}}">
+						   
+							<td class="align-middle" style="padding-left: 0.2em;">
+							   
+								<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+									
+									<label class="fs-4 text-start fw-normal">
+									   {{params.doc.master}}
+									</label>
+
+									<label class="fs-6 fw-normal text-secondary"> <span class="icon-mbri-pin"></span>{{params.doc.master.post}}</label>
+									
+								</div>
+
+							</td>
+
+							{% if params.doc.master.main_photo %}
+								<td class="align-middle col-5 bg-filter" >
+									<div>
+										<img src="{{params.doc.master.main_photo.url}}" style="border-radius: 0.2em; max-height: 350px;"> 
+									</div>
+								</td>  
+							{% else %}
+								<td class="align-middle col-4 bg-image">
+								</td>  
+							{% endif %}
+							
+							
+
+						</tr>
+					</tbody>
+				</table>
+
+				<hr style="width: 75%;">
+
+
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+			</div>
+
+		</div>
+		</div>
+	</div>
+
+
+
+	<div class="card-body">
+        
+		<div class="row align-items-center">
+			<div class="col-sm-3 text-center">
+				
+				{% if params.recomendation.customerStatus == 0 %}
+					<span class="icon-mbri-question fs-4"></span> 
+					<br>
+					Неактивна 
+				{% elif params.recomendation.customerStatus == 1 %}
+					<span class="icon-mbri-timer fs-4"></span> 
+					<br>
+				 	На согласовании 
+				{% elif params.recomendation.customerStatus == 2 %} 
+					<span class="icon-mbri-success fs-4"></span> 
+					<br>
+					Согласовано 
+				{% else %} 
+					<span class="icon-mbri-close fs-4"></span>
+					<br> 
+					Отклонена 
+				{% endif %}
+
+			</div>
+			
+			<div class="col-sm">
+				<label class="fs-6 text-start fw-normal">
+					Наименование: 
+				</label> 
+				<br>
+				<label class="fs-5 text-start fw-normal">
+					<span class="icon-mbri-minus text-secondary">{{params.recomendation.name}}</span>
+				</label>
+				{% if params.recomendation.dataTimeCutomerEvent != None %}
+					
+					<br>
+					<label class="fs-6 text-start fw-normal">
+						Дата обработки клиентом: 
+					</label> 
+					<br>
+					<label class="fs-5 text-start fw-normal">
+						<span class="icon-mbri-minus text-secondary">{{params.recomendation.dataTimeCutomerEvent}}</span>
+					</label>
+					
+				{% endif %}
+					
+			</div>
+
+		</div>
+
+		<hr style="width: 75%;">
+		
+		{% if params.recomendation.recomendation_files_mcu_count > 0 %}
+			
+			<div class="gallery-container">
+				{% for recomendation_object_mcu in params.recomendation.recomendation_mcu_files %}
+						
+					{% if recomendation_object_mcu.is_video %}
+						<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+							<div class="video-responsive">
+								<iframe width="auto" src="{{recomendation_object_mcu.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+							</div>
+						</div>
+					{% else %}
+						<div class="gallery-item" data-index="{{forloop.counter}}">
+							<img src="{{recomendation_object_mcu.file.url}}">
+						</div>
+					{% endif %}
+
+				{% endfor %}
+			</div>
+
+			<hr style="width: 75%;">	
+			
+		{% endif %}
+		
+	</div>
+		  
+		  
+	<h6>{{params.url}}</h6>
+
+</div>
+	
+
+
+<script language="JavaScript">
+	function change_link(){
+		link_1= document.getElementById("unit");
+		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
+	}
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+
+{% endblock %}

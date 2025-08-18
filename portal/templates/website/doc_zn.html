@@ -1,0 +1,1106 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - заказ наряд №{{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
+
+{% block title_navbar %} - заказ наряд №{{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
+    
+{% block content %}
+ 	
+
+<div class="col-sm">
+		
+	<label class="fs-4 text-start fw-normal">
+		№ {{params.doc.nomer}} <br> от {{params.doc.dataTime}} 
+	</label><br>
+
+	<label class="fs-6 text-start fw-normal">
+		Подразделение: 
+	</label> 
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.unit.name}}</span>
+	</label>
+	<br>
+
+	<label class="fs-6 text-start fw-normal">
+		Вид ремонта: 
+	</label> 
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.typeRemont}}</span>
+	</label>
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Клиент: 
+	</label> <br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.customer}}</span><br>
+
+	</label>
+	
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Автомобиль: 
+	</label> <br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.cars.mark}} {{params.doc.cars.model}}</span><br>
+		<span class="icon-mbri-minus text-secondary">{{params.doc.carsGRZ}}</span><br>
+		<span class="icon-mbri-minus text-secondary">{{params.doc.cars.vin}}</span><br>
+		<span class="icon-mbri-minus text-secondary">{{params.doc.cars.year}} г.</span><br>
+		<span class="icon-mbri-minus text-secondary">{{params.doc.run|floatformat:"0g"}} км.</span><br>
+
+	</label>
+
+	<br>
+	<label class="fs-6 text-start fw-normal">
+		Заявка со слов клиента: 
+	</label> <br>
+	<label class="fs-6 text-start fw-normal">
+		<span class="icon-mbri-minus text-secondary">{{params.doc.customerWords}}</span><br>
+	</label>
+
+	<hr style="width: 75%;">
+
+	<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+												
+		<div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
+		   
+			<label class="fs-6 text-center" style="padding: 0.2em;">  
+				<table>
+					<tbody>
+						<tr>
+							<td><span class="icon-mbri-shopping-bag">Товары</td>
+							<td> &nbsp;-&nbsp; </td>
+							<td class="text-end">{{params.doc.products_amount|floatformat:"2g"}} &#8381;</td>
+						</tr>
+						<tr>
+							<td><span class="icon-mbri-setting3">Работы</td>
+							<td> &nbsp;-&nbsp; </td>
+							<td class="text-end">{{params.doc.works_amount|floatformat:"2g"}} &#8381;</td>
+						</tr>
+					</tbody>
+				</table>
+				
+			</label>
+			
+		</div>
+
+		<div class="col">
+
+		</div>
+
+		<div class="col-auto text-end bg-success bg-opacity-75" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+			<label class="fs-2 text-white" style="padding: 0.2em;">  {{params.doc.amount|floatformat:"2g"}} &#8381;</label>
+		</div>
+
+	</div>
+
+	<hr style="width: 75%;">
+			
+	<div class="accordion accordion-flush" id="accordionFlushExample">
+	
+		<div class="accordion-item">
+		<h2 class="accordion-header" id="flush-headingOne">
+		<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+			Работы - {{params.doc.works|length}} ( {{params.doc.works_amount|floatformat:"2g"}} ₽ ) 
+		</button>
+		</h2>
+		<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+		<div class="accordion-body">
+			{% if params.doc.works|length == 0 %} 
+			Работы в заказ наряде отсутствуют
+			{% else %}
+			<div class="table-responsive-sm">	
+				<table class="table table-striped">
+					<tbody>
+						{% for work in params.doc.works %}
+						<tr>
+							<td>{{work.get_type}}</td>
+							<td>{{work.work}}</td>
+							<td>{{work.quantity}}</td>
+							<td>{{work.price}}</td>
+							<td>{{work.amount}}</td>
+						</tr>     
+						{% endfor %}
+					</tbody>
+					</table>
+			</div>
+			{% endif %}
+		</div>
+		</div>
+		</div>
+		
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="flush-headingTwo">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+				Товары - {{params.doc.products|length}} ( {{params.doc.products_amount|floatformat:"2g"}} ₽ )
+			</button>
+			</h2>
+			<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+			<div class="accordion-body">
+				{% if params.doc.products|length == 0 %} 
+				Товары в заказ наряде отсутствуют
+				{% else %}
+				<div class="table-responsive-sm">
+					<table class="table table-striped">
+						<tbody>
+							{% for product in params.doc.products %}
+							<tr>
+								<td>{{product.get_type}}</td>
+								<td>{{product.product}}</td>
+								<td>{{product.quantity}}</td>
+								<td>{{product.price|floatformat:"2g"}} &#8381;</td>
+								<td>{{product.amount|floatformat:"2g"}} &#8381;</td>
+							</tr>     
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% endif %}
+			</div>
+			</div>
+		</div>
+		
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="flush-headingThree">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseThree">
+				Рекомендации - 0
+			</button>
+			</h2>
+			<div id="flush-collapseThree{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+			<div class="accordion-body">
+				Извините рекомендации будут чуть позже - они еще не настроены
+			</div>
+			</div>
+		</div>
+		
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="flush-heading_dop">
+				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_dop{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_dop">
+				Расширения заказ-наряда - {{params.doc.recomendations_count}}
+				</button>
+			</h2>
+			<div id="flush-collapse_dop{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_dop" data-bs-parent="#accordionFlushExample">
+				<div class="accordion-body">
+					
+					{% if params.doc.recomendations_count == 0 %}
+						Расширений по заказ - наряду нет.
+					{% else %}
+						
+						<div class="table-responsive-sm">	
+							<table class="table table-striped">
+								<tbody>
+
+									{% for recomendation in params.doc.recomendations %}
+										<tr data-bs-toggle="modal" data-bs-target="#example_recomendation_{{forloop.counter}}">
+											<td>
+												{% if recomendation.status == 0 %} 
+													<span class="icon-mbri-timer text-warning"></span>
+												{% elif recomendation.status == 1 %} 
+													<span class="icon-mbri-play text-warning"></span>
+												{% elif recomendation.status == 2 %}
+													<span class="icon-mbri-success text-success"></span>
+												{% elif recomendation.status == 3 %} 
+													<span class="icon-mbri-plus text-secondary"></span>
+												{% else %} 
+													<span class="icon-mbri-close"></span>
+												{% endif %}
+											</td>
+											<td>
+												{{recomendation.dataTime}}
+											</td>
+											<td>
+												{{recomendation.name}}
+											</td>
+											<td>
+												{% if recomendation.customerStatus == 0 %} Неактивна {% elif recomendation.customerStatus == 1 %} На согласовании {% elif recomendation.customerStatus == 2 %} Согласовано {% else %} Отклонена {% endif %}
+											</td>	
+											<td>
+												{% if recomendation.status == 0 %} Новая {% elif recomendation.status == 1 %} Обрабатывается {% elif recomendation.status == 2 %} Добавлено в ЗН {% elif recomendation.status == 3 %} Добавлено в рекомендации  {% else %} Отменена {% endif %}
+											</td>	
+											<td>
+												{{recomendation.recomendation_amount|floatformat:"2g"}} &#8381;
+											</td>	
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+
+							{% for recomendation in params.doc.recomendations %}
+								<div  class="modal fade" id="example_recomendation_{{forloop.counter}}" tabindex="-1" aria-labelledby="example_filter_label" aria-hidden="true">
+									<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+										<div class="modal-content">
+											
+											<div class="modal-header">
+											<h5 class="modal-title" id="example_filter_window">
+												{% if recomendation.status == 0 %} 
+													<span class="icon-mbri-timer text-warning"></span>
+												{% elif recomendation.status == 1 %} 
+													<span class="icon-mbri-play text-warning"></span>
+												{% elif recomendation.status == 2 %}
+													<span class="icon-mbri-success text-success"></span>
+												{% elif recomendation.status == 3 %} 
+													<span class="icon-mbri-plus text-secondary"></span>
+												{% else %} 
+													<span class="icon-mbri-close"></span>
+												{% endif %}
+												{{recomendation.name}} 
+											</h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+											</div>
+								
+											<div class="modal-body">
+											
+												<div class="card-body">
+												
+													<div class="table-responsive-sm">
+														<table class="table table-hover table-striped table-sm">
+															<tbody>
+																<tr>
+																	<td>Статус клиент</td>
+																	<td>
+																		<p class="text-start">
+																			{% if recomendation.customerStatus == 0 %} 
+																				<span class="icon-mbri-timer text-warning"> Неактивна </span>
+																			{% elif recomendation.customerStatus == 1 %} 
+																				<span class="icon-mbri-play text-warning"> На согласовании </span>
+																			{% elif recomendation.customerStatus == 2 %}
+																				<span class="icon-mbri-success text-success"> Согласовано </span>
+																			{% elif recomendation.customerStatus == 3 %} 
+																				<span class="icon-mbri-plus text-danger"> Отклонена </span>
+																			{% else %} 
+																				<span class="icon-mbri-close"></span>
+																			{% endif %}
+																		</p>
+																	</td>
+																</tr>
+																{% if recomendation.dataTimeCutomerEvent != '' %}
+																<tr>
+																	<td>Дата обработки клиентом</td>
+																	<td>
+																		<p class="text-start">
+																			<span class="icon-mbri-timer">  
+																				{% if recomendation.dataTimeCutomerEvent  == None %}
+																					---
+																				{% else %}
+																					{{recomendation.dataTimeCutomerEvent}}
+																				{% endif %}
+																			</span>
+																		</p>
+																	</td>
+																</tr> 
+																{% endif %}
+																<tr>
+																	<td>Статус мастер - консультант</td>
+																	<td>
+																		<p class="text-start">
+																			{% if recomendation.status == 0 %} 
+																				<span class="icon-mbri-timer text-warning"> Новая </span>
+																			{% elif recomendation.status == 1 %} 
+																				<span class="icon-mbri-play text-warning"> Обрабатывается </span>
+																			{% elif recomendation.status == 2 %}
+																				<span class="icon-mbri-success text-success"> Добавлено в ЗН </span>
+																			{% elif recomendation.status == 3 %} 
+																				<span class="icon-mbri-plus text-secondary"> Добавлено в рекомендации </span>
+																			{% else %} 
+																				<span class="icon-mbri-close"> Отменена </span>
+																			{% endif %}
+																			
+																		</p>
+																	</td>
+																</tr>     
+															</tbody>
+														</table>
+													</div>
+
+													<div class="accordion accordion-flush" id="accordionFlushExample_1_{{forloop.counter}}">
+														<div class="accordion-item">
+														<h2 class="accordion-header" id="flush-headingOne_1_{{forloop.counter}}">
+															<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne_1_{{forloop.counter}}" aria-expanded="false" aria-controls="flush-collapseOne_1_{{forloop.counter}}">
+																Работы - {{recomendation.recomendation_works|length}} ({{recomendation.recomendation_works_amount|floatformat:"2g"}} &#8381;) 
+															</button>
+														</h2>
+														<div id="flush-collapseOne_1_{{forloop.counter}}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne_1_{{forloop.counter}}" data-bs-parent="#accordionFlushExample_1_{{forloop.counter}}">
+															<div class="accordion-body">
+																
+																{% if recomendation.recomendation_works|length == 0 %} 
+																	
+																	Работы в рекомендации расширении отсутствуют
+
+																{% else %}
+
+																	<div class="table-responsive-sm">
+																		<table class="table table-hover table-striped table-sm">
+																			<tbody>
+																				{% for work in recomendation.recomendation_works %}
+																				<tr>
+																					<td>{{work.work}}</td>
+																					<td>{{work.quantity}}</td>
+																					<td>{{work.price|floatformat:"2g"}} &#8381;</td>
+																					<td>{{work.amount|floatformat:"2g"}} &#8381;</td>
+																				</tr>     
+																				{% endfor %}
+																			</tbody>
+																		</table>
+																	</div>
+
+																{% endif %}
+
+															</div>
+														</div>
+														</div>
+														<div class="accordion-item">
+														<h2 class="accordion-header" id="flush-headingTwo_1_{{forloop.counter}}">
+															<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo_1_{{forloop.counter}}" aria-expanded="false" aria-controls="flush-collapseTwo_1_{{forloop.counter}}">
+																Товары - {{recomendation.recomendation_products|length}}  ({{recomendation.recomendation_products_amount}} &#8381;) 
+															</button>
+														</h2>
+														<div id="flush-collapseTwo_1_{{forloop.counter}}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo_1_{{forloop.counter}}" data-bs-parent="#accordionFlushExample_1_{{forloop.counter}}">
+															<div class="accordion-body">
+																{% if recomendation.recomendation_products|length == 0 %} 
+																	
+																	Товары в рекомендации расширении отсутствуют
+
+																{% else %}
+																
+																	<div class="table-responsive-sm">
+																		<table class="table table-hover table-striped table-sm">
+																			<tbody>
+																				{% for product in recomendation.recomendation_products %}
+																				<tr>
+																					<td>{{product.product}}</td>
+																					<td>{{product.quantity}}</td>
+																					<td>{{product.price|floatformat:"2g"}} &#8381;</td>
+																					<td>{{product.amount|floatformat:"2g"}} &#8381;</td>
+																				</tr>     
+																				{% endfor %}
+																			</tbody>
+																		</table>
+																	</div>
+
+																{% endif %}
+															</div>
+														</div>
+														</div>
+													</div>
+													<hr>
+													<p class="text-start">Итого: {{recomendation.recomendation_amount|floatformat:"2g"}} &#8381;</p>
+													<hr>
+													
+													{% if recomendation.recomendation_files_count > 0 %}
+														
+														<div class="gallery-container">
+															{% for recomendation_object in recomendation.recomendation_files %}
+																	
+																{% if recomendation_object.is_video %}
+																	<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																		<div class="video-responsive">
+																			<iframe width="auto" src="{{recomendation_object.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+																		</div>
+																	</div>
+																{% else %}
+																	<div class="gallery-item" data-index="{{forloop.counter}}">
+																		<img src="{{recomendation_object.file.url}}">
+																	</div>
+																{% endif %}
+
+															{% endfor %}
+														</div>
+
+														
+														<!--
+														<div style="border-radius: 10px; height: auto; max-width: auto;" id="carouselExampleIndicatorsMesto{{forloop.counter0}}" class="carousel slide" data-interval="false" data-bs-interval="false" data-bs-ride="carousel">
+															
+															{% if recomendation.recomendation_files_count > 1 %}
+																<div class="carousel-indicators">
+																	{% for img in recomendation.recomendation_files %}
+																		<button type="button" data-bs-target="#carouselExampleIndicatorsMesto{{forloop.counter0}}" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+																	{% endfor %}
+																</div>
+															{% endif %}
+
+															<div class="carousel-inner">
+																
+																{% for recomendation_object in recomendation.recomendation_files %}
+																
+																	{% if recomendation_object.is_video %}
+																		<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																			<div class="video-responsive">
+																				<iframe width="auto" src="{{recomendation_object.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+																			</div>
+																		</div>
+																	{% else %}
+																		<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																			<div class="wrapper exmpl">
+																				<img class="d-block w-100" style="border-radius: 10px; max-width: auto;" src="{{recomendation_object.file.url}}" >
+																			</div>
+																		</div>
+																	{% endif %}
+																{% endfor %}
+																
+															</div>
+															
+															{% if recomendation.recomendation_files_count > 1 %}
+																
+																<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto{{forloop.counter0}}"  data-bs-slide="prev">
+																	<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+																	<span class="visually-hidden">Предыдущий</span>
+																</button>
+																
+																<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto{{forloop.counter0}}"  data-bs-slide="next">
+																	<span class="carousel-control-next-icon" aria-hidden="true"></span>
+																	<span class="visually-hidden">Следующий</span>
+																</button>
+
+															{% endif %}
+
+														</div>
+														-->
+														<hr>
+													{% endif %}
+													
+													
+														
+												</div>
+												
+
+											</div>
+								
+											<div class="modal-footer">
+												<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+											</div>
+								
+										</div>
+									</div>
+								</div>    
+							{% endfor %}
+						</div>
+
+					{% endif %}
+					
+					<hr>
+
+					<div class="d-grid gap-2">
+						<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal_dop" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить </button>
+					</div>
+
+					<div class="col-sm-auto">
+						<div class="modal fade" id="exampleModal_dop" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+							<div class="modal-dialog modal-dialog-centered">
+								<div class="modal-content">
+								<div class="modal-header">
+									<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление расширения</h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+								
+									<div class="modal-body">
+										<form id="uploadForm" action="" method="POST" enctype="multipart/form-data"> 
+											
+											{% csrf_token %}
+
+											<div class="form-floating mb-3">
+												<input type="text" class="form-control" id="name" for="validationName" name="name" placeholder="" value="{{params.filtr.name}}" required autocomplete="off">
+												<label for="validationName">Наименование</label>
+											</div>
+							
+											<hr>
+											<input type="text" class="form-control" name="dop_new" name="dop_new" placeholder="" value="dop_new"  hidden>
+											<div class="mb-3">
+												<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
+											</div>
+													
+											<hr>
+											<div class="progress">
+												<div class="progress-bar bg-success"></div>
+											</div> 
+											
+											<div id="uploadStatus">
+					
+											</div>
+											
+											<hr>
+
+											<div class="d-grid gap-2">
+												<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_new" ><span class="icon-mbri-success"></span> Сохранить</button>
+											</div>
+											
+										</form>
+									</div>
+				
+								</div>
+							</div>
+						</div>
+						
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		{% if params.doc.unit.mcc %}
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="flush-heading_dop_mcu">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_dop_mcu{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_dop_mcu">
+						Расширения малярно - кузовного участка - {{params.doc.recomendations_mcu_count}}
+					</button>
+				</h2>
+				<div id="flush-collapse_dop_mcu{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_dop_mcu" data-bs-parent="#accordionFlushExample">
+					<div class="accordion-body">
+						
+						{% if params.doc.recomendations_mcu_count == 0 %}
+						
+							Расширений по малярно - кузовному участку нет.
+						
+						{% else %}
+							
+							<div class="table-responsive-sm">	
+								<table class="table table-striped">
+									<tbody>
+
+										{% for recomendation_mcu in params.doc.recomendations_mcu %}
+											<tr data-bs-toggle="modal" data-bs-target="#example_recomendation_mcu_{{forloop.counter}}">
+												<td>
+													{% if recomendation_mcu.customerStatus == 1 %} 
+														<span class="icon-mbri-timer text-warning" style="color: orange;"> </span>
+													{% elif recomendation_mcu.customerStatus == 2 %}
+														<span class="icon-mbri-success text-success" style="color: green;"> </span>
+													{% elif recomendation_mcu.customerStatus == 3 %}
+														<span class="icon-mbri-close text-danger" style="color: red;"> </span>
+													{% endif %}
+												</td>
+												<td>
+													{{recomendation_mcu.dataTime}}
+												</td>
+												<td>
+													{{recomendation_mcu.name}}
+												</td>
+											</tr>
+										{% endfor %}
+									</tbody>
+								</table>
+
+								{% for recomendation_mcu in params.doc.recomendations_mcu %}
+									<div  class="modal fade" id="example_recomendation_mcu_{{forloop.counter}}" tabindex="-1" aria-labelledby="example_filter_label" aria-hidden="true">
+										<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+											<div class="modal-content">
+												
+												<div class="modal-header">
+												<h5 class="modal-title" id="example_filter_window">
+													{% if recomendation_mcu.customerStatus == 1 %} 
+														<span class="icon-mbri-timer text-warning" style="color: orange;"> </span>
+													{% elif recomendation_mcu.customerStatus == 2 %}
+														<span class="icon-mbri-success text-success" style="color: green;"> </span>
+													{% elif recomendation_mcu.customerStatus == 3 %}
+														<span class="icon-mbri-close text-danger" style="color: red;"> </span>
+													{% endif %}
+													{{recomendation_mcu.name}} 
+												</h5>
+												<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+												</div>
+									
+												<div class="modal-body">
+												
+													<div class="card-body">
+													
+														<div class="table-responsive-sm">
+															<table class="table table-hover table-striped table-sm">
+																<tbody>
+																	<tr>
+																		<td>Статус</td>
+																		<td>
+																			<p class="text-start">
+																				{% if recomendation_mcu.customerStatus == 1 %} 
+																					<span class="icon-mbri-timer text-warning"> На согласовании </span>
+																				{% elif recomendation_mcu.customerStatus == 2 %}
+																					<span class="icon-mbri-success text-success"> Согласовано </span>
+																				{% elif recomendation_mcu.customerStatus == 3 %} 
+																					<span class="icon-mbri-close text-danger"> Отклонена </span>
+																				{% else %} 
+																					<span class="icon-mbri-close"></span>
+																				{% endif %}
+																			</p>
+																		</td>
+																	</tr>
+																	<tr>
+																		<td>Дата обработки клиентом</td>
+																		<td>
+																			<p class="text-start">
+																				<span class="icon-mbri-timer">  
+																					{% if recomendation_mcu.dataTimeCutomerEvent  == None %}
+																						---
+																					{% else %}
+																						{{recomendation_mcu.dataTimeCutomerEvent}}
+																					{% endif %}
+																				</span>
+																			</p>
+																		</td>
+																	</tr> 
+																	
+																</tbody>
+															</table>
+														</div>
+
+													
+														{% if recomendation_mcu.recomendation_files_mcu_count > 0 %}
+														
+															<div style="border-radius: 10px; height: auto; max-width: auto;" id="carouselExampleIndicatorsMestoMCU{{forloop.counter0}}" class="carousel slide" data-bs-interval="false" data-interval="false" data-bs-ride="carousel">
+																
+																{% if recomendation_mcu.recomendation_files_mcu_count > 1 %}
+																	<div class="carousel-indicators">
+																		{% for img in recomendation_mcu.recomendation_mcu_files %}
+																			<button type="button" data-bs-target="#carouselExampleIndicatorsMestoMCU{{forloop.counter0}}" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+																		{% endfor %}
+																	</div>
+																{% endif %}
+
+																<div class="carousel-inner">
+																	
+																	{% for recomendation_object_mcu in recomendation_mcu.recomendation_mcu_files %}
+																	
+																		{% if recomendation_object_mcu.is_video %}
+																			<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																				<div class="video-responsive">
+																					<iframe width="auto" src="{{recomendation_object_mcu.file.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+																				</div>
+																			</div>
+																		{% else %}
+																			<div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
+																				<div class="wrapper exmpl">
+																					<img class="d-block w-100" style="border-radius: 10px; max-width: auto;" src="{{recomendation_object_mcu.file.url}}">
+																				</div>
+																			</div>
+																		{% endif %}
+																	{% endfor %}
+																	
+																</div>
+																
+																{% if recomendation_mcu.recomendation_files_mcu_count > 1 %}
+																	<button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMestoMCU{{forloop.counter0}}"  data-bs-slide="prev">
+																		<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+																		<span class="visually-hidden">Предыдущий</span>
+																	</button>
+																	
+																	<button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMestoMCU{{forloop.counter0}}"  data-bs-slide="next">
+																		<span class="carousel-control-next-icon" aria-hidden="true"></span>
+																		<span class="visually-hidden">Следующий</span>
+																	</button>
+																{% endif %}
+
+															</div>
+
+														{% endif %}
+														
+														<hr>
+															
+													</div>
+													
+												</div>
+												
+												<div class="modal-footer">
+													<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+												</div>
+									
+											</div>
+										</div>
+									</div>    
+								{% endfor %}
+							</div>
+
+						{% endif %}
+						
+						<hr>
+
+						<div class="d-grid gap-2">
+							<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить </button>
+						</div>
+
+						<div class="col-sm-auto">
+							<div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+								<div class="modal-dialog modal-dialog-centered">
+									<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление расширения малярно - кузовного ремонта</h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+									
+										<div class="modal-body">
+											<form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
+												
+												{% csrf_token %}
+
+												<div class="form-floating mb-3">
+													<input type="text" class="form-control" id="name" for="validationName" name="dop_mcu_name" placeholder="" value="{{params.filtr.name}}" required autocomplete="off">
+													<label for="validationName">Наименование</label>
+												</div>
+								
+												<hr>
+												<input type="text" class="form-control" name="dop_mcu_new" name="dop_mcu_new" placeholder="" value="dop_mcu_new"  hidden>
+												<div class="mb-3">
+													<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
+												</div>
+														
+												<hr>
+												<div class="progressMCU">
+													<div class="progress-bar bg-success"></div>
+												</div> 
+												
+												<div id="uploadStatusMCU">
+						
+												</div>
+												
+												<hr>
+
+												<div class="d-grid gap-2">
+													<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_mcu_new" ><span class="icon-mbri-success"></span> Сохранить </button>
+												</div>
+												
+											</form>
+										</div>
+					
+									</div>
+								</div>
+							</div>
+							
+						</div>
+
+					</div>
+				</div>
+			</div>
+		{% endif %}
+
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="flush-heading_video">
+				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_video{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_video">
+					
+					Видео выполненных работ - {% if params.doc.video %} 1 {% else %} 0 {% endif %}
+
+				</button>
+			</h2>
+			<div id="flush-collapse_video{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_video" data-bs-parent="#accordionFlushExample">
+				<div class="accordion-body">
+				
+					{% if params.doc.video %}
+
+						<div class="video-responsive">
+							<iframe width="auto" src="{{params.doc.video.url}}" frameborder="0" allowfullscreen autostart="false"></iframe>
+						</div>
+
+					{% else %}
+						
+						<div class="d-grid gap-2">
+							<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить </button>
+						</div>
+
+						<div class="col-sm-auto">
+							<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+									<div class="modal-dialog modal-dialog-centered">
+										<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление видео подтверждения выполненных работ</h5>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+										</div>
+										
+											<div class="modal-body">
+												<form id='videoForm' action="" method="POST" enctype="multipart/form-data"> 
+													
+													{% csrf_token %}
+													
+													<input type="text" class="form-control" name="video" name="video" placeholder="" value="video"  hidden>
+													
+													<div class="mb-3">
+														<input  class="form-control"  type="file" name="file_video" accept="video/*">
+													</div>
+													
+													<hr>
+													<div class="progress">
+														<div class="progress-bar bg-success"></div>
+													</div> 
+													
+													<div id="uploadStatus">
+							
+													</div>
+													
+													<hr>
+													
+											
+													<div class="d-grid gap-2">
+														<button class="btn btn-block btn-outline-success" type="submit" name="video" ><span class="icon-mbri-success"></span> Сохранить</button>
+													</div>
+													
+												</form>
+											</div>
+						
+										</div>
+									</div>
+								</div>
+							
+						</div>
+
+					{% endif %}
+
+				</div>
+			</div>
+		</div>
+	
+	</div>
+		
+
+	<hr>
+	
+	{% if params.checkListO.checkItog > 0 %}
+		<h4>Чек лист {{params.checkListO.id}} от {{params.checkListO.dataTimeCreate}}</h4>
+		
+		<div class="progress">
+		<div class="progress-bar bg-success" role="progressbar" aria-label="" style="width: {{params.checkListO.checkItog}}%;" aria-valuenow="{{params.checkListO.checkItog}}" aria-valuemin="0" aria-valuemax="100">{{params.checkListO.checkItog}} %</div>
+		</div>
+
+		
+		<div class="progress">
+			<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-label="Segment one" style="width: {{params.checkListO..checkItog_v1}}%" aria-valuenow="{{params.checkListO..checkItog_v1}}" aria-valuemin="0" aria-valuemax="100"></div>
+			<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment two" style="width: {{params.checkListO.checkItog_v2}}%" aria-valuenow="{{params.checkListO.checkItog_v2}}" aria-valuemin="0" aria-valuemax="100"></div>
+			<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.checkListO.checkItog_v3}}%" aria-valuenow="{{params.checkListO.checkItog_v3}}" aria-valuemin="0" aria-valuemax="100"></div>
+			<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-label="Segment three" style="width: {{params.checkListO.checkItog_v4}}%" aria-valuenow="{{params.checkListO.checkItog_v4}}" aria-valuemin="0" aria-valuemax="100"></div>
+			<div class="progress-bar bg-warning bg-opacity-75" role="progressbar" aria-label="Segment three" style="width: {{params.checkListO.checkItog_v5}}%" aria-valuenow="{{params.checkListO.checkItog_v5}}" aria-valuemin="0" aria-valuemax="100"></div>
+		</div>
+
+		<br>
+			
+		<div class="row">
+				<div class="col-md-2">
+				<div class="progress progress-bar-vertical">
+					<div class="progress-bar bg-success bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v1_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v1_P}}%;">
+					<span class="sr-only">{{params.checkListO.checkItog_v1_P}} %</span>
+					</div>
+				</div>
+				</div>
+				<div class="col-md-2">
+				<div class="progress progress-bar-vertical">
+					<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v2_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v2_P}}%;">
+					<span class="sr-only">{{params.checkListO.checkItog_v2_P}} %</span>
+					</div>
+				</div>
+				</div>
+				<div class="col-md-2">
+				<div class="progress progress-bar-vertical">
+					<div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v3_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v3_P}}%;">
+					<span class="sr-only">{{params.checkListO.checkItog_v3_P}} %</span>
+					</div>
+				</div>
+				</div>
+				<div class="col-md-2">
+				<div class="progress progress-bar-vertical">
+					<div class="progress-bar bg-warning bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v4_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v4_P}}%;">
+					<span class="sr-only">{{params.checkListO.checkItog_v4_P}} %</span>
+					</div>
+				</div>
+				</div>
+				<div class="col-md-2">
+				<div class="progress progress-bar-vertical">
+					<div class="progress-bar  bg-info bg-opacity-50" role="progressbar" aria-valuenow="{{params.checkListO.checkItog_v5_P}}" aria-valuemin="0" aria-valuemax="100" style="height: {{params.checkListO.checkItog_v5_P}}%;">
+					<span class="sr-only">{{params.checkListO.checkItog_v5_P}} %</span>
+					</div>
+				</div>
+				</div>
+		</div>
+			
+		<div class="row">
+			<div class="col-md-2">
+				<span class="sr-only">Подготовка, встреча и оформление визита клиента / Выявление потребностей клиента</span>
+			</div>
+			<div class="col-md-2">
+				<span class="sr-only">Общая оценка навыков коммуникации</span>
+			</div>
+			<div class="col-md-2">
+				<span class="sr-only">Презентация дополнительных товаров/услуг</span>
+			</div>
+			<div class="col-md-2">
+				<span class="sr-only">Работа с возражениями</span>
+			</div>
+			<div class="col-md-2">
+				<span class="sr-only">Резюмирование сделки (заезда на обслуживание)</span>
+			</div>
+		</div>
+
+		<br>
+		
+		<table class="table align-middle" >
+			<tbody>
+				<tr>
+				<td>
+					<audio controls style="width: 640px;">
+					{% if params.checkListO.audio %}
+						<source src="http://opros.kors-group.com/{{params.checkListO.audio.url}}">
+					{% else %}
+						<source src="http://opros.kors-group.com/{{params.checkListO.audio_voice_recorder.audio.url}}">
+					{% endif %}
+					</audio>
+				</td>
+
+				</tr>
+			</tbody>
+		</table>
+	
+	{% endif %}
+		
+	<hr>
+		  
+</div>
+	
+
+
+<script language="JavaScript">
+	function change_link(){
+		link_1= document.getElementById("unit");
+		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
+	}
+</script>
+
+<script language="JavaScript">
+	function a(page)
+	{
+	   var url = new URL(document.location.href);
+	   url.searchParams.set('page', page)
+	   document.location.href  = url.href;
+	}
+	
+</script>
+
+<script>
+	$(document).ready(function(){
+		
+		$("#uploadForm").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progress", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#uploadForm')[0].reset();
+						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+		
+		$("#uploadFormMCU").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progressMCU", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatusMCU').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatusMCU').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#uploadFormMCU')[0].reset();
+						$('#uploadStatusMCU').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatusMCU').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+		
+		$("#videoForm").on('submit', function(e){
+			e.preventDefault();
+			$.ajax({
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progress", function(evt) {
+						if (evt.lengthComputable) {
+							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
+							$(".progress-bar").width(percentComplete+'%');
+							$(".progress-bar").html(percentComplete+' %');
+						}
+					}, false);
+					return xhr;
+				},
+				type: 'POST',
+				url: '',
+				data: new FormData(this),
+				contentType: false,
+				cache: false,
+				processData: false,
+				beforeSend: function(){
+					$(".progress-bar").width('0%');
+					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
+				},
+				error:function(){
+					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
+				},
+				success: function(resp, textStatus){
+					if(textStatus == 'success'){
+						$('#videoForm')[0].reset();
+						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
+						location.reload();
+					}else {
+						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
+					}
+				}
+			});
+		});
+
+		// File type validation
+		$("#fileInput").change(function(){
+			var allowedTypes = ['audio/wav', 'audio/mp3'];
+			var file = this.files[0];
+			var fileType = file.type;
+			if(!allowedTypes.includes(fileType)){
+				alert('Please select a valid file (mp3/wav/).');
+				$("#fileInput").val('');
+				return false;
+			}
+		});
+	});
+</script>
+
+{% endblock %}

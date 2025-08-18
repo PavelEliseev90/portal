@@ -1,0 +1,437 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - чек листы {% endblock %}
+
+{% block title_navbar %} - чек листы {% endblock %}
+
+    
+{% block content %}
+ 	
+<form method="GET" id="form" name="form">
+
+
+<div class="row">
+
+  <div class="col-sm-3">
+  			
+		{% if profiles.view_checklist %}
+			
+		{% else %}
+			
+			<div class="card text-white bg-secondary">
+				<div class="card-header" onclick="window.location.href='/checklists/new_check_list/?direction=4'; return false">
+					Помощник создания чек листа</a> 
+				</div>
+			</div>
+			<br>
+
+			<div class="card text-white bg-secondary">
+				<div class="card-header" onclick="window.location.href='trade_in_new/'; return false">
+					Создать новый</a> 
+				</div>
+			</div>
+			<br>
+		
+		{% endif %}
+		
+		
+		{% if params.select.units %}
+			<div class="card border-secondary">
+				<div class="card-header bg-secondary text-white">
+					Параметры
+				</div>
+				<div class="card-body">
+					
+						{% csrf_token %}
+						
+						<div class="form-floating mb-3">
+							<input type='text' class="form-control" name="nomer" {% if params.filtr.nomer %} value = {{params.filtr.nomer}} {% endif %} onchange="this.form.submit()">
+							<label for="floatingInput">Номер рабочего листа</label>
+						</div>			
+						
+						<div class="form-floating mb-3">
+							<select class="form-select" name = "select_city" id = "city" onchange="this.form.submit()" onChange="change_link()">
+								<option></option>
+								{% for city in params.select.citys %}
+									{% if params.filtr.cityID|lower == city.id|lower %}
+										<option id={{city.id}} value="{{city.id}}" selected>{{city.name}} </option>
+									{% else %}
+										<option id={{city.id}} value="{{city.id}}"> {{city.name}} </option>
+									{% endif %}
+								{% endfor %}
+							</select>
+							<label for="floatingInput">Город</label>
+						</div>
+						
+						<div class="form-floating mb-3">
+							<select class="form-select" name = "select_unit" id = "unit" onchange="this.form.submit()" onChange="change_link()">
+								<option></option>
+								{% for unit in params.select.units %}
+									{% if params.filtr.unitID|lower == unit.id|lower %}
+										<option id={{unit.id}} value="{{unit.id}}" selected>{{unit.name}} </option>
+									{% else %}
+										<option id={{unit.id}} value="{{unit.id}}"> {{unit.name}} </option>
+									{% endif %}
+								{% endfor %}
+							</select>
+							<label for="floatingInput">Подразделение</label>
+						</div>
+
+						{% if params.select.staffs %}
+							<div class="form-floating mb-3">
+								<select class="form-select" name = "select_staff" onchange="this.form.submit()">
+									<option></option>
+									{% for staf in params.select.staffs %}
+										{% if params.filtr.staffID|lower == staf.id|lower %}
+											<option id={{staf.id}} value="{{staf.id}}" selected>{{staf.name}} </option>
+										{% else %}
+											<option id={{staf.id}} value="{{staf.id}}">{{staf.name}} </option>
+										{% endif %}
+									{% endfor %}
+								</select>
+								<label for="floatingInput">Мастер</label>
+							</div>
+						{% endif %}
+
+						{% if params.select.staffsKK %}
+							
+							<div class="form-floating mb-3">
+								<select class="form-select" name = "select_staffKK" onchange="this.form.submit()">
+									<option></option>
+									{% for stafKK in params.select.staffsKK %}
+										{% if params.filtr.staffKKID|lower == stafKK.id|lower %}
+											<option id={{stafKK.id}} value="{{stafKK.id}}" selected>{{stafKK.user.last_name}} {{stafKK.user.first_name}}</option>
+										{% else %}
+											<option id={{stafKK.id}} value="{{stafKK.id}}">{{stafKK.user.last_name}} {{stafKK.user.first_name}} </option>
+										{% endif %}
+									{% endfor %}
+								</select>
+								<label for="floatingInput">Автор</label>
+							</div>
+							
+						{% endif %}
+
+						<div class="form-floating mb-3">
+							{% if params.filtr.dateStart %}
+								<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_start" value="{{params.filtr.dateStart}}">
+							{% else %}
+								<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_start">
+							{% endif%}
+							<label for="floatingInput">Дата от</label>
+						</div>
+
+						<div class="form-floating mb-3">
+							{% if params.filtr.dateEnd %}
+								<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end" value="{{params.filtr.dateEnd}}">
+							{% else %}
+								<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end">
+							{% endif%}
+							<label for="floatingInput">Дата по</label>
+						</div>
+			
+						<hr>
+						
+						<div class="d-grid gap-2">
+							<button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModalCenteredScrollable">
+								Дополнительный отбор {% if params.count_filtr_dop > 0 %} - {{params.count_filtr_dop}} {% endif %}
+							</button>
+						</div>
+
+						<hr>
+
+						<label>Всего записей: {{params.count}} </label>
+						<!--
+						<hr>
+
+						{% if params.profiles.view_checklist %}
+						
+						{% else %}
+							
+							<div class="row g-2">
+								
+								<div class="d-grid gap-2">
+									<a class="btn btn-outline-secondary" href="/../checklists/reports/?select_direction=4" role="button">Отчет по сотрудникам ДЦ</a>
+								</div>
+
+								<div class="d-grid gap-2">
+									<a class="btn btn-outline-secondary" href="/../checklists/reports_kk/?select_direction=4" role="button">Отчет по сотрудникам КК</a>
+								</div>
+
+							</div>
+
+						{% endif %}
+						-->
+						<div class="modal fade" id="exampleModalCenteredScrollable" style="text-align: left" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+							<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+							<div class="modal-content">
+								<div class="modal-header">
+								<h4 class="modal-title" id="exampleModalCenteredScrollableTitle">Параметры <label id="filtr_count"> {% if params.count_filtr_dop > 0 %} - {{params.count_filtr_dop}} {% endif %} </label></h4>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+								</div>
+								<div class="modal-body">
+									
+									{% for fields_razdel in params.fields %}
+										<div class="card">
+											<div class="card-body">
+												<table class="table table-striped">
+													<tbody>
+														{% for field in fields_razdel.fields %}
+														<tr>
+															<td>{{field.name_human}}</td>
+															
+															<td>{{field.name}}</td>
+															<td style="width: 120px;" class="align-middle">
+																
+																<div class="btn-group" role="group" onclick="test_fields('{{field.id}}')">
+																	
+																	{% if field.value == 0 %}
+																		<input type="text" class="btn-check" id="{{field.id}}" value="{{field.value}}">
+																		<label class="btn btn-outline-secondary" id="l_{{field.id}}" name="l_{{field.id}}" for="l_{{field.id}}">Не важно</label>
+																	{% elif field.value == '1' %}
+																		<input type="text" class="btn-check" name="{{field.id}}" id="{{field.id}}" value="{{field.value}}">
+																		<label class="btn btn-success" id="l_{{field.id}}" name="l_{{field.id}}" for="l_{{field.id}}">Выполнен</label>
+																	{% elif field.value == '2' %}
+																		<input type="text" class="btn-check" name="{{field.id}}" id="{{field.id}}" value="{{field.value}}">
+																		<label class="btn btn-danger" id="l_{{field.id}}" name="l_{{field.id}}" for="l_{{field.id}}">Не выполнен</label>
+																	{% elif field.value == '3' %}
+																		<input type="text" class="btn-check" name="{{field.id}}" id="{{field.id}}" value="{{field.value}}">
+																		<label class="btn btn-success" id="l_{{field.id}}" name="l_{{field.id}}" for="l_{{field.id}}">Выполнен (ИЛИ)</label>
+																	{% else %}
+																		<input type="text" class="btn-check" name="{{field.id}}" id="{{field.id}}" value="{{field.value}}">
+																		<label class="btn btn-danger" id="l_{{field.id}}" name="l_{{field.id}}" for="l_{{field.id}}">Не выполнен (ИЛИ)</label>
+																	{% endif %}
+																</div>
+
+															</td>
+															
+														</tr>
+														{% endfor %}
+													</tbody>
+												</table>
+											</div>
+										</div>
+										
+										<hr>
+									{% endfor %}
+									
+								</div>
+								
+								<hr>
+								
+								<div class="row g-1" style="padding: 15px;">
+									<div class="col-sm">
+										<button type="button" class="btn btn-outline-danger" onclick="clear_fields()"> Очистить все фильтры</button>	
+									</div>
+								</div>
+								
+								<div class="modal-footer">
+									<button type="sumbit" class="btn btn-success" data-bs-dismiss="modal" onclick="this.form.submit()">Применить</button>
+									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+								</div>
+
+							</div>
+							</div>
+						</div>
+
+				</div>
+			</div>
+		{% endif %}
+
+	</div>
+	
+	<div class="col-sm-9">
+		
+		<div class="table-wrapper-scroll-y my-custom-scrollbar">
+			<div class="table-responsive-sm">
+				<table class="table table-sm table-striped table-hover">
+				<thead style="position: sticky;top: 0;">
+					<tr>
+					<th class='header_table bg-light' scope="col">#</th>
+					<th class='header_table bg-light' scope="col">Дата</th>
+					<th class='header_table bg-light' scope="col">Номер</th>
+					<th class='header_table bg-light' scope="col">Подразделение</th>
+					<th class='header_table bg-light' scope="col">Менеджер</th>
+					<th class='header_table bg-light' scope="col">Сотрудник КК</th>
+					<th class='header_table bg-light' scope="col">Закрыт день в день</th>
+					<th class='header_table bg-light' scope="col">Отменен</th>
+					<th class='header_table bg-light' scope="col">%</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% if params.page_obj.object_list %}
+						{% for rlk in params.page_obj.object_list %}
+							<tr onclick="window.location.href='doc/?checkid={{rlk.id}}'; return false">
+							<th scope="row">{{rlk.id}}</th>
+							<td>{{rlk.rlk.dataTime}}</td>
+							<td><label id="itog_v1M">{{rlk.rlk.nomer}}</label></td>
+							<td><label id="itog_v1">{{rlk.rlk.unit.name}}</label></td>
+							<td><label id="itog_v1P">{{rlk.rlk.staff}}</label></td>
+							<td><label id="itog_v12">{{rlk.user.last_name}}</label></td>
+							<td> 
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" value="" id="flexCheckDisabled" {% if rlk.rlk.archiveDayToDay %} checked {% endif %}  disabled>
+								</div>  
+							</td>
+							<td> 
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" value="" id="flexCheckDisabled1" {% if rlk.canceled %} checked {% endif %}  disabled>
+								</div>  
+							</td>
+							<td><label id="itog_v1P"> {{rlk.result}}</label></td>
+							</tr>
+						{% endfor %} 
+					{% endif %}
+				</tbody>
+				</table>
+			</div>
+		</div>
+	
+		<hr>
+
+		<div class="row g-1">
+			<div class="col justify-content-center">
+				<div class="form-floating mb-3">
+					<select class="form-select" name = "select_count" onchange="this.form.submit()">
+						<option {% if params.select_count == 25 %} selected {% endif %}>25</option>
+						<option {% if params.select_count == 50 %} selected {% endif %}>50</option>
+						<option {% if params.select_count == 100 %} selected {% endif %}>100</option>
+						<option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
+					</select>
+					<label for="floatingInput">Выводить</label>
+				</div>
+			</div>
+			<div class="col justify-content-center">
+				<nav aria-label="Page navigation example">
+					<ul class="pagination justify-content-center">
+					
+					{% if  params.page_obj.has_previous %}
+						<li class="page-num">
+								<a class="page-link text-secondary"  OnClick="a( {{ params.page_obj.previous_page_number }})"; name="page" value = " {{ params.page_obj.previous_page_number }} ">&lt;</a>
+						</li>
+					{% endif %}
+			
+					{% for p in params.page_obj.paginator.page_range %}
+						{% if  params.page_obj.number == p %}
+						<li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
+								{% elif p >=  params.page_obj.number|add:-2 and p <=  params.page_obj.number|add:2  %}
+						<li class="page-item">
+							<a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
+						</li>
+						{% endif %}
+					{% endfor %}
+						
+					{% if params.page_obj.has_next %}
+						<li class="page-num">
+							<a class="page-link text-secondary" OnClick="a( {{ params.page_obj.next_page_number }})"; name="page" value = " {{ params.page_obj.next_page_number }} ">&gt;</a>
+						</li>
+					{% endif %}
+			
+					</ul>
+				</nav>
+			</div>
+			<div class="col justify-content-center" >
+				Выведено : {{params.page_obj.object_list|length}}
+			</div>
+		</div>
+	
+	</div>
+
+</div>
+
+</form>
+
+<script language="JavaScript">
+
+function change_link(){
+	link_1= document.getElementById("unit");
+	link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
+}
+
+</script>
+
+<script language="JavaScript">
+
+function refresh_count_filtr(){
+	
+	var label = $('#filtr_count');
+	var count = $("input[type='text'][name^='v']").length
+	if (count > 0){
+		label.text(' - ' + count);
+	} else 
+	{
+		label.text('');
+	}
+	
+}
+
+function clear_fields(){
+	$("input[type='text'][id^='v']").each(function (i, el) {
+		var input = $("input[type='text'][id='"+ el.id + "']");
+		input.attr('value', 0);
+		var label = $('#l_'+ el.id);
+		label.attr('class', 'btn btn-outline-secondary');
+		label.text('Не важно');
+		input.attr('name', '');
+	 });
+
+	refresh_count_filtr();
+
+}
+
+function test_fields(field){
+	
+	var val_field = $("input[type='text'][id='" + field + "']").val()
+	
+	val_field = Number(val_field) + 1;
+	if (val_field > 2){
+		val_field = 0;
+	}
+	
+	$("input[type='text'][id='" + field + "']").attr('value', val_field);
+	
+	var input = $("input[type='text'][id='" + field + "']")
+	var label = $('#l_'+ field);
+	
+	if (val_field == 0){
+		label.attr('class', 'btn btn-outline-secondary');
+		label.text('Не важно');
+		input.attr('name', '');	 
+	}
+	else if (val_field == 1){
+		label.attr('class', 'btn btn-success');
+		label.text('Выполнен');
+		input.attr('name', field); 
+	}
+	else if (val_field == 2) {
+		label.attr('class', 'btn btn-danger');
+		label.text('Не выполнен');
+		input.attr('name', field); 
+	}
+	else if (val_field == 3){
+		label.attr('class', 'btn btn-success');
+		label.text('Выполнен (ИЛИ)');
+		input.attr('name', field); 
+	}
+	else {
+		label.attr('class', 'btn btn-danger');
+		label.text('Не выполнен (ИЛИ)');
+		input.attr('name', field); 
+	}
+	
+	refresh_count_filtr();
+	
+}
+
+function a(page)
+{
+   var url = new URL(document.location.href);
+   url.searchParams.set('page', page)
+   document.location.href  = url.href;
+}
+
+</script>
+
+
+{% endblock %}

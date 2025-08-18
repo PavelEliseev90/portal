@@ -1,0 +1,279 @@
+<div class="" style="position: fixed;
+bottom: 0px;
+right: 0px; 
+padding: 20px;
+z-index: 1030;">
+    <button type="button" class="btn bg-dark text-white" id="chat_open" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><span class="icon-mbri-chat"></span> Чат</button>
+</div>
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasRightLabel"> Чат</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+</div>
+
+<div id="div_reconect" class="d-none align-items-center align-self-center">
+    <hr>
+    <label class="fs-6 fw-bold"> Соединение потеряно...</label>
+    <button class="btn btn-outline-danger" id="btn_reconect"><span class="icon-mbri-close"> </span> Переподключится</button>
+    <hr>
+</div>
+
+<div class="offcanvas-body">
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
+        <div class="container">
+        
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+                
+                {% if params.messages|length > 0 %}
+                    
+                    {% for message in params.messages %}
+                    
+                        <div class="item-chat-message{% if message.user.profiles.eco %}-owner text-end{% endif %} col-12">
+                            <div class="item-chat-body{% if message.user.profiles.eco %}-owner text-end{% endif %} " >
+                                <div class="item-content-chat">
+                                    <label class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                        {% autoescape off %}
+                                        {{message.content_html}}
+                                        {% endautoescape %}
+
+                                    </label>
+                                </div>
+                                
+                                <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} id='chat_m_id_{{message.id}}'">{% if message.user.profiles.eco_name != '' %} {{message.user.profiles.eco_name}} {% else %} {{message.user.last_name}} {{message.user.first_name}} {% endif %} / {{message.date}}</p>
+                                
+                            </div>
+                        </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="item features-image col-12" id="no-message">
+                        <div class="item-wrapper-chat">
+                            <div class="item-content-chat">
+                                <label class="item-title mbr-fonts-style display-9 text-count">
+                                    
+                                </label>
+                                <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                    В чате пока нет сообщений. Напишите мы обязательно ответим.
+                                </h6>
+                            </div>     
+                        </div>
+                    </div>
+                {% endif %}
+               
+            </div>
+        </div>
+    </section>
+
+    <section id="form_send" class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  style="position:absolute;
+    bottom:0.25rem; padding: 0rem; width: -webkit-fill-available; margin-left: 0.25rem; margin-right: 0.25rem;">
+       
+       <form id="post-form" class="">
+        
+        {% csrf_token %}
+                
+            <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
+            <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
+               
+            <div class="input-group  form-control bg-primary" style="padding: 0rem;">
+                <textarea class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
+                <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+            </div>
+   
+        </form>
+
+    </section>
+
+
+</div>
+</div>
+
+<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+
+<script>
+
+    const chat_id       = '{{params.chat.pk}}';
+    const name_user     = '{{params.user}}';
+    const chatName      = '{{params.chat.slug}}';
+    const last_name     = '{{params.user.last_name}}';
+    const first_name    = '{{params.user.first_name}}';
+    const psevdo_name   = '{{params.user.profiles.eco_name}}';
+    const eco           = '{{params.user.profiles.eco}}';
+
+    var chatSocket;
+    var chatSocket_eco;
+    var wsProtocol = '';
+
+    $("#message").keypress(function (e) {
+        
+        if(e.which === 13 && !e.shiftKey) {
+            $('#form-sumbit').click();
+        };
+        scrollToBottom();
+
+    });
+
+    $(document).ready ( function(){
+        
+        scrollToBottom();
+        connect_ws();
+
+    });
+
+    $('#chat_open').click(function() {
+        scrollToBottom();
+    });
+
+    function connect_ws(){
+        
+        var wsProtocol = 'wss://';
+        var ws_url = 'ah.kors-group.com';
+        
+        chatSocket = new WebSocket(
+            wsProtocol
+            + ws_url
+            + '/ws/'
+            + 'rlk_list_eco'
+            + '/'
+        );
+ 
+    
+        chatSocket.onopen = function() {
+          // subscribe to some channels
+          console.log('open');
+          $("#div_reconect").addClass('d-none');
+        };
+
+        chatSocket.onmessage = function(e){
+            
+            const data = JSON.parse(e.data);
+
+            if (data.message){
+                
+                if (data.chat_id === chat_id ){
+            
+                    document.getElementById('notif').play();
+            
+                    let now = new Date()
+                    var html = ''
+                
+                    if (data.eco ){
+                    
+                        html = '<div class="item-chat-message-owner text-end col-12">';
+                        html += '   <div class="item-chat-body-owner text-end">';
+                        html += '      <div class="item-content-chat">';
+                        html += '          <label class="item-subtitle mbr-fonts-style display-9 fw-bold">';
+                        html += '          ' + data.message.replace(/\n/g, '<br>') + '';
+                        html += '          </label>';
+                        if (data.psevdo_name == ''){
+                            html += '           <p class="item-time-chat-owner text-end" id="chat_m_id_{{data.id}}">' + data.last_name + " " +  data.first_name + " / " + now.getHours() + ':' + now.getMinutes() + '</p>'
+                        } else {
+                            html += '           <p class="item-time-chat-owner text-end" id="chat_m_id_{{data.id}}">' + data.psevdo_name + " / " + now.getHours() + ':' + now.getMinutes() + '</p>' 
+                        }
+                        html += '       </div>';
+                        html += '   </div>';
+                        html += '</div>';
+                    
+                        document.querySelector('#message-list').innerHTML += html;  
+                        scrollToBottom();
+
+                    } else {
+                        html = '<div class="item-chat-message col-12">';
+                        html += '   <div class="item-chat-body">';
+                        html += '      <div class="item-content-chat">';
+                        html += '          <label class="item-subtitle mbr-fonts-style display-9 fw-bold">';
+                        html += '          ' + data.message.replace(/\n/g, '<br>') + '';
+                        html += '          </label>';
+                        if (data.psevdo_name == ''){
+                            html += '           <p class="item-time-chat" id="chat_m_id_{{data.id}}">' + data.last_name + " " +  data.first_name + " / " + now.getHours() + ':' + now.getMinutes() + '</p>'
+                        
+                        } else {
+                            html += '           <p class="item-time-chat" id="chat_m_id_{{data.id}}">' + data.psevdo_name + " / " + now.getHours() + ':' + now.getMinutes() + '</p>'
+                        }
+                        html += '       </div>';
+                        html += '   </div>';
+                        html += '</div>';
+                    
+                        document.querySelector('#message-list').innerHTML += html; 
+                        scrollToBottom(); 
+                         
+                    };
+                    
+                };
+                
+            };
+            
+        }
+
+        chatSocket.onclose = function(e){
+            $("#form_send").addClass('d-none');
+            $("#div_reconect").removeClass('d-none');
+            connect_ws();
+        };
+    
+        
+        document.querySelector('#form-sumbit').onclick = function(e){
+            
+            e.preventDefault();
+
+            const messageInputDom = document.querySelector('#message');
+            const message = messageInputDom.value;
+
+            chatSocket.send(
+                JSON.stringify(
+                    {
+                        'chat_id'       : chat_id,
+                        'name'          : name_user,
+                        'chat'          : chatName,
+                        'message'       : message,
+                        'username'      : name_user,
+                        'last_name'     : last_name,
+                        'first_name'    : first_name,
+                        'psevdo_name'   : psevdo_name,
+                        'eco'           : eco
+                    }
+                )
+            );
+            
+            const no_message = document.getElementById("no-message");
+            
+            if (no_message != null){
+                no_message.style.display = 'none';
+            };
+            
+            $('#message').val("");
+
+            return false;
+
+        }
+
+    };
+    
+   
+    
+    $('#btn_reconect').click(function() {   
+        connect_ws();
+        $("#div_reconect").addClass('d-none');
+        $("#form_send").removeClass('d-none');
+    });
+    
+    function scrollToBottom(){
+        const divs = document.getElementById("message-list");
+        divs.scrollIntoViewIfNeeded();  
+    }
+
+    scrollToBottom();
+    
+    function scrollIntoViewIfNotVisible(target) { 
+        if (target.getBoundingClientRect().bottom > window.innerHeight) {
+            target.scrollIntoView(false);
+        }
+        
+        if (target.getBoundingClientRect().top < 0) {
+            target.scrollIntoView();
+        } 
+    }
+
+</script>

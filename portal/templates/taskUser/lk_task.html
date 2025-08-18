@@ -1,0 +1,77 @@
+ {% extends 'base_web.html' %}
+
+{% block title %} - {{params.manual.title}} {% endblock %}
+
+
+{% block title_navbar %} - {{params.manual.title}} {% endblock %}
+
+
+{% block content %}
+
+
+  <div class="row g-2">
+    
+    <h2>{{params.manual.title}}</h2>
+    
+    <hr>
+    
+    <div class="card">
+      <div class="card-body">
+        {% autoescape off %}
+            {{params.manual.text}}
+        {% endautoescape %}   
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+       
+        <div class="row">
+          {% for tag in params.manual.tags.all %}
+          <div class="col-sm-auto">
+            <input name="tag_id_{{tag.id}}" type="checkbox" class="btn-check" id="{{tag.id}}" autocomplete="off">
+            <label class="btn btn-outline-dark" for="{{tag.id}}">{{tag.name}}</label><br>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <p class="text-muted">
+          Автор: {{params.manual.author}} <br>
+          Обновлено: {{params.manual.dateUpdate}}
+          <a href="/manuals/manual_edit/?id={{params.manual.id}}" class="text-decoration-none">Редактировать</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+       
+  <script>
+    $(document).ready(function ($) {
+
+      $('img').each(function () {
+          $(this).removeAttr('style')
+
+      });
+
+    });
+    
+    CKEDITOR.on("instanceReady", function(event) {
+    event.editor.on("beforeCommandExec", function(event) {
+        // Show the paste dialog for the paste buttons and right-click paste
+        if (event.data.name == "paste") {
+            event.editor._.forcePasteDialog = true;
+        }
+        // Don't show the paste dialog for Ctrl+Shift+V
+        if (event.data.name == "pastetext" && event.data.commandData.from == "keystrokeHandler") {
+            event.cancel();
+        }
+    })
+});
+
+  </script>
+             
+{% endblock %}

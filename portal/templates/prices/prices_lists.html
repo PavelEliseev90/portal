@@ -1,0 +1,128 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - прайс-листы {% endblock %}
+
+{% block title_navbar %} - прайс-листы {% endblock %}
+    
+{% block content %}
+
+
+  
+  <form enctype="multipart/form-data" method="get">
+     
+    <div class="row g-2">
+      
+      <div class="col">
+        <div class="form-floating mb-3">
+          <input type="text" list='options' class="form-control" id="manufacturen" name="manufacturen" placeholder="" value="{{params.filtr.manufacturen}}" {% if params.manufacturen|length > 0 %} readonly {% endif %} >
+            <label for="floatingInput">Производитель</label>
+            <datalist id='options'>
+              {% for manufacture in params.manufacturer  %}
+                <option value='{{manufacture.name}}'>
+              {% endfor %}              
+            </datalist>
+        </div>
+      </div>
+
+    </div>
+  
+    <button type="submit" class="btn btn-outline-success" > <span class="icon-mbri-play"></span> Применить</button>
+  
+  </form>
+
+  <hr style="width: 75%;">
+
+  <div class="row">
+    <div class="col">
+      <a type="submit" href="0" class="btn btn-outline-success btn-sm"> <span class="icon-mbri-plus"></span> Добавить</a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th scope="col">Дата</th>
+        <th scope="col">Производитель</th>
+        <th scope="col">Позиций</th>
+        <th scope="col">Ответственный</th>
+        <th scope="col">Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+     
+      {% if params.paginator.object_list %}
+		    {% for object in params.paginator.object_list %}
+            <tr onclick="window.location.href='{{object.pk}}/'; return false">
+              <td> {{object.date}} </td>
+              <td> {{object.settings.name}} </td>
+              <td> {{object.positions_success}} / {{object.positions_all}} </td>
+              <td> {{object.user.last_name}} {{object.user.first_name}} </td>
+              <td> {{object.status}} </td>
+            </tr>
+          {% endfor %} 
+        {% endif %} 
+    </tbody>
+    
+  </table>
+  </div>
+
+  <div class="row align-self-center align-items-center">
+	
+    <div class="col-auto">
+      <p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
+    </div>
+  
+    <div class="col-auto align-items-center align-self-center justify-content-center">
+      <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+        
+          {% if params.paginator.has_previous %}
+            <li class="page-num mbr-section-btn">
+              <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+            </li>
+          {% endif %}
+      
+          {% for p in params.paginator.paginator.page_range %}
+            {% if params.paginator.number == p %}
+              <li class="page-num mbr-section-btn disabled">
+                <a class="btn btn-secondary display-7">
+                  <b>{{p}}</b>
+                </a>
+              </li>
+            {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+              <li class="page-num mbr-section-btn">
+                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+            
+          {% if params.paginator.has_next %}
+            <li class="page-num mbr-section-btn">
+              <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+            </li>
+          {% endif %}
+    
+        </ul>
+      </nav>
+    </div>
+  
+    <div class="col-2 justify-content-end">
+      
+      <div class="form-floating mb-3">
+        <select class="form-select" id="select_count" name="select_count" onchange="change_link()">
+        <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
+        <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
+        <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
+        <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
+        </select>
+        <label for="floatingInput">Выводить</label>
+      </div>
+      </div>
+  
+  </div>
+
+  {% endblock %}

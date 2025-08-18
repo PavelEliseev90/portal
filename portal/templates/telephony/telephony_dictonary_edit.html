@@ -1,0 +1,44 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - {% if params.new == True %} добавление автозамены слов {% else %} автозамена слов / с "{{params.dictonary.name_s}}" на "{{params.dictonary.name_n}}" {% endif %} {% endblock %}
+
+{% block title_navbar %} - {% if params.new == True %} добавление автозамены слов {% else %} автозамена слов / с "{{params.dictonary.name_s}}" на "{{params.dictonary.name_n}}" {% endif %} {% endblock %}
+
+{% block content %}
+
+<form method="POST" id="form_save" name="form">
+  
+  {% csrf_token %}
+
+    <div class="col-sm my-auto">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" placeholder="" disabled value="{{params.dictonary.date}}" autocomplete="off">
+          <label for="floatingInput">Дата добавления</label>
+      </div>
+    </div>
+    
+    <div class="col-sm my-auto">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name_s" name="name_s" placeholder="" value="{{params.dictonary.name_s}}" autocomplete="off">
+          <label for="floatingInput">Что меняем</label>
+      </div>
+    </div>
+
+    <div class="col-sm my-auto">
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name_n" name="name_n" placeholder="" value="{{params.dictonary.name_n}}" autocomplete="off">
+          <label for="floatingInput">На что меняем</label>
+      </div>
+    </div>
+
+  <div class="d-grid gap-2">
+    <button type="submit" class="btn btn-outline-success" name="save_button" id="save_button"><span class="icon-mbri-refresh"> </span> Сохранить </button>
+  </div>
+
+
+</form>
+
+
+{% endblock %}
+

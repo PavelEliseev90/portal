@@ -1,0 +1,108 @@
+{% extends 'base_web.html' %}
+ 
+{% block title %} - новая инструкция {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+
+<script type="text/javascript">
+    
+  function clearError(groups){
+      errorLabel =document.querySelector('#e' + groups);
+      errorLabel.innerHTML = ""
+  }
+
+  function validate_form(){
+      
+      valid = true
+      var error = document.querySelector('#e');
+      error.innerHTML = ""
+      
+      var manual_title = document.querySelector('#manual_title');   
+      if (manual_title.value.length == 0){
+          valid = false
+          error.innerHTML = error.innerHTML + '<br>' + 'Не указана тема инструкции'
+      } 
+      
+      if (!valid){
+        error.innerHTML = '<b>' +  error.innerHTML + '</b>'
+      }
+
+      return valid
+
+  }
+
+</script>
+
+{{params.request.POST}}
+
+<form name="form" method="post" onsubmit="return validate_form();">
+  
+    {% csrf_token %}
+
+    <div class="row g-2">
+    
+      <div class="row g-1">
+        
+        <div class="col">
+          <div class="input-group">
+            <span class="input-group-text">Тема</span>
+            <input type="text" aria-label="First name" id = "manual_title" name = "manual_title" class="form-control" value="{{params.filtr.phone}}">
+          </div>
+        </div>
+
+        <div class="col-auto">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="activated" name="activated">
+            <label class="form-check-label" for="activated">
+              Активна
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+     
+
+      <div class="django-ckeditor-widget" data-field-id="id_text" style="display: inline-block;">
+        <textarea name="editor" id="editor" cols="30" rows="10"></textarea>
+        <script type="text/javascript" src="ckeditor/ckeditor.js"></script>
+        <script type="text/javascript">
+            CKEDITOR.replace('editor');
+        </script>
+      </div>
+
+      <div class="input-group">
+        <span class="input-group-text">Теги</span>
+        <div class="col-sm" style="padding-left: 5px;">
+          <div class="row">
+            {% for tag in params.tags %}
+            <div class="col-auto">
+              <input name="tag_id_{{tag.id}}" type="checkbox" class="btn-check" id="{{tag.id}}" autocomplete="off">
+              <label class="btn btn-outline-dark" for="{{tag.id}}">{{tag.name}}</label><br>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+    
+      </div>
+      
+      <div class="row g-1">
+        
+        <div class="col-sm-auto">
+          <div class="input-group">
+            <span class="input-group-text">Автор</span>
+            <input type="text" disabled aria-label="First name" class="form-control" value="{{params.user}}">
+          </div>
+        </div>
+        
+      </div>
+
+      <label name="e" id="e" style="color: brown; text-align: center;"></label>
+      
+      <button type="submit" class="btn btn-dark">Сохранить</button>
+
+</form>		         
+             
+{% endblock %}

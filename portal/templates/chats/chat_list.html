@@ -1,0 +1,273 @@
+
+
+<div class="hidemobile" style="position: fixed;
+bottom: 0px;
+right: 0px; 
+padding: 20px;
+z-index: 1030;">
+    <button type="button" class="btn bg-dark text-white" id="chat_open" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><span class="icon-mbri-chat"></span> Список чатов</button>
+</div>
+
+
+<div class="hidesite" style="position: fixed;
+bottom: 0px;
+right: 0px; 
+padding: 20px;
+z-index: 1044;">
+    <button type="button" class="btn bg-dark text-white" id="chat_open" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><span class="icon-mbri-chat"></span></button>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasRightLabel">Список чатов</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+</div>
+
+<div id="div_reconect" class="d-none align-items-center align-self-center">
+    <hr>
+    <label class="fs-6 fw-bold"> Соединение потеряно...</label>
+    <button class="btn btn-outline-danger" id="btn_reconect"><span class="icon-mbri-close"> </span> Переподключится</button>
+    <hr>
+</div>
+
+<div class="offcanvas-body">
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
+        <div class="container">
+        
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+                
+                {% if params.chats|length > 0 %}
+                    
+                    {% for message in params.chats %}
+                        <a href="{{message.name}}/" class="text-dark">
+                            <div class="item-chat-message{% if message.user == params.user %}-owner text-end{% endif %} col-12">
+                                <div class="item-chat-body{% if message.user == params.user %}-owner text-end{% endif %} " >
+                                    
+                                    <div class="item-content-chat">
+                                        <label class="item-subtitle">
+                                            {{message.rlk_unit}}
+                                            <br>
+                                            {{message.mark}} {{message.model}} {{message.modification}}
+                                            <br>
+                                            {{message.vin}}
+                                        </label>  
+                                        <hr>                                  
+                                    </div>
+                                    
+                                    <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} id='chat_m_id_{{message.id}}'">{{message.content}} <br> {{message.max_date}}</p>
+                                    
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+
+                {% endif %}
+               
+            </div>
+        </div>
+    </section>
+
+</div>
+</div>
+
+<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+
+<script>
+
+    const chat_id       = '{{params.chat.pk}}';
+    const name_user     = '{{params.user}}';
+    const chatName      = '{{params.chat.slug}}';
+    const last_name     = '{{params.user.last_name}}';
+    const first_name    = '{{params.user.first_name}}';
+    const psevdo_name   = '{{params.user.profiles.eco_name}}';
+    const eco           = '{{params.user.profiles.eco}}';
+    
+    var chatSocket;
+    var wsProtocol = '';
+
+    function connect_ws_list(){
+        
+        if (window.location.protocol == 'https:') {
+            wsProtocol = wsProtocol
+        } else {
+            wsProtocol = 'ws://'
+        };
+        
+        wsProtocol = 'wss://';
+        var ws_url = 'ah.kors-group.com'
+
+        var chatSocket_list = new WebSocket(
+            wsProtocol
+            + ws_url
+            + '/ws/'
+            + 'rlk_list_eco'
+            + '/'
+        );
+        
+        chatSocket_list.onopen = function() {
+          // subscribe to some channels
+          console.log('open');
+          $("#div_reconect").addClass('d-none');
+          refresh_data();
+
+        };
+
+        chatSocket_list.onmessage = function(e){
+            
+            document.getElementById('notif').play();
+            const data = JSON.parse(e.data);
+
+            if (data.message){
+                
+                var link = '/eco/' + data.chat.replace('rlk_','') + '/';
+                toast(data.chat, data.message , '22:10', link, ' ');
+                
+            }
+            refresh_data();
+        };
+
+        chatSocket_list.onclose = function(e){
+            $("#div_reconect").removeClass('d-none');
+            console.log('OFF');
+            setTimeout(function() {
+              console.log('reconect');
+              connect_ws_list();
+            }, 1000);
+            
+        };
+
+    };
+
+    $(document).ready ( function(){
+        connect_ws_list();
+        scrollToBottom();
+    });
+
+    function refresh_data(){
+        
+        document.querySelector('#message-list').innerHTML = '';
+
+        $.get( "js/get_chats_list/", function( data, status ) { 
+            
+            let i = data.length;
+           
+            for (s = 0; s < i; s++) { // используем существующую переменную
+                
+                let obj = data[s];
+                
+                var html = '';
+                var unit            = '';
+                var mark            = obj.mark;
+                var model           = obj.model;
+                var modification    = obj.modification;
+                
+                if (obj.rlk_unit !== null){
+                    unit = obj.rlk_unit;
+                } else {
+                    unit = obj.rlk_unit_dc;
+                }
+
+                if (mark !== null) {
+
+                } else {
+                    mark = '---';
+                    model = '';
+                    modification = '';
+                }
+                var date_list = new Date(obj.max_date);
+                var formattedDate_list = date_list.toLocaleDateString() + ' ' + date_list.toLocaleTimeString();
+
+                html = '<a href="' + obj.name + '/" class="text-dark">'
+                html += '   <div class="item-chat-message col-12">'
+                html += '                <div class="item-chat-body " >'
+                html += '                    <div class="item-content-chat">'
+                html += '                        <label class="item-subtitle">'
+                html += '                            ' + unit + ''
+                html += '                            <br>'
+                html += '                            ' + mark + ' ' +  model + ' ' + modification + ''
+                html += '                            <br>'
+                html += '                            ' + obj.vin + ''
+                html += '                         </label>  '
+                html += '                        <hr>                                  '
+                html += '                    </div>'
+                html += '                    <p class="item-time-chat">' + obj.content + ' <br> ' + formattedDate_list + '</p>'
+                html += '                </div>'
+                html += '            </div>'
+                html += '        </a>'
+
+                document.querySelector('#message-list').innerHTML = document.querySelector('#message-list').innerHTML  + html ;
+
+            } 
+            
+	    })
+
+    }
+
+    $('#chat_open').click(function() {
+        scrollToBottom();
+    });
+
+    
+    
+
+   
+    $('#btn_reconect').click(function() {   
+        console.log('reconect');
+        connect_ws();
+        
+        $("#div_reconect").addClass('d-none');
+        
+        refresh_data();
+
+    });
+
+    function scrollToBottom(){
+        const divs = document.getElementById("message-list");
+        divs.scrollIntoViewIfNeeded();  
+    };
+
+    scrollToBottom();
+
+    function scrollIntoViewIfNotVisible(target) { 
+        if (target.getBoundingClientRect().bottom > window.innerHeight) {
+            target.scrollIntoView(false);
+        }
+        
+        if (target.getBoundingClientRect().top < 0) {
+            target.scrollIntoView();
+        } 
+    };
+
+    
+
+</script>
+
+<!--
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen-md-down">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">Новое сообщение</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+            <form>
+                <div class="mb-3">
+                <label for="recipient-name" class="col-form-label">Получатель:</label>
+                <input type="text" class="form-control" id="recipient-name">
+                </div>
+                <div class="mb-3">
+                <label for="message-text" class="col-form-label">Сообщение:</label>
+                <textarea class="form-control" id="message-text"></textarea>
+                </div>
+            </form>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            <button type="button" class="btn btn-primary">Отправить сообщение</button>
+            </div>
+        </div>
+        </div>
+    </div>
+-->

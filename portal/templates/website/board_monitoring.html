@@ -1,0 +1,597 @@
+{% extends 'base_web.html' %}
+
+{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+
+{% block title %} - мониторинг {% endblock %}
+
+{% block title_navbar %} - мониторинг {% endblock %}
+    
+{% block content %}
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+
+ 
+  
+    <div class="row g-2">
+
+      <div class="col-sm">
+        <div class="card bg-light ">
+          <div class="card-header">ОПФУ <--> Облака</div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              {% if params.ip_errors %}
+                <button class="btn btn-danger " type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                  Есть проблемы!
+                </button>
+              {% else %}
+                <button class="btn btn-outline-success dw-block  " type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                  Подробнее
+                </button>
+              {% endif %}
+          </div>
+            <hr>
+            {% if params.ip_errors %}
+              <div class="" id="">
+            {% else %}
+              <div class="collapse" id="collapseExample">
+            {% endif %}
+              
+              
+            <table class="table table-sm table-striped">
+              <tbody>
+                {% for ip in params.ip %}
+                  <tr>
+                    <th class="align-middle" scope="row">{{ip.name}}</th>
+                      <td class="align-middle">
+                        {% for files in ip.files %}
+                          {% if files.size > 10 %}  
+                            <button type="button" class="btn btn-danger ">{{files.size}} кб</button>
+                          {% elif files.size > 7 %}
+                            <button type="button" class="btn btn-warning ">{{files.size}} кб</button>
+                          {% else %}
+                            <button type="button" class="btn btn-success ">{{files.size}} кб</button>
+                          {% endif %}
+                        {% endfor %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm">
+        <div class="card bg-light ">
+          <div class="card-header">ДЦ 1С</div>
+          <div class="card-body">
+              <div class="d-grid gap-2">
+                {% if params.refs_ib_error %}
+                  <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample_dc" aria-expanded="false" aria-controls="collapseExample_dc">
+                    Есть проблемы!
+                  </button>
+                {% else %}
+                  <button class="btn btn-outline-success dw-block" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample_dc" aria-expanded="false" aria-controls="collapseExample_dc">
+                    Подробнее
+                  </button>
+                {% endif %}
+            </div> 
+            <hr>
+            {% if params.refs_ib_error %}
+              <div class="" id="">
+            {% else %}
+              <div class="collapse" id="collapseExample_dc">
+            {% endif %}
+            <table class="table table-sm table-striped">
+              <tbody>
+                {% for ref_base in params.refs_ib %}
+                  <tr {% if ref_base.response != 200 %} class="bg-warning" {% endif %}>
+                    <td>
+                      {% if ref_base.ib.base == 'ralfahaval' %}  
+                        Альфа
+                      {% else %}
+                        ДЦ
+                      {% endif %}
+                    </td>
+                    <th class="align-middle" scope="row"><span class="icon-mbri-database"></span> {{ref_base.ib.name}}</th>
+                    <!--
+                    <td class="align-middle">
+                      <form method="post">
+                        <input hidden name="id_base" value="{{ref_base.ib.id}}">
+                        <button class="btn" type="submit" name="delite_base"><span class="icon-mbri-error"></span></button>
+                      </form>
+                    </td>
+                    -->
+                    
+                    <td>
+                      {% if ref_base.count != '-' %}  
+                        {% if ref_base.count > 50 %}
+                          <span class="bg-danger text-white">{{ref_base.count}}</span>
+                        {% else %}
+                          {{ref_base.count}}
+                        {% endif %}
+                      {% else %}
+                        <b>{{ref_base.count}}</b>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if ref_base.response == 200 %}  
+                        {{ref_base.response}}
+                      {% else %}
+                        <b>{{ref_base.response}}</b>
+                      {% endif %}
+                    </td>
+                    <td class="align-middle">
+                      {% if ref_base.response == 200 %}  
+                        <a class="text-success" href="http://{{ref_base.ib.server}}/{{ref_base.ib.base}}/ws/DCChange.1cws"><span class="icon-mbri-play"></span></a>
+                      {% else %}
+                        <b><a class="text-danger" href="http://{{ref_base.ib.server}}/{{ref_base.ib.base}}/ws/DCChange.1cws"><span class="icon-mbri-close"></span></a> </td>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+
+        <br>
+
+        <div class="card bg-light ">
+          <div class="card-header">Обновление автомобилей корсавто</div>
+          <div class="card-body">
+              
+            
+           
+           
+            <table class="table table-sm table-striped">
+              <tbody>
+                {% for log_cars in params.list_log_refresh_cars %}
+                  <tr>
+                    <td>
+                      {{log_cars.date}}
+                    </td>
+                    <td>
+                      {{log_cars.unit}}
+                    </td>
+                    <td>
+                      <b><span class="icon-mbri-plus"></span></b>{{log_cars.add}}
+                    </td>
+                    <td>
+                      <span class="icon-mbri-minus"></span>{{log_cars.del}}
+                    </td>
+                    <td>
+                      <span class="icon-mbri-play"></span>{{log_cars.stock}}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm">
+        
+        <div class="row g-1">
+          <div class="col-sm">
+                  
+            <div class="card bg-light ">
+              <div class="card-header">ОПФУ</div>
+              <div class="card-body">
+                
+                <div class="row g-1">
+              
+                <div class="col-sm-auto">
+                   
+                      {% if params.count_swap_opfu > 20 %}
+                        <button type="button" class="btn btn-danger">отправка в ДЦ - {{params.count_swap_opfu}}</button>
+                      {% elif params.count_swap_opfu > 10 %}
+                        <button type="button" class="btn btn-warning">отправка в ДЦ - {{params.count_swap_opfu}}</button>
+                      {% else %}
+                        <button type="button" class="btn btn-success">отправка в ДЦ - {{params.count_swap_opfu}}</button>
+                      {% endif %}
+                   
+                </div>
+
+              </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        
+        <br>
+
+        <div class="row g-1">
+
+          <div class="col-sm">
+
+            <div class="card bg-light ">
+              <div class="card-header">1C КорсАвто</div>
+              <div class="card-body">
+                
+                <div class="row g-2">
+              
+                  <div class="col-sm-auto">
+                        
+                      {% if params.answer_kors_avto %}
+                        <button type="button" class="btn btn-success">Web - service</button>
+                      {% else %}
+                        <button type="button" class="btn btn-danger">Web - service</button>
+                      {% endif %}
+                    
+                  </div>
+  
+                  <div class="col-sm-auto">
+                       
+                      {% if params.count_swap %}
+                        {% if params.count_swap > 20 %}
+                          <button type="button" class="btn btn-danger">Свап - {{params.count_swap}}</button>
+                        {% elif params.count_swap > 10 %}
+                          <button type="button" class="btn btn-warning">Свап - {{params.count_swap}}</button>
+                        {% else %}
+                          <button type="button" class="btn btn-success">Свап -{{params.count_swap}}</button>
+                        {% endif %}
+                      {% endif %}
+                    
+                  </div>
+
+                </div>
+              </div>
+            </div>
+  
+          </div>
+  
+        </div>
+
+        <br>
+        
+        <div class="row g-2">
+        
+          <div class="col-sm">
+                    
+            <div class="card bg-light ">
+              <div class="card-header">ИП Кострюков --> AVITO</div>
+              <div class="card-body">
+                <div class="row g-1">
+              
+                  <div class="col-sm">
+                    <div class="row g-2">
+                      {% if params.answer_bu_avito == True %}
+                        <button type="button" class="btn btn-success"> OK </button>
+                      {% else %}
+                        <p>Смотри 194.87.107.139:55510 hfs должна быть запущена</p>
+                        <button type="button" class="btn btn-danger"> ERROR </button>
+                      {% endif %}
+                    </div>
+                  </div>
+              </div>  
+              </div>
+            </div>
+
+            
+          </div>
+          
+          <div class="col-sm">
+                    
+            
+
+          </div>
+          
+        </div>
+
+        <br>
+
+        <div class="card bg-light ">
+          <div class="card-header">K01SRVDASH</div>
+          <div class="card-body">
+            
+            <div class="row g-1">
+          
+              <div class="row g-2">
+                
+                <div class="col-sm">
+                  <div class="card bg-light ">
+                    <div class="card-header">D:\ cервер</div>
+                    <div class="card-body">
+                      <div class="row g-1">
+                    
+                        <div class="col-sm">
+                          <div class="row g-2">
+                            {% if params.space_disk_free > 100 %}
+                              <button type="button" class="btn btn-success"> {{params.space_disk_free}} GB </button>
+                            {% elif params.count_swap > 10 %}
+                              <button type="button" class="btn btn-warning"> {{params.space_disk_free}} GB </button>
+                            {% else %}
+                              <button type="button" class="btn btn-danger"> {{params.space_disk_free}} GB </button>
+                            {% endif %}
+                          </div>
+                        </div>
+                    </div>  
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-sm">
+                  <div class="card bg-light ">
+                    <div class="card-header">E:\ cервер</div>
+                    <div class="card-body">
+                      <div class="row g-1">
+                    
+                        <div class="col-sm">
+                          <div class="row g-2">
+                            {% if params.space_disk_free_e > 200 %}
+                              <button type="button" class="btn btn-success"> {{params.space_disk_free_e}} GB </button>
+                            {% elif params.space_disk_free_e > 100 %}
+                              <button type="button" class="btn btn-warning"> {{params.space_disk_free_e}} GB </button>
+                            {% else %}
+                              <button type="button" class="btn btn-danger"> {{params.space_disk_free_e}} GB </button>
+                            {% endif %}
+                          </div>
+                        </div>
+                    </div>  
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-sm">
+                          
+                  <div class="card bg-light ">
+                    <div class="card-header">Записи для конвертации</div>
+                    <div class="card-body">
+                      <div class="row g-1">
+                    
+                        <div class="col-sm">
+                          <div class="row g-2">
+                            {% if params.record_convert < 5 %}
+                              <button type="button" class="btn btn-success"> {{params.record_convert}} </button>
+                            {% else %}
+                              <button type="button" class="btn btn-danger"> {{params.record_convert}} </button>
+                            {% endif %}
+                          </div>
+                        </div>
+                    </div>  
+                    </div>
+                  </div>
+      
+                </div>
+                
+                <div class="col-sm">
+                          
+                  <div class="card bg-light ">
+                    <div class="card-header">Записи для распознавания</div>
+                    <div class="card-body">
+                      <div class="row g-1">
+                    
+                        <div class="col-sm">
+                          <div class="row g-2">
+                            {% if params.record_recognitions > 30 %}
+                              <button type="button" class="btn btn-danger"> {{params.record_recognitions}} </button>
+                            {% elif params.record_recognitions > 10 %}
+                              <button type="button" class="btn btn-warning"> {{params.record_recognitions}} </button>
+                            {% else %}
+                              <button type="button" class="btn btn-success"> {{params.record_recognitions}} </button>
+                            {% endif %}
+                          </div>
+                        </div>
+                    </div>  
+                    </div>
+                  </div>
+      
+                </div>
+
+                <div class="col-sm">
+                          
+                  <div class="card bg-light ">
+                    <div class="card-header">Звонки для распознавания</div>
+                    <div class="card-body">
+                      <div class="row g-1">
+                    
+                        <div class="col-sm">
+                          <div class="row g-2">
+                            {% if params.op_queue_doc > 30 %}
+                              <button type="button" class="btn btn-danger"> {{params.op_queue_doc}} / {{params.op_queue}}</button>
+                            {% elif params.op_queue_doc > 10 %}
+                              <button type="button" class="btn btn-warning"> {{params.op_queue_doc}} / {{params.op_queue}}</button>
+                            {% else %}
+                              <button type="button" class="btn btn-success"> {{params.op_queue_doc}} / {{params.op_queue}}</button>
+                            {% endif %}
+                          </div>
+                        </div>
+                    </div>  
+                    </div>
+                  </div>
+
+                </div>
+                
+                <div class="col-sm">
+                          
+                    <div class="card bg-light ">
+                      <div class="card-header">Автохаб</div>
+                      <div class="card-body">
+                        <div class="row g-1">
+                      
+                          <div class="col-sm">
+                            <div class="row g-2">
+                                <button type="button" class="btn btn-success"> {{params.autohab}}</button>
+                            </div>
+                          </div>
+                      </div>  
+                      </div>
+                    </div>
+      
+                </div>
+
+                <div class="col-sm">
+                          
+                  <div class="card bg-light ">
+                    <div class="card-header">Robo_Мойки</div>
+                    <div class="card-body">
+                      <div class="row g-1">
+                    
+                        <div class="col-sm">
+                          <div class="row g-2">
+                              <button type="button" class="btn btn-success"> {{params.robowash}}</button>
+                          </div>
+                        </div>
+                    </div>  
+                    </div>
+                  </div>
+    
+                </div>
+
+              </div>
+
+              <div class="row g-2">
+                <div class="col-sm">
+                              
+                  <div class="card bg-light ">
+                    <div class="card-header">Каталоги</div>
+                      <div class="card-body">
+                          <div class="row">
+                              {% for catalog in params.info_refresh_catalogs %}
+                                <button type="button" class="btn btn-info-outline"> {{catalog.site}} - {{catalog.max_date}}  </button>
+                              {% endfor %}
+                          </div>
+                          <br>
+                          <div class="row">
+                            
+                            <button type="button" class="btn btn-info-outline"> Обновить тех информацию - {{params.modifications_count}} </button>
+                            
+                          </div>
+                          
+                      </div>
+
+                      
+                  </div>
+                
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+        
+      </div>
+
+      
+      <!--
+      <div class="col-sm">
+        
+        
+        <div class="row g-2">
+          <div class="card">
+              <div class="card-header">POWER BI</div>
+              <div class="card-body">
+                <div class="table-responsive">
+                <table class="table table-sm table-striped" style="align-content: center;">
+                  
+                  <tbody>
+                    {% for power_bi in params.power_bi %}
+                      <tr>
+                        <td class="align-middle">
+                          {{power_bi.date}}
+                          <br>
+                          {{power_bi.title}} 
+                        </td>
+                        <td class="align-middle">
+                          +{{power_bi.add}} 
+                          <br>
+                          -{{power_bi.delite}}
+                        </td> 
+                        
+                        <td class="align-middle">
+                          {{power_bi.filtr}}
+                        </td>
+                                            
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                
+                </table>
+              </div>
+              </div>
+          </div>
+        </div>
+        
+      </div>
+    -->
+
+    </div>
+
+    
+
+<script>
+
+Highcharts.chart('container', {
+    chart: {
+        type: 'bar'
+    },
+    title: {
+        text: 'Облачка',
+        align: 'left'
+    },
+    subtitle: {
+        text: 'белогривые лошадки',
+        align: 'left'
+    },
+    xAxis: {
+        categories: {{params.info_ip.list_name|safe}},
+        title: {
+            text: null
+        },
+        gridLineWidth: 1,
+        lineWidth: 0
+    },
+    yAxis: {
+        min: 0,
+        title: {
+            text: 'размер (kb)',
+            align: 'high'
+        },
+        labels: {
+            overflow: 'justify'
+        },
+        gridLineWidth: 0
+    },
+    tooltip: {
+        valueSuffix: ' kb'
+    },
+    plotOptions: {
+        bar: {
+            borderRadius: '50%',
+            dataLabels: {
+                enabled: true
+            },
+            groupPadding: 0.1
+        }
+    },
+    credits: {
+        enabled: false
+    },
+    series: [{
+        name: 'in',
+        data: {{params.info_ip.list_ip_in|safe}},
+    }, {
+        name: 'out',
+        data: {{params.info_ip.list_ip_out|safe}},
+    }]
+});
+
+
+</script>
+
+ 
+ 
+{% endblock %}

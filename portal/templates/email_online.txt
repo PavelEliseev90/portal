@@ -1,0 +1,29 @@
+﻿
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>VSEMesta в одном месте</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="grid"> 
+      <div style="text-align: center;">
+          <a href='http://vsemesta.info'><img  style="width:300px;" class="img_prev" style="text-align: center;" alt='Доступно в Google Play' src='http://vsemesta.info/static/media/1024.png'/></a>
+      </div>
+      <div class="header">
+        <div class="header-content">
+         <center>Ваш код подтверждения - <b>{{ username }}</b>.</center>
+         <br>
+         <br>
+         
+        </div>  
+      </div>
+      
+      <br>
+      <div style="text-align: center;">
+          <a href='https://play.google.com/store/apps/details?id=info.vsemesta.vsemesta&utm_source=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dinfo.vsemesta.vsemesta&utm_campaign=VSEMesta&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img style="width:200px;" alt='Доступно в Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/ru_badge_web_generic.png'/></a>
+      </div>
+    </div>
+    </body>
+</html> 

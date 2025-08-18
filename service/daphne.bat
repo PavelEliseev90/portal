@@ -1,0 +1,1 @@
+call daphne -p 444 portal.asgi:application

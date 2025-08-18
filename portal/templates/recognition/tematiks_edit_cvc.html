@@ -1,0 +1,77 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - {% if params.new == True %} добавление тематики {% else %} тематика / {{params.tematika.name}} {% endif %} {% endblock %}
+
+{% block title_navbar %} - {% if params.new == True %} добавление тематики {% else %} тематика / {{params.tematika.name}} {% endif %} {% endblock %}
+
+{% block content %}
+
+<form method="POST" id="form_save" name="form">
+  
+  {% csrf_token %}
+ 
+  <button type="submit" class="btn btn-outline-success" name="save_button" id="save_button"><span class="icon-mbri-refresh"> </span> Сохранить </button>
+  
+  <div class="row g-1">
+    
+    <div class="row g-3">
+          
+      <div class="col-sm my-auto">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.tematika.name}}" readonly autocomplete="off">
+          <label for="floatingInput">Наименование</label>
+        </div>
+      </div>
+      
+      <div class="col-sm-auto my-auto">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="id_cvc" name="id_cvc" placeholder="" value="{{params.tematika.id_cvc}}" readonly autocomplete="off">
+            <label for="floatingInput">ID CVC</label>
+        </div>
+      </div>
+
+
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+              
+          <div class="col-sm-auto my-auto">
+            <div class="form-floating mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" name="status" id="status" {% if params.tematika.activated == True %} checked {% endif %} >
+                <label class="form-check-label" for="status">Активна</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-auto my-auto">
+            <div class="form-floating mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" name="canceled" id="canceled" {% if params.tematika.canceled == True %} checked {% endif %} >
+                <label class="form-check-label" for="canceled">Не создавать чек лист если найдена</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-auto my-auto">
+            <div class="form-floating mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" name="company" id="company" {% if params.tematika.company == True %} checked {% endif %} >
+                <label class="form-check-label" for="company">ЮрЛицо</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</form>
+
+{% endblock %}
+

@@ -1,0 +1,142 @@
+{% extends 'base_web.html' %}
+
+
+{% block title %} - распознанные звонки по ОП новых автомобилей {% endblock %}
+
+{% block title_navbar %} - распознанные звонки по ОП новых автомобилей {% endblock %}
+
+
+{% block content %}
+
+<div class="row g-1 align-items-center">
+  <div class="col-sm-auto my-auto">
+    <div class="form-floating mb-3">
+      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+      <label for="floatingInput">С</label>
+    </div>
+  </div>
+  
+  <div class="col-sm-auto my-auto">
+    <div class="form-floating mb-3">
+      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+      <label for="floatingInput">По</label>
+    </div>
+  </div>
+  
+  <div class="col-sm-auto my-auto ">
+    <div class="form-floating mb-3">
+      <div class="d-grid gap-2 my-auto">
+        <button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Обновить </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+  
+{% if params.data|length == 0 %}
+  <div class="row g-1">
+            
+          
+    <div class="col-sm">
+      <div class="card mb-3 border-danger">
+          <div class="card-body">
+              
+              <div style="text-align: center;" class="row g-1">
+                <p class="fs-5 fw-normal">ХМ... данные не найдены, проверьте правильность выбора периода вывода данных.</p>
+              </div>
+      
+          </div>
+      </div>
+    </div>
+
+  </div>
+{% else %}  
+  {% for city_info in params.data %}
+    {% if city_info.city__name|length > 0 %}
+    <div class="card mb-3">
+      <div class="row g-0">
+      
+      <div class="col-sm">
+        <div class="card-body">
+          <h5 class="card-title"> <span class="icon-mbri-home"> </span> {{city_info.city__name}} </h5>
+          <p class="fs-6 fw-bold font-monospace">
+          <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-50">
+            <span class="icon-mbri-chat"> </span> {{city_info.count_city}}
+            <span class="icon-mbri-clock"> </span> {{city_info.duration_city}}
+            <span class="visually-hidden"></span>
+          </span>
+        </p>
+          <div class="row g-4">
+            
+            {% if city_info.units|length > 0 %}
+
+              {% for unit in city_info.units %}
+                
+                <div class="col-sm-auto">
+                  <div class="row g-1">
+                        
+                    <div class="col-sm-auto">
+                      <a class="nav-link text-dark" href='{{unit.unit__id}}/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}'>
+                      <div class="card border-success mb-3">
+                        <div class="card-body">
+                          <div class="card-title"><span class="icon-mbri-edit"></span><b>{{unit.unit__name}} </b></div>
+                          <hr>
+                          <div class="book">
+                            <p><span>Количество</span><span>{{unit.count}}</span></p>
+                            <p><span>Продолжительность</span><span>{{unit.duration}}</span></p>
+                          </div>
+                        </div>
+                      </div>
+                      </a>
+                    </div>
+          
+            
+                  </div>
+                </div>
+                
+              {% endfor %}
+
+            {% else %}
+                <div style="text-align: center;" class="row g-1">
+                  <p class="fs-5 fw-normal">Нет данных.</p>
+                </div>
+            {% endif %}
+          </div>
+          
+        </div>
+      </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+
+
+  <script language="JavaScript">
+	
+    function change_link(){
+      
+      var url 	= new URL(document.location.href);
+      
+      find_date = document.getElementById('date_start').value;
+      if (find_date.length > 0){
+        url.searchParams.set('date_start', find_date);
+      }else{
+        url.searchParams.delete('date_start')
+      }
+      find_date_end = document.getElementById('date_end').value;
+      if (find_date_end.length > 0){
+        url.searchParams.set('date_end', find_date_end);
+      }else{
+        url.searchParams.delete('date_end')
+      }
+  
+      document.location.href  = url.href;
+  
+    }
+  
+  </script>
+
+{% endblock %}
+
