@@ -3125,6 +3125,9 @@ def estimations_price_calculation(estimation, type_calculation):
     
     cna_expenses = zna - amount_sum 
     
+    if cna_expenses < 0:
+        cna_expenses = zna
+        
     price = {
         'kors_price_reception'          : kors_price_reception,
         'profit'                        : profit,
