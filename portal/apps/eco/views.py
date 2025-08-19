@@ -2209,18 +2209,19 @@ def estimations_price_calculation(estimation, type_calculation):
 
 
     # продажи и статистика корсавто
-    if estimation.kors_sale_cost_price_avg > 0:
-        price_new   = (price + estimation.kors_sale_cost_price_avg) / 2
-        diff        = price - price_new
-        if diff > 0:
-            price = price_new
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'   : "Цена скоректирована c учетом истории продаж аналогичных АМ КорсАвто",  
-                'name'      : "история корсавто"  
-            }
-            list_info_price.append(inf_price)
+    # пока убрали
+    #if estimation.kors_sale_cost_price_avg > 0:
+    #    price_new   = (price + estimation.kors_sale_cost_price_avg) / 2
+    #    diff        = price - price_new
+    #    if diff > 0:
+    #        price = price_new
+    #        inf_price = {
+    #            'price'     : price,
+    #            'dif'       : diff,
+    #            'comment'   : "Цена скоректирована c учетом истории продаж аналогичных АМ КорсАвто",  
+    #            'name'      : "история корсавто"  
+    #        }
+    #        list_info_price.append(inf_price)
 
     # расчеты ремонта
     if estimation.avtoteka_car_autodex > 0:
@@ -3066,46 +3067,47 @@ def estimations_price_calculation(estimation, type_calculation):
     if zna_type != '1C':
         #Проверяем корректировку ЦНА
         if zna_izp_type > 0:            
-            if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
-                zna_type_name = ''
-                if zna_izp_type == 1:
-                    zna_type_name = '"Использовать если нет данных КорсАвто"'
-                else:
-                    zna_type_name = '"Использовать всегда"'
-                price_old       = price
-                day = day_sale_all
-                if day_sale_zg > 0:
-                    day = day_sale_zg
+            #if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
+            zna_type_name = ''
+            if zna_izp_type == 1:
+                zna_type_name = '"Использовать если нет данных КорсАвто"'
+            else:
+                zna_type_name = '"Использовать всегда"'
+            price_old       = price
+            day = day_sale_all
+            if day_sale_zg > 0:
+                day = day_sale_zg
 
-                fin = fin_all
-                if fin_zg > 0:
-                    fin = fin_zg
+            fin = fin_all
+            if fin_zg > 0:
+                fin = fin_zg
 
-                if estimation.hub_days_in_stok_avg > 0:
-                    day = estimation.hub_days_in_stok_avg 
+            if estimation.hub_days_in_stok_avg > 0:
+                day = estimation.hub_sale_days_in_stok_avg
+                #day = estimation.hub_days_in_stok_avg # Переключил по согласованию с Серебрянниковым, для расчета дней не текущего рынка а истории продаж
+            
+            finance = round(price * ((fin / 365) / 100) * day, 2) 
+            
+            price           = price - finance
+            diff            = finance
+            finance_price   = finance
 
-                finance = round(price * ((fin / 365) / 100) * day, 2) 
-                
-                price           = price - finance
-                diff            = finance
-                finance_price   = finance
-
-                inf_price = {
-                    'price'     : price,
-                    'dif'       : diff,
-                    'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней, (вариант использования: " + zna_type_name + ")",
-                    'name'      : "финансирование"
-                }
-                '''
-                price           = price - (price * zna_izp_kf / 100) 
-                diff            = (price_old *  zna_izp_kf / 100)
-                inf_price = {
-                    'price'     : price,
-                    'dif'       : diff,
-                    'comment'  : "ЦНА скоректирована на " + str(zna_izp_kf)  + "% (вариант использования: " + zna_type_name + ")"
-                }
-                '''
-                list_info_price.append(inf_price)
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней, (вариант использования: " + zna_type_name + ")",
+                'name'      : "финансирование"
+            }
+            '''
+            price           = price - (price * zna_izp_kf / 100) 
+            diff            = (price_old *  zna_izp_kf / 100)
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'  : "ЦНА скоректирована на " + str(zna_izp_kf)  + "% (вариант использования: " + zna_type_name + ")"
+            }
+            '''
+            list_info_price.append(inf_price)
     
     #ИТОГ
     estimation_price    = round(price, -2)
