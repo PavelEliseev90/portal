@@ -1720,3 +1720,174 @@
 </script>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	
+	initCarsSlider();
+});
+
+function initCarsSlider() {
+	const slider = document.getElementById('carsSlider');
+	if (!slider) return;
+	
+	const prevBtn = document.getElementById('carsSliderPrev');
+	const nextBtn = document.getElementById('carsSliderNext');
+	const indicatorsContainer = document.getElementById('carsSliderIndicators');
+	
+	if (!slider || !prevBtn || !nextBtn || !indicatorsContainer) return;
+	
+	const slideItems = slider.querySelectorAll('.cars-slide-item');
+	const totalItems = slideItems.length;
+	
+	if (totalItems === 0) return;
+	
+	let currentSlide = 0;
+	let itemsPerSlide = getItemsPerSlide();
+	let totalSlides = Math.ceil(totalItems / itemsPerSlide);
+	
+	createIndicators();
+	
+	updateSlider();
+	
+	prevBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+		updateSlider();
+	});
+	
+	nextBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide + 1) % totalSlides;
+		updateSlider();
+	});
+	
+	indicatorsContainer.addEventListener('click', (e) => {
+		if (e.target.classList.contains('cars-slider-indicator')) {
+			const slideIndex = parseInt(e.target.dataset.slide);
+			currentSlide = slideIndex;
+			updateSlider();
+		}
+	});
+	
+	let touchStartX = 0;
+	let touchEndX = 0;
+	let minSwipeDistance = 50;
+	
+	slider.addEventListener('touchstart', (e) => {
+		touchStartX = e.touches[0].clientX;
+	});
+	
+	slider.addEventListener('touchmove', (e) => {
+		e.preventDefault(); 
+	});
+	
+	slider.addEventListener('touchend', (e) => {
+		touchEndX = e.changedTouches[0].clientX;
+		const swipeDistance = touchEndX - touchStartX;
+		
+		if (Math.abs(swipeDistance) > minSwipeDistance) {
+			if (swipeDistance > 0) {
+				currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+			} else {
+				currentSlide = (currentSlide + 1) % totalSlides;
+			}
+			updateSlider();
+		}
+	});
+	
+	window.addEventListener('resize', () => {
+		const newItemsPerSlide = getItemsPerSlide();
+		if (newItemsPerSlide !== itemsPerSlide) {
+			itemsPerSlide = newItemsPerSlide;
+			totalSlides = Math.ceil(totalItems / itemsPerSlide);
+			currentSlide = Math.min(currentSlide, totalSlides - 1);
+			createIndicators();
+			updateSlider();
+		}
+	});
+	
+	function getItemsPerSlide() {
+		const width = window.innerWidth;
+		const containerWidth = slider.offsetWidth;
+		const itemWidth = width >= 1200 ? 300 : width >= 768 ? 280 : width >= 576 ? 260 : 240;
+		const gap = 16; // 1rem gap
+		
+		// Вычисляем количество карточек, которые помещаются в контейнер
+		return Math.floor((containerWidth + gap) / (itemWidth + gap));
+	}
+	
+	function createIndicators() {
+		indicatorsContainer.innerHTML = '';
+		
+		for (let i = 0; i < totalSlides; i++) {
+			const indicator = document.createElement('button');
+			indicator.className = 'cars-slider-indicator';
+			indicator.dataset.slide = i;
+			indicator.setAttribute('aria-label', `Перейти к слайду ${i + 1}`);
+			indicatorsContainer.appendChild(indicator);
+		}
+	}
+	
+	function updateSlider() {
+        
+		const itemWidth = window.innerWidth >= 1200 ? 300 : window.innerWidth >= 768 ? 280 : window.innerWidth >= 576 ? 260 : 240;
+		const gap = 16; 
+		const translateX = -(currentSlide * (itemWidth + gap));
+		slider.style.transform = `translateX(${translateX}px)`;
+		
+		
+		const indicators = indicatorsContainer.querySelectorAll('.cars-slider-indicator');
+		indicators.forEach((indicator, index) => {
+			indicator.classList.toggle('active', index === currentSlide);
+		});
+		
+		
+		prevBtn.disabled = totalSlides <= 1;
+		nextBtn.disabled = totalSlides <= 1;
+		
+		
+		slider.classList.add('loading');
+		setTimeout(() => {
+			slider.classList.remove('loading');
+		}, 100);
+		
+		
+		slider.setAttribute('aria-current', currentSlide + 1);
+		slider.setAttribute('aria-label', `Слайд ${currentSlide + 1} из ${totalSlides}`);
+	}
+	
+	
+	let autoPlayInterval;
+	
+	function startAutoPlay() {
+		if (totalSlides <= 1) return;
+		
+		autoPlayInterval = setInterval(() => {
+			currentSlide = (currentSlide + 1) % totalSlides;
+			updateSlider();
+		}, 5000); 
+	}
+	
+	function stopAutoPlay() {
+		if (autoPlayInterval) {
+			clearInterval(autoPlayInterval);
+			autoPlayInterval = null;
+		}
+	}
+	
+	
+	startAutoPlay();
+	
+	
+	slider.addEventListener('mouseenter', stopAutoPlay);
+	slider.addEventListener('mouseleave', startAutoPlay);
+	slider.addEventListener('focusin', stopAutoPlay);
+	slider.addEventListener('focusout', startAutoPlay);
+	
+	
+	slider.addEventListener('touchstart', stopAutoPlay);
+	slider.addEventListener('touchend', () => {
+		setTimeout(startAutoPlay, 3000); 
+	});
+}
+</script>
+
+

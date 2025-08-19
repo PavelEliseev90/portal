@@ -685,76 +685,85 @@
 
 <div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
 
-<div class="row g-4 align-self-center align-items-center cars_list">
-		
+<div class="cars-slider-container">
 	{% if params.paginator.object_list %}
-		
-		{% for car in params.paginator.object_list %}
-
-			<div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4" >		
-				<div class="card bg-white bg-opacity-75" onclick="window.location.href='{{car.slug}}'; return false" > 
-					
-					<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
-
-						<div>
-							<img class="item-img" src="{{car.get_photo}}" >
-						</div>
-
-						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+		<div class="cars-slider" id="carsSlider">
+			{% for car in params.paginator.object_list %}
+				<div class="cars-slide-item" data-car-id="{{car.id}}">
+					<div class="card bg-white bg-opacity-75" onclick="window.location.href='{{car.slug}}'; return false" > 
 						
-							<div class="col-3" style="height: 60px;">
-								<img class="item-img-mini"  src="{{car.logo}}" > <br>
+						<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
+
+							<div>
+								<img class="item-img" src="{{car.get_photo}}" >
 							</div>
-	
-							<div class="col text-end align-self-center">
-								<span class="fs-6  icon-mbri-pin"> {{car.unit.name}}</span>
-							</div>
-						</div>
-			
-						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+
+							<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
 							
-							<div class="col text-truncate">
+								<div class="col-3" style="height: 60px;">
+									<img class="item-img-mini"  src="{{car.logo}}" > <br>
+								</div>
+		
+								<div class="col text-end align-self-center">
+									<span class="fs-6  icon-mbri-pin"> {{car.unit.name}}</span>
+								</div>
+							</div>
+				
+							<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
 								
-								<span class="fs-5"> {{car.modification_autoru.model.mark.name}} 
-									<br> 
-									{{car.modification_autoru.model.name}}
-								</span>
+								<div class="col text-truncate">
+									
+									<span class="fs-5"> {{car.modification_autoru.model.mark.name}} 
+										<br> 
+										{{car.modification_autoru.model.name}}
+									</span>
 
+								</div>
+		
+								<div class="col text-end align-self-center">
+									<span class="fs-4 fw-bold"> {{car.price|floatformat:"2g"}} </span> &#8381;
+								</div>
 							</div>
-	
-							<div class="col text-end align-self-center">
-								<span class="fs-4 fw-bold"> {{car.price|floatformat:"2g"}} </span> &#8381;
+		
+							<div class="row g-1 text-secondary align-self-center align-items-center" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+								<div class="col-8 text-truncate">
+									<span class="fs-6 text-secondary" >
+										{{car.modification_autoru.engine_volume}} л. /
+										{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
+										{{car.modification_autoru.typeEngine.name}}
+										<br>
+										{{car.modification_autoru.typeGear.name}}
+										<br>
+										{{car.modification_autoru.typeBody.name}}</span>
+								</div>
+								<div class="col text-end align-self-center align-items-center">
+									<span class="fs-6"> {{car.year}}</span>
+										<br>
+									<span class="fs-6"> {{car.run|floatformat:"0g"|default_if_none:"---"}} км. </span>
+								</div>
 							</div>
-						</div>
-	
-						<div class="row g-1 text-secondary align-self-center align-items-center" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-							<div class="col-8 text-truncate">
-								<span class="fs-6 text-secondary" >
-									{{car.modification_autoru.engine_volume}} л. /
-									{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-									{{car.modification_autoru.typeEngine.name}}
-									<br>
-									{{car.modification_autoru.typeGear.name}}
-									<br>
-									{{car.modification_autoru.typeBody.name}}</span>
-							</div>
-							<div class="col text-end align-self-center align-items-center">
-								<span class="fs-6"> {{car.year}}</span>
-									<br>
-								<span class="fs-6"> {{car.run|floatformat:"0g"|default_if_none:"---"}} км. </span>
-							</div>
-						</div>
-	
-						
+		
+							
 
+						</div>
 					</div>
 				</div>
-			</div>	
-			
-		{% endfor %} 
-
+			{% endfor %} 
+		</div>
+		
+		<!-- Кнопки навигации -->
+		<button class="cars-slider-prev" id="carsSliderPrev" aria-label="Предыдущий слайд">
+			<span class="cars-slider-arrow">‹</span>
+		</button>
+		<button class="cars-slider-next" id="carsSliderNext" aria-label="Следующий слайд">
+			<span class="cars-slider-arrow">›</span>
+		</button>
+		
+		<!-- Индикаторы слайдов -->
+		<div class="cars-slider-indicators" id="carsSliderIndicators">
+			<!-- Индикаторы будут добавлены через JavaScript -->
+		</div>
 	{% endif %}
-	
 </div>
 
 
