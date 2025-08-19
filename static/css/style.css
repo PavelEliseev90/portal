@@ -3294,42 +3294,16 @@ hr[style*="width: 75%"] {
 }
 
 /* CSS ограничения для количества карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
-/* Ограничение для больших экранов - максимум 4 карточки */
-@media (min-width: 1200px) {
-	.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+5) {
-		display: none !important;
-	}
-}
-
-/* Ограничение для средних экранов - максимум 3 карточки */
-@media (min-width: 768px) and (max-width: 1199px) {
-	.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+4) {
-		display: none !important;
-	}
-}
-
-/* Ограничение для мобильных - максимум 2 карточки */
-@media (max-width: 767px) {
-	.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+3) {
-		display: none !important;
-	}
-}
-
-/* Альтернативный способ для браузеров без поддержки :has() */
-.row.g-3 .col-12.col-sm-6:nth-child(n+5) {
+/* Ограничение для всех размеров экрана - максимум 5 карточек */
+.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+6) {
 	display: none !important;
 }
 
-@media (max-width: 1199px) {
-	.row.g-3 .col-12.col-sm-6:nth-child(n+4) {
-		display: none !important;
-	}
-}
 
-@media (max-width: 767px) {
-	.row.g-3 .col-12.col-sm-6:nth-child(n+3) {
-		display: none !important;
-	}
+
+/* Альтернативный способ для браузеров без поддержки :has() */
+.row.g-3 .col-12.col-sm-6:nth-child(n+6) {
+	display: none !important;
 }
 
 /* Стили для кнопки "Показать еще" */
