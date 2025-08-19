@@ -18,6 +18,7 @@ from django.views.generic import TemplateView
 from django.urls import  include, path, re_path
 from django.views.static import serve
 from django.conf import settings
+from django.conf.urls.static import static
 
 
 handler404 = 'website.views.custom_page_not_found_view'
