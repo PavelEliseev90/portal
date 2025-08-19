@@ -1613,30 +1613,25 @@
     lightBoxCover.addEventListener("click", cover_image);
     lightBoxTransformRight.addEventListener("click", transform_image);
 
-    // Переменные для отслеживания touch событий
     let touchStartX = 0;
     let touchStartY = 0;
     let touchEndX = 0;
     let touchEndY = 0;
-    let minSwipeDistance = 50; // Минимальное расстояние для свайпа в пикселях
+    let minSwipeDistance = 50;
 
-    // Функция для определения направления свайпа
     function getSwipeDirection() {
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
-        
-        // Проверяем, что свайп достаточно длинный и горизонтальный
         if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
             if (deltaX > 0) {
-                return 'right'; // Свайп вправо
+                return 'right';
             } else {
-                return 'left';  // Свайп влево
+                return 'left';
             }
         }
         return 'none';
     }
 
-    // Обработчик начала касания
     function handleTouchStart(e) {
         if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
             touchStartX = e.touches[0].clientX;
@@ -1644,15 +1639,12 @@
         }
     }
 
-    // Обработчик движения пальца
     function handleTouchMove(e) {
         if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
-            // Предотвращаем прокрутку страницы во время свайпа
             e.preventDefault();
         }
     }
 
-    // Обработчик окончания касания
     function handleTouchEnd(e) {
         if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
             touchEndX = e.changedTouches[0].clientX;
@@ -1661,23 +1653,19 @@
             const swipeDirection = getSwipeDirection();
             
             if (swipeDirection === 'left') {
-                // Свайп влево = следующее изображение
                 nextImage();
             } else if (swipeDirection === 'right') {
-                // Свайп вправо = предыдущее изображение
                 prevImage();
             }
         }
     }
 
-    // Добавляем обработчики touch событий для lightbox
     if (galleryItem.length > 1) {
         lightBoxContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
         lightBoxContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
         lightBoxContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
 
-    // Также добавляем поддержку свайпов для самой галереи (когда lightbox закрыт)
     function handleGalleryTouchStart(e) {
         if (galleryItem.length > 1) {
             touchStartX = e.touches[0].clientX;
@@ -1699,11 +1687,9 @@
             const swipeDirection = getSwipeDirection();
             
             if (swipeDirection === 'left') {
-                // Свайп влево = следующее изображение
                 const nextIndex = (index % galleryItem.length) + 1;
                 showLightBox(nextIndex);
             } else if (swipeDirection === 'right') {
-                // Свайп вправо = предыдущее изображение
                 let prevIndex = index - 1;
                 if (prevIndex < 1) prevIndex = galleryItem.length;
                 showLightBox(prevIndex);
@@ -1711,7 +1697,6 @@
         }
     }
 
-    // Добавляем обработчики touch событий для галереи
     for (let i = 0; i < galleryItem.length; i++) {
         galleryItem[i].addEventListener('touchstart', handleGalleryTouchStart, { passive: false });
         galleryItem[i].addEventListener('touchmove', handleGalleryTouchMove, { passive: false });
