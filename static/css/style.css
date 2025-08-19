@@ -3078,27 +3078,27 @@ span.mail a:hover{
   .icon-mbri-zoom-out:before { content: '\e9ce'; } /* '' */
   .icon-mbri-pause:before { content: '\e9cf'; } /* '' */
   
-/* Улучшенные стили для карточек "Может заинтересовать" */
+/* Улучшенные стили для карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
 .card.bg-white.bg-opacity-50 {
-	background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%) !important;
+	background: rgba(255,255,255,0.9) !important;
 	border: 1px solid rgba(255,255,255,0.3);
 	border-radius: 16px;
-	box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.05);
-	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-	backdrop-filter: blur(10px);
-	-webkit-backdrop-filter: blur(10px);
+	box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
 	overflow: hidden;
 }
 
 .card.bg-white.bg-opacity-50:hover {
-	transform: translateY(-8px) scale(1.02);
-	box-shadow: 0 20px 40px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.1);
+	transform: translateY(-4px);
+	box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 	border-color: rgba(254,145,47,0.4);
+	background: rgba(255,255,255,0.95) !important;
 }
 
 .card.bg-white.bg-opacity-50:active {
-	transform: translateY(-4px) scale(1.01);
-	transition: all 0.1s ease;
+	transform: translateY(-2px);
+	transition: transform 0.1s ease;
+	background: rgba(255,255,255,1) !important;
 }
 
 /* Улучшенные стили для изображений в карточках */
@@ -3106,29 +3106,24 @@ span.mail a:hover{
 	height: 280px;
 	object-fit: cover;
 	width: 100%;
-	mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,1) 85%, rgba(255,255,255,0) 100%);
-	-webkit-mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,1) 85%, rgba(255,255,255,0) 100%);
 	border-radius: 12px 12px 0 0;
-	transition: all 0.3s ease;
-	filter: brightness(0.95);
+	transition: transform 0.2s ease;
 }
 
 .card.bg-white.bg-opacity-50:hover .item-img_up {
-	filter: brightness(1.05);
-	transform: scale(1.02);
+	transform: none;
 }
 
 /* Улучшенные стили для содержимого карточек */
 .card.bg-white.bg-opacity-50 .card-body {
 	padding: 1.2rem !important;
-	background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.6) 100%);
+	background: rgba(255,255,255,0.8);
 }
 
 /* Улучшенные стили для текста в карточках */
 .card.bg-white.bg-opacity-50 label.fs-5 {
 	font-weight: 600;
 	color: #2c3e50;
-	text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 	margin-bottom: 0.3rem;
 	display: block;
 }
@@ -3144,16 +3139,12 @@ span.mail a:hover{
 .card.bg-white.bg-opacity-50 label.fs-4.fw-bold {
 	color: #e74c3c;
 	font-weight: 700;
-	text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 	font-size: 1.25rem !important;
 }
 
 /* Улучшенные стили для цены */
 .card.bg-white.bg-opacity-50 .text-end label.fs-4.fw-bold {
-	background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	background-clip: text;
+	color: #e74c3c;
 	font-size: 1.4rem !important;
 }
 
@@ -3188,14 +3179,14 @@ span.mail a:hover{
 	}
 	
 	.card.bg-white.bg-opacity-50:hover {
-		transform: translateY(-4px) scale(1.01);
+		transform: translateY(-2px);
 	}
 }
 
 @media (max-width: 576px) {
 	.card.bg-white.bg-opacity-50 {
 		border-radius: 10px;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 	}
 	
 	.item-img_up {
@@ -3210,22 +3201,6 @@ span.mail a:hover{
 /* Улучшенные стили для сетки карточек */
 .row.g-3 .col-12.col-sm-6 {
 	margin-bottom: 1.5rem;
-}
-
-/* Анимация появления карточек */
-@keyframes cardAppear {
-	from {
-		opacity: 0;
-		transform: translateY(20px) scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
-}
-
-.card.bg-white.bg-opacity-50 {
-	animation: cardAppear 0.6s ease-out;
 }
 
 /* Улучшенные стили для заголовка "Может заинтересовать" */
@@ -3248,7 +3223,7 @@ label.fs-5:contains("Может заинтересовать")::after {
 	transform: translateX(-50%);
 	width: 60px;
 	height: 3px;
-	background: linear-gradient(90deg, #fe912f 0%, #e67e22 100%);
+	background: #fe912f;
 	border-radius: 2px;
 }
 
@@ -3256,7 +3231,7 @@ label.fs-5:contains("Может заинтересовать")::after {
 hr[style*="width: 75%"] {
 	border: none;
 	height: 2px;
-	background: linear-gradient(90deg, transparent 0%, #fe912f 50%, transparent 100%);
+	background: #fe912f;
 	margin: 2rem auto;
 	opacity: 0.7;
 }
@@ -3269,41 +3244,7 @@ hr[style*="width: 75%"] {
 
 .card.bg-white.bg-opacity-50:focus {
 	outline: none;
-	box-shadow: 0 0 0 3px rgba(254,145,47,0.3), 0 8px 32px rgba(0,0,0,0.1);
-}
-
-/* Улучшенные стили для состояний загрузки */
-.card.bg-white.bg-opacity-50.loading {
-	opacity: 0.7;
-	pointer-events: none;
-}
-
-.card.bg-white.bg-opacity-50.loading::after {
-	content: '';
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	width: 40px;
-	height: 40px;
-	border: 3px solid #f3f3f3;
-	border-top: 3px solid #fe912f;
-	border-radius: 50%;
-	animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-	0% { transform: translate(-50%, -50%) rotate(0deg); }
-	100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* Дополнительные улучшения для карточек */
-.card.bg-white.bg-opacity-50 .row {
-	margin: 0;
-}
-
-.card.bg-white.bg-opacity-50 .col-12 {
-	padding: 0.3rem 0;
+	box-shadow: 0 0 0 2px rgba(254,145,47,0.3), 0 4px 16px rgba(0,0,0,0.1);
 }
 
 /* Улучшенные стили для технических характеристик */
@@ -3336,12 +3277,11 @@ hr[style*="width: 75%"] {
 .card.bg-white.bg-opacity-50 .item-img-mini {
 	border-radius: 8px;
 	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-	transition: all 0.3s ease;
+	transition: transform 0.2s ease;
 }
 
 .card.bg-white.bg-opacity-50:hover .item-img-mini {
-	transform: scale(1.05);
-	box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+	transform: none;
 }
 
 /* Улучшенные стили для сетки карточек */
@@ -3353,54 +3293,83 @@ hr[style*="width: 75%"] {
 	padding: 0 0.75rem;
 }
 
-/* Улучшенные стили для состояний загрузки изображений */
-.item-img_up.loading {
-	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-	background-size: 200% 100%;
-	animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-	0% { background-position: 200% 0; }
-	100% { background-position: -200% 0; }
-}
-
-/* Улучшенные стили для фокуса на карточках */
-.card.bg-white.bg-opacity-50:focus-within {
-	box-shadow: 0 0 0 3px rgba(254,145,47,0.4), 0 20px 40px rgba(0,0,0,0.15);
-}
-
-/* Улучшенные стили для анимации при скролле */
-.card.bg-white.bg-opacity-50 {
-	will-change: transform, box-shadow;
-}
-
-/* Улучшенные стили для темной темы (если понадобится) */
-@media (prefers-color-scheme: dark) {
-	.card.bg-white.bg-opacity-50 {
-		background: linear-gradient(135deg, rgba(44,62,80,0.9) 0%, rgba(52,73,94,0.7) 100%) !important;
-		border-color: rgba(255,255,255,0.2);
-	}
-	
-	.card.bg-white.bg-opacity-50 label.fs-5 {
-		color: #ecf0f1;
-	}
-	
-	.card.bg-white.bg-opacity-50 label.fs-6 {
-		color: #bdc3c7;
+/* CSS ограничения для количества карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
+/* Ограничение для больших экранов - максимум 4 карточки */
+@media (min-width: 1200px) {
+	.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+5) {
+		display: none !important;
 	}
 }
 
-/* Улучшенные стили для печати */
-@media print {
-	.card.bg-white.bg-opacity-50 {
-		box-shadow: none;
-		border: 1px solid #ccc;
-		break-inside: avoid;
+/* Ограничение для средних экранов - максимум 3 карточки */
+@media (min-width: 768px) and (max-width: 1199px) {
+	.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+4) {
+		display: none !important;
 	}
-	
-	.card.bg-white.bg-opacity-50:hover {
-		transform: none;
+}
+
+/* Ограничение для мобильных - максимум 2 карточки */
+@media (max-width: 767px) {
+	.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+3) {
+		display: none !important;
 	}
+}
+
+/* Альтернативный способ для браузеров без поддержки :has() */
+.row.g-3 .col-12.col-sm-6:nth-child(n+5) {
+	display: none !important;
+}
+
+@media (max-width: 1199px) {
+	.row.g-3 .col-12.col-sm-6:nth-child(n+4) {
+		display: none !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.row.g-3 .col-12.col-sm-6:nth-child(n+3) {
+		display: none !important;
+	}
+}
+
+/* Стили для кнопки "Показать еще" */
+.show-more-cars-btn {
+	display: block;
+	width: 100%;
+	max-width: 200px;
+	margin: 1rem auto;
+	padding: 0.75rem 1.5rem;
+	background: #fe912f;
+	color: white;
+	border: none;
+	border-radius: 25px;
+	font-weight: 600;
+	font-size: 0.9rem;
+	text-align: center;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.show-more-cars-btn:hover {
+	background: #e67e22;
+}
+
+/* Счетчик показанных карточек */
+.cars-counter {
+	text-align: center;
+	margin: 1rem 0;
+	font-size: 0.9rem;
+	color: #7f8c8d;
+	font-weight: 500;
+}
+
+.cars-counter .current {
+	color: #fe912f;
+	font-weight: 700;
+}
+
+.cars-counter .total {
+	color: #34495e;
+	font-weight: 600;
 }
 
