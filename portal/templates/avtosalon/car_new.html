@@ -34,18 +34,17 @@
 	<div class="row g-1 justify-content-center">
 	
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
-			<div class="gallery-container gallery-pc-slider">
+			<div class="gallery-container {% if request.user_agent.is_pc %}gallery-pc-slider{% endif %}">
 			
 				{% for files in params.object.get_files %}
 										
-					<div class="gallery-item gallery-slide" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
 						{% if files.file_mini %}
 							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
 							{% if forloop.first %}
 								<div class="gallery-count bg-count fw-bold">
 									1 / {{params.object.get_files|length}}
 								</div>
-								
 							{% endif %}
 						{% else %}
 							<img src={{files}} alt="{{files}}" src1="{{files}}">

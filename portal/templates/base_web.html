@@ -1725,20 +1725,35 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 	// Инициализация слайдера галереи для ПК
-	initGallerySlider();
+	// Проверяем, что мы на ПК (слайдер добавляется только для ПК)
+	if (document.querySelector('.gallery-pc-slider')) {
+		console.log('ПК обнаружен, инициализируем слайдер');
+		initGallerySlider();
+	} else {
+		console.log('Мобильное устройство, слайдер не нужен');
+	}
 });
 
 function initGallerySlider() {
+	console.log('Инициализация слайдера галереи...');
 	const slider = document.querySelector('.gallery-pc-slider');
-	if (!slider) return;
+	if (!slider) {
+		console.log('Слайдер не найден');
+		return;
+	}
 	
 	const prevBtn = document.getElementById('gallerySliderPrev');
 	const nextBtn = document.getElementById('gallerySliderNext');
 	const indicatorsContainer = document.getElementById('gallerySliderIndicators');
 	
-	if (!prevBtn || !nextBtn || !indicatorsContainer) return;
+	if (!prevBtn || !nextBtn || !indicatorsContainer) {
+		console.log('Кнопки или индикаторы не найдены');
+		return;
+	}
 	
-	const slideItems = slider.querySelectorAll('.gallery-slide');
+	console.log('Слайдер найден, элементов:', slider.querySelectorAll('.gallery-item').length);
+	
+	const slideItems = slider.querySelectorAll('.gallery-item');
 	const totalItems = slideItems.length;
 	
 	if (totalItems === 0) return;
@@ -1805,48 +1820,52 @@ function initGallerySlider() {
 	}
 	
 	function updateSlider() {
-		// Добавляем класс для анимации
-		slider.classList.add('sliding');
-		
-		// Обновляем главное изображение
-		slideItems.forEach((item, index) => {
-			if (index === currentSlide) {
-				// Перемещаем текущий слайд в начало
-				item.style.order = '0';
-				item.classList.add('slide-active');
-				item.classList.remove('slide-inactive');
-				
-				// Обновляем счетчик
-				const countElement = item.querySelector('.gallery-count');
-				if (countElement) {
-					countElement.textContent = `${index + 1} / ${totalItems}`;
+		try {
+			console.log('Обновление слайдера, текущий слайд:', currentSlide);
+			
+			// Обновляем главное изображение
+			slideItems.forEach((item, index) => {
+				if (index === currentSlide) {
+					// Показываем текущий слайд крупно
+					item.style.display = 'block';
+					item.style.flexBasis = '100%';
+					item.style.maxHeight = '500px';
+					item.style.opacity = '1';
+					item.style.transform = 'scale(1)';
+					
+					// Обновляем счетчик
+					const countElement = item.querySelector('.gallery-count');
+					if (countElement) {
+						countElement.textContent = `${index + 1} / ${totalItems}`;
+					}
+				} else {
+					// Показываем остальные слайды как миниатюры
+					item.style.display = 'flex';
+					item.style.flexBasis = '10%';
+					item.style.maxHeight = '100px';
+					item.style.opacity = '0.7';
+					item.style.transform = 'scale(1)';
 				}
-			} else {
-				// Остальные слайды
-				item.style.order = index + 1;
-				item.classList.remove('slide-active');
-				item.classList.add('slide-inactive');
-			}
-		});
-		
-		// Обновляем индикаторы
-		const indicators = indicatorsContainer.querySelectorAll('.gallery-slider-indicator');
-		indicators.forEach((indicator, index) => {
-			indicator.classList.toggle('active', index === currentSlide);
-		});
-		
-		// Обновляем состояние кнопок
-		prevBtn.disabled = totalItems <= 1;
-		nextBtn.disabled = totalItems <= 1;
-		
-		// Обновляем ARIA атрибуты
-		slider.setAttribute('aria-current', currentSlide + 1);
-		slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
-		
-		// Убираем класс анимации после завершения перехода
-		setTimeout(() => {
-			slider.classList.remove('sliding');
-		}, 500);
+			});
+			
+			// Обновляем индикаторы
+			const indicators = indicatorsContainer.querySelectorAll('.gallery-slider-indicator');
+			indicators.forEach((indicator, index) => {
+				indicator.classList.toggle('active', index === currentSlide);
+			});
+			
+			// Обновляем состояние кнопок
+			prevBtn.disabled = totalItems <= 1;
+			nextBtn.disabled = totalItems <= 1;
+			
+			// Обновляем ARIA атрибуты
+			slider.setAttribute('aria-current', currentSlide + 1);
+			slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
+			
+			console.log('Слайдер обновлен успешно');
+		} catch (error) {
+			console.error('Ошибка при обновлении слайдера:', error);
+		}
 	}
 }
 
