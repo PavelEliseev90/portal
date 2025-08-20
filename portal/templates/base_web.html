@@ -1820,11 +1820,7 @@ function initGallerySlider() {
 					item.style.opacity = '1';
 					item.style.transform = 'scale(1)';
 					
-					// Обновляем счетчик
-					const countElement = item.querySelector('.gallery-count');
-					if (countElement) {
-						countElement.textContent = `${index + 1} / ${totalItems}`;
-					}
+					
 				} else {
 					// Показываем остальные слайды как миниатюры
 					item.style.display = 'flex';

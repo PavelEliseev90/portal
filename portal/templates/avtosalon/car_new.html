@@ -41,11 +41,6 @@
 					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
 						{% if files.file_mini %}
 							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
-							{% if forloop.first %}
-								<div class="gallery-count bg-count fw-bold">
-									1 / {{params.object.get_files|length}}
-								</div>
-							{% endif %}
 						{% else %}
 							<img src={{files}} alt="{{files}}" src1="{{files}}">
 						{% endif %}						
