@@ -250,7 +250,8 @@ JQUERY_URL          = True
 USE_DJANGO_JQUERY   = True
 
 STATIC_URL  = '/static/'
-STATIC_ROOT = 'D:/kors_group/portal/static/'
+STATIC_ROOT = 'C:/Users/a.v.kulakov/Desktop/portal_kg/static'
+STATICFILES_DIRS = [os.path.join(BASE_DIR,"")]
 
 MEDIA_URL   = '/media/'
 MEDIA_ROOT  = 'D:/kors_group/portal/media/'

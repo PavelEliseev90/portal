@@ -298,15 +298,23 @@ table{border-collapse:collapse;border-spacing:0;}
   	mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10%,  rgba(255,255,255,1) 90%, rgba(255,255,255,1) 100%);
 	-webkit-mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10%, rgba(255,255,255,1) 90%, rgba(255,255,255,1) 100%);	
 	border-radius: 0.3rem 0.3rem 0.3rem 0.3rem;
+	transition: all 0.3s ease;
+	filter: brightness(0.95);
+  }
+  
+  .item-img_up:hover {
+	filter: brightness(1.05);
+	transform: scale(1.02);
   }
   @media (max-width: 767px) {
 	.item-img_up {
-		height: 400px;
 		object-fit: cover;
 		width: 100%;
+		height: 220px;
 		mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10%,  rgba(255,255,255,1) 90%, rgba(255,255,255,1) 100%);
 		-webkit-mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10%, rgba(255,255,255,1) 90%, rgba(255,255,255,1) 100%);	
 		border-radius: 0.3rem 0.3rem 0.3rem 0.3rem;
+		transition: all 0.3s ease;
 	}
   }
 
@@ -510,6 +518,110 @@ table{border-collapse:collapse;border-spacing:0;}
 
 }
 
+/* Слайдер для ПК */
+.gallery-pc-slider {
+	position: relative;
+	overflow: hidden;
+	z-index: 1;
+}
+
+.gallery-pc-slider .gallery-item {
+	transition: all 0.4s ease-in-out;
+}
+
+.gallery-pc-slider .gallery-item:first-child {
+	flex-basis: 100%;
+	max-height: 500px;
+	margin: 6px;
+	border-radius: 0.9rem;
+	cursor: pointer;
+	display: block;
+	position: relative;
+	padding-bottom: 10px;
+}
+
+.gallery-pc-slider .gallery-item:not(:first-child) {
+	flex-basis: 10%;
+	max-height: 100px;
+	margin: 6px;
+	border-radius: 0.1rem;
+	display: flex;
+	opacity: 0.7;
+	transition: all 0.3s ease;
+}
+
+.gallery-pc-slider .gallery-item:not(:first-child):hover {
+	opacity: 1;
+	transform: scale(1.05);
+}
+
+/* Кнопки навигации слайдера */
+.gallery-slider-prev,
+.gallery-slider-next {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	background: rgba(0, 0, 0, 0.8);
+	border: none;
+	border-radius: 50%;
+	width: 50px;
+	height: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	z-index: 1000;
+	color: white;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.gallery-slider-prev:hover,
+.gallery-slider-next:hover {
+	background: rgba(0, 0, 0, 0.95);
+	transform: translateY(-50%) scale(1.1);
+}
+
+.gallery-slider-prev {
+	left: 20px;
+}
+
+.gallery-slider-next {
+	right: 20px;
+}
+
+.gallery-slider-arrow {
+	font-size: 28px;
+	font-weight: bold;
+	color: white;
+	transition: color 0.3s ease;
+}
+
+/* Индикаторы убраны - не нужны */
+
+/* Базовые стили для слайдера */
+.gallery-pc-slider .gallery-item {
+	transition: all 0.4s ease-in-out;
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 991px) {
+	.gallery-pc-slider .gallery-slider-prev,
+	.gallery-pc-slider .gallery-slider-next,
+	.gallery-pc-slider .gallery-slider-indicators {
+		display: none !important;
+	}
+	
+	.gallery-pc-slider .gallery-item:not(:first-child) {
+		opacity: 1;
+		transform: none;
+	}
+	
+	.gallery-pc-slider .gallery-item:not(:first-child):hover {
+		transform: none;
+	}
+}
+
 .gallery-price {
 	border-radius: 0.2rem;                
 	width: 32%;
@@ -534,6 +646,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	bottom:0;
 	background-color: #00000080;
 	color: #fff;
+	z-index: 1001;
 }
 
 .gallery-item:first-child {
@@ -568,6 +681,8 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-content {
 	font-size: .8em;
 }
+
+
 
 .input_radio_success[type="radio"]:checked {
 	background-color: #198754;
@@ -702,6 +817,104 @@ table{border-collapse:collapse;border-spacing:0;}
 .lightbox-close:hover {
 	opacity: .7;
 }
+
+
+@media (max-width: 767px) {
+	.gallery-container {
+		touch-action: pan-y; 
+		-webkit-overflow-scrolling: touch; 
+	}
+	
+	.gallery-item {
+		touch-action: manipulation; 
+	}
+	
+	.lightbox-content {
+		touch-action: none; 
+	}
+	
+	
+	.gallery-item img {
+		transition: transform 0.2s ease-in-out;
+	}
+	
+	.gallery-item:active img {
+		transform: scale(0.95);
+	}
+	
+	
+	.lightbox-prev,
+	.lightbox-next {
+		min-width: 44px; 
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.lightbox-close {
+		min-width: 44px;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+}
+
+@media (max-width: 480px) {
+	.gallery-item:first-child {
+		margin-bottom: 0.5rem;
+	}
+	
+	.lightbox-content {
+		margin: 5% auto;
+		width: 95%;
+		height: 70%;
+	}
+	
+	.lightbox-prev,
+	.lightbox-next {
+		min-width: 50px;
+		min-height: 50px;
+		font-size: 1.2rem;
+	}
+}
+
+
+.swipe-indicator {
+	position: absolute;
+	bottom: 10px;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: rgba(0, 0, 0, 0.7);
+	color: white;
+	padding: 8px 16px;
+	border-radius: 20px;
+	font-size: 0.8rem;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	pointer-events: none;
+}
+
+.swipe-indicator.show {
+	opacity: 1;
+}
+
+
+.lightbox-content img {
+	transition: opacity 0.3s ease;
+}
+
+.lightbox-content img.fade-out {
+	opacity: 0;
+}
+
+.lightbox-content img.fade-in {
+	opacity: 1;
+}
+
+
+/* Слайдер убран, теперь используется обычная сетка Bootstrap */
 
 .btn_autoinfo{
 	border-top-width: 0px!important;
@@ -2754,3 +2967,691 @@ span.mail a:hover{
   .icon-mbri-zoom-out:before { content: '\e9ce'; } /* '' */
   .icon-mbri-pause:before { content: '\e9cf'; } /* '' */
   
+/* Улучшенные стили для карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
+.card.bg-white.bg-opacity-50 {
+	background: rgba(255,255,255,0.9) !important;
+	border: 1px solid rgba(255,255,255,0.3);
+	border-radius: 16px;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	overflow: hidden;
+}
+
+.card.bg-white.bg-opacity-50:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+	border-color: rgba(254,145,47,0.4);
+	background: rgba(255,255,255,0.95) !important;
+}
+
+.card.bg-white.bg-opacity-50:active {
+	transform: translateY(-2px);
+	transition: transform 0.1s ease;
+	background: rgba(255,255,255,1) !important;
+}
+
+/* Улучшенные стили для изображений в карточках */
+.item-img_up {
+	height: 280px;
+	object-fit: cover;
+	width: 100%;
+	border-radius: 12px 12px 0 0;
+	transition: transform 0.2s ease;
+}
+
+.card.bg-white.bg-opacity-50:hover .item-img_up {
+	transform: none;
+}
+
+/* Улучшенные стили для содержимого карточек */
+.card.bg-white.bg-opacity-50 .card-body {
+	padding: 1.2rem !important;
+	background: rgba(255,255,255,0.8);
+}
+
+/* Улучшенные стили для текста в карточках */
+.card.bg-white.bg-opacity-50 label.fs-5 {
+	font-weight: 600;
+	color: #2c3e50;
+	margin-bottom: 0.3rem;
+	display: block;
+}
+
+.card.bg-white.bg-opacity-50 label.fs-6 {
+	font-weight: 500;
+	color: #34495e;
+	line-height: 1.4;
+	margin-bottom: 0.2rem;
+	display: block;
+}
+
+.card.bg-white.bg-opacity-50 label.fs-4.fw-bold {
+	color: #e74c3c;
+	font-weight: 700;
+	font-size: 1.25rem !important;
+}
+
+/* Улучшенные стили для цены */
+.card.bg-white.bg-opacity-50 .text-end label.fs-4.fw-bold {
+	color: #e74c3c;
+	font-size: 1.4rem !important;
+}
+
+/* Улучшенные стили для названия дилера */
+.card.bg-white.bg-opacity-50 .text-end label.fs-5 {
+	color: #7f8c8d;
+	font-weight: 600;
+	font-size: 0.9rem !important;
+}
+
+/* Улучшенные стили для пробега */
+.card.bg-white.bg-opacity-50 label.fs-6:contains("км") {
+	color: #95a5a6;
+	font-weight: 500;
+	font-size: 0.85rem !important;
+}
+
+/* Адаптивные улучшения для мобильных устройств */
+@media (max-width: 767px) {
+	.card.bg-white.bg-opacity-50 {
+		border-radius: 12px;
+		margin-bottom: 1rem;
+	}
+	
+	.item-img_up {
+		height: 220px;
+		border-radius: 8px 8px 0 0;
+	}
+	
+	.card.bg-white.bg-opacity-50 .card-body {
+		padding: 1rem !important;
+	}
+	
+	.card.bg-white.bg-opacity-50:hover {
+		transform: translateY(-2px);
+	}
+}
+
+@media (max-width: 576px) {
+	.card.bg-white.bg-opacity-50 {
+		border-radius: 10px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.item-img_up {
+		height: 180px;
+	}
+	
+	.card.bg-white.bg-opacity-50 .card-body {
+		padding: 0.8rem !important;
+	}
+}
+
+/* Улучшенные стили для сетки карточек */
+.row.g-3 .col-12.col-sm-6 {
+	margin-bottom: 1.5rem;
+}
+
+/* Улучшенные стили для заголовка "Может заинтересовать" */
+label.fs-5:contains("Может заинтересовать") {
+	font-weight: 700;
+	color: #2c3e50;
+	font-size: 1.5rem !important;
+	margin-bottom: 1.5rem;
+	text-align: center;
+	display: block;
+	position: relative;
+	padding-bottom: 0.5rem;
+}
+
+label.fs-5:contains("Может заинтересовать")::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 60px;
+	height: 3px;
+	background: #e74c3c;
+	border-radius: 2px;
+}
+
+/* Улучшенные стили для разделителя */
+hr[style*="width: 75%"] {
+	border: none;
+	height: 2px;
+	background: #e74c3c;
+	margin: 2rem auto;
+	opacity: 0.7;
+}
+
+/* Дополнительные улучшения для интерактивности */
+.card.bg-white.bg-opacity-50 {
+	cursor: pointer;
+	user-select: none;
+}
+
+.card.bg-white.bg-opacity-50:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(254,145,47,0.3), 0 4px 16px rgba(0,0,0,0.1);
+}
+
+/* Улучшенные стили для технических характеристик */
+.card.bg-white.bg-opacity-50 label.fs-6:contains("л."),
+.card.bg-white.bg-opacity-50 label.fs-6:contains("л.c."),
+.card.bg-white.bg-opacity-50 label.fs-6:contains("тип") {
+	color: #5a6c7d;
+	font-weight: 500;
+	font-size: 0.8rem !important;
+	line-height: 1.3;
+}
+
+/* Улучшенные стили для года выпуска */
+.card.bg-white.bg-opacity-50 label.fs-6:contains("г.") {
+	color: #27ae60;
+	font-weight: 600;
+	font-size: 0.9rem !important;
+}
+
+/* Улучшенные стили для типа привода */
+.card.bg-white.bg-opacity-50 label:contains("тип_drive") {
+	color: #8e44ad;
+	font-weight: 600;
+	font-size: 0.85rem !important;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Улучшенные стили для логотипа дилера */
+.card.bg-white.bg-opacity-50 .item-img-mini {
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	transition: transform 0.2s ease;
+}
+
+.card.bg-white.bg-opacity-50:hover .item-img-mini {
+	transform: none;
+}
+
+/* Улучшенные стили для сетки карточек */
+.row.g-3 {
+	margin: 0 -0.75rem;
+}
+
+.row.g-3 .col-12.col-sm-6 {
+	padding: 0 0.75rem;
+}
+
+/* CSS ограничения для количества карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
+/* Ограничение для всех размеров экрана - максимум 5 карточек */
+.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+6) {
+	display: none !important;
+}
+
+
+
+/* Альтернативный способ для браузеров без поддержки :has() */
+.row.g-3 .col-12.col-sm-6:nth-child(n+6) {
+	display: none !important;
+}
+
+/* Стили для кнопки "Показать еще" */
+.show-more-cars-btn {
+	display: block;
+	width: 100%;
+	max-width: 200px;
+	margin: 1rem auto;
+	padding: 0.75rem 1.5rem;
+	background: #fe912f;
+	color: white;
+	border: none;
+	border-radius: 25px;
+	font-weight: 600;
+	font-size: 0.9rem;
+	text-align: center;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.show-more-cars-btn:hover {
+	background: #e67e22;
+}
+
+/* Счетчик показанных карточек */
+.cars-counter {
+	text-align: center;
+	margin: 1rem 0;
+	font-size: 0.9rem;
+	color: #7f8c8d;
+	font-weight: 500;
+}
+
+.cars-counter .current {
+	color: #fe912f;
+	font-weight: 700;
+}
+
+.cars-counter .total {
+	color: #34495e;
+	font-weight: 600;
+}
+
+/* Стили для основных карточек машин на странице cars - СТРОГИЙ СТИЛЬ */
+
+/* Заголовок машины */
+.card .card-body .row .col-auto .fs-3 {
+	color: #1a1a1a;
+	font-weight: 700 !important;
+	font-size: 1.8rem !important;
+	line-height: 1.2;
+	text-shadow: none;
+	letter-spacing: -0.5px;
+	transition: color 0.3s ease;
+}
+
+.card .card-body .row .col-auto .fs-3:hover {
+	color: #e74c3c;
+}
+
+/* Логотип дилера в основной карточке */
+.card .card-body .row .col-auto .item-img-mini {
+	width: 60px;
+	height: 60px;
+	object-fit: contain;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	transition: all 0.3s ease;
+	border: 2px solid rgba(0,0,0,0.1);
+	background: rgba(255,255,255,0.95);
+	padding: 4px;
+}
+
+.card .card-body .row .col-auto .item-img-mini:hover {
+	transform: scale(1.02);
+	box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+	border-color: rgba(0,0,0,0.2);
+}
+
+/* Стили для карточек деталей машины */
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 {
+	background: rgba(255,255,255,0.95) !important;
+	border: 1px solid rgba(0,0,0,0.08);
+	border-radius: 8px !important;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+	transition: all 0.3s ease;
+	overflow: hidden;
+	position: relative;
+}
+
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: #e74c3c;
+	transform: scaleX(0);
+	transition: transform 0.3s ease;
+}
+
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+	border-color: rgba(0,0,0,0.12);
+	background: rgba(255,255,255,1) !important;
+}
+
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:hover::before {
+	transform: scaleX(1);
+}
+
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:active {
+	transform: translateY(-1px);
+	transition: transform 0.1s ease;
+}
+
+/* Стили для заголовков в карточках деталей */
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 .fs-6.text-secondary {
+	color: #666 !important;
+	font-weight: 600 !important;
+	font-size: 0.8rem !important;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 0.5rem;
+	display: block;
+	text-shadow: none;
+}
+
+/* Стили для иконок в карточках деталей */
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 .fs-5 {
+	color: #1a1a1a !important;
+	font-weight: 600 !important;
+	font-size: 1rem !important;
+	text-shadow: none;
+}
+
+/* Стили для разделителей в карточках */
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 .hr_kors_dark.btn_block {
+	background: #e74c3c !important;
+	border-radius: 1px;
+	box-shadow: none;
+}
+
+/* Стили для цены машины */
+.card .card-body .row .col-sm-12 .fs-4.fw-bold {
+	color: #e74c3c !important;
+	font-weight: 800 !important;
+	font-size: 1.5rem !important;
+	text-shadow: none;
+	background: none;
+	-webkit-background-clip: unset;
+	-webkit-text-fill-color: unset;
+	background-clip: unset;
+	letter-spacing: -0.5px;
+}
+
+/* Стили для пробега */
+.card .card-body .row .col-sm-12 .fs-6:contains("км.") {
+	color: #1a1a1a !important;
+	font-weight: 600 !important;
+	font-size: 0.9rem !important;
+	text-shadow: none;
+}
+
+/* Стили для дилера */
+.card .card-body .row .col-sm-12 .fs-5:contains("unit") {
+	color: #1a1a1a !important;
+	font-weight: 600 !important;
+	font-size: 0.95rem !important;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	text-shadow: none;
+}
+
+/* Анимация появления карточек */
+@keyframes cardSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 {
+	animation: cardSlideIn 0.4s ease-out;
+}
+
+/* Задержка анимации для каждой карточки */
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:nth-child(1) { animation-delay: 0.05s; }
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:nth-child(2) { animation-delay: 0.1s; }
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:nth-child(3) { animation-delay: 0.15s; }
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:nth-child(4) { animation-delay: 0.2s; }
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:nth-child(5) { animation-delay: 0.25s; }
+.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:nth-child(6) { animation-delay: 0.3s; }
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 767px) {
+	.card .card-body .row .col-auto .fs-3 {
+		font-size: 1.5rem !important;
+	}
+	
+	.card .card-body .row .col-auto .item-img-mini {
+		width: 50px;
+		height: 50px;
+	}
+	
+	.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 {
+		margin-bottom: 0.75rem !important;
+	}
+	
+	.card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25:hover {
+		transform: translateY(-1px);
+	}
+}
+
+/* СТРОГИЕ СТИЛИ ДЛЯ КАРТОЧКИ МАШИНЫ - АВТОДИЛЕРСКИЙ СТИЛЬ */
+
+/* Стили для правой части карточки машины (название дилера + кнопки) */
+.card[style*="background-color: rgba(255,255,255,0.5)"] {
+	background: #ffffff !important;
+	border: 1px solid #000000 !important;
+	border-radius: 15px !important;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+	overflow: hidden;
+}
+
+/* Заголовок с названием дилера */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark {
+	background: #000000 !important;
+	border-radius: 0 !important;
+	padding: 0.75rem 1rem !important;
+	margin: 0 !important;
+}
+
+/* Название дилера */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .fs-4 {
+	color: #ffffff !important;
+	font-weight: 600 !important;
+	font-size: 1.25rem !important;
+	text-shadow: none !important;
+	letter-spacing: 0.3px !important;
+}
+
+/* Иконка дома */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .icon-mbri-home {
+	color: #ffffff !important;
+	font-size: 1.25rem !important;
+}
+
+/* Количество автомобилей */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .fs-5 {
+	color: #ffffff !important;
+	font-weight: 500 !important;
+	font-size: 1rem !important;
+	text-shadow: none !important;
+}
+
+/* Иконка грузовика */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .icon-mbri-delivery {
+	color: #ffffff !important;
+	font-size: 1rem !important;
+}
+
+/* Ссылка на количество автомобилей */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark a {
+	text-decoration: none !important;
+	color: #ffffff !important;
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark a:hover {
+	color: #e74c3c !important;
+	transition: color 0.2s ease;
+}
+
+/* Блок с кнопками */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .start_block {
+	padding: 1rem 0.75rem !important;
+	background: #f8f9fa !important;
+}
+
+/* Стили для кнопок */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn {
+	background: #ffffff !important;
+	border: 1px solid #000000 !important;
+	color: #000000 !important;
+	border-radius: 4px !important;
+	padding: 0.5rem 0.75rem !important;
+	font-weight: 500 !important;
+	font-size: 0.85rem !important;
+	text-decoration: none !important;
+	transition: all 0.2s ease !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn:hover {
+	background: #e74c3c !important;
+	border-color: #e74c3c !important;
+	color: #ffffff !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 6px rgba(231,76,60,0.2) !important;
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn:active {
+	transform: translateY(0) !important;
+}
+
+/* Иконки в кнопках */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn .icon-mbri-pin,
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn .icon-mbri-touch,
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn .icon-mbri-chat {
+	margin-bottom: 0.2rem !important;
+	display: block !important;
+}
+
+/* Текст кнопок */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn label {
+	margin: 0 !important;
+	display: block !important;
+	text-align: center !important;
+}
+
+/* СТРОГИЕ СТИЛИ ДЛЯ БЛОКА ХАРАКТЕРИСТИК МАШИНЫ */
+
+/* Основная карточка характеристик */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] {
+	background: #ffffff !important;
+	border: 1px solid #000000 !important;
+	border-radius: 15px !important;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+	overflow: hidden;
+	margin-top: 1rem !important;
+}
+
+/* Заголовок блока характеристик */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .card-body {
+	padding: 1rem !important;
+	background: #ffffff !important;
+}
+
+/* Сетка характеристик */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .row.g-2 {
+	margin: 0 -0.25rem !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .col-sm {
+	padding: 0 0.25rem !important;
+	margin-bottom: 0.75rem !important;
+}
+
+/* Стили для полей ввода */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-floating {
+	position: relative !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control {
+	background: #ffffff !important;
+	border: 1px solid #d0d0d0 !important;
+	border-radius: 4px !important;
+	color: #000000 !important;
+	font-weight: 500 !important;
+	font-size: 0.9rem !important;
+	padding: 0.75rem 0.5rem !important;
+	height: auto !important;
+	transition: all 0.2s ease !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control:focus {
+	border-color: #e74c3c !important;
+	box-shadow: 0 0 0 0.15rem rgba(231,76,60,0.2) !important;
+	outline: none !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control:read-only {
+	background: #f8f9fa !important;
+	border-color: #c0c0c0 !important;
+	color: #000000 !important;
+}
+
+/* Стили для лейблов */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-floating label {
+	color: #555555 !important;
+	font-weight: 500 !important;
+	font-size: 0.8rem !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.3px !important;
+	background: transparent !important;
+	padding: 0.25rem 0.5rem !important;
+	opacity: 1 !important;
+	transform: none !important;
+	position: static !important;
+	margin-bottom: 0.25rem !important;
+	display: block !important;
+}
+
+/* Стили для текстовых областей */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] textarea.form-control {
+	min-height: 100px !important;
+	resize: vertical !important;
+	border: 1px solid #d0d0d0 !important;
+	border-radius: 4px !important;
+	padding: 0.75rem !important;
+	font-size: 0.85rem !important;
+	line-height: 1.4 !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] textarea.form-control:focus {
+	border-color: #e74c3c !important;
+	box-shadow: 0 0 0 0.15rem rgba(231,76,60,0.2) !important;
+}
+
+/* Стили для лейблов текстовых областей */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-label {
+	color: #000000 !important;
+	font-weight: 600 !important;
+	font-size: 0.9rem !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.3px !important;
+	margin-bottom: 0.5rem !important;
+	border-bottom: 1px solid #e74c3c !important;
+	padding-bottom: 0.25rem !important;
+}
+
+/* Анимация появления карточек */
+@keyframes cardSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"],
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] {
+	animation: cardSlideIn 0.3s ease-out;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+	.card[style*="background-color: rgba(255,255,255,0.5)"] .btn {
+		padding: 0.4rem 0.6rem !important;
+		font-size: 0.8rem !important;
+	}
+	
+	.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .fs-4 {
+		font-size: 1.1rem !important;
+	}
+	
+	.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .card-body {
+		padding: 0.75rem !important;
+	}
+}
+
+
+

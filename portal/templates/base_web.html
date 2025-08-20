@@ -1054,6 +1054,8 @@
 	   document.location.href  = url.href;
 	}
     
+
+    
 </script>  
 
 </body>
@@ -1613,6 +1615,96 @@
     lightBoxCover.addEventListener("click", cover_image);
     lightBoxTransformRight.addEventListener("click", transform_image);
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let minSwipeDistance = 50;
+
+    function getSwipeDirection() {
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) {
+                return 'right';
+            } else {
+                return 'left';
+            }
+        }
+        return 'none';
+    }
+
+    function handleTouchStart(e) {
+        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    }
+
+    function handleTouchMove(e) {
+        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+            e.preventDefault();
+        }
+    }
+
+    function handleTouchEnd(e) {
+        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+            
+            const swipeDirection = getSwipeDirection();
+            
+            if (swipeDirection === 'left') {
+                nextImage();
+            } else if (swipeDirection === 'right') {
+                prevImage();
+            }
+        }
+    }
+
+    if (galleryItem.length > 1) {
+        lightBoxContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        lightBoxContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        lightBoxContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
+
+    function handleGalleryTouchStart(e) {
+        if (galleryItem.length > 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    }
+
+    function handleGalleryTouchMove(e) {
+        if (galleryItem.length > 1) {
+            e.preventDefault();
+        }
+    }
+
+    function handleGalleryTouchEnd(e) {
+        if (galleryItem.length > 1) {
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+            
+            const swipeDirection = getSwipeDirection();
+            
+            if (swipeDirection === 'left') {
+                const nextIndex = (index % galleryItem.length) + 1;
+                showLightBox(nextIndex);
+            } else if (swipeDirection === 'right') {
+                let prevIndex = index - 1;
+                if (prevIndex < 1) prevIndex = galleryItem.length;
+                showLightBox(prevIndex);
+            }
+        }
+    }
+
+    for (let i = 0; i < galleryItem.length; i++) {
+        galleryItem[i].addEventListener('touchstart', handleGalleryTouchStart, { passive: false });
+        galleryItem[i].addEventListener('touchmove', handleGalleryTouchMove, { passive: false });
+        galleryItem[i].addEventListener('touchend', handleGalleryTouchEnd, { passive: false });
+    }
+
     {% if params.type == 'checklists' %}
         $(document).ready(function() {
             loadPage();
@@ -1626,6 +1718,138 @@
             $(this).toggleClass('nav-link-show');
         });
     });
+
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	// Инициализация слайдера галереи для ПК
+	// Проверяем, что мы на ПК (слайдер добавляется только для ПК)
+	if (document.querySelector('.gallery-pc-slider')) {
+		initGallerySlider();
+	}
+});
+
+function initGallerySlider() {
+	const slider = document.querySelector('.gallery-pc-slider');
+	if (!slider) return;
+	
+	const prevBtn = document.getElementById('gallerySliderPrev');
+	const nextBtn = document.getElementById('gallerySliderNext');
+	
+	if (!prevBtn || !nextBtn) return;
+	
+	const slideItems = slider.querySelectorAll('.gallery-item');
+	const totalItems = slideItems.length;
+	
+	if (totalItems === 0) return;
+	
+	let currentSlide = 0;
+	
+	updateSlider();
+	
+	// Обработчики кнопок
+	prevBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide - 1 + totalItems) % totalItems;
+		updateSlider();
+	});
+	
+	nextBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide + 1) % totalItems;
+		updateSlider();
+	});
+	
+	// Обработчик клика по миниатюрам
+	slideItems.forEach((item, index) => {
+		item.addEventListener('click', () => {
+			if (index !== currentSlide) {
+				currentSlide = index;
+				updateSlider();
+			}
+		});
+	});
+	
+	// Клавиатура
+	document.addEventListener('keydown', (e) => {
+		if (slider.closest('.gallery-pc-slider')) {
+			if (e.key === 'ArrowLeft') {
+				currentSlide = (currentSlide - 1 + totalItems) % totalItems;
+				updateSlider();
+			} else if (e.key === 'ArrowRight') {
+				currentSlide = (currentSlide + 1) % totalItems;
+				updateSlider();
+			}
+		}
+	});
+	
+	// Скрываем слайдер когда открывается lightbox
+	const lightboxContainer = document.querySelector('.lightbox');
+	if (lightboxContainer) {
+		const observer = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+					if (lightboxContainer.style.display === 'block') {
+						// Скрываем кнопки слайдера
+						prevBtn.style.display = 'none';
+						nextBtn.style.display = 'none';
+					} else {
+						// Показываем кнопки слайдера
+						prevBtn.style.display = 'flex';
+						nextBtn.style.display = 'flex';
+					}
+				}
+			});
+		});
+		
+		observer.observe(lightboxContainer, {
+			attributes: true,
+			attributeFilter: ['style']
+		});
+	}
+	
+	function updateSlider() {
+		try {
+			// Обновляем главное изображение
+			slideItems.forEach((item, index) => {
+				if (index === currentSlide) {
+					// Показываем текущий слайд крупно
+					item.style.display = 'block';
+					item.style.flexBasis = '100%';
+					item.style.maxHeight = '500px';
+					item.style.opacity = '1';
+					item.style.transform = 'scale(1)';
+					
+					// Обновляем счетчик
+					const countElement = item.querySelector('.gallery-count');
+					if (countElement) {
+						countElement.textContent = `${index + 1} / ${totalItems}`;
+					}
+				} else {
+					// Показываем остальные слайды как миниатюры
+					item.style.display = 'flex';
+					item.style.flexBasis = '10%';
+					item.style.maxHeight = '100px';
+					item.style.opacity = '0.7';
+					item.style.transform = 'scale(1)';
+				}
+			});
+			
+			// Обновляем состояние кнопок
+			prevBtn.disabled = totalItems <= 1;
+			nextBtn.disabled = totalItems <= 1;
+			
+			// Обновляем ARIA атрибуты
+			slider.setAttribute('aria-current', currentSlide + 1);
+			slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
+		} catch (error) {
+			console.error('Ошибка при обновлении слайдера:', error);
+		}
+	}
+}
+
+
+
 
 </script>
 

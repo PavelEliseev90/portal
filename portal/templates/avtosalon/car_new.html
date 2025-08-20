@@ -34,7 +34,7 @@
 	<div class="row g-1 justify-content-center">
 	
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
-			<div class="gallery-container">
+			<div class="gallery-container {% if request.user_agent.is_pc %}gallery-pc-slider{% endif %}">
 			
 				{% for files in params.object.get_files %}
 										
@@ -45,7 +45,6 @@
 								<div class="gallery-count bg-count fw-bold">
 									1 / {{params.object.get_files|length}}
 								</div>
-								
 							{% endif %}
 						{% else %}
 							<img src={{files}} alt="{{files}}" src1="{{files}}">
@@ -54,6 +53,15 @@
 					
 				{% endfor %}
 				
+				<!-- Кнопки навигации слайдера (только для ПК) -->
+				{% if request.user_agent.is_pc %}
+					<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
+						<span class="gallery-slider-arrow">‹</span>
+					</button>
+					<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
+						<span class="gallery-slider-arrow">›</span>
+					</button>
+				{% endif %}
 			</div>
 	
 			
@@ -62,7 +70,7 @@
 			{% if params.object.dop_cars|length > 0 %}
 				
 				<hr style="width: 75%;">
-				<label class="fs-5">Может заинтересовать</label>
+				<label class="fs-5" style="font-weight: bold;">Может заинтересовать</label>
 
 				<div class="row g-3">
 					{% if params.object.dop_cars %}
@@ -387,7 +395,7 @@
 										
 										<a  id="button_map" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children"   data-bs-toggle="modal" data-bs-target="#exampleModal">
 											
-												<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-pin"> </span></label><br>
+												<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-pin"> </span></label>
 												<label class="fs-6 text-dark"> Показать</label>
 											
 										</a>
@@ -397,7 +405,7 @@
 									<div class="col align-self-center align-items-center text-center">
 										<a id="phone" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
 											
-											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-touch"> </span></label><br>
+											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-touch"> </span></label>
 											<label class="fs-6 text-dark"> Позвонить</label>
 										</a>
 									</div>
@@ -405,7 +413,7 @@
 									<div class="col align-self-center align-items-center text-center">
 										<a href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
 											
-											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-chat"> </span></label><br>
+											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-chat"> </span></label>
 											<label class="fs-6 text-dark"> Написать</label>
 										</a>
 									</div>
@@ -637,7 +645,7 @@
 					{% if params.object.dop_cars|length > 0 %}
 						
 						<hr style="width: 75%;">
-						<label class="fs-5">Может заинтересовать</label>
+						<label class="fs-5" style="font-weight: bold;">Может заинтересовать</label>
 
 						<div class="row g-3">
 							{% if params.object.dop_cars %}
