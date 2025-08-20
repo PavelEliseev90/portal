@@ -559,8 +559,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-slider-prev,
 .gallery-slider-next {
 	position: absolute;
-	top: calc(50% - 50px); /* Center relative to main image, accounting for thumbnail height */
-	transform: translateY(-50%);
+	top: 256px; /* Fixed position: 6px margin + 500px/2 main image height */
 	background: rgba(0, 0, 0, 0.8);
 	border: none;
 	border-radius: 50%;
@@ -576,26 +575,10 @@ table{border-collapse:collapse;border-spacing:0;}
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Специальное позиционирование кнопок для разных слайдов */
-.gallery-pc-slider.slide-first .gallery-slider-prev,
-.gallery-pc-slider.slide-first .gallery-slider-next {
-	top: calc(50% - 50px); /* Для первого слайда - стандартное позиционирование */
-}
-
-.gallery-pc-slider.slide-middle .gallery-slider-prev,
-.gallery-pc-slider.slide-middle .gallery-slider-next {
-	top: calc(50% - 25px); /* Для средних слайдов - немного выше */
-}
-
-.gallery-pc-slider.slide-last .gallery-slider-prev,
-.gallery-pc-slider.slide-last .gallery-slider-next {
-	top: calc(50% - 50px); /* Для последнего слайда - по центру как на первом */
-}
-
 .gallery-slider-prev:hover,
 .gallery-slider-next:hover {
 	background: rgba(0, 0, 0, 0.95);
-	transform: translateY(-50%) scale(1.1);
+	transform: scale(1.1);
 }
 
 .gallery-slider-prev {
