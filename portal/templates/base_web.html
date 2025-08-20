@@ -1724,8 +1724,131 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-	// Слайдер убран, теперь используется обычная сетка Bootstrap
+	// Инициализация слайдера галереи для ПК
+	initGallerySlider();
 });
+
+function initGallerySlider() {
+	const slider = document.querySelector('.gallery-pc-slider');
+	if (!slider) return;
+	
+	const prevBtn = document.getElementById('gallerySliderPrev');
+	const nextBtn = document.getElementById('gallerySliderNext');
+	const indicatorsContainer = document.getElementById('gallerySliderIndicators');
+	
+	if (!prevBtn || !nextBtn || !indicatorsContainer) return;
+	
+	const slideItems = slider.querySelectorAll('.gallery-slide');
+	const totalItems = slideItems.length;
+	
+	if (totalItems === 0) return;
+	
+	let currentSlide = 0;
+	
+	// Создаем индикаторы
+	createIndicators();
+	updateSlider();
+	
+	// Обработчики кнопок
+	prevBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide - 1 + totalItems) % totalItems;
+		updateSlider();
+	});
+	
+	nextBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide + 1) % totalItems;
+		updateSlider();
+	});
+	
+	// Обработчик индикаторов
+	indicatorsContainer.addEventListener('click', (e) => {
+		if (e.target.classList.contains('gallery-slider-indicator')) {
+			const slideIndex = parseInt(e.target.dataset.slide);
+			currentSlide = slideIndex;
+			updateSlider();
+		}
+	});
+	
+	// Обработчик клика по миниатюрам
+	slideItems.forEach((item, index) => {
+		item.addEventListener('click', () => {
+			if (index !== currentSlide) {
+				currentSlide = index;
+				updateSlider();
+			}
+		});
+	});
+	
+	// Клавиатура
+	document.addEventListener('keydown', (e) => {
+		if (slider.closest('.gallery-pc-slider')) {
+			if (e.key === 'ArrowLeft') {
+				currentSlide = (currentSlide - 1 + totalItems) % totalItems;
+				updateSlider();
+			} else if (e.key === 'ArrowRight') {
+				currentSlide = (currentSlide + 1) % totalItems;
+				updateSlider();
+			}
+		}
+	});
+	
+	function createIndicators() {
+		indicatorsContainer.innerHTML = '';
+		
+		for (let i = 0; i < totalItems; i++) {
+			const indicator = document.createElement('button');
+			indicator.className = 'gallery-slider-indicator';
+			indicator.dataset.slide = i;
+			indicator.setAttribute('aria-label', `Перейти к изображению ${i + 1}`);
+			indicatorsContainer.appendChild(indicator);
+		}
+	}
+	
+	function updateSlider() {
+		// Добавляем класс для анимации
+		slider.classList.add('sliding');
+		
+		// Обновляем главное изображение
+		slideItems.forEach((item, index) => {
+			if (index === currentSlide) {
+				// Перемещаем текущий слайд в начало
+				item.style.order = '0';
+				item.classList.add('slide-active');
+				item.classList.remove('slide-inactive');
+				
+				// Обновляем счетчик
+				const countElement = item.querySelector('.gallery-count');
+				if (countElement) {
+					countElement.textContent = `${index + 1} / ${totalItems}`;
+				}
+			} else {
+				// Остальные слайды
+				item.style.order = index + 1;
+				item.classList.remove('slide-active');
+				item.classList.add('slide-inactive');
+			}
+		});
+		
+		// Обновляем индикаторы
+		const indicators = indicatorsContainer.querySelectorAll('.gallery-slider-indicator');
+		indicators.forEach((indicator, index) => {
+			indicator.classList.toggle('active', index === currentSlide);
+		});
+		
+		// Обновляем состояние кнопок
+		prevBtn.disabled = totalItems <= 1;
+		nextBtn.disabled = totalItems <= 1;
+		
+		// Обновляем ARIA атрибуты
+		slider.setAttribute('aria-current', currentSlide + 1);
+		slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
+		
+		// Убираем класс анимации после завершения перехода
+		setTimeout(() => {
+			slider.classList.remove('sliding');
+		}, 500);
+	}
+}
 
 
 

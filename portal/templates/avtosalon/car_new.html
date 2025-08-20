@@ -34,11 +34,11 @@
 	<div class="row g-1 justify-content-center">
 	
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
-			<div class="gallery-container">
+			<div class="gallery-container gallery-pc-slider">
 			
 				{% for files in params.object.get_files %}
 										
-					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+					<div class="gallery-item gallery-slide" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
 						{% if files.file_mini %}
 							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
 							{% if forloop.first %}
@@ -54,6 +54,20 @@
 					
 				{% endfor %}
 				
+				<!-- Кнопки навигации слайдера (только для ПК) -->
+				{% if request.user_agent.is_pc %}
+					<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
+						<span class="gallery-slider-arrow">‹</span>
+					</button>
+					<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
+						<span class="gallery-slider-arrow">›</span>
+					</button>
+					
+					<!-- Индикаторы слайдов (только для ПК) -->
+					<div class="gallery-slider-indicators" id="gallerySliderIndicators">
+						<!-- Индикаторы будут добавлены через JavaScript -->
+					</div>
+				{% endif %}
 			</div>
 	
 			
