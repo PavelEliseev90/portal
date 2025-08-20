@@ -559,7 +559,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-slider-prev,
 .gallery-slider-next {
 	position: absolute;
-	top: 50%;
+	top: calc(50% - 50px); /* Center relative to main image, accounting for thumbnail height */
 	transform: translateY(-50%);
 	background: rgba(0, 0, 0, 0.8);
 	border: none;
@@ -584,14 +584,10 @@ table{border-collapse:collapse;border-spacing:0;}
 
 .gallery-slider-prev {
 	left: 20px;
-	top: 50% !important;
-	transform: translateY(-50%) !important;
 }
 
 .gallery-slider-next {
 	right: 20px;
-	top: 50% !important;
-	transform: translateY(-50%) !important;
 }
 
 .gallery-slider-arrow {
