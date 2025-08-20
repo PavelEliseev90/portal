@@ -3930,6 +3930,12 @@ def get_filial(json_filial):
     filial.name           = json_filial['Name']
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])
+
+    if 'Unit' in json_filial > 0:
+        unit_data = json_filial['Unit']
+        if len(unit_data) > 0:
+            filial.unit   = get_unit(unit_data)
+
     filial.save()
 
     return filial
