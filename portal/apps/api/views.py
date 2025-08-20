@@ -3920,7 +3920,7 @@ def get_filial(json_filial):
     
     filials    = RefFilial.objects.filter(uin = uin)
     
-    if len(filials) == 0:
+    if len(filials) == 0: 
         filial      = RefFilial()
         filial.uin  = uin
         filial.save()
