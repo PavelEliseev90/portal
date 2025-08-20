@@ -3524,3 +3524,245 @@ hr[style*="width: 75%"] {
 	}
 }
 
+/* СТРОГИЕ СТИЛИ ДЛЯ КАРТОЧКИ МАШИНЫ - ЧЕРНО-КРАСНО-БЕЛЫЙ ДИЗАЙН */
+
+/* Стили для правой части карточки машины (название дилера + кнопки) */
+.card[style*="background-color: rgba(255,255,255,0.5)"] {
+	background: #ffffff !important;
+	border: 2px solid #000000 !important;
+	border-radius: 8px !important;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+	overflow: hidden;
+}
+
+/* Заголовок с названием дилера */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark {
+	background: #000000 !important;
+	border-radius: 0 !important;
+	padding: 1rem 0.5rem !important;
+	margin: 0 !important;
+}
+
+/* Название дилера */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .fs-4 {
+	color: #ffffff !important;
+	font-weight: 700 !important;
+	font-size: 1.5rem !important;
+	text-shadow: none !important;
+	letter-spacing: 0.5px !important;
+}
+
+/* Иконка дома */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .icon-mbri-home {
+	color: #ffffff !important;
+	font-size: 1.5rem !important;
+}
+
+/* Количество автомобилей */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .fs-5 {
+	color: #ffffff !important;
+	font-weight: 600 !important;
+	font-size: 1.1rem !important;
+	text-shadow: none !important;
+}
+
+/* Иконка грузовика */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .icon-mbri-delivery {
+	color: #ffffff !important;
+	font-size: 1.1rem !important;
+}
+
+/* Ссылка на количество автомобилей */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark a {
+	text-decoration: none !important;
+	color: #ffffff !important;
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark a:hover {
+	color: #e74c3c !important;
+	transition: color 0.3s ease;
+}
+
+/* Блок с кнопками */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .start_block {
+	padding: 1.5rem 0.5rem !important;
+	background: #f8f9fa !important;
+}
+
+/* Стили для кнопок */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn {
+	background: #ffffff !important;
+	border: 2px solid #000000 !important;
+	color: #000000 !important;
+	border-radius: 6px !important;
+	padding: 0.75rem 1rem !important;
+	font-weight: 600 !important;
+	font-size: 0.9rem !important;
+	text-decoration: none !important;
+	transition: all 0.3s ease !important;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn:hover {
+	background: #e74c3c !important;
+	border-color: #e74c3c !important;
+	color: #ffffff !important;
+	transform: translateY(-2px) !important;
+	box-shadow: 0 4px 8px rgba(231,76,60,0.3) !important;
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn:active {
+	transform: translateY(0) !important;
+	transition: transform 0.1s ease !important;
+}
+
+/* Иконки в кнопках */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn .icon-mbri-pin,
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn .icon-mbri-touch,
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn .icon-mbri-chat {
+	font-size: 1.2rem !important;
+	margin-bottom: 0.25rem !important;
+	display: block !important;
+}
+
+/* Текст кнопок */
+.card[style*="background-color: rgba(255,255,255,0.5)"] .btn label {
+	margin: 0 !important;
+	display: block !important;
+	text-align: center !important;
+}
+
+/* СТРОГИЕ СТИЛИ ДЛЯ БЛОКА ХАРАКТЕРИСТИК МАШИНЫ */
+
+/* Основная карточка характеристик */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] {
+	background: #ffffff !important;
+	border: 2px solid #000000 !important;
+	border-radius: 8px !important;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+	overflow: hidden;
+	margin-top: 1.5rem !important;
+}
+
+/* Заголовок блока характеристик */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .card-body {
+	padding: 1.5rem !important;
+	background: #ffffff !important;
+}
+
+/* Сетка характеристик */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .row.g-2 {
+	margin: 0 -0.5rem !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .col-sm {
+	padding: 0 0.5rem !important;
+	margin-bottom: 1rem !important;
+}
+
+/* Стили для полей ввода */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-floating {
+	position: relative !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control {
+	background: #ffffff !important;
+	border: 2px solid #e0e0e0 !important;
+	border-radius: 6px !important;
+	color: #000000 !important;
+	font-weight: 600 !important;
+	font-size: 1rem !important;
+	padding: 1rem 0.75rem 0.5rem !important;
+	height: auto !important;
+	transition: all 0.3s ease !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control:focus {
+	border-color: #e74c3c !important;
+	box-shadow: 0 0 0 0.2rem rgba(231,76,60,0.25) !important;
+	outline: none !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control:read-only {
+	background: #f8f9fa !important;
+	border-color: #d0d0d0 !important;
+	color: #000000 !important;
+}
+
+/* Стили для лейблов */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-floating label {
+	color: #666666 !important;
+	font-weight: 500 !important;
+	font-size: 0.85rem !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.5px !important;
+	background: transparent !important;
+	padding: 0.5rem 0.75rem !important;
+	opacity: 1 !important;
+	transform: none !important;
+	position: static !important;
+	margin-bottom: 0.5rem !important;
+	display: block !important;
+}
+
+/* Стили для текстовых областей */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] textarea.form-control {
+	min-height: 120px !important;
+	resize: vertical !important;
+	border: 2px solid #e0e0e0 !important;
+	border-radius: 6px !important;
+	padding: 1rem !important;
+	font-size: 0.9rem !important;
+	line-height: 1.5 !important;
+}
+
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] textarea.form-control:focus {
+	border-color: #e74c3c !important;
+	box-shadow: 0 0 0 0.2rem rgba(231,76,60,0.25) !important;
+}
+
+/* Стили для лейблов текстовых областей */
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-label {
+	color: #000000 !important;
+	font-weight: 700 !important;
+	font-size: 1rem !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.5px !important;
+	margin-bottom: 0.75rem !important;
+	border-bottom: 2px solid #e74c3c !important;
+	padding-bottom: 0.5rem !important;
+}
+
+/* Анимация появления карточек */
+@keyframes cardSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.card[style*="background-color: rgba(255,255,255,0.5)"],
+.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] {
+	animation: cardSlideIn 0.5s ease-out;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+	.card[style*="background-color: rgba(255,255,255,0.5)"] .btn {
+		padding: 0.5rem 0.75rem !important;
+		font-size: 0.8rem !important;
+	}
+	
+	.card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark .fs-4 {
+		font-size: 1.2rem !important;
+	}
+	
+	.card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .card-body {
+		padding: 1rem !important;
+	}
+}
+
