@@ -1885,14 +1885,16 @@ function initMobileGallerySlider() {
 	
 	console.log('Найден мобильный контейнер:', mobileGallery);
 	
+	// Добавляем счетчик слайдов
+	const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
+	mobileGallery.setAttribute('data-slide-counter', `1 / ${totalSlides}`);
+	
 	// Добавляем обработчики для свайпа
 	let startX = 0;
 	let startY = 0;
 	let currentX = 0;
 	let currentY = 0;
 	let isDragging = false;
-	let startTime = 0;
-	let endTime = 0;
 	
 	// Touch события
 	mobileGallery.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -1905,28 +1907,13 @@ function initMobileGallerySlider() {
 	mobileGallery.addEventListener('mouseup', handleMouseUp);
 	mobileGallery.addEventListener('mouseleave', handleMouseUp);
 	
-	// Обработчик прокрутки для обновления индикаторов
-	mobileGallery.addEventListener('scroll', updateScrollIndicators);
-	
-	// Обработчик для определения активного изображения
-	mobileGallery.addEventListener('scroll', updateActiveImage);
-	
-	// Инициализируем первое изображение как активное
-	setTimeout(() => {
-		const firstItem = mobileGallery.querySelector('.gallery-item');
-		if (firstItem) {
-			firstItem.classList.add('active');
-		}
-	}, 100);
+	// Обработчик прокрутки для обновления счетчика
+	mobileGallery.addEventListener('scroll', updateSlideCounter);
 	
 	function handleTouchStart(e) {
 		startX = e.touches[0].clientX;
 		startY = e.touches[0].clientY;
-		startTime = Date.now();
 		isDragging = true;
-		
-		// Добавляем класс для анимации
-		mobileGallery.style.scrollBehavior = 'auto';
 	}
 	
 	function handleTouchMove(e) {
@@ -1939,23 +1926,13 @@ function initMobileGallerySlider() {
 	function handleTouchEnd(e) {
 		if (!isDragging) return;
 		isDragging = false;
-		endTime = Date.now();
 		handleSwipe();
-		
-		// Возвращаем плавную прокрутку
-		setTimeout(() => {
-			mobileGallery.style.scrollBehavior = 'smooth';
-		}, 100);
 	}
 	
 	function handleMouseDown(e) {
 		startX = e.clientX;
 		startY = e.clientY;
-		startTime = Date.now();
 		isDragging = true;
-		
-		// Добавляем класс для анимации
-		mobileGallery.style.scrollBehavior = 'auto';
 	}
 	
 	function handleMouseMove(e) {
@@ -1967,24 +1944,16 @@ function initMobileGallerySlider() {
 	function handleMouseUp(e) {
 		if (!isDragging) return;
 		isDragging = false;
-		endTime = Date.now();
 		handleSwipe();
-		
-		// Возвращаем плавную прокрутку
-		setTimeout(() => {
-			mobileGallery.style.scrollBehavior = 'smooth';
-		}, 100);
 	}
 	
 	function handleSwipe() {
 		const swipeThreshold = 50;
-		const timeThreshold = 300; // Максимальное время для свайпа
 		const diffX = startX - currentX;
 		const diffY = startY - currentY;
-		const timeDiff = endTime - startTime;
 		
-		// Проверяем, что свайп горизонтальный и быстрый
-		if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > swipeThreshold && timeDiff < timeThreshold) {
+		// Проверяем, что свайп горизонтальный
+		if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > swipeThreshold) {
 			if (diffX > 0) {
 				// Свайп влево - следующее изображение
 				scrollToNextImage();
@@ -2010,9 +1979,6 @@ function initMobileGallerySlider() {
 			left: scrollDistance,
 			behavior: 'smooth'
 		});
-		
-		// Анимация для целевого элемента
-		animateImage(targetItem);
 	}
 	
 	function scrollToPrevImage() {
@@ -2030,27 +1996,6 @@ function initMobileGallerySlider() {
 			left: scrollDistance,
 			behavior: 'smooth'
 		});
-		
-		// Анимация для целевого элемента
-		animateImage(targetItem);
-	}
-	
-	function animateImage(item) {
-		// Убираем активный класс со всех элементов
-		mobileGallery.querySelectorAll('.gallery-item').forEach(el => {
-			el.classList.remove('active');
-		});
-		
-		// Добавляем активный класс к целевому элементу
-		item.classList.add('active');
-		
-		// Добавляем анимацию масштабирования
-		item.style.transform = 'scale(1.05)';
-		item.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-		
-		setTimeout(() => {
-			item.style.transform = 'scale(1.02)';
-		}, 300);
 	}
 	
 	function getCurrentVisibleIndex() {
@@ -2075,37 +2020,10 @@ function initMobileGallerySlider() {
 		return closestIndex;
 	}
 	
-	function updateScrollIndicators() {
-		const scrollLeft = mobileGallery.scrollLeft;
-		const maxScrollLeft = mobileGallery.scrollWidth - mobileGallery.clientWidth;
-		
-		// Обновляем левый градиент
-		if (scrollLeft > 0) {
-			mobileGallery.classList.add('scrolled-left');
-		} else {
-			mobileGallery.classList.remove('scrolled-left');
-		}
-		
-		// Обновляем правый градиент
-		if (scrollLeft < maxScrollLeft - 1) {
-			mobileGallery.classList.remove('scrolled-end');
-		} else {
-			mobileGallery.classList.add('scrolled-end');
-		}
-	}
-	
-	function updateActiveImage() {
-		const items = mobileGallery.querySelectorAll('.gallery-item');
+	function updateSlideCounter() {
 		const currentIndex = getCurrentVisibleIndex();
-		
-		// Убираем активный класс со всех элементов
-		items.forEach((item, index) => {
-			if (index === currentIndex) {
-				item.classList.add('active');
-			} else {
-				item.classList.remove('active');
-			}
-		});
+		const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
+		mobileGallery.setAttribute('data-slide-counter', `${currentIndex + 1} / ${totalSlides}`);
 	}
 	
 	console.log('Мобильный слайдер успешно инициализирован!');

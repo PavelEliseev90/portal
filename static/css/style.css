@@ -749,10 +749,6 @@ table{border-collapse:collapse;border-spacing:0;}
 	.gallery-container {
 		width: 100%;
 		overflow: hidden;
-		-webkit-transform: translateZ(0) !important;
-		transform: translateZ(0) !important;
-		backface-visibility: hidden !important;
-		perspective: 1000px !important;
 	}
 	
 	/* Простой мобильный слайдер */
@@ -765,13 +761,10 @@ table{border-collapse:collapse;border-spacing:0;}
 		-ms-overflow-style: none !important;
 		flex-wrap: nowrap !important;
 		position: relative !important;
-		gap: 15px !important;
-		padding: 0 15px !important;
-		scroll-behavior: smooth !important;
-		-webkit-transform: translateZ(0) !important;
-		transform: translateZ(0) !important;
-		backface-visibility: hidden !important;
-		perspective: 1000px !important;
+		gap: 0 !important;
+		padding: 0 !important;
+		width: 100% !important;
+		height: auto !important;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar {
@@ -782,139 +775,40 @@ table{border-collapse:collapse;border-spacing:0;}
 		flex: 0 0 100% !important;
 		width: 100% !important;
 		max-width: 100% !important;
-		scroll-snap-align: center !important;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+		scroll-snap-align: start !important;
 		position: relative !important;
-		-webkit-transform: translateZ(0) !important;
-		transform: translateZ(0) !important;
-		backface-visibility: hidden !important;
-		will-change: transform !important;
+		margin: 0 !important;
+		padding: 0 !important;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
 		width: 100% !important;
 		height: auto !important;
-		max-height: 350px !important;
+		max-height: 300px !important;
 		object-fit: cover !important;
-		border-radius: 16px !important;
-		box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12) !important;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-		transform: scale(1) !important;
-		-webkit-transform: translateZ(0) scale(1) !important;
-		backface-visibility: hidden !important;
-		will-change: transform, box-shadow !important;
-		image-rendering: -webkit-optimize-contrast !important;
-		image-rendering: crisp-edges !important;
+		display: block !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
 	}
 	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img {
-		transform: scale(1.03) !important;
-		-webkit-transform: translateZ(0) scale(1.03) !important;
-		box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:active img {
-		transform: scale(0.98) !important;
-		-webkit-transform: translateZ(0) scale(0.98) !important;
-		transition: transform 0.1s ease !important;
-	}
-	
-	/* Индикаторы для мобильного слайдера */
-	.gallery-container:not(.gallery-pc-slider)::before,
+	/* Счетчик слайдов внизу */
 	.gallery-container:not(.gallery-pc-slider)::after {
-		content: '' !important;
+		content: attr(data-slide-counter) !important;
 		position: absolute !important;
-		top: 0 !important;
-		bottom: 0 !important;
-		width: 80px !important;
-		pointer-events: none !important;
+		bottom: 15px !important;
+		left: 50% !important;
+		transform: translateX(-50%) !important;
+		background: rgba(0, 0, 0, 0.8) !important;
+		color: white !important;
+		padding: 8px 16px !important;
+		border-radius: 20px !important;
+		font-size: 13px !important;
+		font-weight: 600 !important;
 		z-index: 10 !important;
-		transition: opacity 0.4s ease !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider)::before {
-		left: 0 !important;
-		background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 40%, transparent 100%) !important;
-		opacity: 0 !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider)::after {
-		right: 0 !important;
-		background: linear-gradient(270deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 40%, transparent 100%) !important;
-		opacity: 1 !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider).scrolled-left::before {
-		opacity: 1 !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider).scrolled-end::after {
-		opacity: 0 !important;
-	}
-	
-	/* Анимация для активного изображения */
-	.gallery-container:not(.gallery-pc-slider) .gallery-item.active {
-		transform: scale(1.02) !important;
-		-webkit-transform: translateZ(0) scale(1.02) !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item.active img {
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
-	}
-	
-	/* Дополнительные анимации для мобильного слайдера */
-	.gallery-container:not(.gallery-pc-slider) .gallery-item {
-		animation: fadeInUp 0.6s ease-out !important;
-		-webkit-animation: fadeInUp 0.6s ease-out !important;
-	}
-	
-	@keyframes fadeInUp {
-		from {
-			opacity: 0;
-			transform: translateY(20px) scale(0.95);
-			-webkit-transform: translateZ(0) translateY(20px) scale(0.95);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-			-webkit-transform: translateZ(0) translateY(0) scale(1);
-		}
-	}
-	
-	@-webkit-keyframes fadeInUp {
-		from {
-			opacity: 0;
-			-webkit-transform: translateZ(0) translateY(20px) scale(0.95);
-		}
-		to {
-			opacity: 1;
-			-webkit-transform: translateZ(0) translateY(0) scale(1);
-		}
-	}
-	
-	/* Анимация при прокрутке */
-	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		will-change: transform, box-shadow !important;
-	}
-	
-	/* Улучшенные hover эффекты */
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover {
-		z-index: 5 !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img {
-		transform: scale(1.03) !important;
-		-webkit-transform: translateZ(0) scale(1.03) !important;
-		box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
-	}
-	
-	/* Анимация для градиентов */
-	.gallery-container:not(.gallery-pc-slider)::before,
-	.gallery-container:not(.gallery-pc-slider)::after {
-		will-change: opacity !important;
-		-webkit-transform: translateZ(0) !important;
-		transform: translateZ(0) !important;
-		backface-visibility: hidden !important;
+		pointer-events: none !important;
+		white-space: nowrap !important;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+		letter-spacing: 0.5px !important;
 	}
 	
 	/* Скрытие мобильного слайдера при открытии lightbox */
@@ -922,6 +816,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		opacity: 0 !important;
 		pointer-events: none !important;
 		transition: opacity 0.3s ease !important;
+		transform: scale(0.95) !important;
 	}
 	
 	/* Скрываем изображения для ПК слайдера на мобилке */
@@ -945,24 +840,13 @@ table{border-collapse:collapse;border-spacing:0;}
 
 @media (max-width: 480px) {
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		max-height: 280px;
+		max-height: 250px;
 	}
 	
-	.gallery-container:not(.gallery-pc-slider) {
-		gap: 12px !important;
-		padding: 0 12px !important;
-		-webkit-transform: translateZ(0) !important;
-		transform: translateZ(0) !important;
-		backface-visibility: hidden !important;
-		perspective: 1000px !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		border-radius: 14px !important;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
-		-webkit-transform: translateZ(0) scale(1) !important;
-		transform: translateZ(0) scale(1) !important;
-		backface-visibility: hidden !important;
+	.gallery-container:not(.gallery-pc-slider)::after {
+		bottom: 12px !important;
+		padding: 6px 14px !important;
+		font-size: 12px !important;
 	}
 	
 	.gallery-pc-slider .gallery-item {
