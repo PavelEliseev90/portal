@@ -5872,7 +5872,12 @@ def korsavto_settings_dc(request):
             'name_unit'    : name_unit
             }
         from register.models import RegEstimationBalanceUnit
-        balance_units = RegEstimationBalanceUnit.objects.values('unit').order_by('unit').distinct().annotate(sum = Sum('amount')).values('unit', 'unit__name', 'sum' , ).order_by('-sum')
+        if request.user.profiles.korsavto_city != None and request.user.profiles.korsavto_city != "":
+            balance_units = RegEstimationBalanceUnit.objects.filter(unit__name__icontains = request.user.profiles.korsavto_city)
+        else:
+            balance_units = RegEstimationBalanceUnit.objects.all()
+
+        balance_units = balance_units.values('unit').order_by('unit').distinct().annotate(sum = Sum('amount')).values('unit', 'unit__name', 'sum' , ).order_by('-sum')
         if len(name_unit) > 0:
             balance_units = balance_units.filter(unit__name__icontains = name_unit)
 

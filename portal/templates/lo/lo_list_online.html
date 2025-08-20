@@ -412,7 +412,10 @@ z-index: 1044;">
         
       var wsProtocol = 'wss://';
       var ws_url = 'ah.kors-group.com';
-      var toats_visible = {{request.user.profiles.eco_toast}};
+      var toats_visible = false;
+      {% if request.user.profiles.eco_toast %}
+        toats_visible = true;
+      {% endif %}
 
       var chatSocket = new WebSocket(
           wsProtocol
