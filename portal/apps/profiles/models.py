@@ -19,12 +19,15 @@ class Profiles(models.Model):
     eco                     = models.BooleanField("ЕЦО аналитик", default = False)
     eco_visible             = models.BooleanField("ЕЦО просмотр", default = False)
     eco_page_price_info     = models.BooleanField("ЕЦО просмотр страницы ценообразование", default = False)
-    eco_toast               = models.BooleanField("ЕЦО Всплывающие сообщения", default = False)
+    eco_page_price_auto     = models.BooleanField("ЕЦО просмотр страницы ценообразование автоматическая", default = False)
+    eco_toast               = models.BooleanField("Всплывающиесообщения", default = False) 
+    
     korsavto_settings       = models.BooleanField("Доступ к настройкам корсавто", default = False)
 
     korsavto_settings_dc    = models.BooleanField("Доступ к настройкам корсавто директора дц", default = False)
     korsavto_stores         = models.ManyToManyField(RefStore, verbose_name='Стоянки автомобилей доступны', blank=True)
-    
+    korsavto_city           = models.CharField("Наименование города", max_length=512, default='', blank= True, null=True) 
+
     def image_img(self):
         if self.image:
             return mark_safe('<div style=" width:240px; height:120px;text-align:center;" ><img style="max-width:100%;max-height: 100%;" src="{0}"/></div>'.format(self.image.url))

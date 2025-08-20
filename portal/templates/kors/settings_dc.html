@@ -163,7 +163,7 @@
     </div>
   {% endif %}
 
-  {% if request.user.profiles.korsavto_settings %}
+  {% if request.user.profiles.korsavto_settings or request.user.profiles.korsavto_city != "" or request.user.profiles.korsavto_city != None %}
     <div class="col-4 col-sm-auto text-center" >
       <a href="{{request.path}}?dc={{params.unit.pk}}&page=balance_units" class="text-dark">
         <div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.2rem; height: 100%;">
