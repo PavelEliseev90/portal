@@ -3920,7 +3920,7 @@ def get_filial(json_filial):
     
     filials    = RefFilial.objects.filter(uin = uin)
     
-    if len(filials) == 0:
+    if len(filials) == 0: 
         filial      = RefFilial()
         filial.uin  = uin
         filial.save()
@@ -3931,7 +3931,7 @@ def get_filial(json_filial):
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])
 
-    if 'Unit' in json_filial > 0:
+    if 'Unit' in json_filial:
         unit_data = json_filial['Unit']
         if len(unit_data) > 0:
             filial.unit   = get_unit(unit_data)
