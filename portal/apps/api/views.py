@@ -3931,7 +3931,7 @@ def get_filial(json_filial):
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])
 
-    if 'Unit' in json_filial:
+    if 'Unit' in json_filial: 
         unit_data = json_filial['Unit']
         if len(unit_data) > 0:
             filial.unit   = get_unit(unit_data)
