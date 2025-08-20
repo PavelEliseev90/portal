@@ -1887,7 +1887,15 @@ function initMobileGallerySlider() {
 	
 	// Добавляем счетчик слайдов
 	const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
+	console.log('Всего слайдов:', totalSlides);
+	
+	// Устанавливаем начальный счетчик
 	mobileGallery.setAttribute('data-slide-counter', `1 / ${totalSlides}`);
+	
+	// Принудительно обновляем счетчик через небольшую задержку
+	setTimeout(() => {
+		updateSlideCounter();
+	}, 100);
 	
 	// Добавляем обработчики для свайпа
 	let startX = 0;
@@ -1909,6 +1917,9 @@ function initMobileGallerySlider() {
 	
 	// Обработчик прокрутки для обновления счетчика
 	mobileGallery.addEventListener('scroll', updateSlideCounter);
+	
+	// Обработчик изменения размера окна
+	window.addEventListener('resize', updateSlideCounter);
 	
 	function handleTouchStart(e) {
 		startX = e.touches[0].clientX;
@@ -1979,6 +1990,11 @@ function initMobileGallerySlider() {
 			left: scrollDistance,
 			behavior: 'smooth'
 		});
+		
+		// Обновляем счетчик после прокрутки
+		setTimeout(() => {
+			updateSlideCounter();
+		}, 300);
 	}
 	
 	function scrollToPrevImage() {
@@ -1996,6 +2012,11 @@ function initMobileGallerySlider() {
 			left: scrollDistance,
 			behavior: 'smooth'
 		});
+		
+		// Обновляем счетчик после прокрутки
+		setTimeout(() => {
+			updateSlideCounter();
+		}, 300);
 	}
 	
 	function getCurrentVisibleIndex() {
@@ -2023,7 +2044,13 @@ function initMobileGallerySlider() {
 	function updateSlideCounter() {
 		const currentIndex = getCurrentVisibleIndex();
 		const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
-		mobileGallery.setAttribute('data-slide-counter', `${currentIndex + 1} / ${totalSlides}`);
+		const counterText = `${currentIndex + 1} / ${totalSlides}`;
+		
+		console.log('Обновляем счетчик:', counterText);
+		mobileGallery.setAttribute('data-slide-counter', counterText);
+		
+		// Принудительно обновляем отображение
+		mobileGallery.style.setProperty('--slide-counter', `"${counterText}"`);
 	}
 	
 	console.log('Мобильный слайдер успешно инициализирован!');
