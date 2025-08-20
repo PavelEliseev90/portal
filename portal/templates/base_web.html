@@ -1724,22 +1724,32 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+	console.log('DOM загружен, инициализируем слайдеры...');
+	
 	// Инициализация слайдера галереи для ПК
 	// Проверяем, что мы на ПК (слайдер добавляется только для ПК)
 	if (document.querySelector('.gallery-pc-slider')) {
+		console.log('Найден ПК слайдер, инициализируем...');
 		initGallerySlider();
 	} else {
+		console.log('ПК слайдер не найден, инициализируем мобильный...');
 		// Если нет ПК слайдера, инициализируем мобильный слайдер
 		initMobileGallerySlider();
 	}
+	
+	// Дополнительная проверка через небольшую задержку
+	setTimeout(function() {
+		console.log('Дополнительная проверка...');
+		if (!document.querySelector('.gallery-pc-slider')) {
+			console.log('Повторная инициализация мобильного слайдера...');
+			initMobileGallerySlider();
+		}
+	}, 100);
 });
 
 function initGallerySlider() {
 	const slider = document.querySelector('.gallery-pc-slider');
 	if (!slider) return;
-	
-	// Инициализируем мобильный слайдер для устройств без ПК слайдера
-	initMobileGallerySlider();
 	
 	const prevBtn = document.getElementById('gallerySliderPrev');
 	const nextBtn = document.getElementById('gallerySliderNext');
@@ -1872,9 +1882,26 @@ function initGallerySlider() {
 
 // Функция для инициализации мобильного слайдера
 function initMobileGallerySlider() {
-	// Находим контейнер галереи без класса gallery-pc-slider (для мобильных устройств)
-	const mobileGallery = document.querySelector('.gallery-container:not(.gallery-pc-slider)');
-	if (!mobileGallery) return;
+	console.log('Инициализация мобильного слайдера...');
+	
+	// Находим все контейнеры галереи
+	const allGalleries = document.querySelectorAll('.gallery-container');
+	console.log('Найдено контейнеров галереи:', allGalleries.length);
+	
+	// Ищем контейнер без класса gallery-pc-slider
+	let mobileGallery = null;
+	allGalleries.forEach(gallery => {
+		console.log('Проверяем галерею:', gallery, 'Классы:', gallery.className);
+		if (!gallery.classList.contains('gallery-pc-slider')) {
+			mobileGallery = gallery;
+			console.log('Найден мобильный контейнер:', mobileGallery);
+		}
+	});
+	
+	if (!mobileGallery) {
+		console.log('Мобильный контейнер не найден!');
+		return;
+	}
 	
 	let startX = 0;
 	let currentX = 0;
@@ -1984,6 +2011,8 @@ function initMobileGallerySlider() {
 		
 		return closestIndex;
 	}
+	
+	console.log('Мобильный слайдер успешно инициализирован!');
 }
 
 
