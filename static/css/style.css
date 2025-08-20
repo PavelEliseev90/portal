@@ -621,16 +621,38 @@ table{border-collapse:collapse;border-spacing:0;}
 }
 
 /* Гарантируем одинаковые размеры для всех главных изображений в слайдере */
-.gallery-pc-slider .gallery-item:first-child,
-.gallery-pc-slider .gallery-item[style*="flex-basis: 100%"] {
+.gallery-pc-slider .gallery-item:first-child {
+	flex-basis: 100%;
+	max-height: 500px;
+	height: 500px;
+}
+
+.gallery-pc-slider .gallery-item:first-child img {
+	height: 500px;
+	object-fit: cover;
+}
+
+/* Стили для активного главного изображения (управляется JavaScript) */
+.gallery-pc-slider .gallery-item.active-main {
 	flex-basis: 100% !important;
 	max-height: 500px !important;
 	height: 500px !important;
 }
 
-.gallery-pc-slider .gallery-item:first-child img,
-.gallery-pc-slider .gallery-item[style*="flex-basis: 100%"] img {
+.gallery-pc-slider .gallery-item.active-main img {
 	height: 500px !important;
+	object-fit: cover;
+}
+
+/* Стили для миниатюр (когда элемент не является активным главным) */
+.gallery-pc-slider .gallery-item:not(.active-main) {
+	flex-basis: 10% !important;
+	max-height: 100px !important;
+	height: 100px !important;
+}
+
+.gallery-pc-slider .gallery-item:not(.active-main) img {
+	height: 100px !important;
 	object-fit: cover;
 }
 

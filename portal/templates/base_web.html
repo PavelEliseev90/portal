@@ -1747,6 +1747,9 @@ function initGallerySlider() {
 	
 	let currentSlide = 0;
 	
+	// Инициализируем первый слайд как активный
+	slideItems[0].classList.add('active-main');
+	
 	updateSlider();
 	
 	// Обработчики кнопок
@@ -1822,6 +1825,9 @@ function initGallerySlider() {
 					item.style.opacity = '1';
 					item.style.transform = 'scale(1)';
 					
+					// Добавляем класс для активного главного изображения
+					item.classList.add('active-main');
+					
 					// Перемещаем кнопки к текущему главному слайду
 					prevBtn.style.display = 'flex';
 					nextBtn.style.display = 'flex';
@@ -1835,6 +1841,9 @@ function initGallerySlider() {
 					item.style.maxHeight = '100px';
 					item.style.opacity = '0.7';
 					item.style.transform = 'scale(1)';
+					
+					// Убираем класс активного главного изображения
+					item.classList.remove('active-main');
 				}
 			});
 			
