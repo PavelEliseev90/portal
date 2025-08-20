@@ -1727,31 +1727,18 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Инициализация слайдера галереи для ПК
 	// Проверяем, что мы на ПК (слайдер добавляется только для ПК)
 	if (document.querySelector('.gallery-pc-slider')) {
-		console.log('ПК обнаружен, инициализируем слайдер');
 		initGallerySlider();
-	} else {
-		console.log('Мобильное устройство, слайдер не нужен');
 	}
 });
 
 function initGallerySlider() {
-	console.log('Инициализация слайдера галереи...');
 	const slider = document.querySelector('.gallery-pc-slider');
-	if (!slider) {
-		console.log('Слайдер не найден');
-		return;
-	}
+	if (!slider) return;
 	
 	const prevBtn = document.getElementById('gallerySliderPrev');
 	const nextBtn = document.getElementById('gallerySliderNext');
-	const indicatorsContainer = document.getElementById('gallerySliderIndicators');
 	
-	if (!prevBtn || !nextBtn || !indicatorsContainer) {
-		console.log('Кнопки или индикаторы не найдены');
-		return;
-	}
-	
-	console.log('Слайдер найден, элементов:', slider.querySelectorAll('.gallery-item').length);
+	if (!prevBtn || !nextBtn) return;
 	
 	const slideItems = slider.querySelectorAll('.gallery-item');
 	const totalItems = slideItems.length;
@@ -1760,8 +1747,6 @@ function initGallerySlider() {
 	
 	let currentSlide = 0;
 	
-	// Создаем индикаторы
-	createIndicators();
 	updateSlider();
 	
 	// Обработчики кнопок
@@ -1773,15 +1758,6 @@ function initGallerySlider() {
 	nextBtn.addEventListener('click', () => {
 		currentSlide = (currentSlide + 1) % totalItems;
 		updateSlider();
-	});
-	
-	// Обработчик индикаторов
-	indicatorsContainer.addEventListener('click', (e) => {
-		if (e.target.classList.contains('gallery-slider-indicator')) {
-			const slideIndex = parseInt(e.target.dataset.slide);
-			currentSlide = slideIndex;
-			updateSlider();
-		}
 	});
 	
 	// Обработчик клика по миниатюрам
@@ -1807,22 +1783,33 @@ function initGallerySlider() {
 		}
 	});
 	
-	function createIndicators() {
-		indicatorsContainer.innerHTML = '';
+	// Скрываем слайдер когда открывается lightbox
+	const lightboxContainer = document.querySelector('.lightbox');
+	if (lightboxContainer) {
+		const observer = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+					if (lightboxContainer.style.display === 'block') {
+						// Скрываем кнопки слайдера
+						prevBtn.style.display = 'none';
+						nextBtn.style.display = 'none';
+					} else {
+						// Показываем кнопки слайдера
+						prevBtn.style.display = 'flex';
+						nextBtn.style.display = 'flex';
+					}
+				}
+			});
+		});
 		
-		for (let i = 0; i < totalItems; i++) {
-			const indicator = document.createElement('button');
-			indicator.className = 'gallery-slider-indicator';
-			indicator.dataset.slide = i;
-			indicator.setAttribute('aria-label', `Перейти к изображению ${i + 1}`);
-			indicatorsContainer.appendChild(indicator);
-		}
+		observer.observe(lightboxContainer, {
+			attributes: true,
+			attributeFilter: ['style']
+		});
 	}
 	
 	function updateSlider() {
 		try {
-			console.log('Обновление слайдера, текущий слайд:', currentSlide);
-			
 			// Обновляем главное изображение
 			slideItems.forEach((item, index) => {
 				if (index === currentSlide) {
@@ -1848,12 +1835,6 @@ function initGallerySlider() {
 				}
 			});
 			
-			// Обновляем индикаторы
-			const indicators = indicatorsContainer.querySelectorAll('.gallery-slider-indicator');
-			indicators.forEach((indicator, index) => {
-				indicator.classList.toggle('active', index === currentSlide);
-			});
-			
 			// Обновляем состояние кнопок
 			prevBtn.disabled = totalItems <= 1;
 			nextBtn.disabled = totalItems <= 1;
@@ -1861,8 +1842,6 @@ function initGallerySlider() {
 			// Обновляем ARIA атрибуты
 			slider.setAttribute('aria-current', currentSlide + 1);
 			slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
-			
-			console.log('Слайдер обновлен успешно');
 		} catch (error) {
 			console.error('Ошибка при обновлении слайдера:', error);
 		}

@@ -522,6 +522,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-pc-slider {
 	position: relative;
 	overflow: hidden;
+	z-index: 1;
 }
 
 .gallery-pc-slider .gallery-item {
@@ -596,39 +597,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	transition: color 0.3s ease;
 }
 
-/* Индикаторы слайдов */
-.gallery-slider-indicators {
-	display: flex;
-	justify-content: center;
-	gap: 8px;
-	margin-top: 1rem;
-	position: absolute;
-	bottom: 20px;
-	left: 50%;
-	transform: translateX(-50%);
-	z-index: 1000;
-}
-
-.gallery-slider-indicator {
-	width: 12px;
-	height: 12px;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.5);
-	border: 2px solid rgba(255, 255, 255, 0.8);
-	cursor: pointer;
-	transition: all 0.3s ease;
-}
-
-.gallery-slider-indicator:hover {
-	background: rgba(255, 255, 255, 0.8);
-	transform: scale(1.2);
-}
-
-.gallery-slider-indicator.active {
-	background: white;
-	border-color: white;
-	transform: scale(1.3);
-}
+/* Индикаторы убраны - не нужны */
 
 /* Базовые стили для слайдера */
 .gallery-pc-slider .gallery-item {
