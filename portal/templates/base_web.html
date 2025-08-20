@@ -1,4 +1,3 @@
-
 <!DOCTYPE HTML>
 
 
@@ -1727,24 +1726,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	console.log('DOM загружен, инициализируем слайдеры...');
 	
 	// Инициализация слайдера галереи для ПК
-	// Проверяем, что мы на ПК (слайдер добавляется только для ПК)
 	if (document.querySelector('.gallery-pc-slider')) {
 		console.log('Найден ПК слайдер, инициализируем...');
 		initGallerySlider();
 	} else {
 		console.log('ПК слайдер не найден, инициализируем мобильный...');
-		// Если нет ПК слайдера, инициализируем мобильный слайдер
 		initMobileGallerySlider();
 	}
-	
-	// Дополнительная проверка через небольшую задержку
-	setTimeout(function() {
-		console.log('Дополнительная проверка...');
-		if (!document.querySelector('.gallery-pc-slider')) {
-			console.log('Повторная инициализация мобильного слайдера...');
-			initMobileGallerySlider();
-		}
-	}, 100);
 });
 
 function initGallerySlider() {
@@ -1874,9 +1862,6 @@ function initGallerySlider() {
 			prevBtn.disabled = totalItems <= 1;
 			nextBtn.disabled = totalItems <= 1;
 			
-			// Убираем специальные классы для позиционирования кнопок
-			slider.classList.remove('slide-first', 'slide-last', 'slide-middle');
-			
 			// Обновляем ARIA атрибуты
 			slider.setAttribute('aria-current', currentSlide + 1);
 			slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
@@ -1886,90 +1871,121 @@ function initGallerySlider() {
 	}
 }
 
-// Функция для инициализации мобильного слайдера
+// Простой мобильный слайдер
 function initMobileGallerySlider() {
 	console.log('Инициализация мобильного слайдера...');
 	
-	// Находим все контейнеры галереи
-	const allGalleries = document.querySelectorAll('.gallery-container');
-	console.log('Найдено контейнеров галереи:', allGalleries.length);
-	
-	// Ищем контейнер без класса gallery-pc-slider
-	let mobileGallery = null;
-	allGalleries.forEach(gallery => {
-		console.log('Проверяем галерею:', gallery, 'Классы:', gallery.className);
-		if (!gallery.classList.contains('gallery-pc-slider')) {
-			mobileGallery = gallery;
-			console.log('Найден мобильный контейнер:', mobileGallery);
-		}
-	});
+	// Находим мобильный контейнер галереи
+	const mobileGallery = document.querySelector('.gallery-container:not(.gallery-pc-slider)');
 	
 	if (!mobileGallery) {
 		console.log('Мобильный контейнер не найден!');
 		return;
 	}
 	
-	// Добавляем класс для мобильного слайдера
-	mobileGallery.classList.add('mobile-slider');
+	console.log('Найден мобильный контейнер:', mobileGallery);
 	
-	// Добавляем стрелки-индикаторы и индикатор прогресса
-	addMobileSliderArrows(mobileGallery);
-	addMobileSliderProgress(mobileGallery);
-	
+	// Добавляем обработчики для свайпа
 	let startX = 0;
+	let startY = 0;
 	let currentX = 0;
+	let currentY = 0;
 	let isDragging = false;
+	let startTime = 0;
+	let endTime = 0;
 	
-	// Обработчики для touch событий
+	// Touch события
 	mobileGallery.addEventListener('touchstart', handleTouchStart, { passive: false });
 	mobileGallery.addEventListener('touchmove', handleTouchMove, { passive: false });
 	mobileGallery.addEventListener('touchend', handleTouchEnd, { passive: false });
 	
-	// Обработчики для mouse событий (для тестирования на десктопе)
+	// Mouse события для тестирования
 	mobileGallery.addEventListener('mousedown', handleMouseDown);
 	mobileGallery.addEventListener('mousemove', handleMouseMove);
 	mobileGallery.addEventListener('mouseup', handleMouseUp);
 	mobileGallery.addEventListener('mouseleave', handleMouseUp);
 	
+	// Обработчик прокрутки для обновления индикаторов
+	mobileGallery.addEventListener('scroll', updateScrollIndicators);
+	
+	// Обработчик для определения активного изображения
+	mobileGallery.addEventListener('scroll', updateActiveImage);
+	
+	// Инициализируем первое изображение как активное
+	setTimeout(() => {
+		const firstItem = mobileGallery.querySelector('.gallery-item');
+		if (firstItem) {
+			firstItem.classList.add('active');
+		}
+	}, 100);
+	
 	function handleTouchStart(e) {
 		startX = e.touches[0].clientX;
+		startY = e.touches[0].clientY;
+		startTime = Date.now();
 		isDragging = true;
+		
+		// Добавляем класс для анимации
+		mobileGallery.style.scrollBehavior = 'auto';
 	}
 	
 	function handleTouchMove(e) {
 		if (!isDragging) return;
 		e.preventDefault();
 		currentX = e.touches[0].clientX;
+		currentY = e.touches[0].clientY;
 	}
 	
 	function handleTouchEnd(e) {
 		if (!isDragging) return;
 		isDragging = false;
+		endTime = Date.now();
 		handleSwipe();
+		
+		// Возвращаем плавную прокрутку
+		setTimeout(() => {
+			mobileGallery.style.scrollBehavior = 'smooth';
+		}, 100);
 	}
 	
 	function handleMouseDown(e) {
 		startX = e.clientX;
+		startY = e.clientY;
+		startTime = Date.now();
 		isDragging = true;
+		
+		// Добавляем класс для анимации
+		mobileGallery.style.scrollBehavior = 'auto';
 	}
 	
 	function handleMouseMove(e) {
 		if (!isDragging) return;
 		currentX = e.clientX;
+		currentY = e.clientY;
 	}
 	
 	function handleMouseUp(e) {
 		if (!isDragging) return;
 		isDragging = false;
+		endTime = Date.now();
 		handleSwipe();
+		
+		// Возвращаем плавную прокрутку
+		setTimeout(() => {
+			mobileGallery.style.scrollBehavior = 'smooth';
+		}, 100);
 	}
 	
 	function handleSwipe() {
-		const swipeThreshold = 50; // Минимальное расстояние для свайпа
-		const diff = startX - currentX;
+		const swipeThreshold = 50;
+		const timeThreshold = 300; // Максимальное время для свайпа
+		const diffX = startX - currentX;
+		const diffY = startY - currentY;
+		const timeDiff = endTime - startTime;
 		
-		if (Math.abs(diff) > swipeThreshold) {
-			if (diff > 0) {
+		// Проверяем, что свайп горизонтальный и быстрый
+		if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > swipeThreshold && timeDiff < timeThreshold) {
+			if (diffX > 0) {
 				// Свайп влево - следующее изображение
 				scrollToNextImage();
 			} else {
@@ -1984,22 +2000,19 @@ function initMobileGallerySlider() {
 		const currentIndex = getCurrentVisibleIndex();
 		const nextIndex = (currentIndex + 1) % items.length;
 		
-		// Плавная анимация прокрутки
 		const targetItem = items[nextIndex];
 		const containerRect = mobileGallery.getBoundingClientRect();
 		const itemRect = targetItem.getBoundingClientRect();
 		const scrollDistance = itemRect.left - containerRect.left;
 		
+		// Плавная прокрутка
 		mobileGallery.scrollBy({
 			left: scrollDistance,
 			behavior: 'smooth'
 		});
 		
-		// Добавляем анимацию для текущего элемента
-		targetItem.style.transform = 'scale(1.05)';
-		setTimeout(() => {
-			targetItem.style.transform = 'scale(1)';
-		}, 300);
+		// Анимация для целевого элемента
+		animateImage(targetItem);
 	}
 	
 	function scrollToPrevImage() {
@@ -2007,21 +2020,36 @@ function initMobileGallerySlider() {
 		const currentIndex = getCurrentVisibleIndex();
 		const prevIndex = (currentIndex - 1 + items.length) % items.length;
 		
-		// Плавная анимация прокрутки
 		const targetItem = items[prevIndex];
 		const containerRect = mobileGallery.getBoundingClientRect();
 		const itemRect = targetItem.getBoundingClientRect();
 		const scrollDistance = itemRect.left - containerRect.left;
 		
+		// Плавная прокрутка
 		mobileGallery.scrollBy({
 			left: scrollDistance,
 			behavior: 'smooth'
 		});
 		
-		// Добавляем анимацию для текущего элемента
-		targetItem.style.transform = 'scale(1.05)';
+		// Анимация для целевого элемента
+		animateImage(targetItem);
+	}
+	
+	function animateImage(item) {
+		// Убираем активный класс со всех элементов
+		mobileGallery.querySelectorAll('.gallery-item').forEach(el => {
+			el.classList.remove('active');
+		});
+		
+		// Добавляем активный класс к целевому элементу
+		item.classList.add('active');
+		
+		// Добавляем анимацию масштабирования
+		item.style.transform = 'scale(1.05)';
+		item.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+		
 		setTimeout(() => {
-			targetItem.style.transform = 'scale(1)';
+			item.style.transform = 'scale(1.02)';
 		}, 300);
 	}
 	
@@ -2047,120 +2075,59 @@ function initMobileGallerySlider() {
 		return closestIndex;
 	}
 	
-			console.log('Мобильный слайдер успешно инициализирован!');
-	}
-	
-	// Функция для добавления стрелок-индикаторов
-	function addMobileSliderArrows(container) {
-		// Создаем левую стрелку
-		const leftArrow = document.createElement('div');
-		leftArrow.className = 'mobile-slider-arrow left';
-		leftArrow.innerHTML = '‹';
-		leftArrow.style.opacity = '0';
+	function updateScrollIndicators() {
+		const scrollLeft = mobileGallery.scrollLeft;
+		const maxScrollLeft = mobileGallery.scrollWidth - mobileGallery.clientWidth;
 		
-		// Создаем правую стрелку
-		const rightArrow = document.createElement('div');
-		rightArrow.className = 'mobile-slider-arrow right';
-		rightArrow.innerHTML = '›';
-		rightArrow.style.opacity = '0.8';
-		
-		// Добавляем стрелки в контейнер
-		container.appendChild(leftArrow);
-		container.appendChild(rightArrow);
-		
-		// Обновляем видимость стрелок при прокрутке
-		updateArrowVisibility(container);
-		
-		// Добавляем обработчик прокрутки
-		container.addEventListener('scroll', () => {
-			updateArrowVisibility(container);
-		});
-	}
-	
-	// Функция для обновления видимости стрелок
-	function updateArrowVisibility(container) {
-		const leftArrow = container.querySelector('.mobile-slider-arrow.left');
-		const rightArrow = container.querySelector('.mobile-slider-arrow.right');
-		
-		if (!leftArrow || !rightArrow) return;
-		
-		const scrollLeft = container.scrollLeft;
-		const maxScrollLeft = container.scrollWidth - container.clientWidth;
-		
-		// Показываем левую стрелку, если есть прокрутка влево
+		// Обновляем левый градиент
 		if (scrollLeft > 0) {
-			leftArrow.style.opacity = '0.8';
-			container.classList.add('scrolled-left');
+			mobileGallery.classList.add('scrolled-left');
 		} else {
-			leftArrow.style.opacity = '0';
-			container.classList.remove('scrolled-left');
+			mobileGallery.classList.remove('scrolled-left');
 		}
 		
-		// Показываем правую стрелку, если есть прокрутка вправо
+		// Обновляем правый градиент
 		if (scrollLeft < maxScrollLeft - 1) {
-			rightArrow.style.opacity = '0.8';
-			container.classList.remove('scrolled-end');
+			mobileGallery.classList.remove('scrolled-end');
 		} else {
-			rightArrow.style.opacity = '0';
-			container.classList.add('scrolled-end');
+			mobileGallery.classList.add('scrolled-end');
 		}
 	}
 	
-	// Функция для добавления индикатора прогресса
-	function addMobileSliderProgress(container) {
-		// Создаем контейнер для индикатора прогресса
-		const progressContainer = document.createElement('div');
-		progressContainer.className = 'mobile-slider-progress';
+	function updateActiveImage() {
+		const items = mobileGallery.querySelectorAll('.gallery-item');
+		const currentIndex = getCurrentVisibleIndex();
 		
-		// Создаем полосу прогресса
-		const progressBar = document.createElement('div');
-		progressBar.className = 'mobile-slider-progress-bar';
-		
-		// Добавляем полосу в контейнер
-		progressContainer.appendChild(progressBar);
-		
-		// Добавляем индикатор в контейнер галереи
-		container.appendChild(progressContainer);
-		
-		// Обновляем прогресс при прокрутке
-		updateProgress(container, progressBar);
-		
-		// Добавляем обработчик прокрутки для обновления прогресса
-		container.addEventListener('scroll', () => {
-			updateProgress(container, progressBar);
+		// Убираем активный класс со всех элементов
+		items.forEach((item, index) => {
+			if (index === currentIndex) {
+				item.classList.add('active');
+			} else {
+				item.classList.remove('active');
+			}
 		});
 	}
 	
-	// Функция для обновления индикатора прогресса
-	function updateProgress(container, progressBar) {
-		const scrollLeft = container.scrollLeft;
-		const maxScrollLeft = container.scrollWidth - container.clientWidth;
-		const progress = maxScrollLeft > 0 ? (scrollLeft / maxScrollLeft) * 100 : 0;
-		
-		progressBar.style.width = progress + '%';
-	}
-	
-	// Функция для скрытия мобильного слайдера
-	function hideMobileSlider() {
-		const mobileGalleries = document.querySelectorAll('.gallery-container:not(.gallery-pc-slider)');
-		mobileGalleries.forEach(gallery => {
-			gallery.style.opacity = '0';
-			gallery.style.pointerEvents = 'none';
-		});
-	}
-	
-	// Функция для показа мобильного слайдера
-	function showMobileSlider() {
-		const mobileGalleries = document.querySelectorAll('.gallery-container:not(.gallery-pc-slider)');
-		mobileGalleries.forEach(gallery => {
-			gallery.style.opacity = '1';
-			gallery.style.pointerEvents = 'auto';
-		});
-	}
+	console.log('Мобильный слайдер успешно инициализирован!');
+}
 
+// Функция для скрытия мобильного слайдера
+function hideMobileSlider() {
+	const mobileGalleries = document.querySelectorAll('.gallery-container:not(.gallery-pc-slider)');
+	mobileGalleries.forEach(gallery => {
+		gallery.style.opacity = '0';
+		gallery.style.pointerEvents = 'none';
+	});
+}
 
-
-
+// Функция для показа мобильного слайдера
+function showMobileSlider() {
+	const mobileGalleries = document.querySelectorAll('.gallery-container:not(.gallery-pc-slider)');
+	mobileGalleries.forEach(gallery => {
+		gallery.style.opacity = '1';
+		gallery.style.pointerEvents = 'auto';
+	});
+}
 </script>
 
 

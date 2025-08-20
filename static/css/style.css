@@ -748,177 +748,180 @@ table{border-collapse:collapse;border-spacing:0;}
 @media (max-width: 767px) {
 	.gallery-container {
 		width: 100%;
-		overflow: hidden; /* Добавляем overflow: hidden для слайдера */
+		overflow: hidden;
+		-webkit-transform: translateZ(0) !important;
+		transform: translateZ(0) !important;
+		backface-visibility: hidden !important;
+		perspective: 1000px !important;
 	}
 	
-	/* Мобильный слайдер - показываем все изображения в ряд */
-	.gallery-container:not(.gallery-pc-slider),
-	.gallery-container.mobile-slider {
+	/* Простой мобильный слайдер */
+	.gallery-container:not(.gallery-pc-slider) {
 		display: flex !important;
 		overflow-x: auto !important;
 		scroll-snap-type: x mandatory !important;
 		-webkit-overflow-scrolling: touch !important;
-		scrollbar-width: none !important; /* Скрываем скроллбар для Firefox */
-		-ms-overflow-style: none !important; /* Скрываем скроллбар для IE/Edge */
+		scrollbar-width: none !important;
+		-ms-overflow-style: none !important;
 		flex-wrap: nowrap !important;
 		position: relative !important;
-		transition: all 0.3s ease-in-out !important;
+		gap: 15px !important;
+		padding: 0 15px !important;
+		scroll-behavior: smooth !important;
+		-webkit-transform: translateZ(0) !important;
+		transform: translateZ(0) !important;
+		backface-visibility: hidden !important;
+		perspective: 1000px !important;
 	}
 	
-	/* Индикаторы наличия дополнительных изображений */
+	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar {
+		display: none !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item {
+		flex: 0 0 100% !important;
+		width: 100% !important;
+		max-width: 100% !important;
+		scroll-snap-align: center !important;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+		position: relative !important;
+		-webkit-transform: translateZ(0) !important;
+		transform: translateZ(0) !important;
+		backface-visibility: hidden !important;
+		will-change: transform !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
+		width: 100% !important;
+		height: auto !important;
+		max-height: 350px !important;
+		object-fit: cover !important;
+		border-radius: 16px !important;
+		box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12) !important;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+		transform: scale(1) !important;
+		-webkit-transform: translateZ(0) scale(1) !important;
+		backface-visibility: hidden !important;
+		will-change: transform, box-shadow !important;
+		image-rendering: -webkit-optimize-contrast !important;
+		image-rendering: crisp-edges !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img {
+		transform: scale(1.03) !important;
+		-webkit-transform: translateZ(0) scale(1.03) !important;
+		box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:active img {
+		transform: scale(0.98) !important;
+		-webkit-transform: translateZ(0) scale(0.98) !important;
+		transition: transform 0.1s ease !important;
+	}
+	
+	/* Индикаторы для мобильного слайдера */
 	.gallery-container:not(.gallery-pc-slider)::before,
-	.gallery-container:not(.gallery-pc-slider)::after,
-	.gallery-container.mobile-slider::before,
-	.gallery-container.mobile-slider::after {
+	.gallery-container:not(.gallery-pc-slider)::after {
 		content: '' !important;
 		position: absolute !important;
 		top: 0 !important;
 		bottom: 0 !important;
-		width: 40px !important;
+		width: 80px !important;
 		pointer-events: none !important;
 		z-index: 10 !important;
-		transition: opacity 0.3s ease-in-out !important;
+		transition: opacity 0.4s ease !important;
 	}
 	
-	/* Левый градиент (показывает, что есть изображения слева) */
-	.gallery-container:not(.gallery-pc-slider)::before,
-	.gallery-container.mobile-slider::before {
+	.gallery-container:not(.gallery-pc-slider)::before {
 		left: 0 !important;
-		background: linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%) !important;
+		background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 40%, transparent 100%) !important;
 		opacity: 0 !important;
 	}
 	
-	/* Правый градиент (показывает, что есть изображения справа) */
-	.gallery-container:not(.gallery-pc-slider)::after,
-	.gallery-container.mobile-slider::after {
+	.gallery-container:not(.gallery-pc-slider)::after {
 		right: 0 !important;
-		background: linear-gradient(270deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%) !important;
+		background: linear-gradient(270deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 40%, transparent 100%) !important;
 		opacity: 1 !important;
 	}
 	
-	/* Показываем левый градиент при прокрутке */
-	.gallery-container:not(.gallery-pc-slider).scrolled-left::before,
-	.gallery-container.mobile-slider.scrolled-left::before {
+	.gallery-container:not(.gallery-pc-slider).scrolled-left::before {
 		opacity: 1 !important;
 	}
 	
-	/* Скрываем правый градиент в конце */
-	.gallery-container:not(.gallery-pc-slider).scrolled-end::after,
-	.gallery-container.mobile-slider.scrolled-end::after {
+	.gallery-container:not(.gallery-pc-slider).scrolled-end::after {
 		opacity: 0 !important;
 	}
 	
-	/* Стрелки-индикаторы для мобильного слайдера */
-	.mobile-slider-arrow {
-		position: absolute !important;
-		top: 50% !important;
-		transform: translateY(-50%) !important;
-		width: 30px !important;
-		height: 30px !important;
-		background: rgba(0, 0, 0, 0.6) !important;
-		border-radius: 50% !important;
-		display: flex !important;
-		align-items: center !important;
-		justify-content: center !important;
-		color: white !important;
-		font-size: 18px !important;
-		font-weight: bold !important;
-		z-index: 20 !important;
-		pointer-events: none !important;
-		transition: all 0.3s ease-in-out !important;
-		opacity: 0.8 !important;
+	/* Анимация для активного изображения */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item.active {
+		transform: scale(1.02) !important;
+		-webkit-transform: translateZ(0) scale(1.02) !important;
 	}
 	
-	.mobile-slider-arrow.left {
-		left: 10px !important;
+	.gallery-container:not(.gallery-pc-slider) .gallery-item.active img {
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
 	}
 	
-	.mobile-slider-arrow.right {
-		right: 10px !important;
+	/* Дополнительные анимации для мобильного слайдера */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item {
+		animation: fadeInUp 0.6s ease-out !important;
+		-webkit-animation: fadeInUp 0.6s ease-out !important;
 	}
 	
-	/* Показываем стрелки при наведении */
-	.gallery-container:not(.gallery-pc-slider):hover .mobile-slider-arrow,
-	.gallery-container.mobile-slider:hover .mobile-slider-arrow {
-		opacity: 1 !important;
-		transform: translateY(-50%) scale(1.1) !important;
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px) scale(0.95);
+			-webkit-transform: translateZ(0) translateY(20px) scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+			-webkit-transform: translateZ(0) translateY(0) scale(1);
+		}
 	}
 	
-	/* Индикатор прогресса прокрутки */
-	.mobile-slider-progress {
-		position: absolute !important;
-		bottom: 10px !important;
-		left: 50% !important;
-		transform: translateX(-50%) !important;
-		width: 60px !important;
-		height: 4px !important;
-		background: rgba(0, 0, 0, 0.2) !important;
-		border-radius: 2px !important;
-		overflow: hidden !important;
-		z-index: 15 !important;
+	@-webkit-keyframes fadeInUp {
+		from {
+			opacity: 0;
+			-webkit-transform: translateZ(0) translateY(20px) scale(0.95);
+		}
+		to {
+			opacity: 1;
+			-webkit-transform: translateZ(0) translateY(0) scale(1);
+		}
+	}
+	
+	/* Анимация при прокрутке */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
+		will-change: transform, box-shadow !important;
+	}
+	
+	/* Улучшенные hover эффекты */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover {
+		z-index: 5 !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img {
+		transform: scale(1.03) !important;
+		-webkit-transform: translateZ(0) scale(1.03) !important;
+		box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2) !important;
+	}
+	
+	/* Анимация для градиентов */
+	.gallery-container:not(.gallery-pc-slider)::before,
+	.gallery-container:not(.gallery-pc-slider)::after {
+		will-change: opacity !important;
+		-webkit-transform: translateZ(0) !important;
+		transform: translateZ(0) !important;
+		backface-visibility: hidden !important;
 	}
 	
 	/* Скрытие мобильного слайдера при открытии lightbox */
-	.lightbox[style*="display: block"] ~ .gallery-container.mobile-slider,
-	.lightbox[style*="display: block"] + .gallery-container.mobile-slider {
+	.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) {
 		opacity: 0 !important;
 		pointer-events: none !important;
-		transition: opacity 0.3s ease-in-out !important;
-	}
-	
-	.mobile-slider-progress-bar {
-		height: 100% !important;
-		background: linear-gradient(90deg, #007bff, #0056b3) !important;
-		border-radius: 2px !important;
-		transition: width 0.3s ease-in-out !important;
-		width: 0% !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar,
-	.gallery-container.mobile-slider::-webkit-scrollbar {
-		display: none; /* Скрываем скроллбар для Chrome/Safari */
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item,
-	.gallery-container.mobile-slider .gallery-item {
-		flex: 0 0 auto !important;
-		width: 100% !important;
-		max-height: none !important;
-		height: auto !important;
-		visibility: visible !important;
-		margin: 0 6px 0 0 !important;
-		scroll-snap-align: start !important;
-		transition: all 0.3s ease-in-out !important;
-		transform: scale(1) !important;
-		opacity: 1 !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover,
-	.gallery-container.mobile-slider .gallery-item:hover {
-		transform: scale(1.02) !important;
-		opacity: 0.9 !important;
-		transition: all 0.2s ease-in-out !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
-		margin-left: 0;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item img,
-	.gallery-container.mobile-slider .gallery-item img {
-		width: 100%;
-		height: auto;
-		max-height: 300px;
-		object-fit: cover;
-		transition: all 0.3s ease-in-out !important;
-		border-radius: 8px !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img,
-	.gallery-container.mobile-slider .gallery-item:hover img {
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-		transform: scale(1.01) !important;
+		transition: opacity 0.3s ease !important;
 	}
 	
 	/* Скрываем изображения для ПК слайдера на мобилке */
@@ -941,19 +944,31 @@ table{border-collapse:collapse;border-spacing:0;}
 }
 
 @media (max-width: 480px) {
-	/* Мобильный слайдер для маленьких экранов */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		max-height: 250px;
+		max-height: 280px;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) {
+		gap: 12px !important;
+		padding: 0 12px !important;
+		-webkit-transform: translateZ(0) !important;
+		transform: translateZ(0) !important;
+		backface-visibility: hidden !important;
+		perspective: 1000px !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
+		border-radius: 14px !important;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+		-webkit-transform: translateZ(0) scale(1) !important;
+		transform: translateZ(0) scale(1) !important;
+		backface-visibility: hidden !important;
 	}
 	
 	.gallery-pc-slider .gallery-item {
 		flex-basis: 0%;
-		margin-bottom: 1px;
-	}
-	
-	.lightbox-content {
-		width: 90%;
-		margin: 20% auto;
+		max-height: 0px;
+		visibility: hidden;
 	}
 }
 
@@ -1043,11 +1058,6 @@ table{border-collapse:collapse;border-spacing:0;}
 
 
 @media (max-width: 767px) {
-	.gallery-container {
-		touch-action: pan-y; 
-		-webkit-overflow-scrolling: touch; 
-	}
-	
 	.gallery-item {
 		touch-action: manipulation; 
 	}
