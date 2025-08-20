@@ -685,11 +685,11 @@
 
 <div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
 
-<div class="cars-slider-container">
+<div class="cars-grid-slider-container">
 	{% if params.paginator.object_list %}
-		<div class="cars-slider" id="carsSlider">
+		<div class="cars-grid-slider" id="carsGridSlider">
 			{% for car in params.paginator.object_list %}
-				<div class="cars-slide-item" data-car-id="{{car.id}}">
+				<div class="cars-grid-item" data-car-id="{{car.id}}">
 					<div class="card bg-white bg-opacity-75" onclick="window.location.href='{{car.slug}}'; return false" > 
 						
 						<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
@@ -751,16 +751,16 @@
 			{% endfor %} 
 		</div>
 		
-		<!-- Кнопки навигации -->
-		<button class="cars-slider-prev" id="carsSliderPrev" aria-label="Предыдущий слайд">
-			<span class="cars-slider-arrow">‹</span>
+		<!-- Кнопки навигации для сетки-слайдера -->
+		<button class="cars-grid-prev" id="carsGridPrev" aria-label="Предыдущая группа">
+			<span class="cars-grid-arrow">‹</span>
 		</button>
-		<button class="cars-slider-next" id="carsSliderNext" aria-label="Следующий слайд">
-			<span class="cars-slider-arrow">›</span>
+		<button class="cars-grid-next" id="carsGridNext" aria-label="Следующая группа">
+			<span class="cars-grid-arrow">›</span>
 		</button>
 		
-		<!-- Индикаторы слайдов -->
-		<div class="cars-slider-indicators" id="carsSliderIndicators">
+		<!-- Индикаторы для сетки-слайдера -->
+		<div class="cars-grid-indicators" id="carsGridIndicators">
 			<!-- Индикаторы будут добавлены через JavaScript -->
 		</div>
 	{% endif %}

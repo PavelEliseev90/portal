@@ -1727,14 +1727,25 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initCarsSlider() {
+	// Инициализация обычного слайдера для мобильных
 	const slider = document.getElementById('carsSlider');
-	if (!slider) return;
+	if (slider) {
+		initMobileSlider(slider);
+	}
 	
+	// Инициализация сетки-слайдера для ПК
+	const gridSlider = document.getElementById('carsGridSlider');
+	if (gridSlider) {
+		initGridSlider(gridSlider);
+	}
+}
+
+function initMobileSlider(slider) {
 	const prevBtn = document.getElementById('carsSliderPrev');
 	const nextBtn = document.getElementById('carsSliderNext');
 	const indicatorsContainer = document.getElementById('carsSliderIndicators');
 	
-	if (!slider || !prevBtn || !nextBtn || !indicatorsContainer) return;
+	if (!prevBtn || !nextBtn || !indicatorsContainer) return;
 	
 	const slideItems = slider.querySelectorAll('.cars-slide-item');
 	const totalItems = slideItems.length;
@@ -1887,6 +1898,111 @@ function initCarsSlider() {
 	slider.addEventListener('touchend', () => {
 		setTimeout(startAutoPlay, 3000); 
 	});
+}
+
+// Функция инициализации сетки-слайдера для ПК
+function initGridSlider(gridSlider) {
+	const prevBtn = document.getElementById('carsGridPrev');
+	const nextBtn = document.getElementById('carsGridNext');
+	const indicatorsContainer = document.getElementById('carsGridIndicators');
+	
+	if (!prevBtn || !nextBtn || !indicatorsContainer) return;
+	
+	const gridItems = gridSlider.querySelectorAll('.cars-grid-item');
+	const totalItems = gridItems.length;
+	
+	if (totalItems === 0) return;
+	
+	let currentPage = 0;
+	let itemsPerPage = getItemsPerPage();
+	let totalPages = Math.ceil(totalItems / itemsPerPage);
+	
+	createGridIndicators();
+	updateGridSlider();
+	
+	prevBtn.addEventListener('click', () => {
+		currentPage = (currentPage - 1 + totalPages) % totalPages;
+		updateGridSlider();
+	});
+	
+	nextBtn.addEventListener('click', () => {
+		currentPage = (currentPage + 1) % totalPages;
+		updateGridSlider();
+	});
+	
+	indicatorsContainer.addEventListener('click', (e) => {
+		if (e.target.classList.contains('cars-grid-indicator')) {
+			const pageIndex = parseInt(e.target.dataset.page);
+			currentPage = pageIndex;
+			updateGridSlider();
+		}
+	});
+	
+	window.addEventListener('resize', () => {
+		const newItemsPerPage = getItemsPerPage();
+		if (newItemsPerPage !== itemsPerPage) {
+			itemsPerPage = newItemsPerPage;
+			totalPages = Math.ceil(totalItems / itemsPerPage);
+			currentPage = Math.min(currentPage, totalPages - 1);
+			createGridIndicators();
+			updateGridSlider();
+		}
+	});
+	
+	function getItemsPerPage() {
+		const width = window.innerWidth;
+		if (width >= 1200) return 12; // 4x3
+		if (width >= 992) return 9;   // 3x3
+		if (width >= 768) return 6;   // 2x3
+		return 3; // 1x3 для мобильных
+	}
+	
+	function createGridIndicators() {
+		indicatorsContainer.innerHTML = '';
+		
+		for (let i = 0; i < totalPages; i++) {
+			const indicator = document.createElement('button');
+			indicator.className = 'cars-grid-indicator';
+			indicator.dataset.page = i;
+			indicator.setAttribute('aria-label', `Перейти к странице ${i + 1}`);
+			indicatorsContainer.appendChild(indicator);
+		}
+	}
+	
+	function updateGridSlider() {
+		const startIndex = currentPage * itemsPerPage;
+		const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+		
+		// Скрываем все элементы
+		gridItems.forEach((item, index) => {
+			if (index >= startIndex && index < endIndex) {
+				item.style.display = 'block';
+				item.style.animation = 'gridItemSlideIn 0.4s ease-out';
+			} else {
+				item.style.display = 'none';
+			}
+		});
+		
+		// Обновляем индикаторы
+		const indicators = indicatorsContainer.querySelectorAll('.cars-grid-indicator');
+		indicators.forEach((indicator, index) => {
+			indicator.classList.toggle('active', index === currentPage);
+		});
+		
+		// Обновляем состояние кнопок
+		prevBtn.disabled = totalPages <= 1;
+		nextBtn.disabled = totalPages <= 1;
+		
+		// Добавляем состояние загрузки
+		gridSlider.classList.add('loading');
+		setTimeout(() => {
+			gridSlider.classList.remove('loading');
+		}, 100);
+		
+		// Обновляем ARIA атрибуты
+		gridSlider.setAttribute('aria-current', currentPage + 1);
+		gridSlider.setAttribute('aria-label', `Страница ${currentPage + 1} из ${totalPages}`);
+	}
 }
 </script>
 
