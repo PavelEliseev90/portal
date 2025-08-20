@@ -19,7 +19,7 @@ class Profiles(models.Model):
     eco                     = models.BooleanField("ЕЦО аналитик", default = False)
     eco_visible             = models.BooleanField("ЕЦО просмотр", default = False)
     eco_page_price_info     = models.BooleanField("ЕЦО просмотр страницы ценообразование", default = False)
-
+    eco_toast               = models.BooleanField("ЕЦО Всплывающие сообщения", default = False)
     korsavto_settings       = models.BooleanField("Доступ к настройкам корсавто", default = False)
 
     korsavto_settings_dc    = models.BooleanField("Доступ к настройкам корсавто директора дц", default = False)
