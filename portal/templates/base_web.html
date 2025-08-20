@@ -1877,9 +1877,9 @@ function initGallerySlider() {
 	}
 }
 
-// Простой мобильный слайдер
+// Простой мобильный слайдер - теперь только счетчик
 function initMobileGallerySlider() {
-	console.log('Инициализация мобильного слайдера...');
+	console.log('Инициализация мобильного счетчика галереи...');
 	
 	// Находим мобильный контейнер галереи
 	const mobileGallery = document.querySelector('.gallery-container:not(.gallery-pc-slider)');
@@ -1891,96 +1891,11 @@ function initMobileGallerySlider() {
 	
 	console.log('Найден мобильный контейнер:', mobileGallery);
 	
-	// Находим кнопки навигации
-	const prevBtn = document.getElementById('mobilePrevBtn');
-	const nextBtn = document.getElementById('mobileNextBtn');
+	// Устанавливаем счетчик слайдов
+	const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
+	mobileGallery.style.setProperty('--slide-counter', `1 / ${totalSlides}`);
 	
-	// Обработчики для кнопок навигации
-	if (prevBtn && nextBtn) {
-		prevBtn.addEventListener('click', () => scrollToSlide('prev'));
-		nextBtn.addEventListener('click', () => scrollToSlide('next'));
-	}
-	
-	// Поддержка клавиатуры
-	document.addEventListener('keydown', (e) => {
-		if (mobileGallery.closest('.gallery-container')) {
-			if (e.key === 'ArrowLeft') {
-				scrollToSlide('prev');
-			} else if (e.key === 'ArrowRight') {
-				scrollToSlide('next');
-			}
-		}
-	});
-	
-	// Функция для прокрутки к слайду
-	function scrollToSlide(direction) {
-		const items = mobileGallery.querySelectorAll('.gallery-item');
-		const currentIndex = getCurrentSlideIndex();
-		let targetIndex;
-		
-		if (direction === 'next') {
-			targetIndex = Math.min(currentIndex + 1, items.length - 1);
-		} else {
-			targetIndex = Math.max(currentIndex - 1, 0);
-		}
-		
-		if (targetIndex !== currentIndex) {
-			const targetItem = items[targetIndex];
-			targetItem.scrollIntoView({
-				behavior: 'smooth',
-				block: 'nearest',
-				inline: 'start'
-			});
-		}
-		
-		// Обновляем состояние кнопок
-		updateButtonStates();
-	}
-	
-	// Функция для получения текущего индекса слайда
-	function getCurrentSlideIndex() {
-		const containerRect = mobileGallery.getBoundingClientRect();
-		const items = mobileGallery.querySelectorAll('.gallery-item');
-		
-		let currentIndex = 0;
-		let minDistance = Infinity;
-		
-		items.forEach((item, index) => {
-			const itemRect = item.getBoundingClientRect();
-			const itemCenter = itemRect.left + itemRect.width / 2;
-			const containerCenter = containerRect.left + containerRect.width / 2;
-			const distance = Math.abs(itemCenter - containerCenter);
-			
-			if (distance < minDistance) {
-				minDistance = distance;
-				currentIndex = index;
-			}
-		});
-		
-		return currentIndex;
-	}
-	
-	// Функция для обновления состояния кнопок
-	function updateButtonStates() {
-		if (prevBtn && nextBtn) {
-			const currentIndex = getCurrentSlideIndex();
-			const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
-			
-			prevBtn.disabled = currentIndex === 0;
-			nextBtn.disabled = currentIndex === totalSlides - 1;
-		}
-	}
-	
-	// Инициализируем состояние кнопок
-	updateButtonStates();
-	
-	// Скрываем индикатор загрузки
-	const loadingIndicator = mobileGallery.querySelector('.mobile-gallery-loading');
-	if (loadingIndicator) {
-		loadingIndicator.style.display = 'none';
-	}
-	
-	console.log('Мобильный слайдер успешно инициализирован!');
+	console.log('Мобильный счетчик галереи успешно инициализирован!');
 }
 
 // Функция для скрытия мобильного слайдера
@@ -1992,12 +1907,6 @@ function hideMobileSlider() {
 		gallery.style.visibility = 'hidden';
 		gallery.style.transform = 'scale(0.95)';
 	});
-	
-	// Также скрываем кнопки навигации
-	const mobileNav = document.querySelector('.mobile-gallery-nav');
-	if (mobileNav) {
-		mobileNav.style.display = 'none';
-	}
 }
 
 // Функция для показа мобильного слайдера
@@ -2009,12 +1918,6 @@ function showMobileSlider() {
 		gallery.style.visibility = 'visible';
 		gallery.style.transform = 'scale(1)';
 	});
-	
-	// Также показываем кнопки навигации
-	const mobileNav = document.querySelector('.mobile-gallery-nav');
-	if (mobileNav) {
-		mobileNav.style.display = 'flex';
-	}
 }
 </script>
 
