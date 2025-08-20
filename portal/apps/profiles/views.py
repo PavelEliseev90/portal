@@ -26,6 +26,11 @@ def profiles_edit(request):
                 if len(request.POST['birth_date']) > 0:
                     birth_date = DT.datetime.strptime(request.POST['birth_date'],'%Y-%m-%d')
                     profiles.birth_date = birth_date
+            
+            if 'eco_toast' in request.POST:
+                profiles.eco_toast = True
+            else:
+                profiles.eco_toast = False
 
             profiles.save()
             return HttpResponseRedirect(request.build_absolute_uri())  

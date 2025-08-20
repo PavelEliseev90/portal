@@ -75,9 +75,19 @@
           <label for="floatingInput">Дата регистрации</label>
         </div>
         
-        <div class="d-grid gap-2">
-          <button class="btn btn-block btn-outline-success" type="submit" id="update_info" name="update_info"><span class="icon-mbri-success"></span> Сохранить </button>
+        {% if params.user.profiles.eco or params.user.profiles.eco_visible %}
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="eco_toast" name="eco_toast" {% if params.user.profiles.eco_toast %} checked {% endif %}>
+            <label class="form-check-label" for="eco_toast">Всплывающие сообщения</label>
+          </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col w-100 text-end">
+            <button class="btn btn-block btn-outline-success" type="submit" id="update_info" name="update_info"><span class="icon-mbri-success"></span> Сохранить </button>
+          </div>
         </div>
+        
       </form>
     </div>
 

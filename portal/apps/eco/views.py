@@ -434,7 +434,8 @@ def get_chats_list_online(request):
         content                     = Subquery(subqyery_message_info.values('content')[:1])).annotate(
         user_name                   = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
         user_content                = Subquery(subqyery_message_info.values('user')[:1])).annotate(
-        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1]))
+        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1])).annotate(
+        auction                     = Subquery(subqyery_reg_interactiv.values('auction')[:1]))
     
     chats = chats.filter(status_estimation_id__gte = 2)
     
