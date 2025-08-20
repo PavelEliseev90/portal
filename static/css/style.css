@@ -791,8 +791,8 @@ table{border-collapse:collapse;border-spacing:0;}
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
 		width: 100% !important;
 		height: auto !important;
-		max-height: none !important;
-		min-height: auto !important;
+		max-height: 400px !important;
+		min-height: 300px !important;
 		object-fit: contain !important;
 		display: block !important;
 		border-radius: 0 !important;
@@ -866,12 +866,12 @@ table{border-collapse:collapse;border-spacing:0;}
 
 @media (max-width: 480px) {
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		max-height: none;
-		min-height: auto;
+		max-height: 350px;
+		min-height: 250px;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) {
-		min-height: auto !important;
+		min-height: 250px !important;
 		width: 100% !important;
 	}
 	
@@ -879,12 +879,6 @@ table{border-collapse:collapse;border-spacing:0;}
 		flex: 0 0 100% !important;
 		width: 100% !important;
 		min-width: 100% !important;
-	}
-	
-	.gallery-container:not(.gallery-pc-slider)::after {
-		bottom: 15px !important;
-		padding: 6px 14px !important;
-		font-size: 12px !important;
 	}
 	
 	.gallery-pc-slider .gallery-item {
@@ -955,11 +949,11 @@ table{border-collapse:collapse;border-spacing:0;}
 	border-radius: 50%;
 }
 
-.lightbox-count {
+/* .lightbox-count { // Убираем стили для счетчика
 	bottom: 0%;
 	right: 44%;
 	border-radius: 0.5em 0.5em  0 0;
-}
+} */
 .lightbox-prev {
 	left: 1%;
 	top: 45%;
@@ -973,7 +967,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .lightbox-prev:hover,
 .lightbox-next:hover,
 .lightbox-cover,
-.lightbox-count:hover,
+/* .lightbox-count:hover, */ /* Убираем hover для счетчика */
 .lightbox-close:hover {
 	opacity: .7;
 }

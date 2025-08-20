@@ -1527,7 +1527,7 @@
     }
     
     lightBoxContainer.appendChild(lightBoxClose);
-    lightBoxContainer.appendChild(lightBoxCount);
+    // lightBoxContainer.appendChild(lightBoxCount); // Убираем счетчик слайдов
     lightBoxContainer.appendChild(lightBoxCover);
     lightBoxContainer.appendChild(lightBoxTransformRight);
     
@@ -1544,7 +1544,7 @@
         let imageLocation = galleryItem[index-1].children[0].getAttribute("src1");
         lightBoxImg.setAttribute("src", imageLocation);
         //lightBoxContent.style.backgroundImage = 'url("' + imageLocation + '")';
-        lightBoxCount.innerHTML = ' ' + index + ' / ' + galleryItem.length;
+        // lightBoxCount.innerHTML = ' ' + index + ' / ' + galleryItem.length; // Убираем обновление счетчика
     }
 
     function currentImage() {
