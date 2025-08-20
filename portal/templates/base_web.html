@@ -1885,22 +1885,15 @@ function initMobileGallerySlider() {
 	
 	console.log('Найден мобильный контейнер:', mobileGallery);
 	
-	// Добавляем счетчик слайдов
-	const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
-	console.log('Всего слайдов:', totalSlides);
-	
-	// Устанавливаем начальный счетчик
-	mobileGallery.setAttribute('data-slide-counter', `1 / ${totalSlides}`);
-	
 	// Находим кнопки навигации
 	const prevBtn = document.getElementById('mobilePrevBtn');
 	const nextBtn = document.getElementById('mobileNextBtn');
 	
-	// Обновляем счетчик при прокрутке
-	mobileGallery.addEventListener('scroll', updateSlideCounter);
-	
-	// Обновляем счетчик при изменении размера окна
-	window.addEventListener('resize', updateSlideCounter);
+	// Обработчики для кнопок навигации
+	if (prevBtn && nextBtn) {
+		prevBtn.addEventListener('click', () => scrollToSlide('prev'));
+		nextBtn.addEventListener('click', () => scrollToSlide('next'));
+	}
 	
 	// Поддержка клавиатуры
 	document.addEventListener('keydown', (e) => {
@@ -1913,44 +1906,6 @@ function initMobileGallerySlider() {
 		}
 	});
 	
-	// Обработчики для кнопок навигации
-	if (prevBtn && nextBtn) {
-		prevBtn.addEventListener('click', () => scrollToSlide('prev'));
-		nextBtn.addEventListener('click', () => scrollToSlide('next'));
-	}
-	
-	// Простая функция обновления счетчика
-	function updateSlideCounter() {
-		const containerRect = mobileGallery.getBoundingClientRect();
-		const items = mobileGallery.querySelectorAll('.gallery-item');
-		
-		let currentIndex = 0;
-		let minDistance = Infinity;
-		
-		// Находим ближайший слайд к центру контейнера
-		items.forEach((item, index) => {
-			const itemRect = item.getBoundingClientRect();
-			const itemCenter = itemRect.left + itemRect.width / 2;
-			const containerCenter = containerRect.left + containerRect.width / 2;
-			const distance = Math.abs(itemCenter - containerCenter);
-			
-			if (distance < minDistance) {
-				minDistance = distance;
-				currentIndex = index;
-			}
-		});
-		
-		const counterText = `${currentIndex + 1} / ${totalSlides}`;
-		mobileGallery.setAttribute('data-slide-counter', counterText);
-		mobileGallery.style.setProperty('--slide-counter', `"${counterText}"`);
-		
-		// Обновляем состояние кнопок
-		if (prevBtn && nextBtn) {
-			prevBtn.disabled = currentIndex === 0;
-			nextBtn.disabled = currentIndex === totalSlides - 1;
-		}
-	}
-	
 	// Функция для прокрутки к слайду
 	function scrollToSlide(direction) {
 		const items = mobileGallery.querySelectorAll('.gallery-item');
@@ -1958,7 +1913,7 @@ function initMobileGallerySlider() {
 		let targetIndex;
 		
 		if (direction === 'next') {
-			targetIndex = Math.min(currentIndex + 1, totalSlides - 1);
+			targetIndex = Math.min(currentIndex + 1, items.length - 1);
 		} else {
 			targetIndex = Math.max(currentIndex - 1, 0);
 		}
@@ -1971,6 +1926,9 @@ function initMobileGallerySlider() {
 				inline: 'start'
 			});
 		}
+		
+		// Обновляем состояние кнопок
+		updateButtonStates();
 	}
 	
 	// Функция для получения текущего индекса слайда
@@ -1996,8 +1954,19 @@ function initMobileGallerySlider() {
 		return currentIndex;
 	}
 	
-	// Инициализируем счетчик
-	updateSlideCounter();
+	// Функция для обновления состояния кнопок
+	function updateButtonStates() {
+		if (prevBtn && nextBtn) {
+			const currentIndex = getCurrentSlideIndex();
+			const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
+			
+			prevBtn.disabled = currentIndex === 0;
+			nextBtn.disabled = currentIndex === totalSlides - 1;
+		}
+	}
+	
+	// Инициализируем состояние кнопок
+	updateButtonStates();
 	
 	// Скрываем индикатор загрузки
 	const loadingIndicator = mobileGallery.querySelector('.mobile-gallery-loading');

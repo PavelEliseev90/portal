@@ -765,8 +765,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		padding: 0 !important;
 		width: 100% !important;
 		height: auto !important;
-		min-height: 300px !important;
-		--slide-counter: "1 / 1" !important;
+		min-height: auto !important;
 		margin: 0 !important;
 		scroll-behavior: smooth !important;
 		transition: all 0.3s ease !important;
@@ -792,9 +791,9 @@ table{border-collapse:collapse;border-spacing:0;}
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
 		width: 100% !important;
 		height: auto !important;
-		max-height: 300px !important;
-		min-height: 300px !important;
-		object-fit: cover !important;
+		max-height: none !important;
+		min-height: auto !important;
+		object-fit: contain !important;
 		display: block !important;
 		border-radius: 0 !important;
 		box-shadow: none !important;
@@ -808,6 +807,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	}
 	
 	/* Счетчик слайдов внизу */
+	/*
 	.gallery-container:not(.gallery-pc-slider)::after {
 		content: var(--slide-counter, attr(data-slide-counter)) !important;
 		position: fixed !important;
@@ -835,6 +835,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		background: rgba(0, 0, 0, 0.9) !important;
 		transform: translateX(-50%) scale(1.05) !important;
 	}
+	*/
 	
 	/* Скрытие мобильного слайдера при открытии lightbox */
 	.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) {
@@ -865,12 +866,12 @@ table{border-collapse:collapse;border-spacing:0;}
 
 @media (max-width: 480px) {
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		max-height: 250px;
-		min-height: 250px;
+		max-height: none;
+		min-height: auto;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) {
-		min-height: 250px !important;
+		min-height: auto !important;
 		width: 100% !important;
 	}
 	
