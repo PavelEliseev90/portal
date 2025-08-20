@@ -1814,10 +1814,16 @@ function initGallerySlider() {
 						// Скрываем кнопки слайдера
 						prevBtn.style.display = 'none';
 						nextBtn.style.display = 'none';
+						
+						// Скрываем мобильный слайдер
+						hideMobileSlider();
 					} else {
 						// Показываем кнопки слайдера
 						prevBtn.style.display = 'flex';
 						nextBtn.style.display = 'flex';
+						
+						// Показываем мобильный слайдер
+						showMobileSlider();
 					}
 				}
 			});
@@ -1902,6 +1908,9 @@ function initMobileGallerySlider() {
 		console.log('Мобильный контейнер не найден!');
 		return;
 	}
+	
+	// Добавляем класс для мобильного слайдера
+	mobileGallery.classList.add('mobile-slider');
 	
 	// Добавляем стрелки-индикаторы и индикатор прогресса
 	addMobileSliderArrows(mobileGallery);
@@ -2129,6 +2138,24 @@ function initMobileGallerySlider() {
 		const progress = maxScrollLeft > 0 ? (scrollLeft / maxScrollLeft) * 100 : 0;
 		
 		progressBar.style.width = progress + '%';
+	}
+	
+	// Функция для скрытия мобильного слайдера
+	function hideMobileSlider() {
+		const mobileGalleries = document.querySelectorAll('.gallery-container:not(.gallery-pc-slider)');
+		mobileGalleries.forEach(gallery => {
+			gallery.style.opacity = '0';
+			gallery.style.pointerEvents = 'none';
+		});
+	}
+	
+	// Функция для показа мобильного слайдера
+	function showMobileSlider() {
+		const mobileGalleries = document.querySelectorAll('.gallery-container:not(.gallery-pc-slider)');
+		mobileGalleries.forEach(gallery => {
+			gallery.style.opacity = '1';
+			gallery.style.pointerEvents = 'auto';
+		});
 	}
 
 

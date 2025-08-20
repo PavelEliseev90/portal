@@ -752,7 +752,8 @@ table{border-collapse:collapse;border-spacing:0;}
 	}
 	
 	/* Мобильный слайдер - показываем все изображения в ряд */
-	.gallery-container:not(.gallery-pc-slider) {
+	.gallery-container:not(.gallery-pc-slider),
+	.gallery-container.mobile-slider {
 		display: flex !important;
 		overflow-x: auto !important;
 		scroll-snap-type: x mandatory !important;
@@ -766,7 +767,9 @@ table{border-collapse:collapse;border-spacing:0;}
 	
 	/* Индикаторы наличия дополнительных изображений */
 	.gallery-container:not(.gallery-pc-slider)::before,
-	.gallery-container:not(.gallery-pc-slider)::after {
+	.gallery-container:not(.gallery-pc-slider)::after,
+	.gallery-container.mobile-slider::before,
+	.gallery-container.mobile-slider::after {
 		content: '' !important;
 		position: absolute !important;
 		top: 0 !important;
@@ -778,26 +781,30 @@ table{border-collapse:collapse;border-spacing:0;}
 	}
 	
 	/* Левый градиент (показывает, что есть изображения слева) */
-	.gallery-container:not(.gallery-pc-slider)::before {
+	.gallery-container:not(.gallery-pc-slider)::before,
+	.gallery-container.mobile-slider::before {
 		left: 0 !important;
 		background: linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%) !important;
 		opacity: 0 !important;
 	}
 	
 	/* Правый градиент (показывает, что есть изображения справа) */
-	.gallery-container:not(.gallery-pc-slider)::after {
+	.gallery-container:not(.gallery-pc-slider)::after,
+	.gallery-container.mobile-slider::after {
 		right: 0 !important;
 		background: linear-gradient(270deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%) !important;
 		opacity: 1 !important;
 	}
 	
 	/* Показываем левый градиент при прокрутке */
-	.gallery-container:not(.gallery-pc-slider).scrolled-left::before {
+	.gallery-container:not(.gallery-pc-slider).scrolled-left::before,
+	.gallery-container.mobile-slider.scrolled-left::before {
 		opacity: 1 !important;
 	}
 	
 	/* Скрываем правый градиент в конце */
-	.gallery-container:not(.gallery-pc-slider).scrolled-end::after {
+	.gallery-container:not(.gallery-pc-slider).scrolled-end::after,
+	.gallery-container.mobile-slider.scrolled-end::after {
 		opacity: 0 !important;
 	}
 	
@@ -831,7 +838,8 @@ table{border-collapse:collapse;border-spacing:0;}
 	}
 	
 	/* Показываем стрелки при наведении */
-	.gallery-container:not(.gallery-pc-slider):hover .mobile-slider-arrow {
+	.gallery-container:not(.gallery-pc-slider):hover .mobile-slider-arrow,
+	.gallery-container.mobile-slider:hover .mobile-slider-arrow {
 		opacity: 1 !important;
 		transform: translateY(-50%) scale(1.1) !important;
 	}
@@ -850,6 +858,14 @@ table{border-collapse:collapse;border-spacing:0;}
 		z-index: 15 !important;
 	}
 	
+	/* Скрытие мобильного слайдера при открытии lightbox */
+	.lightbox[style*="display: block"] ~ .gallery-container.mobile-slider,
+	.lightbox[style*="display: block"] + .gallery-container.mobile-slider {
+		opacity: 0 !important;
+		pointer-events: none !important;
+		transition: opacity 0.3s ease-in-out !important;
+	}
+	
 	.mobile-slider-progress-bar {
 		height: 100% !important;
 		background: linear-gradient(90deg, #007bff, #0056b3) !important;
@@ -858,11 +874,13 @@ table{border-collapse:collapse;border-spacing:0;}
 		width: 0% !important;
 	}
 	
-	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar {
+	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar,
+	.gallery-container.mobile-slider::-webkit-scrollbar {
 		display: none; /* Скрываем скроллбар для Chrome/Safari */
 	}
 	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item {
+	.gallery-container:not(.gallery-pc-slider) .gallery-item,
+	.gallery-container.mobile-slider .gallery-item {
 		flex: 0 0 auto !important;
 		width: 100% !important;
 		max-height: none !important;
@@ -875,7 +893,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		opacity: 1 !important;
 	}
 	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover {
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover,
+	.gallery-container.mobile-slider .gallery-item:hover {
 		transform: scale(1.02) !important;
 		opacity: 0.9 !important;
 		transition: all 0.2s ease-in-out !important;
@@ -885,7 +904,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		margin-left: 0;
 	}
 	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
+	.gallery-container:not(.gallery-pc-slider) .gallery-item img,
+	.gallery-container.mobile-slider .gallery-item img {
 		width: 100%;
 		height: auto;
 		max-height: 300px;
@@ -895,7 +915,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 	}
 	
-	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img {
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img,
+	.gallery-container.mobile-slider .gallery-item:hover img {
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
 		transform: scale(1.01) !important;
 	}
