@@ -798,6 +798,21 @@ def doc(request, id):
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
             list_store_info = list()
+
+        if page == 30:
+            
+            if page == 30:
+                if not request.user.profiles.eco_page_price_auto:
+                    return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
+            
+            price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
+            price           = estimations_price_calculation(estimation, type_calculation='avito')
+            price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
+            price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
+            body            = body_estimation(estimation=estimation)
+            if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
+                json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
+            list_store_info = list()
             
         if page == 22:
             versions = {}
