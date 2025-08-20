@@ -589,7 +589,7 @@ table{border-collapse:collapse;border-spacing:0;}
 
 .gallery-pc-slider.slide-last .gallery-slider-prev,
 .gallery-pc-slider.slide-last .gallery-slider-next {
-	top: calc(50% - 75px); /* Для последнего слайда - еще выше */
+	top: calc(50% - 50px); /* Для последнего слайда - по центру как на первом */
 }
 
 .gallery-slider-prev:hover,
