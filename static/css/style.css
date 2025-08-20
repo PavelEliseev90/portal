@@ -620,6 +620,20 @@ table{border-collapse:collapse;border-spacing:0;}
 	transition: all 0.4s ease-in-out;
 }
 
+/* Гарантируем одинаковые размеры для всех главных изображений в слайдере */
+.gallery-pc-slider .gallery-item:first-child,
+.gallery-pc-slider .gallery-item[style*="flex-basis: 100%"] {
+	flex-basis: 100% !important;
+	max-height: 500px !important;
+	height: 500px !important;
+}
+
+.gallery-pc-slider .gallery-item:first-child img,
+.gallery-pc-slider .gallery-item[style*="flex-basis: 100%"] img {
+	height: 500px !important;
+	object-fit: cover;
+}
+
 /* Медиа-запросы для мобильных устройств */
 @media (max-width: 991px) {
 	.gallery-pc-slider .gallery-slider-prev,
@@ -669,6 +683,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	cursor: pointer;
 	display: block;
 	padding-bottom: 0; /* Убираем padding-bottom чтобы картинка была полного размера */
+	height: 500px; /* Добавляем фиксированную высоту */
 }
 
 
@@ -679,6 +694,12 @@ table{border-collapse:collapse;border-spacing:0;}
 	width: 100%;
 	height: 100%;
 	border-radius: 0.9rem !important;
+	object-fit: cover;
+}
+
+/* Специальные стили для главного изображения */
+.gallery-item:first-child img {
+	height: 500px; /* Фиксированная высота для главного изображения */
 	object-fit: cover;
 }
 .gallery-content {
