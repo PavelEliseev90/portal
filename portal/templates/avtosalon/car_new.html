@@ -34,39 +34,26 @@
 	<div class="row g-1 justify-content-center">
 	
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
-			<div class="gallery-grid-slider-container">
-				<div class="gallery-grid-slider" id="galleryGridSlider">
-					{% for files in params.object.get_files %}
-											
-						<div class="gallery-grid-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
-							{% if files.file_mini %}
-								<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
-								{% if forloop.first %}
-									<div class="gallery-count bg-count fw-bold">
-										1 / {{params.object.get_files|length}}
-									</div>
-									
-								{% endif %}
-							{% else %}
-								<img src={{files}} alt="{{files}}" src1="{{files}}">
-							{% endif %}						
-						</div>
-						
-					{% endfor %}
-				</div>
+			<div class="gallery-container">
+			
+				{% for files in params.object.get_files %}
+										
+					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+						{% if files.file_mini %}
+							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
+							{% if forloop.first %}
+								<div class="gallery-count bg-count fw-bold">
+									1 / {{params.object.get_files|length}}
+								</div>
+								
+							{% endif %}
+						{% else %}
+							<img src={{files}} alt="{{files}}" src1="{{files}}">
+						{% endif %}						
+					</div>
+					
+				{% endfor %}
 				
-				<!-- Кнопки навигации для сетки-слайдера галереи -->
-				<button class="gallery-grid-prev" id="galleryGridPrev" aria-label="Предыдущая группа">
-					<span class="gallery-grid-arrow">‹</span>
-				</button>
-				<button class="gallery-grid-next" id="galleryGridNext" aria-label="Следующая группа">
-					<span class="gallery-grid-arrow">›</span>
-				</button>
-				
-				<!-- Индикаторы для сетки-слайдера галереи -->
-				<div class="gallery-grid-indicators" id="galleryGridIndicators">
-					<!-- Индикаторы будут добавлены через JavaScript -->
-				</div>
 			</div>
 	
 			
