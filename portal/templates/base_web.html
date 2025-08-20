@@ -1054,6 +1054,130 @@
 	   document.location.href  = url.href;
 	}
     
+	// Функция инициализации сетки-слайдера галереи
+	function initGalleryGridSlider() {
+		const gridSlider = document.getElementById('galleryGridSlider');
+		if (!gridSlider) return;
+		
+		const prevBtn = document.getElementById('galleryGridPrev');
+		const nextBtn = document.getElementById('galleryGridNext');
+		const indicatorsContainer = document.getElementById('galleryGridIndicators');
+		
+		if (!prevBtn || !nextBtn || !indicatorsContainer) return;
+		
+		const gridItems = gridSlider.querySelectorAll('.gallery-grid-item');
+		const totalItems = gridItems.length;
+		
+		if (totalItems === 0) return;
+		
+		let currentPage = 0;
+		let itemsPerPage = getItemsPerPage();
+		let totalPages = Math.ceil((totalItems - 1) / itemsPerPage); // -1 потому что первое изображение всегда видно
+		
+		if (totalPages <= 0) {
+			// Если страниц нет (мобильные устройства), скрываем навигацию и показываем все изображения
+			prevBtn.style.display = 'none';
+			nextBtn.style.display = 'none';
+			indicatorsContainer.style.display = 'none';
+			
+			// Показываем все изображения
+			gridItems.forEach((item, index) => {
+				item.style.display = 'block';
+			});
+			return;
+		}
+		
+		createGridIndicators();
+		updateGridSlider();
+		
+		prevBtn.addEventListener('click', () => {
+			currentPage = (currentPage - 1 + totalPages) % totalPages;
+			updateGridSlider();
+		});
+		
+		nextBtn.addEventListener('click', () => {
+			currentPage = (currentPage + 1) % totalPages;
+			updateGridSlider();
+		});
+		
+		indicatorsContainer.addEventListener('click', (e) => {
+			if (e.target.classList.contains('gallery-grid-indicator')) {
+				const pageIndex = parseInt(e.target.dataset.page);
+				currentPage = pageIndex;
+				updateGridSlider();
+			}
+		});
+		
+		window.addEventListener('resize', () => {
+			const newItemsPerPage = getItemsPerPage();
+			if (newItemsPerPage !== itemsPerPage) {
+				itemsPerPage = newItemsPerPage;
+				totalPages = Math.ceil((totalItems - 1) / itemsPerPage);
+				currentPage = Math.min(currentPage, totalPages - 1);
+				createGridIndicators();
+				updateGridSlider();
+			}
+		});
+		
+			function getItemsPerPage() {
+		const width = window.innerWidth;
+		if (width >= 1200) return 6; // 1 большое + 6 маленьких
+		if (width >= 992) return 5;  // 1 большое + 5 маленьких
+		if (width >= 768) return 4;  // 1 большое + 4 маленьких
+		return 0; // На мобильных показываем все изображения
+	}
+		
+		function createGridIndicators() {
+			indicatorsContainer.innerHTML = '';
+			
+			for (let i = 0; i < totalPages; i++) {
+				const indicator = document.createElement('button');
+				indicator.className = 'gallery-grid-indicator';
+				indicator.dataset.page = i;
+				indicator.setAttribute('aria-label', `Перейти к группе ${i + 1}`);
+				indicatorsContainer.appendChild(indicator);
+			}
+		}
+		
+		function updateGridSlider() {
+			const startIndex = 1 + (currentPage * itemsPerPage); // Начинаем со второго элемента
+			const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+			
+			// Первое изображение всегда видно
+			gridItems[0].style.display = 'block';
+			
+			// Остальные изображения показываем/скрываем по страницам
+			for (let i = 1; i < totalItems; i++) {
+				if (i >= startIndex && i < endIndex) {
+					gridItems[i].style.display = 'block';
+					gridItems[i].style.animation = 'galleryItemSlideIn 0.4s ease-out';
+				} else {
+					gridItems[i].style.display = 'none';
+				}
+			}
+			
+			// Обновляем индикаторы
+			const indicators = indicatorsContainer.querySelectorAll('.gallery-grid-indicator');
+			indicators.forEach((indicator, index) => {
+				indicator.classList.toggle('active', index === currentPage);
+			});
+			
+			// Обновляем состояние кнопок
+			prevBtn.disabled = totalPages <= 1;
+			nextBtn.disabled = totalPages <= 1;
+			
+			// Добавляем состояние загрузки
+			gridSlider.classList.add('loading');
+			setTimeout(() => {
+				gridSlider.classList.remove('loading');
+			}, 100);
+			
+			// Обновляем ARIA атрибуты
+			gridSlider.setAttribute('aria-current', currentPage + 1);
+			gridSlider.setAttribute('aria-label', `Группа ${currentPage + 1} из ${totalPages}`);
+		}
+	}
+    
 </script>  
 
 </body>
@@ -1480,7 +1604,7 @@
 <script language="JavaScript">
     
     $(document).keyup(function(e) {
-        if ($('.gallery-item').length > 0){
+        if ($('.gallery-grid-item').length > 0){
             if (e.keyCode == 39 ){
                 slideImage(1);
             } else if (e.keyCode == 37 ){
@@ -1491,7 +1615,7 @@
       });
     var rotate = 0;
     var image_cover = true;
-    const galleryItem = document.getElementsByClassName("gallery-item");
+    const galleryItem = document.getElementsByClassName("gallery-grid-item");
     var lightBoxContainer = document.createElement("div");
     lightBoxContainer.style.display=    'relation';
     lightBoxContainer.style.zIndex  = 15000;
@@ -1724,23 +1848,13 @@
 document.addEventListener('DOMContentLoaded', function() {
 	
 	initCarsSlider();
+	initGalleryGridSlider();
 });
 
 function initCarsSlider() {
-	// Инициализация обычного слайдера для мобильных
 	const slider = document.getElementById('carsSlider');
-	if (slider) {
-		initMobileSlider(slider);
-	}
+	if (!slider) return;
 	
-	// Инициализация сетки-слайдера для ПК
-	const gridSlider = document.getElementById('carsGridSlider');
-	if (gridSlider) {
-		initGridSlider(gridSlider);
-	}
-}
-
-function initMobileSlider(slider) {
 	const prevBtn = document.getElementById('carsSliderPrev');
 	const nextBtn = document.getElementById('carsSliderNext');
 	const indicatorsContainer = document.getElementById('carsSliderIndicators');
@@ -1757,7 +1871,6 @@ function initMobileSlider(slider) {
 	let totalSlides = Math.ceil(totalItems / itemsPerSlide);
 	
 	createIndicators();
-	
 	updateSlider();
 	
 	prevBtn.addEventListener('click', () => {
@@ -1817,12 +1930,10 @@ function initMobileSlider(slider) {
 	
 	function getItemsPerSlide() {
 		const width = window.innerWidth;
-		const containerWidth = slider.offsetWidth;
-		const itemWidth = width >= 1200 ? 300 : width >= 768 ? 280 : width >= 576 ? 260 : 240;
-		const gap = 16; // 1rem gap
-		
-		// Вычисляем количество карточек, которые помещаются в контейнер
-		return Math.floor((containerWidth + gap) / (itemWidth + gap));
+		if (width >= 1200) return 4;
+		if (width >= 992) return 3;
+		if (width >= 768) return 2;
+		return 1;
 	}
 	
 	function createIndicators() {
@@ -1838,172 +1949,34 @@ function initMobileSlider(slider) {
 	}
 	
 	function updateSlider() {
-        
-		const itemWidth = window.innerWidth >= 1200 ? 300 : window.innerWidth >= 768 ? 280 : window.innerWidth >= 576 ? 260 : 240;
-		const gap = 16; 
-		const translateX = -(currentSlide * (itemWidth + gap));
-		slider.style.transform = `translateX(${translateX}px)`;
+		const startIndex = currentSlide * itemsPerSlide;
+		const endIndex = Math.min(startIndex + itemsPerSlide, totalItems);
 		
+		slideItems.forEach((item, index) => {
+			if (index >= startIndex && index < endIndex) {
+				item.style.display = 'block';
+				item.style.animation = 'slideIn 0.4s ease-out';
+			} else {
+				item.style.display = 'none';
+			}
+		});
 		
 		const indicators = indicatorsContainer.querySelectorAll('.cars-slider-indicator');
 		indicators.forEach((indicator, index) => {
 			indicator.classList.toggle('active', index === currentSlide);
 		});
 		
-		
 		prevBtn.disabled = totalSlides <= 1;
 		nextBtn.disabled = totalSlides <= 1;
-		
-		
-		slider.classList.add('loading');
-		setTimeout(() => {
-			slider.classList.remove('loading');
-		}, 100);
-		
 		
 		slider.setAttribute('aria-current', currentSlide + 1);
 		slider.setAttribute('aria-label', `Слайд ${currentSlide + 1} из ${totalSlides}`);
 	}
-	
-	
-	let autoPlayInterval;
-	
-	function startAutoPlay() {
-		if (totalSlides <= 1) return;
-		
-		autoPlayInterval = setInterval(() => {
-			currentSlide = (currentSlide + 1) % totalSlides;
-			updateSlider();
-		}, 5000); 
-	}
-	
-	function stopAutoPlay() {
-		if (autoPlayInterval) {
-			clearInterval(autoPlayInterval);
-			autoPlayInterval = null;
-		}
-	}
-	
-	
-	startAutoPlay();
-	
-	
-	slider.addEventListener('mouseenter', stopAutoPlay);
-	slider.addEventListener('mouseleave', startAutoPlay);
-	slider.addEventListener('focusin', stopAutoPlay);
-	slider.addEventListener('focusout', startAutoPlay);
-	
-	
-	slider.addEventListener('touchstart', stopAutoPlay);
-	slider.addEventListener('touchend', () => {
-		setTimeout(startAutoPlay, 3000); 
-	});
 }
 
-// Функция инициализации сетки-слайдера для ПК
-function initGridSlider(gridSlider) {
-	const prevBtn = document.getElementById('carsGridPrev');
-	const nextBtn = document.getElementById('carsGridNext');
-	const indicatorsContainer = document.getElementById('carsGridIndicators');
-	
-	if (!prevBtn || !nextBtn || !indicatorsContainer) return;
-	
-	const gridItems = gridSlider.querySelectorAll('.cars-grid-item');
-	const totalItems = gridItems.length;
-	
-	if (totalItems === 0) return;
-	
-	let currentPage = 0;
-	let itemsPerPage = getItemsPerPage();
-	let totalPages = Math.ceil(totalItems / itemsPerPage);
-	
-	createGridIndicators();
-	updateGridSlider();
-	
-	prevBtn.addEventListener('click', () => {
-		currentPage = (currentPage - 1 + totalPages) % totalPages;
-		updateGridSlider();
-	});
-	
-	nextBtn.addEventListener('click', () => {
-		currentPage = (currentPage + 1) % totalPages;
-		updateGridSlider();
-	});
-	
-	indicatorsContainer.addEventListener('click', (e) => {
-		if (e.target.classList.contains('cars-grid-indicator')) {
-			const pageIndex = parseInt(e.target.dataset.page);
-			currentPage = pageIndex;
-			updateGridSlider();
-		}
-	});
-	
-	window.addEventListener('resize', () => {
-		const newItemsPerPage = getItemsPerPage();
-		if (newItemsPerPage !== itemsPerPage) {
-			itemsPerPage = newItemsPerPage;
-			totalPages = Math.ceil(totalItems / itemsPerPage);
-			currentPage = Math.min(currentPage, totalPages - 1);
-			createGridIndicators();
-			updateGridSlider();
-		}
-	});
-	
-	function getItemsPerPage() {
-		const width = window.innerWidth;
-		if (width >= 1200) return 12; // 4x3
-		if (width >= 992) return 9;   // 3x3
-		if (width >= 768) return 6;   // 2x3
-		return 3; // 1x3 для мобильных
-	}
-	
-	function createGridIndicators() {
-		indicatorsContainer.innerHTML = '';
-		
-		for (let i = 0; i < totalPages; i++) {
-			const indicator = document.createElement('button');
-			indicator.className = 'cars-grid-indicator';
-			indicator.dataset.page = i;
-			indicator.setAttribute('aria-label', `Перейти к странице ${i + 1}`);
-			indicatorsContainer.appendChild(indicator);
-		}
-	}
-	
-	function updateGridSlider() {
-		const startIndex = currentPage * itemsPerPage;
-		const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-		
-		// Скрываем все элементы
-		gridItems.forEach((item, index) => {
-			if (index >= startIndex && index < endIndex) {
-				item.style.display = 'block';
-				item.style.animation = 'gridItemSlideIn 0.4s ease-out';
-			} else {
-				item.style.display = 'none';
-			}
-		});
-		
-		// Обновляем индикаторы
-		const indicators = indicatorsContainer.querySelectorAll('.cars-grid-indicator');
-		indicators.forEach((indicator, index) => {
-			indicator.classList.toggle('active', index === currentPage);
-		});
-		
-		// Обновляем состояние кнопок
-		prevBtn.disabled = totalPages <= 1;
-		nextBtn.disabled = totalPages <= 1;
-		
-		// Добавляем состояние загрузки
-		gridSlider.classList.add('loading');
-		setTimeout(() => {
-			gridSlider.classList.remove('loading');
-		}, 100);
-		
-		// Обновляем ARIA атрибуты
-		gridSlider.setAttribute('aria-current', currentPage + 1);
-		gridSlider.setAttribute('aria-label', `Страница ${currentPage + 1} из ${totalPages}`);
-	}
-}
+
+
+
 </script>
 
 
