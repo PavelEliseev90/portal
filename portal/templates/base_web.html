@@ -1728,12 +1728,18 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Проверяем, что мы на ПК (слайдер добавляется только для ПК)
 	if (document.querySelector('.gallery-pc-slider')) {
 		initGallerySlider();
+	} else {
+		// Если нет ПК слайдера, инициализируем мобильный слайдер
+		initMobileGallerySlider();
 	}
 });
 
 function initGallerySlider() {
 	const slider = document.querySelector('.gallery-pc-slider');
 	if (!slider) return;
+	
+	// Инициализируем мобильный слайдер для устройств без ПК слайдера
+	initMobileGallerySlider();
 	
 	const prevBtn = document.getElementById('gallerySliderPrev');
 	const nextBtn = document.getElementById('gallerySliderNext');
@@ -1861,6 +1867,122 @@ function initGallerySlider() {
 		} catch (error) {
 			console.error('Ошибка при обновлении слайдера:', error);
 		}
+	}
+}
+
+// Функция для инициализации мобильного слайдера
+function initMobileGallerySlider() {
+	// Находим контейнер галереи без класса gallery-pc-slider (для мобильных устройств)
+	const mobileGallery = document.querySelector('.gallery-container:not(.gallery-pc-slider)');
+	if (!mobileGallery) return;
+	
+	let startX = 0;
+	let currentX = 0;
+	let isDragging = false;
+	
+	// Обработчики для touch событий
+	mobileGallery.addEventListener('touchstart', handleTouchStart, { passive: false });
+	mobileGallery.addEventListener('touchmove', handleTouchMove, { passive: false });
+	mobileGallery.addEventListener('touchend', handleTouchEnd, { passive: false });
+	
+	// Обработчики для mouse событий (для тестирования на десктопе)
+	mobileGallery.addEventListener('mousedown', handleMouseDown);
+	mobileGallery.addEventListener('mousemove', handleMouseMove);
+	mobileGallery.addEventListener('mouseup', handleMouseUp);
+	mobileGallery.addEventListener('mouseleave', handleMouseUp);
+	
+	function handleTouchStart(e) {
+		startX = e.touches[0].clientX;
+		isDragging = true;
+	}
+	
+	function handleTouchMove(e) {
+		if (!isDragging) return;
+		e.preventDefault();
+		currentX = e.touches[0].clientX;
+	}
+	
+	function handleTouchEnd(e) {
+		if (!isDragging) return;
+		isDragging = false;
+		handleSwipe();
+	}
+	
+	function handleMouseDown(e) {
+		startX = e.clientX;
+		isDragging = true;
+	}
+	
+	function handleMouseMove(e) {
+		if (!isDragging) return;
+		currentX = e.clientX;
+	}
+	
+	function handleMouseUp(e) {
+		if (!isDragging) return;
+		isDragging = false;
+		handleSwipe();
+	}
+	
+	function handleSwipe() {
+		const swipeThreshold = 50; // Минимальное расстояние для свайпа
+		const diff = startX - currentX;
+		
+		if (Math.abs(diff) > swipeThreshold) {
+			if (diff > 0) {
+				// Свайп влево - следующее изображение
+				scrollToNextImage();
+			} else {
+				// Свайп вправо - предыдущее изображение
+				scrollToPrevImage();
+			}
+		}
+	}
+	
+	function scrollToNextImage() {
+		const items = mobileGallery.querySelectorAll('.gallery-item');
+		const currentIndex = getCurrentVisibleIndex();
+		const nextIndex = (currentIndex + 1) % items.length;
+		
+		items[nextIndex].scrollIntoView({
+			behavior: 'smooth',
+			block: 'nearest',
+			inline: 'start'
+		});
+	}
+	
+	function scrollToPrevImage() {
+		const items = mobileGallery.querySelectorAll('.gallery-item');
+		const currentIndex = getCurrentVisibleIndex();
+		const prevIndex = (currentIndex - 1 + items.length) % items.length;
+		
+		items[prevIndex].scrollIntoView({
+			behavior: 'smooth',
+			block: 'nearest',
+			inline: 'start'
+		});
+	}
+	
+	function getCurrentVisibleIndex() {
+		const items = mobileGallery.querySelectorAll('.gallery-item');
+		const containerRect = mobileGallery.getBoundingClientRect();
+		const containerCenter = containerRect.left + containerRect.width / 2;
+		
+		let closestIndex = 0;
+		let closestDistance = Infinity;
+		
+		items.forEach((item, index) => {
+			const itemRect = item.getBoundingClientRect();
+			const itemCenter = itemRect.left + itemRect.width / 2;
+			const distance = Math.abs(itemCenter - containerCenter);
+			
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestIndex = index;
+			}
+		});
+		
+		return closestIndex;
 	}
 }
 

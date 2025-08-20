@@ -748,18 +748,56 @@ table{border-collapse:collapse;border-spacing:0;}
 @media (max-width: 767px) {
 	.gallery-container {
 		width: 100%;
+		overflow: hidden; /* Добавляем overflow: hidden для слайдера */
 	}
-	.gallery-item:first-child {
+	
+	/* Мобильный слайдер - показываем все изображения в ряд */
+	.gallery-container:not(.gallery-pc-slider) {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none; /* Скрываем скроллбар для Firefox */
+		-ms-overflow-style: none; /* Скрываем скроллбар для IE/Edge */
+	}
+	
+	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar {
+		display: none; /* Скрываем скроллбар для Chrome/Safari */
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item {
+		flex: 0 0 auto;
+		width: 100%;
+		max-height: none;
+		height: auto;
+		visibility: visible;
+		margin: 0 6px 0 0;
+		scroll-snap-align: start;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
+		margin-left: 0;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
+		width: 100%;
+		height: auto;
+		max-height: 300px;
+		object-fit: cover;
+	}
+	
+	/* Скрываем изображения для ПК слайдера на мобилке */
+	.gallery-pc-slider .gallery-item:first-child {
 		flex-basis: 100%;
-		
 		margin-bottom: 1px;
 		visibility: visible;
 	}
-	.gallery-item {
+	.gallery-pc-slider .gallery-item {
 		flex-basis: 0%;
 		max-height: 0px;
 		visibility: hidden;
 	}
+	
 	.lightbox-content {
 		width: 90%;
 		height: 60%;
@@ -768,11 +806,16 @@ table{border-collapse:collapse;border-spacing:0;}
 }
 
 @media (max-width: 480px) {
-	.gallery-item {
-		
+	/* Мобильный слайдер для маленьких экранов */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
+		max-height: 250px;
+	}
+	
+	.gallery-pc-slider .gallery-item {
 		flex-basis: 0%;
 		margin-bottom: 1px;
 	}
+	
 	.lightbox-content {
 		width: 90%;
 		margin: 20% auto;
