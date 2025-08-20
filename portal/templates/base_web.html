@@ -1552,6 +1552,9 @@
 
         let imageIndex = parseInt(this.getAttribute("data-index"));
         showLightBox(index = imageIndex);
+        
+        // Скрываем мобильный слайдер при открытии lightbox
+        hideMobileSlider();
     }
     for (let i = 0; i < galleryItem.length; i++) {
         galleryItem[i].addEventListener("click", currentImage);
@@ -1607,6 +1610,9 @@
             lightBoxContent.style.width     = "99%";
             lightBoxContent.style.height    = "99%";
             lightBoxImg.style.objectFit     = "contain";
+            
+            // Показываем мобильный слайдер при закрытии lightbox
+            showMobileSlider();
         }
     }
     lightBoxClose.addEventListener("click", closeLightBox);
@@ -1983,7 +1989,15 @@ function hideMobileSlider() {
 	mobileGalleries.forEach(gallery => {
 		gallery.style.opacity = '0';
 		gallery.style.pointerEvents = 'none';
+		gallery.style.visibility = 'hidden';
+		gallery.style.transform = 'scale(0.95)';
 	});
+	
+	// Также скрываем кнопки навигации
+	const mobileNav = document.querySelector('.mobile-gallery-nav');
+	if (mobileNav) {
+		mobileNav.style.display = 'none';
+	}
 }
 
 // Функция для показа мобильного слайдера
@@ -1992,7 +2006,15 @@ function showMobileSlider() {
 	mobileGalleries.forEach(gallery => {
 		gallery.style.opacity = '1';
 		gallery.style.pointerEvents = 'auto';
+		gallery.style.visibility = 'visible';
+		gallery.style.transform = 'scale(1)';
 	});
+	
+	// Также показываем кнопки навигации
+	const mobileNav = document.querySelector('.mobile-gallery-nav');
+	if (mobileNav) {
+		mobileNav.style.display = 'flex';
+	}
 }
 </script>
 

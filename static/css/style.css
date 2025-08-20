@@ -791,8 +791,8 @@ table{border-collapse:collapse;border-spacing:0;}
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
 		width: 100% !important;
 		height: auto !important;
-		max-height: 400px !important;
-		min-height: 300px !important;
+		max-height: none !important;
+		min-height: auto !important;
 		object-fit: contain !important;
 		display: block !important;
 		border-radius: 0 !important;
@@ -866,12 +866,12 @@ table{border-collapse:collapse;border-spacing:0;}
 
 @media (max-width: 480px) {
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
-		max-height: 350px;
-		min-height: 250px;
+		max-height: none;
+		min-height: auto;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) {
-		min-height: 250px !important;
+		min-height: auto !important;
 		width: 100% !important;
 	}
 	
@@ -3890,6 +3890,39 @@ hr[style*="width: 75%"] {
 	.mobile-gallery-loading {
 		display: block;
 	}
+}
+
+/* Скрытие мобильного слайдера при открытии lightbox */
+.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) {
+	opacity: 0 !important;
+	pointer-events: none !important;
+	transition: all 0.3s ease !important;
+	transform: scale(0.95) !important;
+}
+
+/* Альтернативный способ скрытия через CSS */
+.lightbox[style*="display: block"] + .gallery-container:not(.gallery-pc-slider),
+.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) {
+	opacity: 0 !important;
+	pointer-events: none !important;
+	visibility: hidden !important;
+	transition: all 0.3s ease !important;
+}
+
+/* Скрытие мобильного слайдера при активном lightbox */
+body:has(.lightbox[style*="display: block"]) .gallery-container:not(.gallery-pc-slider),
+.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) {
+	opacity: 0 !important;
+	pointer-events: none !important;
+	visibility: hidden !important;
+	transform: scale(0.95) !important;
+	transition: all 0.3s ease !important;
+}
+
+/* Скрытие кнопок навигации при активном lightbox */
+body:has(.lightbox[style*="display: block"]) .mobile-gallery-nav,
+.lightbox[style*="display: block"] ~ .mobile-gallery-nav {
+	display: none !important;
 }
 
 
