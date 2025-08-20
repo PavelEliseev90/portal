@@ -1835,6 +1835,16 @@ function initGallerySlider() {
 			prevBtn.disabled = totalItems <= 1;
 			nextBtn.disabled = totalItems <= 1;
 			
+			// Добавляем специальные классы для позиционирования кнопок 
+			slider.classList.remove('slide-first', 'slide-last', 'slide-middle');
+			if (currentSlide === 0) {
+				slider.classList.add('slide-first');
+			} else if (currentSlide === totalItems - 1) {
+				slider.classList.add('slide-last');
+			} else {
+				slider.classList.add('slide-middle');
+			}
+			
 			// Обновляем ARIA атрибуты
 			slider.setAttribute('aria-current', currentSlide + 1);
 			slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);

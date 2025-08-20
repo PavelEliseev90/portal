@@ -576,6 +576,22 @@ table{border-collapse:collapse;border-spacing:0;}
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* Специальное позиционирование кнопок для разных слайдов */
+.gallery-pc-slider.slide-first .gallery-slider-prev,
+.gallery-pc-slider.slide-first .gallery-slider-next {
+	top: calc(50% - 50px); /* Для первого слайда - стандартное позиционирование */
+}
+
+.gallery-pc-slider.slide-middle .gallery-slider-prev,
+.gallery-pc-slider.slide-middle .gallery-slider-next {
+	top: calc(50% - 25px); /* Для средних слайдов - немного выше */
+}
+
+.gallery-pc-slider.slide-last .gallery-slider-prev,
+.gallery-pc-slider.slide-last .gallery-slider-next {
+	top: calc(50% - 75px); /* Для последнего слайда - еще выше */
+}
+
 .gallery-slider-prev:hover,
 .gallery-slider-next:hover {
 	background: rgba(0, 0, 0, 0.95);
