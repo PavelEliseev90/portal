@@ -43,20 +43,20 @@
 							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
 						{% else %}
 							<img src={{files}} alt="{{files}}" src1="{{files}}">
-						{% endif %}						
+						{% endif %}
+						
+						<!-- Кнопки навигации слайдера (только для ПК и только для первой картинки) -->
+						{% if request.user_agent.is_pc and forloop.first %}
+							<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
+								<span class="gallery-slider-arrow">‹</span>
+							</button>
+							<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
+								<span class="gallery-slider-arrow">›</span>
+							</button>
+						{% endif %}
 					</div>
 					
 				{% endfor %}
-				
-				<!-- Кнопки навигации слайдера (только для ПК) -->
-				{% if request.user_agent.is_pc %}
-					<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
-						<span class="gallery-slider-arrow">‹</span>
-					</button>
-					<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
-						<span class="gallery-slider-arrow">›</span>
-					</button>
-				{% endif %}
 			</div>
 	
 			

@@ -1820,6 +1820,11 @@ function initGallerySlider() {
 					item.style.opacity = '1';
 					item.style.transform = 'scale(1)';
 					
+					// Перемещаем кнопки к текущему главному слайду
+					prevBtn.style.display = 'flex';
+					nextBtn.style.display = 'flex';
+					item.appendChild(prevBtn);
+					item.appendChild(nextBtn);
 					
 				} else {
 					// Показываем остальные слайды как миниатюры
@@ -1835,8 +1840,8 @@ function initGallerySlider() {
 			prevBtn.disabled = totalItems <= 1;
 			nextBtn.disabled = totalItems <= 1;
 			
-					// Убираем специальные классы для позиционирования кнопок
-		slider.classList.remove('slide-first', 'slide-last', 'slide-middle');
+			// Убираем специальные классы для позиционирования кнопок
+			slider.classList.remove('slide-first', 'slide-last', 'slide-middle');
 			
 			// Обновляем ARIA атрибуты
 			slider.setAttribute('aria-current', currentSlide + 1);
