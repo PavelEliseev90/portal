@@ -5,3 +5,8 @@
 /key.key
 /media
 /static.rar
+portal/apps/eco/__pycache__/views.cpython-311.pyc
+portal/apps/profiles/__pycache__/models.cpython-311.pyc
+portal/apps/profiles/__pycache__/views.cpython-311.pyc
+portal/apps/eco/__pycache__/views.cpython-311.pyc
+*.pyc
