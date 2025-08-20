@@ -593,15 +593,15 @@ table{border-collapse:collapse;border-spacing:0;}
 
 .gallery-slider-prev {
 	left: 0;
-	border-top-right-radius: 12px;
-	border-bottom-right-radius: 12px;
+	border-top-left-radius: 12px;
+	border-bottom-left-radius: 12px;
 	background: linear-gradient(90deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.3));
 }
 
 .gallery-slider-next {
 	right: 0;
-	border-top-left-radius: 12px;
-	border-bottom-left-radius: 12px;
+	border-top-right-radius: 12px;
+	border-bottom-right-radius: 12px;
 	background: linear-gradient(270deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.3));
 }
 
@@ -668,7 +668,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	border-radius: 0.9rem;
 	cursor: pointer;
 	display: block;
-	padding-bottom: 10px;
+	padding-bottom: 0; /* Убираем padding-bottom чтобы картинка была полного размера */
 }
 
 
