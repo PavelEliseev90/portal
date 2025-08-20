@@ -434,7 +434,8 @@ def get_chats_list_online(request):
         content                     = Subquery(subqyery_message_info.values('content')[:1])).annotate(
         user_name                   = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
         user_content                = Subquery(subqyery_message_info.values('user')[:1])).annotate(
-        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1]))
+        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1])).annotate(
+        auction                     = Subquery(subqyery_reg_interactiv.values('auction')[:1]))
     
     chats = chats.filter(status_estimation_id__gte = 2)
     
@@ -789,6 +790,21 @@ def doc(request, id):
                     kors_estimation_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
 
+            price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
+            price           = estimations_price_calculation(estimation, type_calculation='avito')
+            price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
+            price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
+            body            = body_estimation(estimation=estimation)
+            if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
+                json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
+            list_store_info = list()
+
+        if page == 30:
+            
+            if page == 30:
+                if not request.user.profiles.eco_page_price_auto:
+                    return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
+            
             price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')

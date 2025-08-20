@@ -9,387 +9,6 @@
 {% block content %}
 
 
-<!--
-<form method="get">
-  
-  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-xl">
-      <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      
-        <div class="modal-body">
-          
-          <div class="row">
-
-            <div class="col-sm">
-              
-              <div class="form-floating mb-3">
-                <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-                <label for="floatingInput">Дата начала</label>
-              </div>
-        
-            </div>
-        
-            <div class="col-sm">
-        
-              <div class="form-floating mb-3">
-                <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-                <label for="floatingInput">Дата окончания</label>
-              </div>
-        
-            </div>
-        
-            <div class="col-sm">
-              
-              <div class="form-floating mb-3">
-                <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
-                <label for="floatingInput">Номер РЛК</label>
-              </div>
-        
-            </div>
-        
-            <div class="col-sm">
-              
-              <div class="form-floating mb-3">
-                <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.filtr.customer}}">
-                <label for="floatingInput">Клиент</label>
-              </div>
-        
-            </div>
-            </div>
-        
-            <div class="row">
-            
-              <div class="col-sm">
-                <div class="form-floating mb-3">							
-                  <select class="form-select" id="status_id" name="status_id" placeholder="">
-                    <option></option>
-                    {% for status in params.selected.statuses %}
-                      <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
-                    {% endfor %}
-                  </select>
-                  <label for="floatingInput">Статус</label>
-                </div>
-              </div>
-        
-            <div class="col-sm">
-              <div class="form-floating mb-3">							
-                <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
-                  <option></option>
-                  {% for type_reception in params.selected.type_receptions %}
-                    <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
-                  {% endfor %}
-                </select>
-                <label for="floatingInput">Тип приема</label>
-              </div>
-            </div>
-        
-        
-            <div class="col-sm">
-              <div class="form-floating mb-3">							
-                <select class="form-select" id="unit_id" name="unit_id" placeholder="">
-                  <option></option>
-                  {% for unit in params.selected.units %}
-                    <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
-                  {% endfor %}
-                </select>
-                <label for="floatingInput">Подразделение ДЦ</label>
-              </div>
-            </div>
-        
-            <div class="col-sm">
-              
-              <div class="form-floating mb-3">
-                <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.filtr.staff}}">
-                <label for="floatingInput">Оценщик</label>
-              </div>
-        
-            </div>
-        
-          </div>  
-          
-          {% if params.filters_user|length > 0 %}
-            
-            <hr>
-            
-            <div class="table-responsive">
-              <table class="table table-fit">
-                <tbody>
-                  <tr>
-                    {% for filter in params.filters_user %}
-                
-                      <td>
-                        <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn  {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
-                      </td>
-                    
-                    {% endfor %}
-                    
-                    <td>
-                      <button class="btn btn-outline-success" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
-                    </td>
-
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-          {% endif %}
-        
-        </div>
-      
-        <div class="modal-footer">
-          <div class="row">
-            <div class="col-auto">
-              <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
-            </div>
-            <div class="col">
-              <button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
-          <label for="floatingInput">Наименование</label>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" name="save_filtr" type="submit" >Сохранить</button>
-      </div>
-      </div>
-    </div>
-  </div>
-
-</form>
-
-<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-	<div class="modal-dialog modal-dialog-centered">
-	  <div class="modal-content">
-		<div class="modal-header">
-		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
-		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-		</div>
-		<div class="modal-body">
-			{% if params.filters_user|length > 0 %}
-					<div class="table-responsive">
-						<table class="table">
-						  <tbody>
-								
-							{% for filter in params.filters_user %}
-							<tr>
-								<td>
-									{{filter.name}}
-								</td>
-								<td>
-									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn btn-outline-danger"><span class="icon-mbri-close"></span></a>
-								</td>
-							</tr>
-							{% endfor %}
-								
-						  </tbody>
-						</table>
-					  </div>
-				{% endif %}
-		</div>
-		
-	  </div>
-	</div>
-</div>
-
-
-<form method="get" class="hidemobile">
-  
-  <div class="modal fade" id="exampleModalToggleNewFiltr" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
-          <label for="floatingInput">Наименование</label>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" name="save_filtr" type="submit" ><span class="icon-mbri-download"></span> Сохранить</button>
-      </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-
-    <div class="col-sm">
-      
-      <div class="form-floating mb-3">
-        <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-        <label for="floatingInput">Дата начала</label>
-      </div>
-
-    </div>
-
-    <div class="col-sm">
-
-      <div class="form-floating mb-3">
-        <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-        <label for="floatingInput">Дата окончания</label>
-      </div>
-
-    </div>
-
-    <div class="col-sm">
-      
-      <div class="form-floating mb-3">
-        <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
-        <label for="floatingInput">Номер РЛК</label>
-      </div>
-
-    </div>
-
-    <div class="col-sm">
-      
-      <div class="form-floating mb-3">
-        <input class="form-control form-control-sm" type="text" id="customer" name="customer" value="{{params.filtr.customer}}">
-        <label for="floatingInput">Клиент</label>
-      </div>
-
-    </div>
-    </div>
-
-    <div class="row">
-      
-      <div class="col-sm">
-      
-        <div class="form-floating mb-3">
-          <input class="form-control form-control-sm" type="text" id="search" name="search" value="{{params.filtr.search}}">
-          <label for="floatingInput">VIN, Марка, Модель, Модификация, Оценщик</label>
-        </div>
-  
-      </div>
-
-      <div class="col-sm">
-        <div class="form-floating mb-3">							
-          <select class="form-select" id="status_id" name="status_id" placeholder="">
-            <option></option>
-            {% for status in params.selected.statuses %}
-              <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
-            {% endfor %}
-          </select>
-          <label for="floatingInput">Статус</label>
-        </div>
-      </div>
-
-    <div class="col-sm">
-      <div class="form-floating mb-3">							
-        <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
-          <option></option>
-          {% for type_reception in params.selected.type_receptions %}
-            <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
-          {% endfor %}
-        </select>
-        <label for="floatingInput">Тип приема</label>
-      </div>
-    </div>
-
-
-    <div class="col-sm">
-      <div class="form-floating mb-3">							
-        <select class="form-select" id="unit_id" name="unit_id" placeholder="">
-          <option></option>
-          {% for unit in params.selected.units %}
-            <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
-          {% endfor %}
-        </select>
-        <label for="floatingInput">Подразделение ДЦ</label>
-      </div>
-    </div>
-
-    <div class="col-sm">
-      
-      <div class="form-floating mb-3">
-        <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.filtr.staff}}">
-        <label for="floatingInput">Оценщик</label>
-      </div>
-
-    </div>
-
-  </div>
-
-  <div class="row">
-    
-    <div class="col-sm-auto align-self-center">
-      <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
-    </div>
-    
-    <div class="col-sm align-self-center">
-
-      <div class="row g-1">
-          
-        <div class="col-sm-auto align-self-center">
-          <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggleNewFiltr" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
-        
-          
-        </div>
-        
-        <div class="col-sm align-self-center">
-          
-          <div class="table-responsive">
-            <table class="table table-fit" style="margin: 0px;">
-              <tbody>
-                <tr>
-                  
-                  <td>
-                    <div class="vr"></div>
-                  </td>
-
-                  {% for filter in params.filters_user %}
-              
-                    <td>
-                      
-                        <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
-
-                    </td>
-                  
-                  {% endfor %}
-                  
-                  <td>
-                    <button class="btn btn-outline-secondary" type="button" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
-                  </td>
-    
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div> 
-      
-    </div>
-
-  </div>
-  
-  <hr>
-
-</form>
--->
-
 <div class="row g-1 align-self-center">
   
   <div class="col-sm">
@@ -700,6 +319,11 @@ z-index: 1044;">
                   visible_badge = "";  
                 };
 
+                var auction = '';
+                if (obj.auction){
+                  auction = '<span class="badge bg-danger rounded-pill justify-content-end">A</span>';
+                };
+                
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
@@ -726,7 +350,7 @@ z-index: 1044;">
                 html += '          <hr class="hidesite" style="width: 75%;">';
                 html += '          Прием: ' + car_price_reception + ' ₽';
                 html += '          <br>Продажа: ' + car_price_sale  + ' ₽';
-                html += '          ' + bcp  + '';
+                html += '          ' + bcp  + ' ' + auction + '';
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
@@ -788,6 +412,10 @@ z-index: 1044;">
         
       var wsProtocol = 'wss://';
       var ws_url = 'ah.kors-group.com';
+      var toats_visible = false;
+      {% if request.user.profiles.eco_toast %}
+        toats_visible = true;
+      {% endif %}
 
       var chatSocket = new WebSocket(
           wsProtocol
@@ -813,9 +441,10 @@ z-index: 1044;">
 
           if (data.message){
               
-            var link = '/eco/' + data.chat.replace('rlk_','') + '/';
-              
-            toast(data.chat, data.message , '22:10', link, ' ');
+            if (toats_visible){
+              var link = '/eco/' + data.chat.replace('rlk_','') + '/';
+              toast(data.chat, data.message , '22:10', link, ' ');
+            };
             
             refresh_info(data.chat);
 
@@ -933,6 +562,11 @@ z-index: 1044;">
                   visible_badge = "";  
                 };
                 
+                var auction = '';
+                if (obj.auction){
+                  auction = '<span class="badge bg-danger rounded-pill justify-content-end">A</span>';
+                };
+
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
