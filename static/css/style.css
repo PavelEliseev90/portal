@@ -542,7 +542,8 @@ table{border-collapse:collapse;border-spacing:0;}
 
 .gallery-pc-slider .gallery-item:not(:first-child) {
 	flex-basis: 10%;
-	max-height: 100px;
+	max-height: 70px;
+	height: 70px;
 	margin: 6px;
 	border-radius: 0.1rem;
 	display: flex;
@@ -647,12 +648,12 @@ table{border-collapse:collapse;border-spacing:0;}
 /* Стили для миниатюр (когда элемент не является активным главным) */
 .gallery-pc-slider .gallery-item:not(.active-main) {
 	flex-basis: 10% !important;
-	max-height: 100px !important;
-	height: 100px !important;
+	max-height: 70px !important;
+	height: 70px !important;
 }
 
 .gallery-pc-slider .gallery-item:not(.active-main) img {
-	height: 100px !important;
+	height: 70px !important;
 	object-fit: cover;
 }
 
@@ -691,7 +692,8 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-item:first-child,
 .gallery-item {
 	flex-basis: 10%;
-	max-height: 100px;
+	max-height: 70px;
+	height: 70px;
 	margin: 6px;
 	border-radius: 0.1rem;
 	display: flex;
