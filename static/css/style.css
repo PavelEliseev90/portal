@@ -760,6 +760,102 @@ table{border-collapse:collapse;border-spacing:0;}
 		scrollbar-width: none !important; /* Скрываем скроллбар для Firefox */
 		-ms-overflow-style: none !important; /* Скрываем скроллбар для IE/Edge */
 		flex-wrap: nowrap !important;
+		position: relative !important;
+		transition: all 0.3s ease-in-out !important;
+	}
+	
+	/* Индикаторы наличия дополнительных изображений */
+	.gallery-container:not(.gallery-pc-slider)::before,
+	.gallery-container:not(.gallery-pc-slider)::after {
+		content: '' !important;
+		position: absolute !important;
+		top: 0 !important;
+		bottom: 0 !important;
+		width: 40px !important;
+		pointer-events: none !important;
+		z-index: 10 !important;
+		transition: opacity 0.3s ease-in-out !important;
+	}
+	
+	/* Левый градиент (показывает, что есть изображения слева) */
+	.gallery-container:not(.gallery-pc-slider)::before {
+		left: 0 !important;
+		background: linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%) !important;
+		opacity: 0 !important;
+	}
+	
+	/* Правый градиент (показывает, что есть изображения справа) */
+	.gallery-container:not(.gallery-pc-slider)::after {
+		right: 0 !important;
+		background: linear-gradient(270deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%) !important;
+		opacity: 1 !important;
+	}
+	
+	/* Показываем левый градиент при прокрутке */
+	.gallery-container:not(.gallery-pc-slider).scrolled-left::before {
+		opacity: 1 !important;
+	}
+	
+	/* Скрываем правый градиент в конце */
+	.gallery-container:not(.gallery-pc-slider).scrolled-end::after {
+		opacity: 0 !important;
+	}
+	
+	/* Стрелки-индикаторы для мобильного слайдера */
+	.mobile-slider-arrow {
+		position: absolute !important;
+		top: 50% !important;
+		transform: translateY(-50%) !important;
+		width: 30px !important;
+		height: 30px !important;
+		background: rgba(0, 0, 0, 0.6) !important;
+		border-radius: 50% !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		color: white !important;
+		font-size: 18px !important;
+		font-weight: bold !important;
+		z-index: 20 !important;
+		pointer-events: none !important;
+		transition: all 0.3s ease-in-out !important;
+		opacity: 0.8 !important;
+	}
+	
+	.mobile-slider-arrow.left {
+		left: 10px !important;
+	}
+	
+	.mobile-slider-arrow.right {
+		right: 10px !important;
+	}
+	
+	/* Показываем стрелки при наведении */
+	.gallery-container:not(.gallery-pc-slider):hover .mobile-slider-arrow {
+		opacity: 1 !important;
+		transform: translateY(-50%) scale(1.1) !important;
+	}
+	
+	/* Индикатор прогресса прокрутки */
+	.mobile-slider-progress {
+		position: absolute !important;
+		bottom: 10px !important;
+		left: 50% !important;
+		transform: translateX(-50%) !important;
+		width: 60px !important;
+		height: 4px !important;
+		background: rgba(0, 0, 0, 0.2) !important;
+		border-radius: 2px !important;
+		overflow: hidden !important;
+		z-index: 15 !important;
+	}
+	
+	.mobile-slider-progress-bar {
+		height: 100% !important;
+		background: linear-gradient(90deg, #007bff, #0056b3) !important;
+		border-radius: 2px !important;
+		transition: width 0.3s ease-in-out !important;
+		width: 0% !important;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider)::-webkit-scrollbar {
@@ -774,6 +870,15 @@ table{border-collapse:collapse;border-spacing:0;}
 		visibility: visible !important;
 		margin: 0 6px 0 0 !important;
 		scroll-snap-align: start !important;
+		transition: all 0.3s ease-in-out !important;
+		transform: scale(1) !important;
+		opacity: 1 !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover {
+		transform: scale(1.02) !important;
+		opacity: 0.9 !important;
+		transition: all 0.2s ease-in-out !important;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
@@ -785,6 +890,14 @@ table{border-collapse:collapse;border-spacing:0;}
 		height: auto;
 		max-height: 300px;
 		object-fit: cover;
+		transition: all 0.3s ease-in-out !important;
+		border-radius: 8px !important;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:hover img {
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+		transform: scale(1.01) !important;
 	}
 	
 	/* Скрываем изображения для ПК слайдера на мобилке */
