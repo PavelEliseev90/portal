@@ -41,25 +41,30 @@
 					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
 						{% if files.file_mini %}
 							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
-							{% if forloop.first %}
-								<div class="gallery-count bg-count fw-bold">
-									1 / {{params.object.get_files|length}}
-								</div>
-							{% endif %}
 						{% else %}
 							<img src={{files}} alt="{{files}}" src1="{{files}}">
-						{% endif %}						
+						{% endif %}
+						
+						<!-- Кнопки навигации слайдера (только для ПК и только для первой картинки) -->
+						{% if request.user_agent.is_pc and forloop.first %}
+							<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
+								<span class="gallery-slider-arrow">‹</span>
+							</button>
+							<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
+								<span class="gallery-slider-arrow">›</span>
+							</button>
+						{% endif %}
 					</div>
 					
 				{% endfor %}
 				
-				<!-- Кнопки навигации слайдера (только для ПК) -->
-				{% if request.user_agent.is_pc %}
-					<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
-						<span class="gallery-slider-arrow">‹</span>
+				<!-- Мобильные кнопки навигации (только для мобильных устройств) -->
+				{% if not request.user_agent.is_pc %}
+					<button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">
+						‹
 					</button>
-					<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
-						<span class="gallery-slider-arrow">›</span>
+					<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">
+						›
 					</button>
 				{% endif %}
 			</div>
@@ -139,7 +144,7 @@
 
 
 		</div>
-
+		
 		<div class="col-sm-12 col-md-5 col-lg-5 content-head" >
 				
 			<div class="card" style="background-color: rgba(255,255,255,0.5);">
