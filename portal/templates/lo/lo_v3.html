@@ -13267,19 +13267,23 @@
                 <h6><span class="icon-mbri-image-slider"></span> Фотографии интерактивной оценки</h6>
                 <hr style="width: 75%;">
 
-                <div class="row justify-content-center" style="padding: 0; width: 100%;">
+                <div class="justify-content-center" style="padding: 0; width: 100%;">
                 <div class="col-sm content-head" style="padding: 0;">
-                  <div class="gallery-container">
-                  
-                    {% for files in params.estimation.get_files_all %}
-                                
+                {% if request.user_agent.is_pc %}
+                  <div class="gallery-container gallery-pc-slider">
+
+                    {% for files in params.estimation.get_files_all %}               
                       <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
                         
                           <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
                           {% if forloop.first %}
-                            <div class="gallery-count bg-count fw-bold">
-                              1 / {{params.estimation.get_files_all_count}}
-                            </div>
+                           
+                            <button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
+                              <span class="gallery-slider-arrow">‹</span>
+                            </button>
+                            <button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
+                              <span class="gallery-slider-arrow">›</span>
+                            </button>
                           {% endif %}
                         
                       </div>
@@ -13287,6 +13291,26 @@
                     {% endfor %}
                     
                   </div>
+                  {% else %}
+                  <div class="gallery-container gallery-mobile-slider">
+
+                    {% for files in params.estimation.get_files_all %}
+
+                      <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+
+                          <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
+                          {% if forloop.first %}
+                           
+                          {% endif %}
+
+                      </div>
+
+                    {% endfor %}
+
+                    <button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">‹</button>
+                    <button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">›</button>
+                  </div>
+                  {% endif %}
                 </div>
               </div>
 

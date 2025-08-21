@@ -1732,23 +1732,19 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 	console.log('DOM загружен, инициализируем слайдеры...');
-	
-	// Инициализация слайдера галереи для ПК (если есть)
-	if (document.querySelector('.gallery-pc-slider')) {
-		console.log('Найден ПК слайдер, инициализируем...');
-		initGallerySlider();
-	}
-	
-	// Инициализация мобильного слайдера (если есть)
-	if (document.querySelector('.gallery-container:not(.gallery-pc-slider)')) {
-		console.log('Найден мобильный слайдер, инициализируем...');
-		initMobileGallerySlider();
-	}
+
+        if (document.querySelector('.gallery-pc-slider')) {
+                initGallerySlider('.gallery-pc-slider');
+        }
+
+        if (document.querySelector('.gallery-mobile-slider')) {
+                initMobileGallerySlider('.gallery-mobile-slider');
+        }
 });
 
-function initGallerySlider() {
-	const slider = document.querySelector('.gallery-pc-slider');
-	if (!slider) return;
+function initGallerySlider(selector) {
+        const slider = document.querySelector(selector);
+        if (!slider) return;
 	
 	const prevBtn = document.getElementById('gallerySliderPrev');
 	const nextBtn = document.getElementById('gallerySliderNext');
