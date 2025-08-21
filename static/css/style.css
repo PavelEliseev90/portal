@@ -768,27 +768,32 @@ table{border-collapse:collapse;border-spacing:0;}
 		display: none;
 		width: 100%;
 		max-width: 100%;
-		position: relative;
+		position: relative !important;
 		margin: 0;
 		padding: 0;
 		box-sizing: border-box;
 		opacity: 0;
 		transform: scale(0.95);
 		transition: all 0.3s ease;
+		z-index: 1 !important;
 	}
 	
 	/* Активный слайд для мобильной версии */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile {
-		display: block;
+		display: block !important;
 		opacity: 1;
 		transform: scale(1);
+		position: relative !important;
+		z-index: 1 !important;
 	}
 	
 	/* Первый слайд активен по умолчанию */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
-		display: block;
+		display: block !important;
 		opacity: 1;
 		transform: scale(1);
+		position: relative !important;
+		z-index: 1 !important;
 	}
 	
 	/* Стили для изображений в мобильной версии */
@@ -804,6 +809,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		box-sizing: border-box;
 		vertical-align: top;
 		transition: transform 0.2s ease;
+		position: relative !important;
+		z-index: 1 !important;
 	}
 	
 	/* Стили для первого изображения в мобильной версии */
@@ -813,6 +820,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		height: auto;
 		border-radius: 0;
 		padding-bottom: 0;
+		position: relative !important;
+		z-index: 1 !important;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child img {
@@ -927,9 +936,11 @@ table{border-collapse:collapse;border-spacing:0;}
 	
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile,
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
-		display: block;
+		display: block !important;
 		opacity: 1;
 		transform: scale(1);
+		position: relative !important;
+		z-index: 1 !important;
 	}
 	
 	/* Адаптируем ПК слайдер для мобильных устройств */
@@ -3923,10 +3934,14 @@ hr[style*="width: 75%"] {
 /* Применяем анимации к слайдам */
 .gallery-container:not(.gallery-pc-slider) .gallery-item.slide-in-right {
 	animation: slideInFromRight 0.3s ease-out;
+	position: relative !important;
+	z-index: 1 !important;
 }
 
 .gallery-container:not(.gallery-pc-slider) .gallery-item.slide-in-left {
-	animation: slideInFromLeft 0.3s ease-out;
+	animation: slideInFromRight 0.3s ease-out;
+	position: relative !important;
+	z-index: 1 !important;
 }
 
 /* Скрытие кнопок навигации при активном lightbox - удалено, так как кнопки больше не используются */
