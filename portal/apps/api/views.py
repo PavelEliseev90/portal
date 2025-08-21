@@ -2742,9 +2742,21 @@ def get_lo(lo):
     object.carsGRZ                  = lo['PlateNumber']
     object.year                     = lo['Year']
     
+    if 'SaleAgreementNumber' in lo:
+        object.agreement_number = lo['SaleAgreementNumber']
+
+    if 'SaleAgreementUnit' in lo:
+        object.agreement_unit   = get_unit(lo['SaleAgreementUnit'])
+
+    if 'SaleAgreementBU' in lo:
+        object.agreement_unit_bu = lo['SaleAgreementBU']
+    else:
+        object.agreement_unit_bu = False
+
     modificationAutoru = lo['ModificationAutoru']
     if modificationAutoru > 0:
         object.modification_autoru = AutoruModification.objects.get(idSite = modificationAutoru)
+        
     object.save()
 
     return object

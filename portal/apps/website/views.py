@@ -45,7 +45,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
+from register.models import RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -1774,7 +1774,16 @@ def board_monitoring(request):
     modifications           = modifications.annotate(spec = Count(subquery))
     modifications_count     = modifications.filter(spec = 0).count()
     
-
+    # Проверка интерактивных оценок
+    object_estimations_report_autohub_remote    = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk').count()
+    object_estimations_report_autohub           = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk').count()
+    autohub_count       = object_estimations_report_autohub_remote + object_estimations_report_autohub 
+    autoteka_count      = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).order_by('start_estimation').count()
+    push_count          = RegInteractivOcenkaEmailPush.objects.exclude(send = True).exclude(user__email = '').count()
+    send_1c             = RegSwapKors.objects.filter(status_code = 60).count()
+    task_price_count    = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
+    estimation_1c       = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).count()
+    
     params = {
         'type'                  : 'monitorings',
         'ip'                    : ip_list,
@@ -1797,7 +1806,13 @@ def board_monitoring(request):
         'info_ip'               : info_ip,
         'list_log_refresh_cars' : list_log_refresh_cars,
         'info_refresh_catalogs' : info_refresh_catalogs,
-        'modifications_count'   : modifications_count
+        'modifications_count'   : modifications_count,
+        'autohub_count'         : autohub_count,
+        'autoteka_count'        : autoteka_count,
+        'estimation_1c'         : estimation_1c,
+        'push_count'            : push_count,
+        'send_1c'               : send_1c,
+        'task_price_count'      : task_price_count
     }
     
     return render(request, 'website/board_monitoring.html', {"params": params}) 
