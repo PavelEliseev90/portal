@@ -764,6 +764,12 @@ table{border-collapse:collapse;border-spacing:0;}
 		contain: layout style paint;
 		transform: translateZ(0);
 		backface-visibility: hidden;
+		/* Полная изоляция от остальной страницы */
+		isolation: isolate;
+		z-index: 1;
+		/* Создаем новый контекст наложения */
+		transform-style: preserve-3d;
+		perspective: 1000px;
 	}
 	
 	/* Стили для мобильной версии - только для элементов БЕЗ класса gallery-pc-slider */
@@ -782,24 +788,38 @@ table{border-collapse:collapse;border-spacing:0;}
 		contain: layout style paint;
 		transform-origin: center center;
 		will-change: transform, opacity;
+		/* Принудительная изоляция */
+		isolation: isolate;
+		/* Ограничиваем область отображения */
+		clip-path: inset(0);
+		/* Создаем новый слой */
+		transform: translateZ(0) scale(0.95);
 	}
 	
 	/* Активный слайд для мобильной версии */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile {
 		display: block !important;
 		opacity: 1;
-		transform: scale(1);
+		transform: translateZ(0) scale(1) !important;
 		position: relative !important;
 		z-index: 1 !important;
+		/* Принудительная изоляция */
+		isolation: isolate;
+		/* Ограничиваем область отображения */
+		clip-path: inset(0);
 	}
 	
 	/* Первый слайд активен по умолчанию */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
 		display: block !important;
 		opacity: 1;
-		transform: scale(1);
+		transform: translateZ(0) scale(1) !important;
 		position: relative !important;
 		z-index: 1 !important;
+		/* Принудительная изоляция */
+		isolation: isolate;
+		/* Ограничиваем область отображения */
+		clip-path: inset(0);
 	}
 	
 	/* Стили для изображений в мобильной версии */
@@ -3914,6 +3934,21 @@ hr[style*="width: 75%"] {
 	content: var(--slide-counter, "1 / 1") !important;
 	opacity: 1 !important;
 	visibility: visible !important;
+}
+
+/* Принудительное ограничение всех элементов галереи */
+.gallery-container:not(.gallery-pc-slider) * {
+	max-width: 100% !important;
+	max-height: 100% !important;
+	overflow: hidden !important;
+}
+
+/* Дополнительная изоляция для изображений */
+.gallery-container:not(.gallery-pc-slider) img {
+	position: relative !important;
+	z-index: 1 !important;
+	transform: translateZ(0) !important;
+	contain: layout style paint !important;
 }
 
 /* Скрытие мобильных кнопок навигации при открытии lightbox */
