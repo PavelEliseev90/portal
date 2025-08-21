@@ -36,7 +36,7 @@ import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
 from refs.serializers import AutoruComplectationSerializer, AutoruMarkSerializer, AutoruModelSerializer, AutoruModificationSerializer
 from online.models import Online_doc, Records_online_doc
-from register.models import RegPrices
+from register.models import RegPrices, RegInteractivOcenka
 from avtosalon.models import RefreshSpecificationsAutoRU
 from recognition.models import Recognition_call, Records_voice_recorder
 from telephony.models import Telephony_records_queue
@@ -2759,6 +2759,14 @@ def get_lo(lo):
         
     object.save()
 
+    try:
+        if object.active:
+            if RegInteractivOcenka.objects.filter(rlk = object.rlk).exclude(status = 8).count() > 0:
+                reg_interactiv_ocenka = RegInteractivOcenka.objects.filter(rlk = object.rlk).exclude(status = 8)[0]
+                reg_interactiv_ocenka.returned = False
+                reg_interactiv_ocenka.save()   
+    except:
+        s = 1
     return object
     
 def get_sms(sms):
