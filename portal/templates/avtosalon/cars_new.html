@@ -689,12 +689,12 @@
     	<div class="row g-3">
     		{% for car in params.paginator.object_list %}
     			<div class="col-12 col-md-6 col-lg-4 col-xl-3">
-    				<div class="card bg-white bg-opacity-75" onclick="window.location.href='{{car.slug}}'; return false" > 
+    				<div class="card bg-white bg-opacity-50" onclick="window.location.href='{{car.slug}}'; return false" > 
     					
     					<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
 
     						<div>
-    							<img class="item-img" src="{{car.get_photo}}" >
+    							<img class="item-img_up" src="{{car.get_photo}}">
     						</div>
 
     						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
@@ -720,7 +720,7 @@
     							</div>
     			
     							<div class="col text-end align-self-center">
-    								<span class="fs-4 fw-bold"> {{car.price|floatformat:"2g"}} </span> &#8381;
+    								<span class="fs-4 fw-bold" style="color: #e74c3c;"> {{car.price|floatformat:"2g"}} </span> &#8381;
     							</div>
     						</div>
     			
