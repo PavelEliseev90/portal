@@ -1938,9 +1938,9 @@ function initMobileGallerySlider() {
 		// Устанавливаем начальные позиции для всех слайдов
 		slideItems.forEach((item, index) => {
 			item.classList.remove('active-mobile', 'slide-from-left', 'slide-from-right', 'slide-to-left', 'slide-to-right');
-			if (index === 0) {
-				item.classList.add('active-mobile');
-			}
+			// Скрываем все слайды
+			item.style.opacity = '0';
+			item.style.visibility = 'hidden';
 		});
 		
 		// Показываем первый слайд
@@ -1949,14 +1949,19 @@ function initMobileGallerySlider() {
 	
 	// НОВАЯ ЛОГИКА: Функция показа слайда с анимацией
 	function showMobileSlide(index, direction = null) {
-		// Убираем все классы у всех слайдов
+		// Убираем все классы у всех слайдов и скрываем их
 		slideItems.forEach(item => {
 			item.classList.remove('active-mobile', 'slide-from-left', 'slide-from-right', 'slide-to-left', 'slide-to-right');
+			// Явно скрываем все слайды
+			item.style.opacity = '0';
+			item.style.visibility = 'hidden';
 		});
 		
-		// Добавляем активный класс к текущему слайду
+		// Добавляем активный класс к текущему слайду и показываем его
 		const currentItem = slideItems[index];
 		currentItem.classList.add('active-mobile');
+		currentItem.style.opacity = '1';
+		currentItem.style.visibility = 'visible';
 		
 		// Обновляем счетчик через CSS переменную
 		mobileGallery.style.setProperty('--slide-counter', `${index + 1} / ${totalSlides}`);

@@ -775,18 +775,24 @@ table{border-collapse:collapse;border-spacing:0;}
 		margin: 0;
 		padding: 0;
 		box-sizing: border-box;
+		opacity: 0;
+		visibility: hidden;
 	}
 	
 	/* НОВАЯ ЛОГИКА: Активный слайд видим в центре */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile {
 		transform: translateX(0);
 		z-index: 2;
+		opacity: 1;
+		visibility: visible;
 	}
 	
 	/* НОВАЯ ЛОГИКА: Первый слайд активен по умолчанию */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
 		transform: translateX(0);
 		z-index: 2;
+		opacity: 1;
+		visibility: visible;
 	}
 	
 	/* НОВАЯ ЛОГИКА: Изображения заполняют контейнер */
@@ -862,18 +868,32 @@ table{border-collapse:collapse;border-spacing:0;}
 	/* НОВАЯ ЛОГИКА: Классы для анимации слайдов */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.slide-from-right {
 		transform: translateX(100%);
+		opacity: 0;
+		visibility: hidden;
 	}
 
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.slide-from-left {
 		transform: translateX(-100%);
+		opacity: 0;
+		visibility: hidden;
 	}
 
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.slide-to-left {
 		transform: translateX(-100%);
+		opacity: 0;
+		visibility: hidden;
 	}
 
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.slide-to-right {
 		transform: translateX(100%);
+		opacity: 0;
+		visibility: hidden;
+	}
+
+	/* Дополнительная защита: скрываем все слайды без активного класса */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:not(.active-mobile) {
+		opacity: 0 !important;
+		visibility: hidden !important;
 	}
 	
 	/* Скрываем кнопки если слайд только один */
