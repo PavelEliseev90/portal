@@ -761,15 +761,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		min-height: auto;
 		margin: 0;
 		padding: 0;
-		contain: layout style paint;
-		transform: translateZ(0);
-		backface-visibility: hidden;
-		/* Полная изоляция от остальной страницы */
-		isolation: isolate;
 		z-index: 1;
-		/* Создаем новый контекст наложения */
-		transform-style: preserve-3d;
-		perspective: 1000px;
 	}
 	
 	/* Стили для мобильной версии - только для элементов БЕЗ класса gallery-pc-slider */
@@ -777,49 +769,32 @@ table{border-collapse:collapse;border-spacing:0;}
 		display: none;
 		width: 100%;
 		max-width: 100%;
-		position: relative !important;
+		position: relative;
 		margin: 0;
 		padding: 0;
 		box-sizing: border-box;
 		opacity: 0;
 		transform: scale(0.95);
 		transition: all 0.3s ease;
-		z-index: 1 !important;
-		contain: layout style paint;
-		transform-origin: center center;
-		will-change: transform, opacity;
-		/* Принудительная изоляция */
-		isolation: isolate;
-		/* Ограничиваем область отображения */
-		clip-path: inset(0);
-		/* Создаем новый слой */
-		transform: translateZ(0) scale(0.95);
+		z-index: 1;
 	}
 	
 	/* Активный слайд для мобильной версии */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile {
 		display: block !important;
 		opacity: 1;
-		transform: translateZ(0) scale(1) !important;
-		position: relative !important;
-		z-index: 1 !important;
-		/* Принудительная изоляция */
-		isolation: isolate;
-		/* Ограничиваем область отображения */
-		clip-path: inset(0);
+		transform: scale(1);
+		position: relative;
+		z-index: 1;
 	}
 	
 	/* Первый слайд активен по умолчанию */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
 		display: block !important;
 		opacity: 1;
-		transform: translateZ(0) scale(1) !important;
-		position: relative !important;
-		z-index: 1 !important;
-		/* Принудительная изоляция */
-		isolation: isolate;
-		/* Ограничиваем область отображения */
-		clip-path: inset(0);
+		transform: scale(1);
+		position: relative;
+		z-index: 1;
 	}
 	
 	/* Стили для изображений в мобильной версии */
@@ -835,8 +810,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		box-sizing: border-box;
 		vertical-align: top;
 		transition: transform 0.2s ease;
-		position: relative !important;
-		z-index: 1 !important;
+		position: relative;
+		z-index: 1;
 	}
 	
 	/* Стили для первого изображения в мобильной версии */
@@ -846,8 +821,8 @@ table{border-collapse:collapse;border-spacing:0;}
 		height: auto;
 		border-radius: 0;
 		padding-bottom: 0;
-		position: relative !important;
-		z-index: 1 !important;
+		position: relative;
+		z-index: 1;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child img {
@@ -3938,17 +3913,15 @@ hr[style*="width: 75%"] {
 
 /* Принудительное ограничение всех элементов галереи */
 .gallery-container:not(.gallery-pc-slider) * {
-	max-width: 100% !important;
-	max-height: 100% !important;
-	overflow: hidden !important;
+	max-width: 100%;
+	max-height: 100%;
+	overflow: hidden;
 }
 
 /* Дополнительная изоляция для изображений */
 .gallery-container:not(.gallery-pc-slider) img {
-	position: relative !important;
-	z-index: 1 !important;
-	transform: translateZ(0) !important;
-	contain: layout style paint !important;
+	position: relative;
+	z-index: 1;
 }
 
 /* Скрытие мобильных кнопок навигации при открытии lightbox */
@@ -3985,14 +3958,14 @@ hr[style*="width: 75%"] {
 /* Применяем анимации к слайдам */
 .gallery-container:not(.gallery-pc-slider) .gallery-item.slide-in-right {
 	animation: slideInFromRight 0.3s ease-out;
-	position: relative !important;
-	z-index: 1 !important;
+	position: relative;
+	z-index: 1;
 }
 
 .gallery-container:not(.gallery-pc-slider) .gallery-item.slide-in-left {
-	animation: slideInFromRight 0.3s ease-out;
-	position: relative !important;
-	z-index: 1 !important;
+	animation: slideInFromLeft 0.3s ease-out;
+	position: relative;
+	z-index: 1;
 }
 
 /* Скрытие кнопок навигации при активном lightbox - удалено, так как кнопки больше не используются */
