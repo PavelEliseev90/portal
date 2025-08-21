@@ -770,7 +770,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		width: 100%;
 		height: 100%;
 		transform: translateX(100%);
-		transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+		transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 		z-index: 1;
 		margin: 0;
 		padding: 0;
@@ -799,8 +799,12 @@ table{border-collapse:collapse;border-spacing:0;}
 	.gallery-container:not(.gallery-pc-slider) .gallery-item img {
 		width: 100%;
 		height: 100%;
-		object-fit: contain;
+		object-fit: cover;
 		display: block;
+		max-width: none;
+		max-height: none;
+		min-width: 100%;
+		min-height: 100%;
 	}
 	
 

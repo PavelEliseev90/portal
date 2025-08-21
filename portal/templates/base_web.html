@@ -1941,6 +1941,7 @@ function initMobileGallerySlider() {
 			// Скрываем все слайды
 			item.style.opacity = '0';
 			item.style.visibility = 'hidden';
+			item.style.transform = 'translateX(100%)';
 		});
 		
 		// Показываем первый слайд
@@ -1955,6 +1956,7 @@ function initMobileGallerySlider() {
 			// Явно скрываем все слайды
 			item.style.opacity = '0';
 			item.style.visibility = 'hidden';
+			item.style.transform = 'translateX(100%)';
 		});
 		
 		// Добавляем активный класс к текущему слайду и показываем его
@@ -1962,6 +1964,7 @@ function initMobileGallerySlider() {
 		currentItem.classList.add('active-mobile');
 		currentItem.style.opacity = '1';
 		currentItem.style.visibility = 'visible';
+		currentItem.style.transform = 'translateX(0)';
 		
 		// Обновляем счетчик через CSS переменную
 		mobileGallery.style.setProperty('--slide-counter', `${index + 1} / ${totalSlides}`);
