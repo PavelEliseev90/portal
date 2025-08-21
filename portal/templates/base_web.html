@@ -1894,10 +1894,15 @@ function initMobileGallerySlider() {
 	const prevBtn = document.getElementById('mobileSliderPrev');
 	const nextBtn = document.getElementById('mobileSliderNext');
 	
-	if (!prevBtn || !nextBtn) {
-		console.log('Кнопки навигации не найдены!');
-		return;
-	}
+    if (!prevBtn || !nextBtn) {
+               console.log('Кнопки навигации не найдены!');
+               const firstItem = mobileGallery.querySelector('.gallery-item');
+               if (firstItem) {
+                       firstItem.classList.add('active-mobile');
+                       mobileGallery.style.setProperty('--slide-counter', '1 / 1');
+               }
+               return;
+    }
 	
 	// Находим все слайды
 	const slideItems = mobileGallery.querySelectorAll('.gallery-item');

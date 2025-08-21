@@ -47,7 +47,11 @@
 					{% endif %}
 				{% endfor %}
 			</div>
-
+			{% if not request.user_agent.is_pc %}
+    			<!-- <button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">‹</button>
+    			<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">›</button> -->
+			{% endif %}
+			<br>
 			
 			<div class="card" style="background-color: rgba(255,255,255,0.5);">
 				
