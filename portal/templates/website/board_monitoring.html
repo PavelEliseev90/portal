@@ -149,9 +149,6 @@
           <div class="card-header">Обновление автомобилей корсавто</div>
           <div class="card-body">
               
-            
-           
-           
             <table class="table table-sm table-striped">
               <tbody>
                 {% for log_cars in params.list_log_refresh_cars %}
@@ -160,16 +157,16 @@
                       {{log_cars.date}}
                     </td>
                     <td>
-                      {{log_cars.unit}}
+                      {{log_cars.unit.name}}
                     </td>
                     <td>
-                      <b><span class="icon-mbri-plus"></span></b>{{log_cars.add}}
+                      <span class="icon-mbri-plus text-success"></span><br>{{log_cars.add}}
                     </td>
                     <td>
-                      <span class="icon-mbri-minus"></span>{{log_cars.del}}
+                      <span class="icon-mbri-minus text-danger"></span><br>{{log_cars.del}}
                     </td>
                     <td>
-                      <span class="icon-mbri-play"></span>{{log_cars.stock}}
+                      <span class="icon-mbri-play text-danger"></span><br>{{log_cars.stock}}
                     </td>
                   </tr>
                 {% endfor %}
@@ -278,14 +275,6 @@
               </div>  
               </div>
             </div>
-
-            
-          </div>
-          
-          <div class="col-sm">
-                    
-            
-
           </div>
           
         </div>
@@ -343,7 +332,10 @@
                     </div>
                   </div>
                 </div>
-                
+
+              </div>
+
+              <div class="row g-2">
                 <div class="col-sm">
                           
                   <div class="card bg-light ">
@@ -413,122 +405,136 @@
                   </div>
 
                 </div>
-                
-                <div class="col-sm">
-                          
-                    <div class="card bg-light ">
-                      <div class="card-header">Автохаб</div>
-                      <div class="card-body">
-                        <div class="row g-1">
-                      
-                          <div class="col-sm">
-                            <div class="row g-2">
-                                <button type="button" class="btn btn-success"> {{params.autohab}}</button>
-                            </div>
-                          </div>
-                      </div>  
-                      </div>
-                    </div>
-      
-                </div>
-
-                <div class="col-sm">
-                          
-                  <div class="card bg-light ">
-                    <div class="card-header">Robo_Мойки</div>
-                    <div class="card-body">
-                      <div class="row g-1">
-                    
-                        <div class="col-sm">
-                          <div class="row g-2">
-                              <button type="button" class="btn btn-success"> {{params.robowash}}</button>
-                          </div>
-                        </div>
-                    </div>  
-                    </div>
-                  </div>
-    
-                </div>
-
               </div>
-
-              <div class="row g-2">
-                <div class="col-sm">
-                              
-                  <div class="card bg-light ">
-                    <div class="card-header">Каталоги</div>
-                      <div class="card-body">
-                          <div class="row">
-                              {% for catalog in params.info_refresh_catalogs %}
-                                <button type="button" class="btn btn-info-outline"> {{catalog.site}} - {{catalog.max_date}}  </button>
-                              {% endfor %}
-                          </div>
-                          <br>
-                          <div class="row">
-                            
-                            <button type="button" class="btn btn-info-outline"> Обновить тех информацию - {{params.modifications_count}} </button>
-                            
-                          </div>
-                          
-                      </div>
-
-                      
-                  </div>
-                
-                </div>
-              </div>
-
             </div>
-
           </div>
         </div>
+        
+        <br>
+
+        <div class="card bg-light">
+          <div class="card-header">Интеграция</div>
+            <div class="card-body">
+              <div class="row g-2">                      
+                <div class="col-auto">
+                  <button type="button" class="btn btn-success"> Автохаб - {{params.autohab}} </button>                    
+                </div>
+                <div class="col-auto">
+                  <button type="button" class="btn btn-success"> Робомойки - {{params.robowash}} </button>                    
+                </div> 
+              </div>
+            </div>                
+        </div>
+        
+        <br>
+
+        <div class="row g-2">
+          <div class="col-sm">
+                        
+            <div class="card bg-light ">
+              <div class="card-header">Каталоги</div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for catalog in params.info_refresh_catalogs %}
+                          <div class="col-auto">
+                            <button type="button" class="btn btn-success"> {{catalog.site}} - {{catalog.max_date}}  </button>
+                          </div>
+                        {% endfor %}
+                    </div>
+                    <br>
+                    <button type="button" class="btn btn-success"> Обновить тех информацию - {{params.modifications_count}} </button>
+                </div>
+
+                
+            </div>
+          
+          </div>
+        </div>
+
+        <br>
+              
+        <div class="row g-2">
+          <div class="col-sm">
+                        
+            <div class="card bg-light ">
+              <div class="card-header">Интерактивная оценка</div>
+                <div class="card-body">
+                    <div class="row g-1">
+                      
+                      <div class="col-auto">
+                        {% if params.estimation_1c > 5 %}
+                          <button type="button" class="btn btn-danger"> 1C - {{params.estimation_1c}} </button>  
+                        {% else %}
+                          <button type="button" class="btn btn-success"> 1C - {{params.estimation_1c}} </button>  
+                        {% endif %}
+                      </div>
+                      <div class="col-auto">
+                        {% if params.autoteka_count > 5 %}
+                          <button type="button" class="btn btn-danger"> Автотека - {{params.autoteka_count}} </button>  
+                        {% else %}
+                          <button type="button" class="btn btn-success"> Автотека - {{params.autoteka_count}} </button>  
+                        {% endif %}
+                      </div>
+                      <div class="col-auto">
+                        {% if params.autohub_count > 5 %}
+                          <button type="button" class="btn btn-danger"> Автохаб - {{params.autohub_count}} </button>  
+                        {% else %}
+                          <button type="button" class="btn btn-success"> Автохаб - {{params.autohub_count}} </button>  
+                        {% endif %}
+                      </div>
+                      <div class="col-auto">
+                        {% if params.push_count > 5 %}
+                          <button type="button" class="btn btn-danger"> Оповещения - {{params.push_count}} </button>  
+                        {% else %}
+                          <button type="button" class="btn btn-success"> Оповещения - {{params.push_count}} </button>  
+                        {% endif %}
+                      </div>
+                      <div class="col-auto">
+                        {% if params.push_count > 5 %}
+                          <button type="button" class="btn btn-danger"> Отправка в 1С - {{params.send_1c}} </button>  
+                        {% else %}
+                          <button type="button" class="btn btn-success"> Отправка в 1С - {{params.send_1c}} </button>  
+                        {% endif %}
+                      </div>
+                      
+                    </div>
+                </div>                      
+            </div>
+          
+          </div>
+        </div>
+
+        <br>
+
+        <div class="row g-2">
+          <div class="col-sm">
+                        
+            <div class="card bg-light ">
+              <div class="card-header">Прайс листы</div>
+                <div class="card-body">
+                    <div class="row">
+                      <div class="col-auto">
+                        {% if params.task_price_count > 5 %}
+                          <button type="button" class="btn btn-danger"> Загрузка - {{params.task_price_count}} </button>  
+                        {% else %}
+                          <button type="button" class="btn btn-success"> Загрузка - {{params.task_price_count}} </button>  
+                        {% endif %}
+                      </div>                            
+                    </div>
+                </div>                      
+            </div>
+          
+          </div>
+        </div>
+
+      </div>
+
+      </div>
         
       </div>
 
       
-      <!--
-      <div class="col-sm">
-        
-        
-        <div class="row g-2">
-          <div class="card">
-              <div class="card-header">POWER BI</div>
-              <div class="card-body">
-                <div class="table-responsive">
-                <table class="table table-sm table-striped" style="align-content: center;">
-                  
-                  <tbody>
-                    {% for power_bi in params.power_bi %}
-                      <tr>
-                        <td class="align-middle">
-                          {{power_bi.date}}
-                          <br>
-                          {{power_bi.title}} 
-                        </td>
-                        <td class="align-middle">
-                          +{{power_bi.add}} 
-                          <br>
-                          -{{power_bi.delite}}
-                        </td> 
-                        
-                        <td class="align-middle">
-                          {{power_bi.filtr}}
-                        </td>
-                                            
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                
-                </table>
-              </div>
-              </div>
-          </div>
-        </div>
-        
-      </div>
-    -->
-
-    </div>
+    
 
     
 
