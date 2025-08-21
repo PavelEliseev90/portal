@@ -467,7 +467,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	width: 100%;
 	margin: 0 auto;
 	padding: 0px;
-	z-index: 100000;
+	z-index: 10;
 
 }
 
@@ -514,7 +514,7 @@ table{border-collapse:collapse;border-spacing:0;}
 	width: 100%;
 	margin: 0 auto;
 	padding: 0px;
-	z-index: 100000;
+	z-index: 10;
 
 }
 
@@ -522,7 +522,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-pc-slider {
 	position: relative;
 	overflow: hidden;
-	z-index: 1;
+	z-index: 5;
 }
 
 .gallery-pc-slider .gallery-item {
@@ -839,7 +839,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		border-radius: 15px;
 		font-size: 14px;
 		font-weight: bold;
-		z-index: 10;
+		z-index: 12;
 	}
 	
 	/* Мобильные кнопки навигации */
@@ -857,7 +857,7 @@ table{border-collapse:collapse;border-spacing:0;}
 		font-size: 20px;
 		font-weight: bold;
 		cursor: pointer;
-		z-index: 20;
+		z-index: 15;
 		transition: all 0.3s ease;
 		display: flex;
 		align-items: center;
