@@ -795,11 +795,12 @@ def doc(request, id):
             
             if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
                 lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
-                car = RefCarsOrganization.objects.get(lo = lo)
-                if lo.agreement_number != '':
-                    agreements = DocCarAgreement.objects.filter(nomer = lo.agreement_number).filter(active = True).filter(unit = lo.agreement_unit).count()
-                    if agreements > 0:
-                        agreement = DocCarAgreement.objects.filter(nomer = lo.agreement_number).filter(active = True).filter(unit = lo.agreement_unit)[0]
+                if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
+                    car = RefCarsOrganization.objects.get(lo = lo)
+                    if lo.agreement_number != '':
+                        agreements = DocCarAgreement.objects.filter(nomer = lo.agreement_number).filter(active = True).filter(unit = lo.agreement_unit).count()
+                        if agreements > 0:
+                            agreement = DocCarAgreement.objects.filter(nomer = lo.agreement_number).filter(active = True).filter(unit = lo.agreement_unit)[0]
 
             price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
