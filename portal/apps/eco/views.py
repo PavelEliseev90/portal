@@ -1451,6 +1451,11 @@ def body_estimation(estimation):
         dict_elem['skol']           = 0
         dict_elem['perecras']       = 0
         dict_elem['perecras_strong'] = 0
+        dict_elem['stiker']         = 0
+        dict_elem['toner']          = 0
+        dict_elem['poly']           = 0
+        dict_elem['replace']        = 0
+        dict_elem['replace_add']    = 0
         dict_elem['work']           = ''
         dict_elem['normo']          = 0.0
         dict_elem['podryad']        = 0
@@ -1473,8 +1478,14 @@ def body_estimation(estimation):
     perecras_strong = 0
     tr              = 0    
     all             = 0
+    replace_add     = 0
+    stiker          = 0
+    toner           = 0
+    poly            = 0
+    replace         = 0
 
     for file in files:
+        
         if file.type_file == 'array_images_pass':
             bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'пассажирская')
         elif file.type_file == 'array_images_vod':
@@ -1520,22 +1531,27 @@ def body_estimation(estimation):
                         if dict_elem == '':
                             all = 0
                             dict_elem = dict()
-                            dict_elem['name']           = elem_name
-                            dict_elem['tr']             = 0
-                            dict_elem['carap']          = 0
-                            dict_elem['carap_strong']   = 0
-                            dict_elem['rzav']           = 0
-                            dict_elem['rzav_strong']    = 0
-                            dict_elem['vmyat']          = 0
-                            dict_elem['vmyat_strong']   = 0
-                            dict_elem['skol']           = 0
-                            dict_elem['perecras']       = 0
-                            dict_elem['perecras_strong'] = 0
-                            dict_elem['work']           = ''
-                            dict_elem['normo']          = 0.0
-                            dict_elem['podryad']        = 0
-                            dict_elem['all']            = 0
-                            dict_elem['kors']           = 0
+                            dict_elem['name']               = elem_name
+                            dict_elem['tr']                 = 0
+                            dict_elem['carap']              = 0
+                            dict_elem['carap_strong']       = 0
+                            dict_elem['rzav']               = 0
+                            dict_elem['rzav_strong']        = 0
+                            dict_elem['vmyat']              = 0
+                            dict_elem['vmyat_strong']       = 0
+                            dict_elem['skol']               = 0
+                            dict_elem['perecras']           = 0
+                            dict_elem['perecras_strong']    = 0
+                            dict_elem['replace_add']        = 0
+                            dict_elem['replace']            = 0
+                            dict_elem['stiker']             = 0
+                            dict_elem['toner']              = 0
+                            dict_elem['poly']               = 0
+                            dict_elem['work']               = ''
+                            dict_elem['normo']              = 0.0
+                            dict_elem['podryad']            = 0
+                            dict_elem['all']                = 0
+                            dict_elem['kors']               = 0
                             
 
                         if file.type_point == 'толщиномер':
@@ -1577,6 +1593,26 @@ def body_estimation(estimation):
                             dict_elem['tr']               =  dict_elem['tr']  + 1
                             tr = tr + 1
                             all = all + 1
+                        elif file.type_point == 'заменить':
+                            dict_elem['replace_add'] = dict_elem['replace_add']  + 1
+                            replace_add = replace_add + 1
+                            all = all + 1
+                        elif file.type_point == 'заменен':
+                            dict_elem['replace'] = dict_elem['replace']  + 1
+                            replace = replace + 1
+                            all = all + 1
+                        elif file.type_point == 'наклейка':
+                            dict_elem['stiker'] = dict_elem['stiker']  + 1
+                            stiker = stiker + 1
+                            all = all + 1
+                        elif file.type_point == 'тонировка':
+                            dict_elem['toner'] = dict_elem['toner']  + 1
+                            toner = toner + 1
+                            all = all + 1
+                        elif file.type_point == 'полировка':
+                            dict_elem['poly'] = dict_elem['poly']  + 1
+                            poly = poly + 1
+                            all = all + 1
                         dict_elem['all'] = all
                         for elem_data in array_info:
                             if elem_data['name'] == elem_name:
@@ -1595,7 +1631,14 @@ def body_estimation(estimation):
         'skol'              : skol,
         'perecras'          : perecras,
         'perecras_strong'   : perecras_strong,
-        'tr'                : tr}
+        'tr'                : tr,
+        'replace_add'       : replace_add,
+        'stiker'            : stiker,
+        'toner'             : toner,
+        'poly'              : poly,
+        'replace'           : replace
+        }
+    
     
     return body
 
