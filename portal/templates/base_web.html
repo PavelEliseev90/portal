@@ -1943,6 +1943,13 @@ function initMobileGallerySlider() {
 		// Обновляем счетчик
 		mobileGallery.style.setProperty('--slide-counter', `${index + 1} / ${totalSlides}`);
 		
+		// Принудительно показываем счетчик
+		const counter = mobileGallery.querySelector('::after');
+		if (counter) {
+			counter.style.opacity = '1';
+			counter.style.visibility = 'visible';
+		}
+		
 		// Обновляем состояние кнопок
 		prevBtn.disabled = totalSlides <= 1;
 		nextBtn.disabled = totalSlides <= 1;

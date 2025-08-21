@@ -761,6 +761,9 @@ table{border-collapse:collapse;border-spacing:0;}
 		min-height: auto;
 		margin: 0;
 		padding: 0;
+		contain: layout style paint;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 	
 	/* Стили для мобильной версии - только для элементов БЕЗ класса gallery-pc-slider */
@@ -776,6 +779,9 @@ table{border-collapse:collapse;border-spacing:0;}
 		transform: scale(0.95);
 		transition: all 0.3s ease;
 		z-index: 1 !important;
+		contain: layout style paint;
+		transform-origin: center center;
+		will-change: transform, opacity;
 	}
 	
 	/* Активный слайд для мобильной версии */
@@ -849,6 +855,9 @@ table{border-collapse:collapse;border-spacing:0;}
 		font-size: 14px;
 		font-weight: bold;
 		z-index: 12;
+		opacity: 1;
+		visibility: visible;
+		transition: opacity 0.3s ease, visibility 0.3s ease;
 	}
 	
 	/* Мобильные кнопки навигации */
@@ -3898,6 +3907,13 @@ hr[style*="width: 75%"] {
 	opacity: 0 !important;
 	visibility: hidden !important;
 	transition: all 0.3s ease !important;
+}
+
+/* Предотвращение исчезновения счетчика при смене слайдов */
+.gallery-container:not(.gallery-pc-slider)::after {
+	content: var(--slide-counter, "1 / 1") !important;
+	opacity: 1 !important;
+	visibility: visible !important;
 }
 
 /* Скрытие мобильных кнопок навигации при открытии lightbox */
