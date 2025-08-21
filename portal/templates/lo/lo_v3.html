@@ -5854,228 +5854,303 @@
 
               <div class="row g-1">
 
-                {% if params.estimation.rlk.unit_dc == None or estimation.page_documents.type_reception.id == 7  %}
+                <div class="row g-1">
+                  <div class="col-12 col-sm-4">
+                    {% if params.estimation.rlk.unit_dc == None or estimation.page_documents.type_reception.id == 7  %}
                 
-                  <div class="card {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
-                    <div class="card-body">
-                      <div class="row g-1 align-self-center">
-                        
-                        <div class="col-12 col-sm-3">
-                          <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit.name}}</b></label>                          
-                        </div>
+                      <div class="card {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                        <div class="card-body">
+                          <label class="fs-5"> <b> &nbsp; Резерв подразделения</b></label>  
+                          <hr style="width: 75%;">
+                          <div class="row g-1 align-self-center">
+                            
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit.name}}</b></label>                          
+                            </div>
 
-                        <div class="col-12 col-sm-3">
-                          <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit.balance|floatformat:"2g"}} &#8381</b></label>
-                        </div>
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit.balance|floatformat:"2g"}} &#8381</b></label>
+                            </div>
 
-                        <div class="col-12 col-sm-3">
-                          <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit.balance_top_unit.name}}</b></label>
-                        </div>
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit.balance_top_unit.name}}</b></label>
+                            </div>
 
-                        <div class="col-12 col-sm-3 text-end" data-bs-target="#balance_unit" data-bs-toggle="modal">
-                          <label class="fs-5"> <b><span class="icon-mbri-numbered-list"> </span></b> &nbsp; детализация</label>
-                        </div>
+                            <div class="col-12 col-sm-12 text-end" data-bs-target="#balance_unit" data-bs-toggle="modal">
+                              <label class="fs-5"> <b><span class="icon-mbri-numbered-list"> </span></b> &nbsp; детализация</label>
+                            </div>
 
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div class="modal fade" id="balance_unit" aria-hidden="true" data-bs-target="#balance_unit" data-bs-toggle="modal_1" tabindex="-1">
-                    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                      <div class="modal-content">
-                      <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2"><span class="icon-mbri-home"></span> Детализация операций {{params.estimation.rlk.unit.name}}</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                      </div>
-                        <div class="modal-body">
-                          {% if params.estimation.rlk.unit != None %}
-                                {% for info in params.estimation.rlk.unit.balance_detail %}
-                                  <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
-                                    <div class="card-body">
-                                      {% if info.estimation != None %}
-                                        <div class="row align-items-center">
-                                          <div class="col-12 col-sm-3">
-                                            {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
-                                          </div>
-                                          <div class="col">
-                                            {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
-                                          </div>
-                                          <div class="col-12 col-sm-2 fw-bold text-success text-end">
-                                            {{info.amount|floatformat:"2g"}} &#8381
-                                          </div>
-                                          <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                            <a class="text-success" href="/eco/{{info.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"></span> </a>
-                                          </div>
-                                        </div>
-                                        <br>
-                                      {% else %}
-                                        <div class="row align-items-center">
-                                          <div class="col-12 col-sm-3">
-                                            {{info.date}}
-                                          </div>
-                                          <div class="col">
-                                            {{info.shipment.lo.modification_autoru.model.mark.name}} {{info.shipment.lo.modification_autoru.model.name}} {{info.shipment.lo.modification_autoru.name}} {{info.shipment.lo.vin}}
-                                          </div>
-                                          <div class="col-12 col-sm-2 fw-bold text-danger text-end">
-                                            {{info.amount|floatformat:"2g"}} &#8381
-                                          </div>
-                                          <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                            <a class="text-success" href="/doc_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-mbri-play"></span> </a>
-                                          </div>
-                                        </div>
-                                        <br>
-                                      {% endif %}
-                                    </div>
-                                  </div>
-                                {% endfor %}
-                              {% else %}
-                                {% for info in params.estimation.rlk.unit.balance_detail %}
-                                  <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
-                                    <div class="card-body">
-                                      <div class="row align-items-center">
-                                        <div class="col-12 col-sm-3">
-                                          {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
-                                        </div>
-                                        <div class="col">
-                                          {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
-                                        </div>
-                                        <div class="col-12 col-sm-2 fw-bold text-success">
-                                          {{info.amount|floatformat:"2g"}} &#8381
+                      <div class="modal fade" id="balance_unit" aria-hidden="true" data-bs-target="#balance_unit" data-bs-toggle="modal_1" tabindex="-1">
+                        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                          <div class="modal-content">
+                          <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2"><span class="icon-mbri-home"></span> Детализация операций {{params.estimation.rlk.unit.name}}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                          </div>
+                            <div class="modal-body">
+                              {% if params.estimation.rlk.unit != None %}
+                                    {% for info in params.estimation.rlk.unit.balance_detail %}
+                                      <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
+                                        <div class="card-body">
+                                          {% if info.estimation != None %}
+                                            <div class="row align-items-center">
+                                              <div class="col-12 col-sm-3">
+                                                {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
+                                              </div>
+                                              <div class="col">
+                                                {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
+                                              </div>
+                                              <div class="col-12 col-sm-2 fw-bold text-success text-end">
+                                                {{info.amount|floatformat:"2g"}} &#8381
+                                              </div>
+                                              <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                                                <a class="text-success" href="/eco/{{info.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"></span> </a>
+                                              </div>
+                                            </div>
+                                            <br>
+                                          {% else %}
+                                            <div class="row align-items-center">
+                                              <div class="col-12 col-sm-3">
+                                                {{info.date}}
+                                              </div>
+                                              <div class="col">
+                                                {{info.shipment.lo.modification_autoru.model.mark.name}} {{info.shipment.lo.modification_autoru.model.name}} {{info.shipment.lo.modification_autoru.name}} {{info.shipment.lo.vin}}
+                                              </div>
+                                              <div class="col-12 col-sm-2 fw-bold text-danger text-end">
+                                                {{info.amount|floatformat:"2g"}} &#8381
+                                              </div>
+                                              <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                                                <a class="text-success" href="/doc_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-mbri-play"></span> </a>
+                                              </div>
+                                            </div>
+                                            <br>
+                                          {% endif %}
                                         </div>
                                       </div>
-                                      <hr>
-                                      {{info.comment_2}}
-                                      <br>
-                                    </div>
-                                  </div>
-                                {% endfor %}
-                              {% endif %}
-                        </div>
-                      
-                      </div>
-                    </div>
-                  </div>
-                
-                {% else %}
-
-                  <div class="card {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
-                    <div class="card-body">
-                      <div class="row g-1 align-self-center">
-                        
-                        <div class="col-12 col-sm-3">
-                          <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit_dc.name}}</b></label>                          
-                        </div>
-
-                        <div class="col-12 col-sm-3">
-                          <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance|floatformat:"2g"}} &#8381</b></label>
-                        </div>
-
-                        <div class="col-12 col-sm-3">
-                          <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance_top_unit.name}}</b></label>
-                        </div>
-
-                        <div class="col-12 col-sm-3 text-end" data-bs-target="#balance_unit" data-bs-toggle="modal">
-                          <label class="fs-5"> <b><span class="icon-mbri-numbered-list"> </span></b> &nbsp; детализация</label>
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="modal fade" id="balance_unit" aria-hidden="true" data-bs-target="#balance_unit" data-bs-toggle="modal_1" tabindex="-1">
-                    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                      <div class="modal-content">
-                      <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2"><span class="icon-mbri-home"></span> Детализация операций {{params.estimation.rlk.unit_dc.name}}</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                      </div>
-                        <div class="modal-body">
-                          {% if params.estimation.rlk.unit_dc != None %}
-                                {% for info in params.estimation.rlk.unit_dc.balance_detail %}
-                                  <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10" style="margin: 0.2rem;">
-                                    <div class="card-body">
-                                      
-                                      <div class="row align-items-center">
-                                        <div class="col-12 col-sm-3">
-                                          {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
-                                        </div>
-                                        <div class="col">
-                                          {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} 
-                                          <br>{{info.estimation.vin}} / {{info.estimation.year}}
-                                        </div>
-                                        <div class="col-12 col-sm-2 fw-bold {% if info.amount > 0 %} text-success {% else %} text-danger {% endif %} text-end">
-                                          {{info.amount|floatformat:"2g"}} &#8381
-                                        </div>
-                                        
-                                      </div>                                          
-                                      <hr>
-                                      {% if info.shipment != None %}
-                                        <span class="icon-tag"></span> Продан
-                                        <br><span class="icon-mbri-right"></span>{{info.comment_2}} <a class="text-success" href="/docs_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-doc"></span> </a>
-                                      {% else %}
-                                        <span class="icon-tag"></span> В продаже 
-                                      {% endif %}
-                                      <br>
-                                      <div class="row">
-                                        <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                          <a class="text-success" href="/eco/{{info.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"> Оценка</span> </a>
-                                        </div>
-                                        <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                          <a class="text-success" href="{{info.estimation.link_car}}" target="_blank"> <span class="icon-truck"> Автомобиль</span> </a>
-                                        </div>
-                                        {% if info.shipment != None %}
-                                          <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                            <a class="text-success" href="/docs_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-doc"> Продажа</span> </a>
+                                    {% endfor %}
+                                  {% else %}
+                                    {% for info in params.estimation.rlk.unit.balance_detail %}
+                                      <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
+                                        <div class="card-body">
+                                          <div class="row align-items-center">
+                                            <div class="col-12 col-sm-3">
+                                              {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
+                                            </div>
+                                            <div class="col">
+                                              {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
+                                            </div>
+                                            <div class="col-12 col-sm-2 fw-bold text-success">
+                                              {{info.amount|floatformat:"2g"}} &#8381
+                                            </div>
                                           </div>
-                                        {% endif %}
+                                          <hr>
+                                          {{info.comment_2}}
+                                          <br>
+                                        </div>
                                       </div>
-                                      
-                                    </div>
-                                  </div>
-                                {% endfor %}
-                              {% else %}
-                                {% for info in params.estimation.rlk.unit.balance_detail %}
-                                  <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
-                                    <div class="card-body">
-                                      {% if info.estimation != None %}
-                                        <div class="row align-items-center">
-                                          <div class="col-12 col-sm-3">
-                                            {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
-                                          </div>
-                                          <div class="col">
-                                            {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
-                                          </div>
-                                          <div class="col-12 col-sm-2 fw-bold text-success">
-                                            {{info.amount|floatformat:"2g"}} &#8381
-                                          </div>
-                                        </div>
-                                        <br>
-                                      {% else %}
-                                        <div class="row align-items-center">
-                                          <div class="col-12 col-sm-3">
-                                            {{info.date}}
-                                          </div>
-                                          <div class="col">
-                                            {{info.shipment.lo.modification_autoru.model.mark.name}} {{info.shipment.lo.modification_autoru.model.name}} {{info.shipment.lo.modification_autoru.name}} {{info.shipment.lo.vin}}
-                                          </div>
-                                          <div class="col-12 col-sm-2 fw-bold text-danger">
-                                            {{info.amount|floatformat:"2g"}} &#8381
-                                          </div>
-                                        </div>
-                                        <br>
-                                      {% endif %}
-                                    </div>
-                                  </div>
-                                {% endfor %}
-                              {% endif %}
+                                    {% endfor %}
+                                  {% endif %}
+                            </div>
+                          
+                          </div>
                         </div>
-                      
                       </div>
-                    </div>
+                    
+                    {% else %}
+
+                      <div class="card {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                        <div class="card-body">
+                          <label class="fs-5"> <b></span> &nbsp; Резерв подразделения</b></label>  
+                          <hr style="width: 75%;">
+                          <div class="row g-1 align-self-center">
+                            
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit_dc.name}}</b></label>                          
+                            </div>
+
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance|floatformat:"2g"}} &#8381</b></label>
+                            </div>
+
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance_top_unit.name}}</b></label>
+                            </div>
+
+                            <div class="col-12 col-sm-12 text-end" data-bs-target="#balance_unit" data-bs-toggle="modal">
+                              <label class="fs-5"> <b><span class="icon-mbri-numbered-list"> </span></b> &nbsp; детализация</label>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="modal fade" id="balance_unit" aria-hidden="true" data-bs-target="#balance_unit" data-bs-toggle="modal_1" tabindex="-1">
+                        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                          <div class="modal-content">
+                          <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2"><span class="icon-mbri-home"></span> Детализация операций {{params.estimation.rlk.unit_dc.name}}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                          </div>
+                            <div class="modal-body">
+                              {% if params.estimation.rlk.unit_dc != None %}
+                                    {% for info in params.estimation.rlk.unit_dc.balance_detail %}
+                                      <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10" style="margin: 0.2rem;">
+                                        <div class="card-body">
+                                          
+                                          <div class="row align-items-center">
+                                            <div class="col-12 col-sm-3">
+                                              {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
+                                            </div>
+                                            <div class="col">
+                                              {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} 
+                                              <br>{{info.estimation.vin}} / {{info.estimation.year}}
+                                            </div>
+                                            <div class="col-12 col-sm-2 fw-bold {% if info.amount > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+                                              {{info.amount|floatformat:"2g"}} &#8381
+                                            </div>
+                                            
+                                          </div>                                          
+                                          <hr>
+                                          {% if info.shipment != None %}
+                                            <span class="icon-tag"></span> Продан
+                                            <br><span class="icon-mbri-right"></span>{{info.comment_2}} <a class="text-success" href="/docs_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-doc"></span> </a>
+                                          {% else %}
+                                            <span class="icon-tag"></span> В продаже 
+                                          {% endif %}
+                                          <br>
+                                          <div class="row">
+                                            <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                                              <a class="text-success" href="/eco/{{info.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"> Оценка</span> </a>
+                                            </div>
+                                            <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                                              <a class="text-success" href="{{info.estimation.link_car}}" target="_blank"> <span class="icon-truck"> Автомобиль</span> </a>
+                                            </div>
+                                            {% if info.shipment != None %}
+                                              <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                                                <a class="text-success" href="/docs_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-doc"> Продажа</span> </a>
+                                              </div>
+                                            {% endif %}
+                                          </div>
+                                          
+                                        </div>
+                                      </div>
+                                    {% endfor %}
+                                  {% else %}
+                                    {% for info in params.estimation.rlk.unit.balance_detail %}
+                                      <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
+                                        <div class="card-body">
+                                          {% if info.estimation != None %}
+                                            <div class="row align-items-center">
+                                              <div class="col-12 col-sm-3">
+                                                {% if info.estimation != None %} <span class="icon-mbri-success"></span>  {% else %} <span class="icon-mbri-close"></span>  {% endif %} {{info.date}}
+                                              </div>
+                                              <div class="col">
+                                                {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
+                                              </div>
+                                              <div class="col-12 col-sm-2 fw-bold text-success">
+                                                {{info.amount|floatformat:"2g"}} &#8381
+                                              </div>
+                                            </div>
+                                            <br>
+                                          {% else %}
+                                            <div class="row align-items-center">
+                                              <div class="col-12 col-sm-3">
+                                                {{info.date}}
+                                              </div>
+                                              <div class="col">
+                                                {{info.shipment.lo.modification_autoru.model.mark.name}} {{info.shipment.lo.modification_autoru.model.name}} {{info.shipment.lo.modification_autoru.name}} {{info.shipment.lo.vin}}
+                                              </div>
+                                              <div class="col-12 col-sm-2 fw-bold text-danger">
+                                                {{info.amount|floatformat:"2g"}} &#8381
+                                              </div>
+                                            </div>
+                                            <br>
+                                          {% endif %}
+                                        </div>
+                                      </div>
+                                    {% endfor %}
+                                  {% endif %}
+                            </div>
+                          
+                          </div>
+                        </div>
+                      </div>
+
+                    {% endif %}
                   </div>
 
-                {% endif %}
-                  
+                  <div class="col-12 col-sm-4">
+                    
+                    {% if params.lo != None %}
+                      
+                      <div class="card {% if params.lo.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                        <div class="card-body">
+                          <label class="fs-5"> <b> &nbsp; Соглашение проданного автомобиля</b></label> 
+                          <hr style="width: 75%;"> 
+                          
+                          <div class="row g-1 align-self-center">
+                            
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.lo.agreement_unit.name}}</b></label>                          
+                            </div>
+
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.lo.agreement_number}}</b></label>
+                            </div>
+
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; </b></label>
+                            </div>
+
+                            <div class="col-12 col-sm-12 text-end">
+                              <a сlass="text-dark" href="/docs_car_agreement/{{params.agreement.pk}}/" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+
+                    {% endif %}
+
+                  </div>
+
+                  <div class="col-12 col-sm-4">
+                    {% if params.car != None %}
+                      
+                      <div class="card {% if params.car.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                        <div class="card-body">
+                          <label class="fs-5"> <b> &nbsp; Автомобиль</b></label> 
+                          <hr style="width: 75%;">
+                          <div class="row g-1 align-self-center">
+                            
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.car.store.name}}</b></label>                          
+                            </div>
+
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.car.price|floatformat:"2g"}} &#8381 ({{params.car.status}})</b></label>
+                            </div>
+
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.car.days_in_stok}} д.</b></label>
+                            </div>
+
+                            <div class="col-12 col-sm-12 text-end">
+                              <a сlass="text-dark" href="/cars/{{params.car.slug}}/" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-truck"> </span></b> &nbsp; перейти</label></a>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+
+                    {% endif %}
+                  </div>
+
+                </div>
 
                 <div class="col-sm">
                   
@@ -6290,6 +6365,7 @@
                 </div>
                 
                 <div class="col-sm">
+                  
                   <br>
                   <div class="col-sm-2">
                     <div class="btn-group" role="group" aria-label="">
@@ -6305,7 +6381,7 @@
                       </div>
                     </div>
                   </div>
-
+                  <br>
                   <div class="modal fade" id="price" aria-hidden="true" data-bs-target="#price" data-bs-toggle="modal_1" tabindex="-1">
                     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                       <div class="modal-content">

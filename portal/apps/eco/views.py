@@ -4,7 +4,7 @@ from register.models import RegEstimationsCalculationDetail, RegEstimationPodgot
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
-from documents.models import DocRLK, DocZN, DocLO
+from documents.models import DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
 import json
 from checklists.models import CheckListTradeIn
@@ -697,6 +697,9 @@ def doc(request, id):
     list_work_podgotovka    = list()
     list_work_mcu           = list()
     list_work_ss            = list()
+    lo                      = None
+    car                     = None
+    agreement               = None
 
     if request.method == "GET":
         
@@ -789,6 +792,14 @@ def doc(request, id):
                     get_info_max(estimation.id)
                     kors_estimation_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+            
+            if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
+                lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
+                car = RefCarsOrganization.objects.get(lo = lo)
+                if lo.agreement_number != '':
+                    agreements = DocCarAgreement.objects.filter(nomer = lo.agreement_number).filter(active = True).filter(unit = lo.agreement_unit).count()
+                    if agreements > 0:
+                        agreement = DocCarAgreement.objects.filter(nomer = lo.agreement_number).filter(active = True).filter(unit = lo.agreement_unit)[0]
 
             price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
@@ -917,7 +928,10 @@ def doc(request, id):
                 'body'                  : body,
                 'list_work_podgotovka'  : list_work_podgotovka,
                 'list_work_ss'          : list_work_ss,
-                'list_work_mcu'         : list_work_mcu
+                'list_work_mcu'         : list_work_mcu,
+                'lo'                    : lo,
+                'car'                   : car,
+                'agreement'             : agreement
             }
     
     elif request.method == "POST":
