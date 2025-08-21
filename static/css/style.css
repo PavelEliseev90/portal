@@ -692,7 +692,6 @@ table{border-collapse:collapse;border-spacing:0;}
 .gallery-item:first-child,
 .gallery-item {
 	flex-basis: 10%;
-	max-height: 70px;
 	height: 70px;
 	margin: 6px;
 	border-radius: 0.1rem;
