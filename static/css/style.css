@@ -289,6 +289,8 @@ table{border-collapse:collapse;border-spacing:0;}
 	mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10%,  rgba(255,255,255,1) 90%, rgba(255,255,255,1) 100%);
 	-webkit-mask-image: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10%, rgba(255,255,255,1) 90%, rgba(255,255,255,1) 100%);	
 	border-radius: 0.3rem 0.3rem 0.3rem 0.3rem;
+	transition: all 0.3s ease;
+	filter: brightness(0.95);
   }
 
   .item-img_up {
@@ -303,6 +305,11 @@ table{border-collapse:collapse;border-spacing:0;}
   }
   
   .item-img_up:hover {
+	filter: brightness(1.05);
+	transform: scale(1.02);
+  }
+  
+  .item-img:hover {
 	filter: brightness(1.05);
 	transform: scale(1.02);
   }
@@ -3155,7 +3162,7 @@ span.mail a:hover{
   .icon-mbri-zoom-out:before { content: '\e9ce'; } /* '' */
   .icon-mbri-pause:before { content: '\e9cf'; } /* '' */
   
-/* Улучшенные стили для карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
+/* Единые стили для всех карточек автомобилей - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
 .card.bg-white.bg-opacity-50 {
 	background: rgba(255,255,255,0.9) !important;
 	border: 1px solid rgba(255,255,255,0.3);
@@ -3178,7 +3185,7 @@ span.mail a:hover{
 	background: rgba(255,255,255,1) !important;
 }
 
-/* Улучшенные стили для изображений в карточках */
+/* Единые стили для изображений во всех карточках автомобилей */
 .item-img_up {
 	height: 280px;
 	object-fit: cover;
@@ -3191,13 +3198,13 @@ span.mail a:hover{
 	transform: none;
 }
 
-/* Улучшенные стили для содержимого карточек */
+/* Единые стили для содержимого всех карточек автомобилей */
 .card.bg-white.bg-opacity-50 .card-body {
 	padding: 1.2rem !important;
 	background: rgba(255,255,255,0.8);
 }
 
-/* Улучшенные стили для текста в карточках */
+/* Единые стили для текста во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 label.fs-5 {
 	font-weight: 600;
 	color: #2c3e50;
@@ -3219,27 +3226,27 @@ span.mail a:hover{
 	font-size: 1.25rem !important;
 }
 
-/* Улучшенные стили для цены */
+/* Единые стили для цены во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 .text-end label.fs-4.fw-bold {
 	color: #e74c3c;
 	font-size: 1.4rem !important;
 }
 
-/* Улучшенные стили для названия дилера */
+/* Единые стили для названия дилера во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 .text-end label.fs-5 {
 	color: #7f8c8d;
 	font-weight: 600;
 	font-size: 0.9rem !important;
 }
 
-/* Улучшенные стили для пробега */
+/* Единые стили для пробега во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 label.fs-6:contains("км") {
 	color: #95a5a6;
 	font-weight: 500;
 	font-size: 0.85rem !important;
 }
 
-/* Адаптивные улучшения для мобильных устройств */
+/* Адаптивные улучшения для всех карточек автомобилей на мобильных устройствах */
 @media (max-width: 767px) {
 	.card.bg-white.bg-opacity-50 {
 		border-radius: 12px;
@@ -3260,6 +3267,7 @@ span.mail a:hover{
 	}
 }
 
+/* Адаптивные улучшения для всех карточек автомобилей на маленьких экранах */
 @media (max-width: 576px) {
 	.card.bg-white.bg-opacity-50 {
 		border-radius: 10px;
@@ -3275,12 +3283,12 @@ span.mail a:hover{
 	}
 }
 
-/* Улучшенные стили для сетки карточек */
+/* Единые стили для сетки всех карточек автомобилей */
 .row.g-3 .col-12.col-sm-6 {
 	margin-bottom: 1.5rem;
 }
 
-/* Улучшенные стили для заголовка "Может заинтересовать" */
+/* Единые стили для заголовков разделов с карточками автомобилей */
 label.fs-5:contains("Может заинтересовать") {
 	font-weight: 700;
 	color: #2c3e50;
@@ -3304,7 +3312,7 @@ label.fs-5:contains("Может заинтересовать")::after {
 	border-radius: 2px;
 }
 
-/* Улучшенные стили для разделителя */
+/* Единые стили для разделителей между разделами */
 hr[style*="width: 75%"] {
 	border: none;
 	height: 2px;
@@ -3313,7 +3321,7 @@ hr[style*="width: 75%"] {
 	opacity: 0.7;
 }
 
-/* Дополнительные улучшения для интерактивности */
+/* Единые стили для интерактивности всех карточек автомобилей */
 .card.bg-white.bg-opacity-50 {
 	cursor: pointer;
 	user-select: none;
@@ -3324,7 +3332,7 @@ hr[style*="width: 75%"] {
 	box-shadow: 0 0 0 2px rgba(254,145,47,0.3), 0 4px 16px rgba(0,0,0,0.1);
 }
 
-/* Улучшенные стили для технических характеристик */
+/* Единые стили для технических характеристик во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 label.fs-6:contains("л."),
 .card.bg-white.bg-opacity-50 label.fs-6:contains("л.c."),
 .card.bg-white.bg-opacity-50 label.fs-6:contains("тип") {
@@ -3334,14 +3342,14 @@ hr[style*="width: 75%"] {
 	line-height: 1.3;
 }
 
-/* Улучшенные стили для года выпуска */
+/* Единые стили для года выпуска во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 label.fs-6:contains("г.") {
 	color: #27ae60;
 	font-weight: 600;
 	font-size: 0.9rem !important;
 }
 
-/* Улучшенные стили для типа привода */
+/* Единые стили для типа привода во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 label:contains("тип_drive") {
 	color: #8e44ad;
 	font-weight: 600;
@@ -3350,7 +3358,7 @@ hr[style*="width: 75%"] {
 	letter-spacing: 0.5px;
 }
 
-/* Улучшенные стили для логотипа дилера */
+/* Единые стили для логотипа дилера во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 .item-img-mini {
 	border-radius: 8px;
 	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -3361,7 +3369,7 @@ hr[style*="width: 75%"] {
 	transform: none;
 }
 
-/* Улучшенные стили для сетки карточек */
+/* Единые стили для сетки всех карточек автомобилей */
 .row.g-3 {
 	margin: 0 -0.75rem;
 }
@@ -3370,7 +3378,7 @@ hr[style*="width: 75%"] {
 	padding: 0 0.75rem;
 }
 
-/* CSS ограничения для количества карточек "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
+/* CSS ограничения для количества карточек в разделе "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
 /* Ограничение для всех размеров экрана - максимум 5 карточек */
 .row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+6) {
 	display: none !important;
@@ -3875,6 +3883,175 @@ hr[style*="width: 75%"] {
 
 
 /* Скрытие кнопок навигации при активном lightbox - удалено, так как кнопки больше не используются */
+
+/* ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ КАРТОЧЕК В КАТАЛОГЕ АВТОМОБИЛЕЙ */
+
+/* Стили для карточек в каталоге с классом bg-opacity-75 (старый стиль) */
+.card.bg-white.bg-opacity-75 {
+	background: rgba(255,255,255,0.9) !important;
+	border: 1px solid rgba(255,255,255,0.3);
+	border-radius: 16px;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	overflow: hidden;
+}
+
+.card.bg-white.bg-opacity-75:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+	border-color: rgba(254,145,47,0.4);
+	background: rgba(255,255,255,0.95) !important;
+}
+
+.card.bg-white.bg-opacity-75:active {
+	transform: translateY(-2px);
+	transition: transform 0.1s ease;
+	background: rgba(255,255,255,1) !important;
+}
+
+/* Стили для изображений в карточках каталога */
+.card.bg-white.bg-opacity-75 .item-img {
+	height: 280px;
+	object-fit: cover;
+	width: 100%;
+	border-radius: 12px 12px 0 0;
+	transition: transform 0.2s ease;
+}
+
+.card.bg-white.bg-opacity-75:hover .item-img {
+	transform: none;
+}
+
+/* Стили для содержимого карточек каталога */
+.card.bg-white.bg-opacity-75 .card-body {
+	padding: 1.2rem !important;
+	background: rgba(255,255,255,0.8);
+}
+
+/* Стили для текста в карточках каталога */
+.card.bg-white.bg-opacity-75 .fs-5 {
+	font-weight: 600;
+	color: #2c3e50;
+	margin-bottom: 0.3rem;
+	display: block;
+}
+
+.card.bg-white.bg-opacity-75 .fs-6 {
+	font-weight: 500;
+	color: #34495e;
+	line-height: 1.4;
+	margin-bottom: 0.2rem;
+	display: block;
+}
+
+.card.bg-white.bg-opacity-75 .fs-4.fw-bold {
+	color: #e74c3c;
+	font-weight: 700;
+	font-size: 1.25rem !important;
+}
+
+/* Стили для цены в карточках каталога */
+.card.bg-white.bg-opacity-75 .text-end .fs-4.fw-bold {
+	color: #e74c3c;
+	font-size: 1.4rem !important;
+}
+
+/* Стили для названия дилера в карточках каталога */
+.card.bg-white.bg-opacity-75 .text-end .fs-6 {
+	color: #7f8c8d;
+	font-weight: 600;
+	font-size: 0.9rem !important;
+}
+
+/* Стили для технических характеристик в карточках каталога */
+.card.bg-white.bg-opacity-75 .text-secondary {
+	color: #5a6c7d;
+	font-weight: 500;
+	font-size: 0.8rem !important;
+	line-height: 1.3;
+}
+
+/* Стили для года выпуска в карточках каталога */
+.card.bg-white.bg-opacity-75 .fs-6:last-child {
+	color: #27ae60;
+	font-weight: 600;
+	font-size: 0.9rem !important;
+}
+
+/* Стили для пробега в карточках каталога */
+.card.bg-white.bg-opacity-75 .fs-6:contains("км") {
+	color: #95a5a6;
+	font-weight: 500;
+	font-size: 0.85rem !important;
+}
+
+/* Стили для логотипа дилера в карточках каталога */
+.card.bg-white.bg-opacity-75 .item-img-mini {
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	transition: transform 0.2s ease;
+}
+
+.card.bg-white.bg-opacity-75:hover .item-img-mini {
+	transform: none;
+}
+
+/* Адаптивность для карточек каталога */
+@media (max-width: 767px) {
+	.card.bg-white.bg-opacity-75 {
+		border-radius: 12px;
+		margin-bottom: 1rem;
+	}
+	
+	.card.bg-white.bg-opacity-75 .item-img {
+		height: 220px;
+		border-radius: 8px 8px 0 0;
+	}
+	
+	.card.bg-white.bg-opacity-75 .card-body {
+		padding: 1rem !important;
+	}
+	
+	.card.bg-white.bg-opacity-75:hover {
+		transform: translateY(-2px);
+	}
+}
+
+@media (max-width: 576px) {
+	.card.bg-white.bg-opacity-75 {
+		border-radius: 10px;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	}
+	
+	.card.bg-white.bg-opacity-75 .item-img {
+		height: 180px;
+	}
+	
+	.card.bg-white.bg-opacity-75 .card-body {
+		padding: 0.8rem !important;
+	}
+}
+
+/* Интерактивность для карточек каталога */
+.card.bg-white.bg-opacity-75 {
+	cursor: pointer;
+	user-select: none;
+}
+
+.card.bg-white.bg-opacity-75:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(254,145,47,0.3), 0 4px 16px rgba(0,0,0,0.1);
+}
+
+/* Стили для сетки карточек каталога */
+.row.g-4 .col-12.col-sm-6.col-md-6.col-lg-4.col-xl-4.col-xxl-3 {
+	margin-bottom: 1.5rem;
+}
+
+/* Анимация появления карточек каталога */
+.card.bg-white.bg-opacity-75 {
+	animation: cardSlideIn 0.3s ease-out;
+}
 
 
 
