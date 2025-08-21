@@ -36,8 +36,6 @@
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
 			<div class="gallery-container {% if request.user_agent.is_pc %}gallery-pc-slider{% endif %}">
 			
-				<!-- Индикатор загрузки для мобильного слайдера - удален, так как возвращаемся к стекированному отображению -->
-			
 				{% for files in params.object.get_files %}
 										
 					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
@@ -59,9 +57,17 @@
 					</div>
 					
 				{% endfor %}
+				
+				<!-- Мобильные кнопки навигации (только для мобильных устройств) -->
+				{% if not request.user_agent.is_pc %}
+					<button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">
+						‹
+					</button>
+					<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">
+						›
+					</button>
+				{% endif %}
 			</div>
-			
-			<!-- Мобильные кнопки навигации - удалены, так как возвращаемся к стекированному отображению -->
 	
 			
 

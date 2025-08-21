@@ -1877,9 +1877,9 @@ function initGallerySlider() {
 	}
 }
 
-// Простой мобильный слайдер - теперь только счетчик
+// Мобильный слайдер с навигацией
 function initMobileGallerySlider() {
-	console.log('Инициализация мобильного счетчика галереи...');
+	console.log('Инициализация мобильного слайдера...');
 	
 	// Находим мобильный контейнер галереи
 	const mobileGallery = document.querySelector('.gallery-container:not(.gallery-pc-slider)');
@@ -1891,11 +1891,120 @@ function initMobileGallerySlider() {
 	
 	console.log('Найден мобильный контейнер:', mobileGallery);
 	
-	// Устанавливаем счетчик слайдов
-	const totalSlides = mobileGallery.querySelectorAll('.gallery-item').length;
-	mobileGallery.style.setProperty('--slide-counter', `1 / ${totalSlides}`);
+	// Находим кнопки навигации
+	const prevBtn = document.getElementById('mobileSliderPrev');
+	const nextBtn = document.getElementById('mobileSliderNext');
 	
-	console.log('Мобильный счетчик галереи успешно инициализирован!');
+	if (!prevBtn || !nextBtn) {
+		console.log('Кнопки навигации не найдены!');
+		return;
+	}
+	
+	// Находим все слайды
+	const slideItems = mobileGallery.querySelectorAll('.gallery-item');
+	const totalSlides = slideItems.length;
+	
+	if (totalSlides === 0) {
+		console.log('Слайды не найдены!');
+		return;
+	}
+	
+	// Добавляем класс single-slide если слайд только один
+	if (totalSlides === 1) {
+		mobileGallery.classList.add('single-slide');
+	}
+	
+	let currentSlide = 0;
+	
+	// Показываем первый слайд
+	showMobileSlide(currentSlide);
+	
+	// Обработчики кнопок
+	prevBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+		showMobileSlide(currentSlide);
+	});
+	
+	nextBtn.addEventListener('click', () => {
+		currentSlide = (currentSlide + 1) % totalSlides;
+		showMobileSlide(currentSlide);
+	});
+	
+	// Функция показа слайда
+	function showMobileSlide(index) {
+		// Скрываем все слайды
+		slideItems.forEach(item => {
+			item.classList.remove('active-mobile');
+		});
+		
+		// Показываем текущий слайд
+		slideItems[index].classList.add('active-mobile');
+		
+		// Обновляем счетчик
+		mobileGallery.style.setProperty('--slide-counter', `${index + 1} / ${totalSlides}`);
+		
+		// Обновляем состояние кнопок
+		prevBtn.disabled = totalSlides <= 1;
+		nextBtn.disabled = totalSlides <= 1;
+		
+		console.log(`Показан слайд ${index + 1} из ${totalSlides}`);
+	}
+	
+	// Добавляем поддержку свайпов
+	let touchStartX = 0;
+	let touchStartY = 0;
+	let touchEndX = 0;
+	let touchEndY = 0;
+	const minSwipeDistance = 50;
+	
+	function handleTouchStart(e) {
+		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
+	}
+	
+	function handleTouchMove(e) {
+		e.preventDefault();
+	}
+	
+	function handleTouchEnd(e) {
+		touchEndX = e.changedTouches[0].clientX;
+		touchEndY = e.changedTouches[0].clientY;
+		
+		const deltaX = touchEndX - touchStartX;
+		const deltaY = touchEndY - touchStartY;
+		
+		if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+			if (deltaX > 0) {
+				// Свайп вправо - предыдущий слайд
+				currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+				showMobileSlide(currentSlide);
+			} else {
+				// Свайп влево - следующий слайд
+				currentSlide = (currentSlide + 1) % totalSlides;
+				showMobileSlide(currentSlide);
+			}
+		}
+	}
+	
+	// Добавляем обработчики touch событий
+	mobileGallery.addEventListener('touchstart', handleTouchStart, { passive: false });
+	mobileGallery.addEventListener('touchmove', handleTouchMove, { passive: false });
+	mobileGallery.addEventListener('touchend', handleTouchEnd, { passive: false });
+	
+	// Добавляем поддержку клавиатуры
+	document.addEventListener('keydown', (e) => {
+		if (mobileGallery.closest('.gallery-container:not(.gallery-pc-slider)')) {
+			if (e.key === 'ArrowLeft') {
+				currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+				showMobileSlide(currentSlide);
+			} else if (e.key === 'ArrowRight') {
+				currentSlide = (currentSlide + 1) % totalSlides;
+				showMobileSlide(currentSlide);
+			}
+		}
+	});
+	
+	console.log('Мобильный слайдер успешно инициализирован!');
 }
 
 // Функция для скрытия мобильного слайдера

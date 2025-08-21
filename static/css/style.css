@@ -751,10 +751,10 @@ table{border-collapse:collapse;border-spacing:0;}
 		overflow: hidden;
 	}
 	
-	/* Простой мобильный слайдер - только для контейнеров БЕЗ класса gallery-pc-slider */
+	/* Мобильный слайдер - только для контейнеров БЕЗ класса gallery-pc-slider */
 	.gallery-container:not(.gallery-pc-slider) {
 		display: block;
-		overflow: visible;
+		overflow: hidden;
 		position: relative;
 		width: 100%;
 		height: auto;
@@ -765,17 +765,30 @@ table{border-collapse:collapse;border-spacing:0;}
 	
 	/* Стили для мобильной версии - только для элементов БЕЗ класса gallery-pc-slider */
 	.gallery-container:not(.gallery-pc-slider) .gallery-item {
-		display: block;
+		display: none;
 		width: 100%;
 		max-width: 100%;
 		position: relative;
-		margin: 0 0 1rem 0;
+		margin: 0;
 		padding: 0;
 		box-sizing: border-box;
-		/* Переопределяем только ограничения высоты для мобильной версии */
-		max-height: none;
-		min-height: auto;
-		height: auto;
+		opacity: 0;
+		transform: scale(0.95);
+		transition: all 0.3s ease;
+	}
+	
+	/* Активный слайд для мобильной версии */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile {
+		display: block;
+		opacity: 1;
+		transform: scale(1);
+	}
+	
+	/* Первый слайд активен по умолчанию */
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
+		display: block;
+		opacity: 1;
+		transform: scale(1);
 	}
 	
 	/* Стили для изображений в мобильной версии */
@@ -829,6 +842,48 @@ table{border-collapse:collapse;border-spacing:0;}
 		z-index: 10;
 	}
 	
+	/* Мобильные кнопки навигации */
+	.gallery-container:not(.gallery-pc-slider) .mobile-slider-prev,
+	.gallery-container:not(.gallery-pc-slider) .mobile-slider-next {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		background: rgba(0, 0, 0, 0.7);
+		color: white;
+		border: none;
+		border-radius: 50%;
+		width: 40px;
+		height: 40px;
+		font-size: 20px;
+		font-weight: bold;
+		cursor: pointer;
+		z-index: 20;
+		transition: all 0.3s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .mobile-slider-prev {
+		left: 10px;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .mobile-slider-next {
+		right: 10px;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .mobile-slider-prev:hover,
+	.gallery-container:not(.gallery-pc-slider) .mobile-slider-next:hover {
+		background: rgba(0, 0, 0, 0.9);
+		transform: translateY(-50%) scale(1.1);
+	}
+	
+	/* Скрываем кнопки если слайд только один */
+	.gallery-container:not(.gallery-pc-slider).single-slide .mobile-slider-prev,
+	.gallery-container:not(.gallery-pc-slider).single-slide .mobile-slider-next {
+		display: none !important;
+	}
+	
 	/* Адаптируем ПК слайдер для мобильных устройств */
 	.gallery-pc-slider {
 		display: none;
@@ -851,20 +906,30 @@ table{border-collapse:collapse;border-spacing:0;}
 		width: 100%;
 		max-height: none;
 		height: auto;
-		overflow: visible;
+		overflow: hidden;
 		display: block;
 	}
 	
 	.gallery-container:not(.gallery-pc-slider) .gallery-item {
-		display: block;
+		display: none;
 		width: 100%;
 		max-width: 100%;
 		max-height: none;
 		min-height: auto;
 		height: auto;
 		overflow: visible;
-		margin: 0 0 1rem 0;
+		margin: 0;
 		padding: 0;
+		opacity: 0;
+		transform: scale(0.95);
+		transition: all 0.3s ease;
+	}
+	
+	.gallery-container:not(.gallery-pc-slider) .gallery-item.active-mobile,
+	.gallery-container:not(.gallery-pc-slider) .gallery-item:first-child {
+		display: block;
+		opacity: 1;
+		transform: scale(1);
 	}
 	
 	/* Адаптируем ПК слайдер для мобильных устройств */
@@ -3822,6 +3887,46 @@ hr[style*="width: 75%"] {
 	opacity: 0 !important;
 	visibility: hidden !important;
 	transition: all 0.3s ease !important;
+}
+
+/* Скрытие мобильных кнопок навигации при открытии lightbox */
+.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) .mobile-slider-prev,
+.lightbox[style*="display: block"] ~ .gallery-container:not(.gallery-pc-slider) .mobile-slider-next {
+	opacity: 0 !important;
+	visibility: hidden !important;
+	transition: all 0.3s ease !important;
+}
+
+/* Анимации для мобильного слайдера */
+@keyframes slideInFromRight {
+	from {
+		opacity: 0;
+		transform: translateX(100%) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0) scale(1);
+	}
+}
+
+@keyframes slideInFromLeft {
+	from {
+		opacity: 0;
+		transform: translateX(-100%) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0) scale(1);
+	}
+}
+
+/* Применяем анимации к слайдам */
+.gallery-container:not(.gallery-pc-slider) .gallery-item.slide-in-right {
+	animation: slideInFromRight 0.3s ease-out;
+}
+
+.gallery-container:not(.gallery-pc-slider) .gallery-item.slide-in-left {
+	animation: slideInFromLeft 0.3s ease-out;
 }
 
 /* Скрытие кнопок навигации при активном lightbox - удалено, так как кнопки больше не используются */
