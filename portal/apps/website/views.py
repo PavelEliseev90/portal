@@ -5997,25 +5997,23 @@ def sales_funnel(request):
 
 def test(request):
     
-    t = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').count()
-    object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk')
-    for object_estimation_autohub in object_estimations_report_autohub:
-        try:
-            get_info_max(object_estimation_autohub['pk'])
-        except:
-            s = 1 
-    #get_info_max(22978)
+    #from register.models import RegEstimationBalanceUnit,RegEstimationsSettings
+    #RegEstimationBalanceUnit.objects.all().delete()
 
-    '''
+    #get_info_max(22978)
+    
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
     docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
     estimations_list    = estimations_list.annotate(
-        lo_active   = Subquery(docs_lo.values('active')[:1]))
+        lo_active               = Subquery(docs_lo.values('active')[:1])).annotate(
+        lo_agreement_unit_pk    = Subquery(docs_lo.values('agreement_unit__pk')[:1]))
     
-    estimations_list = estimations_list.filter(lo_active = True).values('pk')
+    estimations_list = estimations_list.filter(lo_active = True).filter(auction = False).values('pk, lo_agreement_unit_pk')
 
-    from register.models import RegEstimationBalanceUnit
+    from register.models import RegEstimationBalanceUnit, RegEstimationsSettings, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU
+    
     for estimation_pk in estimations_list:
+        
         estimation  = RegInteractivOcenka.objects.get(pk = estimation_pk['pk']) 
         unit        = estimation.rlk.unit
         
@@ -6024,6 +6022,9 @@ def test(request):
         
         if estimation.page_documents.type_reception.id == 7 and estimation.rlk.unit != None:
             unit = estimation.rlk.unit
+        
+        if estimation_pk['lo_agreement_unit_pk'] != None:
+            unit = RefUnit.objects.get(pk = estimation_pk['lo_agreement_unit_pk'])
 
         save            = True
         new_record      = None
@@ -6054,33 +6055,130 @@ def test(request):
         if estimation.page_documents.type_reception.id == 3:
             save = False
 
-        if estimation.page_soglasovanie.price_auto_1 > 0:
-            if estimation.page_soglasovanie.price_auto_1 < estimation.page_soglasovanie.price_after_kd:
-                amount = estimation.page_soglasovanie.price_auto_1 - estimation.page_soglasovanie.price_after_kd
-            elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
-                amount = estimation.page_soglasovanie.zachita_ot_ubitka
-
-        elif estimation.page_soglasovanie.price_auto_2 > 0:
-            if estimation.page_soglasovanie.price_auto_2 < estimation.page_soglasovanie.price_after_kd:
-                amount = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.price_after_kd
-            elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
-                amount = estimation.page_soglasovanie.zachita_ot_ubitka
-
-        elif estimation.page_soglasovanie.price_auto_3 > 0:
-            if estimation.page_soglasovanie.price_auto_3 < estimation.page_soglasovanie.price_after_kd:
-                amount = estimation.page_soglasovanie.price_auto_3 - estimation.page_soglasovanie.price_after_kd
-            elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
-                amount = estimation.page_soglasovanie.zachita_ot_ubitka
+        if estimation.page_soglasovanie != None:
             
-        if save:
-            new_record              = RegEstimationBalanceUnit()
-            new_record.unit         = unit
-            new_record.date         = estimation.start_estimation
-            new_record.estimation   = estimation
-            new_record.amount       = amount
-            #new_record.save()
+            price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
+            price_info      = None
+            
+            reg_interactiv_ocenka_soglasovanie = estimation.page_soglasovanie
 
-    '''
+            if reg_interactiv_ocenka_soglasovanie.settings == None:
+                reg_interactiv_ocenka_soglasovanie.settings = RegEstimationsSettings.objects.get(pk = 1)
+
+            if price_kors != None:
+                reg_interactiv_ocenka_soglasovanie.price_auto_1         = price_kors['estimation_price']
+                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_1     = price_kors['cna_expenses']
+                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_kors['zachita_ot_ubitka']
+                reg_interactiv_ocenka_soglasovanie.finance_price        = price_kors['finance_price']
+                reg_interactiv_ocenka_soglasovanie.price_auto_auction   = price_kors['auction']                
+                reg_interactiv_ocenka_soglasovanie.price_zna_1          = price_kors['zna']
+                reg_interactiv_ocenka_soglasovanie.save()
+                price_info = price_kors
+            else:
+                price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
+                if price_autohub != None:
+                    reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                    reg_interactiv_ocenka_soglasovanie.price_auto_auction   = price_autohub['auction']
+                    reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                    reg_interactiv_ocenka_soglasovanie.save()
+                    price_info = price_autohub
+                else:
+                    price_avito   = estimations_price_calculation(estimation, type_calculation='avito')
+                    if price_avito != None:
+                        if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                            reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                            reg_interactiv_ocenka_soglasovanie.price_auto_auction   = price_avito['auction']
+                            reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
+                            reg_interactiv_ocenka_soglasovanie.save()
+                            price_info = price_avito
+
+            if reg_interactiv_ocenka_soglasovanie.price_auto_auction == False:
+                if estimation.page_soglasovanie.price_auto_1 > 0:
+                    if estimation.page_soglasovanie.price_auto_1 < estimation.page_soglasovanie.price_after_kd:
+                        amount = estimation.page_soglasovanie.price_auto_1 - estimation.page_soglasovanie.price_after_kd
+                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+
+                elif estimation.page_soglasovanie.price_auto_2 > 0:
+                    if estimation.page_soglasovanie.price_auto_2 < estimation.page_soglasovanie.price_after_kd:
+                        amount = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.price_after_kd
+                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+
+                elif estimation.page_soglasovanie.price_auto_3 > 0:
+                    if estimation.page_soglasovanie.price_auto_3 < estimation.page_soglasovanie.price_after_kd:
+                        amount = estimation.page_soglasovanie.price_auto_3 - estimation.page_soglasovanie.price_after_kd
+                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+                    
+                if save:
+                    new_record              = RegEstimationBalanceUnit()
+                    new_record.unit         = unit
+                    new_record.date         = estimation.start_estimation
+                    new_record.estimation   = estimation
+                    new_record.amount_in    = amount
+                    new_record.save()
+            else:
+                RegEstimationBalanceUnit.objects.filter(estimation = estimation).delete()  
+
+            if price_info != None:
+                
+                RegEstimationPodgotovka.objects.filter(estimation = estimation).delete()
+                RegEstimationSS.objects.filter(estimation = estimation).delete()
+                RegEstimationMCU.objects.filter(estimation = estimation).delete()
+                
+                for podgotovka in price_info['list_work_podgotovka']:
+                    new_record = RegEstimationPodgotovka()
+                    new_record.estimation   = estimation
+                    new_record.name         = podgotovka['name']
+                    new_record.normo            = podgotovka['quantity']
+                    new_record.price_podrad     = podgotovka['amount_pod']
+                    new_record.price_kors       = podgotovka['amount']
+                    new_record.save()
+                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
+                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
+                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
+
+                for podgotovka in price_info['list_work_service']:
+                    new_record = RegEstimationSS()
+                    new_record.estimation       = estimation
+                    new_record.name             = podgotovka['name']
+                    new_record.normo            = podgotovka['quantity']
+                    new_record.price_podrad     = podgotovka['amount_pod']
+                    new_record.price_kors       = podgotovka['amount']
+                    new_record.save()
+                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
+                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
+                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
+
+                for podgotovka in price_info['list_work_mcu']:
+                    new_record = RegEstimationMCU()
+                    new_record.estimation       = estimation
+                    new_record.name         = podgotovka['name']
+                    new_record.normo            = podgotovka['quantity']
+                    new_record.price_podrad     = podgotovka['amount_pod']
+                    new_record.price_kors       = podgotovka['amount']
+                    new_record.save()
+                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
+                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
+                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)    
+                
+                amount_podgotovka   = price_info['amount_sum']
+                amount_ss           = price_info['amount_ss']
+                amount_mcu          = price_info['amount_mcu']
+                
+                reg_interactiv_ocenka_soglasovanie.amount_podgotovka    = amount_podgotovka
+                reg_interactiv_ocenka_soglasovanie.amount_ss            = amount_ss
+                reg_interactiv_ocenka_soglasovanie.amount_mcu           = amount_mcu
+                reg_interactiv_ocenka_soglasovanie.save()  
+
+    
     s =1
     
     #refresh_wash()

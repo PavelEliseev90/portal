@@ -6095,6 +6095,10 @@
                           <div class="row g-1 align-self-center">
                             
                             <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.agreement.cars.mark}} {{params.agreement.cars.model}} {{params.agreement.cars.year}}</b></label>                          
+                            </div>
+
+                            <div class="col-12 col-sm-12">
                               <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.lo.agreement_unit.name}}</b></label>                          
                             </div>
 
@@ -6103,7 +6107,7 @@
                             </div>
 
                             <div class="col-12 col-sm-12">
-                              <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; </b></label>
+                              <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.agreement.cm_actual|floatformat:"2g"}} &#8381 </b></label>
                             </div>
 
                             <div class="col-12 col-sm-12 text-end">
@@ -6127,6 +6131,10 @@
                           <hr style="width: 75%;">
                           <div class="row g-1 align-self-center">
                             
+                            <div class="col-12 col-sm-12">
+                              <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.car.name}}</b></label>                          
+                            </div>
+
                             <div class="col-12 col-sm-12">
                               <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.car.store.name}}</b></label>                          
                             </div>

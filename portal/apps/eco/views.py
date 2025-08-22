@@ -1693,7 +1693,12 @@ def estimation_lo_history(estimation, count = False):
 
 def estimations_price_calculation(estimation, type_calculation):
 
+
     estimation_settings     = RegEstimationsSettings.objects.get(pk = 1)
+    if estimation.page_soglasovanie != None:
+        if estimation.page_soglasovanie.settings != None:
+            estimation_settings = estimation.page_soglasovanie.settings 
+
     modification            = estimation.modification
     
     list_work_podgotovka    = list()
