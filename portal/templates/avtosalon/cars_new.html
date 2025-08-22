@@ -210,11 +210,11 @@
 -->
 
 <!-- Мобильная кнопка фильтров -->
-<div class="d-block d-md-none mb-3">
-	<div class="text-center">
+<div class="d-block d-md-none">
+	<div class="mobile-filters-button-container">
 		<button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
 			<span class="icon-mbri-setting me-2"></span>
-			<span class="filters-text">Фильтры поиска</span>
+			<span class="filters-text">Фильтры</span>
 			<span class="filters-count" id="activeFiltersCount">0</span>
 		</button>
 	</div>
@@ -653,7 +653,7 @@
 								
 								{% for type_sale in params.selected.type_sales %}
 								
-								<label style="margin: 0.2rem;" class="" id="type_sale_select_{{type_sale.name}}"><input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{unit.pk}}" {% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %} > {{type_sale.name}}</label>
+								<label style="margin: 0.2rem;" class="" id="type_sale_select_{{type_sale.name}}"><input type="checkbox" name="type_sale[]" value="{{stage_price.pk}}" id="type_sale_filtr_{{unit.pk}}" {% if type_sale.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %} > {{type_sale.name}}</label>
 						
 								{% endfor %}
 							
@@ -837,10 +837,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileFiltersContent = document.getElementById('mobileFiltersContent');
     
     if (filtersForm && mobileFiltersContent) {
-        // Клонируем форму для мобильной версии
+        // Создаем копию формы для мобильной версии
         const clonedForm = filtersForm.cloneNode(true);
         clonedForm.classList.remove('d-none', 'd-md-block');
         clonedForm.classList.add('mobile-filters-form');
+        clonedForm.id = 'mobileFiltersForm';
+        
+        // Убираем кнопки из клонированной формы
+        const submitButtons = clonedForm.querySelectorAll('.btn-outline-dark, .btn-outline-secondary');
+        submitButtons.forEach(btn => btn.remove());
+        
+        // Убираем разделители
+        const dividers = clonedForm.querySelectorAll('.hr_kors_dark');
+        dividers.forEach(divider => divider.remove());
         
         // Очищаем содержимое и добавляем клонированную форму
         mobileFiltersContent.innerHTML = '';
@@ -851,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Добавляем обработчики событий для обновления счетчика
         const checkboxes = clonedForm.querySelectorAll('input[type="checkbox"]');
-        const inputs = clonedForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const inputs = clonedForm.querySelectorAll('input[type="text"], input[type="number"]);
         
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateActiveFiltersCount);
@@ -860,10 +869,184 @@ document.addEventListener('DOMContentLoaded', function() {
         inputs.forEach(input => {
             input.addEventListener('input', updateActiveFiltersCount);
         });
+        
+        // Инициализируем поиск в фильтрах
+        initializeMobileFilters();
     }
 });
 
+function initializeMobileFilters() {
+    // Инициализируем поиск по городам
+    const searchCity = document.querySelector('#mobileFiltersModal #search_city');
+    if (searchCity) {
+        searchCity.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="city_select_"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="city_select_"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="city_select_"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по маркам
+    const searchMarks = document.querySelector('#mobileFiltersModal #search_marks');
+    if (searchMarks) {
+        searchMarks.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="marks_select_"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="marks_select_"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="marks_select_"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по коробке передач
+    const searchGear = document.querySelector('#mobileFiltersModal #search_gear');
+    if (searchGear) {
+        searchGear.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="label_search"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="label_search"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="label_search"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по кузову
+    const searchBody = document.querySelector('#mobileFiltersModal #search_body');
+    if (searchBody) {
+        searchBody.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="label_search"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="label_search"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="label_search"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по приводу
+    const searchDrives = document.querySelector('#mobileFiltersModal #search_drives');
+    if (searchDrives) {
+        searchDrives.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="drive_select"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="drive_select_"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="drive_select_"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по статусу
+    const searchStatus = document.querySelector('#mobileFiltersModal #search_status');
+    if (searchStatus) {
+        searchStatus.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="status_select_"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="status_select_"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="status_select_"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по этапу УС
+    const searchStagePrice = document.querySelector('#mobileFiltersModal #search_stage_price');
+    if (searchStagePrice) {
+        searchStagePrice.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="stage_price_select_"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="stage_price_select_"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="stage_price_select_"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Инициализируем поиск по виду продажи
+    const searchTypeSale = document.querySelector('#mobileFiltersModal #search_type_sale');
+    if (searchTypeSale) {
+        searchTypeSale.addEventListener('input', function() {
+            var search = this.value;
+            if (search.length === 0) {
+                document.querySelectorAll('#mobileFiltersModal [id*="type_sale_select_"]').forEach(el => el.classList.remove('d-none'));
+            } else {
+                document.querySelectorAll('#mobileFiltersModal [id*="type_sale_select_"]').forEach(el => el.classList.add('d-none'));
+                var search_lower = search.toLowerCase();
+                document.querySelectorAll('#mobileFiltersModal [id*="type_sale_select_"]').forEach(label => {
+                    var id_name = label.id.toLowerCase();
+                    if (id_name.indexOf(search_lower) >= 0) {
+                        label.classList.remove('d-none');
+                    }
+                });
+            }
+        });
+    }
+}
+
 function updateActiveFiltersCount() {
+    const count = countActiveFilters();
+    const countElement = document.getElementById('activeFiltersCount');
+    if (countElement) {
+        countElement.textContent = count;
+        countElement.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+}
+
+function countActiveFilters() {
     let count = 0;
     
     // Подсчитываем активные чекбоксы
