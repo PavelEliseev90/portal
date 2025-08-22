@@ -4053,5 +4053,445 @@ hr[style*="width: 75%"] {
 	animation: cardSlideIn 0.3s ease-out;
 }
 
+/* Стили для мобильной кнопки фильтров */
+.btn-filters-mobile {
+	background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+	border: 2px solid #1a252f;
+	color: #ffffff;
+	border-radius: 25px;
+	padding: 12px 24px;
+	font-weight: 600;
+	font-size: 0.95rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	overflow: hidden;
+	min-width: 200px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.btn-filters-mobile::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+	transition: left 0.5s ease;
+}
+
+.btn-filters-mobile:hover {
+	background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+	border-color: #e74c3c;
+	box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4), 0 0 0 3px rgba(231, 76, 60, 0.1);
+	transform: translateY(-2px);
+	color: #ffffff;
+}
+
+.btn-filters-mobile:hover::before {
+	left: 100%;
+}
+
+.btn-filters-mobile:active {
+	transform: translateY(0);
+	box-shadow: 0 3px 10px rgba(44, 62, 80, 0.3);
+	transition: all 0.1s ease;
+}
+
+.btn-filters-mobile:focus {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3), 0 4px 15px rgba(44, 62, 80, 0.3);
+}
+
+.btn-filters-mobile .icon-mbri-setting {
+	font-size: 1.1rem;
+	color: #e74c3c;
+	transition: transform 0.3s ease;
+}
+
+.btn-filters-mobile:hover .icon-mbri-setting {
+	transform: rotate(90deg);
+	color: #ffffff;
+}
+
+.btn-filters-mobile .filters-text {
+	font-weight: 600;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.btn-filters-mobile .filters-count {
+	background: #e74c3c;
+	color: #ffffff;
+	border-radius: 50%;
+	min-width: 24px;
+	height: 24px;
+	display: none;
+	font-size: 0.75rem;
+	font-weight: 700;
+	line-height: 24px;
+	text-align: center;
+	box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+	animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+	}
+	50% {
+		transform: scale(1.05);
+		box-shadow: 0 2px 8px rgba(231, 76, 60, 0.5);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+	}
+}
+
+/* Стили для модального окна фильтров */
+#mobileFiltersModal .modal-content {
+	border: none;
+	border-radius: 16px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	overflow: hidden;
+}
+
+#mobileFiltersModal .modal-header {
+	background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+	border-bottom: 2px solid #e74c3c;
+	padding: 1rem 1.5rem;
+}
+
+#mobileFiltersModal .modal-title {
+	font-weight: 700;
+	font-size: 1.1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+#mobileFiltersModal .modal-title .icon-mbri-setting {
+	color: #e74c3c;
+	font-size: 1.2rem;
+}
+
+#mobileFiltersModal .btn-close-white {
+	filter: brightness(0) invert(1);
+	opacity: 0.8;
+	transition: opacity 0.2s ease;
+}
+
+#mobileFiltersModal .btn-close-white:hover {
+	opacity: 1;
+}
+
+#mobileFiltersModal .modal-body {
+	padding: 1.5rem;
+	background: #f8f9fa;
+}
+
+#mobileFiltersModal .modal-footer {
+	border-top: 1px solid #dee2e6;
+	padding: 1rem 1.5rem;
+	background: #ffffff;
+}
+
+/* Стили для формы фильтров в модальном окне */
+.mobile-filters-form {
+	background: transparent;
+}
+
+.mobile-filters-form .card {
+	border: none;
+	background: #ffffff;
+	border-radius: 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	margin-bottom: 1rem;
+	overflow: hidden;
+}
+
+.mobile-filters-form .card-body1 {
+	padding: 1rem;
+	background: #ffffff;
+	border-radius: 12px;
+}
+
+.mobile-filters-form .text-secondary {
+	color: #495057 !important;
+	font-weight: 600 !important;
+	font-size: 0.85rem !important;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	margin-bottom: 0.5rem;
+}
+
+.mobile-filters-form .checkselect {
+	display: block !important;
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid #dee2e6;
+	border-radius: 8px;
+	background: #ffffff;
+	padding: 0.5rem;
+}
+
+.mobile-filters-form .checkselect label {
+	padding: 0.5rem 0.75rem;
+	margin: 0.25rem 0;
+	border-radius: 6px;
+	transition: background-color 0.2s ease;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.mobile-filters-form .checkselect label:hover {
+	background-color: #f8f9fa;
+}
+
+.mobile-filters-form .checkselect input[type="checkbox"] {
+	margin: 0;
+	width: 18px;
+	height: 18px;
+	border: 2px solid #6c757d;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+.mobile-filters-form .checkselect input[type="checkbox"]:checked {
+	background-color: #e74c3c;
+	border-color: #e74c3c;
+}
+
+.mobile-filters-form .form-control {
+	border: 2px solid #dee2e6;
+	border-radius: 8px;
+	padding: 0.75rem;
+	font-size: 0.9rem;
+	transition: all 0.2s ease;
+	background: #ffffff;
+}
+
+.mobile-filters-form .form-control:focus {
+	border-color: #e74c3c;
+	box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+	outline: none;
+}
+
+.mobile-filters-form .form-floating-kors {
+	position: relative;
+}
+
+.mobile-filters-form .form-floating-kors label {
+	position: absolute;
+	top: 0.5rem;
+	left: 0.75rem;
+	font-size: 0.8rem;
+	color: #6c757d;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	background: #ffffff;
+	padding: 0 0.25rem;
+	z-index: 1;
+}
+
+/* Стили для кнопок в модальном окне */
+#mobileFiltersModal .btn {
+	padding: 0.75rem 1.5rem;
+	font-weight: 600;
+	font-size: 0.9rem;
+	border-radius: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	transition: all 0.2s ease;
+	border: 2px solid transparent;
+}
+
+#mobileFiltersModal .btn-secondary {
+	background: #6c757d;
+	border-color: #6c757d;
+	color: #ffffff;
+}
+
+#mobileFiltersModal .btn-secondary:hover {
+	background: #5a6268;
+	border-color: #5a6268;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+#mobileFiltersModal .btn-primary {
+	background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+	border-color: #e74c3c;
+	color: #ffffff;
+}
+
+#mobileFiltersModal .btn-primary:hover {
+	background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+	border-color: #c0392b;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 576px) {
+	.btn-filters-mobile {
+		min-width: 180px;
+		padding: 10px 20px;
+		font-size: 0.9rem;
+	}
+	
+	.btn-filters-mobile .filters-count {
+		min-width: 20px;
+		height: 20px;
+		font-size: 0.7rem;
+		line-height: 20px;
+	}
+	
+	#mobileFiltersModal .modal-body {
+		padding: 1rem;
+	}
+	
+	#mobileFiltersModal .modal-footer {
+		padding: 0.75rem 1rem;
+	}
+	
+	#mobileFiltersModal .btn {
+		padding: 0.6rem 1.2rem;
+		font-size: 0.85rem;
+	}
+}
+
+/* Анимация появления модального окна */
+#mobileFiltersModal .modal-content {
+	animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-20px) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+/* Стили для скроллбара в модальном окне */
+#mobileFiltersModal .modal-body::-webkit-scrollbar {
+	width: 6px;
+}
+
+#mobileFiltersModal .modal-body::-webkit-scrollbar-track {
+	background: #f1f1f1;
+	border-radius: 3px;
+}
+
+#mobileFiltersModal .modal-body::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 3px;
+}
+
+#mobileFiltersModal .modal-body::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
+}
+
+/* Стили для поиска в фильтрах */
+.mobile-filters-form .sticky-top {
+	position: sticky;
+	top: 0;
+	background: #ffffff;
+	z-index: 10;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid #dee2e6;
+	margin-bottom: 0.5rem;
+}
+
+.mobile-filters-form .sticky-top input {
+	border: 2px solid #dee2e6;
+	border-radius: 6px;
+	padding: 0.5rem;
+	font-size: 0.85rem;
+	transition: border-color 0.2s ease;
+}
+
+.mobile-filters-form .sticky-top input:focus {
+	border-color: #e74c3c;
+	outline: none;
+}
+
+/* Стили для разделителей */
+.mobile-filters-form hr {
+	margin: 0.5rem 0;
+	border-color: #dee2e6;
+	opacity: 0.5;
+}
+
+/* Стили для иконок в фильтрах */
+.mobile-filters-form .icon-mbri-success,
+.mobile-filters-form .icon-mbri-close {
+	color: #e74c3c;
+	font-size: 1rem;
+}
+
+/* Стили для активных фильтров */
+.mobile-filters-form .checkselect label:has(input:checked) {
+	background-color: rgba(231, 76, 60, 0.1);
+	border-left: 3px solid #e74c3c;
+	padding-left: 0.5rem;
+}
+
+/* Стили для неактивных фильтров */
+.mobile-filters-form .checkselect label:has(input:not(:checked)) {
+	opacity: 0.8;
+}
+
+/* Стили для hover эффектов */
+.mobile-filters-form .checkselect label:hover {
+	background-color: rgba(231, 76, 60, 0.05);
+	transform: translateX(2px);
+	transition: all 0.2s ease;
+}
+
+/* Стили для фокуса на элементах */
+.mobile-filters-form .checkselect label:focus-within {
+	background-color: rgba(231, 76, 60, 0.1);
+	outline: 2px solid rgba(231, 76, 60, 0.3);
+	outline-offset: 2px;
+}
+
+/* Стили для анимации загрузки */
+.mobile-filters-form .card {
+	animation: cardFadeIn 0.4s ease-out;
+}
+
+@keyframes cardFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Задержка анимации для каждой карточки */
+.mobile-filters-form .card:nth-child(1) { animation-delay: 0.05s; }
+.mobile-filters-form .card:nth-child(2) { animation-delay: 0.1s; }
+.mobile-filters-form .card:nth-child(3) { animation-delay: 0.15s; }
+.mobile-filters-form .card:nth-child(4) { animation-delay: 0.2s; }
+.mobile-filters-form .card:nth-child(5) { animation-delay: 0.25s; }
+.mobile-filters-form .card:nth-child(6) { animation-delay: 0.3s; }
+
 
 

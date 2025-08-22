@@ -96,6 +96,30 @@
 	</div>
 </div>
 
+<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header bg-dark text-white">
+				<h5 class="modal-title" id="mobileFiltersModalLabel">
+					<span class="icon-mbri-setting me-2"></span>Фильтры поиска
+				</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body">
+				<div id="mobileFiltersContent">
+					<!-- Содержимое фильтров будет скопировано сюда -->
+				</div>
+			</div>
+			<div class="modal-footer bg-light">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+				<button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
+					<span class="icon-mbri-search me-2"></span>Применить фильтры
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <!--
 <div class="row g-2 justify-content-center">
 	
@@ -185,8 +209,19 @@
 
 -->
 
-<form method="get">
-	<div class="card bg-white bg-opacity-75">
+<!-- Мобильная кнопка фильтров -->
+<div class="d-block d-md-none mb-3">
+	<div class="text-center">
+		<button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
+			<span class="icon-mbri-setting me-2"></span>
+			<span class="filters-text">Фильтры поиска</span>
+			<span class="filters-count" id="activeFiltersCount">0</span>
+		</button>
+	</div>
+</div>
+
+<form method="get" id="filtersForm">
+	<div class="card bg-white bg-opacity-75 d-none d-md-block">
 		<div class="card-body">
 
 			<div class="row g-1">
@@ -794,3 +829,128 @@
 
 
 {% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Копируем содержимое фильтров в модальное окно
+    const filtersForm = document.getElementById('filtersForm');
+    const mobileFiltersContent = document.getElementById('mobileFiltersContent');
+    
+    if (filtersForm && mobileFiltersContent) {
+        // Клонируем форму для мобильной версии
+        const clonedForm = filtersForm.cloneNode(true);
+        clonedForm.classList.remove('d-none', 'd-md-block');
+        clonedForm.classList.add('mobile-filters-form');
+        
+        // Очищаем содержимое и добавляем клонированную форму
+        mobileFiltersContent.innerHTML = '';
+        mobileFiltersContent.appendChild(clonedForm);
+        
+        // Обновляем счетчик активных фильтров
+        updateActiveFiltersCount();
+        
+        // Добавляем обработчики событий для обновления счетчика
+        const checkboxes = clonedForm.querySelectorAll('input[type="checkbox"]');
+        const inputs = clonedForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateActiveFiltersCount);
+        });
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', updateActiveFiltersCount);
+        });
+    }
+});
+
+function updateActiveFiltersCount() {
+    let count = 0;
+    
+    // Подсчитываем активные чекбоксы
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    count += checkboxes.length;
+    
+    // Подсчитываем заполненные поля ввода
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+    inputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            count++;
+        }
+    });
+    
+    return count;
+}
+
+function applyMobileFilters() {
+    // Синхронизируем значения из модального окна с основной формой
+    const mobileForm = document.querySelector('#mobileFiltersModal .mobile-filters-form');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        // Синхронизируем чекбоксы
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                mainCheckboxes[index].checked = checkbox.checked;
+            }
+        });
+        
+        // Синхронизируем поля ввода
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                mainInputs[index].value = input.value;
+            }
+        });
+        
+        // Обновляем счетчик
+        updateActiveFiltersCount();
+        
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('mobileFiltersModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Отправляем форму
+        mainForm.submit();
+    }
+}
+
+// Обработчик открытия модального окна
+document.getElementById('mobileFiltersModal').addEventListener('show.bs.modal', function() {
+    // Обновляем счетчик при открытии
+    updateActiveFiltersCount();
+});
+
+// Обработчик закрытия модального окна
+document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal', function() {
+    // Синхронизируем изменения обратно в основную форму
+    const mobileForm = document.querySelector('#mobileFiltersModal .mobile-filters-form');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                mainCheckboxes[index].checked = checkbox.checked;
+            }
+        });
+        
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                mainInputs[index].value = input.value;
+            }
+        });
+    }
+});
+</script>
