@@ -4522,7 +4522,7 @@ hr[style*="width: 75%"] {
 }
 
 .pc-filters-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #212529;
     padding: 1.5rem 2rem;
     color: white;
 }
@@ -4784,14 +4784,14 @@ hr[style*="width: 75%"] {
 }
 
 .pc-filters-actions .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #e74c3c;
     border: none;
     color: white;
 }
 
 .pc-filters-actions .btn-primary:hover {
+	background: #212529;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
 @media (max-width: 1200px) {
