@@ -106,9 +106,215 @@
 				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
 			</div>
 			<div class="modal-body">
-				<div id="mobileFiltersContent">
-					<!-- Содержимое фильтров будет скопировано сюда -->
-				</div>
+				<form method="get" id="mobileFiltersForm">
+					<!-- Город -->
+					<div class="filter-section">
+						<div class="filter-title">Город</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_city" placeholder="Поиск по городу">
+						</div>
+						<div class="filter-options">
+							{% for city in params.selected.citys %}
+								{% if city.city__name|length > 0 %}
+									<label class="filter-option" id="mobile_city_{{city.city}}">
+										<input type="checkbox" name="city[]" value="{{city.city}}" 
+											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
+										<span class="filter-text">{{city.city__name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Марка -->
+					<div class="filter-section">
+						<div class="filter-title">Марка</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_marks" placeholder="Поиск по марке">
+						</div>
+						<div class="filter-options">
+							{% for mark in params.selected.marks %}
+								<label class="filter-option" id="mobile_mark_{{mark.pk}}">
+									<input type="checkbox" name="mark[]" value="{{mark.pk}}" 
+										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
+									<span class="filter-text">{{mark.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Коробка передач -->
+					<div class="filter-section">
+						<div class="filter-title">Коробка передач</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_gear" placeholder="Поиск по коробке передач">
+						</div>
+						<div class="filter-options">
+							{% for gear in params.selected.gears %}
+								<label class="filter-option" id="mobile_gear_{{gear.pk}}">
+									<input type="checkbox" name="gear[]" value="{{gear.pk}}" 
+										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
+									<span class="filter-text">{{gear.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Кузов -->
+					<div class="filter-section">
+						<div class="filter-title">Кузов</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_body" placeholder="Поиск по кузову">
+						</div>
+						<div class="filter-options">
+							{% for body in params.selected.bodys %}
+								<label class="filter-option" id="mobile_body_{{body.pk}}">
+									<input type="checkbox" name="body[]" value="{{body.pk}}" 
+										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
+									<span class="filter-text">{{body.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Привод -->
+					<div class="filter-section">
+						<div class="filter-title">Привод</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_drives" placeholder="Поиск по приводу">
+						</div>
+						<div class="filter-options">
+							{% for drive in params.selected.drives %}
+								{% if drive.name|length > 0 %}
+									<label class="filter-option" id="mobile_drive_{{drive.pk}}">
+										<input type="checkbox" name="drive[]" value="{{drive.pk}}" 
+											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
+										<span class="filter-text">{{drive.name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Год выпуска -->
+					<div class="filter-section">
+						<div class="filter-title">Год выпуска</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="year_start" 
+										value="{{params.filtr.year_start}}" placeholder="1950">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="year_end" 
+										value="{{params.filtr.year_end}}" placeholder="2025">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Пробег -->
+					<div class="filter-section">
+						<div class="filter-title">Пробег</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="run_start" 
+										value="{{params.filtr.run_start}}" placeholder="0">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="run_end" 
+										value="{{params.filtr.run_end}}" placeholder="500000">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Цена -->
+					<div class="filter-section">
+						<div class="filter-title">Цена</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="price_start" 
+										value="{{params.filtr.price_start}}" placeholder="0">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="price_end" 
+										value="{{params.filtr.price_end}}" placeholder="10000000">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{% if request.user.is_authenticated %}
+					<!-- VIN -->
+					<div class="filter-section">
+						<div class="filter-title">VIN</div>
+						<div class="filter-input">
+							<input type="text" class="form-control" name="vin" 
+								value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
+						</div>
+					</div>
+
+					<!-- Статус -->
+					<div class="filter-section">
+						<div class="filter-title">Статус</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_status" placeholder="Поиск по статусу">
+						</div>
+						<div class="filter-options">
+							{% for status in params.selected.statuses %}
+								<label class="filter-option" id="mobile_status_{{status.pk}}">
+									<input type="checkbox" name="status[]" value="{{status.pk}}" 
+										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
+									<span class="filter-text">{{status.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Этап УС -->
+					<div class="filter-section">
+						<div class="filter-title">Этап УС</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_stage_price" placeholder="Поиск по этапу УС">
+						</div>
+						<div class="filter-options">
+							{% for stage_price in params.selected.stage_prices %}
+								<label class="filter-option" id="mobile_stage_price_{{stage_price.pk}}">
+									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" 
+										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
+									<span class="filter-text">{{stage_price.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Вид продажи -->
+					<div class="filter-section">
+						<div class="filter-title">Вид продажи</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_type_sale" placeholder="Поиск по виду продажи">
+						</div>
+						<div class="filter-options">
+							{% for type_sale in params.selected.type_sales %}
+								<label class="filter-option" id="mobile_type_sale_{{type_sale.pk}}">
+									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" 
+										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
+									<span class="filter-text">{{type_sale.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+					{% endif %}
+				</form>
 			</div>
 			<div class="modal-footer bg-light">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -212,257 +418,244 @@
 <!-- Мобильная кнопка фильтров -->
 <div class="d-block d-md-none">
 	<div class="mobile-filters-button-container">
-		<a href="?show_filters=1" class="btn btn-filters-mobile">
+		<button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
 			<span class="icon-mbri-setting me-2"></span>
 			<span class="filters-text">Фильтры</span>
 			<span class="filters-count" id="activeFiltersCount">0</span>
-		</a>
+		</button>
 	</div>
 </div>
 
-<!-- Мобильная страница фильтров -->
-{% if request.GET.show_filters %}
-<div class="d-block d-md-none mobile-filters-page">
-	<div class="mobile-filters-header">
-		<div class="d-flex justify-content-between align-items-center">
-			<h4 class="mb-0">
-				<span class="icon-mbri-setting me-2"></span>Фильтры поиска
-			</h4>
-			<a href="?" class="btn btn-outline-secondary btn-sm">
-				<span class="icon-mbri-close"></span>
-			</a>
+<!-- Модальное окно фильтров для мобильных устройств -->
+<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header bg-dark text-white">
+				<h5 class="modal-title" id="mobileFiltersModalLabel">
+					<span class="icon-mbri-setting me-2"></span>Фильтры поиска
+				</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body">
+				<form method="get" id="mobileFiltersForm">
+					<!-- Город -->
+					<div class="filter-section">
+						<div class="filter-title">Город</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_city" placeholder="Поиск по городу">
+						</div>
+						<div class="filter-options">
+							{% for city in params.selected.citys %}
+								{% if city.city__name|length > 0 %}
+									<label class="filter-option" id="mobile_city_{{city.city}}">
+										<input type="checkbox" name="city[]" value="{{city.city}}" 
+											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
+										<span class="filter-text">{{city.city__name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Марка -->
+					<div class="filter-section">
+						<div class="filter-title">Марка</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_marks" placeholder="Поиск по марке">
+						</div>
+						<div class="filter-options">
+							{% for mark in params.selected.marks %}
+								<label class="filter-option" id="mobile_mark_{{mark.pk}}">
+									<input type="checkbox" name="mark[]" value="{{mark.pk}}" 
+										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
+									<span class="filter-text">{{mark.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Коробка передач -->
+					<div class="filter-section">
+						<div class="filter-title">Коробка передач</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_gear" placeholder="Поиск по коробке передач">
+						</div>
+						<div class="filter-options">
+							{% for gear in params.selected.gears %}
+								<label class="filter-option" id="mobile_gear_{{gear.pk}}">
+									<input type="checkbox" name="gear[]" value="{{gear.pk}}" 
+										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
+									<span class="filter-text">{{gear.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Кузов -->
+					<div class="filter-section">
+						<div class="filter-title">Кузов</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_body" placeholder="Поиск по кузову">
+						</div>
+						<div class="filter-options">
+							{% for body in params.selected.bodys %}
+								<label class="filter-option" id="mobile_body_{{body.pk}}">
+									<input type="checkbox" name="body[]" value="{{body.pk}}" 
+										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
+									<span class="filter-text">{{body.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Привод -->
+					<div class="filter-section">
+						<div class="filter-title">Привод</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_drives" placeholder="Поиск по приводу">
+						</div>
+						<div class="filter-options">
+							{% for drive in params.selected.drives %}
+								{% if drive.name|length > 0 %}
+									<label class="filter-option" id="mobile_drive_{{drive.pk}}">
+										<input type="checkbox" name="drive[]" value="{{drive.pk}}" 
+											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
+										<span class="filter-text">{{drive.name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Год выпуска -->
+					<div class="filter-section">
+						<div class="filter-title">Год выпуска</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="year_start" 
+										value="{{params.filtr.year_start}}" placeholder="1950">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="year_end" 
+										value="{{params.filtr.year_end}}" placeholder="2025">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Пробег -->
+					<div class="filter-section">
+						<div class="filter-title">Пробег</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="run_start" 
+										value="{{params.filtr.run_start}}" placeholder="0">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="run_end" 
+										value="{{params.filtr.run_end}}" placeholder="500000">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Цена -->
+					<div class="filter-section">
+						<div class="filter-title">Цена</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="price_start" 
+										value="{{params.filtr.price_start}}" placeholder="0">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="price_end" 
+										value="{{params.filtr.price_end}}" placeholder="10000000">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{% if request.user.is_authenticated %}
+					<!-- VIN -->
+					<div class="filter-section">
+						<div class="filter-title">VIN</div>
+						<div class="filter-input">
+							<input type="text" class="form-control" name="vin" 
+								value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
+						</div>
+					</div>
+
+					<!-- Статус -->
+					<div class="filter-section">
+						<div class="filter-title">Статус</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_status" placeholder="Поиск по статусу">
+						</div>
+						<div class="filter-options">
+							{% for status in params.selected.statuses %}
+								<label class="filter-option" id="mobile_status_{{status.pk}}">
+									<input type="checkbox" name="status[]" value="{{status.pk}}" 
+										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
+									<span class="filter-text">{{status.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Этап УС -->
+					<div class="filter-section">
+						<div class="filter-title">Этап УС</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_stage_price" placeholder="Поиск по этапу УС">
+						</div>
+						<div class="filter-options">
+							{% for stage_price in params.selected.stage_prices %}
+								<label class="filter-option" id="mobile_stage_price_{{stage_price.pk}}">
+									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" 
+										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
+									<span class="filter-text">{{stage_price.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Вид продажи -->
+					<div class="filter-section">
+						<div class="filter-title">Вид продажи</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_type_sale" placeholder="Поиск по виду продажи">
+						</div>
+						<div class="filter-options">
+							{% for type_sale in params.selected.type_sales %}
+								<label class="filter-option" id="mobile_type_sale_{{type_sale.pk}}">
+									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" 
+										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
+									<span class="filter-text">{{type_sale.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+					{% endif %}
+				</form>
+			</div>
+			<div class="modal-footer bg-light">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+				<button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
+					<span class="icon-mbri-search me-2"></span>Применить фильтры
+				</button>
+			</div>
 		</div>
 	</div>
-	
-	<div class="mobile-filters-content">
-		<form method="get" id="mobileFiltersForm">
-			<!-- Город -->
-			<div class="filter-section">
-				<div class="filter-title">Город</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_city" placeholder="Поиск по городу">
-				</div>
-				<div class="filter-options">
-					{% for city in params.selected.citys %}
-						{% if city.city__name|length > 0 %}
-							<label class="filter-option" id="mobile_city_{{city.city}}">
-								<input type="checkbox" name="city[]" value="{{city.city}}" 
-									{% if city.city in params.filtr.filter_city %} checked {% endif %}>
-								<span class="filter-text">{{city.city__name}}</span>
-							</label>
-						{% endif %}
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Марка -->
-			<div class="filter-section">
-				<div class="filter-title">Марка</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_marks" placeholder="Поиск по марке">
-				</div>
-				<div class="filter-options">
-					{% for mark in params.selected.marks %}
-						<label class="filter-option" id="mobile_mark_{{mark.pk}}">
-							<input type="checkbox" name="mark[]" value="{{mark.pk}}" 
-								{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
-							<span class="filter-text">{{mark.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Коробка передач -->
-			<div class="filter-section">
-				<div class="filter-title">Коробка передач</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_gear" placeholder="Поиск по коробке передач">
-				</div>
-				<div class="filter-options">
-					{% for gear in params.selected.gears %}
-						<label class="filter-option" id="mobile_gear_{{gear.pk}}">
-							<input type="checkbox" name="gear[]" value="{{gear.pk}}" 
-								{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
-							<span class="filter-text">{{gear.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Кузов -->
-			<div class="filter-section">
-				<div class="filter-title">Кузов</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_body" placeholder="Поиск по кузову">
-				</div>
-				<div class="filter-options">
-					{% for body in params.selected.bodys %}
-						<label class="filter-option" id="mobile_body_{{body.pk}}">
-							<input type="checkbox" name="body[]" value="{{body.pk}}" 
-								{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
-							<span class="filter-text">{{body.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Привод -->
-			<div class="filter-section">
-				<div class="filter-title">Привод</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_drives" placeholder="Поиск по приводу">
-				</div>
-				<div class="filter-options">
-					{% for drive in params.selected.drives %}
-						{% if drive.name|length > 0 %}
-							<label class="filter-option" id="mobile_drive_{{drive.pk}}">
-								<input type="checkbox" name="drive[]" value="{{drive.pk}}" 
-									{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
-								<span class="filter-text">{{drive.name}}</span>
-							</label>
-						{% endif %}
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Год выпуска -->
-			<div class="filter-section">
-				<div class="filter-title">Год выпуска</div>
-				<div class="filter-range">
-					<div class="row">
-						<div class="col-6">
-							<input type="number" class="form-control" name="year_start" 
-								value="{{params.filtr.year_start}}" placeholder="1950">
-							<small class="text-muted">от</small>
-						</div>
-						<div class="col-6">
-							<input type="number" class="form-control" name="year_end" 
-								value="{{params.filtr.year_end}}" placeholder="2025">
-							<small class="text-muted">до</small>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Пробег -->
-			<div class="filter-section">
-				<div class="filter-title">Пробег</div>
-				<div class="filter-range">
-					<div class="row">
-						<div class="col-6">
-							<input type="number" class="form-control" name="run_start" 
-								value="{{params.filtr.run_start}}" placeholder="0">
-							<small class="text-muted">от</small>
-						</div>
-						<div class="col-6">
-							<input type="number" class="form-control" name="run_end" 
-								value="{{params.filtr.run_end}}" placeholder="500000">
-							<small class="text-muted">до</small>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Цена -->
-			<div class="filter-section">
-				<div class="filter-title">Цена</div>
-				<div class="filter-range">
-					<div class="row">
-						<div class="col-6">
-							<input type="number" class="form-control" name="price_start" 
-								value="{{params.filtr.price_start}}" placeholder="0">
-							<small class="text-muted">от</small>
-						</div>
-						<div class="col-6">
-							<input type="number" class="form-control" name="price_end" 
-								value="{{params.filtr.price_end}}" placeholder="10000000">
-							<small class="text-muted">до</small>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{% if request.user.is_authenticated %}
-			<!-- VIN -->
-			<div class="filter-section">
-				<div class="filter-title">VIN</div>
-				<div class="filter-input">
-					<input type="text" class="form-control" name="vin" 
-						value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
-				</div>
-			</div>
-
-			<!-- Статус -->
-			<div class="filter-section">
-				<div class="filter-title">Статус</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_status" placeholder="Поиск по статусу">
-				</div>
-				<div class="filter-options">
-					{% for status in params.selected.statuses %}
-						<label class="filter-option" id="mobile_status_{{status.pk}}">
-							<input type="checkbox" name="status[]" value="{{status.pk}}" 
-								{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
-							<span class="filter-text">{{status.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Этап УС -->
-			<div class="filter-section">
-				<div class="filter-title">Этап УС</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_stage_price" placeholder="Поиск по этапу УС">
-				</div>
-				<div class="filter-options">
-					{% for stage_price in params.selected.stage_prices %}
-						<label class="filter-option" id="mobile_stage_price_{{stage_price.pk}}">
-							<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" 
-								{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
-							<span class="filter-text">{{stage_price.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-
-			<!-- Вид продажи -->
-			<div class="filter-section">
-				<div class="filter-title">Вид продажи</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_type_sale" placeholder="Поиск по виду продажи">
-				</div>
-				<div class="filter-options">
-					{% for type_sale in params.selected.type_sales %}
-						<label class="filter-option" id="mobile_type_sale_{{type_sale.pk}}">
-							<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" 
-								{% if type_sale.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
-							<span class="filter-text">{{type_sale.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-			{% endif %}
-
-			<!-- Кнопки действий -->
-			<div class="filter-actions">
-				<div class="row">
-					<div class="col-6">
-						<a href="?" class="btn btn-outline-secondary btn-block">
-							<span class="icon-mbri-close me-2"></span>Отмена
-						</a>
-					</div>
-					<div class="col-6">
-						<button type="submit" class="btn btn-primary btn-block">
-							<span class="icon-mbri-search me-2"></span>Применить
-						</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
 </div>
-{% endif %}
 
 <form method="get" id="filtersForm">
 	<div class="card bg-white bg-opacity-75 d-none d-md-block">
@@ -897,12 +1090,12 @@
 								
 								{% for type_sale in params.selected.type_sales %}
 								
-								<label style="margin: 0.2rem;" class="" id="type_sale_select_{{type_sale.name}}"><input type="checkbox" name="type_sale[]" value="{{stage_price.pk}}" id="type_sale_filtr_{{unit.pk}}" {% if type_sale.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %} > {{type_sale.name}}</label>
+								<label style="margin: 0.2rem;" class="" id="type_sale_select_{{type_sale.name}}"><input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{unit.pk}}" {% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %} > {{type_sale.name}}</label>
 						
 								{% endfor %}
 							
 								<script>
-								$('#search_stage_price').on('input', function() {
+								$('#search_type_sale').on('input', function() {
 									var search = $(this).val();
 									if (search.length === 0){
 										$('[id*="type_sale_select_"]').removeClass('d-none');
@@ -1203,11 +1396,99 @@ function countActiveFilters() {
     return count;
 }
 
-// Обработчик отправки мобильной формы фильтров
-document.addEventListener('submit', function(e) {
-    if (e.target.id === 'mobileFiltersForm') {
-        // Форма будет отправлена автоматически, так как это обычная GET форма
-        // Все параметры фильтров передадутся в URL
+function applyMobileFilters() {
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        // Синхронизируем чекбоксы
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                mainCheckboxes[index].checked = checkbox.checked;
+            }
+        });
+        
+        // Синхронизируем поля ввода
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                mainInputs[index].value = input.value;
+            }
+        });
+        
+        // Обновляем счетчик активных фильтров
+        updateActiveFiltersCount();
+        
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('mobileFiltersModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Отправляем основную форму
+        mainForm.submit();
+    }
+}
+
+// Обработчики событий для модального окна
+document.getElementById('mobileFiltersModal').addEventListener('show.bs.modal', function() {
+    // Синхронизируем значения из основной формы в мобильную при открытии
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                checkbox.checked = mainCheckboxes[index].checked;
+            }
+        });
+        
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                input.value = mainInputs[index].value;
+            }
+        });
+        
+        updateActiveFiltersCount();
+    }
+});
+
+document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal', function() {
+    // Синхронизируем значения из мобильной формы в основную при закрытии
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                mainCheckboxes[index].checked = checkbox.checked;
+            }
+        });
+        
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                mainInputs[index].value = input.value;
+            }
+        });
+        
+        updateActiveFiltersCount();
     }
 });
 </script>
