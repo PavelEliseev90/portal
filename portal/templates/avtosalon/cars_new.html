@@ -1216,8 +1216,9 @@ function filterPCOptions(containerId, searchValue) {
 
 function toggleFilters() {
     const filtersContent = document.querySelector('.pc-filters-content');
-    const toggleButton = document.querySelector('.pc-filters-header .btn-outline-light');
-    const icon = toggleButton.querySelector('.icon-mbri-up, .icon-mbri-down');
+    const toggleButton = document.querySelector('.pc-filters-header button[onclick="toggleFilters()"]');
+    
+    if (!filtersContent || !toggleButton) return;
     
     if (filtersContent.style.display === 'none') {
         filtersContent.style.display = 'block';
