@@ -111,14 +111,14 @@
 		{% for car in params.paginator.object_list %}
 				
 			<div class="col-sm-3">
-				<div class="card" onclick="window.location.href='{{car.slug}}'; return false" > 
+				<div class="card bg-white bg-opacity-50" onclick="window.location.href='{{car.slug}}'; return false" > 
 					<div class="card-body" style="padding: 0rem;">
 
 						<div class="row" style="padding: 0rem; padding-top: 0.2rem;">
 							
 							<div class="col-12 col-sm-12">
 									
-								<img src="{{car.get_photo}}" style="border-radius: 0.3rem 0 0.3rem; min-width: 11rem; ">									
+								<img src="{{car.get_photo}}" class="item-img_up" style="min-width: 11rem;">									
 									
 							</div>
 

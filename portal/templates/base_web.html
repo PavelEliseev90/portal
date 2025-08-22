@@ -1,4 +1,3 @@
-
 <!DOCTYPE HTML>
 
 
@@ -1005,7 +1004,9 @@
 	  };
 	})(jQuery);	
 	
-	$('.checkselect').checkselect();
+	$('.checkselect').hide();
+    $('.checkselect').checkselect();
+    $('.checkselect').show();
   
   
   </script>
@@ -1053,6 +1054,8 @@
 	   url.searchParams.set('page', page)
 	   document.location.href  = url.href;
 	}
+    
+
     
 </script>  
 
@@ -1526,7 +1529,7 @@
     }
     
     lightBoxContainer.appendChild(lightBoxClose);
-    lightBoxContainer.appendChild(lightBoxCount);
+    // lightBoxContainer.appendChild(lightBoxCount); // Убираем счетчик слайдов
     lightBoxContainer.appendChild(lightBoxCover);
     lightBoxContainer.appendChild(lightBoxTransformRight);
     
@@ -1543,7 +1546,7 @@
         let imageLocation = galleryItem[index-1].children[0].getAttribute("src1");
         lightBoxImg.setAttribute("src", imageLocation);
         //lightBoxContent.style.backgroundImage = 'url("' + imageLocation + '")';
-        lightBoxCount.innerHTML = ' ' + index + ' / ' + galleryItem.length;
+        // lightBoxCount.innerHTML = ' ' + index + ' / ' + galleryItem.length; // Убираем обновление счетчика
     }
 
     function currentImage() {
@@ -1551,6 +1554,9 @@
 
         let imageIndex = parseInt(this.getAttribute("data-index"));
         showLightBox(index = imageIndex);
+        
+        // Скрываем мобильный слайдер при открытии lightbox
+        hideMobileSlider();
     }
     for (let i = 0; i < galleryItem.length; i++) {
         galleryItem[i].addEventListener("click", currentImage);
@@ -1606,12 +1612,105 @@
             lightBoxContent.style.width     = "99%";
             lightBoxContent.style.height    = "99%";
             lightBoxImg.style.objectFit     = "contain";
+            
+            // Показываем мобильный слайдер при закрытии lightbox
+            showMobileSlider();
         }
     }
     lightBoxClose.addEventListener("click", closeLightBox);
     lightBoxContainer.addEventListener("click", closeLightBox);
     lightBoxCover.addEventListener("click", cover_image);
     lightBoxTransformRight.addEventListener("click", transform_image);
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let minSwipeDistance = 50;
+
+    function getSwipeDirection() {
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) {
+                return 'right';
+            } else {
+                return 'left';
+            }
+        }
+        return 'none';
+    }
+
+    function handleTouchStart(e) {
+        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    }
+
+    function handleTouchMove(e) {
+        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+            e.preventDefault();
+        }
+    }
+
+    function handleTouchEnd(e) {
+        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+            
+            const swipeDirection = getSwipeDirection();
+            
+            if (swipeDirection === 'left') {
+                nextImage();
+            } else if (swipeDirection === 'right') {
+                prevImage();
+            }
+        }
+    }
+
+    if (galleryItem.length > 1) {
+        lightBoxContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        lightBoxContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        lightBoxContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
+
+    function handleGalleryTouchStart(e) {
+        if (galleryItem.length > 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+    }
+
+    function handleGalleryTouchMove(e) {
+        if (galleryItem.length > 1) {
+            e.preventDefault();
+        }
+    }
+
+    function handleGalleryTouchEnd(e) {
+        if (galleryItem.length > 1) {
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+            
+            const swipeDirection = getSwipeDirection();
+            
+            if (swipeDirection === 'left') {
+                const nextIndex = (index % galleryItem.length) + 1;
+                showLightBox(nextIndex);
+            } else if (swipeDirection === 'right') {
+                let prevIndex = index - 1;
+                if (prevIndex < 1) prevIndex = galleryItem.length;
+                showLightBox(prevIndex);
+            }
+        }
+    }
+
+    for (let i = 0; i < galleryItem.length; i++) {
+        galleryItem[i].addEventListener('touchstart', handleGalleryTouchStart, { passive: false });
+        galleryItem[i].addEventListener('touchmove', handleGalleryTouchMove, { passive: false });
+        galleryItem[i].addEventListener('touchend', handleGalleryTouchEnd, { passive: false });
+    }
 
     {% if params.type == 'checklists' %}
         $(document).ready(function() {
@@ -1627,6 +1726,320 @@
         });
     });
 
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	console.log('DOM загружен, инициализируем слайдеры...');
+
+        if (document.querySelector('.gallery-pc-slider')) {
+                initGallerySlider('.gallery-pc-slider');
+        }
+
+        if (document.querySelector('.gallery-mobile-slider')) {
+                initMobileGallerySlider('.gallery-mobile-slider');
+        }
+});
+
+function initGallerySlider(selector) {
+        const slider = document.querySelector(selector);
+        if (!slider) return;
+	
+	const prevBtn = document.getElementById('gallerySliderPrev');
+	const nextBtn = document.getElementById('gallerySliderNext');
+	
+	if (!prevBtn || !nextBtn) return;
+	
+	const slideItems = slider.querySelectorAll('.gallery-item');
+	const totalItems = slideItems.length;
+	
+	if (totalItems === 0) return;
+	
+	let currentSlide = 0;
+	
+	// Инициализируем первый слайд как активный
+	slideItems[0].classList.add('active-main');
+	
+	updateSlider();
+	
+	// Обработчики кнопок
+	prevBtn.addEventListener('click', (event) => {
+		event.stopPropagation(); // Предотвращаем всплытие события
+		currentSlide = (currentSlide - 1 + totalItems) % totalItems;
+		updateSlider();
+	});
+	
+	nextBtn.addEventListener('click', (event) => {
+		event.stopPropagation(); // Предотвращаем всплытие события
+		currentSlide = (currentSlide + 1) % totalItems;
+		updateSlider();
+	});
+	
+	// Обработчик клика по миниатюрам
+	slideItems.forEach((item, index) => {
+		item.addEventListener('click', () => {
+			if (index !== currentSlide) {
+				currentSlide = index;
+				updateSlider();
+			}
+		});
+	});
+	
+	// Клавиатура
+	document.addEventListener('keydown', (e) => {
+		if (slider.closest('.gallery-pc-slider')) {
+			if (e.key === 'ArrowLeft') {
+				currentSlide = (currentSlide - 1 + totalItems) % totalItems;
+				updateSlider();
+			} else if (e.key === 'ArrowRight') {
+				currentSlide = (currentSlide + 1) % totalItems;
+				updateSlider();
+			}
+		}
+	});
+	
+	// Скрываем слайдер когда открывается lightbox
+	const lightboxContainer = document.querySelector('.lightbox');
+	if (lightboxContainer) {
+		const observer = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+					if (lightboxContainer.style.display === 'block') {
+						// Скрываем кнопки слайдера
+						prevBtn.style.display = 'none';
+						nextBtn.style.display = 'none';
+					} else {
+						// Показываем кнопки слайдера
+						prevBtn.style.display = 'flex';
+						nextBtn.style.display = 'flex';
+					}
+				}
+			});
+		});
+		
+		observer.observe(lightboxContainer, {
+			attributes: true,
+			attributeFilter: ['style']
+		});
+	}
+	
+	function updateSlider() {
+		try {
+			// Обновляем главное изображение
+			slideItems.forEach((item, index) => {
+				if (index === currentSlide) {
+					// Показываем текущий слайд крупно
+					item.style.display = 'block';
+					item.style.flexBasis = '100%';
+					item.style.maxHeight = '500px';
+					item.style.opacity = '1';
+					item.style.transform = 'scale(1)';
+					
+					// Добавляем класс для активного главного изображения
+					item.classList.add('active-main');
+					
+					// Перемещаем кнопки к текущему главному слайду
+					prevBtn.style.display = 'flex';
+					nextBtn.style.display = 'flex';
+					item.appendChild(prevBtn);
+					item.appendChild(nextBtn);
+					
+				} else {
+					// Показываем остальные слайды как миниатюры
+					item.style.display = 'flex';
+					item.style.flexBasis = '10%';
+					item.style.maxHeight = '70px';
+					item.style.height = '70px';
+					item.style.opacity = '0.7';
+					item.style.transform = 'scale(1)';
+					
+					// Убираем класс активного главного изображения
+					item.classList.remove('active-main');
+				}
+			});
+			
+			// Обновляем состояние кнопок
+			prevBtn.disabled = totalItems <= 1;
+			nextBtn.disabled = totalItems <= 1;
+			
+			// Обновляем ARIA атрибуты
+			slider.setAttribute('aria-current', currentSlide + 1);
+			slider.setAttribute('aria-label', `Изображение ${currentSlide + 1} из ${totalItems}`);
+		} catch (error) {
+			console.error('Ошибка при обновлении слайдера:', error);
+		}
+	}
+}
+
+// НОВАЯ ЛОГИКА: Мобильный слайдер с transform translateX - полностью переписан
+function initMobileGallerySlider() {
+	console.log('НОВАЯ ЛОГИКА: Инициализация мобильного слайдера...');
+	
+	// Находим мобильный контейнер галереи
+	const mobileGallery = document.querySelector('.gallery-container:not(.gallery-pc-slider)');
+	
+	if (!mobileGallery) {
+		console.log('Мобильный контейнер не найден!');
+		return;
+	}
+	
+	console.log('Найден мобильный контейнер:', mobileGallery);
+	
+	// Находим кнопки навигации
+	const prevBtn = document.getElementById('mobileSliderPrev');
+	const nextBtn = document.getElementById('mobileSliderNext');
+	
+    if (!prevBtn || !nextBtn) {
+               console.log('Кнопки навигации не найдены!');
+               const firstItem = mobileGallery.querySelector('.gallery-item');
+               if (firstItem) {
+                       firstItem.classList.add('active-mobile');
+                       mobileGallery.style.setProperty('--slide-counter', '1 / 1');
+               }
+               return;
+    }
+	
+	// Находим все слайды
+	const slideItems = mobileGallery.querySelectorAll('.gallery-item');
+	const totalSlides = slideItems.length;
+	
+	if (totalSlides === 0) {
+		console.log('Слайды не найдены!');
+		return;
+	}
+	
+	// Добавляем класс single-slide если слайд только один
+	if (totalSlides === 1) {
+		mobileGallery.classList.add('single-slide');
+	}
+	
+	let currentSlide = 0;
+	
+	// НОВАЯ ЛОГИКА: Инициализируем слайды
+	initializeMobileSlider();
+	
+	// Обработчики кнопок
+	prevBtn.addEventListener('click', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const prevSlide = currentSlide;
+		currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+		showMobileSlide(currentSlide, 'prev');
+	});
+	
+	nextBtn.addEventListener('click', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const prevSlide = currentSlide;
+		currentSlide = (currentSlide + 1) % totalSlides;
+		showMobileSlide(currentSlide, 'next');
+	});
+	
+	// НОВАЯ ЛОГИКА: Функция инициализации слайдера
+	function initializeMobileSlider() {
+		// Устанавливаем начальные позиции для всех слайдов
+		slideItems.forEach((item, index) => {
+			item.classList.remove('active-mobile', 'slide-from-left', 'slide-from-right', 'slide-to-left', 'slide-to-right');
+			// Скрываем все слайды
+			item.style.opacity = '0';
+			item.style.visibility = 'hidden';
+			item.style.transform = 'translateX(100%)';
+		});
+		
+		// Показываем первый слайд
+		showMobileSlide(0);
+	}
+	
+	// НОВАЯ ЛОГИКА: Функция показа слайда с анимацией
+	function showMobileSlide(index, direction = null) {
+		// Убираем все классы у всех слайдов и скрываем их
+		slideItems.forEach(item => {
+			item.classList.remove('active-mobile', 'slide-from-left', 'slide-from-right', 'slide-to-left', 'slide-to-right');
+			// Явно скрываем все слайды
+			item.style.opacity = '0';
+			item.style.visibility = 'hidden';
+			item.style.transform = 'translateX(100%)';
+		});
+		
+		// Добавляем активный класс к текущему слайду и показываем его
+		const currentItem = slideItems[index];
+		currentItem.classList.add('active-mobile');
+		currentItem.style.opacity = '1';
+		currentItem.style.visibility = 'visible';
+		currentItem.style.transform = 'translateX(0)';
+		
+		// Обновляем счетчик через CSS переменную
+		mobileGallery.style.setProperty('--slide-counter', `${index + 1} / ${totalSlides}`);
+		
+		// Обновляем состояние кнопок
+		prevBtn.disabled = totalSlides <= 1;
+		nextBtn.disabled = totalSlides <= 1;
+		
+		console.log(`НОВАЯ ЛОГИКА: Показан слайд ${index + 1} из ${totalSlides}`);
+	}
+	
+	// НОВАЯ ЛОГИКА: Поддержка свайпов
+	let touchStartX = 0;
+	let touchStartY = 0;
+	let touchEndX = 0;
+	let touchEndY = 0;
+	const minSwipeDistance = 50;
+	
+	function handleTouchStart(e) {
+		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
+	}
+	
+	function handleTouchMove(e) {
+		e.preventDefault();
+	}
+	
+	function handleTouchEnd(e) {
+		touchEndX = e.changedTouches[0].clientX;
+		touchEndY = e.changedTouches[0].clientY;
+		
+		const deltaX = touchEndX - touchStartX;
+		const deltaY = touchEndY - touchStartY;
+		
+		if (Math.abs(deltaX) > minSwipeDistance && Math.abs(deltaX) > Math.abs(deltaY)) {
+			if (deltaX > 0) {
+				// Свайп вправо - предыдущий слайд
+				currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+				showMobileSlide(currentSlide, 'prev');
+			} else {
+				// Свайп влево - следующий слайд
+				currentSlide = (currentSlide + 1) % totalSlides;
+				showMobileSlide(currentSlide, 'next');
+			}
+		}
+	}
+	
+	// Добавляем обработчики touch событий только для мобильного слайдера
+	mobileGallery.addEventListener('touchstart', handleTouchStart, { passive: false });
+	mobileGallery.addEventListener('touchmove', handleTouchMove, { passive: false });
+	mobileGallery.addEventListener('touchend', handleTouchEnd, { passive: false });
+	
+	// НОВАЯ ЛОГИКА: Поддержка клавиатуры только для мобильного слайдера
+	document.addEventListener('keydown', (e) => {
+		// Проверяем, что фокус находится в мобильном слайдере
+		if (mobileGallery.contains(document.activeElement) || mobileGallery === document.activeElement) {
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+				showMobileSlide(currentSlide, 'prev');
+			} else if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				currentSlide = (currentSlide + 1) % totalSlides;
+				showMobileSlide(currentSlide, 'next');
+			}
+		}
+	});
+	
+	console.log('НОВАЯ ЛОГИКА: Мобильный слайдер успешно инициализирован!');
+}
+
+// Функции для управления мобильным слайдером убраны - теперь мобильный слайдер полностью автономен
 </script>
 
 

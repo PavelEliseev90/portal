@@ -76,10 +76,6 @@ def get_qrcode(name):
     
     return qr_code_image_data
 
-'''
-
-'''
-
 
 # Информационная база 1С
 class RefIb(models.Model):
@@ -148,22 +144,6 @@ class RefOrganization(models.Model):
         db_table = 'refOrganization'
         verbose_name = "Организация / фирма"
         verbose_name_plural = "Организации / фирмы"
-
-
-#Организации (Фирмы)
-class RefFilial(models.Model):
-    uin             = models.CharField("uin", max_length=200, default='')
-    name            = models.CharField("Наименование", max_length=250, default='')
-    organization    = models.ForeignKey(RefOrganization, null=True, on_delete=models.SET_NULL, verbose_name='Организация')
-    active_eco      = models.BooleanField("Доступен для оценки", default=False)
-
-    def __str__(self):
-        return "{} - {} / {}".format(self.name, self.active_eco, self.organization)
-
-    class Meta:
-        db_table = 'refFilial'
-        verbose_name = "Филиал"
-        verbose_name_plural = "Филиалы"
 
 
 # Подразделения ДЦ
@@ -375,6 +355,23 @@ class RefUnit(models.Model):
         db_table = 'refUnit'
         verbose_name = "Подразделение"
         verbose_name_plural = "Подразделения"
+
+
+#Организации (Фирмы)
+class RefFilial(models.Model):
+    uin             = models.CharField("uin", max_length=200, default='')
+    name            = models.CharField("Наименование", max_length=250, default='')
+    organization    = models.ForeignKey(RefOrganization, null=True, on_delete=models.SET_NULL, verbose_name='Организация')
+    active_eco      = models.BooleanField("Доступен для оценки", default=False)
+    unit            = models.ForeignKey(RefUnit, null=True, on_delete=models.SET_NULL, verbose_name='Подразделение')
+
+    def __str__(self):
+        return "{} - {} / {}".format(self.name, self.active_eco, self.organization)
+
+    class Meta:
+        db_table = 'refFilial'
+        verbose_name = "Филиал"
+        verbose_name_plural = "Филиалы"
 
 
 # Группы подразделений

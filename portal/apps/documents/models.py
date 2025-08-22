@@ -631,7 +631,11 @@ class DocLO(models.Model):
     description_op          = models.CharField("Комментарий для отдела продаж", max_length=15120, default='')
     vin_new                 = models.CharField("ВИН нового авто", max_length=21, default='')
     name_new_auto           = models.CharField("Марка / модель нового авто", max_length=512, default='')
-    auction                 = models.BooleanField("Аукцион", default=False) 
+    agreement_number        = models.CharField("Марка / модель нового авто", max_length=512, default='')
+    agreement_unit          = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, related_name='agreement_unit', verbose_name="Подразделение соглашение")
+    agreement_unit_bu       = models.BooleanField("Соглашение БУ", default=False)
+    auction                 = models.BooleanField("Аукцион", default=False)
+    auction_comment         = models.CharField("Аукцион коментарий", max_length=1024, default='')
 
     def __str__(self):
         return "{} ({} - {}) - {}".format(self.dataTime, self.clientName, self.nomer, self.type_reception)

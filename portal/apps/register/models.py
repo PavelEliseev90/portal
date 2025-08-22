@@ -1422,8 +1422,11 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
     
     zna_to_amount                   = models.IntegerField('ЦНА - затраты', default=0, null=True, blank=True)
     
+    price_auto_auction              = models.BooleanField("Автоматически аукцион", default = False, null=True, blank=True)
+    
     zachita_ot_ubitka               = models.FloatField('Защита от убытка', default=0.00, null=True, blank=True)
     finance_price                   = models.FloatField('Финансирование', default=0.00, null=True, blank=True)
+    
     amount_recovery                 = models.FloatField('Затраты на восстановительный ремонт', default=0.00, null=True, blank=True)
 
     settings                        = models.ForeignKey(RegEstimationsSettings, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Настройка ценообразования" ) 
@@ -1440,7 +1443,7 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
 
         try:
             s = 1
-            add_swap(self.reginteractivocenka)
+            #add_swap(self.reginteractivocenka) раскоментировать
         except:
             s =1 
         super().save(*args, **kwargs)
@@ -2612,9 +2615,20 @@ class RegEstimationBalanceUnit(models.Model):
     def __str__(self):
         return "{} / {} / {}".format(self.unit, self.date, self.date, self.amount)
 
+    def save(self, *args, **kwargs):
+        try:
+            if self.shipment != None:
+                self.amount = self.amount_out
+            else:
+                self.amount = self.amount_in
+        except:
+            s=1
+        
+        super().save(*args, **kwargs)
+
     class Meta:
         indexes = [
-            models.Index(fields=['unit'])
+            models.Index(fields=['unit', 'estimation', 'shipment'])
         ]
         db_table = 'regEstimationBalanceUnit'
         verbose_name = "Баланс подразделений организациий"

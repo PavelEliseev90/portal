@@ -36,7 +36,7 @@ import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
 from refs.serializers import AutoruComplectationSerializer, AutoruMarkSerializer, AutoruModelSerializer, AutoruModificationSerializer
 from online.models import Online_doc, Records_online_doc
-from register.models import RegPrices
+from register.models import RegPrices, RegInteractivOcenka
 from avtosalon.models import RefreshSpecificationsAutoRU
 from recognition.models import Recognition_call, Records_voice_recorder
 from telephony.models import Telephony_records_queue
@@ -2742,11 +2742,31 @@ def get_lo(lo):
     object.carsGRZ                  = lo['PlateNumber']
     object.year                     = lo['Year']
     
+    if 'SaleAgreementNumber' in lo:
+        object.agreement_number = lo['SaleAgreementNumber']
+
+    if 'SaleAgreementUnit' in lo:
+        object.agreement_unit   = get_unit(lo['SaleAgreementUnit'])
+
+    if 'SaleAgreementBU' in lo:
+        object.agreement_unit_bu = lo['SaleAgreementBU']
+    else:
+        object.agreement_unit_bu = False
+
     modificationAutoru = lo['ModificationAutoru']
     if modificationAutoru > 0:
         object.modification_autoru = AutoruModification.objects.get(idSite = modificationAutoru)
+        
     object.save()
 
+    try:
+        if object.active:
+            if RegInteractivOcenka.objects.filter(rlk = object.rlk).exclude(status = 8).count() > 0:
+                reg_interactiv_ocenka = RegInteractivOcenka.objects.filter(rlk = object.rlk).exclude(status = 8)[0]
+                reg_interactiv_ocenka.returned = False
+                reg_interactiv_ocenka.save()   
+    except:
+        s = 1
     return object
     
 def get_sms(sms):
@@ -3920,7 +3940,7 @@ def get_filial(json_filial):
     
     filials    = RefFilial.objects.filter(uin = uin)
     
-    if len(filials) == 0:
+    if len(filials) == 0: 
         filial      = RefFilial()
         filial.uin  = uin
         filial.save()
@@ -3930,6 +3950,12 @@ def get_filial(json_filial):
     filial.name           = json_filial['Name']
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])
+
+    if 'Unit' in json_filial:
+        unit_data = json_filial['Unit']
+        if len(unit_data) > 0:
+            filial.unit   = get_unit(unit_data)
+
     filial.save()
 
     return filial

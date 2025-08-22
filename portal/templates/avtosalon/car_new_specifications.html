@@ -35,23 +35,23 @@
 	
 		<div class="col-sm-12 col-md-3 col-lg-3 content-head" >
 			<div class="gallery-container">
-			
 				{% for files in params.object.get_files %}
-										
-					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
-						{% if files.file_mini %}
-							{% if forloop.first %}
+					{% if forloop.first %}
+						<div class="gallery-item" id='foto_1' data-index="1">
+							{% if files.file_mini %}
 								<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">								
-							{% endif %}
-						{% else %}
-							<img src={{files}} alt="{{files}}" src1="{{files}}">
-						{% endif %}						
-					</div>
-					
+							{% else %}
+								<img src={{files}} alt="{{files}}" src1="{{files}}">
+							{% endif %}						
+						</div>
+					{% endif %}
 				{% endfor %}
-				
 			</div>
-
+			{% if not request.user_agent.is_pc %}
+    			<!-- <button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">‹</button>
+    			<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">›</button> -->
+			{% endif %}
+			<br>
 			
 			<div class="card" style="background-color: rgba(255,255,255,0.5);">
 				
