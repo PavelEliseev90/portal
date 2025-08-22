@@ -4857,6 +4857,71 @@ hr[style*="width: 75%"] {
     outline-offset: 2px;
 }
 
+/* Анимация для переключения фильтра */
+.pc-filters-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.pc-filters-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+}
+
+.pc-filters-content.expanded {
+    max-height: 2000px;
+    opacity: 1;
+}
+
+/* Стили для кнопки переключения */
+.pc-filters-footer .btn-outline-primary {
+    transition: all 0.3s ease;
+}
+
+.pc-filters-footer .btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+/* Анимация иконки */
+.pc-filters-footer .btn-outline-primary .icon-mbri-up,
+.pc-filters-footer .btn-outline-primary .icon-mbri-down {
+    transition: transform 0.3s ease;
+}
+
+.pc-filters-footer .btn-outline-primary:hover .icon-mbri-up,
+.pc-filters-footer .btn-outline-primary:hover .icon-mbri-down {
+    transform: scale(1.1);
+}
+
+/* Стили для кнопки в шапке */
+.pc-filters-header .btn-primary {
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.pc-filters-header .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Адаптивность для шапки */
+@media (max-width: 1200px) {
+    .pc-filters-header .btn-primary {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .pc-filters-header .btn-primary {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+    }
+}
+
 
 
 

@@ -660,10 +660,15 @@
 <form method="get" id="filtersForm">
 	<div class="pc-filters-container d-none d-md-block">
 		<div class="pc-filters-header">
-			<h5 class="pc-filters-title">
-				<span class="icon-mbri-setting me-2"></span>
-				Фильтры поиска
-			</h5>
+			<div class="d-flex justify-content-between align-items-center">
+				<h5 class="pc-filters-title">
+					<span class="icon-mbri-setting me-2"></span>
+					Фильтры поиска
+				</h5>
+				<button type="submit" class="btn btn-primary btn-sm">
+					<span class="icon-mbri-search me-2"></span>Показать
+				</button>
+			</div>
 		</div>
 		
 		<div class="pc-filters-content">
@@ -899,8 +904,8 @@
 				<a href="catalog/" class="btn btn-outline-secondary">
 					<span class="icon-mbri-home me-2"></span>Каталог
 				</a>
-				<button type="submit" class="btn btn-primary">
-					<span class="icon-mbri-search me-2"></span>Показать
+				<button type="button" class="btn btn-outline-primary" onclick="toggleFilters()">
+					<span class="icon-mbri-up me-2"></span>Скрыть
 				</button>
 			</div>
 		</div>
@@ -1331,4 +1336,23 @@ document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal'
         updateActiveFiltersCount();
     }
 });
+
+function toggleFilters() {
+    const filtersContent = document.querySelector('.pc-filters-content');
+    const toggleButton = document.querySelector('.pc-filters-footer .btn-outline-primary');
+    const icon = toggleButton.querySelector('.icon-mbri-up');
+    
+    if (filtersContent.style.display === 'none') {
+        filtersContent.style.display = 'block';
+        toggleButton.innerHTML = '<span class="icon-mbri-up me-2"></span>Скрыть';
+        toggleButton.classList.remove('btn-outline-primary');
+        toggleButton.classList.add('btn-outline-primary');
+    } else {
+        filtersContent.style.display = 'none';
+        toggleButton.innerHTML = '<span class="icon-mbri-down me-2"></span>Показать';
+        toggleButton.classList.remove('btn-outline-primary');
+        toggleButton.classList.add('btn-outline-primary');
+    }
+}
+
 </script>
