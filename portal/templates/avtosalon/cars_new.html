@@ -658,498 +658,251 @@
 </div>
 
 <form method="get" id="filtersForm">
-	<div class="card bg-white bg-opacity-75 d-none d-md-block">
-		<div class="card-body">
-
-			<div class="row g-1">
-
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
-						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Город</label><br>
-						
-							<div class="checkselect" style="padding-left: 0rem;">
-							
-							<div class="sticky-top bg-white">
-								<input class="form-control" type="text" id="search_city" value="" style="left: 0;" style="left: 0;">
-								<br>
-								<br>
-							</div>
-							
+	<div class="pc-filters-container d-none d-md-block">
+		<div class="pc-filters-header">
+			<h5 class="pc-filters-title">
+				<span class="icon-mbri-setting me-2"></span>
+				Фильтры поиска
+			</h5>
+		</div>
+		
+		<div class="pc-filters-content">
+			<div class="pc-filters-row">
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Город</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_city" placeholder="Поиск по городу">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="city_options">
 							{% for city in params.selected.citys %}
 								{% if city.city__name|length > 0 %}
-									<label style="margin: 0.2rem;" class="fs-6" id="city_select_{{city.city__name}}"><input type="checkbox" name="city[]" value="{{city.city}}" id="city_filtr_{{city.city}}" {% if city.city in params.filtr.filter_city %} checked {% endif %} > {{city.city__name}}</label>
+									<label class="pc-filter-option" id="city_select_{{city.city__name}}">
+										<input type="checkbox" name="city[]" value="{{city.city}}" id="city_filtr_{{city.city}}" 
+											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
+										<span class="pc-filter-text">{{city.city__name}}</span>
+									</label>
 								{% endif %}
 							{% endfor %}
-						
-							<script>
-								$('#search_city').on('input', function() {
-								var search = $(this).val();
-								if (search.length === 0){
-									$('[id*="city_select_"]').removeClass('d-none');
-								}
-								else {
-									$('[id*="city_select_"]').addClass('d-none');
-									var search_lower = search.toLowerCase();
-									var labels = $('[id*="city_select_"]');
-									for (let i = 0; i < labels.length; i++) {
-									label = labels[i];
-									var id_name = label.id.toLowerCase();
-									if (id_name.indexOf(search_lower) >= 0){
-										$('[id*="' + label.id + '"]').removeClass('d-none');                        
-									};
-									};
-								};                  
-							});              
-							</script>
-				
-							</div> 
 						</div>
-						
 					</div>
 				</div>
-				
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Марка</label><br>
-						<div class="checkselect " style="padding-left: 0rem;">
-							
-							<div class="sticky-top bg-white">
-								<input class="form-control " type="text" id="search_marks" value="" style="left: 0;">
-								<br>
-								<hr>
-							</div>
-							
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Марка</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_marks" placeholder="Поиск по марке">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="marks_options">
 							{% for mark in params.selected.marks %}
-							
-								<label style="margin: 0.2rem;" class="" id="marks_select_{{mark.name}}"><input type="checkbox" name="mark[]" value="{{mark.pk}}" id="mark_filtr_{{mark.pk}}" {% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %} > {{mark.name}}</label>
-					
+								<label class="pc-filter-option" id="marks_select_{{mark.name}}">
+									<input type="checkbox" name="mark[]" value="{{mark.pk}}" id="mark_filtr_{{mark.pk}}" 
+										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
+									<span class="pc-filter-text">{{mark.name}}</span>
+								</label>
 							{% endfor %}
-						
-							<script>
-							$('#search_marks').on('input', function() {
-								var search = $(this).val();
-								if (search.length === 0){
-									$('[id*="marks_select_"]').removeClass('d-none');
-								}
-								else {
-									$('[id*="marks_select_"]').addClass('d-none');
-									var search_lower = search.toLowerCase();
-									var labels = $('[id*="marks_select_"]');
-									for (let i = 0; i < labels.length; i++) {
-									label = labels[i];
-									var id_name = label.id.toLowerCase();
-									if (id_name.indexOf(search_lower) >= 0){
-										$('[id*="' + label.id + '"]').removeClass('d-none');                        
-									};
-									};
-								};                  
-							});              
-							</script>
-				
-						</div> 
 						</div>
-						
 					</div>
 				</div>
 
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Коробка передач</label><br>
-						<div class="checkselect " style="padding-left: 0rem;">
-							
-							<div class="sticky-top bg-white">
-							<input class="form-control  " type="text" id="search_gear" value="">
-							<br>
-							<hr>
-							</div>
-							
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Коробка передач</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_gear" placeholder="Поиск по коробке передач">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="gear_options">
 							{% for gear in params.selected.gears %}
-							
-							<label style="margin: 0.2rem;" class="" id=" {{gear.name}}"><input type="checkbox" name="gear[]" value="{{gear.pk}}" id="gear_filtr_{{unit.pk}}" {% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %} > {{gear.name}}</label>
-					
+								<label class="pc-filter-option" id="gear_select_{{gear.name}}">
+									<input type="checkbox" name="gear[]" value="{{gear.pk}}" id="gear_filtr_{{gear.pk}}" 
+										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
+									<span class="pc-filter-text">{{gear.name}}</span>
+								</label>
 							{% endfor %}
-						
-							<script>
-							$('#search_gear').on('input', function() {
-								var search = $(this).val();
-								if (search.length === 0){
-									$('[id*="label_search"]').removeClass('d-none');
-								}
-								else {
-									$('[id*="label_search"]').addClass('d-none');
-									var search_lower = search.toLowerCase();
-									var labels = $('[id*="label_search"]');
-									for (let i = 0; i < labels.length; i++) {
-									label = labels[i];
-									var id_name = label.id.toLowerCase();
-									if (id_name.indexOf(search_lower) >= 0){
-										$('[id*="' + label.id + '"]').removeClass('d-none');                        
-									};
-									};
-								};                  
-							});              
-							</script>
-				
-						</div> 
 						</div>
-						
 					</div>
 				</div>
 
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Кузов</label><br>
-						<div class="checkselect " style="padding-left: 0rem;">
-							
-							<div class="sticky-top bg-white">
-							<input class="form-control  " type="text" id="search_body" value="">
-							<br>
-							<hr>
-							</div>
-							
-							{% for body in params.selected.bodys %}
-							
-							<label style="margin: 0rem;" class="" id="label_search {{body.name}}"><input type="checkbox" name="body[]" value="{{body.pk}}" id="city_body_{{unit.pk}}" {% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %} > {{body.name}}</label>
-					
-							{% endfor %}
-						
-							<script>
-							$('#search_body').on('input', function() {
-								var search = $(this).val();
-								if (search.length === 0){
-									$('[id*="label_search"]').removeClass('d-none');
-								}
-								else {
-									$('[id*="label_search"]').addClass('d-none');
-									var search_lower = search.toLowerCase();
-									var labels = $('[id*="label_search"]');
-									for (let i = 0; i < labels.length; i++) {
-									label = labels[i];
-									var id_name = label.id.toLowerCase();
-									if (id_name.indexOf(search_lower) >= 0){
-										$('[id*="' + label.id + '"]').removeClass('d-none');                        
-									};
-									};
-								};                  
-							});              
-							</script>
-				
-						</div> 
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Кузов</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_body" placeholder="Поиск по кузову">
+							<span class="pc-filter-icon icon-mbri-search"></span>
 						</div>
-						
+						<div class="pc-filter-options" id="body_options">
+							{% for body in params.selected.bodys %}
+								<label class="pc-filter-option" id="body_select_{{body.name}}">
+									<input type="checkbox" name="body[]" value="{{body.pk}}" id="body_filtr_{{body.pk}}" 
+										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
+									<span class="pc-filter-text">{{body.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
 					</div>
 				</div>
-			
 			</div>
 
-			<br>
-
-			<div class="row g-1">
-				
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-						<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Привод</label><br>
-						
-						<div class="checkselect form-floating" style="padding-left: 0rem;">
-							
-							<div class="sticky-top bg-white">
-							<input class="form-control" type="text" id="search_drives" value="" style="left: 0;">
-							<br>
-							<br>
-							</div>
-							
+			<div class="pc-filters-row">
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Привод</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_drives" placeholder="Поиск по приводу">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="drives_options">
 							{% for drive in params.selected.drives %}
 								{% if drive.name|length > 0 %}
-									<label style="margin: 0.2rem;" class="fs-6" id="drive_select_{{drive.name}}"><input type="checkbox" name="drive[]" value="{{drive.pk}}" id="drive_filtr_{{drive.pk}}" {% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %} > {{drive.name}}</label>
+									<label class="pc-filter-option" id="drive_select_{{drive.name}}">
+										<input type="checkbox" name="drive[]" value="{{drive.pk}}" id="drive_filtr_{{drive.pk}}" 
+											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
+										<span class="pc-filter-text">{{drive.name}}</span>
+									</label>
 								{% endif %}
 							{% endfor %}
-						
-							<script>
-							$('#search_drives').on('input', function() {
-								var search = $(this).val();
-								if (search.length === 0){
-									$('[id*="drive_select"]').removeClass('d-none');
-								}
-								else {
-									$('[id*="drive_select_"]').addClass('d-none');
-									var search_lower = search.toLowerCase();
-									var labels = $('[id*="drive_select_"]');
-									for (let i = 0; i < labels.length; i++) {
-									label = labels[i];
-									var id_name = label.id.toLowerCase();
-									if (id_name.indexOf(search_lower) >= 0){
-										$('[id*="' + label.id + '"]').removeClass('d-none');                        
-									};
-									};
-								};                  
-							});              
-							</script>
-				
-						</div> 
-
 						</div>
-						
 					</div>
 				</div>
 
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Год выпуска</label><br>
-							<div class="row" style="margin: 0; padding: 0;">
-								<div class="col" style="margin: 0; padding: 0;">
-									<div class="form-floating  form-floating-kors" style="margin: 0; padding: 0;">
-										<input type="number" class="form-control form-control-kors text-dark" id="year_start" name="year_start" value="{{params.filtr.year_start}}" placeholder="1950"  autocomplete="off">
-										<label for="floatingInput" class="text-dark"> от</label>
-									</div>
-								</div>
-								<div class="col" style="margin: 0; padding: 0;">
-									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
-										<input type="number" class="form-control form-control-kors text-dark" id="year_end" name="year_end" value="{{params.filtr.year_end}}" placeholder="2025"  autocomplete="off">
-										<label for="floatingInput" class="text-dark"> до</label>
-									</div>	
-								</div>
-							</div>											
-						</div>					  
-					</div>					
-				</div>
-				
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Пробег</label><br>
-							<div class="row" style="margin: 0; padding: 0;">
-								<div class="col" style="margin: 0; padding: 0;">
-									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
-										<input type="number" class="form-control form-control-kors text-dark" id="run_start" name="run_start" value="{{params.filtr.run_start}}"  autocomplete="off">
-										<label for="floatingInput" class="text-dark"> от</label>
-									</div>
-								</div>
-								<div class="col" style="margin: 0; padding: 0;">
-									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
-										<input type="number" class="form-control  form-control-kors text-dark" id="run_end" name="run_end" value="{{params.filtr.run_end}}" autocomplete="off">
-										<label for="floatingInput" class="text-dark"> до</label>
-									</div>	
-								</div>
-							</div>											
-						</div>					  
-					</div>					
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Год выпуска</label>
+					<div class="pc-filter-range">
+						<div class="pc-filter-range-inputs">
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="year_start" name="year_start" 
+									value="{{params.filtr.year_start}}" placeholder="1950" min="1950" max="2025">
+								<label class="pc-filter-range-label">от</label>
+							</div>
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="year_end" name="year_end" 
+									value="{{params.filtr.year_end}}" placeholder="2025" min="1950" max="2025">
+								<label class="pc-filter-range-label">до</label>
+							</div>
+						</div>
+					</div>
 				</div>
 
-				<div class="col-12 col-sm-3">
-					<div class="card">
-						<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Цена</label><br>
-							<div class="row" style="margin: 0; padding: 0;">
-								<div class="col" style="margin: 0; padding: 0;">
-									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
-										<input type="number" class="form-control form-control-kors text-dark" id="price_start" name="price_start" value="{{params.filtr.price_start}}" autocomplete="off">
-										<label for="floatingInput" class="text-dark"> от</label>
-									</div>
-								</div>
-								<div class="col" style="margin: 0; padding: 0;">
-									<div class="form-floating form-floating-kors" style="margin: 0; padding: 0;">
-										<input type="number" class="form-control form-control-kors text-dark" id="price_end" name="price_end" value="{{params.filtr.price_end}}" autocomplete="off">
-										<label for="floatingInput" class="text-dark"> до</label>
-									</div>	
-								</div>
-							</div>											
-						</div>					  
-					</div>					
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Пробег</label>
+					<div class="pc-filter-range">
+						<div class="pc-filter-range-inputs">
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="run_start" name="run_start" 
+									value="{{params.filtr.run_start}}" placeholder="0" min="0" max="1000000">
+								<label class="pc-filter-range-label">от</label>
+							</div>
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="run_end" name="run_end" 
+									value="{{params.filtr.run_end}}" placeholder="500000" min="0" max="1000000">
+								<label class="pc-filter-range-label">до</label>
+							</div>
+						</div>
+					</div>
 				</div>
 
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Цена</label>
+					<div class="pc-filter-range">
+						<div class="pc-filter-range-inputs">
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="price_start" name="price_start" 
+									value="{{params.filtr.price_start}}" placeholder="0" min="0" max="10000000">
+								<label class="pc-filter-range-label">от</label>
+							</div>
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="price_end" name="price_end" 
+									value="{{params.filtr.price_end}}" placeholder="10000000" min="0" max="10000000">
+								<label class="pc-filter-range-label">до</label>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-			<br>
 
 			{% if request.user.is_authenticated %}
-
-				<div class="row g-1">
-
-					<div class="col-12 col-sm-3">
-						<div class="card">
-							<div class="card-body1 bg-white" style="border-radius:  0.3rem;">
-								<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">VIN</label><br>
-								<div class="row" style="margin: 0; padding: 0;">
-									<div class="col" style="margin: 0; padding: 0;">
-										<div class="form-floating  form-floating-kors" style="margin: 0; padding: 0;">
-											<input type="text" class="form-control form-control-kors text-dark" id="vin" name="vin" value="{{params.filtr.vin}}"  autocomplete="off">
-											<label for="floatingInput" class="text-dark"></label>
-										</div>
-									</div>
-								</div>											
-							</div>					  
-						</div>
+			<div class="pc-filters-row">
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">VIN</label>
+					<div class="pc-filter-input-single">
+						<input type="text" class="pc-filter-input" id="vin" name="vin" 
+							value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
 					</div>
-					
-					<div class="col-12 col-sm-3">
-						<div class="card">
-							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Статус</label><br>
-							<div class="checkselect " style="padding-left: 0rem;">
-								
-								<div class="sticky-top bg-white">
-									<input class="form-control " type="text" id="search_status" value="" style="left: 0;">
-									<br>
-									<hr>
-								</div>
-								
-								{% for status in params.selected.statuses %}
-								
-									<label style="margin: 0.2rem;" class="" id="status_select_{{status.name}}"><input type="checkbox" name="status[]" value="{{status.pk}}" id="status_filtr_{{status.pk}}" {% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %} > {{status.name}}</label>
-						
-								{% endfor %}
-							
-								<script>
-								$('#search_status').on('input', function() {
-									var search = $(this).val();
-									if (search.length === 0){
-										$('[id*="status_select_"]').removeClass('d-none');
-									}
-									else {
-										$('[id*="status_select_"]').addClass('d-none');
-										var search_lower = search.toLowerCase();
-										var labels = $('[id*="status_select_"]');
-										for (let i = 0; i < labels.length; i++) {
-										label = labels[i];
-										var id_name = label.id.toLowerCase();
-										if (id_name.indexOf(search_lower) >= 0){
-											$('[id*="' + label.id + '"]').removeClass('d-none');                        
-										};
-										};
-									};                  
-								});              
-								</script>
-					
-							</div> 
-							</div>
-							
-						</div>
-					</div>
-
-					<div class="col-12 col-sm-3">
-						<div class="card">
-							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Этап УС</label><br>
-							<div class="checkselect " style="padding-left: 0rem;">
-								
-								<div class="sticky-top bg-white">
-								<input class="form-control  " type="text" id="search_stage_price" value="">
-								<br>
-								<hr>
-								</div>
-								
-								{% for stage_price in params.selected.stage_prices %}
-								
-								<label style="margin: 0.2rem;" class="" id="stage_price_select_{{stage_price.name}}"><input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" id="stages_price_filtr_{{stage_price.pk}}" {% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %} > {{stage_price.name}}</label>
-						
-								{% endfor %}
-							
-								<script>
-								$('#search_stage_price').on('input', function() {
-									var search = $(this).val();
-									if (search.length === 0){
-										$('[id*="stage_price_select_"]').removeClass('d-none');
-									}
-									else {
-										$('[id*="stage_price_select_"]').addClass('d-none');
-										var search_lower = search.toLowerCase();
-										var labels = $('[id*="stage_price_select_"]');
-										for (let i = 0; i < labels.length; i++) {
-										label = labels[i];
-										var id_name = label.id.toLowerCase();
-										if (id_name.indexOf(search_lower) >= 0){
-											$('[id*="' + label.id + '"]').removeClass('d-none');                        
-										};
-										};
-									};                  
-								});              
-								</script>
-					
-							</div> 
-							</div>
-							
-						</div>
-					</div>
-
-					<div class="col-12 col-sm-3">
-						<div class="card">
-							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Вид продажи</label><br>
-							<div class="checkselect " style="padding-left: 0rem;">
-								
-								<div class="sticky-top bg-white">
-								<input class="form-control  " type="text" id="search_type_sale" value="">
-								<br>
-								<hr>
-								</div>
-								
-								{% for type_sale in params.selected.type_sales %}
-								
-								<label style="margin: 0.2rem;" class="" id="type_sale_select_{{type_sale.name}}"><input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{unit.pk}}" {% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %} > {{type_sale.name}}</label>
-						
-								{% endfor %}
-							
-								<script>
-								$('#search_type_sale').on('input', function() {
-									var search = $(this).val();
-									if (search.length === 0){
-										$('[id*="type_sale_select_"]').removeClass('d-none');
-									}
-									else {
-										$('[id*="type_sale_select_"]').addClass('d-none');
-										var search_lower = search.toLowerCase();
-										var labels = $('[id*="type_sale_select_"]');
-										for (let i = 0; i < labels.length; i++) {
-										label = labels[i];
-										var id_name = label.id.toLowerCase();
-										if (id_name.indexOf(search_lower) >= 0){
-											$('[id*="' + label.id + '"]').removeClass('d-none');                        
-										};
-										};
-									};                  
-								});              
-								</script>
-					
-							</div> 
-							</div>
-							
-						</div>
-					</div>
-				
 				</div>
 
-			{% endif %}
-
-			<div class="row">
-				<div class="col">
-					
-					<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-					
-					<div class="row">
-						<div class="col">
-					
-							<a href="catalog/" class="btn btn-outline-secondary"><span class="icon-mbri-home"></span> Каталог</a>
-					
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Статус</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_status" placeholder="Поиск по статусу">
+							<span class="pc-filter-icon icon-mbri-search"></span>
 						</div>
-					</div>
-						
-				</div>
-
-				<div class="col-auto">
-					<div class="row justify-content-end">
-						<div class="col-auto">
-							<button class="btn btn-outline-dark"><span class="icon-mbri-play"></span> Показать</button>
+						<div class="pc-filter-options" id="status_options">
+							{% for status in params.selected.statuses %}
+								<label class="pc-filter-option" id="status_select_{{status.name}}">
+									<input type="checkbox" name="status[]" value="{{status.pk}}" id="status_filtr_{{status.pk}}" 
+										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
+									<span class="pc-filter-text">{{status.name}}</span>
+								</label>
+							{% endfor %}
 						</div>
 					</div>
 				</div>
-				
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Этап УС</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_stage_price" placeholder="Поиск по этапу УС">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="stage_price_options">
+							{% for stage_price in params.selected.stage_prices %}
+								<label class="pc-filter-option" id="stage_price_select_{{stage_price.name}}">
+									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" id="stages_price_filtr_{{stage_price.pk}}" 
+										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
+									<span class="pc-filter-text">{{stage_price.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Вид продажи</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_type_sale" placeholder="Поиск по виду продажи">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="type_sale_options">
+							{% for type_sale in params.selected.type_sales %}
+								<label class="pc-filter-option" id="type_sale_select_{{type_sale.name}}">
+									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{type_sale.pk}}" 
+										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
+									<span class="pc-filter-text">{{type_sale.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
 			</div>
-			
+			{% endif %}
+		</div>
+
+		<div class="pc-filters-footer">
+			<div class="pc-filters-actions">
+				<a href="catalog/" class="btn btn-outline-secondary">
+					<span class="icon-mbri-home me-2"></span>Каталог
+				</a>
+				<button type="submit" class="btn btn-primary">
+					<span class="icon-mbri-search me-2"></span>Показать
+				</button>
+			</div>
 		</div>
 	</div>
 </form>
@@ -1272,6 +1025,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем мобильные фильтры
     initializeMobileFilters();
     
+    // Инициализируем ПК фильтры
+    initializePCFilters();
+    
     // Обновляем счетчик активных фильтров
     updateActiveFiltersCount();
     
@@ -1359,6 +1115,90 @@ function filterOptions(prefix, searchValue) {
     
     options.forEach(option => {
         const text = option.querySelector('.filter-text').textContent.toLowerCase();
+        const search = searchValue.toLowerCase();
+        
+        if (search === '' || text.includes(search)) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+function initializePCFilters() {
+    // Поиск по городам
+    const searchCity = document.getElementById('search_city');
+    if (searchCity) {
+        searchCity.addEventListener('input', function() {
+            filterPCOptions('city_options', this.value);
+        });
+    }
+    
+    // Поиск по маркам
+    const searchMarks = document.getElementById('search_marks');
+    if (searchMarks) {
+        searchMarks.addEventListener('input', function() {
+            filterPCOptions('marks_options', this.value);
+        });
+    }
+    
+    // Поиск по коробке передач
+    const searchGear = document.getElementById('search_gear');
+    if (searchGear) {
+        searchGear.addEventListener('input', function() {
+            filterPCOptions('gear_options', this.value);
+        });
+    }
+    
+    // Поиск по кузову
+    const searchBody = document.getElementById('search_body');
+    if (searchBody) {
+        searchBody.addEventListener('input', function() {
+            filterPCOptions('body_options', this.value);
+        });
+    }
+    
+    // Поиск по приводу
+    const searchDrives = document.getElementById('search_drives');
+    if (searchDrives) {
+        searchDrives.addEventListener('input', function() {
+            filterPCOptions('drives_options', this.value);
+        });
+    }
+    
+    // Поиск по статусу
+    const searchStatus = document.getElementById('search_status');
+    if (searchStatus) {
+        searchStatus.addEventListener('input', function() {
+            filterPCOptions('status_options', this.value);
+        });
+    }
+    
+    // Поиск по этапу УС
+    const searchStagePrice = document.getElementById('search_stage_price');
+    if (searchStagePrice) {
+        searchStagePrice.addEventListener('input', function() {
+            filterPCOptions('stage_price_options', this.value);
+        });
+    }
+    
+    // Поиск по виду продажи
+    const searchTypeSale = document.getElementById('search_type_sale');
+    if (searchTypeSale) {
+        searchTypeSale.addEventListener('input', function() {
+            filterPCOptions('type_sale_options', this.value);
+        });
+    }
+}
+
+function filterPCOptions(containerId, searchValue) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const options = container.querySelectorAll('.pc-filter-option');
+    
+    options.forEach(option => {
+        const text = option.querySelector('.pc-filter-text').textContent.toLowerCase();
         const search = searchValue.toLowerCase();
         
         if (search === '' || text.includes(search)) {
