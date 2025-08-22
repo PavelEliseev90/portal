@@ -1026,6 +1026,26 @@
 {% endblock %}
 
 <script>
+// Глобальная функция для переключения фильтров
+function toggleFilters() {
+    const filtersContent = document.querySelector('.pc-filters-content');
+    const toggleButton = document.querySelector('.pc-filters-header button[onclick="toggleFilters()"]');
+    
+    if (!filtersContent || !toggleButton) return;
+    
+    if (filtersContent.style.display === 'none') {
+        filtersContent.style.display = 'block';
+        toggleButton.innerHTML = '<span class="icon-mbri-up me-2"></span>Скрыть';
+        toggleButton.classList.remove('btn-outline-primary');
+        toggleButton.classList.add('btn-outline-light');
+    } else {
+        filtersContent.style.display = 'none';
+        toggleButton.innerHTML = '<span class="icon-mbri-down me-2"></span>Показать';
+        toggleButton.classList.remove('btn-outline-light');
+        toggleButton.classList.add('btn-outline-primary');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем мобильные фильтры
     initializeMobileFilters();
@@ -1212,25 +1232,6 @@ function filterPCOptions(containerId, searchValue) {
             option.style.display = 'none';
         }
     });
-}
-
-function toggleFilters() {
-    const filtersContent = document.querySelector('.pc-filters-content');
-    const toggleButton = document.querySelector('.pc-filters-header button[onclick="toggleFilters()"]');
-    
-    if (!filtersContent || !toggleButton) return;
-    
-    if (filtersContent.style.display === 'none') {
-        filtersContent.style.display = 'block';
-        toggleButton.innerHTML = '<span class="icon-mbri-up me-2"></span>Скрыть';
-        toggleButton.classList.remove('btn-outline-primary');
-        toggleButton.classList.add('btn-outline-light');
-    } else {
-        filtersContent.style.display = 'none';
-        toggleButton.innerHTML = '<span class="icon-mbri-down me-2"></span>Показать';
-        toggleButton.classList.remove('btn-outline-light');
-        toggleButton.classList.add('btn-outline-primary');
-    }
 }
 
 function updateActiveFiltersCount() {
