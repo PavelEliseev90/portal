@@ -4922,6 +4922,58 @@ hr[style*="width: 75%"] {
     }
 }
 
+.pc-filters-header .btn-outline-light {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    background: transparent;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.pc-filters-header .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.pc-filters-header .btn-outline-light:active {
+    transform: translateY(0);
+}
+
+.pc-filters-header .btn-outline-primary {
+    border: 1px solid #667eea;
+    color: #667eea;
+    background: transparent;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.pc-filters-header .btn-outline-primary:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.pc-filters-header .btn-outline-primary:active {
+    transform: translateY(0);
+}
+
+.pc-filters-header .btn-outline-light .icon-mbri-up,
+.pc-filters-header .btn-outline-light .icon-mbri-down,
+.pc-filters-header .btn-outline-primary .icon-mbri-up,
+.pc-filters-header .btn-outline-primary .icon-mbri-down {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.pc-filters-header .btn-outline-light:hover .icon-mbri-up,
+.pc-filters-header .btn-outline-primary:hover .icon-mbri-down {
+    transform: scale(1.1);
+}
+
 
 
 
