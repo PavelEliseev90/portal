@@ -4248,6 +4248,32 @@ hr[style*="width: 75%"] {
 	letter-spacing: 0.5px;
 	border-bottom: 2px solid #e74c3c;
 	padding-bottom: 0.5rem;
+	transition: all 0.3s ease;
+}
+
+.filter-title:hover {
+	background-color: rgba(231, 76, 60, 0.1);
+	border-radius: 5px;
+	padding: 0.5rem;
+	margin: -0.5rem -0.5rem 1rem -0.5rem;
+}
+
+.filter-title-toggle {
+	position: relative;
+}
+
+.filter-title-toggle .toggle-icon {
+	transition: transform 0.3s ease;
+}
+
+.filter-title-toggle:hover .toggle-icon {
+	transform: scale(1.1);
+}
+
+.filter-title-toggle .toggle-icon .icon-mbri-down,
+.filter-title-toggle .toggle-icon .icon-mbri-up {
+	font-size: 0.8em;
+	color: #e74c3c;
 }
 
 .filter-search {
@@ -4279,6 +4305,14 @@ hr[style*="width: 75%"] {
 	overflow-y: auto;
 	padding-right: 0.5rem;
 	display: none;
+	transition: all 0.3s ease;
+	opacity: 0;
+	transform: translateY(-10px);
+}
+
+.filter-options[style*="display: block"] {
+	opacity: 1;
+	transform: translateY(0);
 }
 
 .filter-option {
@@ -4623,6 +4657,32 @@ mark {
     font-size: 0.95rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.pc-filter-label:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-radius: 5px;
+    padding: 0.5rem;
+    margin: -0.5rem -0.5rem 0.75rem -0.5rem;
+}
+
+.pc-filter-label-toggle {
+    position: relative;
+}
+
+.pc-filter-label-toggle .toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.pc-filter-label-toggle:hover .toggle-icon {
+    transform: scale(1.1);
+}
+
+.pc-filter-label-toggle .toggle-icon .icon-mbri-down,
+.pc-filter-label-toggle .toggle-icon .icon-mbri-up {
+    font-size: 0.8em;
+    color: #667eea;
 }
 
 .pc-filter-dropdown {
@@ -4683,6 +4743,14 @@ mark {
     max-height: 200px;
     overflow-y: auto;
     padding: 0.5rem;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.pc-filter-options[style*="display: block"] {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .pc-filter-options::-webkit-scrollbar {

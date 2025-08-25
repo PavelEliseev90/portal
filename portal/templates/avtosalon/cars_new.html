@@ -834,6 +834,12 @@ function addClearSearch(input, prefix) {
         input.value = '';
         filterOptions(prefix, '');
         input.focus();
+        
+        // Скрываем контейнер при очистке поиска
+        const optionsContainer = container.nextElementSibling;
+        if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
+            optionsContainer.style.display = 'none';
+        }
     });
     
     input.addEventListener('input', function() {
@@ -886,6 +892,12 @@ function addClearSearchPC(input, containerId) {
         input.value = '';
         filterPCOptions(containerId, '');
         input.focus();
+        
+        // Скрываем контейнер при очистке поиска
+        const optionsContainer = document.getElementById(containerId);
+        if (optionsContainer) {
+            optionsContainer.style.display = 'none';
+        }
     });
     
     input.addEventListener('input', function() {
@@ -906,6 +918,118 @@ function addClearSearchPC(input, containerId) {
             }, 200);
         });
     }
+}
+
+function addToggleFilterSection() {
+    const filterTitles = document.querySelectorAll('.filter-title');
+    
+    filterTitles.forEach(title => {
+        title.style.cursor = 'pointer';
+        title.classList.add('filter-title-toggle');
+        
+        title.addEventListener('click', function() {
+            const filterSection = this.closest('.filter-section');
+            const optionsContainer = filterSection.querySelector('.filter-options');
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (optionsContainer) {
+                const isVisible = optionsContainer.style.display !== 'none';
+                
+                if (isVisible) {
+                    optionsContainer.style.display = 'none';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
+                } else {
+                    // Скрываем все другие списки
+                    const allOptions = document.querySelectorAll('.filter-options');
+                    allOptions.forEach(opt => {
+                        if (opt !== optionsContainer) {
+                            opt.style.display = 'none';
+                        }
+                    });
+                    
+                    // Сбрасываем иконки других заголовков
+                    const allIcons = document.querySelectorAll('.filter-title .toggle-icon');
+                    allIcons.forEach(ic => {
+                        if (ic !== icon) {
+                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
+                        }
+                    });
+                    
+                    optionsContainer.style.display = 'block';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
+                }
+            }
+        });
+        
+        if (!title.querySelector('.toggle-icon')) {
+            const icon = document.createElement('span');
+            icon.className = 'toggle-icon';
+            icon.innerHTML = '<span class="icon-mbri-down"></span>';
+            icon.style.cssText = `
+                float: right;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+            `;
+            title.appendChild(icon);
+        }
+    });
+}
+
+function addTogglePCFilterSection() {
+    const pcFilterLabels = document.querySelectorAll('.pc-filter-label');
+    
+    pcFilterLabels.forEach(label => {
+        label.style.cursor = 'pointer';
+        label.classList.add('pc-filter-label-toggle');
+        
+        label.addEventListener('click', function() {
+            const filterGroup = this.closest('.pc-filter-group');
+            const dropdown = filterGroup.querySelector('.pc-filter-dropdown');
+            const optionsContainer = filterGroup.querySelector('.pc-filter-options');
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (optionsContainer) {
+                const isVisible = optionsContainer.style.display !== 'none';
+                
+                if (isVisible) {
+                    optionsContainer.style.display = 'none';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
+                } else {
+                    // Скрываем все другие списки
+                    const allOptions = document.querySelectorAll('.pc-filter-options');
+                    allOptions.forEach(opt => {
+                        if (opt !== optionsContainer) {
+                            opt.style.display = 'none';
+                        }
+                    });
+                    
+                    // Сбрасываем иконки других заголовков
+                    const allIcons = document.querySelectorAll('.pc-filter-label .toggle-icon');
+                    allIcons.forEach(ic => {
+                        if (ic !== icon) {
+                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
+                        }
+                    });
+                    
+                    optionsContainer.style.display = 'block';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
+                }
+            }
+        });
+        
+        if (!label.querySelector('.toggle-icon')) {
+            const icon = document.createElement('span');
+            icon.className = 'toggle-icon';
+            icon.innerHTML = '<span class="icon-mbri-down"></span>';
+            icon.style.cssText = `
+                float: right;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+                color: #6c757d;
+            `;
+            label.appendChild(icon);
+        }
+    });
 }
 
 // Глобальная функция для переключения фильтров
@@ -950,17 +1074,21 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('input', updateActiveFiltersCount);
     });
     
-    // Показываем все опции по умолчанию для мобильных фильтров
+        // Скрываем все опции по умолчанию для мобильных фильтров
     const mobileOptions = document.querySelectorAll('.filter-options');
     mobileOptions.forEach(option => {
-        option.style.display = 'block';
+        option.style.display = 'none';
     });
     
-    // Показываем все опции по умолчанию для ПК фильтров
+    // Скрываем все опции по умолчанию для ПК фильтров
     const pcOptions = document.querySelectorAll('.pc-filter-options');
     pcOptions.forEach(option => {
-        option.style.display = 'block';
+        option.style.display = 'none';
     });
+    
+    // Добавляем обработчики для скрытия/раскрытия секций фильтров
+    addToggleFilterSection();
+    addTogglePCFilterSection();
 });
 
 function initializeMobileFilters() {
@@ -1090,6 +1218,9 @@ function filterOptions(prefix, searchValue) {
                 }
                 resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
             }
+            
+            // Автоматически показываем контейнер при поиске
+            container.style.display = 'block';
         } else {
             if (noResultsMsg) noResultsMsg.remove();
             if (resultsCountMsg) resultsCountMsg.remove();
@@ -1225,6 +1356,9 @@ function filterPCOptions(containerId, searchValue) {
             }
             resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
         }
+        
+        // Автоматически показываем контейнер при поиске
+        container.style.display = 'block';
     } else {
         if (noResultsMsg) noResultsMsg.remove();
         if (resultsCountMsg) resultsCountMsg.remove();
