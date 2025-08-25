@@ -396,7 +396,6 @@ def refresh_cars(request):
         
         list_cars.append(car_info)
 
-
     info = {
         'list_cars' : list_cars
     }

@@ -30,7 +30,7 @@ from urllib.parse import unquote
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from refs.models import RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
+from refs.models import RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
 from documents.models import DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
@@ -3200,6 +3200,76 @@ def get_agreement(agreement):
         agreement_object.typeSale = agreement['TypeSale']
 
     agreement_object.save()
+
+    if 'CarsOrganization' in agreement:
+        car = agreement['CarsOrganization'] 
+        vin             = car.get('Vin', '').upper()
+        lo_link_number  = car.get('Lo_link_number', '').upper()
+        lo_uin          = car.get('Lo_uin', '').upper()
+
+        car_object, created = RefCarsOrganization.objects.filter(Q(vin = vin) 
+                                                                 and Q(lo_link_number = lo_link_number) 
+                                                                 and Q(lo_uin = lo_uin),).get_or_create(vin = vin,
+                lo_link_number = lo_link_number,
+                lo_uin = lo_uin
+            )
+        car_object.date_refresh     = datetime.now()    
+        car_object.organization     = get_organization(car['Organization'])    
+        car_object.unit             = agreement_object.unit 
+        car_object.store            = get_store(car['Store'])
+        car_object.is_new           = car['Is_new']
+        car_object.vin              = car.get('Vin', '').upper()
+        car_object.vin2             = car['Vin2']
+        car_object.name             = car['Name']
+        car_object.year             = car['Year']
+        car_object.mark             = car['Mark']
+        car_object.model            = car['Model']
+        car_object.modification     = car['Modification']
+        car_object.color            = car['Color']
+        car_object.run              = car['Run']
+        car_object.plate_number     = car['Plate_number']
+        car_object.cost_price       = car['Cost_price']
+        car_object.outlay           = car['Outlay']
+        car_object.days_in_stok     = car['Days_in_stok']
+        car_object.price            = car['Price']
+        car_object.quantity         = car['Quantity']
+        car_object.lo_link              = car['Lo_link']
+        car_object.lo_link_date         = car['Lo_link_date']
+        car_object.lo_link_number       = car.get('Lo_link_number', '').upper()
+        car_object.lo_uin               = car.get('Lo_uin', '').upper()
+        car_object.type_drive           = get_model_object('RefTypeDrive', car['Type_drive'])
+        car_object.stage_price          = get_stage_price(car['Stage_price'])
+        car_object.group_price          = get_group_price(car['Group_price'])
+        car_object.type_sale            = get_model_object('RefTypeSaleCarsOrganization', car['Type_sale'])
+        car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
+        car_object.type_reception       = get_model_object('RefTypeReceptionCarsOrganization', car['Type_reception'])
+        car_object.evaluation           = get_model_object('RefTypeEvaluationCarsOrganization', car['Evaluation'])
+        car_object.rating               = get_model_object('RefRatingCarsOrganization', car['Rating'])
+        
+        car_object.owners               = car['Owners']
+        car_object.keys                 = car['Keys']
+        car_object.task                 = car['Task']  
+        car_object.reserve              = car['Reserve']             
+
+        car_object.days_next_stage      = car['Days_next_stage']
+        car_object.link_avtoteka_web    = car['Link_avtoteka_web']
+        car_object.link_avtoteka_pdf    = car['Link_avtoteka_pdf']
+        car_object.bcp                  = car['BCP']
+        
+        id_avtoru = car['ID_autoru']
+        try:
+            if id_avtoru > 0:
+                car_object.modification_autoru = AutoruModification.objects.get(idSite = id_avtoru)
+        except:
+            s=1
+
+        car_object.engine_power         = car['Engine_power']
+        car_object.engine_volume        = car['Engine_volume']
+
+        car_object.description_podgotovka   = car['Description_podgotovka']
+        car_object.description_op           = car['Description_op']
+
+        car_object.save()
 
     return agreement_object
 
