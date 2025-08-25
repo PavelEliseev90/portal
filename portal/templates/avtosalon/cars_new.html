@@ -796,12 +796,11 @@
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
+        const context = this;
         clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
     };
 }
 
@@ -1092,77 +1091,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeMobileFilters() {
-    // Поиск по городам
-    const searchCity = document.getElementById('mobile_search_city');
-    if (searchCity) {
-        searchCity.addEventListener('input', debounce(function() {
-            filterOptions('mobile_city_', this.value);
-        }, 300));
-        addClearSearch(searchCity, 'mobile_city_');
-    }
-    
-    // Поиск по маркам
-    const searchMarks = document.getElementById('mobile_search_marks');
-    if (searchMarks) {
-        searchMarks.addEventListener('input', debounce(function() {
-            filterOptions('mobile_mark_', this.value);
-        }, 300));
-        addClearSearch(searchMarks, 'mobile_mark_');
-    }
-    
-    // Поиск по коробке передач
-    const searchGear = document.getElementById('mobile_search_gear');
-    if (searchGear) {
-        searchGear.addEventListener('input', debounce(function() {
-            filterOptions('mobile_gear_', this.value);
-        }, 300));
-        addClearSearch(searchGear, 'mobile_gear_');
-    }
-    
-    // Поиск по кузову
-    const searchBody = document.getElementById('mobile_search_body');
-    if (searchBody) {
-        searchBody.addEventListener('input', debounce(function() {
-            filterOptions('mobile_body_', this.value);
-        }, 300));
-        addClearSearch(searchBody, 'mobile_body_');
-    }
-    
-    // Поиск по приводу
-    const searchDrives = document.getElementById('mobile_search_drives');
-    if (searchDrives) {
-        searchDrives.addEventListener('input', debounce(function() {
-            filterOptions('mobile_drive_', this.value);
-        }, 300));
-        addClearSearch(searchDrives, 'mobile_drive_');
-    }
-    
-    // Поиск по статусу
-    const searchStatus = document.getElementById('mobile_search_status');
-    if (searchStatus) {
-        searchStatus.addEventListener('input', debounce(function() {
-            filterOptions('mobile_status_', this.value);
-        }, 300));
-        addClearSearch(searchStatus, 'mobile_status_');
-    }
-    
-    // Поиск по этапу УС
-    const searchStagePrice = document.getElementById('mobile_search_stage_price');
-    if (searchStagePrice) {
-        searchStagePrice.addEventListener('input', debounce(function() {
-            filterOptions('mobile_stage_price_', this.value);
-        }, 300));
-        addClearSearch(searchStagePrice, 'mobile_stage_price_');
-    }
-    
-    // Поиск по виду продажи
-    const searchTypeSale = document.getElementById('mobile_search_type_sale');
-    if (searchTypeSale) {
-        searchTypeSale.addEventListener('input', debounce(function() {
-            filterOptions('mobile_type_sale_', this.value);
-        }, 300));
-        addClearSearch(searchTypeSale, 'mobile_type_sale_');
-    }
+    const mobileFilters = [
+        { id: 'mobile_search_city', prefix: 'mobile_city_' },
+        { id: 'mobile_search_marks', prefix: 'mobile_mark_' },
+        { id: 'mobile_search_gear', prefix: 'mobile_gear_' },
+        { id: 'mobile_search_body', prefix: 'mobile_body_' },
+        { id: 'mobile_search_drives', prefix: 'mobile_drive_' },
+        { id: 'mobile_search_status', prefix: 'mobile_status_' },
+        { id: 'mobile_search_stage_price', prefix: 'mobile_stage_price_' },
+        { id: 'mobile_search_type_sale', prefix: 'mobile_type_sale_' }
+    ];
+
+    mobileFilters.forEach(cfg => {
+        const input = document.getElementById(cfg.id);
+        if (input) {
+            input.addEventListener('input', debounce(function() {
+                filterOptions(cfg.prefix, this.value);
+            }, 300));
+            addClearSearch(input, cfg.prefix);
+        }
+    });
 }
 
 function filterOptions(prefix, searchValue) {
@@ -1229,77 +1177,26 @@ function filterOptions(prefix, searchValue) {
 }
 
 function initializePCFilters() {
-    // Поиск по городам
-    const searchCity = document.getElementById('search_city');
-    if (searchCity) {
-        searchCity.addEventListener('input', debounce(function() {
-            filterPCOptions('city_options', this.value);
-        }, 300));
-        addClearSearchPC(searchCity, 'city_options');
-    }
-    
-    // Поиск по маркам
-    const searchMarks = document.getElementById('search_marks');
-    if (searchMarks) {
-        searchMarks.addEventListener('input', debounce(function() {
-            filterPCOptions('marks_options', this.value);
-        }, 300));
-        addClearSearchPC(searchMarks, 'marks_options');
-    }
-    
-    // Поиск по коробке передач
-    const searchGear = document.getElementById('search_gear');
-    if (searchGear) {
-        searchGear.addEventListener('input', debounce(function() {
-            filterPCOptions('gear_options', this.value);
-        }, 300));
-        addClearSearchPC(searchGear, 'gear_options');
-    }
-    
-    // Поиск по кузову
-    const searchBody = document.getElementById('search_body');
-    if (searchBody) {
-        searchBody.addEventListener('input', debounce(function() {
-            filterPCOptions('body_options', this.value);
-        }, 300));
-        addClearSearchPC(searchBody, 'body_options');
-    }
-    
-    // Поиск по приводу
-    const searchDrives = document.getElementById('search_drives');
-    if (searchDrives) {
-        searchDrives.addEventListener('input', debounce(function() {
-            filterPCOptions('drives_options', this.value);
-        }, 300));
-        addClearSearchPC(searchDrives, 'drives_options');
-    }
-    
-    // Поиск по статусу
-    const searchStatus = document.getElementById('search_status');
-    if (searchStatus) {
-        searchStatus.addEventListener('input', debounce(function() {
-            filterPCOptions('status_options', this.value);
-        }, 300));
-        addClearSearchPC(searchStatus, 'status_options');
-    }
-    
-    // Поиск по этапу УС
-    const searchStagePrice = document.getElementById('search_stage_price');
-    if (searchStagePrice) {
-        searchStagePrice.addEventListener('input', debounce(function() {
-            filterPCOptions('stage_price_options', this.value);
-        }, 300));
-        addClearSearchPC(searchStagePrice, 'stage_price_options');
-    }
-    
-    // Поиск по виду продажи
-    const searchTypeSale = document.getElementById('search_type_sale');
-    if (searchTypeSale) {
-        searchTypeSale.addEventListener('input', debounce(function() {
-            filterPCOptions('type_sale_options', this.value);
-        }, 300));
-        addClearSearchPC(searchTypeSale, 'type_sale_options');
-    }
+    const pcFilters = [
+        { id: 'search_city', container: 'city_options' },
+        { id: 'search_marks', container: 'marks_options' },
+        { id: 'search_gear', container: 'gear_options' },
+        { id: 'search_body', container: 'body_options' },
+        { id: 'search_drives', container: 'drives_options' },
+        { id: 'search_status', container: 'status_options' },
+        { id: 'search_stage_price', container: 'stage_price_options' },
+        { id: 'search_type_sale', container: 'type_sale_options' }
+    ];
+
+    pcFilters.forEach(cfg => {
+        const input = document.getElementById(cfg.id);
+        if (input) {
+            input.addEventListener('input', debounce(function() {
+                filterPCOptions(cfg.container, this.value);
+            }, 300));
+            addClearSearchPC(input, cfg.container);
+        }
+    });
 }
 
 function filterPCOptions(containerId, searchValue) {
