@@ -1777,12 +1777,14 @@ def board_monitoring(request):
     # Проверка интерактивных оценок
     object_estimations_report_autohub_remote    = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk').count()
     object_estimations_report_autohub           = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk').count()
-    autohub_count       = object_estimations_report_autohub_remote + object_estimations_report_autohub 
-    autoteka_count      = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).order_by('start_estimation').count()
-    push_count          = RegInteractivOcenkaEmailPush.objects.exclude(send = True).exclude(user__email = '').count()
-    send_1c             = RegSwapKors.objects.filter(status_code = 60).count()
-    task_price_count    = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
-    estimation_1c       = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).count()
+    autohub_count           = object_estimations_report_autohub_remote + object_estimations_report_autohub 
+    autoteka_count_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 7, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').count()
+    autoteka_count_2        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).count()
+    autoteka_count_3        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).count()
+    push_count              = RegInteractivOcenkaEmailPush.objects.exclude(send = True).exclude(user__email = '').count()
+    send_1c                 = RegSwapKors.objects.filter(status_code = 60).count()
+    task_price_count        = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
+    estimation_1c           = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).count()
     
     params = {
         'type'                  : 'monitorings',
@@ -1808,7 +1810,9 @@ def board_monitoring(request):
         'info_refresh_catalogs' : info_refresh_catalogs,
         'modifications_count'   : modifications_count,
         'autohub_count'         : autohub_count,
-        'autoteka_count'        : autoteka_count,
+        'autoteka_count_1'        : autoteka_count_1,
+        'autoteka_count_2'        : autoteka_count_2,
+        'autoteka_count_3'        : autoteka_count_3,
         'estimation_1c'         : estimation_1c,
         'push_count'            : push_count,
         'send_1c'               : send_1c,
@@ -6001,7 +6005,7 @@ def test(request):
     #RegEstimationBalanceUnit.objects.all().delete()
 
     #get_info_max(22978)
-    
+    '''
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
     docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
     estimations_list    = estimations_list.annotate(
@@ -6178,7 +6182,7 @@ def test(request):
                 reg_interactiv_ocenka_soglasovanie.amount_mcu           = amount_mcu
                 reg_interactiv_ocenka_soglasovanie.save()  
 
-    
+    '''
     s =1
     
     #refresh_wash()
