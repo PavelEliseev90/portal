@@ -33,7 +33,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import refresh_estimation_cars_organization, kors_estimation_data, get_info_max, refresh_signal, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import refresh_estimation_cars_organization, kors_estimation_data, get_info_max, get_info_max_remote, refresh_signal, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -1775,12 +1775,13 @@ def board_monitoring(request):
     modifications_count     = modifications.filter(spec = 0).count()
     
     # Проверка интерактивных оценок
-    object_estimations_report_autohub_remote    = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk').count()
-    object_estimations_report_autohub           = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk').count()
+    object_estimations_report_autohub_remote    = object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).exclude(page_remote = None).exclude(page_remote__price_sale = 0).exclude(page_remote__run = 0).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk').count()
+    object_estimations_report_autohub           = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk').count()
     autohub_count           = object_estimations_report_autohub_remote + object_estimations_report_autohub 
-    autoteka_count_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 7, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').count()
-    autoteka_count_2        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).count()
-    autoteka_count_3        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).count()
+    autoteka_count_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 7, 1)).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).count() + RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').count()
+    #autoteka_count_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 7, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').count()
+    autoteka_count_2        = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').count() + RegInteractivOcenka.objects.exclude(vin__icontains = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(vin__regex = r'^.{17}.*').filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).count()
+    autoteka_count_3        = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).count()
     push_count              = RegInteractivOcenkaEmailPush.objects.exclude(send = True).exclude(user__email = '').count()
     send_1c                 = RegSwapKors.objects.filter(status_code = 60).count()
     task_price_count        = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
@@ -6000,25 +6001,25 @@ def sales_funnel(request):
     return render(request, "kors/sales_funnel.html", {'params': params})
 
 def test(request):
-    
-    #from register.models import RegEstimationBalanceUnit,RegEstimationsSettings
-    #RegEstimationBalanceUnit.objects.all().delete()
 
-    #get_info_max(22978)
-    '''
+    
+    
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
     docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
     estimations_list    = estimations_list.annotate(
         lo_active               = Subquery(docs_lo.values('active')[:1])).annotate(
         lo_agreement_unit_pk    = Subquery(docs_lo.values('agreement_unit__pk')[:1]))
     
-    estimations_list = estimations_list.filter(lo_active = True).filter(auction = False).values('pk, lo_agreement_unit_pk')
+    estimations_list = estimations_list.filter(lo_active = True).filter(auction = False).values('pk', 'lo_agreement_unit_pk')
 
     from register.models import RegEstimationBalanceUnit, RegEstimationsSettings, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU
+    
+    RegEstimationBalanceUnit.objects.all().delete()
     
     for estimation_pk in estimations_list:
         
         estimation  = RegInteractivOcenka.objects.get(pk = estimation_pk['pk']) 
+        
         unit        = estimation.rlk.unit
         
         if unit == None:
@@ -6046,13 +6047,11 @@ def test(request):
                 new_record = RegEstimationBalanceUnit()
 
             new_record.estimation = estimation
-    
-        if unit.name.find('КорсАвто') < 0 and unit.name.find('Корс Авто') < 0 and estimation.page_documents.type_reception.id != 4:
-            if estimation.page_documents.type_reception.id == 2:
-                save = True
-        else:
-            if estimation.page_documents.type_reception.id == 4:
-                save = True
+        if unit == None:
+            unit = estimation.page_documents.unit
+        
+        if estimation.page_documents.type_reception.id != 3 and estimation.page_documents.type_reception.id != 15:
+            save = True
         
         amount = 0
         
@@ -6121,15 +6120,25 @@ def test(request):
                     elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
                         amount = estimation.page_soglasovanie.zachita_ot_ubitka
                     
-                if save:
+                if save and amount != 0:
                     new_record              = RegEstimationBalanceUnit()
                     new_record.unit         = unit
                     new_record.date         = estimation.start_estimation
                     new_record.estimation   = estimation
                     new_record.amount_in    = amount
                     new_record.save()
+                else:
+                    count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                    if count > 0:
+                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]  
+                        if new_record.shipment == None:
+                            new_record.delete()
             else:
-                RegEstimationBalanceUnit.objects.filter(estimation = estimation).delete()  
+                count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                if count > 0:
+                    new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]  
+                    if new_record.shipment == None:
+                        new_record.delete()
 
             if price_info != None:
                 
@@ -6182,7 +6191,7 @@ def test(request):
                 reg_interactiv_ocenka_soglasovanie.amount_mcu           = amount_mcu
                 reg_interactiv_ocenka_soglasovanie.save()  
 
-    '''
+    
     s =1
     
     #refresh_wash()

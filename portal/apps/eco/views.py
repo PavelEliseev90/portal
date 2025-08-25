@@ -1756,6 +1756,7 @@ def estimations_price_calculation(estimation, type_calculation):
     zna_izp_type        = 0
     percent_sale_1C     = 100
     percent_sale        = 100
+    battery             = 0
 
     if zna < 200000:
         zg              = '200'
@@ -1778,54 +1779,39 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_200
         light_zad       = estimation_settings.light_zad_200
         light_zad_kf    = estimation_settings.light_zad_kf_200
-        
+        battery         = estimation_settings.battery_200
         engine_danger_kf            = estimation_settings.engine_danger_kf_200            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_200
-        
+        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_200        
         engine_warning_kf           = estimation_settings.engine_warning_kf_200 
         engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_200 
-        
         engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_200   
         engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_200   
-
         engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_200    
         engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_200    
-
         gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_200 
         gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_200 
-
         gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_200  
         gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_200  
-
         gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_200  
         gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_200  
-
         gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_200   
         gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_200   
-
         gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_200  
         gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_200  
-
         gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_200   
         gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_200   
-
         gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_200 
         gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_200 
-
         gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_200     
         gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_200   
-
         suspension_danger_kf        = estimation_settings.suspension_danger_kf_200   
         suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_200       
-
         suspension_warning_kf        = estimation_settings.suspension_warning_kf_200        
         suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_200       
-
         system_og_danger_kf          = estimation_settings.system_og_danger_kf_200     
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_200     
-
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_200      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200      
+        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
     elif zna < 400000:
         zg              = '400'
         fin_zg          = estimation_settings.percent_financity_400
@@ -1846,6 +1832,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_400
         light_zad       = estimation_settings.light_zad_400
         light_zad_kf    = estimation_settings.light_zad_kf_400
+        battery         = estimation_settings.battery_400
         engine_danger_kf            = estimation_settings.engine_danger_kf_400            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_400
         engine_warning_kf           = estimation_settings.engine_warning_kf_400 
@@ -1898,6 +1885,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_700
         light_zad       = estimation_settings.light_zad_700
         light_zad_kf    = estimation_settings.light_zad_kf_700
+        battery         = estimation_settings.battery_700
         engine_danger_kf            = estimation_settings.engine_danger_kf_700            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_700
         engine_warning_kf           = estimation_settings.engine_warning_kf_700 
@@ -1950,6 +1938,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_1200
         light_zad       = estimation_settings.light_zad_1200
         light_zad_kf    = estimation_settings.light_zad_kf_1200
+        battery         = estimation_settings.battery_1200
         engine_danger_kf            = estimation_settings.engine_danger_kf_1200            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_1200
         engine_warning_kf           = estimation_settings.engine_warning_kf_1200 
@@ -2002,6 +1991,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_2000
         light_zad       = estimation_settings.light_zad_2000
         light_zad_kf    = estimation_settings.light_zad_kf_2000
+        battery         = estimation_settings.battery_2000
         engine_danger_kf            = estimation_settings.engine_danger_kf_2000            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_2000
         engine_warning_kf           = estimation_settings.engine_warning_kf_2000 
@@ -2054,6 +2044,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_3000
         light_zad       = estimation_settings.light_zad_3000
         light_zad_kf    = estimation_settings.light_zad_kf_3000
+        battery         = estimation_settings.battery_3000
         engine_danger_kf            = estimation_settings.engine_danger_kf_3000            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_3000
         engine_warning_kf           = estimation_settings.engine_warning_kf_3000 
@@ -2106,6 +2097,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_5000
         light_zad       = estimation_settings.light_zad_5000
         light_zad_kf    = estimation_settings.light_zad_kf_5000
+        battery         = estimation_settings.battery_5000
         engine_danger_kf            = estimation_settings.engine_danger_kf_5000            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_5000
         engine_warning_kf           = estimation_settings.engine_warning_kf_5000 
@@ -2158,6 +2150,7 @@ def estimations_price_calculation(estimation, type_calculation):
         light_pered_kf  = estimation_settings.light_pered_kf_5001
         light_zad       = estimation_settings.light_zad_5001
         light_zad_kf    = estimation_settings.light_zad_kf_5001
+        battery         = estimation_settings.battery_5001
         engine_danger_kf            = estimation_settings.engine_danger_kf_5001            
         engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_5001
         engine_warning_kf           = estimation_settings.engine_warning_kf_5001 
@@ -2780,44 +2773,122 @@ def estimations_price_calculation(estimation, type_calculation):
                         auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.)'
                 run_other = run
 
+    ###Проверяем требуется ли замена аккамулятора
+    if battery > 0:
+        try:
+            if estimation.start_estimation.year - estimation.year > 4:
+                diff_sum    = 0
+                work        = 'Замена аккамулятора'
+                diff_sum    = battery
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum 
+        except:
+            s = 1
+
     body_info = body_estimation(estimation)            
     elem_rzav = 0
     elem_rzav_data = ''
     for info in body_info['array']:
         if (info['name'] == 'фара правая' or info['name'] == 'фара левая') and info['all'] > 0:
-            price_diff = (price * light_pered_kf / 100)
-            info_diff   = info['name'].title()
+            if info['poly'] > 0 and info['replace_add'] == 0 and info['tr'] == 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 77)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum 
+            elif info['replace_add'] > 0:
+                price_diff = (price * light_pered_kf / 100)
+                info_diff   = info['name'].title() + ' / замена'
 
-            if price_diff < light_pered:
-                price_diff = light_pered
-                info_diff   = info['name']
-            work        = info_diff.title()
-            diff_sum    = price_diff
-            dop = {
-                'name'      : work,
-                'quantity'  : 1,
-                'amount_pod': diff_sum, 
-                'amount'    : diff_sum
-            }
-            list_work_mcu.append(dop)
-            amount_mcu = amount_mcu + diff_sum
+                if price_diff < light_pered:
+                    price_diff = light_pered
+                    info_diff   = info['name']
+                work        = info_diff.title()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum * 2, 
+                    'amount'    : diff_sum * 2
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum
+            else:
+                price_diff = (price * light_pered_kf / 100)
+                info_diff   = info['name'].title()
+
+                if price_diff < light_pered:
+                    price_diff = light_pered
+                    info_diff   = info['name']
+                work        = info_diff.title()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum
         elif (info['name'] == 'фонарь правый' or info['name'] == 'фонарь левый' ) and info['all'] > 0:
-            price_diff = (price * light_zad_kf / 100)
-            info_diff   = info['name']
+            if info['poly'] > 0 and info['replace_add'] == 0 and info['tr'] == 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 77)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum 
+            elif info['replace_add'] > 0:
+                price_diff = (price * light_zad_kf / 100)
+                info_diff   = info['name'] + ' / замена'
 
-            if price_diff < light_zad:
-                price_diff = light_zad
+                if price_diff < light_zad:
+                    price_diff = light_zad
+                    info_diff   = info['name']
+                work        = info_diff.title()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum 
+            else:
+                price_diff = (price * light_zad_kf / 100)
                 info_diff   = info['name']
-            work        = info_diff.title()
-            diff_sum    = price_diff
-            dop = {
-                'name'      : work,
-                'quantity'  : 1,
-                'amount_pod': diff_sum, 
-                'amount'    : diff_sum
-            }
-            list_work_mcu.append(dop)
-            amount_mcu = amount_mcu + diff_sum    
+
+                if price_diff < light_zad:
+                    price_diff = light_zad
+                    info_diff   = info['name']
+                work        = info_diff.title()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum              
         elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
             price_diff = windshield
             info_diff   = info['name']
