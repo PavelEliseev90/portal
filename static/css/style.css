@@ -4235,6 +4235,10 @@ hr[style*="width: 75%"] {
 	transform: translateY(-2px);
 }
 
+.filter-section:hover .filter-options {
+	display: block;
+}
+
 .filter-title {
 	font-weight: 700;
 	font-size: 1rem;
@@ -4266,10 +4270,15 @@ hr[style*="width: 75%"] {
 	outline: none;
 }
 
+.filter-search:focus-within .filter-options {
+	display: block;
+}
+
 .filter-options {
 	max-height: 200px;
 	overflow-y: auto;
 	padding-right: 0.5rem;
+	display: none;
 }
 
 .filter-option {
@@ -4466,6 +4475,53 @@ hr[style*="width: 75%"] {
 	background: #a8a8a8;
 }
 
+.no-results-msg {
+	padding: 10px;
+	text-align: center;
+	color: #6c757d;
+	font-style: italic;
+	border-top: 1px solid #dee2e6;
+	margin-top: 5px;
+}
+
+.results-count-msg {
+	padding: 10px;
+	text-align: center;
+	color: #28a745;
+	font-size: 0.9em;
+	border-top: 1px solid #dee2e6;
+	margin-top: 5px;
+	font-weight: 500;
+}
+
+mark {
+	background-color: #fff3cd;
+	color: #856404;
+	padding: 2px 4px;
+	border-radius: 3px;
+	font-weight: 600;
+}
+
+.clear-search-btn {
+	transition: all 0.2s ease;
+	border-radius: 50%;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.clear-search-btn:hover {
+	color: #dc3545 !important;
+	transform: translateY(-50%) scale(1.1) !important;
+	background-color: rgba(220, 53, 69, 0.1);
+}
+
+.clear-search-btn:active {
+	transform: translateY(-50%) scale(0.95) !important;
+}
+
 /* Адаптивность для модального окна */
 @media (max-width: 576px) {
 	#mobileFiltersModal .modal-body {
@@ -4584,6 +4640,10 @@ hr[style*="width: 75%"] {
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
 }
 
+.pc-filter-dropdown:hover .pc-filter-options {
+    display: block;
+}
+
 .pc-filter-search {
     position: relative;
     padding: 1rem;
@@ -4604,6 +4664,10 @@ hr[style*="width: 75%"] {
     outline: none;
     background: white;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.pc-filter-search:focus-within .pc-filter-options {
+    display: block;
 }
 
 .pc-filter-icon {
@@ -4855,6 +4919,63 @@ hr[style*="width: 75%"] {
 .pc-filter-option:focus-within {
     outline: 2px solid #667eea;
     outline-offset: 2px;
+}
+
+.no-results-msg {
+    padding: 10px;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    border-top: 1px solid #dee2e6;
+    margin-top: 5px;
+}
+
+.pc-no-results-msg {
+    padding: 8px;
+    font-size: 0.9em;
+}
+
+.results-count-msg {
+    padding: 8px;
+    text-align: center;
+    color: #28a745;
+    font-size: 0.9em;
+    border-top: 1px solid #dee2e6;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+.pc-results-count-msg {
+    padding: 6px;
+    font-size: 0.85em;
+}
+
+mark {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.clear-search-btn {
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clear-search-btn:hover {
+    color: #dc3545 !important;
+    transform: translateY(-50%) scale(1.1) !important;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.clear-search-btn:active {
+    transform: translateY(-50%) scale(0.95) !important;
 }
 
 /* Анимация для переключения фильтра */
