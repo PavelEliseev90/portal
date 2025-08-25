@@ -4943,16 +4943,16 @@ hr[style*="width: 75%"] {
 }
 
 .pc-filters-header .btn-outline-primary {
-    border: 1px solid #667eea;
-    color: #667eea;
-    background: transparent;
+    border: 1px solid #e74c3c !important;
+    color: white;
+    background: #e74c3c;
     transition: all 0.3s ease;
     font-size: 0.875rem;
     padding: 0.5rem 1rem;
 }
 
 .pc-filters-header .btn-outline-primary:hover {
-    background: #667eea;
+    background: #e74c3c;
     color: white;
     transform: translateY(-1px);
 }

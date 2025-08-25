@@ -665,13 +665,13 @@
 					<span class="icon-mbri-setting me-2"></span>
 					Фильтры поиска
 				</h5>
-				<button type="button" class="btn btn-outline-light btn-sm" onclick="toggleFilters()">
-					<span class="icon-mbri-up me-2"></span>Скрыть
+				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFilters()">
+					<span class="icon-mbri-down me-2"></span>Показать
 				</button>
 			</div>
 		</div>
 		
-		<div class="pc-filters-content">
+		<div class="pc-filters-content" style="display: none;">
 			<div class="pc-filters-row">
 				<div class="pc-filter-group">
 					<label class="pc-filter-label">Город</label>
@@ -1022,9 +1022,6 @@
 
 </div>
 
-
-{% endblock %}
-
 <script>
 // Глобальная функция для переключения фильтров
 function toggleFilters() {
@@ -1357,3 +1354,5 @@ document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal'
     }
 });
 </script>
+
+{% endblock %}
