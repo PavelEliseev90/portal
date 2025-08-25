@@ -426,237 +426,6 @@
 	</div>
 </div>
 
-<!-- Модальное окно фильтров для мобильных устройств -->
-<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
-		<div class="modal-content">
-			<div class="modal-header bg-dark text-white">
-				<h5 class="modal-title" id="mobileFiltersModalLabel">
-					<span class="icon-mbri-setting me-2"></span>Фильтры поиска
-				</h5>
-				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-			</div>
-			<div class="modal-body">
-				<form method="get" id="mobileFiltersForm">
-					<!-- Город -->
-					<div class="filter-section">
-						<div class="filter-title">Город</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_city" placeholder="Поиск по городу">
-						</div>
-						<div class="filter-options">
-							{% for city in params.selected.citys %}
-								{% if city.city__name|length > 0 %}
-									<label class="filter-option" id="mobile_city_{{city.city}}">
-										<input type="checkbox" name="city[]" value="{{city.city}}" 
-											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
-										<span class="filter-text">{{city.city__name}}</span>
-									</label>
-								{% endif %}
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Марка -->
-					<div class="filter-section">
-						<div class="filter-title">Марка</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_marks" placeholder="Поиск по марке">
-						</div>
-						<div class="filter-options">
-							{% for mark in params.selected.marks %}
-								<label class="filter-option" id="mobile_mark_{{mark.pk}}">
-									<input type="checkbox" name="mark[]" value="{{mark.pk}}" 
-										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
-									<span class="filter-text">{{mark.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Коробка передач -->
-					<div class="filter-section">
-						<div class="filter-title">Коробка передач</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_gear" placeholder="Поиск по коробке передач">
-						</div>
-						<div class="filter-options">
-							{% for gear in params.selected.gears %}
-								<label class="filter-option" id="mobile_gear_{{gear.pk}}">
-									<input type="checkbox" name="gear[]" value="{{gear.pk}}" 
-										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
-									<span class="filter-text">{{gear.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Кузов -->
-					<div class="filter-section">
-						<div class="filter-title">Кузов</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_body" placeholder="Поиск по кузову">
-						</div>
-						<div class="filter-options">
-							{% for body in params.selected.bodys %}
-								<label class="filter-option" id="mobile_body_{{body.pk}}">
-									<input type="checkbox" name="body[]" value="{{body.pk}}" 
-										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
-									<span class="filter-text">{{body.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Привод -->
-					<div class="filter-section">
-						<div class="filter-title">Привод</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_drives" placeholder="Поиск по приводу">
-						</div>
-						<div class="filter-options">
-							{% for drive in params.selected.drives %}
-								{% if drive.name|length > 0 %}
-									<label class="filter-option" id="mobile_drive_{{drive.pk}}">
-										<input type="checkbox" name="drive[]" value="{{drive.pk}}" 
-											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
-										<span class="filter-text">{{drive.name}}</span>
-									</label>
-								{% endif %}
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Год выпуска -->
-					<div class="filter-section">
-						<div class="filter-title">Год выпуска</div>
-						<div class="filter-range">
-							<div class="row">
-								<div class="col-6">
-									<input type="number" class="form-control" name="year_start" 
-										value="{{params.filtr.year_start}}" placeholder="1950">
-									<small class="text-muted">от</small>
-								</div>
-								<div class="col-6">
-									<input type="number" class="form-control" name="year_end" 
-										value="{{params.filtr.year_end}}" placeholder="2025">
-									<small class="text-muted">до</small>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Пробег -->
-					<div class="filter-section">
-						<div class="filter-title">Пробег</div>
-						<div class="filter-range">
-							<div class="row">
-								<div class="col-6">
-									<input type="number" class="form-control" name="run_start" 
-										value="{{params.filtr.run_start}}" placeholder="0">
-									<small class="text-muted">от</small>
-								</div>
-								<div class="col-6">
-									<input type="number" class="form-control" name="run_end" 
-										value="{{params.filtr.run_end}}" placeholder="500000">
-									<small class="text-muted">до</small>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Цена -->
-					<div class="filter-section">
-						<div class="filter-title">Цена</div>
-						<div class="filter-range">
-							<div class="row">
-								<div class="col-6">
-									<input type="number" class="form-control" name="price_start" 
-										value="{{params.filtr.price_start}}" placeholder="0">
-									<small class="text-muted">от</small>
-								</div>
-								<div class="col-6">
-									<input type="number" class="form-control" name="price_end" 
-										value="{{params.filtr.price_end}}" placeholder="10000000">
-									<small class="text-muted">до</small>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					{% if request.user.is_authenticated %}
-					<!-- VIN -->
-					<div class="filter-section">
-						<div class="filter-title">VIN</div>
-						<div class="filter-input">
-							<input type="text" class="form-control" name="vin" 
-								value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
-						</div>
-					</div>
-
-					<!-- Статус -->
-					<div class="filter-section">
-						<div class="filter-title">Статус</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_status" placeholder="Поиск по статусу">
-						</div>
-						<div class="filter-options">
-							{% for status in params.selected.statuses %}
-								<label class="filter-option" id="mobile_status_{{status.pk}}">
-									<input type="checkbox" name="status[]" value="{{status.pk}}" 
-										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
-									<span class="filter-text">{{status.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Этап УС -->
-					<div class="filter-section">
-						<div class="filter-title">Этап УС</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_stage_price" placeholder="Поиск по этапу УС">
-						</div>
-						<div class="filter-options">
-							{% for stage_price in params.selected.stage_prices %}
-								<label class="filter-option" id="mobile_stage_price_{{stage_price.pk}}">
-									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" 
-										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
-									<span class="filter-text">{{stage_price.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-
-					<!-- Вид продажи -->
-					<div class="filter-section">
-						<div class="filter-title">Вид продажи</div>
-						<div class="filter-search">
-							<input type="text" class="form-control" id="mobile_search_type_sale" placeholder="Поиск по виду продажи">
-						</div>
-						<div class="filter-options">
-							{% for type_sale in params.selected.type_sales %}
-								<label class="filter-option" id="mobile_type_sale_{{type_sale.pk}}">
-									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" 
-										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
-									<span class="filter-text">{{type_sale.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-					{% endif %}
-				</form>
-			</div>
-			<div class="modal-footer bg-light">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-				<button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
-					<span class="icon-mbri-search me-2"></span>Применить фильтры
-				</button>
-			</div>
-		</div>
-	</div>
-</div>
-
 <form method="get" id="filtersForm">
 	<div class="pc-filters-container d-none d-md-block">
 		<div class="pc-filters-header">
@@ -665,13 +434,13 @@
 					<span class="icon-mbri-setting me-2"></span>
 					Фильтры поиска
 				</h5>
-				<button type="button" class="btn btn-outline-light btn-sm" onclick="toggleFilters()">
-					<span class="icon-mbri-up me-2"></span>Скрыть
+				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFilters()">
+					<span class="icon-mbri-down me-2"></span>Показать
 				</button>
 			</div>
 		</div>
 		
-		<div class="pc-filters-content">
+		<div class="pc-filters-content" style="display: none;">
 			<div class="pc-filters-row">
 				<div class="pc-filter-group">
 					<label class="pc-filter-label">Город</label>
@@ -1022,10 +791,246 @@
 
 </div>
 
-
-{% endblock %}
-
 <script>
+// Функция debounce для оптимизации поиска
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
+}
+
+function addClearSearch(input, prefix) {
+    const container = input.closest('.filter-search');
+    if (!container) return;
+    
+    let clearBtn = container.querySelector('.clear-search-btn');
+    if (!clearBtn) {
+        clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'clear-search-btn';
+        clearBtn.innerHTML = '<span class="icon-mbri-close"></span>';
+        clearBtn.style.cssText = `
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+        `;
+        container.appendChild(clearBtn);
+    }
+    
+    clearBtn.addEventListener('click', function() {
+        input.value = '';
+        filterOptions(prefix, '');
+        input.focus();
+        
+        // Скрываем контейнер при очистке поиска
+        const optionsContainer = container.nextElementSibling;
+        if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+    
+    input.addEventListener('input', function() {
+        clearBtn.style.display = this.value ? 'block' : 'none';
+    });
+    
+    const optionsContainer = container.nextElementSibling;
+    if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
+        input.addEventListener('focus', function() {
+            optionsContainer.style.display = 'block';
+        });
+        
+        input.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (!optionsContainer.matches(':hover') && !input.matches(':focus')) {
+                    optionsContainer.style.display = 'none';
+                }
+            }, 200);
+        });
+    }
+}
+
+function addClearSearchPC(input, containerId) {
+    const container = input.closest('.pc-filter-search');
+    if (!container) return;
+    
+    let clearBtn = container.querySelector('.clear-search-btn');
+    if (!clearBtn) {
+        clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'clear-search-btn';
+        clearBtn.innerHTML = '<span class="icon-mbri-close"></span>';
+        clearBtn.style.cssText = `
+            position: absolute;
+            right: 35px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+            z-index: 10;
+        `;
+        container.appendChild(clearBtn);
+    }
+    
+    clearBtn.addEventListener('click', function() {
+        input.value = '';
+        filterPCOptions(containerId, '');
+        input.focus();
+        
+        // Скрываем контейнер при очистке поиска
+        const optionsContainer = document.getElementById(containerId);
+        if (optionsContainer) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+    
+    input.addEventListener('input', function() {
+        clearBtn.style.display = this.value ? 'block' : 'none';
+    });
+    
+    const optionsContainer = document.getElementById(containerId);
+    if (optionsContainer) {
+        input.addEventListener('focus', function() {
+            optionsContainer.style.display = 'block';
+        });
+        
+        input.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (!optionsContainer.matches(':hover') && !input.matches(':focus')) {
+                    optionsContainer.style.display = 'none';
+                }
+            }, 200);
+        });
+    }
+}
+
+function addToggleFilterSection() {
+    const filterTitles = document.querySelectorAll('.filter-title');
+    
+    filterTitles.forEach(title => {
+        title.style.cursor = 'pointer';
+        title.classList.add('filter-title-toggle');
+        
+        title.addEventListener('click', function() {
+            const filterSection = this.closest('.filter-section');
+            const optionsContainer = filterSection.querySelector('.filter-options');
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (optionsContainer) {
+                const isVisible = optionsContainer.style.display !== 'none';
+                
+                if (isVisible) {
+                    optionsContainer.style.display = 'none';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
+                } else {
+                    // Скрываем все другие списки
+                    const allOptions = document.querySelectorAll('.filter-options');
+                    allOptions.forEach(opt => {
+                        if (opt !== optionsContainer) {
+                            opt.style.display = 'none';
+                        }
+                    });
+                    
+                    // Сбрасываем иконки других заголовков
+                    const allIcons = document.querySelectorAll('.filter-title .toggle-icon');
+                    allIcons.forEach(ic => {
+                        if (ic !== icon) {
+                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
+                        }
+                    });
+                    
+                    optionsContainer.style.display = 'block';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
+                }
+            }
+        });
+        
+        if (!title.querySelector('.toggle-icon')) {
+            const icon = document.createElement('span');
+            icon.className = 'toggle-icon';
+            icon.innerHTML = '<span class="icon-mbri-down"></span>';
+            icon.style.cssText = `
+                float: right;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+            `;
+            title.appendChild(icon);
+        }
+    });
+}
+
+function addTogglePCFilterSection() {
+    const pcFilterLabels = document.querySelectorAll('.pc-filter-label');
+    
+    pcFilterLabels.forEach(label => {
+        label.style.cursor = 'pointer';
+        label.classList.add('pc-filter-label-toggle');
+        
+        label.addEventListener('click', function() {
+            const filterGroup = this.closest('.pc-filter-group');
+            const dropdown = filterGroup.querySelector('.pc-filter-dropdown');
+            const optionsContainer = filterGroup.querySelector('.pc-filter-options');
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (optionsContainer) {
+                const isVisible = optionsContainer.style.display !== 'none';
+                
+                if (isVisible) {
+                    optionsContainer.style.display = 'none';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
+                } else {
+                    // Скрываем все другие списки
+                    const allOptions = document.querySelectorAll('.pc-filter-options');
+                    allOptions.forEach(opt => {
+                        if (opt !== optionsContainer) {
+                            opt.style.display = 'none';
+                        }
+                    });
+                    
+                    // Сбрасываем иконки других заголовков
+                    const allIcons = document.querySelectorAll('.pc-filter-label .toggle-icon');
+                    allIcons.forEach(ic => {
+                        if (ic !== icon) {
+                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
+                        }
+                    });
+                    
+                    optionsContainer.style.display = 'block';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
+                }
+            }
+        });
+        
+        if (!label.querySelector('.toggle-icon')) {
+            const icon = document.createElement('span');
+            icon.className = 'toggle-icon';
+            icon.innerHTML = '<span class="icon-mbri-down"></span>';
+            icon.style.cssText = `
+                float: right;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+                color: #6c757d;
+            `;
+            label.appendChild(icon);
+        }
+    });
+}
+
 // Глобальная функция для переключения фильтров
 function toggleFilters() {
     const filtersContent = document.querySelector('.pc-filters-content');
@@ -1067,153 +1072,131 @@ document.addEventListener('DOMContentLoaded', function() {
     inputs.forEach(input => {
         input.addEventListener('input', updateActiveFiltersCount);
     });
+    
+        // Скрываем все опции по умолчанию для мобильных фильтров
+    const mobileOptions = document.querySelectorAll('.filter-options');
+    mobileOptions.forEach(option => {
+        option.style.display = 'none';
+    });
+    
+    // Скрываем все опции по умолчанию для ПК фильтров
+    const pcOptions = document.querySelectorAll('.pc-filter-options');
+    pcOptions.forEach(option => {
+        option.style.display = 'none';
+    });
+    
+    // Добавляем обработчики для скрытия/раскрытия секций фильтров
+    addToggleFilterSection();
+    addTogglePCFilterSection();
 });
 
 function initializeMobileFilters() {
-    // Поиск по городам
-    const searchCity = document.getElementById('mobile_search_city');
-    if (searchCity) {
-        searchCity.addEventListener('input', function() {
-            filterOptions('mobile_city_', this.value);
-        });
-    }
-    
-    // Поиск по маркам
-    const searchMarks = document.getElementById('mobile_search_marks');
-    if (searchMarks) {
-        searchMarks.addEventListener('input', function() {
-            filterOptions('mobile_mark_', this.value);
-        });
-    }
-    
-    // Поиск по коробке передач
-    const searchGear = document.getElementById('mobile_search_gear');
-    if (searchGear) {
-        searchGear.addEventListener('input', function() {
-            filterOptions('mobile_gear_', this.value);
-        });
-    }
-    
-    // Поиск по кузову
-    const searchBody = document.getElementById('mobile_search_body');
-    if (searchBody) {
-        searchBody.addEventListener('input', function() {
-            filterOptions('mobile_body_', this.value);
-        });
-    }
-    
-    // Поиск по приводу
-    const searchDrives = document.getElementById('mobile_search_drives');
-    if (searchDrives) {
-        searchDrives.addEventListener('input', function() {
-            filterOptions('mobile_drive_', this.value);
-        });
-    }
-    
-    // Поиск по статусу
-    const searchStatus = document.getElementById('mobile_search_status');
-    if (searchStatus) {
-        searchStatus.addEventListener('input', function() {
-            filterOptions('mobile_status_', this.value);
-        });
-    }
-    
-    // Поиск по этапу УС
-    const searchStagePrice = document.getElementById('mobile_search_stage_price');
-    if (searchStagePrice) {
-        searchStagePrice.addEventListener('input', function() {
-            filterOptions('mobile_stage_price_', this.value);
-        });
-    }
-    
-    // Поиск по виду продажи
-    const searchTypeSale = document.getElementById('mobile_search_type_sale');
-    if (searchTypeSale) {
-        searchTypeSale.addEventListener('input', function() {
-            filterOptions('mobile_type_sale_', this.value);
-        });
-    }
-}
+    const mobileFilters = [
+        { id: 'mobile_search_city', prefix: 'mobile_city_' },
+        { id: 'mobile_search_marks', prefix: 'mobile_mark_' },
+        { id: 'mobile_search_gear', prefix: 'mobile_gear_' },
+        { id: 'mobile_search_body', prefix: 'mobile_body_' },
+        { id: 'mobile_search_drives', prefix: 'mobile_drive_' },
+        { id: 'mobile_search_status', prefix: 'mobile_status_' },
+        { id: 'mobile_search_stage_price', prefix: 'mobile_stage_price_' },
+        { id: 'mobile_search_type_sale', prefix: 'mobile_type_sale_' }
+    ];
 
-function filterOptions(prefix, searchValue) {
-    const options = document.querySelectorAll(`[id^="${prefix}"]`);
-    
-    options.forEach(option => {
-        const text = option.querySelector('.filter-text').textContent.toLowerCase();
-        const search = searchValue.toLowerCase();
-        
-        if (search === '' || text.includes(search)) {
-            option.style.display = 'block';
-        } else {
-            option.style.display = 'none';
+    mobileFilters.forEach(cfg => {
+        const input = document.getElementById(cfg.id);
+        if (input) {
+            input.addEventListener('input', debounce(function() {
+                filterOptions(cfg.prefix, this.value);
+            }, 300));
+            addClearSearch(input, cfg.prefix);
         }
     });
 }
 
+function filterOptions(prefix, searchValue) {
+    const options = document.querySelectorAll(`[id^="${prefix}"]`);
+    let foundCount = 0;
+    
+    options.forEach(option => {
+        const textElement = option.querySelector('.filter-text');
+        const originalText = textElement.getAttribute('data-original-text') || textElement.textContent;
+        
+        if (!textElement.hasAttribute('data-original-text')) {
+            textElement.setAttribute('data-original-text', originalText);
+        }
+        
+        const text = originalText.toLowerCase();
+        const search = searchValue.toLowerCase();
+        
+        if (search === '' || text.includes(search)) {
+            option.style.display = 'block';
+            foundCount++;
+            
+            if (searchValue.trim() !== '') {
+                const highlightedText = originalText.replace(new RegExp(`(${searchValue})`, 'gi'), '<mark>$1</mark>');
+                textElement.innerHTML = highlightedText;
+            } else {
+                textElement.innerHTML = originalText;
+            }
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    const container = options[0]?.closest('.filter-options');
+    if (container) {
+        let noResultsMsg = container.querySelector('.no-results-msg');
+        let resultsCountMsg = container.querySelector('.results-count-msg');
+        
+        if (searchValue.trim() !== '') {
+            if (foundCount === 0) {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.className = 'no-results-msg';
+                    noResultsMsg.innerHTML = '<span class="text-muted">Ничего не найдено</span>';
+                    container.appendChild(noResultsMsg);
+                }
+                if (resultsCountMsg) resultsCountMsg.remove();
+            } else {
+                if (noResultsMsg) noResultsMsg.remove();
+                if (!resultsCountMsg) {
+                    resultsCountMsg = document.createElement('div');
+                    resultsCountMsg.className = 'results-count-msg';
+                    container.appendChild(resultsCountMsg);
+                }
+                resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
+            }
+            
+            // Автоматически показываем контейнер при поиске
+            container.style.display = 'block';
+        } else {
+            if (noResultsMsg) noResultsMsg.remove();
+            if (resultsCountMsg) resultsCountMsg.remove();
+        }
+    }
+}
+
 function initializePCFilters() {
-    // Поиск по городам
-    const searchCity = document.getElementById('search_city');
-    if (searchCity) {
-        searchCity.addEventListener('input', function() {
-            filterPCOptions('city_options', this.value);
-        });
-    }
-    
-    // Поиск по маркам
-    const searchMarks = document.getElementById('search_marks');
-    if (searchMarks) {
-        searchMarks.addEventListener('input', function() {
-            filterPCOptions('marks_options', this.value);
-        });
-    }
-    
-    // Поиск по коробке передач
-    const searchGear = document.getElementById('search_gear');
-    if (searchGear) {
-        searchGear.addEventListener('input', function() {
-            filterPCOptions('gear_options', this.value);
-        });
-    }
-    
-    // Поиск по кузову
-    const searchBody = document.getElementById('search_body');
-    if (searchBody) {
-        searchBody.addEventListener('input', function() {
-            filterPCOptions('body_options', this.value);
-        });
-    }
-    
-    // Поиск по приводу
-    const searchDrives = document.getElementById('search_drives');
-    if (searchDrives) {
-        searchDrives.addEventListener('input', function() {
-            filterPCOptions('drives_options', this.value);
-        });
-    }
-    
-    // Поиск по статусу
-    const searchStatus = document.getElementById('search_status');
-    if (searchStatus) {
-        searchStatus.addEventListener('input', function() {
-            filterPCOptions('status_options', this.value);
-        });
-    }
-    
-    // Поиск по этапу УС
-    const searchStagePrice = document.getElementById('search_stage_price');
-    if (searchStagePrice) {
-        searchStagePrice.addEventListener('input', function() {
-            filterPCOptions('stage_price_options', this.value);
-        });
-    }
-    
-    // Поиск по виду продажи
-    const searchTypeSale = document.getElementById('search_type_sale');
-    if (searchTypeSale) {
-        searchTypeSale.addEventListener('input', function() {
-            filterPCOptions('type_sale_options', this.value);
-        });
-    }
+    const pcFilters = [
+        { id: 'search_city', container: 'city_options' },
+        { id: 'search_marks', container: 'marks_options' },
+        { id: 'search_gear', container: 'gear_options' },
+        { id: 'search_body', container: 'body_options' },
+        { id: 'search_drives', container: 'drives_options' },
+        { id: 'search_status', container: 'status_options' },
+        { id: 'search_stage_price', container: 'stage_price_options' },
+        { id: 'search_type_sale', container: 'type_sale_options' }
+    ];
+
+    pcFilters.forEach(cfg => {
+        const input = document.getElementById(cfg.id);
+        if (input) {
+            input.addEventListener('input', debounce(function() {
+                filterPCOptions(cfg.container, this.value);
+            }, 300));
+            addClearSearchPC(input, cfg.container);
+        }
+    });
 }
 
 function filterPCOptions(containerId, searchValue) {
@@ -1221,17 +1204,62 @@ function filterPCOptions(containerId, searchValue) {
     if (!container) return;
     
     const options = container.querySelectorAll('.pc-filter-option');
+    let foundCount = 0;
     
     options.forEach(option => {
-        const text = option.querySelector('.pc-filter-text').textContent.toLowerCase();
+        const textElement = option.querySelector('.pc-filter-text');
+        const originalText = textElement.getAttribute('data-original-text') || textElement.textContent;
+        
+        if (!textElement.hasAttribute('data-original-text')) {
+            textElement.setAttribute('data-original-text', originalText);
+        }
+        
+        const text = originalText.toLowerCase();
         const search = searchValue.toLowerCase();
         
         if (search === '' || text.includes(search)) {
             option.style.display = 'block';
+            foundCount++;
+            
+            if (searchValue.trim() !== '') {
+                const highlightedText = originalText.replace(new RegExp(`(${searchValue})`, 'gi'), '<mark>$1</mark>');
+                textElement.innerHTML = highlightedText;
+            } else {
+                textElement.innerHTML = originalText;
+            }
         } else {
             option.style.display = 'none';
         }
     });
+    
+    let noResultsMsg = container.querySelector('.no-results-msg');
+    let resultsCountMsg = container.querySelector('.results-count-msg');
+    
+    if (searchValue.trim() !== '') {
+        if (foundCount === 0) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'no-results-msg pc-no-results-msg';
+                noResultsMsg.innerHTML = '<span class="text-muted">Ничего не найдено</span>';
+                container.appendChild(noResultsMsg);
+            }
+            if (resultsCountMsg) resultsCountMsg.remove();
+        } else {
+            if (noResultsMsg) noResultsMsg.remove();
+            if (!resultsCountMsg) {
+                resultsCountMsg = document.createElement('div');
+                resultsCountMsg.className = 'results-count-msg pc-results-count-msg';
+                container.appendChild(resultsCountMsg);
+            }
+            resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
+        }
+        
+        // Автоматически показываем контейнер при поиске
+        container.style.display = 'block';
+    } else {
+        if (noResultsMsg) noResultsMsg.remove();
+        if (resultsCountMsg) resultsCountMsg.remove();
+    }
 }
 
 function updateActiveFiltersCount() {
@@ -1357,3 +1385,5 @@ document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal'
     }
 });
 </script>
+
+{% endblock %}

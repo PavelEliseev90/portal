@@ -1771,7 +1771,6 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     def fotos_kolesa_count(self):
         return RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'kolesa').count()
         
-    
     def fotos_kolesa2(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'kolesa2').order_by('file_number') 
         fotos = fotos.order_by('type_file', 'file_number')
@@ -2100,18 +2099,11 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
                     self.status = RefStatusEstimation.objects.get(pk = 4)   
             else:
                 self.status = RefStatusEstimation.objects.get(pk = 2)
-            
-            #if self.page_soglasovanie != None:
-            #    #refresh_balance_unit_staff(self)       
-            #    try:
-            #        refresh_balance_unit(self)  
-            #    except:
-            #        s = 1
                 
         except:
             self.status = RefStatusEstimation.objects.get(pk = 1)
         
-        add_swap(self)
+        #add_swap(self)
         
         super().save(*args, **kwargs)
 
