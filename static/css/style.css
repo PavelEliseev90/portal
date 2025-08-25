@@ -4696,7 +4696,7 @@ mark {
 
 .pc-filter-dropdown:hover,
 .pc-filter-dropdown:focus-within {
-    border-color: #667eea;
+    border-color: #e74c3c;
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
 }
 
@@ -4975,17 +4975,17 @@ mark {
 /* Стили для активных чекбоксов */
 .pc-filter-option:has(input:checked) {
     background: rgba(102, 126, 234, 0.1);
-    border-left: 3px solid #667eea;
+    border-left: 3px solid #e74c3c;
 }
 
 .pc-filter-option:has(input:checked) .pc-filter-text {
-    color: #667eea;
+    color: #e74c3c;
     font-weight: 500;
 }
 
 /* Фокус для доступности */
 .pc-filter-option:focus-within {
-    outline: 2px solid #667eea;
+    outline: 2px solid #e74c3c;
     outline-offset: 2px;
 }
 
