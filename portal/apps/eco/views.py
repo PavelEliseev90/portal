@@ -3220,9 +3220,9 @@ def estimations_price_calculation(estimation, type_calculation):
             #if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
             zna_type_name = ''
             if zna_izp_type == 1:
-                zna_type_name = '"Использовать если нет данных КорсАвто"'
+                zna_type_name = '""'
             else:
-                zna_type_name = '"Использовать всегда"'
+                zna_type_name = '""'
             price_old       = price
             day = day_sale_all
             if day_sale_zg > 0:

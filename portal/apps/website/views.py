@@ -5280,15 +5280,17 @@ def korsavto_settings_dc(request):
         subquery_txt                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 1).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_txt_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_eval_avtohab       = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 1).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_1c            = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 2).annotate(count=Func(F('id'), function='Count')).values('count')
+        subquery_eval_1c            = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id__in = [2, 8]).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_eval_uk            = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 3).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_eval_man           = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 4).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_eval_sed           = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 5).annotate(count=Func(F('id'), function='Count')).values('count')
+        subquery_eval_express       = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 7).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_eval_avtohab_s     = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_1c_s          = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 2).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+        subquery_eval_1c_s          = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id__in = [2, 8]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_eval_uk_s          = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 3).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_eval_man_s         = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_eval_sed_s         = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 5).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+        subquery_eval_express_s     = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 7).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_200                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 7).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_200_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 7).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_400                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 1).annotate(count=Func(F('id'), function='Count')).values('count')
@@ -5303,18 +5305,22 @@ def korsavto_settings_dc(request):
         subquery_3000_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
         subquery_5000               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [8,5]).annotate(count=Func(F('id'), function='Count')).values('count')
         subquery_5000_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [8,5]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+        subquery_5001               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 12).annotate(count=Func(F('id'), function='Count')).values('count')
+        subquery_5001_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 12).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
 
         list_dc     = list_dc.annotate(
-            count_eval_avtohab = Subquery(subquery_eval_avtohab)).annotate(
-            count_eval_1c   = Subquery(subquery_eval_1c)).annotate( 
-            count_eval_uk   = Subquery(subquery_eval_uk)).annotate( 
-            count_eval_man  = Subquery(subquery_eval_man)).annotate(
-            count_eval_sed  = Subquery(subquery_eval_sed)).annotate(
+            count_eval_avtohab      = Coalesce(Subquery(subquery_eval_avtohab), Value(0))).annotate(
+            count_eval_1c           = Coalesce(Subquery(subquery_eval_1c), Value(0))).annotate( 
+            count_eval_uk           = Coalesce(Subquery(subquery_eval_uk), Value(0))).annotate( 
+            count_eval_man          = Coalesce(Subquery(subquery_eval_man), Value(0))).annotate(
+            count_eval_sed          = Coalesce(Subquery(subquery_eval_sed), Value(0))).annotate(
+            count_eval_express      = Coalesce(Subquery(subquery_eval_express), Value(0))).annotate(
             count_eval_avtohab_s    = Coalesce(Subquery(subquery_eval_avtohab_s), Value(0))).annotate(
             count_eval_1c_s         = Coalesce(Subquery(subquery_eval_1c_s), Value(0))).annotate(
             count_eval_uk_s         = Coalesce(Subquery(subquery_eval_uk_s), Value(0))).annotate(
             count_eval_man_s        = Coalesce(Subquery(subquery_eval_man_s), Value(0))).annotate(
             count_eval_sed_s        = Coalesce(Subquery(subquery_eval_sed_s), Value(0))).annotate(
+            count_eval_express_s    = Coalesce(Subquery(subquery_eval_express_s), Value(0))).annotate(
             count_sale      = Subquery(subquery_sale)).annotate(
             count_sale_s    = Subquery(subquery_sale_s)).annotate(
             count_cars      = Subquery(subquery)).annotate(
@@ -5340,7 +5346,9 @@ def korsavto_settings_dc(request):
             count_3000      = Subquery(subquery_3000)).annotate(
             count_3000_s    = Coalesce(Subquery(subquery_3000_s), Value(0))).annotate(
             count_5000      = Subquery(subquery_5000)).annotate(
-            count_5000_s    = Coalesce(Subquery(subquery_5000_s), Value(0)))
+            count_5000_s    = Coalesce(Subquery(subquery_5000_s), Value(0))).annotate(
+            count_5001      = Subquery(subquery_5001)).annotate(
+            count_5001_s    = Coalesce(Subquery(subquery_5001_s), Value(0)))
         
         #docs            = DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(type__id = 7).filter(eco = True).order_by('-dataTime')
         #docs            = DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True).order_by('-dataTime')
@@ -5379,12 +5387,14 @@ def korsavto_settings_dc(request):
                                                 Sum('count_eval_1c'), 
                                                 Sum('count_eval_man'), 
                                                 Sum('count_eval_uk'), 
-                                                Sum('count_eval_sed'), 
+                                                Sum('count_eval_sed'),
+                                                Sum('count_eval_express'),  
                                                 Sum('count_eval_avtohab_s'), 
                                                 Sum('count_eval_1c_s'), 
                                                 Sum('count_eval_man_s'), 
                                                 Sum('count_eval_uk_s'), 
-                                                Sum('count_eval_sed_s'), 
+                                                Sum('count_eval_sed_s'),
+                                                Sum('count_eval_express_s'), 
                                                 Sum('count_200'), 
                                                 Sum('count_400'), 
                                                 Sum('count_700'), 
@@ -5392,13 +5402,15 @@ def korsavto_settings_dc(request):
                                                 Sum('count_2000'), 
                                                 Sum('count_3000'), 
                                                 Sum('count_5000'), 
+                                                Sum('count_5001'), 
                                                 Sum('count_200_s'), 
                                                 Sum('count_400_s'), 
                                                 Sum('count_700_s'), 
                                                 Sum('count_1200_s'), 
                                                 Sum('count_2000_s'), 
                                                 Sum('count_3000_s'), 
-                                                Sum('count_5000_s'), 
+                                                Sum('count_5000_s'),
+                                                Sum('count_5001_s'), 
                                                 Sum('count_test'), 
                                                 Sum('count_rdo'), 
                                                 Sum('count_kor'), 
@@ -6003,7 +6015,7 @@ def sales_funnel(request):
 def test(request):
 
     
-    
+    '''
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
     docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
     estimations_list    = estimations_list.annotate(
@@ -6191,15 +6203,15 @@ def test(request):
                 reg_interactiv_ocenka_soglasovanie.amount_mcu           = amount_mcu
                 reg_interactiv_ocenka_soglasovanie.save()  
 
-    
+    '''
     s =1
     
     #refresh_wash()
     
     #refresh_avtoteka_vin().filter(pk = 112238)
     
-    '''
-    docs = DocCarShipment.objects.filter(dataTime__gt = DT.date(2025, 6, 1)).filter(active = True)
+    
+    docs = DocCarShipment.objects.filter(pk = 115188).filter(dataTime__gt = DT.date(2025, 6, 1)).filter(active = True)
     count_doc  = docs.count()
     for doc in docs:
         try:
@@ -6253,7 +6265,7 @@ def test(request):
                                     price_info = estimations_price_calculation(estimation, 'autohub')
                                 else:
                                     zna = page_soglasovanie.price_zna_3 
-                                    zak = page_soglasovanie.price_auto_2
+                                    zak = page_soglasovanie.price_auto_3
                                     price_info = estimations_price_calculation(estimation, 'avito')
 
                                 if zna > 0:
@@ -6355,29 +6367,30 @@ def test(request):
                                                 zak_new = zak + price_info['iznos_price'] + price_info['amount_sum']  
                                                 zak     = zak_new
 
-                                                if doc.typeSale == 'Аукцион':
-                                                    t = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) 
-                                                    val_itog = t
-                                                else:
+                                                if doc.typeSale != 'Аукцион':
+                                                #    t = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) 
+                                                #    val_itog = t
+                                                #else:
+                                                    
                                                     t = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) 
                                                     val_itog = t
 
-                                                kso         = ", КСО: " + str(kso_fact)
-                                                wheels      = ", БУРезина: " + str(bu_wheels_fact)
-                                                iznos   = ", Износ: " + str(price_info['iznos_price']) 
-                                                vr      = ", ВР: " + str(price_info['amount_sum']) 
-                                                fin_r   = ", Финансирование расчетное: " + str(price_info['finance_price']) 
-                                                fin_f   = ", Финансирование факт: " + str(fin_fact) 
-                                                day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
-                                                new_record.shipment     = doc
-                                                new_record.date         = doc.dataTime
-                                                new_record.amount       = val_itog
-                                                new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + iznos + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
-                                                new_record.save()
+                                                    kso         = ", КСО: " + str(kso_fact)
+                                                    wheels      = ", БУРезина: " + str(bu_wheels_fact)
+                                                    iznos   = ", Износ: " + str(price_info['iznos_price']) 
+                                                    vr      = ", ВР: " + str(price_info['amount_sum']) 
+                                                    fin_r   = ", Финансирование расчетное: " + str(price_info['finance_price']) 
+                                                    fin_f   = ", Финансирование факт: " + str(fin_fact) 
+                                                    day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
+                                                    new_record.shipment     = doc
+                                                    new_record.date         = doc.dataTime
+                                                    new_record.amount_out   = val_itog
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + iznos + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    new_record.save()
         except:
             s = 1
             
-    '''
+    
     
     s = 1
     '''
@@ -6413,7 +6426,7 @@ def test(request):
                     reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
                     reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
                     reg_interactiv_ocenka_soglasovanie.save()
-                    price_info = price_autohub
+                    price_info = price_autohub 
                 else:
                     price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
                     if price_avito != None:
