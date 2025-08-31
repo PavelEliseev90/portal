@@ -798,9 +798,9 @@ def doc(request, id):
                 if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
                     car = RefCarsOrganization.objects.get(lo = lo)
                     if lo.agreement_number != '':
-                        agreements = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name = lo.agreement_unit.name).count()
+                        agreements = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name).count()
                         if agreements > 0:
-                            agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name = lo.agreement_unit.name)[0]
+                            agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
 
             price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
