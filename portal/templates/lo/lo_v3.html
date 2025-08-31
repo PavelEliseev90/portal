@@ -6140,7 +6140,7 @@
                             </div>
 
                             <div class="col-12 col-sm-12">
-                              <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.car.price|floatformat:"2g"}} &#8381 ({{params.car.status}})</b></label>
+                              <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.car.price|floatformat:"2g"}} &#8381 ({% if params.car.quantity == 0 %} Продан {% else %} {{params.car.status}} {% endif %})</b></label>
                             </div>
 
                             <div class="col-12 col-sm-12">

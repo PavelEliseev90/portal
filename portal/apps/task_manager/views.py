@@ -33,6 +33,7 @@ from register.models import RegInteractivOcenka, RegSwapKors
 from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
+from refs.serializers import RefCarsOrganizationSerializer
 
 import base64
 
@@ -46,6 +47,7 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
+url_my_kors_portal   = 'http://my.kors-group.com'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -591,7 +593,36 @@ def get_name_re(name, ind):
     elif ind > 0:
         return ''
     return name_new.replace('_', ' ').strip()
+
+
+def refresh_car_my_kors_portal():
     
+    list_cars = list()
+    
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(type_reception__id__in = [3, 15])
+    
+    for car in cars: 
+        car_info = RefCarsOrganizationSerializer(car, many=False).data  
+        
+        car_info['autohub']             = list(car.avtohub_car_organizaton())
+        car_info['car_link_auto_ru']    = car.get_link_autoru() 
+        car_info['car_link_avito_ru']   = car.get_link_avitoru() 
+        car_info['car_link_drom_ru']    = car.get_link_dromru() 
+        car_info['car_price_info']                  = list(car.price_car_organizaton_info())
+        car_info['car_price_info_calculation']      = list(car.price_car_organizaton_calculation())
+        car_info['car_price_info_estimations']      = list(car.price_car_organizaton_estimations())
+        car_info['car_photos']                      = list(car.get_files().values('url'))
+        
+        list_cars.append(car_info)
+    
+    if len(list_cars) > 0:
+        
+        data_info  = json.dumps(list_cars)
+        
+        r   = requests.post(url_my_kors_portal + '/api/refresh/', json = data_info)
+        if r.status_code == 200:
+            s = 1
+
 
 def refresh_estimation_cars_organization():
     
@@ -1955,8 +1986,9 @@ def refresh_autohub():
                 siteStates      = car.get('siteStates')
                 if siteStates != None:
                     for site_info in siteStates:
-                        site_info       = site_info.get('site')
-                        site_avtohub    = get_site_avtohub(site_info)
+                        
+                        site_info_site       = site_info.get('site')
+                        site_avtohub    = get_site_avtohub(site_info_site)
                         
                         site_avtohub_object = AvtohubSiteInfo()
                         site_avtohub_object.date        = date
@@ -1965,6 +1997,8 @@ def refresh_autohub():
                         site_avtohub_object.uin         = uin
                         site_avtohub_object.site        = site_avtohub
                         site_avtohub_object.externalState   = site_info.get('externalState')
+                        if site_info['externalURL'] != '':
+                            s =1
                         site_avtohub_object.externalURL     = site_info.get('externalURL')
                         site_avtohub_object.hasProblems     = site_info.get('hasProblems')
                         site_avtohub_object.save()

@@ -1689,10 +1689,48 @@ class RefCarsOrganization(models.Model):
         from register.models import RegEstimationRefCarsOrganizations
         return RegEstimationRefCarsOrganizations.objects.filter(car = self).order_by('-date')    
 
+    def get_link_autoru(self):
+        from avtosalon.models import AvtohubSiteInfo
+        infos = AvtohubSiteInfo.objects.filter(vin = self.vin).filter(date__range = [self.lo_link_date, self.date_refresh]).filter(site__id = 9).order_by('-date')   
+        if infos.count() > 0:
+            url = infos[0].externalURL
+            if url != None:
+                return url
+        return ''
+
+    def get_link_avitoru(self):
+        from avtosalon.models import AvtohubSiteInfo
+        infos = AvtohubSiteInfo.objects.filter(vin = self.vin).filter(date__range = [self.lo_link_date, self.date_refresh]).filter(site__id = 1).order_by('-date')   
+        if infos.count() > 0:
+            url = infos[0].externalURL
+            if url != None:
+                return url
+        return ''
+
+    def get_link_dromru(self):
+        from avtosalon.models import AvtohubSiteInfo
+        infos = AvtohubSiteInfo.objects.filter(vin = self.vin).filter(date__range = [self.lo_link_date, self.date_refresh]).filter(site__id = 3).order_by('-date')   
+        if infos.count() > 0:
+            url = infos[0].externalURL
+            if url != None:
+                return url
+        return ''
+
     def avtohub_car_organizaton(self):
         from avtosalon.models import Avtohub
         return Avtohub.objects.filter(vin = self.vin).filter(date__range = [self.lo_link_date, self.date_refresh]).order_by('-date')    
 
+    def price_car_organizaton_info(self):
+        from register.models import RegRefCarsOrganizationsPrice
+        return RegRefCarsOrganizationsPrice.objects.filter(car = self).order_by('-date') 
+    
+    def price_car_organizaton_calculation(self):
+        from register.models import RegRefCarsOrganizationsCalculationPrice
+        return RegRefCarsOrganizationsCalculationPrice.objects.filter(car = self).order_by('-date') 
+    
+    def price_car_organizaton_estimations(self):
+        from register.models import RegEstimationRefCarsOrganizations
+        return RegEstimationRefCarsOrganizations.objects.filter(car = self).order_by('-date') 
 
     def dop_cars(self):
         cars_model = RefCarsOrganization.objects.exclude(modification_autoru = None).exclude(pk = self.pk).exclude(quantity = 0).filter(
