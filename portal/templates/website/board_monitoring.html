@@ -15,7 +15,110 @@
 
 
 
+    <div class="row g-1">
+
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.ip_errors %} bg-danger {% else %} bg-success {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5 text-truncate">{% if params.ip_errors %} <span class="icon-mbri-close"></span> Внимание {% else %} <span class="icon-mbri-success"></span> OK {% endif %}</label>
+            <hr>
+            <label class="fs-6">ОПФУ <-> Облака </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.count_swap_opfu > 20 %} bg-danger {% elif params.count_swap_opfu > 10 %} bg-warning {% else %} bg-success {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5"> <span class="icon-mbri-numbered-list"></span> {{params.count_swap_opfu}} </label>
+            <hr>
+            <label class="fs-6">ОПФУ -> ДЦ </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.ip_errors %} bg-danger {% else %} bg-success {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.ip_errors %} <span class="icon-mbri-close"></span> Внимание {% else %} <span class="icon-mbri-success"></span> OK {% endif %}</label>
+            <hr>
+            <label class="fs-6">ДЦ -> Портал </label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.count_swap > 20 %} bg-danger {% elif params.count_swap > 10 %} bg-warning {% else %} bg-success {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5"> <span class="icon-mbri-numbered-list"></span> {{params.count_swap}} </label>
+            <hr>
+            <label class="fs-6">КорсАвто - свап </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.answer_bu_avito != True %} bg-danger {% else %} bg-success {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.answer_bu_avito == True %} <span class="icon-mbri-success"></span> OK {% else %} <span class="icon-mbri-close"></span> Есть проблема {% endif %} </label>
+            <hr>
+            <label class="fs-6">ИП Кострюков -> AVITO </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.answer_bu_avito != True %} bg-danger {% else %} bg-success {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.answer_bu_avito == True %} <span class="icon-mbri-success"></span> OK {% else %} <span class="icon-mbri-close"></span> Есть проблема {% endif %} </label>
+            <hr>
+            <label class="fs-6">Обновление автомобилей </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
  
+    <br>
+
+    <div class="row g-2">
+      
+      <div class="col-12 col-sm-3">
+        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.autohab|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.now|date:'d' == params.autohab|date:'d' %} <span class="icon-mbri-success"></span> {{params.autohab}} {% else %} <span class="icon-mbri-close"></span> {{params.autohab}} {% endif %} </label>
+            <hr>
+            <label class="fs-6">Автохаб </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-3">
+        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.robowash|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.now|date:'d' == params.robowash|date:'d' %} <span class="icon-mbri-success"></span> {{params.robowash}} {% else %} <span class="icon-mbri-close"></span> {{params.robowash}} {% endif %} </label>
+            <hr>
+            <label class="fs-6">Робомойки </label>
+          </div>
+        </div>
+      </div>
+
+      {% for catalog in params.info_refresh_catalogs %}
+        <div class="col-12 col-sm-3">
+          <div class="card bg-opacity-75 {% if params.now|date:'d' == catalog.max_date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
+            <div class="card-body">
+              <label class="fs-5 text-truncate">{% if params.now|date:'d' == catalog.max_date|date:'d' %}  <span class="icon-mbri-success"></span> {{catalog.max_date}} {% else %} <span class="icon-mbri-close"></span> {{catalog.max_date}} {% endif %} </label>
+              <hr>
+              <label class="fs-6"> {{catalog.site}} </label>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+    </div>
+
+    <br>
+    
   
     <div class="row g-2">
 
@@ -26,7 +129,7 @@
             <div class="d-grid gap-2">
               {% if params.ip_errors %}
                 <button class="btn btn-danger " type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                  Есть проблемы!
+                  Внимание!
                 </button>
               {% else %}
                 <button class="btn btn-outline-success dw-block  " type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
@@ -75,7 +178,7 @@
               <div class="d-grid gap-2">
                 {% if params.refs_ib_error %}
                   <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample_dc" aria-expanded="false" aria-controls="collapseExample_dc">
-                    Есть проблемы!
+                    Внимание!
                   </button>
                 {% else %}
                   <button class="btn btn-outline-success dw-block" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample_dc" aria-expanded="false" aria-controls="collapseExample_dc">

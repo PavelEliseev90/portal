@@ -255,6 +255,7 @@ def refresh_cars(request):
 
     list_load_photo = list()
     cars_json       = data['Cars']
+    
     for car in cars_json:
 
         vin             = car.get('Vin', '').upper()

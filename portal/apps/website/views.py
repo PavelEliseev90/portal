@@ -33,7 +33,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import refresh_estimation_cars_organization, kors_estimation_data, get_info_max, get_info_max_remote, refresh_signal, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import refresh_car_my_kors_portal, refresh_estimation_cars_organization, kors_estimation_data, get_info_max, get_info_max_remote, refresh_signal, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -1817,7 +1817,9 @@ def board_monitoring(request):
         'estimation_1c'         : estimation_1c,
         'push_count'            : push_count,
         'send_1c'               : send_1c,
-        'task_price_count'      : task_price_count
+        'task_price_count'      : task_price_count,
+        'now'                   : DT.datetime.now()
+
     }
     
     return render(request, 'website/board_monitoring.html', {"params": params}) 
@@ -6013,7 +6015,8 @@ def sales_funnel(request):
     return render(request, "kors/sales_funnel.html", {'params': params})
 
 def test(request):
-
+    #refresh_autohub()
+    refresh_car_my_kors_portal()
     
     '''
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
@@ -6210,8 +6213,9 @@ def test(request):
     
     #refresh_avtoteka_vin().filter(pk = 112238)
     
+    '''
     
-    docs = DocCarShipment.objects.filter(pk = 115188).filter(dataTime__gt = DT.date(2025, 6, 1)).filter(active = True)
+    docs = DocCarShipment.objects.filter(dataTime__gt = DT.date(2025, 6, 1)).filter(active = True)
     count_doc  = docs.count()
     for doc in docs:
         try:
@@ -6371,9 +6375,9 @@ def test(request):
                                                 #    t = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) 
                                                 #    val_itog = t
                                                 #else:
-                                                    
-                                                    t = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) 
-                                                    val_itog = t
+                                                    vr_int      = price_info['amount_sum'] 
+                                                    t           = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) - agreement.outlay
+                                                    val_itog    = t
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
@@ -6390,7 +6394,7 @@ def test(request):
         except:
             s = 1
             
-    
+    '''
     
     s = 1
     '''
