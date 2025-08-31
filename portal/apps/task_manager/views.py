@@ -47,7 +47,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
-url_my_kors_portal   = 'http://my.kors-group.com'
+#url_my_kors_portal   = 'http://my.kors-group.com'
+url_my_kors_portal   = 'http://127.0.0.1:8005'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -611,8 +612,10 @@ def refresh_car_my_kors_portal():
         car_info['car_price_info']                  = list(car.price_car_organizaton_info())
         car_info['car_price_info_calculation']      = list(car.price_car_organizaton_calculation())
         car_info['car_price_info_estimations']      = list(car.price_car_organizaton_estimations())
-        car_info['car_photos']                      = list(car.get_files().values('url'))
-        
+        try:
+            car_info['car_photos']                      = list(car.get_files().values('url'))
+        except:
+            car_info['car_photos']                      = list()
         list_cars.append(car_info)
     
     if len(list_cars) > 0:
