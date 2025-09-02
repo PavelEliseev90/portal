@@ -34,7 +34,7 @@ from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
 from refs.serializers import RefCarsOrganizationSerializer
-
+from datetime import datetime, date, time
 import base64
 
 import asyncio
@@ -595,31 +595,42 @@ def get_name_re(name, ind):
     return name_new.replace('_', ' ').strip()
 
 
+def datetime_handler(obj):
+    if isinstance(obj, (datetime, date, time)):
+        return str(obj)
+
 def refresh_car_my_kors_portal():
     
     list_cars = list()
     
     cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(type_reception__id__in = [3, 15])
-    
-    for car in cars: 
-        car_info = RefCarsOrganizationSerializer(car, many=False).data  
+    s = 0
+    for car in cars:
         
-        car_info['autohub']             = list(car.avtohub_car_organizaton())
-        car_info['car_link_auto_ru']    = car.get_link_autoru() 
-        car_info['car_link_avito_ru']   = car.get_link_avitoru() 
-        car_info['car_link_drom_ru']    = car.get_link_dromru() 
-        car_info['car_price_info']                  = list(car.price_car_organizaton_info())
-        car_info['car_price_info_calculation']      = list(car.price_car_organizaton_calculation())
-        car_info['car_price_info_estimations']      = list(car.price_car_organizaton_estimations())
-        car_info['car_photos']                      = list(car.get_files().values('url'))
-        
-        list_cars.append(car_info)
+        if s < 1000: 
+            car_info = RefCarsOrganizationSerializer(car, many=False).data  
+            
+            car_info['autohub']             = list(car.avtohub_car_organizaton().values())
+            car_info['car_link_auto_ru']    = car.get_link_autoru() 
+            car_info['car_link_avito_ru']   = car.get_link_avitoru() 
+            car_info['car_link_drom_ru']    = car.get_link_dromru() 
+            car_info['car_price_info']                  = list(car.price_car_organizaton_info().values('date', 'price'))
+            car_info['car_price_info_calculation']      = list(car.price_car_organizaton_calculation().values('date', 'price', 'evaluation__name'))
+            car_info['car_price_info_estimations']      = list(car.price_car_organizaton_estimations().values('date', 'avg_price', 'avg_days', 'position', 'price', 'total'))
+            try:
+                car_info['car_photos']                      = list(car.get_files().values('url'))
+            except:
+                car_info['car_photos']                      = list()
+            
+            list_cars.append(car_info)
+            s = s + 1
+
     
     if len(list_cars) > 0:
         
-        data_info  = json.dumps(list_cars)
+        data_info  = json.dumps(list_cars, default=datetime_handler)
         
-        r   = requests.post(url_my_kors_portal + '/api/refresh/', json = data_info)
+        r   = requests.post('http://127.0.0.1:8005' + '/api/refresh/', json = data_info)
         if r.status_code == 200:
             s = 1
 
