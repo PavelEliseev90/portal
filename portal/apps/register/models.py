@@ -1443,7 +1443,7 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
 
         try:
             s = 1
-            #add_swap(self.reginteractivocenka) раскоментировать
+            add_swap(self.reginteractivocenka)
         except:
             s =1 
         super().save(*args, **kwargs)
@@ -2103,7 +2103,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         except:
             self.status = RefStatusEstimation.objects.get(pk = 1)
         
-        #add_swap(self)
+        add_swap(self)
         
         super().save(*args, **kwargs)
 
@@ -2600,19 +2600,29 @@ class RegEstimationBalanceUnit(models.Model):
     shipment                = models.ForeignKey(DocCarShipment, on_delete=models.PROTECT, null=True, verbose_name="Отгрузка")
     amount_in               = models.FloatField("Сумма движения вход", default=0.0, blank=False)
     amount_out              = models.FloatField("Сумма движения выход", default=0.0, blank=False)    
+    amount_custom           = models.FloatField("Сумма движения ручная", default=0.0, blank=False)    
     amount                  = models.FloatField("Сумма движения итог", default=0.0, blank=False)
     comment_1               = models.CharField("Комментарий", max_length=1024, default='') 
-    comment_2               = models.CharField("Комментарий 2", max_length=1024, default='') 
+    comment_2               = models.CharField("Комментарий 2", max_length=1024, default='')
+    comment_3               = models.CharField("Комментарий 3", max_length=1024, default='') 
      
     def __str__(self):
         return "{} / {} / {}".format(self.unit, self.date, self.date, self.amount)
 
     def save(self, *args, **kwargs):
         try:
-            if self.shipment != None:
-                self.amount = self.amount_out
-            else:
-                self.amount = self.amount_in
+            if self.amount_custom != None and self.amount_custom != 0:
+               self.amount = self.amount_custom
+            else:     
+                if self.shipment != None:
+                    self.amount = self.amount_out
+                else:
+                    self.amount = self.amount_in
+        except:
+            s=1
+
+        try:
+            self.date = self.estimation.start_estimation
         except:
             s=1
         

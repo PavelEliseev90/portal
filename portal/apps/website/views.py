@@ -45,7 +45,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
+from register.models import RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -431,6 +431,34 @@ def logout(request):
 	dj_logout(request)
 	return HttpResponseRedirect('/')
 
+
+def balance_edit(request, id):
+    
+    if not request.user.profiles.eco_page_price_info:
+        params = {
+        'type'          : 'home',
+        'nav_selected'  : 4,
+        'request'       : request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    balance = RegEstimationBalanceUnit.objects.get(pk = id)
+    if request.method == "POST":
+        balance.amount_custom = int(request.POST.get('amount_custom', '0'))
+        balance.comment_3 = request.POST.get('comment_3', '0')
+        balance.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
+    else:
+        if 'refresh' in request.GET:
+            refresh_estimation_balance_unit(balance.estimation.rlk.pk)
+            return HttpResponseRedirect(request.path)
+    
+    params = {
+        'type'      : 'korsavto_settings',
+        'balance'   : balance
+    }
+
+    return render(request, "website/balance_edit.html", {'params': params}) 
 
 ###
 ##
@@ -6014,10 +6042,273 @@ def sales_funnel(request):
     
     return render(request, "kors/sales_funnel.html", {'params': params})
 
+def refresh_estimation_balance_unit(id_estimation):
+    
+    estimations_list    = RegInteractivOcenka.objects.filter(rlk__pk = id_estimation).exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
+    docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
+    estimations_list    = estimations_list.annotate(
+        lo_active               = Subquery(docs_lo.values('active')[:1])).annotate(
+        lo_uin               = Subquery(docs_lo.values('uin')[:1])).annotate(
+        lo_agreement_unit_pk    = Subquery(docs_lo.values('agreement_unit__pk')[:1]))
+    
+    estimations_list = estimations_list.filter(lo_active = True).filter(auction = False).values('pk', 'lo_agreement_unit_pk', 'lo_uin')
+    from register.models import RegEstimationBalanceUnit, RegEstimationsSettings, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU
+    
+    for estimation_pk in estimations_list:
+        
+        estimation  = RegInteractivOcenka.objects.get(pk = estimation_pk['pk']) 
+        
+        unit        = estimation.rlk.unit
+        
+        if unit == None:
+            unit = estimation.rlk.unit_dc
+        
+        if estimation.page_documents.type_reception.id == 7 and estimation.rlk.unit != None:
+            unit = estimation.rlk.unit
+        
+        if estimation_pk['lo_agreement_unit_pk'] != None:
+            unit = RefUnit.objects.get(pk = estimation_pk['lo_agreement_unit_pk'])
+
+        save            = True
+        new_record      = None
+
+        new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count() 
+        if new_record_count > 0:
+            new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]
+            if new_record.shipment != None:
+                save = False
+            else:
+                new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0] 
+
+        if save:
+            if new_record == None:
+                new_record = RegEstimationBalanceUnit()
+
+            new_record.estimation = estimation
+        if unit == None:
+            unit = estimation.page_documents.unit
+        
+        if estimation.page_documents.type_reception.id != 3 and estimation.page_documents.type_reception.id != 15:
+            save = True
+        
+        amount = 0
+        
+        if estimation.page_documents.type_reception.id == 3:
+            save = False
+
+        if estimation.page_soglasovanie != None:
+            
+            reg_interactiv_ocenka_soglasovanie = estimation.page_soglasovanie
+            if reg_interactiv_ocenka_soglasovanie.settings == None:
+                reg_interactiv_ocenka_soglasovanie.settings = RegEstimationsSettings.objects.get(pk = 1)
+
+            price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
+            if price_autohub != None:
+                reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                reg_interactiv_ocenka_soglasovanie.price_auto_auction   = price_autohub['auction']
+                reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                reg_interactiv_ocenka_soglasovanie.save()
+                price_info = price_autohub
+            else:
+                price_avito   = estimations_price_calculation(estimation, type_calculation='avito')
+                if price_avito != None:
+                    if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                        reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                        reg_interactiv_ocenka_soglasovanie.price_auto_auction   = price_avito['auction']
+                        reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
+                        reg_interactiv_ocenka_soglasovanie.save()
+                        price_info = price_avito
+
+            if reg_interactiv_ocenka_soglasovanie.price_auto_auction == False:
+                
+                if estimation.page_soglasovanie.price_auto_2 > 0:
+                    if estimation.page_soglasovanie.price_auto_2 < estimation.page_soglasovanie.price_after_kd:
+                        amount = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.price_after_kd
+                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+
+                elif estimation.page_soglasovanie.price_auto_3 > 0:
+                    if estimation.page_soglasovanie.price_auto_3 < estimation.page_soglasovanie.price_after_kd:
+                        amount = estimation.page_soglasovanie.price_auto_3 - estimation.page_soglasovanie.price_after_kd
+                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+                    
+                if save:
+                    count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                    if count > 0:
+                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]
+                    else:
+                        new_record              = RegEstimationBalanceUnit()
+                    new_record.unit         = unit
+                    new_record.date         = estimation.start_estimation
+                    new_record.estimation   = estimation
+                    new_record.amount_in    = amount
+                    new_record.save()
+
+                    agreement   = None
+                    lo          = estimation_pk['lo_uin']
+                    agreements_ = DocCarAgreement.objects.filter(lo__uin = lo).filter(active = True)
+                    for agreement_ in agreements_:
+                        agreement = agreement_
+                        cum = agreement.cm_actual 
+                    if agreement != None:
+                        docs = DocCarShipment.objects.filter(agreement = agreement).count()
+                        if docs > 0:
+                            doc = DocCarShipment.objects.filter(agreement = agreement)[0] 
+                            page_soglasovanie = estimation.page_soglasovanie
+                            if page_soglasovanie != None:
+                                price_info = None 
+                                zna = 0
+                                zak = 0
+                                if page_soglasovanie.price_zna_2 > 0:
+                                    zna = page_soglasovanie.price_zna_2
+                                    zak = page_soglasovanie.price_auto_2
+                                    price_info = estimations_price_calculation(estimation, 'autohub')
+                                else:
+                                    zna = page_soglasovanie.price_zna_3 
+                                    zak = page_soglasovanie.price_auto_3
+                                    price_info = estimations_price_calculation(estimation, 'avito')
+
+                                if zna > 0:
+                                    car_organizations = RefCarsOrganization.objects.filter(lo__rlk = estimation.rlk) 
+                                    if len(car_organizations) == 1:
+                                        
+                                        car_organization    = car_organizations[0]
+                                        unit                = car_organization.unit
+                                        stage               = car_organization.stage_price
+                                        zg                  = car_organization.group_price
+                                        kf                  = 100
+                                        
+                                        if zg.name == '200':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_200
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_200
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_200
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_200
+                                        elif zg.name == '400':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_400
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_400
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_400
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_400   
+                                        elif zg.name == '700':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_700
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_700
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_700
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_700 
+                                        elif zg.name == '1200' or zg.name == '1 200':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_1200
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_1200
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_1200
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_1200
+                                        elif zg.name == '2000' or zg.name == '2 000':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_2000
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_2000
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_2000
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_2000 
+                                        elif zg.name == '3000' or zg.name == '3 000' or zg.name == '3 001+':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_3000
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_3000
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_3000
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_3000
+                                        elif zg.name == '5000' or zg.name == '5 000':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_5000
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_5000
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_5000
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_5000
+                                        elif zg.name == '5 000' or zg.name == '5 000+':
+                                            if stage.pk == 1:
+                                                kf = unit.ratio_avtohub_txt_5001
+                                            elif stage.pk == 2:
+                                                kf = unit.ratio_avtohub_rdo_5001
+                                            elif stage.pk == 3:
+                                                kf = unit.ratio_avtohub_kor_5001
+                                            elif stage.pk == 4:
+                                                kf = unit.ratio_avtohub_test_price_5001
+
+                                        if estimation != None:
+                                            
+                                            new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()     
+                                            if new_record_count > 0:
+                                                new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0] 
+                                                
+                                                fin_prim = price_info['finance_price']
+                                                
+                                                kso_fact        = agreement.kso_actual
+                                                bu_wheels_fact  = agreement.bu_wheels_actual
+                                                
+                                                fin_fact = round(estimation.page_soglasovanie.price_after_kd * 0.25 /365 * car_organization.days_in_stok)
+                                                zak     = zak
+                                                zak_new = zak + price_info['iznos_price'] + price_info['amount_sum']  
+                                                
+                                                if doc.typeSale != 'Аукцион':
+                                                    vr_int      = price_info['amount_sum'] 
+                                                    var_sum     = vr_int - agreement.outlay
+                                                    iznos       = price_info['iznos_price']
+                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + iznos + fin_prim - fin_fact) 
+                                                    val_itog    = cum - (t + kso_fact + bu_wheels_fact)
+
+                                                    kso         = ", КСО: " + str(kso_fact)
+                                                    wheels      = ", БУРезина: " + str(bu_wheels_fact)
+                                                    iznos   = ", Износ: " + str(price_info['iznos_price']) 
+                                                    vr      = ", ВР: " + str(price_info['amount_sum']) 
+                                                    fin_r   = ", Финансирование расчетное: " + str(price_info['finance_price']) 
+                                                    fin_f   = ", Финансирование факт: " + str(fin_fact) 
+                                                    day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
+                                                    new_record.shipment     = doc
+                                                    new_record.amount_out   = val_itog
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + iznos + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    new_record.save()                                
+                else:
+                    count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                    if count > 0:
+                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]  
+                        if new_record.shipment == None:
+                            new_record.delete()
+            else:
+                count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                if count > 0:
+                    new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]  
+                    if new_record.shipment == None:
+                        new_record.delete()    
+
 def test(request):
+    
     #refresh_autohub()
     
-    #refresh_car_my_kors_portal()
+    refresh_car_my_kors_portal()
     
     '''
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
@@ -6215,7 +6506,7 @@ def test(request):
     #refresh_avtoteka_vin().filter(pk = 112238)
     
     
-    
+    '''
     docs = DocCarShipment.objects.filter(dataTime__gt = DT.date(2025, 6, 1)).filter(active = True)
     count_doc  = docs.count()
     for doc in docs:
@@ -6397,7 +6688,7 @@ def test(request):
             s = 1
             
     
-    
+    '''
     s = 1
     '''
     estimations_list = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation').values('pk')
