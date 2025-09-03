@@ -6016,7 +6016,8 @@ def sales_funnel(request):
 
 def test(request):
     #refresh_autohub()
-    refresh_car_my_kors_portal()
+    
+    #refresh_car_my_kors_portal()
     
     '''
     estimations_list    = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
@@ -6213,7 +6214,7 @@ def test(request):
     
     #refresh_avtoteka_vin().filter(pk = 112238)
     
-    '''
+    
     
     docs = DocCarShipment.objects.filter(dataTime__gt = DT.date(2025, 6, 1)).filter(active = True)
     count_doc  = docs.count()
@@ -6367,17 +6368,18 @@ def test(request):
                                                 bu_wheels_fact  = agreement.bu_wheels_actual
                                                 
                                                 fin_fact = round(estimation.page_soglasovanie.price_after_kd * 0.25 /365 * car_organization.days_in_stok)
-                                                
+                                                zak     = zak
                                                 zak_new = zak + price_info['iznos_price'] + price_info['amount_sum']  
-                                                zak     = zak_new
-
+                                                
                                                 if doc.typeSale != 'Аукцион':
                                                 #    t = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) 
                                                 #    val_itog = t
                                                 #else:
                                                     vr_int      = price_info['amount_sum'] 
-                                                    t           = cum - ((( zna - (zna - zna * kf / 100) ) - (zak + fin_prim - fin_fact)) + kso_fact + bu_wheels_fact) - agreement.outlay
-                                                    val_itog    = t
+                                                    var_sum     = vr_int - agreement.outlay
+                                                    iznos       = price_info['iznos_price']
+                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + iznos + fin_prim - fin_fact) 
+                                                    val_itog    = cum - (t + kso_fact + bu_wheels_fact)
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
@@ -6394,7 +6396,7 @@ def test(request):
         except:
             s = 1
             
-    '''
+    
     
     s = 1
     '''

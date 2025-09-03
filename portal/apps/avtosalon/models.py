@@ -106,7 +106,8 @@ class Avtohub(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['vin'])
+            models.Index(fields=['vin']),
+            models.Index(fields=['date'])
         ]
         db_table = 'avtohub'
         verbose_name = 'Автохаб'
@@ -141,6 +142,10 @@ class AvtohubSiteInfo(models.Model):
         return "{} / {}".format(self.date, self.vin)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['vin']),
+            models.Index(fields=['site'])
+        ]
         db_table = 'avtohubSiteInfo'
         verbose_name = 'Автохаб- информация по объявлениеям на сайтах'
         verbose_name_plural = "Автохаб информация по объявлениеям на сайтах' - https://api.maxposter.ru/partners-api-docs/docs.html - vehicles"

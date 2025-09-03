@@ -1840,7 +1840,12 @@ class RefCarsOrganization(models.Model):
         return "{} - {}({})".format(self.name, self.vin, self.vin2)
 
     class Meta:
-        
+        indexes = [
+            models.Index(fields=['slug']),
+            models.Index(fields=['vin']),
+            models.Index(fields=['lo_uin']),
+            models.Index(fields=['lo_link_number'])
+        ]
         db_table = 'refCarsOrganization'
         verbose_name = "Автомобиль организации"
         verbose_name_plural = "Автомобили организации"
@@ -1870,6 +1875,9 @@ class RefCarsOrganizationFiles(models.Model):
         return "{}".format(self.сars_organization)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['сars_organization'])
+        ]
         db_table = 'refCarsOrganizationFiles'
         verbose_name = "Фото автомобиля"
         verbose_name_plural = "Фотографии автомобилей"

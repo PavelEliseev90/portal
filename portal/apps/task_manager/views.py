@@ -34,7 +34,7 @@ from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
 from refs.serializers import RefCarsOrganizationSerializer
-
+from datetime import datetime, date, time
 import base64
 
 import asyncio
@@ -596,11 +596,16 @@ def get_name_re(name, ind):
     return name_new.replace('_', ' ').strip()
 
 
+def datetime_handler(obj):
+    if isinstance(obj, (datetime, date, time)):
+        return str(obj)
+
 def refresh_car_my_kors_portal():
     
     list_cars = list()
     
     cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(type_reception__id__in = [3, 15])
+
     
     for car in cars: 
         car_info = RefCarsOrganizationSerializer(car, many=False).data  
@@ -620,9 +625,9 @@ def refresh_car_my_kors_portal():
     
     if len(list_cars) > 0:
         
-        data_info  = json.dumps(list_cars)
+        data_info  = json.dumps(list_cars, default=datetime_handler)
         
-        r   = requests.post(url_my_kors_portal + '/api/refresh/', json = data_info)
+        r   = requests.post('http://127.0.0.1:8005' + '/api/refresh/', json = data_info)
         if r.status_code == 200:
             s = 1
 
