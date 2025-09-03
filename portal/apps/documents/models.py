@@ -314,6 +314,9 @@ class DocZNWork(models.Model):
         return "{} / {}".format(self.zn, self.work)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
         db_table = 'docZNWork'
         verbose_name = "Работа заказ наряда"
         verbose_name_plural = "Работы заказ наряда"
@@ -356,6 +359,9 @@ class DocZNProduct(models.Model):
         return "{} / {}".format(self.zn, self.product)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
         db_table = 'docZNProduct'
         verbose_name = "Товар заказ наряда"
         verbose_name_plural = "Товары заказ наряда"
@@ -373,6 +379,9 @@ class DocZNProductCustomer(models.Model):
         return "{} / {}".format(self.zn, self.product)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
         db_table = 'docZNProductCustomer'
         verbose_name = "Товар клиента заказ наряда"
         verbose_name_plural = "Товары клиента заказ наряда"
@@ -393,6 +402,9 @@ class DocZNRecomendation(models.Model):
         return "{} / {}".format(self.zn, self.name)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
         db_table = 'docZNRecomendation'
         verbose_name = "Рекомендация заказ наряда"
         verbose_name_plural = "Рекомендации заказ наряда"
@@ -408,6 +420,9 @@ class DocZNPerformers(models.Model):
         return "{} / {}".format(self.zn, self.staff)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
         db_table = 'docZNPerformers'
         verbose_name = "Исполнитель заказ наряда"
         verbose_name_plural = "Исполнители заказ - наряда"
@@ -679,7 +694,8 @@ class DocRLKEvents(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['uin'])
+            models.Index(fields=['uin']),
+            models.Index(fields=['rlk']),
         ]
         db_table = 'docRLKEvents'
         verbose_name = "Событие рабочего листа"
@@ -742,7 +758,8 @@ class DocCarAgreement(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['uin'])
+            models.Index(fields=['uin']),
+            models.Index(fields=['rlk'])
         ]
         db_table = 'docCarAgreement'
         verbose_name = "Соглашение о покупке автомобиля"
@@ -808,7 +825,9 @@ class DocCarShipment(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['uin'])
+            models.Index(fields=['uin']),
+            models.Index(fields=['rlk']),
+            models.Index(fields=['agreement'])
         ]
         db_table = 'docCarShipment'
         verbose_name = "Отгрузка автомобиля"
@@ -892,6 +911,9 @@ class DoсRecomendationWork(models.Model):
         return "{} / {}".format(self.recomendation, self.work)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['recomendation'])
+        ]
         db_table = 'doсRecomendationWork'
         verbose_name = "Работа заказ наряда"
         verbose_name_plural = "Работы заказ наряда"
@@ -908,6 +930,9 @@ class DoсRecomendationProduct(models.Model):
         return "{} / {}".format(self.recomendation, self.product)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['recomendation'])
+        ]
         db_table = 'doсRecomendationProduct'
         verbose_name = "Товар рекомендации"
         verbose_name_plural = "Товары рекомендации"
@@ -928,6 +953,9 @@ class DocRecomendationFiles(models.Model):
         return "{}".format(self.recomendation)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['recomendation'])
+        ]
         db_table = 'docRecomendationFiles'
         verbose_name = "Файл рекомендации"
         verbose_name_plural = "Файлы рекомендаций"
@@ -973,7 +1001,8 @@ class DocOprosZN(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['uin'])
+            models.Index(fields=['uin']),
+            models.Index(fields=['zn'])
         ]
         db_table = 'docOprosZN'
         verbose_name = "Опрос по заказ - наряду"
@@ -1034,6 +1063,10 @@ class DocOprosCarShipment(models.Model):
         return "{}".format(self.shipment)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['uin']),
+            models.Index(fields=['shipment'])
+        ]
         db_table = 'docOprosCarShipment'
         verbose_name = "Опрос по продаже автомобиля"
         verbose_name_plural = "Опросы по продажам автомобилей"
@@ -1062,6 +1095,9 @@ class DoсRecomendationMCU(models.Model):
         return "{} {} - {}".format(self.dataTime, self.name, self.zn)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
         db_table = 'doсRecomendationMCU'
         verbose_name = "Рекомендация расширения зн МКУ"
         verbose_name_plural = "Рекомендации расширений зн МКУ"
@@ -1082,6 +1118,9 @@ class DocRecomendationFilesMCU(models.Model):
         return "{}".format(self.recomendation)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['recomendation'])
+        ]
         db_table = 'docRecomendationFilesMCU'
         verbose_name = "Файл рекомендации МКУ"
         verbose_name_plural = "Файлы рекомендаций МКУ"
