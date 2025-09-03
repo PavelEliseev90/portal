@@ -1,0 +1,138 @@
+{% extends 'base_web.html' %}
+
+{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+
+{% block title %} - Редактирование суммы резерва подразделения {% endblock %}
+
+{% block title_navbar %} - Редактирование суммы резерва подразделения {% endblock %}
+    
+{% block content %}
+    
+
+{% if params.balance != None %}
+  <div class="card">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-12 col-sm-auto">
+          {{ params.balance.date }}
+        </div>
+        <div class="col-12 col-sm-auto">
+          {% if params.balance.shipment != None %}
+            <span class="icon-tag"></span> Продан
+          {% else %}
+            <span class="icon-tag"></span> В продаже 
+          {% endif %}
+        </div>
+        <div class="col-12 col-sm-auto">
+          {{params.balance.estimation.modification.model.mark.name}} {{params.balance.estimation.modification.model.name}} {{params.balance.estimation.modification.name}} 
+          <br>{{params.balance.estimation.vin}} / {{params.balance.estimation.year}}
+        </div>
+      </div>
+      <div class="row g-1">
+        <div class="col-12 col-sm-3 h-100 fw-bold {% if params.balance.amount_in > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+          <div class="card">
+            <div class="card-body">
+              Принят: {{params.balance.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381<br>
+              Рекомендовано: {{params.balance.estimation.page_soglasovanie.price_auto_2|floatformat:"2g"}} &#8381<br>
+              Итог: {{params.balance.amount_in|floatformat:"2g"}} &#8381<br>                                  
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-12 col-sm-3 h-100 fw-bold {% if params.balance.amount_out > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+          <div class="card">
+            <div class="card-body">
+              Продан: {% if params.balance.shipment != None %} {{params.balance.shipment.amount|floatformat:"2g"}} {% else %} - {% endif %} &#8381<br>
+              КМ: {% if params.balance.shipment != None %} {{params.balance.shipment.agreement.cm_actual|floatformat:"2g"}} {% else %} - {% endif %} &#8381<br>
+              Итог: {% if params.balance.shipment != None %} {{params.balance.amount_out|floatformat:"2g"}} {% else %} - {% endif %}&#8381
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-12 col-sm-3 h-100 fw-bold {% if params.balance.amount_out > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+          <div class="card">
+            <div class="card-body">
+              Ручное: {% if params.balance.amount_custom != 0 %} {{params.balance.amount_custom|floatformat:"2g"}} {% else %} - {% endif %}&#8381
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-12 col-sm-3 h-100 fw-bold {% if params.balance.amount > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+          <div class="card">
+            <div class="card-body">
+              <label class="fs-5"> Итог: {{params.balance.amount|floatformat:"2g"}} &#8381 </label>
+            </div>
+          </div>
+        </div>
+        
+      </div>                                          
+      
+      {% if params.balance.shipment != None %}
+        <br> 
+        Продажа - {{params.balance.comment_2}}
+      {% endif %}
+      
+      {% if params.balance.amount_custom != 0 %}
+        <br> 
+        Ручное изменение - {{params.balance.comment_3}}
+      {% endif %}
+      
+      <br>
+      <br>
+      <div class="row">
+        
+        <div class="col-12 col-sm-auto fw-bold text-success text-end">
+          <a class="text-success" href="/eco/{{params.balance.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"> Оценка</span> </a>
+        </div>
+
+        <div class="col-12 col-sm-auto fw-bold text-success text-end">
+          <a class="text-success" href="{{params.balance.estimation.link_car}}" target="_blank"> <span class="icon-truck"> Автомобиль</span> </a>
+        </div>
+        
+        {% if params.balance.shipment != None %}
+          <div class="col-12 col-sm-auto fw-bold text-success text-end">
+            <a class="text-success" href="/docs_car_shipment/{{params.balance.shipment.id}}/" target="_blank"> <span class="icon-doc"> Продажа</span> </a>
+          </div>
+        {% endif %}
+        
+        {% if request.user.profiles.eco_page_price_info %}
+          
+          <div class="col-12 col-sm-auto fw-bold text-secondary text-end">
+            <a class="text-secondary" href="/balance_edit/{{params.balance.pk}}/?refresh=true" target="_blank"> <span class="icon-mbri-update"> Обновить</span> </a>
+          </div>
+
+        {% endif %}
+  
+      </div>
+
+    </div>
+  </div>  
+  
+  <br>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-floating">
+          <input class="form-control form-control-sm" type="number" name="amount_custom" id="amount_custom" value="0" >
+          <label for="floatingInput">Новое значение &#8381</label>
+        </div>
+        <br>
+        <div class="form-floating">
+          <input class="form-control form-control-sm" type="text" name="comment_3" id="comment_3" value="" >
+          <label for="floatingInput">Комментарий</label>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Сохранить</button>
+      </form>
+
+    </div>
+  </div>
+    
+
+  {% else %}
+    -
+  {% endif %}
+
+{% endblock %}

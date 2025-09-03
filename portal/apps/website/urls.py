@@ -30,6 +30,7 @@ urlpatterns = [
    path('refs/',                 views.refs),
    path('refs/units_group/',     views.refs_unit_group_list),
    
+   path('balance_edit/<id>/',   views.balance_edit, name='id'),
 
    # Доски приветствия
    #path('boards/',            views.boards),

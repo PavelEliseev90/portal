@@ -1,6 +1,6 @@
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
-from register.models import RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
@@ -700,6 +700,8 @@ def doc(request, id):
     lo                      = None
     car                     = None
     agreement               = None
+    agreement_car           = None
+    balance                 = None
 
     if request.method == "GET":
         
@@ -779,7 +781,8 @@ def doc(request, id):
             elif page == 21:
                 if not request.user.profiles.eco and not request.user.profiles.eco_page_price_info:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
-                    
+
+            
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
                 if refresh == 'autohub':
@@ -793,10 +796,18 @@ def doc(request, id):
                     kors_estimation_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
             
+            balance_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+            if balance_count == 1:
+                balance = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]   
+
             if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
                 lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
                 if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
                     car = RefCarsOrganization.objects.get(lo = lo)
+                    if car.quantity == 0:
+                        agreements_car = DocCarAgreement.objects.filter(lo = lo).filter(active = True).count()
+                        if agreements_car > 0:
+                            agreement_car = DocCarAgreement.objects.filter(lo = lo).filter(active = True)[0]     
                     if lo.agreement_number != '':
                         agreements = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name).count()
                         if agreements > 0:
@@ -932,7 +943,9 @@ def doc(request, id):
                 'list_work_mcu'         : list_work_mcu,
                 'lo'                    : lo,
                 'car'                   : car,
-                'agreement'             : agreement
+                'agreement'             : agreement,
+                'agreement_car'         : agreement_car,
+                'balance'               : balance
             }
     
     elif request.method == "POST":
