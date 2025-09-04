@@ -5857,6 +5857,7 @@
                 <div class="row g-1">
                   
                   <div class="col-12 col-sm-4">
+                    
                     {% if params.estimation.rlk.unit_dc == None %}
                 
                       <div class="card h-100 {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
@@ -6135,6 +6136,60 @@
 
                 </div>
                 
+                <div class="row g-1">
+                  
+                  <div class="col-12 col-sm-12">
+                    
+                      <div class="card {% if info.balance.shipment == None %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" style="margin: 0.2rem;">
+                        <div class="card-body">
+                          <label class="fs-5"> <b> &nbsp; Сигнал - {{params.signal|length}}</b></label>  
+                          <hr>
+                          
+                          {% for signal in params.signal %}
+                            <div class="row g-1">
+                              <div class="col">
+                                {{signal.date}}
+                              </div>
+                              <div class="col">
+                                {{signal.brand}}  {{signal.model}} {{signal.year}} г.в.
+                              </div>
+                              <div class="col">
+                                {{signal.mileage|floatformat:"0g"}} км.
+                              </div>
+                              <div class="col">
+                                {{signal.price|floatformat:"2g"}} &#8381 
+                              </div>
+                              <div class="col">
+                                {{signal.region_name}}  {{signal.city_name}} 
+                              </div>
+                              <div class="col">
+                                {{signal.item_created_at}} 
+                              </div>
+                              <div class="col">
+                                {{signal.item_updated_at}} 
+                              </div>
+                              
+                              <div class="col">
+                                {{signal.seller}} 
+                              </div>
+                              
+                            </div>
+                            <br>
+                            <label> {{signal.description}} </label>
+                            <br>
+                            <a href="{{signal.url}}" target="_blank"> Посмотреть </a>
+                            <hr>
+
+                            
+                          {% endfor %}
+
+                        </div>
+                      </div>
+                   
+                  </div>
+
+                </div>
+
                 <div class="col-sm">
                   
                   <br>
