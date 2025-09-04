@@ -34,7 +34,7 @@ from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
 from refs.serializers import RefCarsOrganizationSerializer
-from datetime import datetime, date, time
+from datetime import datetime, date
 import base64
 
 import asyncio
@@ -47,8 +47,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
-#url_my_kors_portal   = 'http://my.kors-group.com'
-url_my_kors_portal   = 'http://127.0.0.1:8005'
+url_my_kors_portal   = 'http://my.kors-group.com'
+
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'

@@ -15,7 +15,7 @@ import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from django.contrib.auth.models import User, Group
 from django.db.models.functions import Cast, Coalesce
-
+from avtosalon.models import Autoteka_signal
 
 import re
 from django.core.mail import EmailMultiAlternatives
@@ -761,7 +761,7 @@ def doc(request, id):
         users               = list()
         opens_infos         = list()
         json_autoteka       = list()
-
+        signal              = list() 
         list_store_info     = list()
 
         page = 0
@@ -782,7 +782,7 @@ def doc(request, id):
                 if not request.user.profiles.eco and not request.user.profiles.eco_page_price_info:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
 
-            
+            signal = Autoteka_signal.objects.filter(vin = estimation.vin)
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
                 if refresh == 'autohub':
@@ -945,7 +945,8 @@ def doc(request, id):
                 'car'                   : car,
                 'agreement'             : agreement,
                 'agreement_car'         : agreement_car,
-                'balance'               : balance
+                'balance'               : balance,
+                'signal'                : signal
             }
     
     elif request.method == "POST":

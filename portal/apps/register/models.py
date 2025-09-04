@@ -30,10 +30,12 @@ from changelog.signals import journal_save_handler, journal_delete_handler
 def random_slug():
     return ''.join([random.choice(list('123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM')) for x in range(8)])
 
+
 def unique_list(l):
     ulist = []
     [ulist.append(x) for x in l if x not in ulist]
     return ulist
+
 
 def transliterate(name):
    slovar = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e',
@@ -55,6 +57,7 @@ def transliterate(name):
       name = name.replace(key, slovar[key])
    return name
 
+
 def transliterate_to_rus(name):
    slovar = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e',
       'ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n',
@@ -75,6 +78,7 @@ def transliterate_to_rus(name):
       name = name.replace(slovar[key], key)
    return name
 
+
 def get_qrcode(name):
     
     slug = 'https://ah.kors-group.com/es/' + name + '/'
@@ -85,6 +89,7 @@ def get_qrcode(name):
     qr_code_image_data = buffer.getvalue()
     
     return qr_code_image_data
+
 
 def add_swap(estimation):
     try:
@@ -101,6 +106,7 @@ def add_swap(estimation):
 
     except:
         s = 1
+
 
 def save_directory():
     path = settings.MEDIA_ROOT_DOP

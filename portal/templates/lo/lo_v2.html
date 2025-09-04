@@ -4958,543 +4958,342 @@
 
 
               <div class="row g-1">
-    
-                {% if params.estimation.rlk.unit == None %}
-                <div class="card {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
-                  <div class="card-body">
-                    <div class="row g-1 align-self-center">
-                      
-                      <div class="col-12 col-sm-3">
-                        <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit_dc.name}}</b></label>                          
-                      </div>
+                  
+                <div class="col-12 col-sm-4">
+                  
+                  {% if params.estimation.rlk.unit_dc == None %}
+              
+                    <div class="card h-100 {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card-body">
+                        <label class="fs-5"> <b> &nbsp; Резерв подразделения</b></label>  
+                        <hr>
+                        <div class="row g-1 align-self-center">
+                          
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit.name}}</b></label>                          
+                          </div>
 
-                      <div class="col-12 col-sm-3">
-                        <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance|floatformat:"2g"}} &#8381</b></label>
-                      </div>
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit.balance|floatformat:"2g"}} &#8381</b></label>
+                          </div>
 
-                      <div class="col-12 col-sm-3">
-                        <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance_top_unit.name}}</b></label>
-                      </div>
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit.balance_top_unit.name}}</b></label>
+                          </div>
 
-                      <div class="col-12 col-sm-3 text-end" data-bs-target="#balance_unit" data-bs-toggle="modal">
-                        <label class="fs-5"> <b><span class="icon-mbri-numbered-list"> </span></b> &nbsp; детализация</label>
-                      </div>
+                        </div>
+                        
+                        <div class="position-relative-bottom">
+                          
+                          <div class="justify-content-end w-100 text-end" >
+                            <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                          </div>
 
+                        </div>
+                        
+                        
+                      </div>
                     </div>
-                  </div>
+
+                  {% else %}
+
+                    <div class="card h-100 {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card-body">
+                        <label class="fs-5"> <b></span> &nbsp; Резерв подразделения</b></label>  
+                        <hr>
+                        <div class="row g-1 align-self-center">
+                          
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> <b><span class="icon-mbri-home"> </span> &nbsp; {{params.estimation.rlk.unit_dc.name}}</b></label>                          
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance|floatformat:"2g"}} &#8381</b></label>
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance_top_unit.name}}</b></label>
+                          </div>
+
+                        </div>
+                        <div class="d-flex align-content-end flex-wrap mb-2">
+                        <div class="justify-content-end w-100 text-end" >
+                          <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit_dc.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+
+                  {% endif %}
+
                 </div>
 
-                <div class="modal fade" id="balance_unit" aria-hidden="true" data-bs-target="#balance_unit" data-bs-toggle="modal_1" tabindex="-1">
-                  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                    <div class="modal-content">
-                    <div class="modal-header">
-                      <h1 class="modal-title fs-5" id="exampleModalToggleLabel2"><span class="icon-mbri-home"></span> Детализация операций {{params.estimation.rlk.unit_dc.name}}</h1>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                    </div>
-                      <div class="modal-body">
-                        {% if params.estimation.rlk.unit_dc != None %}
-                              {% for info in params.estimation.rlk.unit_dc.balance_detail %}
-                                <div class="card {% if info.estimation != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
-                                  <div class="card-body">
-                                    {% if info.estimation != None %}
-                                      <div class="row align-items-center">
-                                        <div class="col-12 col-sm-3">
-                                          {{info.date}}
-                                        </div>
-                                        <div class="col">
-                                          {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
-                                        </div>
-                                        <div class="col-12 col-sm-2 fw-bold text-success text-end">
-                                          + {{info.amount|floatformat:"2g"}} &#8381
-                                        </div>
-                                        <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                          <a class="text-success" href="/eco/{{info.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"></span> </a>
-                                        </div>
-                                      </div>
-                                      <br>
+                <div class="col-12 col-sm-4">
+          
+                    <div class="card h-100 {% if params.lo.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card-body">
+                        <label class="fs-5"> <b> &nbsp; Соглашение проданного автомобиля</b></label> 
+                        <hr> 
+                        
+                        <div class="row g-1 align-self-center">
+                          
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-truck"> </span> &nbsp; {{params.agreement.cars.mark}} {{params.agreement.cars.model}} {{params.agreement.cars.year}} </b> {% else %} - {% endif %} </label>                          
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-mbri-home"> </span> &nbsp; {{params.lo.agreement_unit.name}}</b> {% else %} - {% endif %}</label>                          
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.lo.agreement_number}}</b> {% else %} - {% endif %}</label>
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-mbri-star"> </span> &nbsp; {{params.agreement.cm_actual|floatformat:"2g"}} &#8381 </b> {% else %} - {% endif %}</label>
+                          </div>
+
+                          <div class="col-12 col-sm-12 text-end">
+                            {% if params.lo.agreement_number != '' %} <a сlass="text-dark" href="/docs_car_agreement/{{params.agreement.pk}}/" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a> {% else %} - {% endif %}
+                          </div>
+
+                        </div>
+                      </div>
+                    </div>                    
+
+                </div>
+
+                <div class="col-12 col-sm-4">
+                  
+                  <div class="card h-100 {% if params.car != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card-body">
+                        <label class="fs-5"> <b> &nbsp; Автомобиль</b></label> 
+                        <hr>
+                        <div class="row g-1 align-self-center">
+                          
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> {% if params.car != None %} <b><span class="icon-truck"> </span> &nbsp; {{params.car.name}}</b> {% else %} - {% endif %} </label>                          
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> {% if params.car != None %} <b><span class="icon-mbri-home"> </span> &nbsp; {{params.car.store.name}}</b> {% else %} - {% endif %} </label>                          
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                              <label class="fs-5"> 
+                                {% if params.car != None %} 
+                                  {% if params.car.quantity > 0 %} 
+                                    <b> <span class="icon-mbri-credit-card"> </span> &nbsp; {{params.car.price|floatformat:"2g"}} &#8381 {{params.car.status}} - {{params.car.days_in_stok}} д.</b>
+                                  {% else %}
+                                    {% if params.agreement_car != None %}
+                                      <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.agreement_car.nomer}}</b></label>
                                     {% else %}
-                                      <div class="row align-items-center">
-                                        <div class="col-12 col-sm-3">
-                                          {{info.date}}
-                                        </div>
-                                        <div class="col">
-                                          {{info.shipment.lo.modification_autoru.model.mark.name}} {{info.shipment.lo.modification_autoru.model.name}} {{info.shipment.lo.modification_autoru.name}} {{info.shipment.lo.vin}}
-                                        </div>
-                                        <div class="col-12 col-sm-2 fw-bold text-danger text-end">
-                                          {{info.amount|floatformat:"2g"}} &#8381
-                                        </div>
-                                        <div class="col-12 col-sm-auto fw-bold text-success text-end">
-                                          <a class="text-success" href="/doc_car_shipment/{{info.shipment.id}}/" target="_blank"> <span class="icon-mbri-play"></span> </a>
-                                        </div>
-                                      </div>
-                                      <br>
+                                      -
                                     {% endif %}
-                                  </div>
-                                </div>
-                              {% endfor %}
+                                  {% endif %}
+                                {% else %} 
+                                  - 
+                                {% endif %}
+                              </label>
+                          </div>
+
+                          <div class="col-12 col-sm-12">
+                            <label class="fs-5"> 
+                              {% if params.agreement_car != None %} 
+                                <b><span class="icon-mbri-star"> </span> &nbsp; {{params.agreement_car.cm_actual|floatformat:"2g"}} &#8381 </b> 
+                              {% else %} 
+                                -  
+                              {% endif %} </label>
+                          </div>
+
+                          <div class="col-12 col-sm-12 text-end">
+                            {% if params.agreement_car != None %}
+                              <a сlass="text-dark" href="/docs_car_agreement/{{params.agreement_car.pk}}/" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-truck"> </span></b> &nbsp; перейти</label></a> 
                             {% else %}
-                              {% for info in params.estimation.rlk.unit.balance_detail %}
-                                <div class="card {% if info.estimation != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25" style="margin: 0.2rem;">
-                                  <div class="card-body">
-                                    {% if info.estimation != None %}
-                                      <div class="row align-items-center">
-                                        <div class="col-12 col-sm-3">
-                                          {{info.date}}
-                                        </div>
-                                        <div class="col">
-                                          {{info.estimation.modification.model.mark.name}} {{info.estimation.modification.model.name}} {{info.estimation.modification.name}} {{info.estimation.vin}}
-                                        </div>
-                                        <div class="col-12 col-sm-2 fw-bold text-success">
-                                          + {{info.amount|floatformat:"2g"}} &#8381
-                                        </div>
-                                      </div>
-                                      <br>
-                                    {% else %}
-                                      <div class="row align-items-center">
-                                        <div class="col-12 col-sm-3">
-                                          {{info.date}}
-                                        </div>
-                                        <div class="col">
-                                          {{info.shipment.lo.modification_autoru.model.mark.name}} {{info.shipment.lo.modification_autoru.model.name}} {{info.shipment.lo.modification_autoru.name}} {{info.shipment.lo.vin}}
-                                        </div>
-                                        <div class="col-12 col-sm-2 fw-bold text-danger">
-                                          {{info.amount|floatformat:"2g"}} &#8381
-                                        </div>
-                                      </div>
-                                      <br>
-                                    {% endif %}
-                                  </div>
-                                </div>
-                              {% endfor %}
+                              {% if params.car != None %} 
+                                <a сlass="text-dark" href="/cars/{{params.car.slug}}/" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-truck"> </span></b> &nbsp; перейти</label></a> 
+                              {% else %} 
+                                - 
+                              {% endif %}
                             {% endif %}
+                          </div>
+
+                        </div>
                       </div>
-                    
                     </div>
-                  </div>
+
                 </div>
-                {% else %}
 
-                {% endif %}
-              
+              </div>
 
-            <div class="col-sm">
-              
-              <div class="card">
-                <div class="card-body">
+              <div class="row g-1">
+                
+                <div class="col-12 col-sm-12">
                   
-                  <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
-                    <br>
-                    {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                    <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                    <br>
-                  
-                    <br>
-
-                  <div class="card">
-                    <div class="card-body">
-
-                      {% if params.estimation.page_vnesh.check_vin_int == 0 %}
-                              
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
-                          <b>VIN возможно не читается</b>
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.carsharing %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
-                          <b>Каршеринг !</b>
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.taxi %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          <b>Такси !</b>
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.count_dtp %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          Был в ДТП - {{params.estimation.count_dtp}}
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.avtoteka_car_autodex > 300000 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
-                          <b>Расчет ремонта - {{params.estimation.avtoteka_car_autodex|floatformat:"2g" }} &#8381;</b>
-                        </button>
-                        
-                      {% elif params.estimation.avtoteka_car_autodex > 0 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-warning text-nowrap">
-                          Расчет ремонта - {{params.estimation.avtoteka_car_autodex|floatformat:"2g"}} &#8381;  
-                        </button>
-                        
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.car_repaint %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          Есть крашеные элементы
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.dachboard_critical_error > 0 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          Критические ошибки - {{params.estimation.dachboard_critical_error}}
-                        </button>
-                        
-                      {% endif %}
-                      
-                      {% if params.estimation.dachboard_no_critical_error > 0 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-warning opacity-75 text-nowrap">
-                          Ошибки - {{params.estimation.dachboard_no_critical_error}}
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.page_salon.cleaning_int == 1 %}
-                        <td class="col-auto">
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button"class="btn btn-warning opacity-75 text-nowrap">
-                          Требуется химчистка
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.page_salon.damage_wheel_int == 1 %}
-                        <td class="col-auto">
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button"class="btn btn-warning opacity-75 text-nowrap">
-                          Повреждения / затертость руля
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.page_salon.damage_seat_int == 1 %}
-                        <td class="col-auto">
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button"class="btn btn-warning opacity-75 text-nowrap">
-                          Повреждения / затертость сидений
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.page_vnesh.windshield_error_int == 1 %}
-                        <td class="col-auto">
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button"class="btn btn-warning opacity-75 text-nowrap">
-                          Повреждения лобового стекла
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.fotos_vmatin > 3 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          Многочисленые вмятины
-                        </button>
-                        
-                      {% elif params.estimation.fotos_carap > 1 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-warning opacity-75 text-nowrap">
-                          Присутствуют вмятины
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.fotos_carap > 3 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          Многочисленые царапины
-                        </button>
-                        
-                      {% elif params.estimation.fotos_carap > 1 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-warning opacity-75 text-nowrap">
-                          Присутствуют царапины
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.fotos_rzav > 3 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                          Многочисленные следы ржавчины
-                        </button>
-                        
-                      {% elif params.estimation.fotos_rzav > 1 %}
-                        
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-warning opacity-75 text-nowrap">
-                          Присутствуют ржавчина
-                        </button>
-                        
-                      {% endif %}
-    
-                      {% if params.estimation.page_documents.sale_drom_ru %}
-    
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-warning opacity-75 text-nowrap">
-                        Размещен на DROM.RU
-                        </button>
-    
-                      {% endif %}
-    
-                      {% if params.Krashenyj %}
-    
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger opacity-75 text-nowrap">
-                        Есть крашеные элементы
-                        </button>
-    
-                      {% endif %}
-    
-                      {% if params.Krashenyj %}
-    
-                        <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-dark text-nowrap">
-                        Есть расхождения в пробегах 
-                        </button>
-    
-                      {% endif %}
-        
-                      {% if params.estimation.count_dtp > 0 %}
+                    <div class="card {% if info.balance.shipment == None %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" style="margin: 0.2rem;">
+                      <div class="card-body">
+                        <label class="fs-5"> <b> &nbsp; Движение документа в резерве</b></label>  
                         <hr>
                         
-                        {% if params.estimation.dtp_red %}
-                        
-                          <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
-                        
-                          <hr style="width: 75%;">
-                        {% else %}
-                          <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
+                        {% if params.balance != None %}
+                          <div class="row align-items-center">
+                            <div class="col-12 col-sm-auto">
+                              {{ params.balance.date }}
+                            </div>
+                            <div class="col-12 col-sm-auto">
+                              {% if params.balance.shipment != None %}
+                                <span class="icon-tag"></span> Продан
+                              {% else %}
+                                <span class="icon-tag"></span> В продаже 
+                              {% endif %}
+                            </div>
+                            <div class="col-12 col-sm-auto">
+                              {{params.balance.estimation.modification.model.mark.name}} {{params.balance.estimation.modification.model.name}} {{params.balance.estimation.modification.name}} 
+                              <br>{{params.balance.estimation.vin}} / {{params.balance.estimation.year}}
+                            </div>
+                            <div class="col-12 col-sm-auto fw-bold {% if params.balance.amount_in > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+                              <div class="card">
+                                <div class="card-body">
+                                  Принят: {{params.balance.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381<br>
+                                  Рекомендовано: {{params.balance.estimation.page_soglasovanie.price_auto_2|floatformat:"2g"}} &#8381<br>
+                                  Итог: {{params.balance.amount_in|floatformat:"2g"}} &#8381<br>                                  
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="col-12 col-sm-auto fw-bold {% if params.balance.amount_out > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+                              <div class="card">
+                                <div class="card-body">
+                                  Продан: {% if params.balance.shipment != None %} {{params.balance.shipment.amount|floatformat:"2g"}} {% else %} - {% endif %} &#8381<br>
+                                  КМ: {% if params.balance.shipment != None %} {{params.balance.shipment.agreement.cm_actual|floatformat:"2g"}} {% else %} - {% endif %} &#8381<br>
+                                  Итог: {% if params.balance.shipment != None %} {{params.balance.amount_out|floatformat:"2g"}} {% else %} - {% endif %}&#8381
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="col-12 col-sm-auto fw-bold {% if params.balance.amount_out > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+                              <div class="card">
+                                <div class="card-body">
+                                  Ручное: {% if params.balance.amount_custom != 0 %} {{params.balance.amount_custom|floatformat:"2g"}} {% else %} - {% endif %}&#8381
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="col-12 col-sm-auto fw-bold {% if params.balance.amount > 0 %} text-success {% else %} text-danger {% endif %} text-end">
+                              <div class="card">
+                                <div class="card-body">
+                                  <label class="fs-5"> Итог: {{params.balance.amount|floatformat:"2g"}} &#8381 </label>
+                                </div>
+                              </div>
+                            </div>
+                            
+                          </div>                                          
                           
-                          <hr style="width: 75%;">
+                          {% if params.balance.shipment != None %}
+                            <br> 
+                            Продажа - {{params.balance.comment_2}}
+                          {% endif %}
+                          
+                          {% if params.balance.amount_custom != 0 %}
+                            <br> 
+                            Ручное изменение - {{params.balance.comment_3}}
+                          {% endif %}
+                          
+                          <br>
+                          <br>
+                          <div class="row">
+                            <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                              <a class="text-success" href="/eco/{{params.balance.estimation.rlk.id}}/?page=20" target="_blank"> <span class="icon-mbri-play"> Оценка</span> </a>
+                            </div>
+                            <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                              <a class="text-success" href="{{params.balance.estimation.link_car}}" target="_blank"> <span class="icon-truck"> Автомобиль</span> </a>
+                            </div>
+                            {% if params.balance.shipment != None %}
+                              <div class="col-12 col-sm-auto fw-bold text-success text-end">
+                                <a class="text-success" href="/docs_car_shipment/{{params.balance.shipment.id}}/" target="_blank"> <span class="icon-doc"> Продажа</span> </a>
+                              </div>
+                            {% endif %}
+                            
+                            {% if request.user.profiles.eco_page_price_info %}
+                              <div class="col-12 col-sm-auto fw-bold text-secondary text-end">
+                                <a class="text-secondary" href="/balance_edit/{{params.balance.pk}}/" target="_blank"> <span class="icon-mbri-edit"> Редактировать</span> </a>
+                              </div>
+                            {% endif %}
+
+                            {% if request.user.profiles.eco_page_price_info %}
+                              <div class="col-12 col-sm-auto fw-bold text-secondary text-end">
+                                <a class="text-secondary" href="/balance_edit/{{params.balance.pk}}/" target="_blank"> <span class="icon-mbri-update"> Обновить</span> </a>
+                              </div>
+                            {% endif %}
+
+                          </div>
+
+                        {% else %}
+                          -
                         {% endif %}
-    
-                      {% endif %}
-    
-                    </div>
-                  </div>
-                  
-                
-                </div>
-              </div>
 
-            </div>
-            
-            <div class="col-sm">
+                      </div>
+                    </div>
+                 
+                </div>
+
+              </div>
               
-              <div class="col-sm-2">
-                <div class="btn-group" role="group" aria-label="">
-                  <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                      Обновить
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=autohub">Автохаб</a></li>
-                      <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=kors">Данные КорсАвто</a></li>
-                      <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=all">Все</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal fade" id="price" aria-hidden="true" data-bs-target="#price" data-bs-toggle="modal_1" tabindex="-1">
-                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                  <div class="modal-content">
-                  <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                  </div>
-                    <div class="modal-body">
-                      {% for info in params.price.list_info_price %}
-                        <div class="card" style="margin: 0.2rem;">
-                          <div class="card-body" >
-                            <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                            <br>
-                            {{info.comment}}
-                          </div>
-                        </div>
-                      {% endfor %}
-                    </div>
-                  
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal fade" id="price_autohub" aria-hidden="true" data-bs-target="#price_autohub" data-bs-toggle="modal_1" tabindex="-1">
-                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                  <div class="modal-content">
-                  <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                  </div>
-                    <div class="modal-body">
-                      {% for info in params.price_autohub.list_info_price %}
-                        <div class="card" style="margin: 0.2rem;">
-                          <div class="card-body" >
-                            <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                            <br>
-                            {{info.comment}}
-                          </div>
-                        </div>
-                      {% endfor %}
-                    </div>
-                  
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal fade" id="price_custom" aria-hidden="true" data-bs-target="#price_custom" data-bs-toggle="modal_1" tabindex="-1">
-                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                  <div class="modal-content">
-                  <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Ручная</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                  </div>
-                    <div class="modal-body">
-                      {% for info in params.price_custom.list_info_price %}
-                        <div class="card" style="margin: 0.2rem;">
-                          <div class="card-body" >
-                            <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                            <br>
-                            {{info.comment}}
-                          </div>
-                        </div>
-                      {% endfor %}
-                    </div>
-                  
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal fade" id="price_custom_edit" aria-hidden="true" data-bs-target="#price_custom_edit"  tabindex="-1">
-                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                  <div class="modal-content">
-                  <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleprice_custom_edit">Ручная</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                  </div>
-                    <div class="modal-body">
-                      <form method="post">
-                        {% csrf_token %}
-                        <div class="row g-1">
-                          <div class="col-sm-6">
-                            <input type="number" class="form-control col-2" id="custom_zna" name="custom_zna" placeholder="0.0" value="{{params.estimation.custom_zna}}" >
-                          </div>
-                          <div class="col-auto">
-                            &#8381;
-                          </div>
-                          <div class="col-auto">
-                            <button type="submit" id="custom_zna_btn" class="btn btn-outline-secondary"><span class="icon-mbri-success"></span> Применить</button>    
-                          </div>
-                        </div>
-                      </form>
-
-                    </div>
-                  
-                  </div>
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="row g-1">
-                  <div class="col-sm">
-                    <div class="card bg-white bg-opacity-50" style="margin: 0.2rem;" id="div_price_1" onclick="div_price(1)">
-                      <div class="card-body" >
-                        <div class="row">
-                          <div class="col">
-                            <label class="fs-6">1С</label>
-                          </div>
-                        </div>
-                        
-                        <div class="hr_kors btn_block" style="height: 0.2rem;"></div>
-                        <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price_kors.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <br>
-                        <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price_kors.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <div class="row">
-                          <div class="col text-end"><label class="text-end"  data-bs-target="#price_kors" data-bs-toggle="modal"> Подробнее</label></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-sm">
-                    <div class="card bg-white bg-opacity-50" style="margin: 0.2rem;" id="div_price_2" onclick="div_price(2)">
-                      <div class="card-body" >
-                        <div class="row">
-                          <div class="col">
-                            <label class="fs-6">Автохаб</label>
-                          </div>
-                        </div>
-                        
-                        <div class="hr_kors btn_block" style="height: 0.2rem;"></div>
-                        <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price_autohub.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <br>
-                        <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price_autohub.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <div class="row">
-                          <div class="col text-end"><label class="text-end " data-bs-target="#price_autohub" data-bs-toggle="modal"> Подробнее</label></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-sm">
-                    <div class="card bg-white bg-opacity-50" style="margin: 0.2rem;" id="div_price_3" onclick="div_price(3)">
-                      <div class="card-body" >
-                        <div class="row">
-                          <div class="col">
-                            <label class="fs-6">Авито</label>
-                          </div>
-                        </div>
-                        
-                        <div class="hr_kors btn_block" style="height: 0.2rem;"></div>
-                        <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <br>
-                        <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <div class="row">
-                          <div class="col text-end"><label class="text-end"  data-bs-target="#price" data-bs-toggle="modal"> Подробнее</label></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-sm">
-                    <div class="card bg-white bg-opacity-50" style="margin: 0.2rem;" id="div_price_4" onclick="div_price(4)">
-                      <div class="card-body" >
-                        <div class="row">
-                          <div class="col">
-                            <label class="fs-6">Ручная</label>
-                          </div>
-                        </div>
-                        
-                        <div class="hr_kors btn_block" style="height: 0.2rem;"></div>
-                        <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price_custom.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> <span class="icon-mbri-edit" data-bs-target="#price_custom_edit" data-bs-toggle="modal"></span></label>
-                        <br>
-                        <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price_custom.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                        <div class="row">
-                          <div class="col text-end"><label class="text-end" data-bs-target="#price_custom" data-bs-toggle="modal"> Подробнее</label></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              <br>
-
-            </div>
-
-          </div>
-              <br>
               <div class="row g-1">
-
                 
+                <div class="col-12 col-sm-12">
+                  
+                    <div class="card {% if info.balance.shipment == None %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" style="margin: 0.2rem;">
+                      <div class="card-body">
+                        <label class="fs-5"> <b> &nbsp; Сигнал - {{params.signal|length}}</b></label>  
+                        <hr>
+                        
+                        {% for signal in params.signal %}
+                          <div class="row g-1">
+                            <div class="col">
+                              {{signal.date}}
+                            </div>
+                            <div class="col">
+                              {{signal.brand}}  {{signal.model}} {{signal.year}} г.в.
+                            </div>
+                            <div class="col">
+                              {{signal.mileage|floatformat:"0g"}} км.
+                            </div>
+                            <div class="col">
+                              {{signal.price|floatformat:"2g"}} &#8381 
+                            </div>
+                            <div class="col">
+                              {{signal.region_name}}  {{signal.city_name}} 
+                            </div>
+                            <div class="col">
+                              {{signal.item_created_at}} 
+                            </div>
+                            <div class="col">
+                              {{signal.item_updated_at}} 
+                            </div>
+                            
+                            <div class="col">
+                              {{signal.seller}} 
+                            </div>
+                            
+                          </div>
+                          <br>
+                          <label> {{signal.description}} </label>
+                          <br>
+                          <a href="{{signal.url}}" target="_blank"> Посмотреть </a>
+                          <hr>
+
+                          
+                        {% endfor %}
+
+                      </div>
+                    </div>
+                 
+                </div>
 
               </div>
+              
+              
 
               <div class="row g-1 d-none" id="div_price_kors">
                 
