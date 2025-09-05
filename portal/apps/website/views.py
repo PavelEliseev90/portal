@@ -54,7 +54,8 @@ from django.contrib.auth.models import User, Group
 from eco.views import estimations_price_calculation 
 
 #Настройки параметров доступа
-server_im      = 'http://k01srv1c07/rinternetmag/hs/mb/'
+#server_im      = 'http://k01srv1c07/rinternetmag/hs/mb/'
+server_im      = 'http://k01srv1c10/ralfa01/hs/mb/'
 time_out_im    = 25
 
 
@@ -4467,12 +4468,13 @@ def product(request):
         json_text   = json.loads(answer.text)
         
         filtr = request.GET
+        '''
         if len(json_text['МассивФото']) == 0:
             json_text['МассивФото'] = list()
         else:
             json_text['МассивФото'] = json_text['МассивФото'].split(';')
             del json_text['МассивФото'][len(json_text['МассивФото'])-1]
-
+        '''
         params = {
             'type'          : 'stok_im',
             'filtr'         : filtr,
