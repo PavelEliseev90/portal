@@ -2,104 +2,244 @@
 
 {% block url %} {% endblock %} 
 
-{% block title %} - {{params.answer.Товар}} {% endblock %}
+{% block title %} - {{params.answer.Номенклатура}} {% endblock %}
 
-{% block title_navbar %} - {{params.answer.Товар}} {% endblock %}
+{% block title_navbar %} - {{params.answer.Номенклатура}} {% endblock %}
     
 {% block content %}
- 	
-
-{% if params.answer.МассивФото|length > 0 %}
-														
-		<div class="gallery-container">
+ 
+<div class="row g-1">
 			
-			{% for foto in params.answer.МассивФото %}
-				<div class="gallery-item" data-index="{{forloop.counter}}">
-					<img src="{{foto}}">
+	<div class="col-12 col-sm-6 h-100">
+
+		<div class="card">
+			<div class="card-body">
+				
+				<label class="fs-4">{{params.answer.Номенклатура}} {{params.answer.Артикул}}</label>
+				
+				<hr style="width: 75%;">
+
+				<!--
+				<div class="row g-1">
+					<div class="col-12 col-sm-6">
+						<div class="form-floating">
+							<input class="form-control form-control-sm fs-5" type="text" readonly value="{{params.answer.НоменклатураКод}}">
+							<label for="floatingInput">Код 1С</label>
+						</div>
+					</div>
+					<div class="col-12 col-sm-6">
+						<div class="form-floating">
+							<input class="form-control form-control-sm fs-5" type="text" readonly value="{{params.answer.ЯчейкаХранения}}">
+							<label for="floatingInput">Ячейка</label>
+						</div>
+					</div>
 				</div>
-			{% endfor %}
+				-->
 
-		</div>
-
+				<label class="fs-6 text-start fw-normal text-secondary">
+					Код 1С: 
+				</label><br>
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.НоменклатураКод}}
+				</label><br>
+				
+				<label class="fs-6 text-start fw-normal text-secondary">
+					Ячейка: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.ЯчейкаХранения}}
+				</label><br>
 		
-{% endif %}
-	
-<hr>
+				<label class="fs-6 text-start fw-normal text-secondary">
+					Производитель: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Производитель}}
+				</label><br>
 
-	<div class="d-grid gap-2">
-	<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu" data-bs-whatever="@mdo"> <span class="icon-mbri-play"></span> Добавить фото</button>
-	</div>
+				<label class="fs-6 text-start fw-normal text-secondary">
+					Артикул: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Артикул}}
+				</label><br>
 
-	<div class="col-sm-auto">
-	<div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление фото товара</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			
-				<div class="modal-body">
-					<form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
-						
-						{% csrf_token %}
-
-						<input type="text" class="form-control" name="dop_mcu_new" name="dop_mcu_new" placeholder="" value="dop_mcu_new"  hidden>
-						<div class="mb-3">
-							<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
-						</div>
-								
-						<hr>
-						<div class="progressMCU">
-							<div class="progress-bar bg-success"></div>
-						</div> 
-						
-						<div id="uploadStatusMCU">
-
-						</div>
-						
-						<hr>
-
-						<div class="d-grid gap-2">
-							<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_mcu_new" ><span class="icon-mbri-success"></span> Сохранить </button>
-						</div>
-						
-					</form>
-				</div>
+				<label class="fs-6 text-start fw-normal text-secondary">
+					Количество остаток: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.КоличествоОстаток|floatformat:"2g"}}
+				</label><br>
+				
+				<label class="fs-6 text-start fw-normal text-secondary">
+					Цена: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Price|floatformat:"2g"}} &#8381; 
+				</label><br>
 
 			</div>
 		</div>
-	</div>
 
 	</div>
 
-<hr>
+	<div class="col-12 col-sm-6 h-auto">
+		<div class="card h-100">
+			<div class="card-body h-100">
+				
+				<label class="fs-4"> Фотографии - {{params.answer.КоличествоФото}} </label> 
+				<a class="" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu" data-bs-whatever="@mdo"> <span class="icon-mbri-edit"></span> Добавить </a>
+				
+				<hr style="width: 75%;">
+				
+				<div class="col-sm-auto">
+					<div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+						<div class="modal-dialog modal-dialog-centered">
+							<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление фото товара</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							
+								<div class="modal-body">
+									<form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
+										
+										{% csrf_token %}
+			
+										<input type="text" class="form-control" name="dop_mcu_new" name="dop_mcu_new" placeholder="" value="dop_mcu_new"  hidden>
+										<div class="mb-3">
+											<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
+										</div>
+												
+										<hr>
+										<div class="progressMCU">
+											<div class="progress-bar bg-success"></div>
+										</div> 
+										
+										<div id="uploadStatusMCU">
+			
+										</div>
+										
+										<hr>
+			
+										<div class="d-grid gap-2">
+											<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_mcu_new" ><span class="icon-mbri-success"></span> Сохранить </button>
+										</div>
+										
+									</form>
+								</div>
+			
+							</div>
+						</div>
+					</div>
+				</div>
 
+			</div>
+		</div>		
+	</div>
+</div>
 
+<br>
+
+<div class="row g-1">
+	<div class="col-12 col-sm-6">
+		<div class="card">
+			<div class="card-body">
+				
+				<label class="fs-4"> Дополнительное описание - {{params.answer.ДополнительныеПоля|length}} </label>
+				<hr style="width: 75%;">
+				
+				<label class="fs-6 text-start fw-normal">
+					Авито категория: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Категория}}
+				</label><br>
+
+				{% for dop in params.answer.ДополнительныеПоля %}
+					
+					<label class="fs-6 text-start text-secondary fw-normal">
+						{{dop.СвойствоЗаголовок}}: 
+					</label><br>
+					<label class="fs-5 text-start fw-normal fw-bold">
+						<span class="icon-mbri-minus text-secondary"></span>{{dop.Значение}}
+					</label><br>
+
+				{% endfor %}
+
+				
+			</div>
+		
+		</div>
+	</div>
+
+	<div class="col-12 col-sm-6">
+		<div class="card">
+			
+			<div class="card-body">
+				
+				<label class="fs-4"> Авито информация </label>
+				<hr style="width: 75%;">
+				
+				<label class="fs-6 text-start fw-normal">
+					Статус: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Статус}}
+				</label><br>
+
+				<label class="fs-6 text-start fw-normal">
+					Создано: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.DateBegin}}
+				</label><br>
+
+				<label class="fs-6 text-start fw-normal">
+					Закрыто: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.DateEnd}}
+				</label><br>
+
+				<label class="fs-6 text-start fw-normal">
+					ИД: 
+				</label><br> 
+				<label class="fs-5 text-start fw-normal fw-bold">
+					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.AvitoId}}
+				</label><br>
+				
+			</div>
+		
+		</div>
+	</div>
+
+</div>
 
 
 <!-- Второй столбец !-->
+<!--
 <div class="card">
 	<div class="card-body">
 		<label class="fs-6 text-start fw-normal">
 			Код 1С: 
 		</label><br>
 		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Код}}
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.НоменклатураКод}}
 		</label><br>
 
 		<label class="fs-6 text-start fw-normal">
 			Наименование: 
 		</label><br> 
 		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Товар}}
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Номенклатура}}
 		</label><br>
 		
 		<label class="fs-6 text-start fw-normal">
 			Ячейка: 
 		</label><br> 
 		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Ячейка}}
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.ЯчейкаХранения}}
 		</label><br>
 
 		<label class="fs-6 text-start fw-normal">
@@ -120,7 +260,7 @@
 			Авито категория: 
 		</label><br> 
 		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.AVITOПодкатегорияТовара}}
+			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Категория}}
 		</label><br>
 
 		<hr>
@@ -233,7 +373,8 @@
 	</div>
 
 </div>
-	
+	-->
+
 </form>
 
 <script>

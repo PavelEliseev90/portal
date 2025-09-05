@@ -27,6 +27,7 @@
 					
 						<div class="modal-body">
 							<form method="get">
+								<!--
 								<div class="form-floating mb-3">							
 									<select class="form-select" id="status" name="status" placeholder="">
 										<option></option>
@@ -36,7 +37,7 @@
 									</select>
 									<label for="floatingInput">Статус</label>
 								</div>
-								
+								-->
 								<div class="form-floating mb-3">
 									<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
 									<label for="floatingInput">Наименование</label>
@@ -81,13 +82,13 @@
 				{% if params.answer %}
 					{% for product in params.answer %}
 						  
-						<div class="card"  onclick="window.location.href='product/?kod={{product.Код}}'; return false"> 
+						<div class="card"  onclick="window.location.href='product/?kod={{product.НоменклатураКод}}'; return false"> 
 							<div class="card-body" style="padding: 0;">
 								
 								<div class="row" style="padding: 0.2em;">
 									
 									<div class="col-sm-4">
-										{{product.Товар}}
+										{{product.Номенклатура}}
 									</div>
 									
 									<div class="col-sm">
@@ -95,7 +96,11 @@
 									</div>
 									
 									<div class="col-sm">
-										{{product.Ячейка}} 
+										{{product.ЯчейкаХранения}} 
+									</div>
+
+									<div class="col-sm">
+										{{product.КоличествоОстаток}} 
 									</div>
 
 									<div class="col-sm">
@@ -103,7 +108,7 @@
 									</div>
 
 									<div class="col-sm">
-										{{product.ПодкатегорияТовара}} 
+										{{product.КатегорияАвито}} 
 									</div>
 									
 									<div class="col-sm">
@@ -111,7 +116,7 @@
 									</div>
 									
 									<div class="col-sm">
-										{{product.Фото}} 
+										{{product.КоличествоФото}} 
 									</div>
 
 								</div>
@@ -132,15 +137,7 @@
 									</div>
 
 									<div class="col text-end">
-										<label class="fs-4 
-											{% if product.Статус == 'Не выгружался' %}
-												bg-warning
-											{% elif product.Статус == 'active' %} 
-												bg-success
-											{% else %}
-												bg-danger
-											{% endif %} 
-										bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{product.Цена|floatformat:"2g"}} &#8381;</label>
+										<label class="fs-4 bg-opacity-75 " style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{product.Price|floatformat:"2g"}} &#8381;</label>
 									</div>
 								</div>
 							</div>
