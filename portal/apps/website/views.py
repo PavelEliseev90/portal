@@ -6051,7 +6051,7 @@ def refresh_estimation_balance_unit(id_estimation):
     docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
     estimations_list    = estimations_list.annotate(
         lo_active               = Subquery(docs_lo.values('active')[:1])).annotate(
-        lo_uin               = Subquery(docs_lo.values('uin')[:1])).annotate(
+        lo_uin                  = Subquery(docs_lo.values('uin')[:1])).annotate(
         lo_agreement_unit_pk    = Subquery(docs_lo.values('agreement_unit__pk')[:1]))
     
     estimations_list = estimations_list.filter(lo_active = True).filter(auction = False).values('pk', 'lo_agreement_unit_pk', 'lo_uin')
@@ -6279,20 +6279,20 @@ def refresh_estimation_balance_unit(id_estimation):
                                                 if doc.typeSale != 'Аукцион':
                                                     vr_int      = price_info['amount_sum'] 
                                                     var_sum     = vr_int - agreement.outlay
-                                                    iznos       = price_info['iznos_price']
-                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + iznos + fin_prim - fin_fact) 
+                                                    #iznos       = price_info['iznos_price']
+                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + fin_prim - fin_fact) 
                                                     val_itog    = cum - (t + kso_fact + bu_wheels_fact)
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
-                                                    iznos   = ", Износ: " + str(price_info['iznos_price']) 
+                                                    #iznos   = ", Износ: " + str(price_info['iznos_price']) 
                                                     vr      = ", ВР: " + str(price_info['amount_sum']) 
                                                     fin_r   = ", Финансирование расчетное: " + str(price_info['finance_price']) 
                                                     fin_f   = ", Финансирование факт: " + str(fin_fact) 
                                                     day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
                                                     new_record.shipment     = doc
                                                     new_record.amount_out   = val_itog
-                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + iznos + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
                                                     new_record.save()                                
                 else:
                     count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
@@ -6309,5 +6309,13 @@ def refresh_estimation_balance_unit(id_estimation):
 
 
 def test(request):
-    refresh_signal()
+    
+    object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
+    s = 0
+    count = object_estimations.count()
+    object_estimations = object_estimations.values('rlk__pk')
+    for object_estimation in object_estimations:
+        refresh_estimation_balance_unit(object_estimation['rlk__pk'])     
+        s = s + 1
+        print(str(s) + '/' + str(count))
     return render(request, "website/test.html")
