@@ -9581,15 +9581,13 @@
                 
                 var type = 4;
 
-                {% if params.estimation.kors_price > 0 %}
-                  type = 1;
-                {% endif %}
+              
 
-                {% if params.estimation.kors_price == 0 and params.price_autohub.zna > 0  %}
+                {% if params.price_autohub.zna > 0  %}
                   type = 2;
                 {% endif %}
 
-                {% if params.estimation.kors_price == 0 and params.price_autohub.zna == 0 and params.price.zna > 0 %}
+                {% if params.price_autohub.zna == 0 and params.price.zna > 0 %}
                   type = 3;
                 {% endif %}
 
@@ -13225,15 +13223,11 @@
                 
                 var type = 4;
 
-                {% if params.estimation.kors_price > 0 %}
-                  type = 1;
-                {% endif %}
-
-                {% if params.estimation.kors_price == 0 and params.price_autohub.zna > 0  %}
+                {% if params.price_autohub.zna > 0  %}
                   type = 2;
                 {% endif %}
 
-                {% if params.estimation.kors_price == 0 and params.price_autohub.zna == 0 and params.price.zna > 0 %}
+                {% if params.price_autohub.zna == 0 and params.price.zna > 0 %}
                   type = 3;
                 {% endif %}
 
@@ -14394,7 +14388,7 @@
 
               <div class="row g-1">
                 
-                {% if params.estimation.kors_price > 0 %}
+                {% if params.estimation.kors_price_ > 0 %}
                   
                   <div class="col-12 col-sm-6">
 
@@ -14685,7 +14679,7 @@
                 
                 
 
-                {% if params.estimation.kors_price == 0 and params.price_autohub.zna > 0  %}
+                {% if params.price_autohub.zna > 0  %}
                 
                   <div class="col-12 col-sm-6">
                     
@@ -14990,7 +14984,7 @@
 
                 {% endif %}
 
-                {% if params.estimation.kors_price == 0 and params.price_autohub.zna == None and params.price.zna > 0 %}
+                {% if params.price_autohub.zna == None and params.price.zna > 0 %}
 
                   <div class="col-12 col-sm-6">
                     

@@ -813,7 +813,7 @@ def doc(request, id):
                         if agreements > 0:
                             agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
 
-            price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
+            price_kors      = None #estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
             price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
@@ -828,7 +828,7 @@ def doc(request, id):
                 if not request.user.profiles.eco_page_price_auto:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
             
-            price_kors      = estimations_price_calculation(estimation, type_calculation='kors')
+            price_kors      = None #estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
             price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
@@ -1128,7 +1128,8 @@ def doc(request, id):
                     text = "Продажа: Розница."                  
             except:
                 s=1
-                
+
+            '''   
             price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
             if price_kors != None:
                 if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
@@ -1138,26 +1139,26 @@ def doc(request, id):
                     reg_interactiv_ocenka_soglasovanie.finance_price        = price_kors['finance_price']
                     reg_interactiv_ocenka_soglasovanie.price_zna_1          = price_kors['zna']
                     reg_interactiv_ocenka_soglasovanie.save()
+            ''' 
+            price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+            if price_autohub != None:
+                if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                    reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                    reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                    reg_interactiv_ocenka_soglasovanie.save()
             else:
-                price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
-                if price_autohub != None:
-                    if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                        reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                        reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
+                if price_avito != None:
+                    if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                        reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                        reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
                         reg_interactiv_ocenka_soglasovanie.save()
-                else:
-                    price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
-                    if price_avito != None:
-                        if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                            reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
-                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
-                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
-                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
-                            reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
-                            reg_interactiv_ocenka_soglasovanie.save()
             
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.save()
@@ -1260,7 +1261,7 @@ def doc(request, id):
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
                     
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
-
+                    '''
                     price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
                     if price_kors != None:
                         if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
@@ -1271,25 +1272,26 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.price_zna_1          = price_kors['zna']
                             reg_interactiv_ocenka_soglasovanie.save()
                     else:
-                        price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
-                        if price_autohub != None:
-                            if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                                reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                                reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                                reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                    '''
+                    price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+                    if price_autohub != None:
+                        if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                            reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                            reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                            reg_interactiv_ocenka_soglasovanie.save()
+                    else:
+                        price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
+                        if price_avito != None:
+                            if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                                reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                                reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                                reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
                                 reg_interactiv_ocenka_soglasovanie.save()
-                        else:
-                            price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
-                            if price_avito != None:
-                                if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                                    reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
-                                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
-                                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
-                                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
-                                    reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
-                                    reg_interactiv_ocenka_soglasovanie.save()
 
                     reg_interactiv_ocenka.staff_eco_2 = request.user
                     reg_interactiv_ocenka.save()
@@ -1401,7 +1403,7 @@ def doc(request, id):
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
                     
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
-
+                    '''
                     price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
                     if price_kors != None:
                         if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
@@ -1411,23 +1413,24 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.finance_price        = price_kors['finance_price']
                             reg_interactiv_ocenka_soglasovanie.save()
                     else:
-                        price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
-                        if price_autohub != None:
-                            if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                                reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                                reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                    '''
+                    price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+                    if price_autohub != None:
+                        if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                            reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                            reg_interactiv_ocenka_soglasovanie.save()
+                    else:
+                        price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
+                        if price_avito != None:
+                            if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                                reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                                reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
                                 reg_interactiv_ocenka_soglasovanie.save()
-                        else:
-                            price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
-                            if price_avito != None:
-                                if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                                    reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
-                                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
-                                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
-                                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
-                                    reg_interactiv_ocenka_soglasovanie.save()
 
                     reg_interactiv_ocenka.staff_eco_2 = request.user
                     reg_interactiv_ocenka.save()
@@ -3259,7 +3262,7 @@ def estimations_price_calculation(estimation, type_calculation):
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней, (вариант использования: " + zna_type_name + ")",
+                'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней",
                 'name'      : "финансирование"
             }
             '''
