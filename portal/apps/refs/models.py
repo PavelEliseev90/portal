@@ -1841,6 +1841,7 @@ class RefCarsOrganization(models.Model):
 
     class Meta:
         indexes = [
+            models.Index(fields=['unit']),
             models.Index(fields=['slug']),
             models.Index(fields=['vin']),
             models.Index(fields=['lo_uin']),
@@ -1881,3 +1882,34 @@ class RefCarsOrganizationFiles(models.Model):
         db_table = 'refCarsOrganizationFiles'
         verbose_name = "Фото автомобиля"
         verbose_name_plural = "Фотографии автомобилей"
+
+
+class RefCarsOrganizationAuctionStatus(models.Model):
+    name                    = models.CharField("Наименование", max_length=512, default='', blank=True)
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refCarsOrganizationAuctionStatus'
+        verbose_name = "Автомобили для аукциона статус"
+        verbose_name_plural = "Автомобили для аукциона статус"
+
+
+class RefCarsOrganizationAuction(models.Model):    
+    сars_organization       = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль")
+    name                    = models.CharField("Наименование", max_length=512, default='', blank=True)
+    status                  = models.ForeignKey(RefCarsOrganizationAuctionStatus, on_delete=models.PROTECT, null=True, verbose_name="Статус")  
+    price                   = models.IntegerField("Цена", blank=True, default=0)
+    uid                     = models.UUIDField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
+    
+    def __str__(self):
+        return "{}".format(self.сars_organization)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['сars_organization'])
+        ]
+        db_table = 'refCarsOrganizationAuction'
+        verbose_name = "Автомобили для аукциона"
+        verbose_name_plural = "Автомобили для аукциона"

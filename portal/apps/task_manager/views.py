@@ -754,7 +754,7 @@ def refresh_avtoteka_vin():
                 vin     = object_estimation.vin
                 status  = ''
                 
-                if vin != None and len(vin) > 0 and re.match(r'^[A-Za-z0-9_-]*$', vin) is not None:
+                if vin != None and len(vin) == 17 and re.match(r'^[A-Za-z0-9_-]*$', vin) is not None and vin.find("_") < 0:
                     
                     id = {
                         "vin": vin
@@ -2059,6 +2059,7 @@ def start_hystory_call_task():
 ##
 # Мониторинг
 def start_back_monitoring():
+    #board_monitoring()
     #start_cvc_get_info_background(schedule = 1, repeat = 3600, verbose_name = "CVC - get info")
     board_monitoring(schedule = 60, repeat = 300, verbose_name = "Мониторинг")
     #start_queue_recognition_kg(schedule = 1, repeat = 3600, verbose_name = "queue_recognition_kg")
@@ -2223,9 +2224,6 @@ def board_monitoring_alert_telegram(error_list):
     text = ''
     list_answer = list()
     list_answer.append("382698912")
-    list_answer.append("1004431859")
-    list_answer.append("5413340540")
-    list_answer.append("1123338775")
     for error_text in error_list:
         text = text + error_text + "\n"
     token       = "5936060836:AAHvjlsiWmlZMv44pNdsD4-LW3HGo5Zr274"

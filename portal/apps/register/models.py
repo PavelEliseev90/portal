@@ -194,8 +194,7 @@ class RegEstimationsSettings(models.Model):
     suspension_warning_amount        = models.IntegerField('Подвеска есть замечания сумма',      default=0, null=True, blank=True)       #'// 
     suspension_warning_kf            = models.IntegerField('Подвеска есть замечания коэфицент',      default=0, null=True, blank=True)       #'// 
     suspension_warning_amount_min    = models.IntegerField('Подвеска есть замечания мин сумма',      default=0, null=True, blank=True)       #'// 
-
-    
+ 
     system_og_danger_amount        = models.IntegerField('Подвеска не исправен сумма',      default=0, null=True, blank=True)       #'// 
     system_og_danger_kf            = models.IntegerField('Подвеска не исправен коэфицент',      default=0, null=True, blank=True)       #'// 
     system_og_danger_amount_min    = models.IntegerField('Подвеска не исправен мин сумма',      default=0, null=True, blank=True)       #'// 
@@ -240,7 +239,6 @@ class RegEstimationsSettings(models.Model):
     battery_5000         = models.FloatField("Процент коррекции цна battery_5000", default=0.0, blank=True, null=True)
     battery_5001         = models.FloatField("Процент коррекции цна battery_5001", default=0.0, blank=True, null=True)
     
-
     izp_200         = models.FloatField("Процент коррекции цна 200", default=0.0, blank=True, null=True)
     izp_200_v       = models.IntegerField('Коррекция цна 200 вариант',      default=0, null=True, blank=True)       #'// 
     auction_kf_200  = models.FloatField('% от расчитанной цены аукцион цг 200',      default=0.0, blank=True, null=True)
@@ -274,6 +272,30 @@ class RegEstimationsSettings(models.Model):
     auction_kf_5001     = models.FloatField('% от расчитанной цены аукцион цг 5 000 +',      default=0.0, blank=True, null=True)
 
     max_kf_iznos = models.FloatField("Максимальный % разницы коэфицента износа", default=0.0, blank=True, null=True)
+
+    wheel_danger_amount_200             = models.IntegerField('Рулевая рейка не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_200                 = models.IntegerField('Рулевая рейка не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_200         = models.IntegerField('Рулевая рейка не исправен мин сумма 200',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_200        	= models.IntegerField('Рулевая рейка есть замечания сумма 200',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_200            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_200    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_200        = models.IntegerField('Кондиционер не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_200            = models.IntegerField('Кондиционер не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_200    = models.IntegerField('Кондиционер не исправен мин сумма 200',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_200          = models.IntegerField('Кондиционер есть замечания сумма 200',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_200            	= models.IntegerField('Кондиционер есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_200    	= models.IntegerField('Кондиционер есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_200                 = models.IntegerField('Турбо не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_200                     = models.IntegerField('Турбо не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_200             = models.IntegerField('Турбо не исправен мин сумма 200',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_200            = models.IntegerField('Турбо есть замечания сумма 200',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_200            	= models.IntegerField('Турбо есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_200    	= models.IntegerField('Турбо есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
 
     engine_danger_amount_200        = models.IntegerField('Двигатель не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_200            = models.IntegerField('Двигатель не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
@@ -338,7 +360,31 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_amount_200        = models.IntegerField('Подвеска есть замечания сумма 200',      default=0, null=True, blank=True)       #'// 
     system_og_warning_kf_200            = models.IntegerField('Подвеска есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
     system_og_warning_amount_min_200    = models.IntegerField('Подвеска есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
+    
 
+    wheel_danger_amount_400             = models.IntegerField('Рулевая рейка не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_400                 = models.IntegerField('Рулевая рейка не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_400         = models.IntegerField('Рулевая рейка не исправен мин сумма 400',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_400        	= models.IntegerField('Рулевая рейка есть замечания сумма 400',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_400            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_400    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_400        = models.IntegerField('Кондиционер не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_400            = models.IntegerField('Кондиционер не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_400    = models.IntegerField('Кондиционер не исправен мин сумма 400',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_400          = models.IntegerField('Кондиционер есть замечания сумма 400',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_400            	= models.IntegerField('Кондиционер есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_400    	= models.IntegerField('Кондиционер есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_400                 = models.IntegerField('Турбо не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_400                     = models.IntegerField('Турбо не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_400             = models.IntegerField('Турбо не исправен мин сумма 400',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_400            = models.IntegerField('Турбо есть замечания сумма 400',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_400            	= models.IntegerField('Турбо есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_400    	= models.IntegerField('Турбо есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
 
     engine_danger_amount_400        = models.IntegerField('Двигатель не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_400            = models.IntegerField('Двигатель не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
@@ -403,6 +449,31 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_amount_400        = models.IntegerField('Подвеска есть замечания сумма 400',      default=0, null=True, blank=True)       #'// 
     system_og_warning_kf_400            = models.IntegerField('Подвеска есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
     system_og_warning_amount_min_400    = models.IntegerField('Подвеска есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
+    
+
+    wheel_danger_amount_700             = models.IntegerField('Рулевая рейка не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_700                 = models.IntegerField('Рулевая рейка не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_700         = models.IntegerField('Рулевая рейка не исправен мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_700        	= models.IntegerField('Рулевая рейка есть замечания сумма 700',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_700            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_700    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_700        = models.IntegerField('Кондиционер не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_700            = models.IntegerField('Кондиционер не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_700    = models.IntegerField('Кондиционер не исправен мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_700          = models.IntegerField('Кондиционер есть замечания сумма 700',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_700            	= models.IntegerField('Кондиционер есть замечания коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_700    	= models.IntegerField('Кондиционер есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_700                 = models.IntegerField('Турбо не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_700                     = models.IntegerField('Турбо не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_700             = models.IntegerField('Турбо не исправен мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_700            = models.IntegerField('Турбо есть замечания сумма 700',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_700            	= models.IntegerField('Турбо есть замечания коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_700    	= models.IntegerField('Турбо есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
 
     engine_danger_amount_700        = models.IntegerField('Двигатель не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_700            = models.IntegerField('Двигатель не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
@@ -469,6 +540,30 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_amount_min_700    = models.IntegerField('Подвеска есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
 
 
+    wheel_danger_amount_1200             = models.IntegerField('Рулевая рейка не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_1200                 = models.IntegerField('Рулевая рейка не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_1200         = models.IntegerField('Рулевая рейка не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_1200        	= models.IntegerField('Рулевая рейка есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_1200            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_1200    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_1200        = models.IntegerField('Кондиционер не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_1200            = models.IntegerField('Кондиционер не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_1200    = models.IntegerField('Кондиционер не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_1200          = models.IntegerField('Кондиционер есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_1200            	= models.IntegerField('Кондиционер есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_1200    	= models.IntegerField('Кондиционер есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_1200                 = models.IntegerField('Турбо не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_1200                     = models.IntegerField('Турбо не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_1200             = models.IntegerField('Турбо не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_1200            = models.IntegerField('Турбо есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_1200            	= models.IntegerField('Турбо есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_1200    	= models.IntegerField('Турбо есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
     engine_danger_amount_1200        = models.IntegerField('Двигатель не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_1200            = models.IntegerField('Двигатель не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     engine_danger_amount_min_1200    = models.IntegerField('Двигатель не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
@@ -532,6 +627,31 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_amount_1200        = models.IntegerField('Подвеска есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
     system_og_warning_kf_1200            = models.IntegerField('Подвеска есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     system_og_warning_amount_min_1200    = models.IntegerField('Подвеска есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+
+    wheel_danger_amount_2000             = models.IntegerField('Рулевая рейка не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_2000                 = models.IntegerField('Рулевая рейка не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_2000         = models.IntegerField('Рулевая рейка не исправен мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_2000        	= models.IntegerField('Рулевая рейка есть замечания сумма 2000',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_2000            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_2000    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_2000        = models.IntegerField('Кондиционер не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_2000            = models.IntegerField('Кондиционер не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_2000    = models.IntegerField('Кондиционер не исправен мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_2000          = models.IntegerField('Кондиционер есть замечания сумма 2000',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_2000            	= models.IntegerField('Кондиционер есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_2000    	= models.IntegerField('Кондиционер есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_2000                 = models.IntegerField('Турбо не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_2000                     = models.IntegerField('Турбо не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_2000             = models.IntegerField('Турбо не исправен мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_2000            = models.IntegerField('Турбо есть замечания сумма 2000',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_2000            	= models.IntegerField('Турбо есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_2000    	= models.IntegerField('Турбо есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
 
     engine_danger_amount_2000        = models.IntegerField('Двигатель не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_2000            = models.IntegerField('Двигатель не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
@@ -597,6 +717,31 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_kf_2000            = models.IntegerField('Подвеска есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
     system_og_warning_amount_min_2000    = models.IntegerField('Подвеска есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
 
+
+    wheel_danger_amount_3000             = models.IntegerField('Рулевая рейка не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_3000                 = models.IntegerField('Рулевая рейка не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_3000         = models.IntegerField('Рулевая рейка не исправен мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_3000        	= models.IntegerField('Рулевая рейка есть замечания сумма 3000',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_3000            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_3000    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_3000        = models.IntegerField('Кондиционер не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_3000            = models.IntegerField('Кондиционер не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_3000    = models.IntegerField('Кондиционер не исправен мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_3000          = models.IntegerField('Кондиционер есть замечания сумма 3000',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_3000            	= models.IntegerField('Кондиционер есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_3000    	= models.IntegerField('Кондиционер есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_3000                 = models.IntegerField('Турбо не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_3000                     = models.IntegerField('Турбо не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_3000             = models.IntegerField('Турбо не исправен мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_3000            = models.IntegerField('Турбо есть замечания сумма 3000',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_3000            	= models.IntegerField('Турбо есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_3000    	= models.IntegerField('Турбо есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
     engine_danger_amount_3000        = models.IntegerField('Двигатель не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_3000            = models.IntegerField('Двигатель не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
     engine_danger_amount_min_3000    = models.IntegerField('Двигатель не исправен мин сумма 3000',      default=0, null=True, blank=True)       #'// 
@@ -661,6 +806,30 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_kf_3000            = models.IntegerField('Подвеска есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
     system_og_warning_amount_min_3000    = models.IntegerField('Подвеска есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
 
+    wheel_danger_amount_5000             = models.IntegerField('Рулевая рейка не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_5000                 = models.IntegerField('Рулевая рейка не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_5000         = models.IntegerField('Рулевая рейка не исправен мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_5000        	= models.IntegerField('Рулевая рейка есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_5000            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_5000    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_5000        = models.IntegerField('Кондиционер не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_5000            = models.IntegerField('Кондиционер не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_5000    = models.IntegerField('Кондиционер не исправен мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_5000          = models.IntegerField('Кондиционер есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_5000            	= models.IntegerField('Кондиционер есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_5000    	= models.IntegerField('Кондиционер есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_5000                 = models.IntegerField('Турбо не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_5000                     = models.IntegerField('Турбо не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_5000             = models.IntegerField('Турбо не исправен мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_5000            = models.IntegerField('Турбо есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_5000            	= models.IntegerField('Турбо есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_5000    	= models.IntegerField('Турбо есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
     engine_danger_amount_5000        = models.IntegerField('Двигатель не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_5000            = models.IntegerField('Двигатель не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
     engine_danger_amount_min_5000    = models.IntegerField('Двигатель не исправен мин сумма 5000',      default=0, null=True, blank=True)       #'// 
@@ -724,6 +893,31 @@ class RegEstimationsSettings(models.Model):
     system_og_warning_amount_5000        = models.IntegerField('Подвеска есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
     system_og_warning_kf_5000            = models.IntegerField('Подвеска есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
     system_og_warning_amount_min_5000    = models.IntegerField('Подвеска есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+
+    wheel_danger_amount_5001             = models.IntegerField('Рулевая рейка не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_kf_5001                 = models.IntegerField('Рулевая рейка не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    wheel_danger_amount_min_5001         = models.IntegerField('Рулевая рейка не исправен мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
+    wheel_warning_amount_5001        	= models.IntegerField('Рулевая рейка есть замечания сумма 5001',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_kf_5001            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    wheel_warning_amount_min_5001    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+    
+    conditioner_danger_amount_5001        = models.IntegerField('Кондиционер не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_kf_5001            = models.IntegerField('Кондиционер не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    conditioner_danger_amount_min_5001    = models.IntegerField('Кондиционер не исправен мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
+    conditioner_warning_amount_5001          = models.IntegerField('Кондиционер есть замечания сумма 5001',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_kf_5001            	= models.IntegerField('Кондиционер есть замечания коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    conditioner_warning_amount_min_5001    	= models.IntegerField('Кондиционер есть замечания мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
+    turbo_danger_amount_5001                 = models.IntegerField('Турбо не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_kf_5001                     = models.IntegerField('Турбо не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    turbo_danger_amount_min_5001             = models.IntegerField('Турбо не исправен мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
+    turbo_warning_amount_5001            = models.IntegerField('Турбо есть замечания сумма 5001',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_kf_5001            	= models.IntegerField('Турбо есть замечания коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    turbo_warning_amount_min_5001    	= models.IntegerField('Турбо есть замечания мин сумма 5001',      default=0, null=True, blank=True)       #'// 
 
     engine_danger_amount_5001        = models.IntegerField('Двигатель не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_5001            = models.IntegerField('Двигатель не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
@@ -864,51 +1058,84 @@ class RegEstimationsSettings(models.Model):
 
     bumper_pered_200                 = models.IntegerField('Бампер 200 ',      default=0, null=False, blank=True)       
     bumper_zad_200                   = models.IntegerField('Бампер 200 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_200                 = models.IntegerField('Бампер 200 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_200                  = models.IntegerField('Бампер 200 зад',      default=0, null=False, blank=True)
 
     bumper_pered_400                 = models.IntegerField('Бампер 400 ',      default=0, null=False, blank=True)       
     bumper_zad_400                   = models.IntegerField('Бампер 400 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_400                 = models.IntegerField('Бампер 400 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_400                   = models.IntegerField('Бампер 400 зад',      default=0, null=False, blank=True)
 
     bumper_pered_700                 = models.IntegerField('Бампер 700 ',      default=0, null=False, blank=True)       
     bumper_zad_700                   = models.IntegerField('Бампер 700 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_700                 = models.IntegerField('Бампер 700 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_700                   = models.IntegerField('Бампер 700 зад',      default=0, null=False, blank=True)
 
     bumper_pered_1200                 = models.IntegerField('Бампер 1200 ',      default=0, null=False, blank=True)       
     bumper_zad_1200                   = models.IntegerField('Бампер 1200 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_1200                 = models.IntegerField('Бампер 1200 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_1200                   = models.IntegerField('Бампер 1200 зад',      default=0, null=False, blank=True)
 
     bumper_pered_2000                 = models.IntegerField('Бампер 2000 ',      default=0, null=False, blank=True)       
     bumper_zad_2000                   = models.IntegerField('Бампер 2000 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_2000                 = models.IntegerField('Бампер 2000 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_2000                   = models.IntegerField('Бампер 2000 зад',      default=0, null=False, blank=True)
 
     bumper_pered_3000                 = models.IntegerField('Бампер 3000 ',      default=0, null=False, blank=True)       
     bumper_zad_3000                   = models.IntegerField('Бампер 3000 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_3000                 = models.IntegerField('Бампер 3000 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_3000                   = models.IntegerField('Бампер 3000 зад',      default=0, null=False, blank=True)
 
     bumper_pered_5000                 = models.IntegerField('Бампер 5000 ',      default=0, null=False, blank=True)       
     bumper_zad_5000                   = models.IntegerField('Бампер 5000 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_5000                 = models.IntegerField('Бампер 5000 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_5000                   = models.IntegerField('Бампер 5000 зад',      default=0, null=False, blank=True)
 
     bumper_pered_5001                 = models.IntegerField('Бампер 5001 ',      default=0, null=False, blank=True)       
     bumper_zad_5001                   = models.IntegerField('Бампер 5001 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_5001                 = models.IntegerField('Бампер 5001 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_5001                   = models.IntegerField('Бампер 5001 зад',      default=0, null=False, blank=True)
+
 
     bumper_pered_kf_200                 = models.IntegerField('Бампер 200 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_200                   = models.IntegerField('Бампер 200 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_200                 = models.IntegerField('Бампер замена 200 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_200                   = models.IntegerField('Бампер замена 200 зад',      default=0, null=False, blank=True)
 
     bumper_pered_kf_400                 = models.IntegerField('Бампер 400 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_400                   = models.IntegerField('Бампер 400 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_400                 = models.IntegerField('Бампер замена 400 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_400                   = models.IntegerField('Бампер замена 400 зад',      default=0, null=False, blank=True)
 
     bumper_pered_kf_700                 = models.IntegerField('Бампер 700 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_700                   = models.IntegerField('Бампер 700 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_700                 = models.IntegerField('Бампер замена 700 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_700                   = models.IntegerField('Бампер замена 700 зад',      default=0, null=False, blank=True)
 
     bumper_pered_kf_1200                 = models.IntegerField('Бампер 1200 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_1200                   = models.IntegerField('Бампер 1200 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_1200                 = models.IntegerField('Бампер замена 1200 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_1200                   = models.IntegerField('Бампер замена 1200 зад',      default=0, null=False, blank=True)
 
     bumper_pered_kf_2000                 = models.IntegerField('Бампер 2000 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_2000                   = models.IntegerField('Бампер 2000 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_2000                 = models.IntegerField('Бампер замена 2000 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_2000                   = models.IntegerField('Бампер замена 2000 зад',      default=0, null=False, blank=True)
 
     bumper_pered_kf_3000                 = models.IntegerField('Бампер 3000 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_3000                   = models.IntegerField('Бампер 3000 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_3000                 = models.IntegerField('Бампер 3000 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_3000                   = models.IntegerField('Бампер 3000 зад',      default=0, null=False, blank=True)
 
     bumper_pered_kf_5000                 = models.IntegerField('Бампер 5000 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_5000                   = models.IntegerField('Бампер 5000 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_5000        = models.IntegerField('Бампер замена 5000 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_5000          = models.IntegerField('Бампер замена 5000 зад',      default=0, null=False, blank=True)
     
     bumper_pered_kf_5001                 = models.IntegerField('Бампер 5001 ',      default=0, null=False, blank=True)       
     bumper_zad_kf_5001                   = models.IntegerField('Бампер 5001 зад',      default=0, null=False, blank=True)
+    bumper_pered_replace_kf_5001        = models.IntegerField('Бампер замена 5001 ',      default=0, null=False, blank=True)       
+    bumper_zad_replace_kf_5001          = models.IntegerField('Бампер замена 5001 зад',      default=0, null=False, blank=True)
     
     def __str__(self):
         return "{}".format(self.name)
@@ -1322,19 +1549,24 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     end_estimation      = models.DateTimeField('Дата окончания', blank=True, null=True)
     text_json           = models.TextField("Текст", blank=True, null=True)
     
-    engine                  = models.IntegerField('Двигатель', default=10, null=True, blank=True)                #'// 0 - не работает 1 работает 2 есть замечания'
-    system_og               = models.IntegerField('Система выпуска ОГ', default=10, null=True, blank=True)       #'// 0 - не работает 1 работает 2 есть замечания'
-    gear                    = models.IntegerField('КПП', default=10, null=True, blank=True)                      #'// 0 - не работает 1 работает 2 есть замечания'
-    suspension              = models.IntegerField('Подвеска', default=10, null=True, blank=True)                 #'// 0 - не работает 1 работает 2 есть замечания'
-    airbag                  = models.IntegerField('Подушка безопастности', default=10, null=True, blank=True)    #'// 0 - не работает 1 работает 2 есть замечания'
+    engine                  = models.IntegerField('Двигатель', default=10, null=True, blank=True)                   #'// 0 - не работает 1 работает 2 есть замечания'
+    system_og               = models.IntegerField('Система выпуска ОГ', default=10, null=True, blank=True)          #'// 0 - не работает 1 работает 2 есть замечания'
+    gear                    = models.IntegerField('КПП', default=10, null=True, blank=True)                         #'// 0 - не работает 1 работает 2 есть замечания'
+    suspension              = models.IntegerField('Подвеска', default=10, null=True, blank=True)                    #'// 0 - не работает 1 работает 2 есть замечания'
+    airbag                  = models.IntegerField('Подушка безопастности', default=10, null=True, blank=True)       #'// 0 - не работает 1 работает 2 есть замечания'
+    wheel                   = models.IntegerField('Рулевое управление', default=10, null=True, blank=True)          #'// 0 - не работает 1 работает 2 есть замечания'
+    conditioner             = models.IntegerField('Кондиционер', default=10, null=True, blank=True)                 #'// 0 - не работает 1 работает 2 есть замечания'
+    turbo                   = models.IntegerField('Турбина', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
     
     comment_engine          = models.CharField('Комментарий двигатель', max_length=512, default='', null=True, blank=True)  
     comment_system_og       = models.CharField('Комментарий система выпуска ОГ', max_length=512, default='', null=True, blank=True)  
     comment_gear            = models.CharField('Комментарий коробка передач', max_length=512, default='', null=True, blank=True)  
     comment_suspension      = models.CharField('Комментарий подвеска', max_length=512, default='', null=True, blank=True)  
     comment_airbag          = models.CharField('Комментарий подушки безопастности', max_length=512, default='', null=True, blank=True)  
+    comment_wheel           = models.CharField('Комментарий рулевого управления', max_length=512, default='', null=True, blank=True)  
+    comment_conditioner     = models.CharField('Комментарий системы кондиционирования', max_length=512, default='', null=True, blank=True)  
+    comment_turbo           = models.CharField('Комментарий турбокомпрессора', max_length=512, default='', null=True, blank=True)  
     
-
     pp_dinamyc              = models.IntegerField('Разгонная динамика, посторонние шумы, вибрации при движении', default=10, null=True, blank=True)  #'// 0 - ремонт 1 норма 2 диагностика'
     pp_kpp                  = models.IntegerField('Плавность включения передач (автомобили с МКПП и АКПП, проверка CVT во всех режимах), все передачи', default=10, null=True, blank=True)  #'// 0 - ремонт 1 норма 2 диагностика'
     pp_uvod                 = models.IntegerField('Увод от прямолинейного движения', default=10, null=True, blank=True)  #'// 0 - ремонт 1 норма 2 диагностика'
