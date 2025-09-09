@@ -5163,53 +5163,91 @@ def korsavto_settings_dc(request):
             estimation_settings.light_pered_kf_5001      = int(request.POST.get('light_pered_kf_5001', 0))
             estimation_settings.light_zad_kf_5001 = int(request.POST.get('light_zad_kf_5001', 0))
 
-            estimation_settings.bumper_pered_200      = int(request.POST.get('bumper_pered_200', 0))
-            estimation_settings.bumper_zad_200 = int(request.POST.get('bumper_zad_200', 0))
+            estimation_settings.bumper_pered_200        = int(request.POST.get('bumper_pered_200', 0))
+            estimation_settings.bumper_zad_200          = int(request.POST.get('bumper_zad_200', 0))
+            estimation_settings.bumper_replace_pered_200        = int(request.POST.get('bumper_pered_200', 0))
+            estimation_settings.bumper_replace_zad_200          = int(request.POST.get('bumper_zad_200', 0))
+
 
             estimation_settings.bumper_pered_400      = int(request.POST.get('bumper_pered_400', 0))
             estimation_settings.bumper_zad_400 = int(request.POST.get('bumper_zad_400', 0))
+            estimation_settings.bumper_replace_pered_400        = int(request.POST.get('bumper_pered_400', 0))
+            estimation_settings.bumper_replace_zad_400          = int(request.POST.get('bumper_zad_400', 0))
+
 
             estimation_settings.bumper_pered_700      = int(request.POST.get('bumper_pered_700', 0))
             estimation_settings.bumper_zad_700 = int(request.POST.get('bumper_zad_700', 0))
+            estimation_settings.bumper_replace_pered_700        = int(request.POST.get('bumper_pered_700', 0))
+            estimation_settings.bumper_replace_zad_700          = int(request.POST.get('bumper_zad_700', 0))
 
             estimation_settings.bumper_pered_1200      = int(request.POST.get('bumper_pered_1200', 0))
             estimation_settings.bumper_zad_1200 = int(request.POST.get('bumper_zad_1200', 0))
+            estimation_settings.bumper_replace_pered_1200        = int(request.POST.get('bumper_pered_1200', 0))
+            estimation_settings.bumper_replace_zad_1200          = int(request.POST.get('bumper_zad_1200', 0))
 
             estimation_settings.bumper_pered_2000      = int(request.POST.get('bumper_pered_2000', 0))
             estimation_settings.bumper_zad_2000 = int(request.POST.get('bumper_zad_2000', 0))
-
+            estimation_settings.bumper_replace_pered_2000        = int(request.POST.get('bumper_pered_2000', 0))
+            estimation_settings.bumper_replace_zad_2000          = int(request.POST.get('bumper_zad_2000', 0))
+    
             estimation_settings.bumper_pered_3000      = int(request.POST.get('bumper_pered_3000', 0))
             estimation_settings.bumper_zad_3000 = int(request.POST.get('bumper_zad_3000', 0))
+            estimation_settings.bumper_replace_pered_3000        = int(request.POST.get('bumper_pered_3000', 0))
+            estimation_settings.bumper_replace_zad_3000          = int(request.POST.get('bumper_zad_3000', 0))
 
             estimation_settings.bumper_pered_5000      = int(request.POST.get('bumper_pered_5000', 0))
             estimation_settings.bumper_zad_5000 = int(request.POST.get('bumper_zad_5000', 0))
+            estimation_settings.bumper_replace_pered_5000        = int(request.POST.get('bumper_pered_5000', 0))
+            estimation_settings.bumper_replace_zad_5000          = int(request.POST.get('bumper_zad_5000', 0))
 
             estimation_settings.bumper_pered_5001      = int(request.POST.get('bumper_pered_5001', 0))
             estimation_settings.bumper_zad_5001 = int(request.POST.get('bumper_zad_5001', 0))
+            estimation_settings.bumper_pered_replace_5001      = int(request.POST.get('bumper_pered_replace_5001', 0))
+            estimation_settings.bumper_zad_replace_5001 = int(request.POST.get('bumper_zad_replace_5001', 0))
+
 
             estimation_settings.bumper_pered_kf_200      = int(request.POST.get('bumper_pered_kf_200', 0))
             estimation_settings.bumper_zad_kf_200 = int(request.POST.get('bumper_zad_kf_200', 0))
+            estimation_settings.bumper_pered_replace_kf_200         = int(request.POST.get('bumper_pered_replace_kf_200', 0))
+            estimation_settings.bumper_zad_replace_kf_200           = int(request.POST.get('bumper_zad_replace_kf_200', 0))
 
             estimation_settings.bumper_pered_kf_400      = int(request.POST.get('bumper_pered_kf_400', 0))
             estimation_settings.bumper_zad_kf_400 = int(request.POST.get('bumper_zad_kf_400', 0))
+            estimation_settings.bumper_pered_replace_kf_400         = int(request.POST.get('bumper_pered_replace_kf_400', 0))
+            estimation_settings.bumper_zad_replace_kf_400           = int(request.POST.get('bumper_zad_replace_kf_400', 0))
+
 
             estimation_settings.bumper_pered_kf_700      = int(request.POST.get('bumper_pered_kf_700', 0))
             estimation_settings.bumper_zad_kf_700 = int(request.POST.get('bumper_zad_kf_700', 0))
+            estimation_settings.bumper_pered_replace_kf_700         = int(request.POST.get('bumper_pered_replace_kf_700', 0))
+            estimation_settings.bumper_zad_replace_kf_700           = int(request.POST.get('bumper_zad_replace_kf_700', 0))
+
 
             estimation_settings.bumper_pered_kf_1200      = int(request.POST.get('bumper_pered_kf_1200', 0))
             estimation_settings.bumper_zad_kf_1200 = int(request.POST.get('bumper_zad_kf_1200', 0))
+            estimation_settings.bumper_pered_replace_kf_1200         = int(request.POST.get('bumper_pered_replace_kf_1200', 0))
+            estimation_settings.bumper_zad_replace_kf_1200           = int(request.POST.get('bumper_zad_replace_kf_1200', 0))
+
 
             estimation_settings.bumper_pered_kf_2000        = int(request.POST.get('bumper_pered_kf_2000', 0))
             estimation_settings.bumper_zad_kf_2000          = int(request.POST.get('bumper_zad_kf_2000', 0))
+            estimation_settings.bumper_pered_replace_kf_2000         = int(request.POST.get('bumper_pered_replace_kf_2000', 0))
+            estimation_settings.bumper_zad_replace_kf_2000           = int(request.POST.get('bumper_zad_replace_kf_2000', 0))
 
             estimation_settings.bumper_pered_kf_3000      = int(request.POST.get('bumper_pered_kf_3000', 0))
             estimation_settings.bumper_zad_kf_3000 = int(request.POST.get('bumper_zad_kf_3000', 0))
+            estimation_settings.bumper_pered_replace_kf_3000         = int(request.POST.get('bumper_pered_replace_kf_3000', 0))
+            estimation_settings.bumper_zad_replace_kf_3000           = int(request.POST.get('bumper_zad_replace_kf_3000', 0))
 
             estimation_settings.bumper_pered_kf_5000      = int(request.POST.get('bumper_pered_kf_5000', 0))
             estimation_settings.bumper_zad_kf_5000 = int(request.POST.get('bumper_zad_kf_5000', 0))
+            estimation_settings.bumper_pered_replace_kf_5000         = int(request.POST.get('bumper_pered_replace_kf_5000', 0))
+            estimation_settings.bumper_zad_replace_kf_5000           = int(request.POST.get('bumper_zad_replace_kf_5000', 0))
 
             estimation_settings.bumper_pered_kf_5001      = int(request.POST.get('bumper_pered_kf_5001', 0))
             estimation_settings.bumper_zad_kf_5001 = int(request.POST.get('bumper_zad_kf_5001', 0))
+            estimation_settings.bumper_pered_replace_kf_5001         = int(request.POST.get('bumper_pered_replace_kf_5001', 0))
+            estimation_settings.bumper_zad_replace_kf_5001           = int(request.POST.get('bumper_zad_replace_kf_5001', 0))
 
             estimation_settings.max_kf_iznos = float(request.POST.get('max_kf_iznos', 0))
 
@@ -5225,7 +5263,7 @@ def korsavto_settings_dc(request):
                     work.materials_amount   = float(request.POST.get('workdata_'+ pk_work + '_materials_amount'))
                     
                     work.save()
-                if key.startswith('engine_') or key.startswith('system_og_') > 0 or key.startswith('suspension_') > 0 or key.startswith('gear_') > 0: 
+                if key.startswith('engine_') or key.startswith('system_og_') > 0 or key.startswith('suspension_') > 0 or key.startswith('gear_') > 0 or key.startswith('wheel_') > 0 or key.startswith('turbo_') > 0 or key.startswith('conditioner_') > 0: 
                     setattr(estimation_settings, key, int(request.POST.get(key)))          
 
             estimation_settings.save()
@@ -6309,7 +6347,8 @@ def refresh_estimation_balance_unit(id_estimation):
 
 
 def test(request):
-    
+    refresh_avtoteka_vin()
+    '''
     object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     s = 0
     count = object_estimations.count()
@@ -6318,4 +6357,5 @@ def test(request):
         refresh_estimation_balance_unit(object_estimation['rlk__pk'])     
         s = s + 1
         print(str(s) + '/' + str(count))
+    '''
     return render(request, "website/test.html")
