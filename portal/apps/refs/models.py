@@ -1287,6 +1287,9 @@ class RefTypeEvaluationCarsOrganization(models.Model):
         return "{}".format(self.name)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['name'])
+        ]
         db_table = 'refTypeEvaluationCarsOrganization'
         verbose_name = "Статус автомобиля"
         verbose_name_plural = "Статусы автомобилей"
