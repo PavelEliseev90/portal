@@ -247,15 +247,18 @@ def refresh_cars(request):
     count_stock = 0
 
     list_del = list()
-    cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0)
-    for car in cars_update:
-        car.quantity = 0
-        car.save()
-        list_del.append(car.pk)
+
+    #cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0)
+    #for car in cars_update:
+    #    car.quantity = 0
+    #    car.save()
+    #    list_del.append(car.pk)
 
     list_load_photo = list()
     cars_json       = data['Cars']
     
+    list_cars_id = list()
+
     for car in cars_json:
 
         vin             = car.get('Vin', '').upper()
@@ -276,6 +279,7 @@ def refresh_cars(request):
                 list_del.remove(car_object.pk)
             except:
                 s = 1
+        list_cars_id.append(car_object.pk)
 
         car_object.date_refresh     = datetime.now()    
         car_object.organization     = get_organization(car['Organization'])    
@@ -343,24 +347,31 @@ def refresh_cars(request):
         car_object.save()
 
         if 'Prices_list' in car:
-            RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()
+            #RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()
             for car_price in car['Prices_list']:
-                new_price = RegRefCarsOrganizationsPrice()
-                new_price.car   = car_object
-                new_price.date  = car_price['Date']
-                new_price.price = car_price['Price']
-                new_price.save()  
+                data_info, created = RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) 
+                                                                 and Q(date = car_price['Date']) 
+                                                                                        ).get_or_create(car = car_object,
+                                                                                                                date = car_price['Date']
+                                                                                                            )
+                if created:
+                    data_info.price = car_price['Price']
+                    data_info.save()  
 
         if 'Prices_calculation_list' in car:
-            RegRefCarsOrganizationsCalculationPrice.objects.filter(car= car_object).delete()
+            #RegRefCarsOrganizationsCalculationPrice.objects.filter(car= car_object).delete()
             for car_price in car['Prices_calculation_list']:
-                new_price = RegRefCarsOrganizationsCalculationPrice()
-                new_price.car           = car_object
-                new_price.date          = car_price['Date']
-                new_price.price         = car_price['Price']
-                new_price.evaluation    = get_model_object('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
-                new_price.rule          = car_price['Rule']
-                new_price.save()     
+                evaluation = get_model_object('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
+                data_info, created = RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
+                                                                 and Q(date = car_price['Date']) 
+                                                                 and Q(evaluation = evaluation),).get_or_create(car = car_object,
+                                                                                                                date = car_price['Date'],
+                                                                                                                evaluation = evaluation
+                                                                                                            )
+                if created:
+                    data_info.price         = car_price['Price']
+                    data_info.rule          = car_price['Rule']
+                    data_info.save()     
 
         info_car = {
             'Car_object'        : car_object,
@@ -368,7 +379,13 @@ def refresh_cars(request):
             'Photos'            : car['Photos']
         }
         list_load_photo.append(info_car)
-        
+    
+    cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0).exclude(pk__in = list_cars_id)    
+    for car in cars_update:
+        car.quantity = 0
+        car.save()
+        list_del.append(car.pk)
+    
     count_del   = len(list_del)
     count_stock = len(cars_json)
 

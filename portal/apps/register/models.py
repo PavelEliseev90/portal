@@ -2997,7 +2997,8 @@ class RegRefCarsOrganizationsPrice(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['car'])
+            models.Index(fields=['car']),
+            models.Index(fields=['date'])
         ]
         db_table = 'regRefCarsOrganizationsPrice'
         verbose_name = "Цены автомобилей организаций"
@@ -3016,7 +3017,9 @@ class RegRefCarsOrganizationsCalculationPrice(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['car'])
+            models.Index(fields=['car']),
+            models.Index(fields=['date']),
+            models.Index(fields=['evaluation']) 
         ]
         db_table = 'regRefCarsOrganizationsCalculationPrice'
         verbose_name = "Цены автомобилей организаций расчетные"
