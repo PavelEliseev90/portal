@@ -52,6 +52,7 @@ def add_statistic_cars_organization(cars, store, type):
     new_view.reserve    = cars.reserve    
     new_view.save()
 
+
 @api_view(['GET', 'POST'])
 def zna_info(request):
     
@@ -137,6 +138,7 @@ def get_image_change(request):
         'url'       : ''
     }
     return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
+
 
 @api_view(['GET', 'POST'])
 def post_image_change(request):
@@ -232,6 +234,7 @@ def info_cars_organization(request):
     }   
     return JsonResponse(answer, status=status.HTTP_200_OK)
 
+
 @api_view(['POST'])
 def refresh_cars(request):
 
@@ -247,12 +250,6 @@ def refresh_cars(request):
     count_stock = 0
 
     list_del = list()
-
-    #cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0)
-    #for car in cars_update:
-    #    car.quantity = 0
-    #    car.save()
-    #    list_del.append(car.pk)
 
     list_load_photo = list()
     cars_json       = data['Cars']

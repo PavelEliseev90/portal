@@ -1,7 +1,19 @@
 from django.contrib import admin
-from .models import RefStatusEstimation, RefTypeDrive, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefPsdDisk, RefTypeDisk, RefDiaDisk, RefEtDisk, RefFilial, AutoruModificationSpecifications, RefSpecification, RefSpecificationData, RefEventCarsOrganization, RefRatingCarsOrganization, RefStore, RefCarsOrganizationFiles, RefCarsOrganization, RefAvito, RefTypeBody, RefTypeEngine, RefUnitGroup, RefExchangeCars, RefTypeCanceledCheckList, RefIb, RefTypeItemRepair, AutoruMark, AutoruModification, AutoruComplectation, AutoruModel, RefArea, RefCity, RefOrganization, RefUnit, RefCustomer, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefBoardsPage, RefTypeCanceledSMS, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefBoards, RefPageOcenka, RefCustomerFiltr, RefAvitoComplectation
+from .models import Auction, AuctionStructure, RefStatusEstimation, RefTypeDrive, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefPsdDisk, RefTypeDisk, RefDiaDisk, RefEtDisk, RefFilial, AutoruModificationSpecifications, RefSpecification, RefSpecificationData, RefEventCarsOrganization, RefRatingCarsOrganization, RefStore, RefCarsOrganizationFiles, RefCarsOrganization, RefAvito, RefTypeBody, RefTypeEngine, RefUnitGroup, RefExchangeCars, RefTypeCanceledCheckList, RefIb, RefTypeItemRepair, AutoruMark, AutoruModification, AutoruComplectation, AutoruModel, RefArea, RefCity, RefOrganization, RefUnit, RefCustomer, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefBoardsPage, RefTypeCanceledSMS, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefBoards, RefPageOcenka, RefCustomerFiltr, RefAvitoComplectation
 from django_mptt_admin.admin import DjangoMpttAdmin
 
+
+@admin.register(Auction)
+class AuctionAdmin(admin.ModelAdmin):
+    list_display    = ('pk', 'store', )
+    readonly_fields = ('store', 'user')
+
+
+@admin.register(AuctionStructure)
+class AuctionStructureAdmin(admin.ModelAdmin):
+    list_display    = ('pk', 'auction', 'car')
+    readonly_fields = ('car', 'auction')
+    
 
 @admin.register(RefTypeDrive)
 class RefTypeDriveAdmin(admin.ModelAdmin):

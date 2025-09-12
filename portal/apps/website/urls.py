@@ -16,6 +16,10 @@ urlpatterns = [
    path('stok_im/',              views.stok_im),
    path('stok_im/product/',      views.product),
 
+   path('auction/',                          views.auction_list),
+   path('auction/<slug:slug_auction>/',      views.auction_doc, name='slug'),
+   path('auction/js/get_cars_lot_online/',   views.auction_doc_get_cars),
+   path('auction/js/get_cars_lot_online/<slug:slug>/',   views.auction_doc_get_cars_info, name='slug'),
 
    path('service/<id>/',         views.service_new, name='id'),
    path('s/<id>/',               views.service_new, name='id'),

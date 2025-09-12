@@ -1,0 +1,1298 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} Аукционы автомобилей {% endblock %}
+
+{% block title_navbar %} - Аукционы автомобилей {{params.object.name}}  {% endblock %}
+    
+{% block content %}
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+		<div class="modal-header">
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		
+			<div class="modal-body">
+				<form action="GET">
+					<div class="form-floating mb-3">							
+						<select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
+							<option></option>
+							{% for store in params.selected.stores %}
+								<option value="{{store.id}}" {% if params.filtr.store_id == store.id %} selected {% endif %}> {{store.name}} </option>
+							{% endfor %}
+						</select>
+						<label for="floatingInput">Дилерский центр</label>
+					</div>
+					
+					<div class="row">
+						<div class="col">
+							<button class="btn btn_block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>	
+						</div>
+					</div>
+				</form>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			<div class="form-floating mb-3">
+				<input type="text" class="form-control " id="new_filtr" name="new_filtr" placeholder="" required>
+				<label for="floatingInput">Наименование</label>
+			</div>
+		</div>
+		<div class="modal-footer">
+		  <button class="btn btn-success" type="button" onclick="change_link()" >Сохранить</button>
+		</div>
+	  </div>
+	</div>
+</div>
+
+<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+		</div>
+		<div class="modal-body">
+			{% if params.filters_user|length > 0 %}
+					<hr>
+					<div class="table-responsive">
+						<table class="table">
+						  <tbody>
+								
+							{% for filter in params.filters_user %}
+							<tr>
+								<td>
+									{{filter.name}}
+								</td>
+								<td>
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn  btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								</td>
+							</tr>
+							{% endfor %}
+								
+						  </tbody>
+						</table>
+					  </div>
+				{% endif %}
+		</div>
+		
+	  </div>
+	</div>
+</div>
+
+<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header bg-dark text-white">
+				<h5 class="modal-title" id="mobileFiltersModalLabel">
+					<span class="icon-mbri-setting me-2"></span>Фильтры поиска
+				</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body">
+				<form method="get" id="mobileFiltersForm">
+					<!-- Город -->
+					<div class="filter-section">
+						<div class="filter-title">Город</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_city" placeholder="Поиск по городу">
+						</div>
+						<div class="filter-options">
+							{% for city in params.selected.citys %}
+								{% if city.city__name|length > 0 %}
+									<label class="filter-option" id="mobile_city_{{city.city}}">
+										<input type="checkbox" name="city[]" value="{{city.city}}" 
+											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
+										<span class="filter-text">{{city.city__name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Марка -->
+					<div class="filter-section">
+						<div class="filter-title">Марка</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_marks" placeholder="Поиск по марке">
+						</div>
+						<div class="filter-options">
+							{% for mark in params.selected.marks %}
+								<label class="filter-option" id="mobile_mark_{{mark.pk}}">
+									<input type="checkbox" name="mark[]" value="{{mark.pk}}" 
+										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
+									<span class="filter-text">{{mark.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Коробка передач -->
+					<div class="filter-section">
+						<div class="filter-title">Коробка передач</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_gear" placeholder="Поиск по коробке передач">
+						</div>
+						<div class="filter-options">
+							{% for gear in params.selected.gears %}
+								<label class="filter-option" id="mobile_gear_{{gear.pk}}">
+									<input type="checkbox" name="gear[]" value="{{gear.pk}}" 
+										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
+									<span class="filter-text">{{gear.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Кузов -->
+					<div class="filter-section">
+						<div class="filter-title">Кузов</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_body" placeholder="Поиск по кузову">
+						</div>
+						<div class="filter-options">
+							{% for body in params.selected.bodys %}
+								<label class="filter-option" id="mobile_body_{{body.pk}}">
+									<input type="checkbox" name="body[]" value="{{body.pk}}" 
+										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
+									<span class="filter-text">{{body.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Привод -->
+					<div class="filter-section">
+						<div class="filter-title">Привод</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_drives" placeholder="Поиск по приводу">
+						</div>
+						<div class="filter-options">
+							{% for drive in params.selected.drives %}
+								{% if drive.name|length > 0 %}
+									<label class="filter-option" id="mobile_drive_{{drive.pk}}">
+										<input type="checkbox" name="drive[]" value="{{drive.pk}}" 
+											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
+										<span class="filter-text">{{drive.name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Год выпуска -->
+					<div class="filter-section">
+						<div class="filter-title">Год выпуска</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="year_start" 
+										value="{{params.filtr.year_start}}" placeholder="1950">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="year_end" 
+										value="{{params.filtr.year_end}}" placeholder="2025">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Пробег -->
+					<div class="filter-section">
+						<div class="filter-title">Пробег</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="run_start" 
+										value="{{params.filtr.run_start}}" placeholder="0">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="run_end" 
+										value="{{params.filtr.run_end}}" placeholder="500000">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Цена -->
+					<div class="filter-section">
+						<div class="filter-title">Цена</div>
+						<div class="filter-range">
+							<div class="row">
+								<div class="col-6">
+									<input type="number" class="form-control" name="price_start" 
+										value="{{params.filtr.price_start}}" placeholder="0">
+									<small class="text-muted">от</small>
+								</div>
+								<div class="col-6">
+									<input type="number" class="form-control" name="price_end" 
+										value="{{params.filtr.price_end}}" placeholder="10000000">
+									<small class="text-muted">до</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{% if request.user.is_authenticated %}
+					<!-- VIN -->
+					<div class="filter-section">
+						<div class="filter-title">VIN</div>
+						<div class="filter-input">
+							<input type="text" class="form-control" name="vin" 
+								value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
+						</div>
+					</div>
+
+					<!-- Статус -->
+					<div class="filter-section">
+						<div class="filter-title">Статус</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_status" placeholder="Поиск по статусу">
+						</div>
+						<div class="filter-options">
+							{% for status in params.selected.statuses %}
+								<label class="filter-option" id="mobile_status_{{status.pk}}">
+									<input type="checkbox" name="status[]" value="{{status.pk}}" 
+										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
+									<span class="filter-text">{{status.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Этап УС -->
+					<div class="filter-section">
+						<div class="filter-title">Этап УС</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_stage_price" placeholder="Поиск по этапу УС">
+						</div>
+						<div class="filter-options">
+							{% for stage_price in params.selected.stage_prices %}
+								<label class="filter-option" id="mobile_stage_price_{{stage_price.pk}}">
+									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" 
+										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
+									<span class="filter-text">{{stage_price.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+
+					<!-- Вид продажи -->
+					<div class="filter-section">
+						<div class="filter-title">Вид продажи</div>
+						<div class="filter-search">
+							<input type="text" class="form-control" id="mobile_search_type_sale" placeholder="Поиск по виду продажи">
+						</div>
+						<div class="filter-options">
+							{% for type_sale in params.selected.type_sales %}
+								<label class="filter-option" id="mobile_type_sale_{{type_sale.pk}}">
+									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" 
+										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
+									<span class="filter-text">{{type_sale.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+					{% endif %}
+				</form>
+			</div>
+			<div class="modal-footer bg-light">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+				<button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
+					<span class="icon-mbri-search me-2"></span>Применить фильтры
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Мобильная кнопка фильтров -->
+<div class="d-block d-md-none">
+	<div class="mobile-filters-button-container">
+		<button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
+			<span class="icon-mbri-setting me-2"></span>
+			<span class="filters-text">Фильтры</span>
+			<span class="filters-count" id="activeFiltersCount">0</span>
+		</button>
+	</div>
+</div>
+
+<form method="get" id="filtersForm">
+	<div class="pc-filters-container d-none d-md-block">
+		<div class="pc-filters-header">
+			<div class="d-flex justify-content-between align-items-center">
+				<h5 class="pc-filters-title">
+					<span class="icon-mbri-setting me-2"></span>
+					Фильтры поиска
+				</h5>
+				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFilters()">
+					<span class="icon-mbri-down me-2"></span>Показать
+				</button>
+			</div>
+		</div>
+		
+		<div class="pc-filters-content" style="display: none;">
+			<div class="pc-filters-row">
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Город</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_city" placeholder="Поиск по городу">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="city_options">
+							{% for city in params.selected.citys %}
+								{% if city.city__name|length > 0 %}
+									<label class="pc-filter-option" id="city_select_{{city.city__name}}">
+										<input type="checkbox" name="city[]" value="{{city.city}}" id="city_filtr_{{city.city}}" 
+											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
+										<span class="pc-filter-text">{{city.city__name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Марка</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_marks" placeholder="Поиск по марке">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="marks_options">
+							{% for mark in params.selected.marks %}
+								<label class="pc-filter-option" id="marks_select_{{mark.name}}">
+									<input type="checkbox" name="mark[]" value="{{mark.pk}}" id="mark_filtr_{{mark.pk}}" 
+										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
+									<span class="pc-filter-text">{{mark.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Коробка передач</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_gear" placeholder="Поиск по коробке передач">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="gear_options">
+							{% for gear in params.selected.gears %}
+								<label class="pc-filter-option" id="gear_select_{{gear.name}}">
+									<input type="checkbox" name="gear[]" value="{{gear.pk}}" id="gear_filtr_{{gear.pk}}" 
+										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
+									<span class="pc-filter-text">{{gear.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Кузов</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_body" placeholder="Поиск по кузову">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="body_options">
+							{% for body in params.selected.bodys %}
+								<label class="pc-filter-option" id="body_select_{{body.name}}">
+									<input type="checkbox" name="body[]" value="{{body.pk}}" id="body_filtr_{{body.pk}}" 
+										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
+									<span class="pc-filter-text">{{body.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="pc-filters-row">
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Привод</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_drives" placeholder="Поиск по приводу">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="drives_options">
+							{% for drive in params.selected.drives %}
+								{% if drive.name|length > 0 %}
+									<label class="pc-filter-option" id="drive_select_{{drive.name}}">
+										<input type="checkbox" name="drive[]" value="{{drive.pk}}" id="drive_filtr_{{drive.pk}}" 
+											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
+										<span class="pc-filter-text">{{drive.name}}</span>
+									</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Год выпуска</label>
+					<div class="pc-filter-range">
+						<div class="pc-filter-range-inputs">
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="year_start" name="year_start" 
+									value="{{params.filtr.year_start}}" placeholder="1950" min="1950" max="2025">
+								<label class="pc-filter-range-label">от</label>
+							</div>
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="year_end" name="year_end" 
+									value="{{params.filtr.year_end}}" placeholder="2025" min="1950" max="2025">
+								<label class="pc-filter-range-label">до</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Пробег</label>
+					<div class="pc-filter-range">
+						<div class="pc-filter-range-inputs">
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="run_start" name="run_start" 
+									value="{{params.filtr.run_start}}" placeholder="0" min="0" max="1000000">
+								<label class="pc-filter-range-label">от</label>
+							</div>
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="run_end" name="run_end" 
+									value="{{params.filtr.run_end}}" placeholder="500000" min="0" max="1000000">
+								<label class="pc-filter-range-label">до</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Цена</label>
+					<div class="pc-filter-range">
+						<div class="pc-filter-range-inputs">
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="price_start" name="price_start" 
+									value="{{params.filtr.price_start}}" placeholder="0" min="0" max="10000000">
+								<label class="pc-filter-range-label">от</label>
+							</div>
+							<div class="pc-filter-range-group">
+								<input type="number" class="pc-filter-range-input" id="price_end" name="price_end" 
+									value="{{params.filtr.price_end}}" placeholder="10000000" min="0" max="10000000">
+								<label class="pc-filter-range-label">до</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{% if request.user.is_authenticated %}
+			<div class="pc-filters-row">
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">VIN</label>
+					<div class="pc-filter-input-single">
+						<input type="text" class="pc-filter-input" id="vin" name="vin" 
+							value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Статус</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_status" placeholder="Поиск по статусу">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="status_options">
+							{% for status in params.selected.statuses %}
+								<label class="pc-filter-option" id="status_select_{{status.name}}">
+									<input type="checkbox" name="status[]" value="{{status.pk}}" id="status_filtr_{{status.pk}}" 
+										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
+									<span class="pc-filter-text">{{status.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Этап УС</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_stage_price" placeholder="Поиск по этапу УС">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="stage_price_options">
+							{% for stage_price in params.selected.stage_prices %}
+								<label class="pc-filter-option" id="stage_price_select_{{stage_price.name}}">
+									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" id="stages_price_filtr_{{stage_price.pk}}" 
+										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
+									<span class="pc-filter-text">{{stage_price.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+				<div class="pc-filter-group">
+					<label class="pc-filter-label">Вид продажи</label>
+					<div class="pc-filter-dropdown">
+						<div class="pc-filter-search">
+							<input type="text" class="pc-filter-input" id="search_type_sale" placeholder="Поиск по виду продажи">
+							<span class="pc-filter-icon icon-mbri-search"></span>
+						</div>
+						<div class="pc-filter-options" id="type_sale_options">
+							{% for type_sale in params.selected.type_sales %}
+								<label class="pc-filter-option" id="type_sale_select_{{type_sale.name}}">
+									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{type_sale.pk}}" 
+										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
+									<span class="pc-filter-text">{{type_sale.name}}</span>
+								</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+
+		<div class="pc-filters-footer">
+			<div class="pc-filters-actions">
+				<a href="new_lots/" class="btn btn-outline-secondary">
+					<span class="icon-mbri-play me-2"></span>Новый лот аукциона
+				</a>
+				<button type="submit" class="btn btn-primary">
+					<span class="icon-mbri-search me-2"></span>Показать
+				</button>
+			</div>
+		</div>
+	</div>
+</form>
+
+	<div class="row">
+		<div class="col-auto">
+			<label class="fs-4"><span class="badge text-white bg-success bg-opacity-75" id="car_profit_auction"> <span class="icon-tag"></span> Лотов: {{params.count}} </span></label>
+		</div>
+		<div class="col-auto">
+			<label class="fs-4"><span class="badge text-white bg-success bg-opacity-75" id="car_profit_auction"> <span class="icon-mbri-credit-card"></span> Сумма лотов: {{params.amount|floatformat:"2g"}} </span></label>
+		</div>
+		<div class="col-auto">
+			<label class="fs-4"><span class="badge text-white bg-success bg-opacity-75" id="car_profit_auction"> <span class="icon-truck"></span> Автомобилей: {{params.count_cars}} </span></label>
+		</div>
+	</div>
+
+    <div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+    
+    {% if params.paginator.object_list %}
+		
+		<div class="row g-3">
+    		{% for object in params.paginator.object_list %}
+    			<div class="col-12 col-md-12 col-lg-12 col-xl-12">
+    				<div class="card bg-white bg-opacity-50"> 
+    					
+    					<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
+
+    						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+    						
+    							<div class="col-12 col-sm-2">
+    								<span class="fs-6  icon-mbri-plus"> {{object.dataTime}}</span>
+    							</div>
+
+								<div class="col-12 col-sm-1">
+    								{% if object.status == None %} <label class="fs-5"><span class="badge text-white bg-warning" id="car_profit_auction"> <span class="fs-6  icon-tag"></span> Новый </span></label> {% else %} {{object.status}} {% endif %}
+    							</div>
+
+								<div class="col-12 col-sm-2">
+    								<span class="fs-6  icon-mbri-play"> {{object.dateStart}} </span>
+    							</div>
+
+								<div class="col-12 col-sm-2">
+    								<span class="fs-6  icon-mbri-flag"> {% if object.dateEnd == None %} Не закончен {% else %} {{object.dateEnd}} {% endif %}</span>
+    							</div>
+
+    							<div class="col-12 col-sm-2">
+    								<span class="fs-6  icon-mbri-pin"> {{object.store.name}}</span>
+    							</div>
+								
+								<div class="col-12 col-sm-2">
+    								<span class="fs-6  icon-mbri-credit-card"> {{object.start_price|floatformat:"2g"}} &#8381;</span>
+    							</div>
+								<div class="col-12 col-sm-1">
+    								<span class="fs-6  icon-truck"> {{object.count_cars}}</span>
+    							</div>
+								<div class="col-6">
+    								<span class="fs-6  icon-mbri-user">{{object.user.last_name}} {{object.user.first_name}}</span>
+    							</div>
+								<div class="col-6 text-end">
+    								<a href="{{object.uid}}/"> <span class="fs-6  icon-mbri-preview"> Посмотреть</span></a>
+    							</div>
+    						</div>
+    					</div>
+    				</div>
+    			</div>
+    		{% endfor %} 
+    	</div>
+
+    {% endif %}
+
+<br>
+<div class="row align-self-center align-items-center justify-content-center" style="width: 100%;">
+	
+
+	<div class="col-auto align-items-center align-self-center justify-content-center">
+		<nav aria-label="Page navigation example">
+			<ul class="pagination justify-content-center">
+			
+				{% if params.paginator.has_previous %}
+					<li class="page-num mbr-section-btn">
+						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+					</li>
+				{% endif %}
+		
+				{% for p in params.paginator.paginator.page_range %}
+					{% if params.paginator.number == p %}
+						<li class="page-num mbr-section-btn disabled">
+							<a class="btn btn-secondary display-7">
+								<b>{{p}}</b>
+							</a>
+						</li>
+					{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+						<li class="page-num mbr-section-btn">
+							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+						</li>
+					{% endif %}
+				{% endfor %}
+					
+				{% if params.paginator.has_next %}
+					<li class="page-num mbr-section-btn">
+						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+					</li>
+				{% endif %}
+	
+			</ul>
+		</nav>
+	</div>
+
+
+</div>
+
+<script>
+// Функция debounce для оптимизации поиска
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
+}
+
+function addClearSearch(input, prefix) {
+    const container = input.closest('.filter-search');
+    if (!container) return;
+    
+    let clearBtn = container.querySelector('.clear-search-btn');
+    if (!clearBtn) {
+        clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'clear-search-btn';
+        clearBtn.innerHTML = '<span class="icon-mbri-close"></span>';
+        clearBtn.style.cssText = `
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+        `;
+        container.appendChild(clearBtn);
+    }
+    
+    clearBtn.addEventListener('click', function() {
+        input.value = '';
+        filterOptions(prefix, '');
+        input.focus();
+        
+        // Скрываем контейнер при очистке поиска
+        const optionsContainer = container.nextElementSibling;
+        if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+    
+    input.addEventListener('input', function() {
+        clearBtn.style.display = this.value ? 'block' : 'none';
+    });
+    
+    const optionsContainer = container.nextElementSibling;
+    if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
+        input.addEventListener('focus', function() {
+            optionsContainer.style.display = 'block';
+        });
+        
+        input.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (!optionsContainer.matches(':hover') && !input.matches(':focus')) {
+                    optionsContainer.style.display = 'none';
+                }
+            }, 200);
+        });
+    }
+}
+
+function addClearSearchPC(input, containerId) {
+    const container = input.closest('.pc-filter-search');
+    if (!container) return;
+    
+    let clearBtn = container.querySelector('.clear-search-btn');
+    if (!clearBtn) {
+        clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'clear-search-btn';
+        clearBtn.innerHTML = '<span class="icon-mbri-close"></span>';
+        clearBtn.style.cssText = `
+            position: absolute;
+            right: 35px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+            z-index: 10;
+        `;
+        container.appendChild(clearBtn);
+    }
+    
+    clearBtn.addEventListener('click', function() {
+        input.value = '';
+        filterPCOptions(containerId, '');
+        input.focus();
+        
+        // Скрываем контейнер при очистке поиска
+        const optionsContainer = document.getElementById(containerId);
+        if (optionsContainer) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+    
+    input.addEventListener('input', function() {
+        clearBtn.style.display = this.value ? 'block' : 'none';
+    });
+    
+    const optionsContainer = document.getElementById(containerId);
+    if (optionsContainer) {
+        input.addEventListener('focus', function() {
+            optionsContainer.style.display = 'block';
+        });
+        
+        input.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (!optionsContainer.matches(':hover') && !input.matches(':focus')) {
+                    optionsContainer.style.display = 'none';
+                }
+            }, 200);
+        });
+    }
+}
+
+function addToggleFilterSection() {
+    const filterTitles = document.querySelectorAll('.filter-title');
+    
+    filterTitles.forEach(title => {
+        title.style.cursor = 'pointer';
+        title.classList.add('filter-title-toggle');
+        
+        title.addEventListener('click', function() {
+            const filterSection = this.closest('.filter-section');
+            const optionsContainer = filterSection.querySelector('.filter-options');
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (optionsContainer) {
+                const isVisible = optionsContainer.style.display !== 'none';
+                
+                if (isVisible) {
+                    optionsContainer.style.display = 'none';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
+                } else {
+                    // Скрываем все другие списки
+                    const allOptions = document.querySelectorAll('.filter-options');
+                    allOptions.forEach(opt => {
+                        if (opt !== optionsContainer) {
+                            opt.style.display = 'none';
+                        }
+                    });
+                    
+                    // Сбрасываем иконки других заголовков
+                    const allIcons = document.querySelectorAll('.filter-title .toggle-icon');
+                    allIcons.forEach(ic => {
+                        if (ic !== icon) {
+                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
+                        }
+                    });
+                    
+                    optionsContainer.style.display = 'block';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
+                }
+            }
+        });
+        
+        if (!title.querySelector('.toggle-icon')) {
+            const icon = document.createElement('span');
+            icon.className = 'toggle-icon';
+            icon.innerHTML = '<span class="icon-mbri-down"></span>';
+            icon.style.cssText = `
+                float: right;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+            `;
+            title.appendChild(icon);
+        }
+    });
+}
+
+function addTogglePCFilterSection() {
+    const pcFilterLabels = document.querySelectorAll('.pc-filter-label');
+    
+    pcFilterLabels.forEach(label => {
+        label.style.cursor = 'pointer';
+        label.classList.add('pc-filter-label-toggle');
+        
+        label.addEventListener('click', function() {
+            const filterGroup = this.closest('.pc-filter-group');
+            const dropdown = filterGroup.querySelector('.pc-filter-dropdown');
+            const optionsContainer = filterGroup.querySelector('.pc-filter-options');
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (optionsContainer) {
+                const isVisible = optionsContainer.style.display !== 'none';
+                
+                if (isVisible) {
+                    optionsContainer.style.display = 'none';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
+                } else {
+                    // Скрываем все другие списки
+                    const allOptions = document.querySelectorAll('.pc-filter-options');
+                    allOptions.forEach(opt => {
+                        if (opt !== optionsContainer) {
+                            opt.style.display = 'none';
+                        }
+                    });
+                    
+                    // Сбрасываем иконки других заголовков
+                    const allIcons = document.querySelectorAll('.pc-filter-label .toggle-icon');
+                    allIcons.forEach(ic => {
+                        if (ic !== icon) {
+                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
+                        }
+                    });
+                    
+                    optionsContainer.style.display = 'block';
+                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
+                }
+            }
+        });
+        
+        if (!label.querySelector('.toggle-icon')) {
+            const icon = document.createElement('span');
+            icon.className = 'toggle-icon';
+            icon.innerHTML = '<span class="icon-mbri-down"></span>';
+            icon.style.cssText = `
+                float: right;
+                margin-left: 10px;
+                transition: transform 0.3s ease;
+                color: #6c757d;
+            `;
+            label.appendChild(icon);
+        }
+    });
+}
+
+// Глобальная функция для переключения фильтров
+function toggleFilters() {
+    const filtersContent = document.querySelector('.pc-filters-content');
+    const toggleButton = document.querySelector('.pc-filters-header button[onclick="toggleFilters()"]');
+    
+    if (!filtersContent || !toggleButton) return;
+    
+    if (filtersContent.style.display === 'none') {
+        filtersContent.style.display = 'block';
+        toggleButton.innerHTML = '<span class="icon-mbri-up me-2"></span>Скрыть';
+        toggleButton.classList.remove('btn-outline-primary');
+        toggleButton.classList.add('btn-outline-light');
+    } else {
+        filtersContent.style.display = 'none';
+        toggleButton.innerHTML = '<span class="icon-mbri-down me-2"></span>Показать';
+        toggleButton.classList.remove('btn-outline-light');
+        toggleButton.classList.add('btn-outline-primary');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализируем мобильные фильтры
+    initializeMobileFilters();
+    
+    // Инициализируем ПК фильтры
+    initializePCFilters();
+    
+    // Обновляем счетчик активных фильтров
+    updateActiveFiltersCount();
+    
+    // Добавляем обработчики событий для обновления счетчика
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateActiveFiltersCount);
+    });
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', updateActiveFiltersCount);
+    });
+    
+        // Скрываем все опции по умолчанию для мобильных фильтров
+    const mobileOptions = document.querySelectorAll('.filter-options');
+    mobileOptions.forEach(option => {
+        option.style.display = 'none';
+    });
+    
+    // Скрываем все опции по умолчанию для ПК фильтров
+    const pcOptions = document.querySelectorAll('.pc-filter-options');
+    pcOptions.forEach(option => {
+        option.style.display = 'none';
+    });
+    
+    // Добавляем обработчики для скрытия/раскрытия секций фильтров
+    addToggleFilterSection();
+    addTogglePCFilterSection();
+});
+
+function initializeMobileFilters() {
+    const mobileFilters = [
+        { id: 'mobile_search_city', prefix: 'mobile_city_' },
+        { id: 'mobile_search_marks', prefix: 'mobile_mark_' },
+        { id: 'mobile_search_gear', prefix: 'mobile_gear_' },
+        { id: 'mobile_search_body', prefix: 'mobile_body_' },
+        { id: 'mobile_search_drives', prefix: 'mobile_drive_' },
+        { id: 'mobile_search_status', prefix: 'mobile_status_' },
+        { id: 'mobile_search_stage_price', prefix: 'mobile_stage_price_' },
+        { id: 'mobile_search_type_sale', prefix: 'mobile_type_sale_' }
+    ];
+
+    mobileFilters.forEach(cfg => {
+        const input = document.getElementById(cfg.id);
+        if (input) {
+            input.addEventListener('input', debounce(function() {
+                filterOptions(cfg.prefix, this.value);
+            }, 300));
+            addClearSearch(input, cfg.prefix);
+        }
+    });
+}
+
+function filterOptions(prefix, searchValue) {
+    const options = document.querySelectorAll(`[id^="${prefix}"]`);
+    let foundCount = 0;
+    
+    options.forEach(option => {
+        const textElement = option.querySelector('.filter-text');
+        const originalText = textElement.getAttribute('data-original-text') || textElement.textContent;
+        
+        if (!textElement.hasAttribute('data-original-text')) {
+            textElement.setAttribute('data-original-text', originalText);
+        }
+        
+        const text = originalText.toLowerCase();
+        const search = searchValue.toLowerCase();
+        
+        if (search === '' || text.includes(search)) {
+            option.style.display = 'block';
+            foundCount++;
+            
+            if (searchValue.trim() !== '') {
+                const highlightedText = originalText.replace(new RegExp(`(${searchValue})`, 'gi'), '<mark>$1</mark>');
+                textElement.innerHTML = highlightedText;
+            } else {
+                textElement.innerHTML = originalText;
+            }
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    const container = options[0]?.closest('.filter-options');
+    if (container) {
+        let noResultsMsg = container.querySelector('.no-results-msg');
+        let resultsCountMsg = container.querySelector('.results-count-msg');
+        
+        if (searchValue.trim() !== '') {
+            if (foundCount === 0) {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.className = 'no-results-msg';
+                    noResultsMsg.innerHTML = '<span class="text-muted">Ничего не найдено</span>';
+                    container.appendChild(noResultsMsg);
+                }
+                if (resultsCountMsg) resultsCountMsg.remove();
+            } else {
+                if (noResultsMsg) noResultsMsg.remove();
+                if (!resultsCountMsg) {
+                    resultsCountMsg = document.createElement('div');
+                    resultsCountMsg.className = 'results-count-msg';
+                    container.appendChild(resultsCountMsg);
+                }
+                resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
+            }
+            
+            // Автоматически показываем контейнер при поиске
+            container.style.display = 'block';
+        } else {
+            if (noResultsMsg) noResultsMsg.remove();
+            if (resultsCountMsg) resultsCountMsg.remove();
+        }
+    }
+}
+
+function initializePCFilters() {
+    const pcFilters = [
+        { id: 'search_city', container: 'city_options' },
+        { id: 'search_marks', container: 'marks_options' },
+        { id: 'search_gear', container: 'gear_options' },
+        { id: 'search_body', container: 'body_options' },
+        { id: 'search_drives', container: 'drives_options' },
+        { id: 'search_status', container: 'status_options' },
+        { id: 'search_stage_price', container: 'stage_price_options' },
+        { id: 'search_type_sale', container: 'type_sale_options' }
+    ];
+
+    pcFilters.forEach(cfg => {
+        const input = document.getElementById(cfg.id);
+        if (input) {
+            input.addEventListener('input', debounce(function() {
+                filterPCOptions(cfg.container, this.value);
+            }, 300));
+            addClearSearchPC(input, cfg.container);
+        }
+    });
+}
+
+function filterPCOptions(containerId, searchValue) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const options = container.querySelectorAll('.pc-filter-option');
+    let foundCount = 0;
+    
+    options.forEach(option => {
+        const textElement = option.querySelector('.pc-filter-text');
+        const originalText = textElement.getAttribute('data-original-text') || textElement.textContent;
+        
+        if (!textElement.hasAttribute('data-original-text')) {
+            textElement.setAttribute('data-original-text', originalText);
+        }
+        
+        const text = originalText.toLowerCase();
+        const search = searchValue.toLowerCase();
+        
+        if (search === '' || text.includes(search)) {
+            option.style.display = 'block';
+            foundCount++;
+            
+            if (searchValue.trim() !== '') {
+                const highlightedText = originalText.replace(new RegExp(`(${searchValue})`, 'gi'), '<mark>$1</mark>');
+                textElement.innerHTML = highlightedText;
+            } else {
+                textElement.innerHTML = originalText;
+            }
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    let noResultsMsg = container.querySelector('.no-results-msg');
+    let resultsCountMsg = container.querySelector('.results-count-msg');
+    
+    if (searchValue.trim() !== '') {
+        if (foundCount === 0) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'no-results-msg pc-no-results-msg';
+                noResultsMsg.innerHTML = '<span class="text-muted">Ничего не найдено</span>';
+                container.appendChild(noResultsMsg);
+            }
+            if (resultsCountMsg) resultsCountMsg.remove();
+        } else {
+            if (noResultsMsg) noResultsMsg.remove();
+            if (!resultsCountMsg) {
+                resultsCountMsg = document.createElement('div');
+                resultsCountMsg.className = 'results-count-msg pc-results-count-msg';
+                container.appendChild(resultsCountMsg);
+            }
+            resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
+        }
+        
+        // Автоматически показываем контейнер при поиске
+        container.style.display = 'block';
+    } else {
+        if (noResultsMsg) noResultsMsg.remove();
+        if (resultsCountMsg) resultsCountMsg.remove();
+    }
+}
+
+function updateActiveFiltersCount() {
+    const count = countActiveFilters();
+    const countElement = document.getElementById('activeFiltersCount');
+    if (countElement) {
+        countElement.textContent = count;
+        countElement.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+}
+
+function countActiveFilters() {
+    let count = 0;
+    
+    // Подсчитываем активные чекбоксы
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    count += checkboxes.length;
+    
+    // Подсчитываем заполненные поля ввода
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+    inputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            count++;
+        }
+    });
+    
+    return count;
+}
+
+function applyMobileFilters() {
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        // Синхронизируем чекбоксы
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                mainCheckboxes[index].checked = checkbox.checked;
+            }
+        });
+        
+        // Синхронизируем поля ввода
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                mainInputs[index].value = input.value;
+            }
+        });
+        
+        // Обновляем счетчик активных фильтров
+        updateActiveFiltersCount();
+        
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('mobileFiltersModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Отправляем основную форму
+        mainForm.submit();
+    }
+}
+
+// Обработчики событий для модального окна
+document.getElementById('mobileFiltersModal').addEventListener('show.bs.modal', function() {
+    // Синхронизируем значения из основной формы в мобильную при открытии
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                checkbox.checked = mainCheckboxes[index].checked;
+            }
+        });
+        
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                input.value = mainInputs[index].value;
+            }
+        });
+        
+        updateActiveFiltersCount();
+    }
+});
+
+document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal', function() {
+    // Синхронизируем значения из мобильной формы в основную при закрытии
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    const mainForm = document.getElementById('filtersForm');
+    
+    if (mobileForm && mainForm) {
+        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
+        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
+        
+        mobileCheckboxes.forEach((checkbox, index) => {
+            if (index < mainCheckboxes.length) {
+                mainCheckboxes[index].checked = checkbox.checked;
+            }
+        });
+        
+        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
+        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
+        
+        mobileInputs.forEach((input, index) => {
+            if (index < mainInputs.length) {
+                mainInputs[index].value = input.value;
+            }
+        });
+        
+        updateActiveFiltersCount();
+    }
+});
+</script>
+
+{% endblock %}

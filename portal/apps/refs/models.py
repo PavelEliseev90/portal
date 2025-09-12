@@ -1834,6 +1834,11 @@ class RefCarsOrganization(models.Model):
             name_slug = transliterate(self.name) + '_' + str(self.vin[0:5]) + self.vin[15:18] + '_' + str(self.lo_link_number.replace('ПО-', ''))
             self.slug = slugify(name_slug.lower())
         
+        try:
+            self.search_fields  = '' + self.vin + ' ' + self.status.name
+        except:
+            s = 1
+
         if not self.qr:
             self.qr = ContentFile(get_qrcode(self.slug), name=self.slug)
 
@@ -1899,20 +1904,56 @@ class RefCarsOrganizationAuctionStatus(models.Model):
         verbose_name_plural = "Автомобили для аукциона статус"
 
 
-class RefCarsOrganizationAuction(models.Model):    
-    сars_organization       = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль")
-    name                    = models.CharField("Наименование", max_length=512, default='', blank=True)
-    status                  = models.ForeignKey(RefCarsOrganizationAuctionStatus, on_delete=models.PROTECT, null=True, verbose_name="Статус")  
-    price                   = models.IntegerField("Цена", blank=True, default=0)
-    uid                     = models.UUIDField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
+class Auction(models.Model):
+    uid             = models.UUIDField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
+    status          = models.ForeignKey(RefCarsOrganizationAuctionStatus, on_delete=models.PROTECT, null=True, verbose_name="Статус")  
+    number          = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
+    dataTime        = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    dateStart       = models.DateTimeField('Желаемая дата аукциона', null=True, blank=True)
+    dateEnd         = models.DateTimeField('Дата завершения аукциона', null=True, blank=True)
+    store           = models.ForeignKey(RefStore, on_delete=models.SET_NULL, null=True, verbose_name="Стоянка")
+    user            = models.ForeignKey(User, null=True, on_delete=models.SET_NULL,verbose_name="Ответственный", blank=True)
+    description     = models.CharField('Описание', default='', null=True, max_length=12500, blank=False)
+    start_price     = models.IntegerField("Стартовая цена", default=0, blank=True)
+
+    def count_cars(self):
+        return AuctionStructure.objects.filter(auction = self).count()
+    
+    def cars(self):
+        return AuctionStructure.objects.filter(auction = self)
     
     def __str__(self):
-        return "{}".format(self.сars_organization)
+        return "{} ({} - {}) - {}".format(self.dataTime, self.store, self.user, self.start_price)
+
+    def save(self, *args, **kwargs):
+
+        super().save(*args, **kwargs)
 
     class Meta:
         indexes = [
-            models.Index(fields=['сars_organization'])
+            models.Index(fields=['store'])
         ]
-        db_table = 'refCarsOrganizationAuction'
-        verbose_name = "Автомобили для аукциона"
-        verbose_name_plural = "Автомобили для аукциона"
+        db_table = 'auction'
+        verbose_name = "Аукцион"
+        verbose_name_plural = "Аукцион"
+
+
+class AuctionStructure(models.Model):
+    auction         = models.ForeignKey(Auction, on_delete=models.SET_NULL, null=True, verbose_name="Документ аукциона") 
+    car             = models.ForeignKey(RefCarsOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Автомобиль") 
+    description     = models.CharField('Описание', default='', null=True, max_length=12500, blank=False)
+        
+    def __str__(self):
+        return "{} ({} - {})".format(self.auction, self.car, self.description)
+
+    def save(self, *args, **kwargs):
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['auction'])
+        ]
+        db_table = 'auctionStructure'
+        verbose_name = "Аукцион состав"
+        verbose_name_plural = "Аукцион состав"
