@@ -687,7 +687,7 @@
                             Отдел продаж
                             </a>
                         </li>
-                            <div class="collapse {% if params.type == 'cars' or params.type == 'doc_car_agreement' or params.type == 'doc_car_shipment' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
+                            <div class="collapse {% if params.type == 'auction' or params.type == 'cars' or params.type == 'doc_car_agreement' or params.type == 'doc_car_shipment' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
                                 
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'cars' %}secondary active {% else %}white{% endif %}" href="/cars/">
@@ -709,6 +709,15 @@
                                     </a>
                                 </li>
                                 -->
+                                {% if request.user.profiles.korsavto_auction %}
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'auction' %} secondary active {% else %}white{% endif %}" href="/auction/">
+                                        <span class="icon-mbri-features"></span>
+                                            Аукцион КорсАвто
+                                        </a>
+                                    </li>
+                                {% endif %}
+
                                 {% if request.user.profiles.korsavto_settings %}
                                     
                                     <li class="nav-item">

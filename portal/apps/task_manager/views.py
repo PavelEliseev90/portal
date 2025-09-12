@@ -600,6 +600,7 @@ def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):
         return str(obj)
 
+
 def refresh_car_my_kors_portal():
     
     list_cars = list()
@@ -616,18 +617,20 @@ def refresh_car_my_kors_portal():
         car_info['car_price_info']                  = list(car.price_car_organizaton_info().values('date', 'price'))
         car_info['car_price_info_calculation']      = list(car.price_car_organizaton_calculation().values('date', 'price', 'evaluation__name'))
         car_info['car_price_info_estimations']      = list(car.price_car_organizaton_estimations().values('date', 'avg_price', 'avg_days', 'position', 'price', 'total'))
-
+        
+        #Фотографии
         try:
             car_info['car_photos']                      = list(car.get_files().values('url'))
         except:
             car_info['car_photos']                      = list()
         list_cars.append(car_info)
+        
     
     if len(list_cars) > 0:
         
         data_info  = json.dumps(list_cars, default=datetime_handler)
         
-        r   = requests.post('http://my.kors-group.com' + '/api/refresh/', json = data_info)
+        r   = requests.post(url_my_kors_portal + '/api/refresh/', json = data_info)
         if r.status_code == 200:
             s = 1
 
@@ -709,8 +712,8 @@ def refresh_estimation_cars_organization():
                 js_data = json.loads(r.text)
                 data = js_data['data']
 
-                if len(data) > 0:
-                    data = data[0]
+                if len(data) == 1:
+                    data = data[0] 
 
                 analyticsByActualSales              = data['analyticsByActualSales']
                 
@@ -1237,6 +1240,7 @@ def refresh_catalog_auto_ru():
                             countComplectation = countComplectation + 1
 
         try:
+            
             new_info        = RegInfoRefreshCatalog()
             new_info.date   = DT.datetime.now()
             new_info.site   = 'AUTO RU'
@@ -1813,8 +1817,17 @@ def get_token_wash(header):
 @background(queue='refresh_autohub')
 def start_refresh_autohub():
     refresh_autohub()
-    refresh_signal()
-    refresh_estimation_cars_organization()
+    
+    try:
+        refresh_signal()
+    except:
+        s = 1
+    
+    try:
+        refresh_estimation_cars_organization()
+    except:
+        s = 1
+
 
 def refresh_autohub():
     username       = "korsgroup@maxposter.ru"

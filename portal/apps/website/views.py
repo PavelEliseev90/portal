@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
 import xml.etree.ElementTree as ETree
-from refs.models import RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
+from refs.models import Auction, AuctionStructure, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -6346,8 +6346,217 @@ def refresh_estimation_balance_unit(id_estimation):
                         new_record.delete()    
 
 
+@login_required
+def auction_list(request):
+    
+    select_count = 10
+    
+    user = request.user
+
+    if user.is_superuser:
+        select_stores =  RefStore.objects.all()
+    else:
+        select_stores =  user.profiles.korsavto_stores.all()
+    
+    objects     = Auction.objects.all().order_by('dataTime')
+    page_number = request.GET.get('page', 0)
+    
+    subquery_1 = AuctionStructure.objects.filter(auction__id=OuterRef('pk')).values('auction__id').annotate(count=Count('pk')).values('count')
+    
+    objects    = objects.annotate(
+        count_cars  = Subquery(subquery_1))
+    
+    amount      = objects.aggregate(Sum('start_price'))['start_price__sum']
+    count_cars  = objects.aggregate(Sum('count_cars'))['count_cars__sum']
+        
+    paginator   = Paginator(list(objects), select_count)
+    paginator   = paginator.get_page(page_number)
+
+    select = {
+        'stores' : select_stores
+    }
+    params = {
+        'type'          : 'auction',
+        'paginator'     : paginator,
+        'amount'        : amount,
+        'count_cars'    : count_cars,
+        'count'         : objects.count(),
+        'select'        : select
+    }
+    
+    return render(request, "auction/auction_list.html", {'params': params})
+
+
+@login_required
+def auction_doc(request, slug_auction):
+    auction = None
+    new = False
+    if slug_auction == 'new_lots':
+        new = True
+    else:
+        new = False
+        auction = Auction.objects.get(uid = slug_auction)
+
+    user = request.user
+
+    if user.is_superuser:
+        select_stores =  RefStore.objects.filter(active_eco = True)
+    else:
+        select_stores =  user.profiles.korsavto_stores.all()
+    
+    select = {
+        'stores' : select_stores
+    }
+
+    if request.method == 'POST':
+        if new:
+            auction = Auction()
+            auction.user = user
+        else:
+            auction = Auction.objects.get(uid = slug_auction)
+        auction.user                = user
+        auction.store               = RefStore.objects.get(name = request.POST.get('store', ''))
+        auction.start_price         = int(request.POST.get('price_start', '0')) 
+        auction.dateStart           = DT.datetime.strptime(request.POST.get('dateStart', ''), "%Y-%m-%dT%H:%M")
+        auction.description         = request.POST.get('description', '')        
+        auction.save()
+
+        AuctionStructure.objects.filter(auction = auction).delete()
+
+        for key in request.POST.keys():
+            if key.startswith('cars_list_data_slug_'):
+                val_key = request.POST.get(key)
+                pk      = key.replace('cars_list_data_slug_', '')
+                car     = RefCarsOrganization.objects.get(slug = pk)
+                structure = AuctionStructure()
+                structure.auction = auction
+                structure.car = car
+                structure.save()
+        return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
+     
+    params = {
+        'type'          : 'auction',
+        'auction'       : auction,
+        'new'           : new,
+        'user'          : user,
+        'select'        : select
+    }
+    
+    return render(request, "auction/auction_doc.html", {'params': params})
+
+
+def auction_doc_get_cars(request):
+
+    search = request.GET.get('search', '')
+
+    if len(search) > 0:
+        cars = RefCarsOrganization.objects.filter(search_fields__icontains = search)
+    else:    
+        cars = RefCarsOrganization.objects.exclude(quantity = 0)[:10]
+    
+    data = list(cars.values('vin', 
+                       'slug', 
+                       'year',
+                       'price',
+                       'run', 
+                       modification_name = F('modification_autoru__name'),
+                       model_name   = F('modification_autoru__model__name'),
+                       mark_name    = F('modification_autoru__model__mark__name'),
+                       url          = F('prev_photo')))
+    for car in data:
+        car['url'] = get_url_image(car['slug'])
+    
+    return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
+def auction_doc_get_cars_info(request, slug):
+    
+    cars        = RefCarsOrganization.objects.filter(slug = slug)
+    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
+    cars    = cars.annotate(
+        int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
+        int_ocenka_diagnostika = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
+        int_ocenka_url_pered = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_zad = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_up = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_right = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_left = Value('', output_field=CharField()))
+    
+    
+    data = list(cars.values('vin', 
+                       'slug', 
+                       'year',
+                       'price',
+                       'run', 
+                       'days_in_stok',
+                       'outlay',
+                       'cost_price',
+                       'bcp',
+                       'description_op',
+                       'description_podgotovka',
+                       'int_ocenka_diagnostika',
+                       'int_ocenka_id',
+                       'int_ocenka_url_pered',
+                       'int_ocenka_url_zad',
+                       'int_ocenka_url_up',
+                       'int_ocenka_url_right',
+                       'int_ocenka_url_left',
+                       type_sale_name = F('type_sale__name'),
+                       type_reception_name = F('type_reception__name'),
+                       stage_price_name = F('stage_price__name'),
+                       status_name = F('status__name'),
+                       modification_name = F('modification_autoru__name'),
+                       model_name   = F('modification_autoru__model__name'),
+                       mark_name    = F('modification_autoru__model__mark__name'),
+                       url          = F('prev_photo')))
+    for car in data:
+        car['url'] = get_url_images(car['slug'])
+        car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
+        car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
+        car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
+        car['int_ocenka_url_right'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pass')
+        car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
+    
+    return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
+def get_url_image_osmotr(estimation_id, type_file):
+    photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
+    try:
+        if photos_count > 0:
+            return RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file)[0].file.url.replace('/media/','/media_dop/')
+    except:
+        return '/media/nophoto.png'
+    return '/media/nophoto.png'
+
+def get_url_image(slug):
+    photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).filter(main = True).count()
+    try:
+        if photos_count > 0:
+            return RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).filter(main = True)[0].file_mini.url
+        else:
+            photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).count()
+            if photos_count > 0:
+                return RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug)[0].file_bak.url
+    except:
+        return '/media/nophoto.png'
+    return '/media/nophoto.png'
+
+def get_url_images(slug):
+    list_url = list()
+    photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).count()
+    try:
+        if photos_count > 0:
+            photos = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).order_by('-main')
+            for photo in photos:
+                list_url.append(photo.file.url)
+        else:
+            list_url.append('/media/nophoto.png')
+    except:
+        list_url.append('/media/nophoto.png')
+    return list_url
+
+
 def test(request):
-    refresh_avtoteka_vin()
+    
     '''
     object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     s = 0
