@@ -1835,7 +1835,35 @@ class RefCarsOrganization(models.Model):
             self.slug = slugify(name_slug.lower())
         
         try:
-            self.search_fields  = '' + self.vin + ' ' + self.status.name
+            text_search = ''
+            if len(self.vin) > 4:
+                text_search = text_search + self.vin + ' '
+            if len(self.plate_number) > 4:
+                text_search = text_search + self.plate_number + ' '
+            if self.status != None:
+                text_search = text_search + self.status.name + ' '
+            if self.type_sale != None:
+                text_search = text_search + self.type_sale.name + ' '
+            if self.type_reception != None:
+                text_search = text_search + self.type_reception.name + ' '
+            
+            if self.modification_autoru != None:
+                text_search = text_search + self.modification_autoru.model.mark.name + ' '
+                text_search = text_search + self.modification_autoru.model.name + ' '
+                text_search = text_search + self.modification_autoru.name + ' ' 
+            else:
+                text_search = text_search + self.mark + ' '
+                text_search = text_search + self.model + ' '
+                text_search = text_search + self.modification + ' '            
+
+            if len(self.lo_link_number) > 4:
+                text_search = text_search + self.lo_link_number + ' '
+            
+            if len(self.color) > 4:
+                text_search = text_search + self.color + ' ' 
+
+            self.search_fields  = text_search
+
         except:
             s = 1
 
