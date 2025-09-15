@@ -3233,7 +3233,7 @@ def estimations_price_calculation(estimation, type_calculation):
     #Финансирование
     if zna_type != '1C':
         #Проверяем корректировку ЦНА
-        if zna_izp_type > 0:            
+        if zna_izp_type > -1:            
             #if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
             zna_type_name = ''
             if zna_izp_type == 1:

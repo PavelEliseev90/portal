@@ -6558,6 +6558,7 @@ def get_url_images(slug):
     return list_url
 
 def test(request):
+    #refresh_estimation_cars_organization()
     '''
     object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     s = 0

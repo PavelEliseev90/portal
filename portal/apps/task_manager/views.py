@@ -50,7 +50,7 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-url_auction_kors_portal     = 'http://my.kors-group.com'
+url_auction_kors_portal     = 'http://127.0.0.1:8008'
 
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
@@ -637,7 +637,7 @@ def send_auction(auction):
     
     data_info  = json.dumps(json_doc, default=datetime_handler)
     
-    r   = requests.post(url_my_kors_portal + '/api/refresh_auction/', json = data_info)
+    r   = requests.post(url_auction_kors_portal + '/api/refresh_auction/', json = data_info, auth=('Admin_my_kors_portal', 'Audi80b4'))
     if r.status_code == 200:
         s = 1
 
