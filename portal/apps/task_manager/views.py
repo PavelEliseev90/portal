@@ -4,7 +4,7 @@ import glob, os
 from powerbi.models import Bi_logs, Bi_wash
 from django.conf import settings
 import requests
-from refs.models import RefCarsOrganization, RefManufacturer, RefIb, RefCategoryProduct, RefGroupProduct, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefAvito, RefAvitoComplectation
+from refs.models import RefCarsOrganizationFiles, RefCarsOrganization, RefManufacturer, RefIb, RefCategoryProduct, RefGroupProduct, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefAvito, RefAvitoComplectation
 from documents.models import DocCarShipment, DocRLK, DocRLKEvents, DocLO
 from recognition.models import Check_settings_cvc, Records_voice_recorder_cvc_checklist_tematics, Records_voice_recorder_cvc_tematics, Records_voice_recorder_cvc_checklist, Records_voice_recorder, Records_voice_recorder_cvc, Records_voice_recorder_queue, Records_voice_recorder_cvc_checklist_kg, Records_questions
 import platform
@@ -33,9 +33,11 @@ from register.models import RegInteractivOcenka, RegSwapKors
 from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
-from refs.serializers import RefCarsOrganizationSerializer
+from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer
 from datetime import datetime, date
 import base64
+from django.db.models import Min, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
+
 
 import asyncio
 import websockets
@@ -47,7 +49,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
-url_my_kors_portal   = 'http://my.kors-group.com'
+url_my_kors_portal          = 'http://my.kors-group.com'
+url_auction_kors_portal     = 'http://127.0.0.1:8008'
 
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
@@ -600,6 +603,128 @@ def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):
         return str(obj)
 
+def send_auction(auction):
+    
+    store_serializer = RefStoreSerializer(auction.store, many=False).data
+
+    status_name = 'Новый'
+    if auction.status != None:
+        status_name = auction.status.name 
+
+    list_cars = list()
+
+    cars_auction = auction.cars()
+    for auction_car in cars_auction:
+        car_info = {
+            'car'           : RefCarsOrganizationSerializer(auction_car.car, many=False).data,
+            'description'   : auction_car.description,
+            'dop_info'      : info_car_auction(auction_car.car.slug)
+        }
+        list_cars.append(car_info)
+    
+    json_doc = {
+        'date_start'        : auction.dateStart,
+        'store'             : store_serializer,
+        'date_create'       : auction.dataTime,
+        'date_end'          : auction.dateEnd,
+        'description'       : auction.description,
+        'start_price'       : auction.start_price,
+        'uid'               : str(auction.uid),
+        'status'            : status_name,
+        'user'              : auction.user.username,
+        'cars_info'         : list_cars
+    }
+    
+    data_info  = json.dumps(json_doc, default=datetime_handler)
+    
+    r   = requests.post(url_auction_kors_portal + '/api/refresh_auction/', json = data_info, auth=('Admin_my_kors_portal', 'Audi80b4'))
+    if r.status_code == 200:
+        s = 1
+
+def info_car_auction(slug):
+    cars        = RefCarsOrganization.objects.filter(slug = slug)
+    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
+    cars    = cars.annotate(
+        int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
+        int_ocenka_diagnostika  = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
+        int_ocenka_url_pered    = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_zad      = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_up       = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_right    = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_left     = Value('', output_field=CharField()))
+    
+    
+    data = list(cars.values('vin', 
+                       'slug', 
+                       'year',
+                       'price',
+                       'run', 
+                       'days_in_stok',
+                       'outlay',
+                       'cost_price',
+                       'bcp',
+                       'description_op',
+                       'description_podgotovka',
+                       'int_ocenka_diagnostika',
+                       'int_ocenka_id',
+                       'int_ocenka_url_pered',
+                       'int_ocenka_url_zad',
+                       'int_ocenka_url_up',
+                       'int_ocenka_url_right',
+                       'int_ocenka_url_left',
+                       type_sale_name = F('type_sale__name'),
+                       type_reception_name = F('type_reception__name'),
+                       stage_price_name = F('stage_price__name'),
+                       status_name = F('status__name'),
+                       modification_name = F('modification_autoru__name'),
+                       model_name   = F('modification_autoru__model__name'),
+                       mark_name    = F('modification_autoru__model__mark__name'),
+                       url          = F('prev_photo')))
+    for car in data:
+        car['url'] = get_url_images(car['slug'])
+        car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
+        car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
+        car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
+        car['int_ocenka_url_right'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pass')
+        car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
+    
+    return car
+    
+def get_url_image_osmotr(estimation_id, type_file):
+    photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
+    try:
+        if photos_count > 0:
+            return RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file)[0].file.url.replace('/media/','/media_dop/')
+    except:
+        return '/media/nophoto.png'
+    return '/media/nophoto.png'
+
+def get_url_image(slug):
+    photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).filter(main = True).count()
+    try:
+        if photos_count > 0:
+            return RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).filter(main = True)[0].file_mini.url
+        else:
+            photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).count()
+            if photos_count > 0:
+                return RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug)[0].file_bak.url
+    except:
+        return '/media/nophoto.png'
+    return '/media/nophoto.png'
+
+def get_url_images(slug):
+    list_url = list()
+    photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).count()
+    try:
+        if photos_count > 0:
+            photos = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).order_by('-main')
+            for photo in photos:
+                list_url.append(photo.file.url)
+        else:
+            list_url.append('/media/nophoto.png')
+    except:
+        list_url.append('/media/nophoto.png')
+    return list_url
 
 def refresh_car_my_kors_portal():
     

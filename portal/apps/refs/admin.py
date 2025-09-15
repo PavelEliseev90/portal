@@ -135,7 +135,7 @@ class RefRatingCarsOrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(RefCarsOrganization)
 class RefCarsOrganizationAdmin(admin.ModelAdmin):
-    list_display    = ('unit', 'store', 'lo', 'vin', 'name', 'run', 'year', 'modification_autoru', 'modification_avito', 'plate_number', 'price', 'date_refresh', 'stage_price', 'group_price', 'get_files_count', )
+    list_display    = ('unit', 'store', 'lo', 'vin', 'name', 'run', 'year', 'modification_autoru', 'complectation_autoru', 'modification_avito', 'plate_number', 'price', 'date_refresh', 'stage_price', 'group_price', 'get_files_count', )
     raw_id_fields   = ('organization', 'store', 'unit', 'modification_avito', 'complectation_avito', 'modification_autoru', 'complectation_autoru', 'lo', )
     search_fields   = ('vin', )  
     list_filter     = ("quantity", "reserve", 'store', 'unit', 'group_price',)

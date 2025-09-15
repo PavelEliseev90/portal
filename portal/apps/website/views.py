@@ -33,7 +33,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import refresh_car_my_kors_portal, refresh_estimation_cars_organization, kors_estimation_data, get_info_max, get_info_max_remote, refresh_signal, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import send_auction, refresh_car_my_kors_portal, refresh_estimation_cars_organization, kors_estimation_data, get_info_max, get_info_max_remote, refresh_signal, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -6432,6 +6432,9 @@ def auction_doc(request, slug_auction):
                 structure.auction = auction
                 structure.car = car
                 structure.save()
+
+        if 'send' in request.POST:
+            send_auction(auction)
         return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
      
     params = {
@@ -6554,9 +6557,8 @@ def get_url_images(slug):
         list_url.append('/media/nophoto.png')
     return list_url
 
-
 def test(request):
-    
+    #refresh_estimation_cars_organization()
     '''
     object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     s = 0
