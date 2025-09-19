@@ -1,0 +1,979 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - оценка {{params.estimation.rlk.nomer}} от {{params.estimation.rlk.dataTime}} {% endblock %}
+
+{% block title_navbar %} - оценка {{params.estimation.rlk.nomer}} от {{params.estimation.rlk.dataTime}} {% endblock %}
+
+{% block content %}
+
+
+      <div class="hidesite">
+        
+        <br>
+        
+      </div>
+
+      <div class="tab-content">
+        
+        <div class="tab-pane active" id="document" role="tabpanel" aria-labelledby="document-tab">
+                                  
+            <form method="POST" enctype="multipart/form-data">
+              
+              <input hidden value="save" name="s_documents">   
+              
+              {% csrf_token %} 
+              
+              <input hidden type="text" value="{{params.return_page}}" name="return_page" id="return_page">
+
+              <div class="fixed-top hidemobile my_pages_title" >
+      
+                <div class="row g-1">
+                  
+                  <div class="col">
+                    <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
+                      
+                      <div class="col-sm" style="padding-bottom: 0.4rem;">
+                        <label class="fs-3"> <span class="icon-mbri-edit"></span> Осмотр салона - {{params.type_name}}</label>
+                      </div>
+                      
+                      <div class="col-sm-auto">
+                        <a class="btn btn-dark" href="/estimations/{{params.estimation.rlk.id}}/?page=2"> <span class="icon-mbri-left"></span> Назад</a>  
+                      </div>
+
+                      <div class="col-sm-auto">
+                        <button class="btn btn-dark d-none" type="submit" id="save" name="save"> <span class="icon-mbri-save"></span> Сохранить</button>  
+                      </div>
+                      
+                    </div>   
+                  </div>
+              
+                </div>
+              
+
+      
+              </div>
+              
+              <div class="fixed-top hidesite my_pages_title" >
+                
+                <div class="row  g-1" style="width: 100%;" >
+                  
+                  <div class="col-12">
+                    <div class="row-1 dw-block text-white" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; ">
+                      <label class="fs-4" style="padding: 0.3rem;"> <span class="icon-mbri-edit"></span> {{params.type_name}} </label>    
+                    </div>    
+                  </div>
+            
+                </div>
+              
+              </div>
+
+              <div class="my_pages_info_doc">
+
+                <div class="card bg-success bg-opacity-10">
+                  <div class="card-body">
+                    <label class="fs-6" style="padding: 0.3rem;"> <span class="icon-mbri-touch"></span> Нажмите на изображение и выберите вариант отметки, после этого можно сохранить</label>    
+                  </div>
+                </div>
+                <br>
+                <div class="row g-1" id="rlks_trade_in" style="width: 100%; ">
+                  <div style="display: flex; text-align: start; margin-bottom: 1em;">
+                    <div class='row g-1 entries flex-nowrap overflow-auto' id="">
+                      <div class="col-sm-auto" id="stock">
+                        
+                        {% if params.type == 'page_osmotr_salon' %}
+                        
+                          <canvas name="canvas" id="canvas" width="341" height="701" style="cursor:crosshair; background:url(/media_dop/body_capture/sedan_new.png"></canvas>
+                          <img hidden id="photo_1" src="/media_dop/salon_capture/salon.png">
+                        
+                        {% endif %}
+
+                      </div>
+                    </div>         
+                  </div>     
+                </div>
+
+                <input hidden id="url_image" name="url_image" value="">
+                
+                <div class="row g-1" id="rlks_trade_in" style="width: 100%; overflow-x: scroll;">
+                  <div style="display: flex; text-align: start; margin-bottom: 1em;">
+                    <div class='row g-1 entries flex-nowrap overflow-auto' id="myTable">
+
+                    </div>         
+                  </div>     
+                </div>
+
+                <div class="hidesite" >
+                  <div class="row fixed-bottom" style="padding: 0.5rem; margin-left: 0.1rem; margin-right: 0.1rem;"  >
+                      
+                      <div class="col">
+                        <a class="btn btn-dark" href="/estimations/{{params.estimation.rlk.id}}/?page=2"> <span class="icon-mbri-left"></span></a>  
+                        <button class="btn btn-block btn-dark col-10" type="submit" id="save_m" name="save_m">
+                          <span class="icon-mbri-save"> Сохранить </span>
+                        </button>
+                      </div>                
+                  </div>
+                </div>
+
+              </div>
+              
+            </form>
+          
+            <div class="modal fade" id="exampleModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+              <div class="modal-dialog modal-fullscreen-sm-down  modal-dialog-centered-sm" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Выберите значение отметки</h5>
+                    
+                  </div>
+                  <div class="modal-body">
+                    
+                    <div class="div" id="div_damage">
+                      
+                      <div class="p-1 w-100">
+                        <div id="tr" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25"> 
+                          <div class=" align-self-center justify-content-center" > 
+                            <div class="col-12 text-center"><img id="tr_img" src="/media_dop/static/estimation/tr.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center ">Восстановление формы</div>
+                          </div>  
+                        </div>
+                      </div>
+
+                      <div class="p-1 w-100">
+                        <div id="skol" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25">
+                          <div class=" align-items-center"> 
+                            <div class="col-12 text-center"><img id="skol_img" src="/media_dop/static/estimation/skol.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center">Дырка</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="p-1 w-100">
+                        <div id="vmyat" class="btn btn-block h-100 w-100 align-self-center bg-warning bg-opacity-25"> 
+                          <div class=" align-items-center" > 
+                            <div class="col-12 text-center"><img id="vmyat_img" src="/media_dop/static/estimation/vmyat.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center ">Перешив</div>
+                          </div>  
+                        </div>
+                      </div>
+
+                      <div class="p-1 w-100">
+                        <div id="stiker" class="btn btn-block h-100 w-100 align-self-center bg-warning bg-opacity-50">
+                          <div class="align-items-center"> 
+                            <div class="col-12 text-center fs-7"><img id="stiker_img" src="/media_dop/static/estimation/stiker.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center fs-7">Перекрас</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                    </div>
+                    
+                    <div id="params_button" class="row g-1">
+
+                    </div>
+
+                    <div id="div_add_file" class="row g-1 d-none">
+                      <br>
+                      <p class="fs-6">Можете добавить фото к отметке</p>
+                      <input type="file" class="form-control" id="image_params" name="image_params" accept="image/png, image/gif, image/jpeg;capture=camera"/>
+                      <hr>
+                      <button id="button_next" class="btn btn_block btn-success opacity-75"> <span class="icon-mbri-pin"></span> Далее</button>
+                    </div>
+
+                                      
+                    <div id="div_tol" class="row g-1 d-none">
+                      
+                      <br>
+                      
+                      <div class="hidesite">
+                        
+                        <div class="row g-2 row-cols-1">
+                          
+                          <div class="col">
+                            <button id="button_t_text" class="btn btn_block btn-outline-dark opacity-50 fw-bold font-weight-bold">-</button>
+                          </div>
+                        
+                          
+                          <div class="row g-2 row-cols-3 g-col-12">
+                            <div class="col">
+                              <button id="button_t_1" class="btn btn_block btn-dark opacity-50 fw-bold">  1</button>
+                            </div>
+                            <div class="col">
+                              <button id="button_t_2" class="btn btn_block btn-dark opacity-50 fw-bold"> 2</button>
+                            </div>
+                            <div class="col">
+                              <button id="button_t_3" class="btn btn_block btn-dark opacity-50 fw-bold"> 3</button>
+                            </div>
+                          </div>
+  
+                          <div class="row g-2 row-cols-3">
+                            <div class="col">
+                              <button id="button_t_4" class="btn btn_block btn-dark opacity-50 fw-bold">  4</button>
+                            </div>
+                            <div class="col">
+                              <button id="button_t_5" class="btn btn_block btn-dark opacity-50 fw-bold"> 5</button>
+                            </div>
+                            <div class="col">
+                              <button id="button_t_6" class="btn btn_block btn-dark opacity-50 fw-bold"> 6</button>
+                            </div>
+                          </div>
+  
+                          <div class="row g-2 row-cols-3">
+                            <div class="col">
+                              <button id="button_t_7" class="btn btn_block btn-dark opacity-50 fw-bold">  7</button>
+                            </div>
+                            <div class="col">
+                              <button id="button_t_8" class="btn btn_block btn-dark opacity-50 fw-bold"> 8</button>
+                            </div>
+                            <div class="col">
+                              <button id="button_t_9" class="btn btn_block btn-dark opacity-50 fw-bold"> 9</button>
+                            </div>
+                          </div>
+                          
+                          <div class="row g-2 row-cols-3">
+                            <div class="col-4">
+                              <button id="button_t_del" class="btn btn_block btn-danger opacity-50 fw-bold">  <span class="icon-mbri-left"></span></button>
+                            </div>
+                            <div class="col-4">
+                              <button id="button_t_0" class="btn btn_block btn-dark opacity-50 fw-bold"> 0</button>
+                            </div>
+                            <div class="col-4">
+                              <button id="button_t_ok" class="btn btn_block btn-success opacity-50 fw-bold"> <span class="icon-mbri-success"></span> </button>
+                            </div>
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                      <div class="hidemobile">
+
+                        <div class="row g-1">
+                          
+                          <div class="col-sm">
+                            <div class="form-floating">
+                              <input class="form-control form-control-sm" type="number" id="lkp" name="lkp" value="">
+                              <label for="floatingInput">Показание</label>
+                            </div>
+                          </div>
+
+                          <div class="col-sm-auto align-items-center align-self-center">
+                            <button id="button_t_ok_text" class="btn btn_block btn-success opacity-50"> <span class="icon-mbri-success"></span> </button>
+                          </div>
+
+                        </div>
+
+                      </div>
+                      
+                      
+                    </div>
+                  
+                    <hr>
+
+                    <div class="row">
+                      <button id="close_modal" type="button" class="btn btn_block btn-danger opacity-75"> <span class="icon-mbri-close"></span> Отменить</button> 
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <script language="JavaScript">
+
+              var name_body = '';
+
+              var elements_body = JSON.parse(JSON.stringify({{params.elements_body|safe}}));
+              var array     = new Array();
+              var new_image = true;
+              var tol       = false;
+              var x         = 0;
+              var y         = 0;
+              var type      = '';
+              var tol_text  = "";
+              
+              var img = "";
+              var vmyat_img = "";
+              var vmyat_strong_img = "";
+              var carap_img = "";
+              var carap_strong_img = "";
+              var skol_img = "";
+              var rzav_img = "";
+              var tr_img = "";
+              var rzav_strong_img   = "";
+              var poly_img          = "";
+              var toner_img         = "";
+              var stiker_img        = "";
+              var replace_img       = "";
+              var replace_add_img   = "";
+
+              var poly_count    = 0;
+              var vmyat_count   = 0;
+              var carap_count   = 0;
+              var rzav_count    = 0;
+              var skol_count    = 0;
+              var tr_count      = 0;
+              var replace_count     = 0;
+              var replace_add_count = 0;
+              var toner_count   = 0;
+              var stiker_count  = 0;
+
+              $(document).ready(function() {
+                  
+                $('.search-select').select2({ width: '100%' }); 
+                
+                vmyat_img           = document.getElementById("vmyat_img");
+                vmyat_strong_img    = document.getElementById("vmyat_strong_img");                
+                carap_img           = document.getElementById("carap_img");
+                carap_strong_img    = document.getElementById("carap_strong_img");
+                skol_img            = document.getElementById("skol_img");
+                rzav_img            = document.getElementById("rzav_img");
+                rzav_strong_img     = document.getElementById("rzav_strong_img");              
+                tr_img              = document.getElementById("tr_img");              
+                replace_img         = document.getElementById("replace_img");
+                replace_add_img     = document.getElementById("replace_add_img"); 
+                poly_img            = document.getElementById("poly_img");
+                toner_img           = document.getElementById("toner_img");
+                stiker_img          = document.getElementById("stiker_img");
+
+                array               = {{params.json_data|safe}};
+                
+                img                 = document.getElementById("photo_1");
+                
+                refresh_image();
+
+              });
+
+              $("#close_modal").click(function(e){
+                tol = false;
+                refresh_modal();
+                refresh_image();                
+                $('#exampleModal').modal('hide');
+              });
+
+              function date_click(){
+                  var date        = new Date();
+                  var hour = date.getHours();
+                  var date_str = '' + ("0" + date.getDate()).slice(-2) + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + date.getFullYear() + ' ' + ("0" + date.getHours()).slice(-2) + ':' + ("0" + date.getMinutes()).slice(-2);
+                  return date_str;
+              }
+
+              $("#canvas").click(function(e){
+                
+                  if (new_image == true){
+                    
+                    img           = document.getElementById("photo_1");
+                    canvas        = document.getElementById("canvas");
+                    context       = canvas.getContext("2d");
+                    context.drawImage(img, 0, 0);
+                    new_image = false;
+
+                  };
+
+                  getPosition(e);                   
+
+                });
+
+                var pointSize = 5;
+
+                function getPosition(event){
+                 
+                  var rect = canvas.getBoundingClientRect();
+                  x = event.clientX - rect.left;
+                  y = event.clientY - rect.top;
+                  info_body(x , y);
+                    
+                  $('#exampleModal').modal('show');
+
+                  //drawCoordinates(x,y);
+
+                }
+
+                function drawCoordinates(x,y){	
+                  
+                  var uid         = generateUUID();
+                  var array_coor  = [type, x , y, tol, tol_text, uid, date_click()];
+                  array.push(array_coor);
+                  
+                  refresh_image();
+                    
+                }
+
+                function checkForTheCondition(){
+
+                  if (array.length == 0){
+                    alert('Перед сохранением необходимо указать данные на изображении!');
+                    return false;
+                  }
+                  let image_data_url = document.querySelector("#canvas").toDataURL();            
+                  $("#url_image").val(image_data_url);
+                  return true;
+
+                }
+
+                function refresh_image(){
+                  
+                  var date_str    = '';
+
+                  var strong      = false;
+                  canvas          = document.getElementById("canvas");
+                  var ctx         = canvas.getContext("2d");
+                  ctx.drawImage(img, 0, 0);
+                  
+                  for (let i = 0; i < array.length; i++) {
+                     
+                    array_info      = array[i];
+                    var type_array  = array_info[0];
+                    var uid         = array_info[5];
+                    var type_human  = "";
+                    var x_cor       = array_info[1];
+                    var y_cor       = array_info[2];
+                    var text_cor    = array_info[4];
+                    date_str        = array_info[6]; 
+
+                    if (type_array == 'tol'){
+
+                        ctx.font = '12px Arial';
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 5;
+                        var text = array_info[4];
+                        ctx.strokeText(text, array_info[1], array_info[2]);
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(text, array_info[1], array_info[2]);
+
+                        type_human = 'толщиномер';
+
+                    } else {
+                      if (type_array == 'stiker'){
+                        ctx.drawImage(stiker_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'Перекрас'; 
+                        stiker_count = stiker_count + 1                      
+                      } else if (type_array == 'toner'){
+                        ctx.drawImage(toner_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'тонировка'; 
+                        toner_count = toner_count + 1                      
+                      } else if (type_array == 'poly'){
+                        ctx.drawImage(poly_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'полировка'; 
+                        poly_count = poly_count + 1                      
+                      } else if (type_array == 'replace'){
+                        ctx.drawImage(replace_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'заменен'; 
+                        replace_count = replace_count + 1                      
+                      } else if (type_array == 'replace_add'){
+                        ctx.drawImage(replace_add_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'заменить'; 
+                        replace_add_count = replace_add_count + 1                      
+                      } else if (type_array == 'tr'){
+                        ctx.drawImage(tr_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'восстановление'; 
+                        tr_count = tr_count + 1                      
+                      } else if (type_array == 'vmyat'){
+                        ctx.drawImage(vmyat_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'перешив'; 
+                        vmyat_count = vmyat_count + 1                      
+                      } else if (type_array == 'vmyat_strong'){
+                        ctx.drawImage(vmyat_strong_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'вмятина сильная';
+                        strong = true;
+                        vmyat_count = vmyat_count + 1 
+                      } else 
+                      if (type_array == 'carap'){
+                        ctx.drawImage(carap_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'царапина';
+                        carap_count = carap_count + 1;
+                      } else if (type_array == 'carap_strong'){
+                        ctx.drawImage(carap_strong_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'царапина сильная';
+                        carap_count = carap_count + 1;
+                        strong = true;
+                      } else if (type_array == 'skol'){
+                        ctx.drawImage(skol_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'дырка';
+                        skol_count = skol_count + 1;
+                      } else if (type_array == 'rzav'){
+                        ctx.drawImage(rzav_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'ржавчина';
+                        rzav_count = rzav_count + 1;
+                      } else if (type_array == 'rzav_strong'){
+                        ctx.drawImage(rzav_strong_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'ржавчина сквозная';
+                        strong = true;
+                        rzav_count = rzav_count + 1;
+                      } else {
+                        ctx.fillStyle = "#939393"; // Red color
+                      }
+
+                    }
+
+                    ctx.font = '12px Arial';
+                    if (strong == true){
+                      ctx.strokeStyle = 'red';
+                      strong    = false
+                    } else {
+                      ctx.strokeStyle = 'black';
+                    };
+                      
+                    ctx.lineWidth = 5;
+                    var i_text = i + 1;
+                    ctx.strokeText(i_text.toString(), array_info[1]-12, array_info[2]-12);
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(i_text.toString(), array_info[1]-12, array_info[2]-12);
+
+                    ctx.font = '10px Arial';
+                    ctx.lineWidth = 2;
+                    ctx.fillStyle = 'black';
+                    
+
+                    if ( $("#photo_" + uid).length == 0 ){
+
+                      html = '<div class="card" style="width: 18rem; margin: 0.2rem;"' + 'id="div_photo_' + uid + '">';
+                      html += ' <div class="card-body">';                      
+                      html += '   <div class="row g-1">';
+                      html += '     <div class="col-11">';                        
+                      html += '       <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold" ' + 'id="div_text_' + uid + '">';
+                      html += '         ' + 'Отметка ' + i_text + ' - ' + type_human + ' ' + text_cor
+                      html += '       </h6>';
+                      html += '     </div>';
+                      html += '     <div class="col-auto text-end">';                        
+                      html += '       <span class="icon-mbri-close" ' + 'id="del_photo_' + uid + '" onclick=del_position("' + uid +'")></span';                          
+                      html += '     </div>';
+                      html += '   </div>';
+                      html += '   <hr style="width:75%;">';
+                      html += '   <input class="form-control"  ' + 'id="photo_' + uid + '" name="photo_' + uid + '" type="file">'
+                      html += '   <input hidden class="form-control" ' + 'id="photo_x_' + uid + '" name="photo_x_' + uid + '" type="text" value="' + x_cor + '" >'
+                      html += '   <input hidden class="form-control" ' + 'id="photo_y_' + uid + '" name="photo_y_' + uid + '" type="text" value="' + y_cor + '" >'
+                      html += '   <input hidden class="form-control" ' + 'id="photo_text_' + uid + '" name="photo_text_' + uid + '" type="text" value="' + text_cor + '" >'
+                      html += '   <input hidden class="form-control" ' + 'id="photo_name_' + uid + '" name="photo_name_' + uid + '" type="text" value="' + type_human + ' - ' + i_text + '" >'
+                      html += '   <input hidden class="form-control" ' + 'id="photo_type_' + uid + '" name="photo_type_' + uid + '" type="text" value="' + type_human + '" >'
+                      html += '   <input hidden class="form-control" ' + 'id="photo_date_' + uid + '" name="photo_date_' + uid + '" type="text" value="' + date_str + '" >'
+                      html += '  </div>';
+
+                      html += '</div>';
+                    
+                      $('#myTable').append(html);
+
+                    } else {
+                      $("#div_text_" + uid).text('Отметка ' + i_text + ' - ' + type_human);
+                    }
+
+                    const el = document.getElementById('div_photo_' + uid);
+                    el.scrollIntoView({behavior: "smooth"});
+                    
+                  };
+                  
+                  var start = 1;
+                  var hei   = 20;
+
+                  if (toner_count > 0){
+                    ctx.drawImage(toner_img, start, hei - 19);
+                    ctx.fillText('- тонировка', start + 35, hei);
+                    start = start + 87;
+                  };
+
+                  if (stiker_count > 0){
+                    ctx.drawImage(stiker_img, start, hei - 19);
+                    ctx.fillText('- перекрас', start + 35, hei);
+                    start = start + 87;
+                  };
+
+                  if (poly_count > 0){
+                    ctx.drawImage(poly_img, start, hei - 19);
+                    ctx.fillText('- полировка', start + 35, hei);
+                    start = start + 87;
+                  };
+
+                  if (replace_count > 0){
+                    ctx.drawImage(replace_img, start, hei - 19);
+                    ctx.fillText('- заменен', start + 35, hei);
+                    start = start + 87;
+                  };
+
+                  if (tr_count > 0){
+                    ctx.drawImage(tr_img, start, hei - 19);
+                    ctx.fillText('- восстановление', start + 35, hei);
+                    start = start + 115;
+                  };
+
+                  if (vmyat_count > 0){
+                    ctx.drawImage(vmyat_img, start, hei - 19);
+                    ctx.fillText('- перешив', start + 35, hei);
+                    start = start + 87;
+                  };
+                  
+                  if (carap_count > 0){
+                    ctx.drawImage(carap_img, start, hei - 19);
+                    ctx.fillText('- царапина', start + 35, hei);
+                    start = start + 87;
+                  };
+                  
+                  if (skol_count > 0){
+                    ctx.drawImage(skol_img, start, hei - 19);
+                    ctx.fillText('- дырка', start + 35, hei);
+                    start = start + 80;
+                  };
+                  
+                  if (start > 250){
+                    start = 1;
+                    hei   = 50;
+                  }
+              
+                  if (rzav_count > 0){
+                    ctx.drawImage(rzav_img, start, hei - 19);
+                    ctx.fillText('- ржавчина', start + 35, hei);
+                    start = start + 87;
+                  };
+
+                  if (replace_add_count > 0){
+                    ctx.drawImage(replace_add_img, start, hei - 19);
+                    ctx.fillText('- заменить', start + 35, hei);
+                    start = start + 80;
+                  };
+
+                  ctx.strokeStyle = 'black';
+                  ctx.font = '14px Arial';
+                  ctx.lineWidth = 5;
+                  ctx.strokeText(date_str, 5, 695);
+                  ctx.lineWidth = 3;
+                  ctx.fillStyle = 'white';
+                  ctx.fillText(date_str, 5, 695);
+                  
+                  let image_data_url = document.querySelector("#canvas").toDataURL();            
+                  $("#url_image").val(image_data_url);
+                  
+                  $("#save").removeClass('d-none');
+                  $("#save_m").removeClass('d-none');
+
+                }
+
+                function del_position(uid){
+                  
+                  vmyat_count = 0;
+                  carap_count = 0;
+                  rzav_count  = 0;
+                  skol_count  = 0;
+                  tr_count    = 0;
+                  poly_count  = 0;
+                  stiker_count = 0;
+                  toner_count = 0;
+
+                  for (let i = 0; i < array.length; i++) {
+                    var uin = array[i][5];
+                    if (uin == uid){
+                      array.splice(i, 1);
+                      $('#div_photo_' + uid).remove();
+                      refresh_image();
+                      break;
+                    }
+                  }
+
+                }
+       
+                function generateUUID() { // Public Domain/MIT
+                  var d = new Date().getTime();//Timestamp
+                  var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+                  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                      var r = Math.random() * 16;//random number between 0 and 16
+                      if(d > 0){//Use timestamp until depleted
+                          r = (d + r)%16 | 0;
+                          d = Math.floor(d/16);
+                      } else {//Use microseconds since page-load if supported
+                          r = (d2 + r)%16 | 0;
+                          d2 = Math.floor(d2/16);
+                      }
+                      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                  });
+              }
+              
+              $("#toner").click(function(e){
+                type = 'toner';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#stiker").click(function(e){
+                type = 'stiker';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#poly").click(function(e){
+                type = 'poly';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#replace").click(function(e){
+                type = 'replace';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#replace_add").click(function(e){
+                type = 'replace_add';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#vmyat").click(function(e){
+                type = 'vmyat';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#tr").click(function(e){
+                type = 'tr';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#vmyat_strong").click(function(e){
+                type = 'vmyat_strong';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#skol").click(function(e){
+                type = 'skol';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+              
+              $("#carap").click(function(e){
+                type = 'carap';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+              
+              $("#carap_strong").click(function(e){
+                type = 'carap_strong';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+              
+              $("#rzav").click(function(e){
+                type = 'rzav';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+              
+              $("#rzav_strong").click(function(e){
+                type = 'rzav_strong';
+                drawCoordinates(x,y);
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#button_t_1").click(function(e){
+                tol_text = tol_text + "1";
+                refresh_text_button_tol();
+              });
+              $("#button_t_2").click(function(e){
+                tol_text = tol_text + "2";
+                refresh_text_button_tol();
+              });
+              $("#button_t_3").click(function(e){
+                tol_text = tol_text + "3";
+                refresh_text_button_tol();
+              });
+              $("#button_t_4").click(function(e){
+                tol_text = tol_text + "4";
+                refresh_text_button_tol();
+              });
+              $("#button_t_5").click(function(e){
+                tol_text = tol_text + "5";
+                refresh_text_button_tol();
+              });
+              $("#button_t_6").click(function(e){
+                tol_text = tol_text + "6";
+                refresh_text_button_tol();
+              });
+              $("#button_t_7").click(function(e){
+                tol_text = tol_text + "7";
+                refresh_text_button_tol();
+              });
+              $("#button_t_8").click(function(e){
+                tol_text = tol_text + "8";
+                refresh_text_button_tol();
+              });
+              $("#button_t_9").click(function(e){
+                tol_text = tol_text + "9";
+                refresh_text_button_tol();
+              });
+              $("#button_t_0").click(function(e){
+                tol_text = tol_text + "0";
+                refresh_text_button_tol();
+                
+              });
+
+              $("#button_t_del").click(function(e){
+                tol_text = tol_text.substring(0, tol_text.length-1);
+                refresh_text_button_tol();
+              });
+
+              $("#button_t_ok").click(function(e){
+                type = 'tol';
+                drawCoordinates(x,y);
+                tol = false;
+                refresh_modal();
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#button_t_ok_text").click(function(e){
+                tol_text = $("#lkp").val();
+                type = 'tol';
+                drawCoordinates(x,y);
+                tol = false;
+                refresh_modal();
+                $("#lkp").val('');
+                $('#exampleModal').modal('hide');
+              });
+
+              $("#tol").click(function(e){
+                
+                tol = !tol;
+                tol_text = "";
+                refresh_modal();
+                
+              });
+              
+              $("#button_next").click(function(e){
+                
+                refresh_modal();
+                
+                $('#exampleModal').modal('hide');
+                
+                $('#url_image_test').val($('#image_params').val());
+                $('#image_params').val();
+                
+
+              });
+
+          
+              function refresh_modal(){
+ 
+                tol_text = '';
+
+                refresh_text_button_tol();
+                
+                $("#div_add_file").addClass('d-none');
+                $("#tol").removeClass('d-none');
+
+                if (tol == true){
+                  $("#div_tol").removeClass('d-none');
+                  $("#params_button").addClass('d-none');
+                  $("#div_damage").addClass('d-none');
+                  
+                }else{
+                  $("#div_tol").addClass('d-none');
+                  $("#params_button").removeClass('d-none');
+                  $("#div_damage").removeClass('d-none');
+                };
+
+              };
+                          
+              function refresh_text_button_tol(){
+                if (tol_text.length == 0){
+                  $("#button_t_text").html('---'); 
+                } else {
+                  $("#button_t_text").html(tol_text); 
+                }
+                
+              }
+
+              function info_body(x, y){
+                
+                var search_success = false;
+                for (let i = 0; i < elements_body.length; i++) { 
+                    var name  = elements_body[i].name;
+                    var coor_x = elements_body[i].coor_x;
+                    var coor_y = elements_body[i].coor_y;
+                    var chek = isLatLngInZone(x, y, coor_x, coor_y);
+                    //fillPolygon(coor_x, coor_y, 'red');
+                    if (chek){
+                      name_body = name;// console.log(name);
+                      search_success = true;
+                      //break;
+                    };
+                }
+
+                if (search_success){
+
+                } else {
+                  name_body = '';
+                };
+
+                $("#exampleModalLabel").html(name_body); 
+
+
+              };
+            
+              function isLatLngInZone(x, y, coor_x, coor_y){
+                  y = Math.ceil(y);
+                  
+                  let inside = false
+                  for (let i = 0, j = coor_x.length ; i < coor_y.length; j = i++) {
+                    const xi = coor_x[i],
+                      yi = coor_y[i]
+                    const xj = coor_x[i-1],
+                      yj = coor_y[i-1]
+
+                   
+                    const intersect = yi > y != yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
+                    if (intersect) 
+                      inside = !inside
+                    }
+
+                  return inside
+
+              }
+
+              function fillPolygon(points, points_y, color) {
+                  canvas        = document.getElementById("canvas");
+                  var context       = canvas.getContext("2d");
+                  if (points.length > 0) {
+                      context.fillStyle = color; // all css colors are accepted by this property
+
+                      context.beginPath();
+                      context.moveTo(points[0], points_y[0]);   // point 1
+
+                      for (var i = 1; i < points.length; ++i) {
+                          context.lineTo(points[i], points_y[i]);
+                      }
+
+                      context.closePath();      // go back to point 1
+                      context.fill();
+                  }
+              }
+
+            </script>
+
+        </div>
+        
+      </div>
+
+    
+
+
+  
+  <script>
+    $(".js-for-modal-open").click(function(){
+      alert("Got it!");
+    });
+
+    $(document).ready(function(){
+      $('#select_page').change(function(){
+        reload($(this).val());
+      });
+    });
+  </script>
+
+
+  <script language="JavaScript">
+    function reload(id){
+      var url = new URL(document.location.href);
+      url.searchParams.set('page', id)
+      document.location.href  = url.href;
+    }
+  </script>
+
+{% endblock %}

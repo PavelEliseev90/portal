@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from openpyxl import Workbook, load_workbook
 from documents.models import DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning
 import datetime as DT
+from dateutil.relativedelta import relativedelta
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as dj_login
@@ -5284,6 +5285,7 @@ def korsavto_settings_dc(request):
     rating      = 0
     dash        = ''
     filter_unit = request.GET.getlist('unit[]')
+    selected    = dict()
 
     select_units = RefUnit.objects.filter(buauto = True).order_by('name')
     list_dc_filtr = list()
@@ -5969,25 +5971,98 @@ def korsavto_settings_dc(request):
         cars = DocCarShipment.objects.filter(unit = unit).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end)
 
     if page == 'balance_units':
-        name_unit = request.GET.get('name_unit','')
-        filtr = {
-            'name_unit'    : name_unit
-            }
+        
+        type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
+        
+        name_unit           = request.GET.get('name_unit','')
+        type_reception_id   = request.GET.get('type_reception_id','')    
+        vin                 = request.GET.get('vin', '')
+        
+        date_start      = request.GET.get('date_start', '')
+        date_end        = request.GET.get('date_end', '')
+        
+        if date_start == '':
+            date_start = DT.datetime.now() - relativedelta(months=2)
+            date_start = date_start.replace(day = 1, hour = 0, minute=0, second=0)
+        else:
+            date_start =  DT.datetime.strptime(date_start, "%Y-%m-%d")
+        
+        if date_end == '':
+            date_end = DT.datetime.now().replace(hour = 23)
+        else:
+            date_end = DT.datetime.strptime(date_end, "%Y-%m-%d").replace(hour = 23)
+        
+        selected = {
+            'type_receptions'   : type_receptions
+        }
+
         from register.models import RegEstimationBalanceUnit
         if request.user.profiles.korsavto_city != None and request.user.profiles.korsavto_city != "":
             balance_units = RegEstimationBalanceUnit.objects.filter(unit__name__icontains = request.user.profiles.korsavto_city)
         else:
             balance_units = RegEstimationBalanceUnit.objects.all()
-
+        balance_units = balance_units.filter(date__gte = date_start).filter(date__lte = date_end)
+        
+        if vin != '':
+            balance_units = balance_units.filter(estimation__vin__icontains = vin)
+        if type_reception_id != '':
+            type_reception_id = int(type_reception_id)
+            balance_units = balance_units.filter(estimation__page_documents__type_reception__id = type_reception_id)
+        
         balance_units = balance_units.values('unit').order_by('unit').distinct().annotate(sum = Sum('amount')).values('unit', 'unit__name', 'sum' , ).order_by('-sum')
         if len(name_unit) > 0:
             balance_units = balance_units.filter(unit__name__icontains = name_unit)
-
+        
+        filtr = {
+            'name_unit'         : name_unit,
+            'date_start'        : date_start,
+            'date_end'          : date_end,
+            'vin'               : vin,
+            'type_reception_id' : type_reception_id,
+        }
+        
     if page == 'balance_unit':
+        type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
+        type_reception_id   = request.GET.get('type_reception_id','')    
+        
         unit = RefUnit.objects.get(pk = request.GET.get('dc',''))
+        
+        vin             = request.GET.get('vin', '')
+        date_start      = request.GET.get('date_start', '')
+        date_end        = request.GET.get('date_end', '')
+        
+        if date_start == '':
+            date_start = DT.datetime.now() - relativedelta(months=2)
+            date_start = date_start.replace(day = 1, hour = 0, minute=0, second=0)
+        else:
+            date_start =  DT.datetime.strptime(date_start, "%Y-%m-%d")
+        
+        if date_end == '':
+            date_end = DT.datetime.now().replace(hour = 23) 
+        else:
+            date_end = DT.datetime.strptime(date_end, "%Y-%m-%d").replace(hour = 23)
+        
         from register.models import RegEstimationBalanceUnit
-        balance_unit = RegEstimationBalanceUnit.objects.filter(unit = unit).order_by('-date')
-     
+        balance_unit = RegEstimationBalanceUnit.objects.filter(unit = unit)
+        balance_unit = balance_unit.filter(date__gte = date_start).filter(date__lte = date_end)
+        if vin != '':
+            balance_unit = balance_unit.filter(estimation__vin__icontains = vin)
+        if type_reception_id != '':
+            type_reception_id = int(type_reception_id)
+            balance_unit = balance_unit.filter(estimation__page_documents__type_reception__id = type_reception_id)
+        balance_unit = balance_unit.order_by('-date')
+        
+        selected = {
+            'type_receptions'   : type_receptions
+        }
+        filtr = {
+            'date_start'        : date_start,
+            'date_end'          : date_end,
+            'vin'               : vin,
+            'unit'              : unit,
+            'type_reception_id' : type_reception_id,
+            }
+        
     settings = ''
     if page == 'settings':
         settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
@@ -6009,6 +6084,7 @@ def korsavto_settings_dc(request):
         'unit'          : unit,
         'paginator'     : paginator,
         'filtr'         : filtr,
+        'selected'      : selected,
         'rating'        : rating,
         'estimations'   : estimations,
         'cars'          : cars,
@@ -6345,6 +6421,14 @@ def refresh_estimation_balance_unit(id_estimation):
                     if new_record.shipment == None:
                         new_record.delete()    
 
+def refresh_balance_unit_car_shipment(car_shipment_id):
+    car_shipment = DocCarShipment.objects.get(id = car_shipment_id)
+    if car_shipment.lo != None:
+        rlk = car_shipment.lo.rlk
+        if rlk != None:
+            count_estimations = RegInteractivOcenka.objects.filter(rlk = rlk).count()
+            if count_estimations == 1:
+                refresh_estimation_balance_unit(rlk.id)
 
 @login_required
 def auction_list(request):
@@ -6385,7 +6469,6 @@ def auction_list(request):
     }
     
     return render(request, "auction/auction_list.html", {'params': params})
-
 
 @login_required
 def auction_doc(request, slug_auction):
@@ -6446,7 +6529,6 @@ def auction_doc(request, slug_auction):
     }
     
     return render(request, "auction/auction_doc.html", {'params': params})
-
 
 def auction_doc_get_cars(request):
 
@@ -6557,8 +6639,20 @@ def get_url_images(slug):
         list_url.append('/media/nophoto.png')
     return list_url
 
+
 def test(request):
+    
+    '''
+    date_start = DT.datetime.now()
+    date_start = date_start.replace(year=2025, month=9, day = 16, hour = 0, minute=0, second=0, microsecond=0)
+    list_checklist_cvc = Records_voice_recorder_cvc_checklist.objects.filter(success = True).filter(rlk__dataTime__gte = date_start)
+    for s in list_checklist_cvc:
+        s.success = False
+        s.save()
+    '''
+
     #refresh_estimation_cars_organization()
+    
     '''
     object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     s = 0
@@ -6569,4 +6663,5 @@ def test(request):
         s = s + 1
         print(str(s) + '/' + str(count))
     '''
+
     return render(request, "website/test.html")

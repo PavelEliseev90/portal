@@ -613,6 +613,13 @@ def send_auction(auction):
 
     list_cars = list()
 
+    user_data = {
+        'username'      : auction.user.username,
+        'first_name'    : auction.user.first_name,
+        'last_name'     : auction.user.last_name,
+        'email'         : auction.user.email,
+    }
+
     cars_auction = auction.cars()
     for auction_car in cars_auction:
         car_info = {
@@ -631,7 +638,7 @@ def send_auction(auction):
         'start_price'       : auction.start_price,
         'uid'               : str(auction.uid),
         'status'            : status_name,
-        'user'              : auction.user.username,
+        'user'              : user_data,
         'cars_info'         : list_cars
     }
     
@@ -652,8 +659,7 @@ def info_car_auction(slug):
         int_ocenka_url_up       = Value('', output_field=CharField())).annotate(
         int_ocenka_url_right    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_left     = Value('', output_field=CharField()))
-    
-    
+
     data = list(cars.values('vin', 
                        'slug', 
                        'year',
@@ -681,7 +687,10 @@ def info_car_auction(slug):
                        mark_name    = F('modification_autoru__model__mark__name'),
                        url          = F('prev_photo')))
     for car in data:
-        car['url'] = get_url_images(car['slug'])
+        car['url']                  = get_url_images(car['slug'])
+        
+        int_ocenka_id               = car['int_ocenka_id']
+         
         car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
         car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
         car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
@@ -724,6 +733,7 @@ def get_url_images(slug):
             list_url.append('/media/nophoto.png')
     except:
         list_url.append('/media/nophoto.png')
+
     return list_url
 
 def refresh_car_my_kors_portal():

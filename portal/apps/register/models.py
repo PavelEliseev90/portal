@@ -2124,6 +2124,12 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     def dachboard_no_critical_error(self):
         return self.page_salon.dashboard_error.all().filter(critical = False).count()
     
+    def fotos_salon_capture(self):
+        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'fotos_salon_capture')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/salon_capture/salon.png'
+    
     def fotos_vnesh_pered_count(self):
         return RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'vnesh_car_osmotr_pered').count()
         if fotos.count() > 0:
@@ -2286,7 +2292,20 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
                     elif run <= 175000 and self.k_i > 1.2:
                         self.iznos = True
                     elif run > 175000 and self.k_i > 0:
-                        self.iznos = True    
+                        self.iznos = True
+            elif self.page_remote != None:
+                if self.page_remote.run > 0:
+                    eyar_k = datetime.now().year - self.year
+                    if eyar_k == 0:
+                        eyar_k = 1
+                    run = self.page_remote.run
+                    self.k_i = round(run / (eyar_k * 35000), 2)
+                    if run <= 175000 and self.k_i <= 1.2:
+                        self.iznos = False
+                    elif run <= 175000 and self.k_i > 1.2:
+                        self.iznos = True
+                    elif run > 175000 and self.k_i > 0:
+                        self.iznos = True
         except:
             s = 1
 
@@ -2326,7 +2345,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
             elif self.end_estimation != None and self.page_soglasovanie != None:
                 count_success = DocLO.objects.filter(rlk = self.rlk).filter(active = True).count()
                 if count_success > 0:
-                    self.status = RefStatusEstimation.objects.get(pk = 8)
+                    self.status = RefStatusEstimation.objects.get(pk = 8)                    
                 elif self.page_soglasovanie.price_before_kd == 0:
                     self.status = RefStatusEstimation.objects.get(pk = 3)
                 elif self.page_soglasovanie.price_before_kd > 0 and not self.page_soglasovanie.no_diagnostica and self.page_soglasovanie.comment_diagnostica == '':
@@ -2343,6 +2362,13 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         
         add_swap(self)
         
+        try:
+            if self.status == RefStatusEstimation.objects.get(pk = 8):
+                from website.views import refresh_estimation_balance_unit
+                refresh_estimation_balance_unit(self.id)
+        except:
+            s = 1
+
         super().save(*args, **kwargs)
 
 

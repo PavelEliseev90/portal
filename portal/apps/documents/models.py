@@ -742,8 +742,11 @@ class DocCarAgreement(models.Model):
     cm_goal                                 = models.FloatField("КМ целевой", default=0.0, blank=True)
     date_planed_sale                        = models.DateTimeField('Планируемая дата выдачи', default=datetime.now, blank=False)    
 
+    def opcion(self):
+        return self.cm_actual - (self.amount - (self.cost_price + self.outlay + self.discountAmount))
+
     def cum(self):
-        return self.amount - (self.cost_price + self.outlay)
+        return self.amount - (self.cost_price + self.outlay + self.discountAmount)
     
     def save(self, *args, **kwargs):
         
@@ -818,6 +821,15 @@ class DocCarShipment(models.Model):
             self.amountAddDiscountAmountTorg = self.amount + self.discountAmountTorg
         except:
             self.amountAddDiscountAmountTorg = 0
+        
+        try:
+            if self.lo != None:
+                from website.views import refresh_balance_unit_car_shipment
+                refresh_balance_unit_car_shipment(self.id)
+
+        except:
+            s = 1
+
         super().save(*args, **kwargs)
 
     def __str__(self):
