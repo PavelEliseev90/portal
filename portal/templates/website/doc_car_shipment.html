@@ -55,91 +55,257 @@
 
 				<h6><span class="icon-mbri-info"></span> Соглашение</h6>
 				<hr style="width: 75%;">
+
+				<div class="row">
+					<div class="col-12 col-sm-6">
+						<div class="table-responsive table-responsive-sm">
+							<table class="table-sm table-fit">
+								<tr>
+									<td>
+										<label class="fs-5">Цена продажи</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.amount|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr class="text-success">
+									<td>
+										<label class="fs-5">Затраты</label>
+									</td>
+									<td class="text-center">
+																
+									</td>
+									<td class="text-end">
+										
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label class="fs-5">Себестоимость</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.cost_price|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label class="fs-5">Расходы на АМ</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.outlay|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr class="text-success">
+									<td>
+										<label class="fs-5">Скидки</label>
+									</td>
+									<td class="text-center">
+																
+									</td>
+									<td class="text-end">
+										
+									</td>
+								</tr>
+								<tr>
+								<td>
+									<label class="fs-5">Скидка торг</label>
+								</td>
+								<td class="text-center">
+									&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+								</td>
+								<td class="text-end">
+									<label class="fs-5">{{params.object.discountAmountTorg|floatformat:"2g"}} &#8381;</label>
+								</td>
+								</tr>
+								
+								<tr>
+									<td>
+										<label class="fs-5">Скидка TradeIN</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.discountAmountTradeIN|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								
+								<tr class="text-success">
+									<td>
+										<label class="fs-5">КВ расчетные</label>
+									</td>
+									<td class="text-center">
+																
+									</td>
+									<td class="text-end">
+										
+									</td>
+								</tr>
+		
+								<tr>
+									<td>
+										<label class="fs-5">Колеса</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.bu_wheels_est|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label class="fs-5">КСО</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.kso_est|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+		
+								<tr class="text-success">
+									<td>
+										<label class="fs-5">КВ факт</label>
+									</td>
+									<td class="text-center">
+																
+									</td>
+									<td class="text-end">
+										
+									</td>
+								</tr>
+		
+								<tr>
+									<td>
+										<label class="fs-5">Колеса</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.bu_wheels_actual|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label class="fs-5">КСО</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.kso_actual|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr class="text-success">
+									<td>
+										<label class="fs-5">Данные КМ</label>
+									</td>
+									<td class="text-center">
+																
+									</td>
+									<td class="text-end">
+										
+									</td>
+								</tr>
+		
+								<tr>
+									<td>
+										<label class="fs-5">Расчетный</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.cm_est|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label class="fs-5">Минимальный</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.cm_min|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label class="fs-5">Целевой</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.cm_goal|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr class="fw-bold bg-opacity-10 bg-success">
+									<td>
+										<label class="fs-5">Железо</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.cum|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr class="fw-bold bg-opacity-10 bg-success">
+									<td>
+										<label class="fs-5">Опцион</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.opcion|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+								<tr class="fw-bold bg-opacity-25 bg-success">
+									<td>
+										<label class="fs-5">Факт</label>
+									</td>
+									<td class="text-center">
+										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
+									</td>
+									<td class="text-end">
+										<label class="fs-5">{{params.object.cm_actual|floatformat:"2g"}} &#8381;</label>
+									</td>
+								</tr>
+		
+								
+							</table>
+						</div>
+					</div>
+					<div class="col-12 col-sm-6">
+						<hr style="width: 75%;" class="hidesite">
+
+						<Label class="fs-6">{{params.object.check_text|linebreaksbr}}</Label>
+						
+						<hr style="width: 75%;">
+						{% if params.object.id != None %}
+							<a href="/docs_car_agreement/{{params.object.id}}/" class="btn btn-outline-dark text-start"><span class="icon-doc"></span> Соглашение</a>	
+						{% else %}
+							<button class="btn btn-outline-dark text-start" disabled><span class="icon-doc"></span> Соглашение</button>	
+						{% endif %}
+						
+					</div>
+				</div>
 				
-				{% if params.object.id != None %}
-					<a href="/docs_car_agreement/{{params.object.id}}/" class="btn btn-outline-dark text-start"><span class="icon-doc"></span> Соглашение</a>	
-				{% else %}
-					<button class="btn btn-outline-dark text-start" disabled><span class="icon-doc"></span> Соглашение</button>	
-				{% endif %}
-
-				<br><br>
-				
-				
-
-				<h6><span class="icon-mbri-info"></span> Расчеты</h6>
-              	<hr style="width: 75%;">
-
-				  <div class="table-responsive table-responsive-sm">
-					<table class="table-sm table-fit">
-					  <tr>
-						<td>
-							<label class="fs-5">Себестоимость</label>
-						</td>
-						<td class="text-center">
-							&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-						</td>
-						<td class="text-end">
-							<label class="fs-5">{{params.object.cost_price|floatformat:"2g"}} &#8381;</label>
-						</td>
-					  </tr>
-					  <tr>
-						<td>
-							<label class="fs-5">Расходы на АМ</label>
-						</td>
-						<td class="text-center">
-							&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-						</td>
-						<td class="text-end">
-							<label class="fs-5">{{params.object.outlay|floatformat:"2g"}} &#8381;</label>
-						</td>
-					  </tr>
-					  <tr>
-						<td>
-							<label class="fs-5">Скидка торг</label>
-						</td>
-						<td class="text-center">
-							&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-						</td>
-						<td class="text-end">
-							<label class="fs-5">{{params.object.discountAmountTorg|floatformat:"2g"}} &#8381;</label>
-						</td>
-					  </tr>
-					  <tr>
-						<td>
-							<label class="fs-5">Скидка TradeIN</label>
-						</td>
-						<td class="text-center">
-							&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-						</td>
-						<td class="text-end">
-							<label class="fs-5">{{params.object.discountAmountTradeIN|floatformat:"2g"}} &#8381;</label>
-						</td>
-					  </tr>
-					  <tr class="fw-bold">
-						<td>
-							<label class="fs-5">Продажа</label>
-						</td>
-						<td class="text-center">
-							&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-						</td>
-						<td class="text-end">
-							<label class="fs-5">{{params.object.amount|floatformat:"2g"}} &#8381;</label>
-						</td>
-					  </tr>
-					  <tr class="fw-bold">
-						<td>
-							<label class="fs-5">Итог</label>
-						</td>
-						<td class="text-center">
-							&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-						</td>
-						<td class="text-end">
-							<label class="fs-5">{{params.object.cum|floatformat:"2g"}} &#8381;</label>
-						</td>
-					  </tr>
-					</table>
-				  </div>
-
 			</div>
 		</div>
 			  

@@ -1000,156 +1000,131 @@
                     <div class="card">
                       <div class="card-body">
                         
-                        <div class="row g-3">
-          
-                          <div class="col-sm-6">
+                        <h6><span class="icon-mbri-info"></span> Замечания по салону автомобиля</h6>
+                        <hr style="width: 75%;">
+                        
+                        <div class="row">
 
-                            <h6><span class="icon-mbri-image-slider"></span> Замечания по салону автомобиля</h6>
-                            <hr style="width: 75%;">
-                            
-                            <div class="row g-1">
-                              <div class="col-sm-12">
-                                <label class="fs-6" for="cleaning">Требуется химчистка салона</label>
-                              </div>
-                              <div class="col-sm-12">
-                                
+                          <div class="col-sm">
+                              <div class="row g-1">
+
+                                <div class="col-sm-12">
+                                  <label class="fs-6" for="cleaning">Химчистка салона</label>
+                                </div>
+            
+                                <div class="col-sm-12">
+                                  
+                                    <div class="btn-group btn_block" role="group" aria-label="">
+                                      <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio1" autocomplete="off" {% if params.estimation.page_salon.cleaning_int == 0 %}  checked {% endif %} value="0" required>
+                                      <label class="btn btn-outline-success" for="cleaning_int-radio1">Не требуется</label>                          
+                                      <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio4" autocomplete="off" {% if params.estimation.page_salon.cleaning_int == 3 %}  checked {% endif %} value="3" required>
+                                      <label class="btn btn-outline-warning" for="cleaning_int-radio4">Легкая</label>
+                                      <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio3" autocomplete="off" {% if params.estimation.page_salon.cleaning_int == 2 %}  checked {% endif %} value="2" required>
+                                      <label class="btn btn-outline-warning" for="cleaning_int-radio3">Средняя</label>
+                                      <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio2" autocomplete="off" {% if params.estimation.page_salon.cleaning_int == 1 %}  checked {% endif %} value="1" required>
+                                      <label class="btn btn-outline-danger" for="cleaning_int-radio2">Сложная</label>                          
+                                    </div>
+                                  
+                                </div>
+                              </div>              
+                              <hr>
+                
+                              <div class="row g-1">
+                                <div class="col-sm-12">
+                                  <label class="fs-6" for="checked">Рычаг КПП</label>
+                                </div>
+                                <div class="col-sm-12">              
                                   <div class="btn-group btn_block" role="group" aria-label="">
-                                    <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio1" autocomplete="off" {% if params.estimation.page_salon.cleaning_int == 0 %}  checked {% endif %} value="0" required>
-                                    <label class="btn btn-outline-success" for="cleaning_int-radio1">Не требуется</label>
-                                    <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio2" autocomplete="off" {% if params.estimation.page_salon.cleaning_int == 1 %}  checked {% endif %} value="1" required>
-                                    <label class="btn btn-outline-danger" for="cleaning_int-radio2">Требуется</label>
+                                    <input type="radio" class="btn-check" name="damage_kpp_int" id="damage_kpp_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_kpp_int == 0 %}  checked {% endif %} value="0" required>
+                                    <label class="btn btn-outline-success" for="damage_kpp_int-radio1">Не поврежден</label>
+                                    <input type="radio" class="btn-check" name="damage_kpp_int" id="damage_kpp_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_kpp_int == 1 %}  checked {% endif %} value="1" required>
+                                    <label class="btn btn-outline-warning" for="damage_kpp_int-radio2">Покраска</label>
+                                    <input type="radio" class="btn-check" name="damage_kpp_int" id="damage_kpp_int-radio3" autocomplete="off" {% if params.estimation.page_salon.damage_kpp_int == 2 %}  checked {% endif %} value="2" required>
+                                    <label class="btn btn-outline-danger" for="damage_kpp_int-radio3">Замена</label>
                                   </div>
+                                </div>
+                              </div>
+                              <hr>
+                
+                              <div class="row g-1">
+                                <div class="col-sm-12">
+                                  <label class="fs-6" for="damage_wheel">Руль</label>
+                                </div>
+                                <div class="col-sm-12">              
+                                  <div class="btn-group btn_block" role="group" aria-label="">
+                                    <input type="radio" class="btn-check" name="damage_wheel_int" id="damage_wheel_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_wheel_int == 0 %}  checked {% endif %} value="0" required>
+                                    <label class="btn btn-outline-success" for="damage_wheel_int-radio1">Не поврежден</label>
+                                    <input type="radio" class="btn-check" name="damage_wheel_int" id="damage_wheel_int-radio3" autocomplete="off" {% if params.estimation.page_salon.damage_wheel_int == 2 %}  checked {% endif %} value="2" required>
+                                    <label class="btn btn-outline-warning" for="damage_wheel_int-radio3">Покраска</label>
+                                    <input type="radio" class="btn-check" name="damage_wheel_int" id="damage_wheel_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_wheel_int == 1 %}  checked {% endif %} value="1" required>
+                                    <label class="btn btn-outline-danger" for="damage_wheel_int-radio2">Перешив</label>
+                                  </div>
+                                </div>
+                              </div>
+                              <hr>
+                
+                              <div class="row g-1">
+                                <div class="col-sm-12">
+                                  <label class="fs-6" for="damage_pedal">Педали</label>
+                                </div>
+                                <div class="col-sm-12">              
+                                  <div class="btn-group btn_block" role="group" aria-label="">
+                                    <input type="radio" class="btn-check" name="damage_pedal_int" id="damage_pedal_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_pedal_int == 0 %}  checked {% endif %} value="0" required>
+                                    <label class="btn btn-outline-success" for="damage_pedal_int-radio1">Не повреждены</label>
+                                    <input type="radio" class="btn-check" name="damage_pedal_int" id="damage_pedal_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_pedal_int == 1 %}  checked {% endif %} value="1" required>
+                                    <label class="btn btn-outline-danger" for="damage_pedal_int-radio2">Повреждены</label>
+                                  </div>
+                                </div>
+                              </div>
+                              <hr>
+                              
+                              <div class="row g-1">
+                                <div class="col-sm-12">
+                                  <label class="fs-6" for="damage_door">к дверей</label>
+                                </div>
+                                <div class="col-sm-12">              
+                                  <div class="btn-group btn_block" role="group" aria-label="">
+                                    <input type="radio" class="btn-check" name="damage_door_int" id="damage_door_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_door_int == 0 %}  checked {% endif %} value="0" required>
+                                    <label class="btn btn-outline-success" for="damage_door_int-radio1">Не повреждены</label>
+                                    <input type="radio" class="btn-check" name="damage_door_int" id="damage_door_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_door_int == 1 %}  checked {% endif %} value="1" required>
+                                    <label class="btn btn-outline-danger" for="damage_door_int-radio2">Повреждены</label>
+                                  </div>
+                                </div>
+                              </div>
+                              <hr>
+                              
+                              <div class="row g-1">
+                                <div class="col-sm-12">
+                                  <label class="fs-6" for="damage_seat">Повреждения / затертые сиденья</label>
+                                </div>
+                                <div class="col-sm-12">              
+                                  <div class="btn-group btn_block" role="group" aria-label="">
+                                    <input type="radio" class="btn-check" name="damage_seat_int" id="damage_seat_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_seat_int == 0 %}  checked {% endif %} value="0" required>
+                                    <label class="btn btn-outline-success" for="damage_seat_int-radio1">Не поврежден</label>
+                                    <input type="radio" class="btn-check" name="damage_seat_int" id="damage_seat_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_seat_int == 1 %}  checked {% endif %} value="1" required>
+                                    <label class="btn btn-outline-danger" for="damage_seat_int-radio2">Поврежден</label>
+                                  </div>
+                                </div>
+                              </div>
+                              <hr>
+                          </div>
+                          <!--
+                          <div class="col-12 col-sm-6">
+                            
+                            <div class="fixOverlayDiv">
+                              <div class="wrapper1 exmp3">
+                                
+                                <img class="d-block w-100" style="object-fit: none; border-radius: 10px; height: 550px;" src="{{params.estimation.fotos_salon_capture}}">
                                 
                               </div>
-                            </div>              
-                            <hr>
-              
-                            <div class="row g-1">
-                              <div class="col-sm-12">
-                                <label class="fs-6" for="checked">Повреждения рычага кпп</label>
-                              </div>
-                              <div class="col-sm-12">              
-                                <div class="btn-group btn_block" role="group" aria-label="">
-                                  <input type="radio" class="btn-check" name="damage_kpp_int" id="damage_kpp_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_kpp_int == 0 %}  checked {% endif %} value="0" required>
-                                  <label class="btn btn-outline-success" for="damage_kpp_int-radio1">Не поврежден</label>
-                                  <input type="radio" class="btn-check" name="damage_kpp_int" id="damage_kpp_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_kpp_int == 1 %}  checked {% endif %} value="1" required>
-                                  <label class="btn btn-outline-danger" for="damage_kpp_int-radio2">Поврежден</label>
-                                </div>
-                              </div>
+    
+                              <div class=""><button class="btn btn-dark btn-sm OverlayText" style="border-radius: 10rem;" type="submit" name="page_osmotr_salon"><span class="icon-mbri-edit2 text-dark"> </span></button></div>  
+    
                             </div>
-                            <hr>
-              
-                            <div class="row g-1">
-                              <div class="col-sm-12">
-                                <label class="fs-6" for="damage_wheel">Повреждения / затертый руль</label>
-                              </div>
-                              <div class="col-sm-12">              
-                                <div class="btn-group btn_block" role="group" aria-label="">
-                                  <input type="radio" class="btn-check" name="damage_wheel_int" id="damage_wheel_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_wheel_int == 0 %}  checked {% endif %} value="0" required>
-                                  <label class="btn btn-outline-success" for="damage_wheel_int-radio1">Не поврежден</label>
-                                  <input type="radio" class="btn-check" name="damage_wheel_int" id="damage_wheel_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_wheel_int == 1 %}  checked {% endif %} value="1" required>
-                                  <label class="btn btn-outline-danger" for="damage_wheel_int-radio2">Поврежден</label>
-                                </div>
-                              </div>
-                            </div>
-                            <hr>
-              
-                            <div class="row g-1">
-                              <div class="col-sm-12">
-                                <label class="fs-6" for="damage_pedal">Повреждения / затертые педали</label>
-                              </div>
-                              <div class="col-sm-12">              
-                                <div class="btn-group btn_block" role="group" aria-label="">
-                                  <input type="radio" class="btn-check" name="damage_pedal_int" id="damage_pedal_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_pedal_int == 0 %}  checked {% endif %} value="0" required>
-                                  <label class="btn btn-outline-success" for="damage_pedal_int-radio1">Не поврежден</label>
-                                  <input type="radio" class="btn-check" name="damage_pedal_int" id="damage_pedal_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_pedal_int == 1 %}  checked {% endif %} value="1" required>
-                                  <label class="btn btn-outline-danger" for="damage_pedal_int-radio2">Поврежден</label>
-                                </div>
-                              </div>
-                            </div>
-                            <hr>
-                            
-                            <div class="row g-1">
-                              <div class="col-sm-12">
-                                <label class="fs-6" for="damage_door">Повреждения / затертые карты дверей</label>
-                              </div>
-                              <div class="col-sm-12">              
-                                <div class="btn-group btn_block" role="group" aria-label="">
-                                  <input type="radio" class="btn-check" name="damage_door_int" id="damage_door_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_door_int == 0 %}  checked {% endif %} value="0" required>
-                                  <label class="btn btn-outline-success" for="damage_door_int-radio1">Не поврежден</label>
-                                  <input type="radio" class="btn-check" name="damage_door_int" id="damage_door_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_door_int == 1 %}  checked {% endif %} value="1" required>
-                                  <label class="btn btn-outline-danger" for="damage_door_int-radio2">Поврежден</label>
-                                </div>
-                              </div>
-                            </div>
-                            <hr>
-                            
-                            <div class="row g-1">
-                              <div class="col-sm-12">
-                                <label class="fs-6" for="damage_seat">Повреждения / затертые сиденья</label>
-                              </div>
-                              <div class="col-sm-12">              
-                                <div class="btn-group btn_block" role="group" aria-label="">
-                                  <input type="radio" class="btn-check" name="damage_seat_int" id="damage_seat_int-radio1" autocomplete="off" {% if params.estimation.page_salon.damage_seat_int == 0 %}  checked {% endif %} value="0" required>
-                                  <label class="btn btn-outline-success" for="damage_seat_int-radio1">Не поврежден</label>
-                                  <input type="radio" class="btn-check" name="damage_seat_int" id="damage_seat_int-radio2" autocomplete="off" {% if params.estimation.page_salon.damage_seat_int == 1 %}  checked {% endif %} value="1" required>
-                                  <label class="btn btn-outline-danger" for="damage_seat_int-radio2">Поврежден</label>
-                                </div>
-                              </div>
-                            </div>
-                            <hr>
 
-                          </div>
-
-                          <div class="col-sm-6">
-                            
-                            <p class="fs-6"><span class="icon-mbri-image-slider"></span> Фотографии повреждений салона</p>
-
-                            {% if params.estimation.fotos_salon_damage|length %}
-              
-                                <div style="object-fit: cover; border-radius: 10px; height: 300px;" id="carouselExampleIndicatorsSalonDamage" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
-                                      
-                                  <div class="carousel-indicators">
-                                    {% for img in params.estimation.fotos_salon_damage %}
-                                      <button type="button" data-bs-target="#carouselExampleIndicatorsSalonDamage" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
-                                    {% endfor %}
-                                  </div>
-                                  
-                                  <div class="carousel-inner">
-                                    
-                                    {% for img in params.estimation.fotos_salon_damage %}
-                                    
-                                      <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} ">
-                                          <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
-                                        
-                                          <div class="carousel-caption d-md-block bg-title-slider">
-                                              <label class="fs-6">Повреждения салона<label class="fs-6">
-                                          </div>
-                                    
-                                      </div>
-              
-                                    {% endfor %}
-                                    
-                                  </div>
-                                  
-                                  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsSalonDamage"  data-bs-slide="prev">
-                                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                  <span class="visually-hidden">Предыдущий</span>
-                                  </button>
-                                  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsSalonDamage"  data-bs-slide="next">
-                                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                  <span class="visually-hidden">Следующий</span>
-                                  </button>
-                                </div>
-                            
-                            {% endif %}   
-                           
-                            
-
-                            <input type="file" class="form-control" id="image_damage_salon" name="image_damage_salon" accept="image/*;capture=camera" multiple/>
                            
                           </div>
-                          
+-->
                         </div>
                 
                       </div>
@@ -1159,7 +1134,7 @@
                   </div>
 
 
-                  <div class="col-sm-6">
+                  <div class="col-sm-4">
 
                     <div class="card">
                       <div class="card-body">
@@ -1297,14 +1272,10 @@
                       </div>
                     </div>
                 
-                </div>
+                  </div>
                  
 
                 </div>
-
-              
-
-            
 
               </div>
 

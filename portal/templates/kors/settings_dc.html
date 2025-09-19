@@ -1645,10 +1645,78 @@
       
     </div>
 
+    <br>
+
+    <form method="get" class="">
+      <div class="card">
+  
+        <div class="card-body">
+          
+          <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
+  
+          <div class="collapse" id="filtr">
+            <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
+        
+            <div class="row">
+        
+        
+              <div class="col-sm">
+        
+                <div class="row">
+                  <div class="col">
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+                      <label for="floatingInput">C</label>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+                      <label for="floatingInput">По</label>
+                    </div>
+                  </div>
+                </div>
+        
+              </div>
+             
+              <div class="col-sm">
+                <div class="form-floating mb-3">							
+                  <select class="form-select" id="type_reception_id" name="type_reception_id" placeholder="">
+                    <option></option>
+                    {% for type_reception in params.selected.type_receptions %}
+                      <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+                    {% endfor %}
+                  </select>
+                  <label for="floatingInput">Тип приема</label>
+                </div>
+              </div>
+
+              <div class="col-sm">
+        
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="vin" name="vin" placeholder="" value="{{params.filtr.vin}}" autocomplete="off">
+                  <label for="floatingInput">VIN</label>
+                </div>
+        
+              </div>
+            
+              <div class="col-sm-auto align-self-center">
+                <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
+              </div>
+        
+            </div>
+          </div>
+  
+        </div>
+  
+      </div>
+  
+    </form>
+  
     <hr>
   
     {% for info in params.balance_unit %}
-        
+       
     <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10" style="margin: 0.2rem;">
       <div class="card-body">
         
@@ -1708,29 +1776,83 @@
     
   </div>
 
-  <hr>
-  <form method="get" class="hidemobile">
-    
-    <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
+  <br>
+  
+  <form method="get" class="">
+    <div class="card">
 
-    <div class="row">
+      <div class="card-body">
+        
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
 
-      <div class="col-sm">
+        <div class="collapse" id="filtr">
+          <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
+      
+          <div class="row">
+      
+      
+            <div class="col-sm">
+      
+              <div class="row">
+                <div class="col">
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+                    <label for="floatingInput">C</label>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+                    <label for="floatingInput">По</label>
+                  </div>
+                </div>
+              </div>
+      
+            </div>
 
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="name_unit" name="name_unit" placeholder="" value="{{params.filtr.name_unit}}" autocomplete="off">
-          <label for="floatingInput">Наименование</label>
+            <div class="col-sm">
+              <div class="form-floating mb-3">							
+                <select class="form-select" id="type_reception_id" name="type_reception_id" placeholder="">
+                  <option></option>
+                  {% for type_reception in params.selected.type_receptions %}
+                    <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+                  {% endfor %}
+                </select>
+                <label for="floatingInput">Тип приема</label>
+              </div>
+            </div>
+
+            <div class="col-sm">
+      
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="vin" name="vin" placeholder="" value="{{params.filtr.vin}}" autocomplete="off">
+                <label for="floatingInput">VIN</label>
+              </div>
+      
+            </div>
+            <div class="col-sm">
+      
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="name_unit" name="name_unit" placeholder="" value="{{params.filtr.name_unit}}" autocomplete="off">
+                <label for="floatingInput">Наименование ДЦ</label>
+              </div>
+      
+            </div>
+      
+            <div class="col-sm-auto align-self-center">
+              <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
+            </div>
+      
+          </div>
         </div>
 
-      </div>
-
-      <div class="col-sm-auto align-self-center">
-        <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
       </div>
 
     </div>
 
   </form>
+
+  <hr>
 
   <div class="table-responsive bg-white bg-opacity-50">
     <table class="table table-striped table-hover">
@@ -1763,7 +1885,7 @@
               {% endif %}
             </td>
             <td class="">
-              <a href="{{request.path}}?dc={{object_data.unit}}&page=balance_unit" class="text-dark" > <span class="icon-mbri-numbered-list"> </span> детализация </a>
+              <a href="{{request.path}}?dc={{object_data.unit}}&page=balance_unit&date_start={{params.filtr.date_start|date:'Y-m-d'}}&date_end={{params.filtr.date_end|date:'Y-m-d'}}{% if params.filtr.vin != '' %}&vin={{params.filtr.vin}}{% endif %}{% if params.filtr.type_reception_id != ''%}&type_reception_id={{params.filtr.type_reception_id}}{% endif %}" class="text-dark" > <span class="icon-mbri-numbered-list"> </span> детализация </a>
             </td>
             
           </tr>

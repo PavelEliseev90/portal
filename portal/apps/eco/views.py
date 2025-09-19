@@ -2780,15 +2780,16 @@ def estimations_price_calculation(estimation, type_calculation):
         run_other   = 0
         run_sum     = 0
         for event in eventsOthersHistory:
-            if event['mileage'] > 0:
-                run = event['mileage']
-                if run_other > run:
-                    if run_other - run > 20000:
-                        run_ok = False
-                        run_sum = run_sum + (run_other - run)
-                        auction = True
-                        auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.)'
-                run_other = run
+            if event['source'] != 'Audatex':
+                if event['mileage'] > 0:
+                    run = event['mileage']
+                    if run_other > run:
+                        if run_other - run > 20000:
+                            run_ok = False
+                            run_sum = run_sum + (run_other - run)
+                            auction = True
+                            auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.)'
+                    run_other = run
 
     ###Проверяем требуется ли замена аккамулятора
     if battery > 0:

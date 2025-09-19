@@ -9,6 +9,7 @@ urlpatterns = [
     path('',                                                                    views.estimation),
     path('<slug:rlk_id>/',                                                      views.estimation_rlk, name='slug'),
     path('<slug:rlk_id>/osmotr/<slug:type>/',                                   views.osmotr, name='slug'),
+    path('<slug:rlk_id>/osmotr_salon/<slug:type>/',                             views.osmotr_salon, name='slug'),
     path('<slug:rlk_id>/s/',                                                    views.years, name='slug'),
     path('<slug:rlk_id>/s/<slug:years>/',                                       views.catalog, name='slug'),
     path('<slug:rlk_id>/s/<slug:years>/<slug:mark_id>/',                        views.models, name='slug'),
