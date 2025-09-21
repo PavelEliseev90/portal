@@ -674,7 +674,7 @@ def options_refresh_info(request):
             new_record = AutoruModificationOptions()
             new_record.modification     = mod
             new_record.complectation    = compl
-            new_record.complectation    = link['title']
+            new_record.name             = link['title']
             new_record.link             = link['link']
             new_record.save()
 
