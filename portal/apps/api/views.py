@@ -30,7 +30,7 @@ from urllib.parse import unquote
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from refs.models import RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
+from refs.models import AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
 from documents.models import DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
@@ -617,7 +617,84 @@ def specifications_refresh_info(request):
             'links': 'ok'
         }
         return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+    to_json = {
+        'links': list()
+    }
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+######
+#####
+####
+###
+##
+# Обрабатываем запросы по заполнению и получению информации по опциям автомобилей каталога
+@api_view(['GET', 'POST'])
+def options_refresh_info(request):
+    if request.method == 'GET':
+        link_spec_auto_ru = 'https://auto.ru/catalog/cars/'
+
+        if 'reverse' in request.GET:
+            modifications   = AutoruModification.objects.all().order_by('-pk')
+        else:
+            modifications   = AutoruModification.objects.all().order_by('pk')
+        
+        subquery            = Subquery(AutoruComplectation.objects.filter(modification__id = OuterRef(name='id')).values('id')[:1], output_field = models.IntegerField())
+        subquery_options    = Subquery(AutoruModificationOptions.objects.filter(modification__id = OuterRef(name='id')).values('id')[:1], output_field = models.IntegerField())
+        
+        modifications   = modifications.annotate(spec = Count(subquery))
+        modifications   = modifications.annotate(options = Count(subquery_options))
+        modifications   = modifications.exclude(spec = 0).filter(options = 0)
+        if modifications.count() > 0:
+            mod     = modifications[0]
+            compls  = AutoruComplectation.objects.filter(modification__id = mod.id) 
+            if compls.count() > 0:
+                links = list()
+                for compl in compls:
+                    link_mod = {
+                        'id'        : mod.id,
+                        'id_compl'  : compl.id,
+                        'info'      : '',
+                        'link'      : link_spec_auto_ru + mod.model.mark.nameEn.lower() + '/' + mod.model.nameEn.lower() + '/' + str(mod.idSiteGeneration) + '/' + str(mod.idSiteKonf) + '/equipment/' + str(mod.idSiteKonf) + '_' + str(compl.id) +'_' + str(mod.idSiteTech) + '/'
+                    }
+                    links.append(link_mod)
+
+                to_json = {
+                    'links': links
+                }
+                return JsonResponse(to_json, status=status.HTTP_200_OK)
+    else:
+        body_unicode    = request.body
+        data            = json.loads(body_unicode)
+        links           = data
+        for link in links:
+            mod         = AutoruModification.objects.get(pk = link['id'])
+            compl       = AutoruComplectation.objects.get(pk = link['id_compl'])
+
+            new_record = AutoruModificationOptions()
+            new_record.modification     = mod
+            new_record.complectation    = compl
+            new_record.complectation    = link['title']
+            new_record.link             = link['link']
+            new_record.save()
+
+            for options_data in link['options_data']:
+                group_str       = options_data['group']
+                group, created  = RefModificationsOptionGroup.objects.filter(name = group_str).get_or_create(name = group_str)
+                
+                for option_data in options_data['list_options']:
+                    option, created     = RefModificationsOption.objects.filter((Q(name = option_data) and Q(group = group)).get_or_create(name = option_data, group = group))
+                    
+                    new_option_record   = AutoruModificationOptionsDetail()
+                    new_option_record.modification      = mod
+                    new_option_record.complectation     = compl
+                    new_option_record.option            = option
+                    new_option_record.save()
             
+        to_json = {
+            'links': 'ok'
+        }
+        return JsonResponse(to_json, status=status.HTTP_200_OK)
 
     to_json = {
         'links': list()
