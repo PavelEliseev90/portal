@@ -90,6 +90,7 @@ urlpatterns = [
    
    path('get_qrcode/',                                views.get_qrcode),
    path('specifications_refresh_info/',               views.specifications_refresh_info),
+   path('options_refresh_info/',                      views.options_refresh_info),
 
    path('index/',                   views.index),
    # Временный обмен с корсавто

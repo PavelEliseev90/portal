@@ -810,6 +810,56 @@ class AutoruComplectation(models.Model):
 		verbose_name_plural = "Комплектации"
 		ordering = ['name',]
 
+# Опции модификации автору
+class AutoruModificationOptions(models.Model):
+    modification        = models.ForeignKey(AutoruModification, null=True, on_delete=models.CASCADE, verbose_name='Модификация')
+    complectation       = models.ForeignKey(AutoruComplectation, null=True, on_delete=models.CASCADE, verbose_name='Комплектация')
+    name                = models.CharField("Наименование", max_length=1750, default='')
+    link                = models.CharField("Ссылка", max_length=1750, default='')
+
+    def __str__(self):
+        return "{}".format(self.modification)
+
+    class Meta:
+        db_table = 'autoruModificationOptions'
+        verbose_name = "Опции модификации"
+        verbose_name_plural = "Опции модификаций"
+
+class RefModificationsOptionGroup(models.Model):
+    name    = models.CharField("Наименование", max_length=512, default='')
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'refModificationsOptionGroup'
+        verbose_name = "Группа опции"
+        verbose_name_plural = "Группа опций"
+
+class RefModificationsOption(models.Model):
+    name    = models.CharField("Наименование", max_length=512, default='')
+    group   = models.ForeignKey(RefModificationsOptionGroup, null=True, on_delete=models.CASCADE, verbose_name='Группа опций')
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'refModificationsOption'
+        verbose_name = "Группа опции"
+        verbose_name_plural = "Группа опций"
+
+class AutoruModificationOptionsDetail(models.Model):
+    modification        = models.ForeignKey(AutoruModification, null=True, on_delete=models.CASCADE, verbose_name='Модификация')
+    complectation       = models.ForeignKey(AutoruComplectation, null=True, on_delete=models.CASCADE, verbose_name='Комплектация')
+    option              = models.ForeignKey(RefModificationsOption, null=True, on_delete=models.CASCADE, verbose_name='Опция')
+    
+    def __str__(self):
+        return "{}".format(self.modification)
+
+    class Meta:
+        db_table = 'autoruModificationOptionsDetail'
+        verbose_name = "Опции модификации детально"
+        verbose_name_plural = "Опции модификации детально"
 
 # Технические характеристики модификации автору
 class AutoruModificationSpecifications(models.Model):
@@ -826,7 +876,6 @@ class AutoruModificationSpecifications(models.Model):
         verbose_name = "Спецификация модификации тех характеристики"
         verbose_name_plural = "Спецификации модификаций тех характеристики"
 
-
 class RefSpecification(models.Model):
     name    = models.CharField("Наименование", max_length=512, default='')
     group   = models.CharField("Группа", max_length=512, default='')
@@ -838,7 +887,6 @@ class RefSpecification(models.Model):
         db_table = 'refSpecification'
         verbose_name = "Спецификация"
         verbose_name_plural = "Спецификации"
-
 
 class RefSpecificationData(models.Model):
     modification_specifications = models.ForeignKey(AutoruModificationSpecifications, null=True, on_delete=models.CASCADE, verbose_name='Модификация спецификация')
