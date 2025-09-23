@@ -81,13 +81,9 @@
                     <div class='row g-1 entries flex-nowrap overflow-auto' id="">
                       <div class="col-sm-auto" id="stock">
                         
-                        {% if params.type == 'page_osmotr_salon' %}
-                        
-                          <canvas name="canvas" id="canvas" width="341" height="701" style="cursor:crosshair; background:url(/media_dop/body_capture/sedan_new.png"></canvas>
+                          <canvas name="canvas" id="canvas" width="341" height="701" style="cursor:crosshair; background:url(/media_dop/salon_capture/salon.png"></canvas>
                           <img hidden id="photo_1" src="/media_dop/salon_capture/salon.png">
-                        
-                        {% endif %}
-
+                    
                       </div>
                     </div>         
                   </div>     
@@ -131,36 +127,36 @@
                     <div class="div" id="div_damage">
                       
                       <div class="p-1 w-100">
-                        <div id="tr" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25"> 
+                        <div id="vost" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25"> 
                           <div class=" align-self-center justify-content-center" > 
-                            <div class="col-12 text-center"><img id="tr_img" src="/media_dop/static/estimation/tr.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center"><img id="vost_img" src="/media_dop/static/estimation/vost.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px; min-height: 32px; min-width: 32px;"></div>
                             <div class="col-12 text-center ">Восстановление формы</div>
                           </div>  
                         </div>
                       </div>
 
                       <div class="p-1 w-100">
-                        <div id="skol" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25">
+                        <div id="dirka" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25">
                           <div class=" align-items-center"> 
-                            <div class="col-12 text-center"><img id="skol_img" src="/media_dop/static/estimation/skol.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center"><img id="dirka_img" src="/media_dop/static/estimation/dirka.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
                             <div class="col-12 text-center">Дырка</div>
                           </div>
                         </div>
                       </div>
                       
                       <div class="p-1 w-100">
-                        <div id="vmyat" class="btn btn-block h-100 w-100 align-self-center bg-warning bg-opacity-25"> 
+                        <div id="pereshiv" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25"> 
                           <div class=" align-items-center" > 
-                            <div class="col-12 text-center"><img id="vmyat_img" src="/media_dop/static/estimation/vmyat.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center"><img id="pereshiv_img" src="/media_dop/static/estimation/pereshiv.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
                             <div class="col-12 text-center ">Перешив</div>
                           </div>  
                         </div>
                       </div>
 
                       <div class="p-1 w-100">
-                        <div id="stiker" class="btn btn-block h-100 w-100 align-self-center bg-warning bg-opacity-50">
+                        <div id="perecras" class="btn btn-block h-100 w-100 align-self-center bg-danger bg-opacity-25">
                           <div class="align-items-center"> 
-                            <div class="col-12 text-center fs-7"><img id="stiker_img" src="/media_dop/static/estimation/stiker.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
+                            <div class="col-12 text-center fs-7"><img id="perecras_img" src="/media_dop/static/estimation/perecras.png" style="background: white; border-radius: 50%; padding: 0.2rem; min-height: 32px; min-width: 32px;"></div>
                             <div class="col-12 text-center fs-7">Перекрас</div>
                           </div>
                         </div>
@@ -168,10 +164,6 @@
                       
                     </div>
                     
-                    <div id="params_button" class="row g-1">
-
-                    </div>
-
                     <div id="div_add_file" class="row g-1 d-none">
                       <br>
                       <p class="fs-6">Можете добавить фото к отметке</p>
@@ -179,96 +171,6 @@
                       <hr>
                       <button id="button_next" class="btn btn_block btn-success opacity-75"> <span class="icon-mbri-pin"></span> Далее</button>
                     </div>
-
-                                      
-                    <div id="div_tol" class="row g-1 d-none">
-                      
-                      <br>
-                      
-                      <div class="hidesite">
-                        
-                        <div class="row g-2 row-cols-1">
-                          
-                          <div class="col">
-                            <button id="button_t_text" class="btn btn_block btn-outline-dark opacity-50 fw-bold font-weight-bold">-</button>
-                          </div>
-                        
-                          
-                          <div class="row g-2 row-cols-3 g-col-12">
-                            <div class="col">
-                              <button id="button_t_1" class="btn btn_block btn-dark opacity-50 fw-bold">  1</button>
-                            </div>
-                            <div class="col">
-                              <button id="button_t_2" class="btn btn_block btn-dark opacity-50 fw-bold"> 2</button>
-                            </div>
-                            <div class="col">
-                              <button id="button_t_3" class="btn btn_block btn-dark opacity-50 fw-bold"> 3</button>
-                            </div>
-                          </div>
-  
-                          <div class="row g-2 row-cols-3">
-                            <div class="col">
-                              <button id="button_t_4" class="btn btn_block btn-dark opacity-50 fw-bold">  4</button>
-                            </div>
-                            <div class="col">
-                              <button id="button_t_5" class="btn btn_block btn-dark opacity-50 fw-bold"> 5</button>
-                            </div>
-                            <div class="col">
-                              <button id="button_t_6" class="btn btn_block btn-dark opacity-50 fw-bold"> 6</button>
-                            </div>
-                          </div>
-  
-                          <div class="row g-2 row-cols-3">
-                            <div class="col">
-                              <button id="button_t_7" class="btn btn_block btn-dark opacity-50 fw-bold">  7</button>
-                            </div>
-                            <div class="col">
-                              <button id="button_t_8" class="btn btn_block btn-dark opacity-50 fw-bold"> 8</button>
-                            </div>
-                            <div class="col">
-                              <button id="button_t_9" class="btn btn_block btn-dark opacity-50 fw-bold"> 9</button>
-                            </div>
-                          </div>
-                          
-                          <div class="row g-2 row-cols-3">
-                            <div class="col-4">
-                              <button id="button_t_del" class="btn btn_block btn-danger opacity-50 fw-bold">  <span class="icon-mbri-left"></span></button>
-                            </div>
-                            <div class="col-4">
-                              <button id="button_t_0" class="btn btn_block btn-dark opacity-50 fw-bold"> 0</button>
-                            </div>
-                            <div class="col-4">
-                              <button id="button_t_ok" class="btn btn_block btn-success opacity-50 fw-bold"> <span class="icon-mbri-success"></span> </button>
-                            </div>
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                      <div class="hidemobile">
-
-                        <div class="row g-1">
-                          
-                          <div class="col-sm">
-                            <div class="form-floating">
-                              <input class="form-control form-control-sm" type="number" id="lkp" name="lkp" value="">
-                              <label for="floatingInput">Показание</label>
-                            </div>
-                          </div>
-
-                          <div class="col-sm-auto align-items-center align-self-center">
-                            <button id="button_t_ok_text" class="btn btn_block btn-success opacity-50"> <span class="icon-mbri-success"></span> </button>
-                          </div>
-
-                        </div>
-
-                      </div>
-                      
-                      
-                    </div>
-                  
-                    <hr>
 
                     <div class="row">
                       <button id="close_modal" type="button" class="btn btn_block btn-danger opacity-75"> <span class="icon-mbri-close"></span> Отменить</button> 
@@ -283,58 +185,35 @@
 
               var name_body = '';
 
-              var elements_body = JSON.parse(JSON.stringify({{params.elements_body|safe}}));
+              var elements_salon = JSON.parse(JSON.stringify({{params.elements_salon|safe}}));
               var array     = new Array();
               var new_image = true;
-              var tol       = false;
+              
               var x         = 0;
               var y         = 0;
               var type      = '';
               var tol_text  = "";
-              
-              var img = "";
-              var vmyat_img = "";
-              var vmyat_strong_img = "";
-              var carap_img = "";
-              var carap_strong_img = "";
-              var skol_img = "";
-              var rzav_img = "";
-              var tr_img = "";
-              var rzav_strong_img   = "";
-              var poly_img          = "";
-              var toner_img         = "";
-              var stiker_img        = "";
-              var replace_img       = "";
-              var replace_add_img   = "";
+              var tol     = false;
 
-              var poly_count    = 0;
-              var vmyat_count   = 0;
-              var carap_count   = 0;
-              var rzav_count    = 0;
-              var skol_count    = 0;
-              var tr_count      = 0;
-              var replace_count     = 0;
-              var replace_add_count = 0;
-              var toner_count   = 0;
-              var stiker_count  = 0;
+              var img             = "";
+              var pereshiv_img    = "";
+              var dirka_img       = "";
+              var vost_img        = "";
+              var perecras_img    = "";
+              
+              var pereshiv_count  = 0;
+              var dirka_count     = 0;
+              var vost_count      = 0;
+              var perecras_count  = 0;
 
               $(document).ready(function() {
                   
                 $('.search-select').select2({ width: '100%' }); 
                 
-                vmyat_img           = document.getElementById("vmyat_img");
-                vmyat_strong_img    = document.getElementById("vmyat_strong_img");                
-                carap_img           = document.getElementById("carap_img");
-                carap_strong_img    = document.getElementById("carap_strong_img");
-                skol_img            = document.getElementById("skol_img");
-                rzav_img            = document.getElementById("rzav_img");
-                rzav_strong_img     = document.getElementById("rzav_strong_img");              
-                tr_img              = document.getElementById("tr_img");              
-                replace_img         = document.getElementById("replace_img");
-                replace_add_img     = document.getElementById("replace_add_img"); 
-                poly_img            = document.getElementById("poly_img");
-                toner_img           = document.getElementById("toner_img");
-                stiker_img          = document.getElementById("stiker_img");
+                pereshiv_img            = document.getElementById("pereshiv_img");
+                dirka_img               = document.getElementById("dirka_img");
+                vost_img                = document.getElementById("vost_img");              
+                perecras_img            = document.getElementById("perecras_img");
 
                 array               = {{params.json_data|safe}};
                 
@@ -444,65 +323,23 @@
                         type_human = 'толщиномер';
 
                     } else {
-                      if (type_array == 'stiker'){
-                        ctx.drawImage(stiker_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'Перекрас'; 
-                        stiker_count = stiker_count + 1                      
-                      } else if (type_array == 'toner'){
-                        ctx.drawImage(toner_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'тонировка'; 
-                        toner_count = toner_count + 1                      
-                      } else if (type_array == 'poly'){
-                        ctx.drawImage(poly_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'полировка'; 
-                        poly_count = poly_count + 1                      
-                      } else if (type_array == 'replace'){
-                        ctx.drawImage(replace_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'заменен'; 
-                        replace_count = replace_count + 1                      
-                      } else if (type_array == 'replace_add'){
-                        ctx.drawImage(replace_add_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'заменить'; 
-                        replace_add_count = replace_add_count + 1                      
-                      } else if (type_array == 'tr'){
-                        ctx.drawImage(tr_img, array_info[1] - 16, array_info[2] - 16);
+                      if (type_array == 'perecras'){
+                        ctx.drawImage(perecras_img, array_info[1] - 16, array_info[2] - 16);
+                        type_human = 'перекрас'; 
+                        perecras_count = perecras_count + 1                      
+                      } else if (type_array == 'vost'){
+                        ctx.drawImage(vost_img, array_info[1] - 16, array_info[2] - 16);
                         type_human = 'восстановление'; 
-                        tr_count = tr_count + 1                      
-                      } else if (type_array == 'vmyat'){
-                        ctx.drawImage(vmyat_img, array_info[1] - 16, array_info[2] - 16);
+                        vost_count = vost_count + 1                      
+                      } else if (type_array == 'pereshiv'){
+                        ctx.drawImage(pereshiv_img, array_info[1] - 16, array_info[2] - 16);
                         type_human = 'перешив'; 
-                        vmyat_count = vmyat_count + 1                      
-                      } else if (type_array == 'vmyat_strong'){
-                        ctx.drawImage(vmyat_strong_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'вмятина сильная';
-                        strong = true;
-                        vmyat_count = vmyat_count + 1 
-                      } else 
-                      if (type_array == 'carap'){
-                        ctx.drawImage(carap_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'царапина';
-                        carap_count = carap_count + 1;
-                      } else if (type_array == 'carap_strong'){
-                        ctx.drawImage(carap_strong_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'царапина сильная';
-                        carap_count = carap_count + 1;
-                        strong = true;
-                      } else if (type_array == 'skol'){
-                        ctx.drawImage(skol_img, array_info[1] - 16, array_info[2] - 16);
+                        pereshiv_count = pereshiv_count + 1                      
+                      } else if (type_array == 'dirka'){
+                        ctx.drawImage(dirka_img, array_info[1] - 16, array_info[2] - 16);
                         type_human = 'дырка';
-                        skol_count = skol_count + 1;
-                      } else if (type_array == 'rzav'){
-                        ctx.drawImage(rzav_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'ржавчина';
-                        rzav_count = rzav_count + 1;
-                      } else if (type_array == 'rzav_strong'){
-                        ctx.drawImage(rzav_strong_img, array_info[1] - 16, array_info[2] - 16);
-                        type_human = 'ржавчина сквозная';
-                        strong = true;
-                        rzav_count = rzav_count + 1;
-                      } else {
-                        ctx.fillStyle = "#939393"; // Red color
-                      }
+                        dirka_count = dirka_count + 1;
+                      } 
 
                     }
 
@@ -565,71 +402,35 @@
                   var start = 1;
                   var hei   = 20;
 
-                  if (toner_count > 0){
-                    ctx.drawImage(toner_img, start, hei - 19);
-                    ctx.fillText('- тонировка', start + 35, hei);
-                    start = start + 87;
-                  };
-
-                  if (stiker_count > 0){
-                    ctx.drawImage(stiker_img, start, hei - 19);
+                  if (perecras_count > 0){
+                    ctx.drawImage(perecras_img, start, hei - 19);
                     ctx.fillText('- перекрас', start + 35, hei);
                     start = start + 87;
                   };
 
-                  if (poly_count > 0){
-                    ctx.drawImage(poly_img, start, hei - 19);
-                    ctx.fillText('- полировка', start + 35, hei);
-                    start = start + 87;
-                  };
-
-                  if (replace_count > 0){
-                    ctx.drawImage(replace_img, start, hei - 19);
-                    ctx.fillText('- заменен', start + 35, hei);
-                    start = start + 87;
-                  };
-
-                  if (tr_count > 0){
-                    ctx.drawImage(tr_img, start, hei - 19);
+                  if (vost_count > 0){
+                    ctx.drawImage(vost_img, start, hei - 19);
                     ctx.fillText('- восстановление', start + 35, hei);
                     start = start + 115;
                   };
 
-                  if (vmyat_count > 0){
-                    ctx.drawImage(vmyat_img, start, hei - 19);
+                  if (pereshiv_count > 0){
+                    ctx.drawImage(pereshiv_img, start, hei - 19);
                     ctx.fillText('- перешив', start + 35, hei);
                     start = start + 87;
-                  };
-                  
-                  if (carap_count > 0){
-                    ctx.drawImage(carap_img, start, hei - 19);
-                    ctx.fillText('- царапина', start + 35, hei);
-                    start = start + 87;
-                  };
-                  
-                  if (skol_count > 0){
-                    ctx.drawImage(skol_img, start, hei - 19);
-                    ctx.fillText('- дырка', start + 35, hei);
-                    start = start + 80;
                   };
                   
                   if (start > 250){
                     start = 1;
                     hei   = 50;
                   }
-              
-                  if (rzav_count > 0){
-                    ctx.drawImage(rzav_img, start, hei - 19);
-                    ctx.fillText('- ржавчина', start + 35, hei);
-                    start = start + 87;
-                  };
-
-                  if (replace_add_count > 0){
-                    ctx.drawImage(replace_add_img, start, hei - 19);
-                    ctx.fillText('- заменить', start + 35, hei);
+                  if (dirka_count > 0){
+                    ctx.drawImage(dirka_img, start, hei - 19);
+                    ctx.fillText('- дырка', start + 35, hei);
                     start = start + 80;
                   };
 
+              
                   ctx.strokeStyle = 'black';
                   ctx.font = '14px Arial';
                   ctx.lineWidth = 5;
@@ -648,15 +449,11 @@
 
                 function del_position(uid){
                   
-                  vmyat_count = 0;
-                  carap_count = 0;
-                  rzav_count  = 0;
-                  skol_count  = 0;
-                  tr_count    = 0;
-                  poly_count  = 0;
-                  stiker_count = 0;
-                  toner_count = 0;
-
+                  pereshiv_count  = 0;
+                  dirka_count     = 0;
+                  vost_count      = 0;
+                  perecras_count  = 0;
+                  
                   for (let i = 0; i < array.length; i++) {
                     var uin = array[i][5];
                     if (uin == uid){
@@ -685,170 +482,31 @@
                   });
               }
               
-              $("#toner").click(function(e){
-                type = 'toner';
+              $("#perecras").click(function(e){
+                type = 'perecras';
                 drawCoordinates(x,y);
                 $('#exampleModal').modal('hide');
               });
 
-              $("#stiker").click(function(e){
-                type = 'stiker';
+              $("#pereshiv").click(function(e){
+                type = 'pereshiv';
                 drawCoordinates(x,y);
                 $('#exampleModal').modal('hide');
               });
 
-              $("#poly").click(function(e){
-                type = 'poly';
+              $("#vost").click(function(e){
+                type = 'vost';
                 drawCoordinates(x,y);
                 $('#exampleModal').modal('hide');
               });
 
-              $("#replace").click(function(e){
-                type = 'replace';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#replace_add").click(function(e){
-                type = 'replace_add';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#vmyat").click(function(e){
-                type = 'vmyat';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#tr").click(function(e){
-                type = 'tr';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#vmyat_strong").click(function(e){
-                type = 'vmyat_strong';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#skol").click(function(e){
-                type = 'skol';
+              $("#dirka").click(function(e){
+                type = 'dirka';
                 drawCoordinates(x,y);
                 $('#exampleModal').modal('hide');
               });
               
-              $("#carap").click(function(e){
-                type = 'carap';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-              
-              $("#carap_strong").click(function(e){
-                type = 'carap_strong';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-              
-              $("#rzav").click(function(e){
-                type = 'rzav';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-              
-              $("#rzav_strong").click(function(e){
-                type = 'rzav_strong';
-                drawCoordinates(x,y);
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#button_t_1").click(function(e){
-                tol_text = tol_text + "1";
-                refresh_text_button_tol();
-              });
-              $("#button_t_2").click(function(e){
-                tol_text = tol_text + "2";
-                refresh_text_button_tol();
-              });
-              $("#button_t_3").click(function(e){
-                tol_text = tol_text + "3";
-                refresh_text_button_tol();
-              });
-              $("#button_t_4").click(function(e){
-                tol_text = tol_text + "4";
-                refresh_text_button_tol();
-              });
-              $("#button_t_5").click(function(e){
-                tol_text = tol_text + "5";
-                refresh_text_button_tol();
-              });
-              $("#button_t_6").click(function(e){
-                tol_text = tol_text + "6";
-                refresh_text_button_tol();
-              });
-              $("#button_t_7").click(function(e){
-                tol_text = tol_text + "7";
-                refresh_text_button_tol();
-              });
-              $("#button_t_8").click(function(e){
-                tol_text = tol_text + "8";
-                refresh_text_button_tol();
-              });
-              $("#button_t_9").click(function(e){
-                tol_text = tol_text + "9";
-                refresh_text_button_tol();
-              });
-              $("#button_t_0").click(function(e){
-                tol_text = tol_text + "0";
-                refresh_text_button_tol();
-                
-              });
-
-              $("#button_t_del").click(function(e){
-                tol_text = tol_text.substring(0, tol_text.length-1);
-                refresh_text_button_tol();
-              });
-
-              $("#button_t_ok").click(function(e){
-                type = 'tol';
-                drawCoordinates(x,y);
-                tol = false;
-                refresh_modal();
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#button_t_ok_text").click(function(e){
-                tol_text = $("#lkp").val();
-                type = 'tol';
-                drawCoordinates(x,y);
-                tol = false;
-                refresh_modal();
-                $("#lkp").val('');
-                $('#exampleModal').modal('hide');
-              });
-
-              $("#tol").click(function(e){
-                
-                tol = !tol;
-                tol_text = "";
-                refresh_modal();
-                
-              });
-              
-              $("#button_next").click(function(e){
-                
-                refresh_modal();
-                
-                $('#exampleModal').modal('hide');
-                
-                $('#url_image_test').val($('#image_params').val());
-                $('#image_params').val();
-                
-
-              });
-
-          
+                        
               function refresh_modal(){
  
                 tol_text = '';
@@ -883,10 +541,10 @@
               function info_body(x, y){
                 
                 var search_success = false;
-                for (let i = 0; i < elements_body.length; i++) { 
-                    var name  = elements_body[i].name;
-                    var coor_x = elements_body[i].coor_x;
-                    var coor_y = elements_body[i].coor_y;
+                for (let i = 0; i < elements_salon.length; i++) { 
+                    var name  = elements_salon[i].name;
+                    var coor_x = elements_salon[i].coor_x;
+                    var coor_y = elements_salon[i].coor_y;
                     var chek = isLatLngInZone(x, y, coor_x, coor_y);
                     //fillPolygon(coor_x, coor_y, 'red');
                     if (chek){
