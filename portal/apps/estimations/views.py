@@ -1961,7 +1961,7 @@ def osmotr_salon(request, rlk_id, type):
     return_page                     = request.GET.get('return', '')
     list_info       = list()
     json_data       = list()
-    bodys_info      = list()
+    salons_info     = list()
 
     type_name = 'передняя часть'
 
@@ -1970,74 +1970,22 @@ def osmotr_salon(request, rlk_id, type):
 
     if request.method == 'POST':
         
-        type_file   = 'array_images_pered'
+        type_file   = 'osmotr_salon'
         return_page = request.POST.get('return_page', '')
 
-        if type == 'pered':
+        if type == 'page_osmotr_salon':
             url_base_64 = request.POST.get('url_image')
             url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrPered_maximum_' + str(object.id) +'.jpg'
+            file_name = 'osmotr_salon_' + str(object.id) +'.jpg'
             decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
-            type_file = 'vnesh_car_osmotr_pered'
+            type_file = 'osmotr_salon'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
             new_estimation_files.name           = file_name
             new_estimation_files.type_file      = type_file
             new_estimation_files.file           = decoded_data_1
             new_estimation_files.user           = request.user
             new_estimation_files.save()
-            type_file = 'array_images_pered'
-        elif type == 'vod':
-            url_base_64     = request.POST.get('url_image')
-            url_base        = url_base_64.split(',')[1].encode()
-            file_name       = 'imageViewOsmotrVod_maximum_' + str(object.id) +'.jpg'
-            decoded_data_1  = ContentFile(base64.b64decode(url_base), name = file_name)
-            type_file       = 'vnesh_car_osmotr_vod'
-            new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
-            new_estimation_files.name           = file_name
-            new_estimation_files.type_file      = type_file
-            new_estimation_files.file           = decoded_data_1
-            new_estimation_files.user           = request.user
-            new_estimation_files.save()
-            type_file = 'array_images_vod'
-        elif type == 'pass':
-            url_base_64 = request.POST.get('url_image')
-            url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrPass_maximum_' + str(object.id) +'.jpg'
-            decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
-            type_file = 'vnesh_car_osmotr_pass'
-            new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
-            new_estimation_files.name           = file_name
-            new_estimation_files.type_file      = type_file
-            new_estimation_files.file           = decoded_data_1
-            new_estimation_files.user           = request.user
-            new_estimation_files.save()
-            type_file = 'array_images_pass'
-        elif type == 'zad':
-            url_base_64 = request.POST.get('url_image')
-            url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrZad_maximum_' + str(object.id) +'.jpg'
-            decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
-            type_file = 'vnesh_car_osmotr_zad'
-            new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
-            new_estimation_files.name           = file_name
-            new_estimation_files.type_file      = type_file
-            new_estimation_files.file           = decoded_data_1
-            new_estimation_files.user           = request.user
-            new_estimation_files.save()
-            type_file = 'array_images_zad'
-        elif type == 'up':
-            url_base_64 = request.POST.get('url_image')
-            url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrUp_maximum_' + str(object.id) +'.jpg'
-            decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
-            type_file = 'vnesh_car_osmotr_up'
-            new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
-            new_estimation_files.name           = file_name
-            new_estimation_files.type_file      = type_file
-            new_estimation_files.file           = decoded_data_1
-            new_estimation_files.user           = request.user
-            new_estimation_files.save()
-            type_file = 'array_images_up'
+            type_file = 'array_images_osmotr_salon'
             
         RegRegInteractivOcenkaFiles.objects.filter(estimation = reg_interactiv_ocenka).filter(type_file = type_file).delete()
 
@@ -2063,9 +2011,6 @@ def osmotr_salon(request, rlk_id, type):
                 new_estimation_files.date           = s
                 new_estimation_files.user           = request.user
                 
-                if len(photo_text_) > 0:
-                    new_estimation_files.kraska         = int(photo_text_)
-
                 if request.FILES.get('photo_' + uid) != None:
                     file_object                 = request.FILES.get('photo_' + uid) 
                     new_estimation_files.file   = file_object
@@ -2075,13 +2020,13 @@ def osmotr_salon(request, rlk_id, type):
 
         if return_page == 'eco':
             return HttpResponseRedirect('/eco/' + rlk_id + '/?page=21')    
-        return HttpResponseRedirect('/estimations/' + rlk_id + '/?page=3')
+        return HttpResponseRedirect('/estimations/' + rlk_id + '/?page=2')
     else:
           
         if type == 'page_osmotr_salon':
-            type_name = 'осмотр салона автомобиля'
-            type_file = 'array_images_osmotr_salon'
-            bodys_info      = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'салон')
+            type_name           = 'осмотр салона автомобиля'
+            type_file           = 'array_images_osmotr_salon'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'салон')
         
         files_data = RegRegInteractivOcenkaFiles.objects.filter(estimation = reg_interactiv_ocenka).filter(type_file = type_file).order_by('date')
         for files in files_data:
@@ -2090,41 +2035,20 @@ def osmotr_salon(request, rlk_id, type):
             type_array      = ''
             text_cor        = ''
             
-            if f_type_array == 'толщиномер':
-                type_array  = 'tol'
-                tol         = True
-                text_cor    = str(files.kraska)
-            elif f_type_array == 'наклейка':
-                type_array = 'stiker'
-            elif f_type_array == 'тонировка':
-                type_array = 'toner'
-            elif f_type_array == 'полировка':
-                type_array = 'poly'
-            elif f_type_array == 'вмятина':
-                type_array = 'vmyat'
-            elif f_type_array == 'вмятина сильная':
-                type_array = 'vmyat_strong'
-            elif f_type_array == 'царапина':
-                type_array = 'carap'
-            elif f_type_array == 'царапина сильная':
-                type_array = 'carap_strong'
-            elif f_type_array == 'ржавчина':
-                type_array = 'rzav'
-            elif f_type_array == 'ржавчина сквозная':
-                type_array = 'rzav_strong'
-            elif f_type_array == 'скол':
-                type_array = 'skol'
-            elif f_type_array == 'трещина':
-                type_array = 'tr'
-            elif f_type_array == 'заменен':
-                type_array = 'replace'
-            elif f_type_array == 'заменить':
-                type_array = 'replace_add'
+            if f_type_array == 'перекрас':
+                type_array = 'perecras'
+            elif f_type_array == 'перешив':
+                type_array = 'pereshiv'
+            elif f_type_array == 'дырка':
+                type_array = 'dirka'
+            elif f_type_array == 'восстановление':
+                type_array = 'vost'
 
             date_str    = '' 
             file_date   = files.date
             if file_date != None:
                 date_str = file_date.strftime('%d-%m-%Y %H:%M')
+
             x_cor       = files.cor_x
             y_cor       = files.cor_y
             data_to_list    = list()
@@ -2137,13 +2061,13 @@ def osmotr_salon(request, rlk_id, type):
             data_to_list.append(date_str)
             json_data.append(data_to_list)
 
-    elements_body   = list()
+    elements_salon   = list()
     
-    for body in bodys_info:
-        name        = body.body_element
+    for salon in salons_info:
+        name        = salon.body_element
         polygon_x   = list()
         polygon_y   = list()
-        poly_str = body.polygon
+        poly_str = salon.polygon
         lens_str = poly_str.split(',')
         len_mas  = len(lens_str)
         s = 0
@@ -2152,23 +2076,23 @@ def osmotr_salon(request, rlk_id, type):
                 polygon_x.append(int(lens_str[s]))   
                 polygon_y.append(int(lens_str[s+1]))
             s = s + 1
-        info_body_element = {
+        info_salon_element = {
             'name'      : name,
             'coor_x'    : polygon_x,
             'coor_y'    : polygon_y,
         }
-        elements_body.append(info_body_element)
+        elements_salon.append(info_salon_element)
 
         
 
     params = {
-        'rlk_id'        : rlk_id,
-        'estimation'    : reg_interactiv_ocenka,
-        'type'          : type,
-        'return_page'   : return_page,
-        'type_name'     : type_name,
-        'elements_body' : json.dumps(elements_body),
-        'json_data'     : json.dumps(json_data)
+        'rlk_id'            : rlk_id,
+        'estimation'        : reg_interactiv_ocenka,
+        'type'              : type,
+        'return_page'       : return_page,
+        'type_name'         : type_name,
+        'elements_salon'    : json.dumps(elements_salon),
+        'json_data'         : json.dumps(json_data)
     }   
     
     return render(request, 'estimation/estimation_doc_salon_osmotr.html', {'params': params})

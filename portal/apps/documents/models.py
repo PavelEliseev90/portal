@@ -663,8 +663,8 @@ class DocLO(models.Model):
                     from register.models import RegInteractivOcenka
                     ocenka = RegInteractivOcenka.objects.filter(rlk = self.rlk)
                     if ocenka.count() == 1:
-                        if ocenka[0].status.id != 8: 
-                            ocenka[0].save()
+                        #if ocenka[0].status.id != 8: 
+                        ocenka[0].save()
         except:
             s = 1
         

@@ -632,6 +632,7 @@ def specifications_refresh_info(request):
 @api_view(['GET', 'POST'])
 def options_refresh_info(request):
     if request.method == 'GET':
+        exepts = int(request.GET.get('ex', '0'))
         link_spec_auto_ru = 'https://auto.ru/catalog/cars/'
 
         if 'reverse' in request.GET:
@@ -646,7 +647,10 @@ def options_refresh_info(request):
         modifications   = modifications.annotate(options = Count(subquery_options))
         modifications   = modifications.exclude(spec = 0).filter(options = 0)
         if modifications.count() > 0:
-            mod     = modifications[0]
+            try:
+                mod     = modifications[exepts]
+            except:
+                mod     = modifications[0] 
             compls  = AutoruComplectation.objects.filter(modification__id = mod.id) 
             if compls.count() > 0:
                 links = list()

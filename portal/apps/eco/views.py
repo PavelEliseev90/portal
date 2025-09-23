@@ -694,6 +694,7 @@ def doc(request, id):
     messages = chat.get_last_messages()
     versions = ''
     body     = ''
+    salon    = '' 
     list_work_podgotovka    = list()
     list_work_mcu           = list()
     list_work_ss            = list()
@@ -818,6 +819,8 @@ def doc(request, id):
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
             price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
             body            = body_estimation(estimation=estimation)
+            salon           = salon_estimation(estimation=estimation)
+
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
             list_store_info = list()
@@ -828,6 +831,23 @@ def doc(request, id):
                 if not request.user.profiles.eco_page_price_auto:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
             
+            balance_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+            if balance_count == 1:
+                balance = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]   
+
+            if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
+                lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
+                if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
+                    car = RefCarsOrganization.objects.get(lo = lo)
+                    if car.quantity == 0:
+                        agreements_car = DocCarAgreement.objects.filter(lo = lo).filter(active = True).count()
+                        if agreements_car > 0:
+                            agreement_car = DocCarAgreement.objects.filter(lo = lo).filter(active = True)[0]     
+                    if lo.agreement_number != '':
+                        agreements = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name).count()
+                        if agreements > 0:
+                            agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
+
             price_kors      = None #estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
@@ -938,6 +958,7 @@ def doc(request, id):
                 'store_info'            : list_store_info,
                 'versions'              : versions,
                 'body'                  : body,
+                'salon'                 : salon,
                 'list_work_podgotovka'  : list_work_podgotovka,
                 'list_work_ss'          : list_work_ss,
                 'list_work_mcu'         : list_work_mcu,
@@ -1454,7 +1475,7 @@ def doc(request, id):
 def body_estimation(estimation):
     
     array_info  = list()
-    polys = RegInfoBody.objects.all().order_by('body_elem_name').values('body_elem_name').distinct().order_by('body_elem_name')
+    polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('body_elem_name')
     for poly in polys:
         dict_elem = dict()
         dict_elem['name']           = poly['body_elem_name']
@@ -1658,6 +1679,108 @@ def body_estimation(estimation):
     
     
     return body
+
+def salon_estimation(estimation):
+    
+    array_info  = list()
+    polys = RegInfoBody.objects.filter(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    for poly in polys:
+        dict_elem = dict()
+        dict_elem['name']           = poly['body_elem_name']
+        dict_elem['perecras']       = 0
+        dict_elem['dirka']          = 0
+        dict_elem['pereshiv']       = 0
+        dict_elem['vost']           = 0
+        dict_elem['work']           = ''
+        dict_elem['normo']          = 0.0
+        dict_elem['podryad']        = 0
+        dict_elem['all']            = 0
+        dict_elem['kors']           = 0
+        array_info.append(dict_elem)
+
+    array_salon     = list()
+    files           = RegRegInteractivOcenkaFiles.objects.filter(type_file__icontains = 'array_images_osmotr_salon').filter(estimation = estimation).order_by('-type_file')
+    
+    perecras        = 0
+    dirka           = 0
+    pereshiv        = 0
+    vost            = 0
+    
+    for file in files:
+        
+        salons_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'салон').order_by('-body_elem_name')
+
+        point = Point(file.cor_x , file.cor_y)
+        for salon in salons_info:
+            polygon  = list()
+            poly_str = salon.polygon
+            lens_str = poly_str.split(',')
+            len_mas  = len(lens_str)
+            s = 0
+            while s < len_mas:
+                if s % 2 == 0:
+                    polygon.append(Point(int(lens_str[s]), int(lens_str[s+1])))   
+                s = s + 1
+            # Check if the point is inside the polygon
+            if point_in_polygon(point, polygon):
+                dict_elem = ''
+                elem_name = salon.body_elem_name
+                name = '' + salon.body_elem_name + ' - ' + file.type_point 
+                if name != '':
+                    try:
+                        index = array_salon.index(name)
+                    except ValueError:
+                        for elem_data in array_info:
+                            if elem_data['name'] == elem_name:
+                                dict_elem = elem_data
+                                all = elem_data['all']
+                        if dict_elem == '':
+                            all = 0
+                            dict_elem = dict()
+                            dict_elem['name']               = elem_name
+                            dict_elem['perecras']           = 0
+                            dict_elem['dirka']              = 0
+                            dict_elem['pereshiv']           = 0
+                            dict_elem['vost']               = 0
+                            dict_elem['work']               = ''
+                            dict_elem['normo']              = 0.0
+                            dict_elem['podryad']            = 0
+                            dict_elem['all']                = 0
+                            dict_elem['kors']               = 0                            
+
+                        if file.type_point == 'перекрас':
+                            dict_elem['perecras']   = dict_elem['perecras']  + 1
+                            perecras = perecras + 1
+                            all = all + 1
+                        elif file.type_point == 'дырка':
+                            dict_elem['dirka']    =  dict_elem['dirka']  + 1
+                            dirka = dirka + 1
+                            all = all + 1
+                        elif file.type_point == 'перешив':
+                            dict_elem['pereshiv']          =  dict_elem['pereshiv']  + 1
+                            pereshiv = pereshiv + 1
+                            all = all + 1
+                        elif file.type_point == 'восстановление':
+                            dict_elem['vost']    =  dict_elem['vost']  + 1
+                            vost = vost + 1
+                            all = all + 1
+                        dict_elem['all'] = all
+                        for elem_data in array_info:
+                            if elem_data['name'] == elem_name:
+                                elem_data = dict_elem
+                        
+                        array_salon.append(name)
+
+    salon = {
+        'array'             : array_info,
+        'perecras'          : perecras,
+        'dirka'             : dirka,
+        'pereshiv'          : pereshiv,
+        'vost'              : vost
+        }
+    
+    
+    return salon
 
 
 def repair_history(estimation, count = False):
@@ -2808,6 +2931,57 @@ def estimations_price_calculation(estimation, type_calculation):
                 amount_podgotovka = amount_podgotovka + diff_sum 
         except:
             s = 1
+
+    salon_info = salon_estimation(estimation)
+    for info in salon_info['array']:
+        if info['name'] == 'ручка кпп':
+            if info['all'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 66)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 67)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum
+        elif info['name'] == 'подлокотник':
+            if info['all'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 57)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 58)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum 
 
     body_info = body_estimation(estimation)            
     elem_rzav = 0

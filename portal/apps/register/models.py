@@ -2125,7 +2125,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         return self.page_salon.dashboard_error.all().filter(critical = False).count()
     
     def fotos_salon_capture(self):
-        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'fotos_salon_capture')
+        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'osmotr_salon')
         if fotos.count() > 0:
             return fotos[0].get_absolute_url()    
         return '/media_dop/salon_capture/salon.png'
@@ -2365,7 +2365,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         try:
             if self.status == RefStatusEstimation.objects.get(pk = 8):
                 from website.views import refresh_estimation_balance_unit
-                refresh_estimation_balance_unit(self.id)
+                refresh_estimation_balance_unit(self.rlk.id)
         except:
             s = 1
 
