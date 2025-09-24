@@ -31,6 +31,11 @@ register.filter('formatted_float', formatted_float)
 register.filter('ammont_box_sum', ammont_box_sum)
 
 
+def second_to_time(seconds):
+    return str(DT.timedelta(seconds=seconds))
+register.filter('second_to_time', second_to_time)
+
+
 def replace_simbol(value):
     return str(value).replace("_", " ")
 
@@ -39,7 +44,10 @@ def replace_simbol(value):
 
 @register.filter(name='fromunix')
 def fromunix(value):
-    return DT.datetime.fromtimestamp(int(value))
+    try:
+        return DT.datetime.fromtimestamp(int(value))
+    except:
+        return ''
 
 
 @register.simple_tag(takes_context=True)

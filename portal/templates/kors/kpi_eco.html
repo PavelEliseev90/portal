@@ -1,0 +1,233 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - KPI ЕЦО {% endblock %}
+
+{% block title_navbar %} - KPI ЕЦО {% endblock %}
+
+{% block content %}
+
+<form method="get" class="">
+  <div class="card">
+
+    <div class="card-body">
+      
+      <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
+
+      <div class="collapse" id="filtr">
+        <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
+    
+        <div class="row">
+    
+    
+          <div class="col-sm">
+    
+            <div class="row">
+              <div class="col">
+                <div class="form-floating mb-3">
+                  <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+                  <label for="floatingInput">C</label>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-floating mb-3">
+                  <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+                  <label for="floatingInput">По</label>
+                </div>
+              </div>
+            </div>
+    
+          </div>
+
+          <div class="col-sm">
+            <div class="form-floating mb-3">							
+              <select class="form-select" id="type_reception_id" name="type_reception_id" placeholder="">
+                <option></option>
+                {% for type_reception in params.selected.type_receptions %}
+                  <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+                {% endfor %}
+              </select>
+              <label for="floatingInput">Тип приема</label>
+            </div>
+          </div>
+
+          <div class="col-sm">
+    
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="vin" name="vin" placeholder="" value="{{params.filtr.vin}}" autocomplete="off">
+              <label for="floatingInput">VIN</label>
+            </div>
+    
+          </div>
+          <div class="col-sm">
+    
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="name_unit" name="name_unit" placeholder="" value="{{params.filtr.name_unit}}" autocomplete="off">
+              <label for="floatingInput">Наименование ДЦ</label>
+            </div>
+    
+          </div>
+    
+          <div class="col-sm-auto align-self-center">
+            <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
+          </div>
+    
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</form>
+
+<br>
+<div class="card bg-white bg-opacity-25">
+  <div class="card-body">
+    <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_statuses" aria-expanded="false" aria-controls="collapse_statuses">Оценки по статусам</label>
+    <hr style="width: 75%">
+    <div class="collapse" id="collapse_statuses">   
+      <div class="row g-1">
+        <div class="col-12 col-sm-6">
+          <div class="container-fluid">
+            <div class="row g-1 row-cols-1 row-cols-sm-3">
+              {% for status in params.statuses %}
+                {% if status.interactiv_status != None %}
+                  <div class="col">
+                    <div class="card text-white bg-dark bg-gradient bg-opacity-75">
+                      <div class="card-body text-center" >
+                        <label class="fs-6 text-truncate"> {{status.interactiv_status}}</label>
+                        <br>
+                        <label class="fs-5"> {{status.count}}</label> 
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <figure class="highcharts-figure">
+            <div id="container_status_estimation"></div>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<br>
+
+{% for data in params.data %}
+{{data.nomer}} - {{data.interactiv_status}} - {{ data.staff_name}}
+{{data.rlk.pk}}  -  
+{{data.staff_eco}}
+<br>
+{% endfor %}
+
+<hr>
+
+  <script src="https://ah.kors-group.com/static/js/highcharts/highcharts.js"></script>  
+  <script src="https://ah.kors-group.com/static/js/highcharts/highcharts-3d.js"></script>
+  <script src="https://ah.kors-group.com/static/js/highcharts/cylinder.js"></script>
+  <script src="https://ah.kors-group.com/static/js/highcharts/funnel3d.js"></script>
+  <script src="https://ah.kors-group.com/static/js/highcharts/exporting.js"></script>
+  <script src="https://ah.kors-group.com/static/js/highcharts/accessibility.js"></script>
+
+<script>
+  
+  Highcharts.chart('container_status_estimation', {
+        chart: {
+            backgroundColor: '',
+            type: 'pie',
+            custom: {},
+            events: {
+                render() {
+                    const chart = this,
+                        series = chart.series[0];
+                    let customLabel = chart.options.chart.custom.label;
+
+                    if (!customLabel) {
+                        customLabel = chart.options.chart.custom.label =
+                            chart.renderer.label(
+                                '' +
+                                '<strong>{{params.dash.count_estimations|floatformat:"0g"}} <br> оценок</strong>'
+                            )
+                                .css({
+                                    color: '#000',
+                                    textAnchor: 'middle'
+                                })
+                                .add();
+                    }
+
+                    const x = series.center[0] + chart.plotLeft,
+                        y = series.center[1] + chart.plotTop -
+                        (customLabel.attr('height') / 2);
+
+                    customLabel.attr({
+                        x,
+                        y
+                    });
+                    // Set font size based on chart diameter
+                    customLabel.css({
+                        fontSize: `${series.center[2] / 12}px`
+                    });
+                }
+            }
+        },
+        accessibility: {
+            point: {
+                valueSuffix: '%'
+            }
+        },
+        title: {
+            text: ''
+        },
+        subtitle: {
+            text: ''
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.0f}%</b>'
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            series: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                borderRadius: 8,
+                dataLabels: [{
+                    enabled: true,
+                    distance: 20,
+                    format: '{point.name}'
+                }, {
+                    enabled: true,
+                    distance: -15,
+                    format: '{point.percentage:.0f}%',
+                    style: {
+                        fontSize: '0.9em'
+                    }
+                }],
+                showInLegend: true
+            }
+        },
+        series: [{
+            name: 'Статус',
+            colorByPoint: true,
+            innerSize: '75%',
+            data: [
+              {% for status in params.statuses %}
+                {% if status.interactiv_status != None %}
+                   { name: "{{status.interactiv_status}}",
+                   y:  {{status.count}} },
+                {% endif %}
+              {% endfor %}  
+            ]
+        }]
+    });
+
+</script>
+{% endblock %}

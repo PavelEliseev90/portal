@@ -116,4 +116,5 @@ urlpatterns = [
    path('korsavto/settings/',                views.korsavto_settings_dc),
    path('korsavto/settings/<slug:slug>/',    views.korsavto_settings_dc_cars),
    path('korsavto/sales_funnel/',            views.sales_funnel),
+   path('korsavto/kpi_eco/',                 views.kpi_eco),
 ]

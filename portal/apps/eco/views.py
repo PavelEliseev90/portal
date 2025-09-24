@@ -863,7 +863,11 @@ def doc(request, id):
             versions['page_1'] = versions_page_1
 
         if page == 18:
-            opens_infos = opens_info(estimation)
+            if request.user.profiles.eco or request.user.profiles.eco_page_price_info:
+                opens_infos = opens_info(estimation)
+            else:
+                return HttpResponseRedirect(request.path_info + '?page=0')
+            
         if page == 13:
             repair_info = repair_history(estimation)
         if page == 5:
