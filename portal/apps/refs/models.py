@@ -530,7 +530,7 @@ class RefWork(models.Model):
 # Статусы оценки 
 class RefStatusEstimation(models.Model):
     name    = models.CharField("Наименование", max_length=300, default='')
-    
+    order   = models.IntegerField("Сортировка", null=True, default=0, blank=True)
     def __str__(self):
         return "{}".format(self.name)
 

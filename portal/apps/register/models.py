@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 from documents.models import DocRLK, DocLO, DocCarShipment
 from refs.models import RefTypeEvaluationCarsOrganization, RefAvito, RefAvitoComplectation, RefStatusEstimation, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefOrganization, RefFilial, RefTypeReceptionCarsOrganization, AutoruModification, RefGroupProduct, RefStaff, RefCategoryProduct, RefPageOcenka, RefUnit, RefCarsOrganization, RefEventCarsOrganization, RefStore, RefManufacturer, AutoruComplectation
 from ckeditor_uploader.fields import RichTextUploadingField
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from itertools import chain
@@ -1824,8 +1824,35 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
     type_price              = models.IntegerField('Тип формирования цены', default=0, null=True, blank=True)
     
+    users_eco               = models.IntegerField('Сотрудников ецо в чате', default=0, null=True, blank=True)
+    users_no_eco            = models.IntegerField('Сотрудников не ецо в чате', default=0, null=True, blank=True)
+    users_dop               = models.IntegerField('Сотрудников доп согласования', default=0, null=True, blank=True)
+
+    date_s_do_diag  = models.DateTimeField('Дата согласования до диагностики', blank=True, null=True)
+    date_diagnostic = models.DateTimeField('Дата диагностики', blank=True, null=True)
+    date_s_diag     = models.DateTimeField('Дата согласования после диагностики', blank=True, null=True)
+    
+    status_ocenka                       = models.IntegerField('Секунд оценка', default=0, null=True, blank=True)
+    status_soglasovanie_do_diag         = models.IntegerField('Секунд до согласования диагностики', default=0, null=True, blank=True)
+    status_diagnostika                  = models.IntegerField('Секунд диагностика', default=0, null=True, blank=True)
+    status_soglasovanie_posle_kd        = models.IntegerField('Секунд после диагностики', default=0, null=True, blank=True)
+    
+    count_task                          = models.IntegerField('Задач', default=0, null=True, blank=True)
+    seconds_task                        = models.IntegerField('Время на задачи', default=0, null=True, blank=True)
+    count_answer                        = models.IntegerField('Ответов ЕЦО', default=0, null=True, blank=True)
+    seconds_answer                      = models.IntegerField('Среднее время ответа', default=0, null=True, blank=True)
+    seconds_estimation                  = models.IntegerField('Секунд оценки', default=0, null=True, blank=True)
     #text_json   = models.DateTimeField('Дата окончания оценки', blank=True, null=True)
     #upload      = models.FileField(storage=save_directory,  upload_to='tessttt/%Y/%m/%d/', verbose_name="Видео", blank=True, null=True)
+    
+    def duration_answer(self):
+        try:
+            return str(timedelta(seconds=(int(self.seconds_answer / self.count_answer))))
+        except:
+            return ''
+    
+    def duration(self):
+        return str(timedelta(seconds=self.seconds_estimation))
     
     def link_car(self):
         car_organizations = RefCarsOrganization.objects.filter(lo__rlk = self.rlk) 
@@ -2268,6 +2295,14 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
         return fotos
 
+    def chat_message(self):
+        from chats.models import ChatMessage
+        return ChatMessage.objects.filter(chat__slug = 'rlk_' + str(self.rlk.id)).count()
+
+    def chat_message_users(self):
+        from chats.models import ChatMessage
+        return ChatMessage.objects.filter(chat__slug = 'rlk_' + str(self.rlk.id)).values('user').distinct().count()
+    
     def car_repaint(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(kraska__gte = 350).count()
         if fotos > 0:

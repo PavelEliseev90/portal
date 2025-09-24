@@ -6158,6 +6158,63 @@ def sales_funnel(request):
     
     return render(request, "kors/sales_funnel.html", {'params': params})
 
+@login_required
+def kpi_eco(request):
+    
+    type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
+        
+    name_unit           = request.GET.get('name_unit','')
+    type_reception_id   = request.GET.get('type_reception_id','')    
+    vin                 = request.GET.get('vin', '')
+    
+    date_start      = request.GET.get('date_start', '')
+    date_end        = request.GET.get('date_end', '')
+    
+    if date_start == '':
+        date_start = DT.datetime.now() - relativedelta(months=2)
+        date_start = date_start.replace(day = 1, hour = 0, minute=0, second=0)
+    else:
+        date_start =  DT.datetime.strptime(date_start, "%Y-%m-%d")
+    
+    if date_end == '':
+        date_end = DT.datetime.now().replace(hour = 23)
+    else:
+        date_end = DT.datetime.strptime(date_end, "%Y-%m-%d").replace(hour = 23)
+    
+    selected = {
+        'type_receptions'   : type_receptions
+    }
+
+    doc_lo      = DocLO.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end)
+    interactiv  = RegInteractivOcenka.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
+
+    data    = doc_lo.annotate(
+        interactiv_status           = Subquery(interactiv.values('status__name')[:1])).annotate(
+        interactiv_status_order     = Subquery(interactiv.values('status__order')[:1])).annotate(
+        interactiv                  = Subquery(interactiv.values('id')[:1])).annotate(
+        staff_name                  = Subquery(interactiv.values('staff__name')[:1])).annotate(
+        staff_eco                   = Coalesce(Subquery(interactiv.values('staff_eco_2__profiles__eco_name')[:1]), Subquery(interactiv.values('staff_eco_1__profiles__eco_name')[:1])))
+    
+    statuses = data.values('interactiv_status').annotate(count = Count('interactiv')).order_by('interactiv_status_order')
+    statuses_count = statuses.aggregate(Sum('count'))['count__sum']
+    dash = {
+        'count_estimations' : statuses_count
+    }
+    filtr = {
+            'name_unit'         : name_unit,
+            'date_start'        : date_start,
+            'date_end'          : date_end 
+        }
+    params = {
+        'type'          : 'korsavto_kpi_eco',
+        'filtr'         : filtr,
+        'dash'          : dash,
+        'statuses'      : statuses,
+        'data'          : data[:50]
+    }
+    
+    return render(request, "kors/kpi_eco.html", {'params': params})
+
 
 def refresh_estimation_balance_unit(id_estimation):
     
@@ -6642,6 +6699,197 @@ def get_url_images(slug):
 
 def test(request):
     
+    hour_start_day  = 9
+    hour_end_day    = 20
+
+    estimations = RegInteractivOcenka.objects.filter(rlk__pk = 2312526).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
+    for estimation in estimations:
+        slug_chat       = 'rlk_' + str(estimation.rlk.id)
+        end_estimation  = estimation.end_estimation
+        
+        #Если нет окончания оценки проставим ее
+        if end_estimation == DT.datetime(1,1,1):
+            chats_messages_ = ChatMessage.objects.filter(chat__slug = slug_chat).filter(content = 'Оценка отправлена на согласование').order_by('date')
+            for chats_message_ in chats_messages_:
+                if end_estimation == DT.datetime(1,1,1):
+                    end_estimation = chats_message_.date
+            if end_estimation != DT.datetime(1,1,1):
+                estimation.end_estimation = end_estimation 
+                estimation.save(update_fields=['end_estimation'])
+
+        #Если не указан аналитик до диагностики то пробуем его поставить
+        if estimation.staff_eco_1 == None:
+            staff_eco_1 = None
+            chats_messages_ = ChatMessage.objects.filter(chat__slug = slug_chat).filter(content__startswith = 'Согласована цена до диагностики -').order_by('date')
+            for chats_message_ in chats_messages_:
+                if staff_eco_1 == None:
+                    staff_eco_1 = chats_message_.user
+            if staff_eco_1 != None:
+                estimation.staff_eco_1 = staff_eco_1 
+                estimation.save(update_fields=['staff_eco_1'])  
+
+        #Если не указан аналитик после диагностки то пробуем его поставить
+        if estimation.staff_eco_2 == None:
+            staff_eco_2 = None
+            chats_messages_ = ChatMessage.objects.filter(chat__slug = slug_chat).filter(content__startswith = 'Согласована цена после диагностики -').order_by('date')
+            for chats_message_ in chats_messages_:
+                if staff_eco_2 == None:
+                    staff_eco_2 = chats_message_.user
+            if staff_eco_2 != None:
+                estimation.staff_eco_2 = staff_eco_2 
+                estimation.save(update_fields=['staff_eco_2'])  
+
+        #А тут соберем данные по пользователям согласования, вдруг просили подтверждение Серебрянникова или директора ДЦ
+        messages_user = ChatMessage.objects.filter(chat__slug = slug_chat).values('user', 'user__profiles__eco', 'user__username').distinct()
+        dop_soglasovanie    = 0
+        users_eco           = 0
+        users_no_eco        = 0           
+        
+        for message_user in messages_user:
+            if message_user['user__profiles__eco']:
+                users_eco = users_eco + 1
+            else:
+                users_no_eco = users_no_eco + 1
+                if estimation.staff.domain_login != message_user['user__username']:
+                    dop_soglasovanie = dop_soglasovanie + 1
+        
+        #Посчитаем среднее время приема
+        #Не считаем время при переходе на следующий день, т.е. не считаем время от последнего до первого сообщения следующего дня.
+        #Для принятых последнее сообщение и дату листа оценки.
+        messages_date   = ChatMessage.objects.filter(chat__slug = slug_chat).values('date').order_by('date')
+        mes_start       = ''
+        seconds         = 0 
+        for message_date in messages_date:
+            if mes_start == '':
+                mes_start = message_date['date']
+            else:
+                if mes_start.day == message_date['date'].day:
+                    seconds = seconds + (message_date['date'] - mes_start).total_seconds()
+                else:
+                   day_end      = mes_start.replace(hour = hour_end_day, minute = 0, second = 0)
+                   day_start    = message_date['date'].replace(hour = hour_start_day, minute = 0, second = 0)
+                   sec_1        = (day_end - mes_start).total_seconds()
+                   sec_2        = (message_date['date'] - day_start).total_seconds()
+                   seconds = seconds + sec_1 + sec_2
+                mes_start = message_date['date']
+        s = 1
+        
+        #Проставим отметки этапов
+        date_s_do_diag  = DT.datetime(1,1,1)
+        date_diagnostic = DT.datetime(1,1,1)
+        date_s_diag     = DT.datetime(1,1,1)
+        messages_list = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
+        
+        status_ocenka                   = 0
+        status_soglasovanie_do_diag     = 0
+        status_diagnostika              = 0
+        status_soglasovanie_posle_kd    = 0
+        
+        status          = 0
+        mes_start       = ''
+        seconds_status  = 0
+        prev_user       = True
+        seconds_answer  = 0
+        answer_count    = 0
+        for message in messages_list:
+            
+            if message.content.startswith('Согласована цена до диагностики -'):
+               status = 1
+               date_s_do_diag = message.date
+            if message.content.startswith('Согласована цена после диагностики -'):
+               status = 3
+               date_s_diag = message.date
+            if message.content.startswith('Пройдена диагностика -'):
+               status = 2
+               date_diagnostic = message.date 
+            
+            if mes_start == '':
+                mes_start = message.date
+            else:
+                if mes_start.day == message.date.day:
+                    seconds_status = seconds_status + (message.date - mes_start).total_seconds()
+                    sec = seconds_status
+                else:
+                   day_end      = mes_start.replace(hour = hour_end_day, minute = 0, second = 0)
+                   day_start    = message.date.replace(hour = hour_start_day, minute = 0, second = 0)
+                   sec_1        = (day_end - mes_start).total_seconds()
+                   sec_2        = (message.date - day_start).total_seconds()
+                   sec          = sec_1 + sec_2
+                   seconds_status = seconds_status + sec_1 + sec_2
+                
+                if status == 1:
+                    status_soglasovanie_do_diag = status_soglasovanie_do_diag + seconds_status
+                    seconds_status = 0
+                elif status == 2:
+                    status_diagnostika = status_diagnostika + seconds_status
+                    seconds_status = 0
+                elif status == 3:
+                    status_soglasovanie_posle_kd = status_soglasovanie_posle_kd + seconds_status        
+                    seconds_status = 0
+
+            if message.user.profiles.eco and prev_user:
+                seconds_answer = seconds_answer + sec                
+                answer_count = answer_count + 1
+            prev_user = not message.user.profiles.eco
+            mes_start = message.date        
+
+        #Пробуем посчитать время в статусах
+        status_ocenka                   = (estimation.end_estimation - estimation.start_estimation).total_seconds()
+        #status_soglasovanie_do_diag     = (date_s_do_diag - estimation.end_estimation).total_seconds()
+        #status_diagnostika              = (date_diagnostic - date_s_do_diag).total_seconds()
+        #status_soglasovanie_posle_kd    = (date_s_diag - date_diagnostic).total_seconds() 
+        
+        estimation.date_s_do_diag   = date_s_do_diag
+        estimation.date_diagnostic  = date_diagnostic
+        estimation.date_s_diag      = date_s_diag
+
+        estimation.status_ocenka                    = status_ocenka
+        estimation.status_soglasovanie_do_diag      = status_soglasovanie_do_diag
+        estimation.status_diagnostika               = status_diagnostika
+        estimation.status_soglasovanie_posle_kd     = status_soglasovanie_posle_kd
+        estimation.seconds_estimation               = seconds
+        estimation.count_answer     = answer_count
+        estimation.seconds_answer   = seconds_answer
+        estimation.users_eco        = users_eco
+        estimation.users_no_eco     = users_no_eco
+        estimation.users_dop        = dop_soglasovanie
+        
+        tasks = estimation.tasks()
+        estimation.count_task   = len(tasks)
+        second_task             = 0
+        for task in tasks:
+            if task.date_open.day == message.date_close.day:
+                second_task = second_task + (message.date_open - message.date_close).total_seconds()
+            else:
+                day_end      = message.date_open.replace(hour = hour_end_day, minute = 0, second = 0)
+                day_start    = message.date_close.replace(hour = hour_start_day, minute = 0, second = 0)
+                sec_1        = (day_end - mes_start).total_seconds()
+                sec_2        = (message.date - day_start).total_seconds()
+                sec          = sec_1 + sec_2
+                second_task = second_task + sec_1 + sec_2    
+        estimation.seconds_task = second_task
+
+        estimation.save(update_fields=['count_task',
+                                       'seconds_task',
+                                       'count_answer',
+                                       'seconds_answer',
+                                       'users_dop',
+                                       'users_no_eco',
+                                        'users_eco',
+                                       'date_s_do_diag',
+                                       'date_diagnostic',
+                                       'date_s_diag',
+                                       'status_ocenka',
+                                       'seconds_estimation',
+                                       'status_soglasovanie_do_diag',
+                                       'status_diagnostika',
+                                       'status_soglasovanie_posle_kd'
+            ]) 
+        #
+    
+
+
+    
     '''
     date_start = DT.datetime.now()
     date_start = date_start.replace(year=2025, month=9, day = 16, hour = 0, minute=0, second=0, microsecond=0)
@@ -6651,6 +6899,7 @@ def test(request):
         s.save()
     '''
 
+    #object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     #refresh_estimation_cars_organization()
     
     '''

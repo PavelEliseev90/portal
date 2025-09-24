@@ -14,7 +14,7 @@
 {% include 'chats/chat.html' %}
 
   
-  <div class="loads bg-secondary bg-opacity-75 d-none" id="loads" >
+  <div class="loads bg-secondary bg-gradient bg-opacity-75 d-none" id="loads" >
     
     <div class="loads_parr ">
       <div class="modal-content">
@@ -37,28 +37,28 @@
   <div class="row g-1">
 
     <div class="col-2 text-center hidemobile">
-      <div class="sticky-top bg-white bg-opacity-25" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
+      <div class="sticky-top bg-white bg-opacity-10" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
 
         <div class="col-sm">
           
           <div class="form-floating ">
             
             <input class="form-control form-control-sm  {% if params.estimation.status.id == 1 %} 
-                border_gray bg-opacity-25 bg-secondary
+                border_gray bg-opacity-10 bg-secondary bg-gradient
               {% elif params.estimation.status.id == 2 or params.estimation.status.id == 9 %} 
-                border_red  bg-opacity-25 bg-danger                   
+                border_red  bg-opacity-10 bg-danger                   
               {% elif params.estimation.status.id == 7 %} 
-                border_red  bg-opacity-25 bg-danger   
+                border_red  bg-opacity-10 bg-danger   
               {% elif params.estimation.status.id == 3 %} 
-                border_yeloow bg-opacity-25 bg-warning
+                border_yeloow bg-opacity-10 bg-warning
               {% elif params.estimation.status.id == 4 %} 
-                border_green bg-opacity-25 bg-success
+                border_green bg-opacity-10 bg-success
               {% elif params.estimation.status.id == 6 %} 
-                border_orange bg-opacity-25 bg-warning
+                border_orange bg-opacity-10 bg-warning
               {% elif params.estimation.status.id == 8 %} 
                 border_green bg-opacity-75 bg-success 
               {% else %} 
-                border_blue bg-opacity-25 bg-primary
+                border_blue bg-opacity-10 bg-primary
               {% endif %}" type="text" id="" name="" value="{{params.estimation.status}}" readonly>
 
             <label for="floatingInput text-dark" >Статус</label>
@@ -182,19 +182,19 @@
         
         <div class="form-floating btn_block"  style="padding-bottom: 0.5rem;">
           <input class="form-control form-control-sm  {% if params.estimation.status.id == 1 %} 
-              border_gray bg-opacity-25 bg-secondary
+              border_gray bg-opacity-10 bg-secondary bg-gradient
             {% elif params.estimation.status.id == 2 or params.estimation.status.id == 9 %} 
-              border_red  bg-opacity-25 bg-danger          
+              border_red  bg-opacity-10 bg-danger          
             {% elif params.estimation.status.id == 3 %} 
-              border_yeloow bg-opacity-25 bg-warning
+              border_yeloow bg-opacity-10 bg-warning
             {% elif params.estimation.status.id == 4 %} 
-              border_green bg-opacity-25 bg-success
+              border_green bg-opacity-10 bg-success
             {% elif params.estimation.status.id == 6 %} 
               border_orange
             {% elif params.estimation.status.id == 8 %} 
               border_green bg-opacity-75 bg-success
             {% else %} 
-              border_blue bg-opacity-25 bg-primary
+              border_blue bg-opacity-10 bg-primary
             {% endif %}" type="text" id="" name="" value="{{params.estimation.status}}" readonly>
           <label for="floatingInput text-dark" >Статус</label>
         </div>
@@ -1623,7 +1623,7 @@
                             
                               <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 420px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
                               
-                              <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
    
                               </div>
                             {% endif %}
@@ -1686,7 +1686,7 @@
                         
                           <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pered" onclick="visible_foto('gallery-item-pered', {{forloop.counter}})" data-index="{{forloop.counter}}"  >
                             <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
-                              <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                 {% if img.kraska %}
                                   <h6>Показание толщиномера - {{img.text}}</h6>
                                 {% else %}
@@ -1742,7 +1742,7 @@
                         
                           <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-vod" onclick="visible_foto('gallery-item-vod', {{forloop.counter}})" data-index="{{forloop.counter}}"  >
                               <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
-                              <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                 {% if img.kraska %}
                                   <h6>Показание толщиномера - {{img.text}}</h6>
                                 {% else %}
@@ -1799,7 +1799,7 @@
                           <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-zad" onclick="visible_foto('gallery-item-zad', {{forloop.counter}})" data-index="{{forloop.counter}}">
                             
                               <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
-                              <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                 {% if img.kraska %}
                                   <h6>Показание толщиномера - {{img.text}}</h6>
                                 {% else %}
@@ -1857,7 +1857,7 @@
                           <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pass" onclick="visible_foto('gallery-item-pass', {{forloop.counter}})" data-index="{{forloop.counter}}">
                             
                               <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 320px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
-                              <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                 {% if img.kraska %}
                                   <h6>Показание толщиномера - {{img.text}}</h6>
                                 {% else %}
@@ -1910,7 +1910,7 @@
                         
                           <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-up" onclick="visible_foto('gallery-item-up', {{forloop.counter}})" data-index="{{forloop.counter}}">
                             <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
-                              <div class="carousel-caption d-md-block bg-secondary" style="border-radius: 10px; opacity: 0.6;">
+                              <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                 {% if img.kraska %}
                                   <h6>Показание толщиномера - {{img.text}}</h6>
                                 {% else %}
@@ -3078,15 +3078,15 @@
                   {% if doc.interactiv %}  
                     <div class="card" style="margin: 0.2rem;" > 
                       <div class="card-body {% if doc.status.id == 1 %} 
-                        border_gray bg-secondary bg-opacity-25
+                        border_gray bg-secondary bg-gradient bg-opacity-10
                       {% elif doc.status.id == 2 or doc.status.id == 9 %} 
-                        border_red bg-danger bg-opacity-25
+                        border_red bg-danger bg-opacity-10
                       {% elif doc.status.id == 3 %} 
-                        border_yeloow bg-warning bg-opacity-25 
+                        border_yeloow bg-warning bg-opacity-10 
                       {% elif doc.status.id == 4 %} 
-                        border_green bg-success bg-opacity-25
+                        border_green bg-success bg-opacity-10
                       {% elif doc.status.id == 5 %} 
-                        border_blue bg-primary bg-opacity-25
+                        border_blue bg-primary bg-opacity-10
                       {% elif doc.status.id == 6 %} 
                         border_orange bg-warning bg-opacity-50
                       {% elif doc.status.id == 8 %} 
@@ -3166,24 +3166,24 @@
                           {% if params.estimation.page_remote == None or params.estimation.page_remote.end_estimation != None %}
                             {% if doc.page_soglasovanie.price_after_kd > 0 %}
                               <div class="col-auto text-end">
-                                <label class="fs-4 bg-secondary bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381;</label>
+                                <label class="fs-4 bg-secondary bg-gradient bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381;</label>
                               </div>
                             {% else %}
                               <div class="col-auto text-end">
-                                <label class="fs-4 bg-secondary bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381;</label>
+                                <label class="fs-4 bg-secondary bg-gradient bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381;</label>
                               </div>
                             {% endif %}
 
                             <div class="col-auto text-end">
-                              <label class="fs-4 bg-secondary bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> БЦП: {{doc.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381;</label>
+                              <label class="fs-4 bg-secondary bg-gradient bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> БЦП: {{doc.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381;</label>
                             </div>
 
                           {% else %}
                             <div class="col-auto text-end">
-                              <label class="fs-4 bg-secondary bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.page_remote.price_eco|floatformat:"2g"}} &#8381;</label>
+                              <label class="fs-4 bg-secondary bg-gradient bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.page_remote.price_eco|floatformat:"2g"}} &#8381;</label>
                             </div>
                             <div class="col-auto text-end">
-                              <label class="fs-4 bg-secondary bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> БЦП: {{doc.bcp|floatformat:"2g"}} &#8381;</label>
+                              <label class="fs-4 bg-secondary bg-gradient bg-opacity-50 text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> БЦП: {{doc.bcp|floatformat:"2g"}} &#8381;</label>
                             </div>
                           {% endif %}
                         </div>
@@ -3193,7 +3193,7 @@
                         </div>
                     </div>
                   {% else %} 
-                    <div class="card {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %}" style="margin: 0.2rem;" > 
+                    <div class="card {% if doc.active %} bg-success bg-opacity-10 {% else %} bg-danger bg-opacity-10 {% endif %}" style="margin: 0.2rem;" > 
                       <div class="card-body" >
                         
                         <div class="row">
@@ -3255,10 +3255,10 @@
 
                         <div class="row">
                           <div class="col-auto text-end">
-                            <label class="fs-4 {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %} text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.cost_price|floatformat:"2g"}} &#8381;</label>
+                            <label class="fs-4 {% if doc.active %} bg-success bg-opacity-10 {% else %} bg-danger bg-opacity-10 {% endif %} text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> Прием: {{doc.cost_price|floatformat:"2g"}} &#8381;</label>
                           </div>
                           <div class="col-auto text-end">
-                            <label class="fs-4 {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %} text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> БЦП: {{doc.bcp|floatformat:"2g"}} &#8381;</label>
+                            <label class="fs-4 {% if doc.active %} bg-success bg-opacity-10 {% else %} bg-danger bg-opacity-10 {% endif %} text-white" style="min-width: 9rem;border-radius: 0.2em; padding: 0.2em;"> БЦП: {{doc.bcp|floatformat:"2g"}} &#8381;</label>
                           </div>
                         </div>
                         
@@ -3287,7 +3287,7 @@
             {% if params.repairs_info %}
               {% for doc in params.repairs_info %}
                   
-                <div class="card {% if doc.active %} bg-success bg-opacity-25 {% else %} bg-danger bg-opacity-25 {% endif %}" style="margin: 0.2rem;" data-bs-toggle="modal" data-bs-target="#example_repair_{{doc.pk}}" data-bs-whatever="@mdo"> 
+                <div class="card {% if doc.active %} bg-success bg-opacity-10 {% else %} bg-danger bg-opacity-10 {% endif %}" style="margin: 0.2rem;" data-bs-toggle="modal" data-bs-target="#example_repair_{{doc.pk}}" data-bs-whatever="@mdo"> 
                   <div class="card-body" style="padding: 0;">
                     
                     <div class="row" style="padding: 0.2em;">
@@ -3578,7 +3578,7 @@
                             {% for event in params.json_autoteka.taxiData.events %}
                             
                               <div class="card">
-                                <div class="card-body {% if event.isActual %} bg-success bg-opacity-25 {% endif %} ">
+                                <div class="card-body {% if event.isActual %} bg-success bg-opacity-10 {% endif %} ">
                                   <div class="row g-1">
                                     <div class="col-sm">
                                       {{event.regionName}}<br>
@@ -3607,7 +3607,7 @@
                             {% for event in params.json_autoteka.carsharingData.events %}
                             
                               <div class="card">
-                                <div class="card-body {% if event.isActual %} bg-success bg-opacity-25 {% endif %} ">
+                                <div class="card-body {% if event.isActual %} bg-success bg-opacity-10 {% endif %} ">
                                   <div class="row g-1">
                                     <div class="col-sm">
                                       {{event.regionName}}<br>
@@ -4865,7 +4865,7 @@
 
                 <div class="col-12 col-sm-4"> 
                   <div class="card " style="margin: 0.2rem;" id="price_custom">
-                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                      
                       <div class="modal fade" id="example_podgotovka_custom" aria-hidden="true" data-bs-target="#example_podgotovka_custom" data-bs-toggle="modal_1" tabindex="-1">
                         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -5880,12 +5880,160 @@
 
                 <div class="row g-1">
                   
+                  <div class="col-12 col-sm-12">
+                    
+                      <div class="card bg-success bg-white bg-opacity-10" style="margin: 0.2rem;">
+                        <div class="card-body">
+                            <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_analitik" aria-expanded="false" aria-controls="collapse_analitik"> <b> &nbsp; Аналитика оценки</b></label>  
+                            <div class="collapse" id="collapse_analitik">
+                            
+                              <hr>
+                              
+                              <div class="row g-1">
+                                <div class="col-12 col-sm-auto h-100">
+                                  <div class="card text-center text-white bg-secondary bg-gradient bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Время оценки</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.duration}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                {% if params.estimation.users_dop > 0 %}
+                                  <div class="col-12 col-sm-auto">
+                                    <div class="card text-center text-white bg-gradient bg-danger bg-opacity-75">
+                                      <div class="card-body">
+                                        <label class="fs-6">Доп согласование</label>
+                                        <br>
+                                        <label class="fs-5">Да</label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                {% else %}
+                                  <div class="col-12 col-sm-auto">
+                                    <div class="card text-center text-white bg-gradient bg-success bg-opacity-75">
+                                      <div class="card-body">
+                                        <label class="fs-6">Доп согласование</label>
+                                        <br>
+                                        <label class="fs-5">НЕТ</label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                {% endif %}
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-dark bg-gradient bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">СР. Время ответа</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.duration_answer}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Оценка</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.status_ocenka|second_to_time}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Сог-ние до кд</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.status_soglasovanie_do_diag|second_to_time}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Диагностика</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.status_diagnostika|second_to_time}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Сог-ние после кд</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.status_soglasovanie_posle_kd|second_to_time}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <br>
+
+                              <div class="row g-1">
+                                <div class="col-12 col-sm-auto h-100">
+                                  <div class="card text-center text-white bg-dark bg-gradient bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Задач</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.count_task}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-dark bg-gradient bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Время задач</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.seconds_task|second_to_time}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Файлов</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.get_files_all_count}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Сообщений в чате</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.chat_message}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-12 col-sm-auto">
+                                  <div class="card text-center text-white bg-gradient bg-dark bg-opacity-75">
+                                    <div class="card-body">
+                                      <label class="fs-6">Пользователей в чате</label>
+                                      <br>
+                                      <label class="fs-5">{{params.estimation.chat_message_users}}</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                            </div>
+                        </div>
+                      </div>
+                   
+                  </div>
+
+                </div>
+
+                <div class="row g-1">
+                  
                   <div class="col-12 col-sm-4">
                     
                     {% if params.estimation.rlk.unit_dc == None %}
 
                       {% if params.estimation.rlk.unit == None %}
-                        <div class="card h-100 {% if params.estimation.page_documents.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                        <div class="card h-100 {% if params.estimation.page_documents.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                           <div class="card-body">
                             <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Резерв подразделения</b></label>  
                             <div class="collapse" id="collapse_reserve_unit">
@@ -5918,7 +6066,7 @@
                           </div>
                         </div>
                       {% else %}
-                        <div class="card h-100 {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                        <div class="card h-100 {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                           <div class="card-body">
                             <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Резерв подразделения</b></label>  
                             <div class="collapse" id="collapse_reserve_unit">
@@ -5954,7 +6102,7 @@
 
                     {% else %}
 
-                      <div class="card h-100 {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card h-100 {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                         <div class="card-body">
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b></span> &nbsp; Резерв подразделения</b></label> 
                           <div class="collapse" id="collapse_reserve_unit">
@@ -5989,7 +6137,7 @@
 
                   <div class="col-12 col-sm-4">
             
-                      <div class="card h-100 {% if params.lo.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card h-100 {% if params.lo.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                         <div class="card-body">
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Соглашение проданного автомобиля</b></label> 
                           <div class="collapse" id="collapse_reserve_unit">
@@ -6026,7 +6174,7 @@
 
                   <div class="col-12 col-sm-4">
                     
-                    <div class="card h-100 {% if params.car != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                    <div class="card h-100 {% if params.car != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                         <div class="card-body">
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Автомобиль</b></label> 
                           <div class="collapse" id="collapse_reserve_unit">
@@ -6891,7 +7039,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_kors">
-                    <div class="card-body {% if params.price_kors.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_kors.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <div class="row">
                         <div class="col">
@@ -7424,7 +7572,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_autohub">
-                    <div class="card-body {% if params.price_autohub.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_autohub.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <div class="row">
                         <div class="col">
@@ -7835,7 +7983,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price">
-                    <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <label class="fs-5">Авито (Автоматическая - 3)</label>
                       <hr style="margin: 0.2rem;">
@@ -8166,7 +8314,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_custom">
-                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <label class="fs-5">Ручная</label>
                       <hr style="margin: 0.2rem;">
@@ -8319,11 +8467,10 @@
           
             </main>
 
-
             <div class="row row-cols-1 row-cols-md-4 mb-4 text-center">
                 
               <div class="col">
-                <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-opacity-50">
+                <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-50">
                   <div class="card-header py-3">
                     <h4 class="my-0 fw-normal">Оценщик - ЕЦО</h4>
                   </div>
@@ -8434,7 +8581,7 @@
               </div>
              
               <div class="col">
-                <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-25">
+                <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-10">
                   <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
                     <h4 class="my-0 fw-normal" >Авито</h4>
                   </div>
@@ -8499,7 +8646,7 @@
               </div>
 
               <div class="col">
-                <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-25">
+                <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-10">
                   <div class="card-header py-3"  data-bs-toggle="collapse" href="#collapse_kors" role="button" aria-expanded="false" aria-controls="collapse_kors">
                     <h4 class="my-0 fw-normal">КорсАвто</h4>
                   </div>
@@ -8823,7 +8970,7 @@
               
 
               <div class="col">
-                <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-opacity-25">
+                <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-10">
                   <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
                     <h4 class="my-0 fw-normal">Автохаб</h4>
                   </div>
@@ -9063,7 +9210,7 @@
                     
                     {% for body_info in params.body.array %}
                     
-                      <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-opacity-10 {% endif %}}">
+                      <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-gradient bg-opacity-10 {% endif %}}">
                         <td colspan="4">{{body_info.name}}</div>
                         <td> 
                           <span class="badge bg-opacity-75 {% if body_info.carap > 1 %} bg-danger {% elif body_info.carap > 0 %} bg-warning {% else %} bg-success {% endif %} rounded-pill justify-content-end">{{body_info.carap}}</span>
@@ -9139,7 +9286,7 @@
                                                 Склад - {{params.estimation.list_data_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-success bg-opacity-25">
+                                            <tr class="bg-success bg-opacity-10">
                                               <th scope="col">Принят</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -9161,7 +9308,7 @@
                                             {% for car_store in params.estimation.list_data_active %} 
                                           
                                               {% if car_store.active %}
-                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                                   <td>
                                                     {{car_store.doc.dataTime}}
                                                   </td>
@@ -9222,7 +9369,7 @@
                                                 Продажи - {{params.estimation.list_data_sale_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-success bg-opacity-25">
+                                            <tr class="bg-success bg-opacity-10">
                                               <th scope="col">Продан</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -9242,7 +9389,7 @@
                                               <th scope="col">ЦНА</th>
                                             </tr>
                                             {% for car_store in params.estimation.list_data_sale_active %} 
-                                              <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                              <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                                 <td >
                                                   {{car_store.doc.dataTime}}
                                                 </td>
@@ -9306,7 +9453,7 @@
                                                 Склад - {{params.estimation.list_data_no_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-danger bg-opacity-25">
+                                            <tr class="bg-danger bg-opacity-10">
                                               <th scope="col">Принят</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -9327,7 +9474,7 @@
                                             </tr>
                                             {% for car_store in params.estimation.list_data_no_active %} 
                                                                                   
-                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                                   <td>
                                                     {{car_store.doc.dataTime}}
                                                   </td>
@@ -9387,7 +9534,7 @@
                                                 Продажи - {{params.estimation.list_data_sale_no_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-danger bg-opacity-25">
+                                            <tr class="bg-danger bg-opacity-10">
                                               <th scope="col">Продан</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -9730,7 +9877,7 @@
                   {% if params.estimation.rlk.unit_dc == None %}
 
                     {% if params.estimation.rlk.unit == None %}
-                      <div class="card h-100 {% if params.estimation.page_documents.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card h-100 {% if params.estimation.page_documents.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                         <div class="card-body">
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Резерв подразделения</b></label>  
                           <div class="collapse" id="collapse_reserve_unit">
@@ -9763,7 +9910,7 @@
                         </div>
                       </div>
                     {% else %}
-                      <div class="card h-100 {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                      <div class="card h-100 {% if params.estimation.rlk.unit.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                         <div class="card-body">
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Резерв подразделения</b></label>  
                           <div class="collapse" id="collapse_reserve_unit">
@@ -9799,7 +9946,7 @@
 
                   {% else %}
 
-                    <div class="card h-100 {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                    <div class="card h-100 {% if params.estimation.rlk.unit_dc.balance > -1 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                       <div class="card-body">
                         <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b></span> &nbsp; Резерв подразделения</b></label> 
                         <div class="collapse" id="collapse_reserve_unit">
@@ -9834,7 +9981,7 @@
 
                 <div class="col-12 col-sm-4">
           
-                    <div class="card h-100 {% if params.lo.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                    <div class="card h-100 {% if params.lo.agreement_number != '' %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                       <div class="card-body">
                         <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Соглашение проданного автомобиля</b></label> 
                         <div class="collapse" id="collapse_reserve_unit">
@@ -9871,7 +10018,7 @@
 
                 <div class="col-12 col-sm-4">
                   
-                  <div class="card h-100 {% if params.car != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-25">
+                  <div class="card h-100 {% if params.car != None %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10">
                       <div class="card-body">
                         <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve_unit" aria-expanded="false" aria-controls="collapse_reserve_unit"> <b> &nbsp; Автомобиль</b></label> 
                         <div class="collapse" id="collapse_reserve_unit">
@@ -10523,7 +10670,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_kors">
-                    <div class="card-body {% if params.price_kors.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_kors.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <div class="row">
                         <div class="col">
@@ -11056,7 +11203,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_autohub">
-                    <div class="card-body {% if params.price_autohub.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_autohub.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <div class="row">
                         <div class="col">
@@ -11467,7 +11614,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price">
-                    <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <label class="fs-5">Авито (Автоматическая - 3)</label>
                       <hr style="margin: 0.2rem;">
@@ -11798,7 +11945,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_custom">
-                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
                       <label class="fs-5">Ручная</label>
                       <hr style="margin: 0.2rem;">
@@ -11954,7 +12101,7 @@
               <div class="row row-cols-1 row-cols-md-4 mb-4 text-center">
                 
                 <div class="col">
-                  <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-opacity-50">
+                  <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-50">
                     <div class="card-header py-3">
                       <h4 class="my-0 fw-normal">Оценщик - ЕЦО</h4>
                     </div>
@@ -12065,7 +12212,7 @@
                 </div>
                
                 <div class="col">
-                  <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-25">
+                  <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-10">
                     <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
                       <h4 class="my-0 fw-normal" >Авито</h4>
                     </div>
@@ -12130,7 +12277,7 @@
                 </div>
 
                 <div class="col">
-                  <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-25">
+                  <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-10">
                     <div class="card-header py-3"  data-bs-toggle="collapse" href="#collapse_kors" role="button" aria-expanded="false" aria-controls="collapse_kors">
                       <h4 class="my-0 fw-normal">КорсАвто</h4>
                     </div>
@@ -12452,7 +12599,7 @@
                 </div>
                 
                 <div class="col">
-                  <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-opacity-25">
+                  <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-10">
                     <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
                       <h4 class="my-0 fw-normal">Автохаб</h4>
                     </div>
@@ -12695,7 +12842,7 @@
                     
                     {% for body_info in params.body.array %}
                     
-                      <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-opacity-10 {% endif %}}">
+                      <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-gradient bg-opacity-10 {% endif %}}">
                         <td colspan="4">{{body_info.name}}</div>
                         <td> 
                           <span class="badge bg-opacity-75 {% if body_info.carap > 1 %} bg-danger {% elif body_info.carap > 0 %} bg-warning {% else %} bg-success {% endif %} rounded-pill justify-content-end">{{body_info.carap}}</span>
@@ -12771,7 +12918,7 @@
                                                 Склад - {{params.estimation.list_data_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-success bg-opacity-25">
+                                            <tr class="bg-success bg-opacity-10">
                                               <th scope="col">Принят</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -12793,7 +12940,7 @@
                                             {% for car_store in params.estimation.list_data_active %} 
                                           
                                               {% if car_store.active %}
-                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                                   <td>
                                                     {{car_store.doc.dataTime}}
                                                   </td>
@@ -12854,7 +13001,7 @@
                                                 Продажи - {{params.estimation.list_data_sale_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-success bg-opacity-25">
+                                            <tr class="bg-success bg-opacity-10">
                                               <th scope="col">Продан</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -12874,7 +13021,7 @@
                                               <th scope="col">ЦНА</th>
                                             </tr>
                                             {% for car_store in params.estimation.list_data_sale_active %} 
-                                              <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                              <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                                 <td >
                                                   {{car_store.doc.dataTime}}
                                                 </td>
@@ -12938,7 +13085,7 @@
                                                 Склад - {{params.estimation.list_data_no_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-danger bg-opacity-25">
+                                            <tr class="bg-danger bg-opacity-10">
                                               <th scope="col">Принят</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -12959,7 +13106,7 @@
                                             </tr>
                                             {% for car_store in params.estimation.list_data_no_active %} 
                                                                                   
-                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                                <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                                   <td>
                                                     {{car_store.doc.dataTime}}
                                                   </td>
@@ -13019,7 +13166,7 @@
                                                 Продажи - {{params.estimation.list_data_sale_no_active|length}}
                                               </td>
                                             </tr>
-                                            <tr class="bg-danger bg-opacity-25">
+                                            <tr class="bg-danger bg-opacity-10">
                                               <th scope="col">Продан</th>
                                               <th scope="col">Стоянка</th>
                                               <th scope="col">VIN</th>
@@ -14109,7 +14256,7 @@
                           
                           {% for body_info in params.body.array %}
                           
-                            <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-opacity-10 {% endif %}">
+                            <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-gradient bg-opacity-10 {% endif %}">
                               <td colspan="4">{{body_info.name}}</div>
                               <td> 
                                 <span class="badge bg-opacity-75 {% if body_info.carap > 1 %} bg-danger {% elif body_info.carap > 0 %} bg-warning {% else %} bg-success {% endif %} rounded-pill justify-content-end">{{body_info.carap}}</span>
@@ -14205,7 +14352,7 @@
                         
                         {% for salon_info in params.salon.array %}
                         
-                          <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-opacity-10 {% endif %}">
+                          <tr class="{% if forloop.counter|divisibleby:"2" %} bg-secondary bg-gradient bg-opacity-10 {% endif %}">
                             <td colspan="4">{{salon_info.name}}</div>
                             <td> 
                               <span class="badge bg-opacity-75 {% if salon_info.perecras > 1 %} bg-danger {% elif salon_info.perecras > 0 %} bg-warning {% else %} bg-success {% endif %} rounded-pill justify-content-end">{{salon_info.perecras}}</span>
@@ -14717,7 +14864,7 @@
                     </div>
 
                     <div class="card" style="margin: 0.2rem;" id="price_kors">
-                      <div class="card-body {% if params.price_kors.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                      <div class="card-body {% if params.price_kors.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                         
                         <div class="row">
                           <div class="col">
@@ -15008,7 +15155,7 @@
                     </div>
 
                     <div class="card" style="margin: 0.2rem;" id="price_autohub">
-                      <div class="card-body {% if params.price_autohub.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                      <div class="card-body {% if params.price_autohub.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                         <form method="POST">
                           {% csrf_token %}
                         
@@ -15312,7 +15459,7 @@
                     </div>
 
                     <div class="card" style="margin: 0.2rem;" id="price">
-                      <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                      <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                         
                         <label class="fs-5">Автоматическая - 3</label>
                         <hr style="margin: 0.2rem;">
@@ -15590,7 +15737,7 @@
                   </div>
 
                   <div class="card" style="margin: 0.2rem;" id="price_custom">
-                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
+                    <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       <form id='form_send' method="post">
                         {% csrf_token %}
 
@@ -16204,7 +16351,7 @@
                                           Склад - {{params.estimation.list_data_active|length}}
                                         </td>
                                       </tr>
-                                      <tr class="bg-success bg-opacity-25">
+                                      <tr class="bg-success bg-opacity-10">
                                         <th scope="col">Принят</th>
                                         <th scope="col">Стоянка</th>
                                         <th scope="col">VIN</th>
@@ -16226,7 +16373,7 @@
                                       {% for car_store in params.estimation.list_data_active %} 
                                     
                                         {% if car_store.active %}
-                                          <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                          <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                             <td>
                                               {{car_store.doc.dataTime}}
                                             </td>
@@ -16287,7 +16434,7 @@
                                           Продажи - {{params.estimation.list_data_sale_active|length}}
                                         </td>
                                       </tr>
-                                      <tr class="bg-success bg-opacity-25">
+                                      <tr class="bg-success bg-opacity-10">
                                         <th scope="col">Продан</th>
                                         <th scope="col">Стоянка</th>
                                         <th scope="col">VIN</th>
@@ -16307,7 +16454,7 @@
                                         <th scope="col">ЦНА</th>
                                       </tr>
                                       {% for car_store in params.estimation.list_data_sale_active %} 
-                                        <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                        <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                           <td >
                                             {{car_store.doc.dataTime}}
                                           </td>
@@ -16371,7 +16518,7 @@
                                           Склад - {{params.estimation.list_data_no_active|length}}
                                         </td>
                                       </tr>
-                                      <tr class="bg-danger bg-opacity-25">
+                                      <tr class="bg-danger bg-opacity-10">
                                         <th scope="col">Принят</th>
                                         <th scope="col">Стоянка</th>
                                         <th scope="col">VIN</th>
@@ -16392,7 +16539,7 @@
                                       </tr>
                                       {% for car_store in params.estimation.list_data_no_active %} 
                                                                             
-                                          <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-25" {% endif %}>
+                                          <tr {% if car_store.cum < 0 %} class="bg-danger bg-opacity-10" {% endif %}>
                                             <td>
                                               {{car_store.doc.dataTime}}
                                             </td>
@@ -16452,7 +16599,7 @@
                                           Продажи - {{params.estimation.list_data_sale_no_active|length}}
                                         </td>
                                       </tr>
-                                      <tr class="bg-danger bg-opacity-25">
+                                      <tr class="bg-danger bg-opacity-10">
                                         <th scope="col">Продан</th>
                                         <th scope="col">Стоянка</th>
                                         <th scope="col">VIN</th>
@@ -16699,7 +16846,7 @@
 
                   <div class="row g-1">
                     <div class="col-3">
-                      <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-25">
+                      <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-10">
                         <div class="card-header py-3"  data-bs-toggle="collapse" href="#collapse_kors" role="button" aria-expanded="false" aria-controls="collapse_kors">
                           <h4 class="my-0 fw-normal">КорсАвто</h4>
                         </div>
