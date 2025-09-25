@@ -6702,7 +6702,7 @@ def test(request):
     hour_start_day  = 9
     hour_end_day    = 20
 
-    estimations = RegInteractivOcenka.objects.filter(rlk__pk = 2312526).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
+    estimations = RegInteractivOcenka.objects.filter(rlk__pk = 2209734).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     for estimation in estimations:
         slug_chat       = 'rlk_' + str(estimation.rlk.id)
         end_estimation  = estimation.end_estimation
@@ -6820,12 +6820,15 @@ def test(request):
                 if status == 1:
                     status_soglasovanie_do_diag = status_soglasovanie_do_diag + seconds_status
                     seconds_status = 0
+                    status = 0
                 elif status == 2:
                     status_diagnostika = status_diagnostika + seconds_status
                     seconds_status = 0
+                    status = 0
                 elif status == 3:
                     status_soglasovanie_posle_kd = status_soglasovanie_posle_kd + seconds_status        
                     seconds_status = 0
+                    status = 0
 
             if message.user.profiles.eco and prev_user:
                 seconds_answer = seconds_answer + sec                
@@ -6858,13 +6861,13 @@ def test(request):
         estimation.count_task   = len(tasks)
         second_task             = 0
         for task in tasks:
-            if task.date_open.day == message.date_close.day:
-                second_task = second_task + (message.date_open - message.date_close).total_seconds()
+            if task.date_open.day == task.date_close.day:
+                second_task = second_task + (task.date_close - task.date_open).total_seconds()
             else:
-                day_end      = message.date_open.replace(hour = hour_end_day, minute = 0, second = 0)
-                day_start    = message.date_close.replace(hour = hour_start_day, minute = 0, second = 0)
+                day_end      = task.date_open.replace(hour = hour_end_day, minute = 0, second = 0)
+                day_start    = task.date_close.replace(hour = hour_start_day, minute = 0, second = 0)
                 sec_1        = (day_end - mes_start).total_seconds()
-                sec_2        = (message.date - day_start).total_seconds()
+                sec_2        = (task.date - day_start).total_seconds()
                 sec          = sec_1 + sec_2
                 second_task = second_task + sec_1 + sec_2    
         estimation.seconds_task = second_task

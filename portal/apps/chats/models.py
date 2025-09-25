@@ -36,6 +36,9 @@ class Chat(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['slug'])
+        ]
         db_table = 'chat'
         verbose_name = "Чат"
         verbose_name_plural = "Чаты"
@@ -68,6 +71,9 @@ class ChatMessage(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['chat'])
+        ]
         db_table = 'chatMessage'
         verbose_name = "Сообщение чата"
         verbose_name_plural = "Сообщения чата"
