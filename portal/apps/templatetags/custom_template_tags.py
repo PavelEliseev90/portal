@@ -32,7 +32,9 @@ register.filter('ammont_box_sum', ammont_box_sum)
 
 
 def second_to_time(seconds):
-    return str(DT.timedelta(seconds=seconds))
+    if seconds != None:
+        return str(DT.timedelta(seconds=seconds))
+    return str(DT.timedelta(seconds=0))
 register.filter('second_to_time', second_to_time)
 
 

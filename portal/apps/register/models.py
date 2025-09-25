@@ -1681,7 +1681,7 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
 
         try:
             s = 1
-            add_swap(self.reginteractivocenka)
+            #add_swap(self.reginteractivocenka)
         except:
             s =1 
         super().save(*args, **kwargs)
@@ -1849,10 +1849,12 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         try:
             return str(timedelta(seconds=(int(self.seconds_answer / self.count_answer))))
         except:
-            return ''
+            return str(timedelta(seconds=0))
     
     def duration(self):
-        return str(timedelta(seconds=self.seconds_estimation))
+        if self.seconds_estimation != None:
+            return str(timedelta(seconds=self.seconds_estimation))
+        return str(timedelta(seconds=0))
     
     def link_car(self):
         car_organizations = RefCarsOrganization.objects.filter(lo__rlk = self.rlk) 
@@ -2395,7 +2397,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         except:
             self.status = RefStatusEstimation.objects.get(pk = 1)
         
-        add_swap(self)
+        #add_swap(self)
         
         try:
             if self.status == RefStatusEstimation.objects.get(pk = 8):

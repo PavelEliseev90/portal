@@ -5975,7 +5975,7 @@
                                     <div class="card-body">
                                       <label class="fs-6">Задач</label>
                                       <br>
-                                      <label class="fs-5">{{params.estimation.count_task}}</label>
+                                      <label class="fs-5">{{params.estimation.count_task|default_if_none:"0"}}</label>
                                     </div>
                                   </div>
                                 </div>

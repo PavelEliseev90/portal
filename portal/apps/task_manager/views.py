@@ -50,7 +50,7 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-url_auction_kors_portal     = 'http://127.0.0.1:8008'
+url_auction_kors_portal     = 'https://my.kors-group.ru'
 
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
