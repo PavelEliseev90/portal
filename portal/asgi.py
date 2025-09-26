@@ -16,9 +16,12 @@ import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'portal.settings')
 
+
 django.setup()
 
+
 from chats import consumers
+
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
