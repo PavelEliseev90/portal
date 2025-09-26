@@ -19,9 +19,6 @@ table{border-collapse:collapse;border-spacing:0;}
     font-size: 0.75rem !important;
 }
 
-.fs-8 {
-    font-size: 0.5rem !important;
-}
 
 .form-floating-kors>label{
 	padding-top: 0.65rem !important;
@@ -3226,14 +3223,14 @@ span.mail a:hover{
 }
 
 .card.bg-white.bg-opacity-50 label.fs-4.fw-bold {
-	color: #e74c3c;
+	color: #fe912f;
 	font-weight: 700;
 	font-size: 1.25rem !important;
 }
 
 /* Единые стили для цены во всех карточках автомобилей */
 .card.bg-white.bg-opacity-50 .text-end label.fs-4.fw-bold {
-	color: #e74c3c;
+	color: #fe912f;
 	font-size: 1.4rem !important;
 }
 
@@ -3313,7 +3310,7 @@ label.fs-5:contains("Может заинтересовать")::after {
 	transform: translateX(-50%);
 	width: 60px;
 	height: 3px;
-	background: #e74c3c;
+	background: #fe912f;
 	border-radius: 2px;
 }
 
@@ -3321,8 +3318,8 @@ label.fs-5:contains("Может заинтересовать")::after {
 hr[style*="width: 75%"] {
 	border: none;
 	height: 2px;
-	background: #e74c3c;
-	margin: 2rem auto;
+	background: #fe912f;
+	margin: 0.7rem auto;
 	opacity: 0.7;
 }
 
@@ -3451,7 +3448,7 @@ hr[style*="width: 75%"] {
 }
 
 .card .card-body .row .col-auto .fs-3:hover {
-	color: #e74c3c;
+	color: #fe912f;
 }
 
 /* Логотип дилера в основной карточке */
@@ -3491,7 +3488,7 @@ hr[style*="width: 75%"] {
 	left: 0;
 	right: 0;
 	height: 2px;
-	background: #e74c3c;
+	background: #fe912f;
 	transform: scaleX(0);
 	transition: transform 0.3s ease;
 }
@@ -3534,14 +3531,14 @@ hr[style*="width: 75%"] {
 
 /* Стили для разделителей в карточках */
 .card.mb-1.rounded-3.shadow-sm.bg-white.bg-opacity-25 .hr_kors_dark.btn_block {
-	background: #e74c3c !important;
+	background: #fe912f !important;
 	border-radius: 1px;
 	box-shadow: none;
 }
 
 /* Стили для цены машины */
 .card .card-body .row .col-sm-12 .fs-4.fw-bold {
-	color: #e74c3c !important;
+	color: #fe912f !important;
 	font-weight: 800 !important;
 	font-size: 1.5rem !important;
 	text-shadow: none;
@@ -3669,7 +3666,7 @@ hr[style*="width: 75%"] {
 }
 
 .card[style*="background-color: rgba(255,255,255,0.5)"] .bg-dark a:hover {
-	color: #e74c3c !important;
+	color: #fe912f !important;
 	transition: color 0.2s ease;
 }
 
@@ -3694,8 +3691,8 @@ hr[style*="width: 75%"] {
 }
 
 .card[style*="background-color: rgba(255,255,255,0.5)"] .btn:hover {
-	background: #e74c3c !important;
-	border-color: #e74c3c !important;
+	background: #fe912f !important;
+	border-color: #fe912f !important;
 	color: #ffffff !important;
 	transform: translateY(-1px) !important;
 	box-shadow: 0 2px 6px rgba(231,76,60,0.2) !important;
@@ -3766,7 +3763,7 @@ hr[style*="width: 75%"] {
 }
 
 .card.start_block[style*="background-color: rgba(255,255,255,0.1)"] .form-control:focus {
-	border-color: #e74c3c !important;
+	border-color: #fe912f !important;
 	box-shadow: 0 0 0 0.15rem rgba(231,76,60,0.2) !important;
 	outline: none !important;
 }
@@ -3805,7 +3802,7 @@ hr[style*="width: 75%"] {
 }
 
 .card.start_block[style*="background-color: rgba(255,255,255,0.1)"] textarea.form-control:focus {
-	border-color: #e74c3c !important;
+	border-color: #fe912f !important;
 	box-shadow: 0 0 0 0.15rem rgba(231,76,60,0.2) !important;
 }
 
@@ -3817,7 +3814,7 @@ hr[style*="width: 75%"] {
 	text-transform: uppercase !important;
 	letter-spacing: 0.3px !important;
 	margin-bottom: 0.5rem !important;
-	border-bottom: 1px solid #e74c3c !important;
+	border-bottom: 1px solid #fe912f !important;
 	padding-bottom: 0.25rem !important;
 }
 
@@ -3950,14 +3947,14 @@ hr[style*="width: 75%"] {
 }
 
 .card.bg-white.bg-opacity-75 .fs-4.fw-bold {
-	color: #e74c3c;
+	color: #fe912f;
 	font-weight: 700;
 	font-size: 1.25rem !important;
 }
 
 /* Стили для цены в карточках каталога */
 .card.bg-white.bg-opacity-75 .text-end .fs-4.fw-bold {
-	color: #e74c3c;
+	color: #fe912f;
 	font-size: 1.4rem !important;
 }
 
@@ -4101,7 +4098,7 @@ hr[style*="width: 75%"] {
 
 .btn-filters-mobile:hover {
 	background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-	border-color: #e74c3c;
+	border-color: #fe912f;
 	box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4), 0 0 0 3px rgba(231, 76, 60, 0.1);
 	transform: translateY(-2px);
 	color: #ffffff;
@@ -4124,7 +4121,7 @@ hr[style*="width: 75%"] {
 
 .btn-filters-mobile .icon-mbri-setting {
 	font-size: 1.1rem;
-	color: #e74c3c;
+	color: #fe912f;
 	transition: transform 0.3s ease;
 }
 
@@ -4139,7 +4136,7 @@ hr[style*="width: 75%"] {
 }
 
 .btn-filters-mobile .filters-count {
-	background: #e74c3c;
+	background: #fe912f;
 	color: #ffffff;
 	border-radius: 50%;
 	min-width: 24px;
@@ -4177,7 +4174,7 @@ hr[style*="width: 75%"] {
 }
 
 #mobileFiltersModal .modal-header {
-	border-bottom: 2px solid #e74c3c;
+	border-bottom: 2px solid #fe912f;
 	padding: 1.5rem;
 }
 
@@ -4191,7 +4188,7 @@ hr[style*="width: 75%"] {
 }
 
 #mobileFiltersModal .modal-title .icon-mbri-setting {
-	color: #e74c3c;
+	color: #fe912f;
 	font-size: 1.3rem;
 	margin-right: 0.5rem;
 }
@@ -4246,7 +4243,7 @@ hr[style*="width: 75%"] {
 	margin-bottom: 1rem;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
-	border-bottom: 2px solid #e74c3c;
+	border-bottom: 2px solid #fe912f;
 	padding-bottom: 0.5rem;
 	transition: all 0.3s ease;
 }
@@ -4273,7 +4270,7 @@ hr[style*="width: 75%"] {
 .filter-title-toggle .toggle-icon .icon-mbri-down,
 .filter-title-toggle .toggle-icon .icon-mbri-up {
 	font-size: 0.8em;
-	color: #e74c3c;
+	color: #fe912f;
 }
 
 .filter-search {
@@ -4290,7 +4287,7 @@ hr[style*="width: 75%"] {
 }
 
 .filter-search input:focus {
-	border-color: #e74c3c;
+	border-color: #fe912f;
 	background: #ffffff;
 	box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
 	outline: none;
@@ -4330,7 +4327,7 @@ hr[style*="width: 75%"] {
 
 .filter-option:hover {
 	background: #e9ecef;
-	border-color: #e74c3c;
+	border-color: #fe912f;
 	transform: translateX(5px);
 }
 
@@ -4338,7 +4335,7 @@ hr[style*="width: 75%"] {
 	margin-right: 0.75rem;
 	width: 1.2rem;
 	height: 1.2rem;
-	accent-color: #e74c3c;
+	accent-color: #fe912f;
 	cursor: pointer;
 }
 
@@ -4376,7 +4373,7 @@ hr[style*="width: 75%"] {
 }
 
 .filter-range input:focus {
-	border-color: #e74c3c;
+	border-color: #fe912f;
 	background: #ffffff;
 	box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
 	outline: none;
@@ -4402,7 +4399,7 @@ hr[style*="width: 75%"] {
 }
 
 .filter-input input:focus {
-	border-color: #e74c3c;
+	border-color: #fe912f;
 	background: #ffffff;
 	box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
 	outline: none;
@@ -4433,8 +4430,8 @@ hr[style*="width: 75%"] {
 }
 
 #mobileFiltersModal .btn-primary {
-	background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-	border-color: #e74c3c;
+	background: linear-gradient(135deg, #fe912f 0%, #c0392b 100%);
+	border-color: #fe912f;
 	color: #ffffff;
 }
 
@@ -4470,8 +4467,8 @@ hr[style*="width: 75%"] {
 
 /* Стили для активных фильтров */
 .filter-option:has(input:checked) {
-	background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-	border-color: #e74c3c;
+	background: linear-gradient(135deg, #fe912f 0%, #c0392b 100%);
+	border-color: #fe912f;
 	color: #ffffff;
 }
 
@@ -4486,7 +4483,7 @@ hr[style*="width: 75%"] {
 }
 
 .filter-option:focus-within {
-	outline: 2px solid #e74c3c;
+	outline: 2px solid #fe912f;
 	outline-offset: 2px;
 }
 
@@ -4696,7 +4693,7 @@ mark {
 
 .pc-filter-dropdown:hover,
 .pc-filter-dropdown:focus-within {
-    border-color: #e74c3c;
+    border-color: #fe912f;
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
 }
 
@@ -4916,7 +4913,7 @@ mark {
 }
 
 .pc-filters-actions .btn-primary {
-    background: #e74c3c;
+    background: #fe912f;
     border: none;
     color: white;
 }
@@ -4975,17 +4972,17 @@ mark {
 /* Стили для активных чекбоксов */
 .pc-filter-option:has(input:checked) {
     background: rgba(102, 126, 234, 0.1);
-    border-left: 3px solid #e74c3c;
+    border-left: 3px solid #fe912f;
 }
 
 .pc-filter-option:has(input:checked) .pc-filter-text {
-    color: #e74c3c;
+    color: #fe912f;
     font-weight: 500;
 }
 
 /* Фокус для доступности */
 .pc-filter-option:focus-within {
-    outline: 2px solid #e74c3c;
+    outline: 2px solid #fe912f;
     outline-offset: 2px;
 }
 
@@ -5132,16 +5129,16 @@ mark {
 }
 
 .pc-filters-header .btn-outline-primary {
-    border: 1px solid #e74c3c !important;
+    border: 1px solid #fe912f !important;
     color: white;
-    background: #e74c3c;
+    background: #fe912f;
     transition: all 0.3s ease;
     font-size: 0.875rem;
     padding: 0.5rem 1rem;
 }
 
 .pc-filters-header .btn-outline-primary:hover {
-    background: #e74c3c;
+    background: #fe912f;
     color: white;
     transform: translateY(-1px);
 }

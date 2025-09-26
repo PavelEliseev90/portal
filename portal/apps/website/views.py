@@ -6702,7 +6702,7 @@ def test(request):
     hour_start_day  = 9
     hour_end_day    = 20
 
-    estimations = RegInteractivOcenka.objects.filter(rlk__pk = 2209734).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
+    estimations = RegInteractivOcenka.objects.filter(rlk__pk = 2314324).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     for estimation in estimations:
         slug_chat       = 'rlk_' + str(estimation.rlk.id)
         end_estimation  = estimation.end_estimation
@@ -6808,7 +6808,7 @@ def test(request):
             else:
                 if mes_start.day == message.date.day:
                     seconds_status = seconds_status + (message.date - mes_start).total_seconds()
-                    sec = seconds_status
+                    sec = (message.date - mes_start).total_seconds()
                 else:
                    day_end      = mes_start.replace(hour = hour_end_day, minute = 0, second = 0)
                    day_start    = message.date.replace(hour = hour_start_day, minute = 0, second = 0)
