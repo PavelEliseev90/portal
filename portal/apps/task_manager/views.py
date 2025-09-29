@@ -474,15 +474,11 @@ def get_info_max(estimation_id):
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    if DT.datetime.now().year - estimation.year > 5:
-        year_start  = estimation.year 
-        year_end    = estimation.year 
-    else:
-        year_start  = estimation.year
-        year_end    = estimation.year
-
+    year_start  = estimation.year  - 1 
+    year_end    = estimation.year  + 1
+    
     try:
-
+       
         brand = {
             'id'    : None,
             'name'  : estimation.modification.model.mark.name.strip()
@@ -509,8 +505,8 @@ def get_info_max(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-           # 'yearFrom'      : year_start,
-            #"yearTo"        : year_end
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end
         }
         
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
@@ -522,9 +518,9 @@ def get_info_max(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'useAutoFilter'  : True,
-            #'yearFrom'      : year_start,
-            #"yearTo"        : year_end,
+            'useAutoFilter'  : False,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end,
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 
@@ -782,6 +778,9 @@ def refresh_estimation_cars_organization():
     cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None)
     for car in cars:
         try:
+            
+            year_start  = car.year
+            year_end    = car.year
 
             brand = {
                 'id'    : None,
@@ -809,8 +808,8 @@ def refresh_estimation_cars_organization():
                 'generation'    : generation,
                 'modification'  : modification,
                 'geoDistance'   : 500,
-            # 'yearFrom'      : year_start,
-                #"yearTo"        : year_end
+                'yearFrom'      : year_start,
+                "yearTo"        : year_end
             }
             
             salesFromDate = DT.datetime.now() - relativedelta(months=2)
@@ -822,9 +821,9 @@ def refresh_estimation_cars_organization():
                 'generation'    : generation,
                 'modification'  : modification,
                 'geoDistance'   : 500,
-                'useAutoFilter'  : True,
-                #'yearFrom'      : year_start,
-                #"yearTo"        : year_end,
+                'useAutoFilter'  : False,
+                'yearFrom'      : year_start,
+                "yearTo"        : year_end,
                 'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
             }
 
