@@ -6696,13 +6696,12 @@ def get_url_images(slug):
         list_url.append('/media/nophoto.png')
     return list_url
 
-
-def test(request):
-    
+def refresh_estimation_analitik(estimation_rlk_id):
+      
     hour_start_day  = 9
     hour_end_day    = 20
 
-    estimations = RegInteractivOcenka.objects.filter(rlk__pk = 2314324).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
+    estimations = RegInteractivOcenka.objects.filter(rlk__pk = estimation_rlk_id).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     for estimation in estimations:
         slug_chat       = 'rlk_' + str(estimation.rlk.id)
         end_estimation  = estimation.end_estimation
@@ -6889,6 +6888,22 @@ def test(request):
                                        'status_soglasovanie_posle_kd'
             ]) 
         #
+    
+
+
+    
+def test(request):
+    
+    estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
+    count = estimations.count()
+    s = 1
+    for estimation in estimations:
+        try:
+            refresh_estimation_analitik(estimation['rlk__id'])
+            s  = s + 1
+        except:
+            ss = 1
+        print(str(s) + ' / ' + str(count))
     
 
 
