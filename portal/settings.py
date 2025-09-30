@@ -118,7 +118,7 @@ CORS_ALLOW_PRIVATE_NETWORK = True
 
 ROOT_URLCONF = 'portal.urls'
 
-
+LOGIN_URL = '/login/'
 
 TEMPLATES = [
     {
@@ -196,7 +196,7 @@ AUTHENTICATION_BACKENDS = [
 LDAP_AUTH_URL = ["ldap://a01-srv-dc01:389",] 
 
 LDAP_AUTH_CONNECTION_USERNAME = 'portal.adm'
-LDAP_AUTH_CONNECTION_PASSWORD = 'DO`PD7+V~0sum8jTNpSY'
+LDAP_AUTH_CONNECTION_PASSWORD = 'Ymkdyf%bFsFyp1nt.~e7'
 
 # Initiate TLS on connection.
 LDAP_AUTH_USE_TLS = False
