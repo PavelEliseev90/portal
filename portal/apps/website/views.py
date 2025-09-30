@@ -6231,12 +6231,12 @@ def settings_diagnostic(request):
     
     settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
     
-    settings = {
+    settings_data = {
         'settings_estimation' : settings_estimation
     }
     params = {
         'type'          : 'settings',
-        'settings'      : settings        
+        'settings'      : settings_data        
     }
     
     return render(request, "kors/settings_diagnostic.html", {'params': params})
@@ -6246,12 +6246,12 @@ def settings_vnesh(request):
     
     settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
     
-    settings = {
+    settings_data = {
         'settings_estimation' : settings_estimation
     }
     params = {
         'type'          : 'settings',
-        'settings'      : settings        
+        'settings'      : settings_data        
     }
     
     return render(request, "kors/settings_vnesh.html", {'params': params})
