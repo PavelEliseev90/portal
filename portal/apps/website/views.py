@@ -6990,7 +6990,7 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
-    '''
+    
     estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
     count = estimations.count()
     s = 1
@@ -7001,7 +7001,7 @@ def test(request):
         except:
             ss = 1
         print(str(s) + ' / ' + str(count))
-    '''
+    
 
 
     
