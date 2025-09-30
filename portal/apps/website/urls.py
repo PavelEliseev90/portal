@@ -32,6 +32,12 @@ urlpatterns = [
 
    # Справочники
    path('refs/',                 views.refs),
+   
+   path('settings/',                                        views.settings),
+   path('settings/settings_matrix_auction/',                views.settings_matrix_auction),
+   path('settings/settings_diagnostic/',                    views.settings_diagnostic),
+   path('settings/settings_vnesh/',                         views.settings_vnesh),
+
    path('refs/units_group/',     views.refs_unit_group_list),
    
    path('balance_edit/<id>/',   views.balance_edit, name='id'),

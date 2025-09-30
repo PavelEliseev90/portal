@@ -796,7 +796,14 @@ def doc(request, id):
                     get_info_max(estimation.id)
                     kors_estimation_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
-            
+                elif refresh == 'analitik':
+                    from website.views import refresh_estimation_analitik
+                    try:
+                        refresh_estimation_analitik(estimation.rlk.id)
+                    except:
+                        s= 1
+                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+                
             balance_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
             if balance_count == 1:
                 balance = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]   
@@ -2907,7 +2914,7 @@ def estimations_price_calculation(estimation, type_calculation):
         run_other   = 0
         run_sum     = 0
         for event in eventsOthersHistory:
-            if event['source'] != 'Audatex':
+            if event['source'] != 'Audatex' and event['source'] != 'Данные о техосмотре':
                 if event['mileage'] > 0:
                     run = event['mileage']
                     if run_other > run:

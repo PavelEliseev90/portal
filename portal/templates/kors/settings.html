@@ -1,0 +1,147 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - Настройки {% endblock %}
+
+{% block title_navbar %} - Настройки {% endblock %}
+
+{% block content %}
+
+<div class="card bg-white bg-opacity-75 bg-gradient">
+  <div class="card-body">
+    
+    <label class="fs-6">Интерактивная оценка</label>
+    
+    
+    <div class="row g-1">
+      
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <label class="fs-7"> Общие настройки </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <label class="fs-7"> Внутренний осмотр </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <a class="text-dark" href="settings_vnesh/"> <label class="fs-7"> Внешний осмотр </label></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <a class="text-dark" href="settings_diagnostic/"> <label class="fs-7"> Диагностика </label></a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    
+  </div>
+</div>
+
+<br>
+
+<div class="card bg-white bg-opacity-75 bg-gradient">
+  <div class="card-body">
+    <label class="fs-6">Подготовка</label>
+    
+
+    <div class="row g-1">
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <label class="fs-7"> Работы </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<br>
+
+<div class="card bg-white bg-opacity-75 bg-gradient">
+  <div class="card-body">
+    <label class="fs-5">Продажи</label>
+    
+    <div class="row g-1">
+      
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <label class="fs-7"> Настройки автоматической переоценки новых АМ </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <label class="fs-7"> Настройки автоматической переоценки КорсАвто </label>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+  </div>
+</div>
+
+<br>
+
+<div class="card bg-white bg-opacity-75 bg-gradient">
+  <div class="card-body">
+    <label class="fs-6">Аукцион</label>
+    
+
+    <div class="row g-1">
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <a class="text-dark" href="settings_matrix_auction/"> <label class="fs-7"> Матрица расчета БЦП </label></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<br>
+
+<div class="card bg-white bg-opacity-75 bg-gradient">
+  <div class="card-body">
+    <label class="fs-6">Настройки доступа</label>
+    
+
+    <div class="row g-1">
+      <div class="col-sm-auto">
+        <div class="card">
+          <div class="card-body">
+            <label class="fs-7"> Пользователи </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+
+
+{% endblock %}
