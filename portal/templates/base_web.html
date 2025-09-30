@@ -519,44 +519,29 @@
                         </li>
                         
                         {% if request.user.is_superuser %}
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="/admin">
-                            <span class="icon-mbri-globe"> </span>
-                                Админка
-                                <!--<span class="badge bg-danger rounded-pill">1</span>-->
-                            </a>
-                        </li>
                         
-                       
-                         <!--
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_refs" aria-expanded="false" aria-controls="collapse_refs">
-                            <span class="icon-mbri-globe"> </span>
-                                Справочники
-                            </a>
-                        </li>
-                            <div class="collapse {% if params.type == 'units_group' or params.type == 'units' %} show {% endif %}" id="collapse_refs" style="transition: 0.5s; padding-left: 1.5rem;">
-                                <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'units_group' %}secondary active {% else %}white {% endif %}" href="/refs/units_group/">
-                                    <span class="icon-mbri-video-play"></span>
-                                        Группы подразделений
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'units' %}secondary active {% else %}white {% endif %}" href="/refs/units/">
-                                    <span class="icon-mbri-cust-feedback"></span>
-                                        Подразделения
-                                    </a>
-                                </li>
-                            </div>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="/admin">
+                                <span class="icon-mbri-globe"> </span>
+                                    Админка                            
+                                </a>
+                            </li>
                         
-                        <li class="nav-item">
-                            <a class="nav-link text-{% if params.type == 'help' %}secondary active {% else %}white {% endif %}" href="/help_desk/">
-                            <span class="icon-mbri-help"> </span>
-                                Help Desk
-                            </a>
-                        </li>
-                        -->
+                        {% endif %}
+                        
+                        {% if request.user.profiles.korsavto_settings %}
+                            <li class="nav-item">
+                                <a class="nav-link text-{% if params.type == 'settings' %}secondary active {% else %}white {% endif %}" href="/settings/">
+                                <span class="icon-mbri-cust-feedback"></span>
+                                    Настройки
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-{% if params.type == 'reports' %}secondary active {% else %}white {% endif %}" href="/reports/">
+                                <span class="icon-mbri-cust-feedback"></span>
+                                    Отчеты
+                                </a>
+                            </li>
                         {% endif %}
 
                         {% if request.user.profiles.eco or request.user.profiles.eco_visible %}
@@ -589,6 +574,7 @@
                                         </a>
                                     </li>
                                 {% endif %}
+                                
                             </div>
                             
                         {% endif %}

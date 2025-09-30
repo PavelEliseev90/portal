@@ -113,6 +113,64 @@ def save_directory():
     return FileSystemStorage(location=path)
 
 
+class SettingsMatrixAuction(models.Model):
+    charge_bcp_200              = models.IntegerField('Базовая наценка для определения БЦП ЦГ200', default=0, null=False, blank=True)       #'// 
+    min_km_200                  = models.IntegerField('Минимальный КМ ЦГ200', default=0, null=False, blank=True)
+    charge_km_stage_1_200       = models.IntegerField('Умеренное снижение ЦГ200', default=0, null=False, blank=True)
+    charge_km_stage_2_200       = models.IntegerField('Среднее снижение ЦГ200', default=0, null=False, blank=True)
+    charge_km_stage_3_200       = models.IntegerField('Значительное снижение КМ ЦГ200', default=0, null=False, blank=True)
+
+    charge_bcp_400              = models.IntegerField('Базовая наценка для определения БЦП ЦГ400', default=0, null=False, blank=True)       #'// 
+    min_km_400                  = models.IntegerField('Минимальный КМ ЦГ400', default=0, null=False, blank=True)
+    charge_km_stage_1_400       = models.IntegerField('Умеренное снижение ЦГ400', default=0, null=False, blank=True)
+    charge_km_stage_2_400       = models.IntegerField('Среднее снижение ЦГ400', default=0, null=False, blank=True)
+    charge_km_stage_3_400       = models.IntegerField('Значительное снижение КМ ЦГ400', default=0, null=False, blank=True)
+
+    charge_bcp_700              = models.IntegerField('Базовая наценка для определения БЦП ЦГ700', default=0, null=False, blank=True)       #'// 
+    min_km_700                  = models.IntegerField('Минимальный КМ ЦГ700', default=0, null=False, blank=True)
+    charge_km_stage_1_700       = models.IntegerField('Умеренное снижение ЦГ700', default=0, null=False, blank=True)
+    charge_km_stage_2_700       = models.IntegerField('Среднее снижение ЦГ700', default=0, null=False, blank=True)
+    charge_km_stage_3_700       = models.IntegerField('Значительное снижение КМ ЦГ700', default=0, null=False, blank=True)
+
+    charge_bcp_1200              = models.IntegerField('Базовая наценка для определения БЦП ЦГ1200', default=0, null=False, blank=True)       #'// 
+    min_km_1200                  = models.IntegerField('Минимальный КМ ЦГ1200', default=0, null=False, blank=True)
+    charge_km_stage_1_1200       = models.IntegerField('Умеренное снижение ЦГ1200', default=0, null=False, blank=True)
+    charge_km_stage_2_1200       = models.IntegerField('Среднее снижение ЦГ1200', default=0, null=False, blank=True)
+    charge_km_stage_3_1200       = models.IntegerField('Значительное снижение КМ ЦГ1200', default=0, null=False, blank=True)
+
+    charge_bcp_2000              = models.IntegerField('Базовая наценка для определения БЦП ЦГ1200', default=0, null=False, blank=True)       #'// 
+    min_km_2000                  = models.IntegerField('Минимальный КМ ЦГ2000', default=0, null=False, blank=True)
+    charge_km_stage_1_2000       = models.IntegerField('Умеренное снижение ЦГ2000', default=0, null=False, blank=True)
+    charge_km_stage_2_2000       = models.IntegerField('Среднее снижение ЦГ2000', default=0, null=False, blank=True)
+    charge_km_stage_3_2000       = models.IntegerField('Значительное снижение КМ ЦГ2000', default=0, null=False, blank=True)
+
+    charge_bcp_3000              = models.IntegerField('Базовая наценка для определения БЦП ЦГ3000', default=0, null=False, blank=True)       #'// 
+    min_km_3000                  = models.IntegerField('Минимальный КМ ЦГ3000', default=0, null=False, blank=True)
+    charge_km_stage_1_3000       = models.IntegerField('Умеренное снижение ЦГ3000', default=0, null=False, blank=True)
+    charge_km_stage_2_3000       = models.IntegerField('Среднее снижение ЦГ3000', default=0, null=False, blank=True)
+    charge_km_stage_3_3000       = models.IntegerField('Значительное снижение КМ ЦГ3000', default=0, null=False, blank=True)
+
+    charge_bcp_5000              = models.IntegerField('Базовая наценка для определения БЦП ЦГ5000', default=0, null=False, blank=True)       #'// 
+    min_km_5000                  = models.IntegerField('Минимальный КМ ЦГ5000', default=0, null=False, blank=True)
+    charge_km_stage_1_5000       = models.IntegerField('Умеренное снижение ЦГ5000', default=0, null=False, blank=True)
+    charge_km_stage_2_5000       = models.IntegerField('Среднее снижение ЦГ5000', default=0, null=False, blank=True)
+    charge_km_stage_3_5000       = models.IntegerField('Значительное снижение КМ ЦГ5000', default=0, null=False, blank=True)
+
+    charge_bcp_5001              = models.IntegerField('Базовая наценка для определения БЦП ЦГ5001', default=0, null=False, blank=True)       #'// 
+    min_km_5001                  = models.IntegerField('Минимальный КМ ЦГ5001', default=0, null=False, blank=True)
+    charge_km_stage_1_5001       = models.IntegerField('Умеренное снижение ЦГ5001', default=0, null=False, blank=True)
+    charge_km_stage_2_5001       = models.IntegerField('Среднее снижение ЦГ5001', default=0, null=False, blank=True)
+    charge_km_stage_3_5001       = models.IntegerField('Значительное снижение КМ ЦГ5001', default=0, null=False, blank=True)
+
+    def __str__(self):
+        return "{}".format(self.pk)
+
+    class Meta:
+        db_table = 'settingsMatrixAuction'
+        verbose_name = "Матрица расчета БЦП аукцион"
+        verbose_name_plural = "Матрица расчета БЦП аукцион"
+
+
 class RegEstimationsSettings(models.Model):
     name                    = models.CharField("Наименование", null=True, blank=True, max_length=512)
     
@@ -2800,6 +2858,7 @@ class RegPodgotovkaWork(models.Model):
     materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
     materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
     materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
+    type_settings           = models.IntegerField("Тип настройки для интерактивной оценки",  default=0, null=True, blank=True) 
     
     def save(self, *args, **kwargs):
         try:

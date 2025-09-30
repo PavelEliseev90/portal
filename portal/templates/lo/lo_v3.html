@@ -5966,7 +5966,16 @@
                                   </div>
                                 </div>
                               </div>
-                              
+                              <!--
+                              <br>
+                              <div class="row">
+                                <div class="col-12 col-sm-10">
+                                  <figure class="highcharts-figure">
+                                    <div id="container_estimation"></div>
+                                  </figure>
+                                </div> 
+                              </div>
+                              -->
                               <br>
 
                               <div class="row g-1">
@@ -6017,7 +6026,161 @@
                                   </div>
                                 </div>
                               </div>
+                              <!--
+                              <script src="https://ah.kors-group.com/static/js/highcharts/highcharts.js"></script>  
+                              <script src="https://ah.kors-group.com/static/js/highcharts/highcharts-3d.js"></script>
+                              <script src="https://ah.kors-group.com/static/js/highcharts/cylinder.js"></script>
+                              <script src="https://ah.kors-group.com/static/js/highcharts/funnel3d.js"></script>
+                              <script src="https://ah.kors-group.com/static/js/highcharts/exporting.js"></script>
+                              <script src="https://ah.kors-group.com/static/js/highcharts/accessibility.js"></script>
 
+                              <script language="JavaScript">
+                                
+                                  (function (H) {
+                                      H.addEvent(
+                                          H.seriesTypes.column,
+                                          'afterColumnTranslate',
+                                          function () {
+                                              const series = this,
+                                                  options = series.options,
+                                                  topMargin = options.topMargin || 0,
+                                                  bottomMargin = options.bottomMargin || 0,
+                                                  idx = series.index;
+
+                                              if (options.headSize) {
+
+                                                  series.points.forEach(function (point) {
+                                                      const shapeArgs = point.shapeArgs,
+                                                          w = shapeArgs.width,
+                                                          h = shapeArgs.height,
+                                                          x = shapeArgs.x,
+                                                          y = shapeArgs.y,
+                                                          cutLeft = idx !== 0,
+                                                          cutRight = point.stackY !== point.y || !cutLeft;
+
+                                                      let len = options.headSize; // in pixels
+
+                                                      if (point.y > 0) {
+                                                          len *= -1;
+                                                      }
+
+                                                      // Preserve the box for data labels
+                                                      point.dlBox = point.shapeArgs;
+
+                                                      point.shapeType = 'path';
+                                                      point.shapeArgs = {
+                                                          d: [
+                                                              ['M', x, y + topMargin],
+                                                              [
+                                                                  'L',
+                                                                  x + w / 2,
+                                                                  y + topMargin + (cutRight ? len : 0)
+                                                              ], // arrow
+                                                              // top side
+                                                              ['L', x + w, y + topMargin],
+                                                              // right side
+                                                              ['L', x + w, y + h],
+                                                              // bottom side
+                                                              [
+                                                                  'L',
+                                                                  x + w / 2,
+                                                                  y + h + bottomMargin + (cutLeft ? len : 0)
+                                                              ],
+                                                              ['L', x, y + h + bottomMargin],
+                                                              // left side
+                                                              ['L', x, y],
+                                                              // close
+                                                              ['Z']
+                                                          ]
+                                                      };
+
+                                                  });
+                                              }
+                                          }
+                                      );
+                                  }(Highcharts));
+
+                                  Highcharts.chart('container_estimation', {
+                                      chart: {
+                                          type: 'bar',
+                                          height: 160
+                                      },
+                                      title: {
+                                          text: 'Оценка'
+                                      },
+                                      plotOptions: {
+                                          bar: {
+                                              headSize: 6,
+                                              stacking: 'normal',
+                                              dataLabels: {
+                                                  enabled: true,
+                                                  y: 20,
+                                                  verticalAlign: 'bottom',
+                                                  color: 'var(--highcharts-neutral-color-100, black)'
+                                              },
+                                              color: 'rgb(10, 10, 10)',
+                                              negativeColor: 'rgb(100, 100, 100)',
+                                              accessibility: {
+                                                  exposeAsGroupOnly: true
+                                              }
+                                          }
+                                      },
+                                      tooltip: {
+                                          format: '<span style="color:{point.color}">\u25CF</span> ' +
+                                              '<b>{series.name}: {point.y} d</b>'
+                                      },
+                                      accessibility: {
+                                          typeDescription: '',
+                                          series: {
+                                              descriptionFormat: 'Series {add series.index 1} of ' +
+                                              '{chart.series.length}, Name: {series.name}, ' +
+                                              '{#if (gt series.points.0.y 0)}accelerating' +
+                                              '{else}decelerating{/if} value of {series.points.0.y}.'
+                                          }
+                                      },
+                                      yAxis: {
+                                          reversedStacks: false,
+                                          opposite: true,
+                                          labels: {
+                                              enabled: false
+                                          },
+                                          title: '',
+                                          accessibility: {
+                                              description: ''
+                                          },
+                                          stackLabels: {
+                                              enabled: false,
+                                              verticalAlign: 'top',
+                                              style: {
+                                                  fontSize: '1.2em'
+                                              },
+                                              format: ''
+                                          },
+                                          startOnTick: false,
+                                          endOnTick: false
+                                      },
+                                      xAxis: {
+                                          visible: false,
+                                          title: '',
+                                          accessibility: {
+                                              description: 'ss'
+                                          }
+                                      },
+                                      legend: {
+                                          enabled: true
+                                      },
+                                      series: [
+                                          { name: 'Оценка', data: [{{params.estimation.status_ocenka}}] },
+                                          { name: 'Согласование до кд', data: [{{params.estimation.status_soglasovanie_do_diag}}] },
+                                          { name: 'Диагностика', data: [{{params.estimation.status_diagnostika}}] },
+                                          { name: 'Согласование после кд', data: [{{params.estimation.status_soglasovanie_posle_kd}}] }
+                                      ]
+                                  });
+
+                              </script>
+                              -->
+                              <br>
+                              <a class="btn btn-outline-secondary btn-sm" href="{{request.get_full_path}}&refresh_data=analitik"> <span class="icon-mbri-update"></span> Обновить аналитику</a>
                             </div>
                         </div>
                       </div>

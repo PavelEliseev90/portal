@@ -1,0 +1,2599 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - Настройки - Диагностика {% endblock %}
+
+{% block title_navbar %} - Настройки - Диагностика {% endblock %}
+
+{% block content %}
+
+    <a href="/settings/" class="fs-5">Назад </a> - <label class="fs-5">Диагностика</label>
+    
+    <hr style="width: 75%;">
+
+    <form method="post">
+    
+    
+    {% csrf_token %}
+
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_200" aria-expanded="false" aria-controls="collapse_200" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">200</label>
+       
+        <div class="table-responsive bg-white bg-opacity-50">
+            <table class="table table-striped table-hover">            
+              <tbody>        
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                  
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3"> 
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_200" name="engine_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_200" name="engine_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_200" name="engine_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_200" name="engine_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_200" name="engine_dt_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_200" name="engine_dt_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_200" name="engine_dt_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_200" name="engine_dt_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_200" name="gear_at_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_200" name="gear_at_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_200" name="gear_at_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_200" name="gear_at_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_200" name="gear_amt_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_200" name="gear_amt_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_200" name="gear_amt_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_200" name="gear_amt_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_200" name="gear_cvt_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_200" name="gear_cvt_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_200" name="gear_cvt_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_200" name="gear_cvt_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_200" name="gear_mt_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_200" name="gear_mt_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_200" name="gear_mt_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_200" name="gear_mt_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Подвеска</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_200" name="suspension_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_200" name="suspension_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_200" name="suspension_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_200" name="suspension_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_200" name="system_og_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_200" name="system_og_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_200" name="system_og_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_200" name="system_og_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_200" name="conditioner_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_200" name="conditioner_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_200" name="conditioner_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_200}}" autocomplete="off">
+                      <label for="floatingInput">% понижения от оценки</label>
+                    </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                    <div class="form-floating mb-3">
+                      <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_200" name="conditioner_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_200}}" autocomplete="off">
+                      <label for="floatingInput">Минимальная сумма понижения</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_200" name="turbo_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_200" name="turbo_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_200" name="turbo_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_200" name="turbo_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                  </td>
+                </tr>
+
+                <tr class="align-items-center align-self-center collapse" id="collapse_200">
+                  <td class="" style="min-width: 150px;">Рулевое управление</td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_200" name="wheel_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_200" name="wheel_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_200" name="wheel_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                  </td>
+                  <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_200" name="wheel_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+
+      </div>
+    </div>
+
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_400" aria-expanded="false" aria-controls="collapse_400" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">400</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_400" name="engine_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_400" name="engine_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_400" name="engine_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_400" name="engine_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_400" name="engine_dt_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_400" name="engine_dt_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_400" name="engine_dt_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_400" name="engine_dt_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_400" name="gear_at_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_400" name="gear_at_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_400" name="gear_at_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_400" name="gear_at_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_400" name="gear_amt_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_400" name="gear_amt_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_400" name="gear_amt_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_400" name="gear_amt_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_400" name="gear_cvt_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_400" name="gear_cvt_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_400" name="gear_cvt_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_400" name="gear_cvt_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_400" name="gear_mt_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_400" name="gear_mt_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_400" name="gear_mt_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_400" name="gear_mt_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_400" name="suspension_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_400" name="suspension_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_400" name="suspension_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_400" name="suspension_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_400" name="system_og_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_400" name="system_og_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_400" name="system_og_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_400" name="system_og_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_400" name="conditioner_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_400" name="conditioner_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_400" name="conditioner_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_400}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_400" name="conditioner_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_400}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_400" name="turbo_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_400}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_400" name="turbo_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_400}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_400" name="turbo_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_400}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_400" name="turbo_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_400}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_400">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_400" name="wheel_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_400}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_400" name="wheel_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_400}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_400" name="wheel_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_400}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_400" name="wheel_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_400}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>        
+      </div>
+    </div>
+
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_700" aria-expanded="false" aria-controls="collapse_700" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">700</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_700" name="engine_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_700" name="engine_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_700" name="engine_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_700" name="engine_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_700" name="engine_dt_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_700" name="engine_dt_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_700" name="engine_dt_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_700" name="engine_dt_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_700" name="gear_at_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_700" name="gear_at_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_700" name="gear_at_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_700" name="gear_at_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_700" name="gear_amt_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_700" name="gear_amt_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_700" name="gear_amt_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_700" name="gear_amt_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_700" name="gear_cvt_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_700" name="gear_cvt_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_700" name="gear_cvt_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_700" name="gear_cvt_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_700" name="gear_mt_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_700" name="gear_mt_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_700" name="gear_mt_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_700" name="gear_mt_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_700" name="suspension_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_700" name="suspension_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_700" name="suspension_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_700" name="suspension_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_700" name="system_og_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_700" name="system_og_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_700" name="system_og_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_700" name="system_og_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_700" name="conditioner_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_700" name="conditioner_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_700" name="conditioner_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_700}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_700" name="conditioner_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_700}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_700" name="turbo_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_700}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_700" name="turbo_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_700}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_700" name="turbo_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_700}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_700" name="turbo_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_700}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_700">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_700" name="wheel_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_700}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_700" name="wheel_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_700}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_700" name="wheel_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_700}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_700" name="wheel_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_700}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_1200" aria-expanded="false" aria-controls="collapse_1200" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">1 200</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_1200" name="engine_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_1200" name="engine_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_1200" name="engine_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_1200" name="engine_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_1200" name="engine_dt_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_1200" name="engine_dt_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_1200" name="engine_dt_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_1200" name="engine_dt_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_1200" name="gear_at_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_1200" name="gear_at_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_1200" name="gear_at_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_1200" name="gear_at_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_1200" name="gear_amt_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_1200" name="gear_amt_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_1200" name="gear_amt_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_1200" name="gear_amt_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_1200" name="gear_cvt_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_1200" name="gear_cvt_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_1200" name="gear_cvt_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_1200" name="gear_cvt_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_1200" name="gear_mt_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_1200" name="gear_mt_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_1200" name="gear_mt_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_1200" name="gear_mt_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_1200" name="suspension_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_1200" name="suspension_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_1200" name="suspension_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_1200" name="suspension_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_1200" name="system_og_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_1200" name="system_og_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_1200" name="system_og_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_1200" name="system_og_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_1200" name="conditioner_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_1200" name="conditioner_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_1200" name="conditioner_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_1200}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_1200" name="conditioner_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_1200}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_1200" name="turbo_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_1200}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_1200" name="turbo_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_1200}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_1200" name="turbo_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_1200}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_1200" name="turbo_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_1200}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_1200">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_1200" name="wheel_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_1200}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_1200" name="wheel_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_1200}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_1200" name="wheel_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_1200}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_1200" name="wheel_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_1200}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>        
+      </div>
+    </div>
+
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_2000" aria-expanded="false" aria-controls="collapse_2000" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">2 000</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_2000" name="engine_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_2000" name="engine_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_2000" name="engine_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_2000" name="engine_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_2000" name="engine_dt_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_2000" name="engine_dt_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_2000" name="engine_dt_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_2000" name="engine_dt_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_2000" name="gear_at_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_2000" name="gear_at_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_2000" name="gear_at_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_2000" name="gear_at_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_2000" name="gear_amt_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_2000" name="gear_amt_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_2000" name="gear_amt_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_2000" name="gear_amt_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_2000" name="gear_cvt_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_2000" name="gear_cvt_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_2000" name="gear_cvt_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_2000" name="gear_cvt_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_2000" name="gear_mt_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_2000" name="gear_mt_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_2000" name="gear_mt_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_2000" name="gear_mt_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_2000" name="suspension_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_2000" name="suspension_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_2000" name="suspension_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_2000" name="suspension_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_2000" name="system_og_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_2000" name="system_og_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_2000" name="system_og_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_2000" name="system_og_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_2000" name="conditioner_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_2000" name="conditioner_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_2000" name="conditioner_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_2000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_2000" name="conditioner_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_2000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_2000" name="turbo_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_2000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_2000" name="turbo_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_2000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_2000" name="turbo_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_2000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_2000" name="turbo_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_2000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_2000">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_2000" name="wheel_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_2000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_2000" name="wheel_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_2000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_2000" name="wheel_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_2000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_2000" name="wheel_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_2000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>        
+      </div>
+    </div>
+    
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_3000" aria-expanded="false" aria-controls="collapse_3000" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">3 000</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_3000" name="engine_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_3000" name="engine_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_3000" name="engine_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_3000" name="engine_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_3000" name="engine_dt_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_3000" name="engine_dt_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_3000" name="engine_dt_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_3000" name="engine_dt_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_3000" name="gear_at_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_3000" name="gear_at_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_3000" name="gear_at_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_3000" name="gear_at_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_3000" name="gear_amt_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_3000" name="gear_amt_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_3000" name="gear_amt_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_3000" name="gear_amt_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_3000" name="gear_cvt_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_3000" name="gear_cvt_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_3000" name="gear_cvt_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_3000" name="gear_cvt_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_3000" name="gear_mt_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_3000" name="gear_mt_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_3000" name="gear_mt_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_3000" name="gear_mt_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_3000" name="suspension_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_3000" name="suspension_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_3000" name="suspension_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_3000" name="suspension_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_3000" name="system_og_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_3000" name="system_og_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_3000" name="system_og_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_3000" name="system_og_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_3000" name="conditioner_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_3000" name="conditioner_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_3000" name="conditioner_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_3000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_3000" name="conditioner_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_3000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_3000" name="turbo_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_3000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_3000" name="turbo_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_3000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_3000" name="turbo_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_3000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_3000" name="turbo_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_3000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_3000">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_3000" name="wheel_warning_kf_3000" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_3000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_3000" name="wheel_warning_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_3000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_3000" name="wheel_danger_kf_3000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_3000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_3000" name="wheel_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_3000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>  
+            </tbody>
+          </table>
+        </div>        
+      </div>
+    </div>
+    
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_5000" aria-expanded="false" aria-controls="collapse_5000" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">5 000</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_5000" name="engine_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_5000" name="engine_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_5000" name="engine_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_5000" name="engine_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_5000" name="engine_dt_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_5000" name="engine_dt_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_5000" name="engine_dt_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_5000" name="engine_dt_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_5000" name="gear_at_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_5000" name="gear_at_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_5000" name="gear_at_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_5000" name="gear_at_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_5000" name="gear_amt_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_5000" name="gear_amt_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_5000" name="gear_amt_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_5000" name="gear_amt_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_5000" name="gear_cvt_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_5000" name="gear_cvt_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_5000" name="gear_cvt_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_5000" name="gear_cvt_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_5000" name="gear_mt_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_5000" name="gear_mt_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_5000" name="gear_mt_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_5000" name="gear_mt_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_5000" name="suspension_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_5000" name="suspension_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_5000" name="suspension_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_5000" name="suspension_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_5000" name="system_og_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_5000" name="system_og_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_5000" name="system_og_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_5000" name="system_og_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_5000" name="conditioner_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_5000" name="conditioner_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_5000" name="conditioner_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_5000}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_5000" name="conditioner_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_5000}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_5000" name="turbo_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_5000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_5000" name="turbo_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_5000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_5000" name="turbo_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_5000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_5000" name="turbo_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_5000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_5000">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_5000" name="wheel_warning_kf_5000" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_5000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_5000" name="wheel_warning_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_5000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_5000" name="wheel_danger_kf_5000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_5000}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_5000" name="wheel_danger_amount_min_5000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_5000}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>        
+      </div>
+    </div>
+
+    <br>
+    <div class="card bg-white bg-opacity-75 bg-gradient">
+      <div class="card-body">
+        <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_5001" aria-expanded="false" aria-controls="collapse_5001" class="bg-success bg-opacity-10" style="border-radius: 0.2rem;">5 000 +</label>
+        <div class="table-responsive bg-white bg-opacity-50">
+          <table class="table table-striped table-hover">            
+            <tbody>
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Двигатель (Бензин)</td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3"> 
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_kf_5001" name="engine_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.engine_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_warning_amount_min_5001" name="engine_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.engine_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_kf_5001" name="engine_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.engine_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_danger_amount_min_5001" name="engine_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.engine_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Двигатель (Дизель)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_kf_5001" name="engine_dt_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="engine_dt_warning_amount_min_5001" name="engine_dt_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.engine_dt_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_kf_5001" name="engine_dt_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="engine_dt_danger_amount_min_5001" name="engine_dt_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.engine_dt_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Коробка передач (Автомат - АТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_kf_5001" name="gear_at_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_at_warning_amount_min_5001" name="gear_at_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_at_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_kf_5001" name="gear_at_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_at_danger_amount_min_5001" name="gear_at_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_at_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Коробка передач (Робот - АМТ)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_kf_5001" name="gear_amt_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_amt_warning_amount_min_5001" name="gear_amt_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_amt_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_kf_5001" name="gear_amt_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_amt_danger_amount_min_5001" name="gear_amt_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_amt_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Коробка передач (Вариатор - CVT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_kf_5001" name="gear_cvt_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_cvt_warning_amount_min_5001" name="gear_cvt_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_kf_5001" name="gear_cvt_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_cvt_danger_amount_min_5001" name="gear_cvt_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_cvt_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Коробка передач (Механика - MT)</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_kf_5001" name="gear_mt_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="gear_mt_warning_amount_min_5001" name="gear_mt_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_mt_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_kf_5001" name="gear_mt_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="gear_mt_danger_amount_min_5001" name="gear_mt_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.gear_mt_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Подвеска</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_kf_5001" name="suspension_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="suspension_warning_amount_min_5001" name="suspension_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.suspension_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_kf_5001" name="suspension_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="suspension_danger_amount_min_5001" name="suspension_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.suspension_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Система выпука ОГ</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_kf_5001" name="system_og_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="system_og_warning_amount_min_5001" name="system_og_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.system_og_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_kf_5001" name="system_og_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="system_og_danger_amount_min_5001" name="system_og_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.system_og_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Система кондиционирования</td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_kf_5001" name="conditioner_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="conditioner_warning_amount_min_5001" name="conditioner_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.conditioner_warning_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_kf_5001" name="conditioner_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_kf_5001}}" autocomplete="off">
+                    <label for="floatingInput">% понижения от оценки</label>
+                  </div>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="form-floating mb-3">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="conditioner_danger_amount_min_5001" name="conditioner_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.conditioner_danger_amount_min_5001}}" autocomplete="off">
+                    <label for="floatingInput">Минимальная сумма понижения</label>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Турбокомпрессор</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_kf_5001" name="turbo_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_kf_5001}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="turbo_warning_amount_min_5001" name="turbo_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.turbo_warning_amount_min_5001}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_kf_5001" name="turbo_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_kf_5001}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="turbo_danger_amount_min_5001" name="turbo_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.turbo_danger_amount_min_5001}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+              <tr class="align-items-center align-self-center collapse" id="collapse_5001">
+                <td class="" style="min-width: 150px;">Рулевое управление</td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_kf_5001" name="wheel_warning_kf_5001" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_kf_5001}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="wheel_warning_amount_min_5001" name="wheel_warning_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.wheel_warning_amount_min_5001}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_kf_5001" name="wheel_danger_kf_5001" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_kf_5001}}" autocomplete="off">
+                  <label for="floatingInput">% понижения от оценки</label>
+                </div>
+                </td>
+                <td style="min-width: 150px;">
+                <div class="form-floating mb-3">
+                  <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_5001" name="wheel_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_5001}}" autocomplete="off">
+                  <label for="floatingInput">Минимальная сумма понижения</label>
+                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>        
+      </div>
+    </div>
+
+    <hr style="width: 75%;">
+
+    <button type="submit" class="btn btn-outline-success">Сохранить</button>
+
+    </form>
+    
+    <br>
+    <br>
+
+{% endblock %}

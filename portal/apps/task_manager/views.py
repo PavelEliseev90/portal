@@ -380,12 +380,8 @@ def get_info_max_remote(estimation_id):
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    if DT.datetime.now().year - estimation.year > 5:
-        year_start  = estimation.year 
-        year_end    = estimation.year 
-    else:
-        year_start  = estimation.year
-        year_end    = estimation.year
+    year_start  = estimation.year - 1
+    year_end    = estimation.year + 1
 
     try:
 
@@ -428,9 +424,9 @@ def get_info_max_remote(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'useAutoFilter'  : True,
-            #'yearFrom'      : year_start,
-            #"yearTo"        : year_end,
+            'useAutoFilter'  : False,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end,
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 

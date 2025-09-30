@@ -46,7 +46,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
+from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -1175,9 +1175,6 @@ def sms_opros_op_doc(request, pk):
             'answer'        : answer
         }
         return render(request, 'website/sms_opros_op_doc.html', {'params': params})
-
-
-
 
 def sms_opros_service(request):
     if not request.user.is_authenticated:
@@ -6159,6 +6156,107 @@ def sales_funnel(request):
     return render(request, "kors/sales_funnel.html", {'params': params})
 
 @login_required
+def settings(request):
+    
+    params = {
+        'type'          : 'settings'
+    }
+    
+    return render(request, "kors/settings.html", {'params': params})
+
+@login_required
+def settings_matrix_auction(request):
+
+    settings_auction = SettingsMatrixAuction.objects.all()
+    setting_auction  = None 
+    if settings_auction.count() > 0:
+        setting_auction = settings_auction[0]
+    else:
+        setting_auction = SettingsMatrixAuction()
+        setting_auction.save()
+
+    if request.method == 'POST':
+        setting_auction.charge_bcp_200  =   int(request.POST.get('charge_bcp_200', '0'))
+        setting_auction.min_km_200      =   int(request.POST.get('min_km_200', '0'))
+        setting_auction.charge_km_stage_1_200 = int(request.POST.get('charge_km_stage_1_200', '0'))
+        setting_auction.charge_km_stage_2_200 = int(request.POST.get('charge_km_stage_2_200', '0'))
+        setting_auction.charge_km_stage_3_200 = int(request.POST.get('charge_km_stage_3_200', '0'))
+        setting_auction.charge_bcp_400  =   int(request.POST.get('charge_bcp_400', '0'))
+        setting_auction.min_km_400      =   int(request.POST.get('min_km_400', '0'))
+        setting_auction.charge_km_stage_1_400 = int(request.POST.get('charge_km_stage_1_400', '0'))
+        setting_auction.charge_km_stage_2_400 = int(request.POST.get('charge_km_stage_2_400', '0'))
+        setting_auction.charge_km_stage_3_400 = int(request.POST.get('charge_km_stage_3_400', '0'))
+        setting_auction.charge_bcp_700  =   int(request.POST.get('charge_bcp_700', '0'))
+        setting_auction.min_km_700      =   int(request.POST.get('min_km_700', '0'))
+        setting_auction.charge_km_stage_1_700 = int(request.POST.get('charge_km_stage_1_700', '0'))
+        setting_auction.charge_km_stage_2_700 = int(request.POST.get('charge_km_stage_2_700', '0'))
+        setting_auction.charge_km_stage_3_700 = int(request.POST.get('charge_km_stage_3_700', '0'))
+        setting_auction.charge_bcp_1200 =   int(request.POST.get('charge_bcp_1200', '0'))
+        setting_auction.min_km_1200     =   int(request.POST.get('min_km_1200', '0'))
+        setting_auction.charge_km_stage_1_1200 =    int(request.POST.get('charge_km_stage_1_1200', '0'))
+        setting_auction.charge_km_stage_2_1200 =    int(request.POST.get('charge_km_stage_2_1200', '0'))
+        setting_auction.charge_km_stage_3_1200 =    int(request.POST.get('charge_km_stage_3_1200', '0'))
+        setting_auction.charge_bcp_2000 =   int(request.POST.get('charge_bcp_2000', '0'))
+        setting_auction.min_km_2000     =   int(request.POST.get('min_km_2000', '0'))
+        setting_auction.charge_km_stage_1_2000 =    int(request.POST.get('charge_km_stage_1_2000', '0'))
+        setting_auction.charge_km_stage_2_2000 =    int(request.POST.get('charge_km_stage_2_2000', '0'))
+        setting_auction.charge_km_stage_3_2000 =    int(request.POST.get('charge_km_stage_3_2000', '0'))
+        setting_auction.charge_bcp_3000 =   int(request.POST.get('charge_bcp_3000', '0'))
+        setting_auction.min_km_3000     =   int(request.POST.get('min_km_3000', '0'))
+        setting_auction.charge_km_stage_1_3000 =    int(request.POST.get('charge_km_stage_1_3000', '0'))
+        setting_auction.charge_km_stage_2_3000 =    int(request.POST.get('charge_km_stage_2_3000', '0'))
+        setting_auction.charge_km_stage_3_3000 =    int(request.POST.get('charge_km_stage_3_3000', '0'))
+        setting_auction.charge_bcp_5000 =   int(request.POST.get('charge_bcp_5000', '0'))
+        setting_auction.min_km_5000     =   int(request.POST.get('min_km_5000', '0'))
+        setting_auction.charge_km_stage_1_5000 =    int(request.POST.get('charge_km_stage_1_5000', '0'))
+        setting_auction.charge_km_stage_2_5000 =    int(request.POST.get('charge_km_stage_2_5000', '0'))
+        setting_auction.charge_km_stage_3_5000 =    int(request.POST.get('charge_km_stage_3_5000', '0'))
+        setting_auction.charge_bcp_5001 =   int(request.POST.get('charge_bcp_5001', '0'))
+        setting_auction.min_km_5001     =   int(request.POST.get('min_km_5001', '0'))
+        setting_auction.charge_km_stage_1_5001 =    int(request.POST.get('charge_km_stage_1_5001', '0'))
+        setting_auction.charge_km_stage_2_5001 =    int(request.POST.get('charge_km_stage_2_5001', '0'))
+        setting_auction.charge_km_stage_3_5001 =    int(request.POST.get('charge_km_stage_3_5001', '0'))
+        setting_auction.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
+
+    params = {
+        'type'          : 'settings',
+        'settings'      : setting_auction
+    }
+    
+    return render(request, "kors/settings_matrix_auction.html", {'params': params})
+
+@login_required
+def settings_diagnostic(request):
+    
+    settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
+    
+    settings = {
+        'settings_estimation' : settings_estimation
+    }
+    params = {
+        'type'          : 'settings',
+        'settings'      : settings        
+    }
+    
+    return render(request, "kors/settings_diagnostic.html", {'params': params})
+
+@login_required
+def settings_vnesh(request):
+    
+    settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
+    
+    settings = {
+        'settings_estimation' : settings_estimation
+    }
+    params = {
+        'type'          : 'settings',
+        'settings'      : settings        
+    }
+    
+    return render(request, "kors/settings_vnesh.html", {'params': params})
+
+@login_required
 def kpi_eco(request):
     
     type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
@@ -6890,10 +6988,9 @@ def refresh_estimation_analitik(estimation_rlk_id):
         #
     
 
-
-    
 def test(request):
     
+    '''
     estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
     count = estimations.count()
     s = 1
@@ -6904,7 +7001,7 @@ def test(request):
         except:
             ss = 1
         print(str(s) + ' / ' + str(count))
-    
+    '''
 
 
     
