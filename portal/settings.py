@@ -118,8 +118,6 @@ CORS_ALLOW_PRIVATE_NETWORK = True
 
 ROOT_URLCONF = 'portal.urls'
 
-LOGIN_URL = '/login/'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

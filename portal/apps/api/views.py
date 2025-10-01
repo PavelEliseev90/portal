@@ -64,7 +64,7 @@ def post_info(request):
         data = RefWidthTyres()
         data.name   = dat
         data.value  = float(dat)
-        data.save()
+        data.save()settings
     '''
     to_json = {
         'list_info'          : list_info
