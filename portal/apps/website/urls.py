@@ -33,7 +33,7 @@ urlpatterns = [
    # Справочники
    path('refs/',                 views.refs),
    
-   path('settings/',                                        views.settings),
+   path('settings/',                                        views.settings_),
    path('settings/settings_matrix_auction/',                views.settings_matrix_auction),
    path('settings/settings_diagnostic/',                    views.settings_diagnostic),
    path('settings/settings_vnesh/',                         views.settings_vnesh),

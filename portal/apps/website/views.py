@@ -6060,12 +6060,12 @@ def korsavto_settings_dc(request):
             'type_reception_id' : type_reception_id,
             }
         
-    settings = ''
+    settings_ = ''
     if page == 'settings':
         settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
         units = RefUnit.objects.filter(buauto = True).filter(name__icontains = 'КорсАвто').order_by('name')
         works = RegPodgotovkaWork.objects.all().order_by('name_group', 'name')
-        settings = {
+        settings_ = {
             'units'                 : units,
             'works'                 : works,
             'settings_estimation'   : settings_estimation
@@ -6156,7 +6156,7 @@ def sales_funnel(request):
     return render(request, "kors/sales_funnel.html", {'params': params})
 
 @login_required
-def settings(request):
+def settings_(request):
     
     params = {
         'type'          : 'settings'

@@ -10605,7 +10605,7 @@
                             <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price_kors.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
                             <br>
                             <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price_kors.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                            <div class="row">
+                            <div class="row d-none">
                               <div class="col text-end"><label class="text-end"  data-bs-target="#price_kors" data-bs-toggle="modal"> Подробнее</label></div>
                             </div>
                           </div>
@@ -10624,7 +10624,7 @@
                             <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price_autohub.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
                             <br>
                             <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price_autohub.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                            <div class="row">
+                            <div class="row d-none">
                               <div class="col text-end"><label class="text-end " data-bs-target="#price_autohub" data-bs-toggle="modal"> Подробнее</label></div>
                             </div>
                           </div>
@@ -10643,7 +10643,7 @@
                             <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
                             <br>
                             <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                            <div class="row">
+                            <div class="row d-none">
                               <div class="col text-end"><label class="text-end"  data-bs-target="#price" data-bs-toggle="modal"> Подробнее</label></div>
                             </div>
                           </div>
@@ -10662,7 +10662,7 @@
                             <label class="fw-bold fs-6 text-danger"> ЦНА:<br> {{params.price_custom.zna|floatformat:"2g"}} &#8381</label> <label class="text-success"> <span class="icon-mbri-edit" data-bs-target="#price_custom_edit" data-bs-toggle="modal"></span></label>
                             <br>
                             <label class="fw-bold fs-6 text-success"> Прием:<br> {{params.price_custom.estimation_price|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
-                            <div class="row">
+                            <div class="row d-none">
                               <div class="col text-end"><label class="text-end" data-bs-target="#price_custom" data-bs-toggle="modal"> Подробнее</label></div>
                             </div>
                           </div>
@@ -10868,7 +10868,7 @@
                       
                       <div class="row">
                         <div class="col">
-                          <label class="fs-5">1С (Автоматическая - 1)</label>
+                          <label class="fs-5">Автоматическая - 1</label>
                         </div>
                         <div class="col align-self-end">
                             
@@ -10969,7 +10969,7 @@
                   </div>
                 </div>
 
-                <div class="col-sm-6">
+                <div class="col-sm-6 d-none">
                   
                   <div class="card bg-secondary bg-gradient bg-opacity-10">
                     <div class="card-body">
@@ -11401,7 +11401,7 @@
                       
                       <div class="row">
                         <div class="col">
-                          <label class="fs-5">Автохаб (Автоматическая - 2)</label>
+                          <label class="fs-5">Автоматическая - 2</label>
                         </div>
                         <div class="col-auto align-self-end">
                             
@@ -11497,7 +11497,7 @@
 
                 </div>
 
-                <div class="col-sm-6">
+                <div class="col-sm-6 d-none">
                   
                   <div class="card bg-secondary bg-gradient bg-opacity-10">
                     <div class="card-body">
@@ -11810,7 +11810,7 @@
                   <div class="card" style="margin: 0.2rem;" id="price">
                     <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                       
-                      <label class="fs-5">Авито (Автоматическая - 3)</label>
+                      <label class="fs-5">Автоматическая - 3</label>
                       <hr style="margin: 0.2rem;">
                       ЦНА:
                       <br>
@@ -11905,7 +11905,7 @@
 
                 </div>
 
-                <div class="col-sm-6">
+                <div class="col-sm-6 d-none">
                   
                   <div class="card bg-secondary bg-gradient bg-opacity-10">
                     <div class="card-body">
@@ -12240,7 +12240,7 @@
 
                 </div>
 
-                <div class="col-sm-6">
+                <div class="col-sm-6 d-none">
                   
                   <div class="card bg-secondary bg-gradient bg-opacity-10">
                     <div class="card-body">
