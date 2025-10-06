@@ -781,9 +781,9 @@ def refresh_car_my_kors_portal():
 # Экспресс оценка автомобилей на складе по нашим фильтрам "Экспресс оценка"
 @background(queue='refresh_estimation_cars_organization')
 def start_refresh_estimation_cars_organization():
-    refresh_estimation_cars_organization()
+    refresh_estimation_cars_organization_run()
 
-def refresh_estimation_cars_organization():
+def refresh_estimation_cars_organization_run():
     
     username        = "korsgroup@maxposter.ru"
     password        = "pJ%[QwwqH,YxP9J-"
@@ -792,10 +792,11 @@ def refresh_estimation_cars_organization():
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None)
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
     for car in cars:
         try:
-            
+            sleep(5)
+
             year_start  = car.year
             year_end    = car.year
 
@@ -876,9 +877,29 @@ def refresh_estimation_cars_organization():
                 new_record.total        = analyticsByActualSales['usefulSalesTotal']
                 new_record.price        = car.price
                 new_record.save()
-                
+            else:
+                text_error              = r.text
+                new_record              = RegEstimationRefCarsOrganizations()
+                new_record.car          = car
+                new_record.avg_price    = 0
+                new_record.avg_days     = 0
+                new_record.position     = 0
+                new_record.total        = 0
+                new_record.price        = car.price
+                new_record.error        = text_error
+                new_record.save()     
         except:
             s = 1
+            text_error              = 'Неопределено' 
+            new_record              = RegEstimationRefCarsOrganizations()
+            new_record.car          = car
+            new_record.avg_price    = 0
+            new_record.avg_days     = 0
+            new_record.position     = 0
+            new_record.total        = 0
+            new_record.price        = car.price
+            new_record.error        = text_error
+            new_record.save()
 
 
 ####
@@ -1105,9 +1126,9 @@ def get_token_avtoteka():
 # Получение данных сигнала
 @background(queue='refresh_signal')
 def start_refresh_signal():
-    refresh_signal()
+    refresh_signal_run()
 
-def refresh_signal():
+def refresh_signal_run():
     
     token = ''
     header = {

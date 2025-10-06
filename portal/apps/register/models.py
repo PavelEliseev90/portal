@@ -3096,7 +3096,8 @@ class RegEstimationRefCarsOrganizations(models.Model):
     position                = models.IntegerField("Позиция",  default=0, null=False, blank=True) 
     price                   = models.IntegerField("Цена наша",  default=0, null=False, blank=True)  
     total                   = models.IntegerField("Всего авто",  default=0, null=False, blank=True)  
-    
+    error                   = models.CharField("Правило", max_length=2048, default='')
+
     def __str__(self):
         return "{} / {} / {}".format(self.car, self.date, self.avg_price)
 
