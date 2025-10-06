@@ -420,7 +420,7 @@ def get_info_max_remote(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-           # 'yearFrom'      : year_start,
+            #'yearFrom'      : year_start,
             #"yearTo"        : year_end
         }
         
@@ -433,9 +433,9 @@ def get_info_max_remote(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'useAutoFilter'  : False,
-            'yearFrom'      : year_start,
-            "yearTo"        : year_end,
+            'useAutoFilter' : True,
+            #'yearFrom'      : year_start,
+            #"yearTo"        : year_end,
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 
@@ -510,8 +510,8 @@ def get_info_max(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'yearFrom'      : year_start,
-            "yearTo"        : year_end
+            #'yearFrom'      : year_start,
+            #"yearTo"        : year_end
         }
         
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
@@ -523,9 +523,9 @@ def get_info_max(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'useAutoFilter'  : False,
-            'yearFrom'      : year_start,
-            "yearTo"        : year_end,
+            'useAutoFilter' : True,
+            #'yearFrom'      : year_start,
+            #"yearTo"        : year_end,
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 
@@ -825,8 +825,8 @@ def refresh_estimation_cars_organization():
                 'generation'    : generation,
                 'modification'  : modification,
                 'geoDistance'   : 500,
-                'yearFrom'      : year_start,
-                "yearTo"        : year_end
+                #'yearFrom'      : year_start,
+                #"yearTo"        : year_end
             }
             
             salesFromDate = DT.datetime.now() - relativedelta(months=2)
@@ -839,8 +839,8 @@ def refresh_estimation_cars_organization():
                 'modification'  : modification,
                 'geoDistance'   : 500,
                 'useAutoFilter' : True,
-                'yearFrom'      : year_start,
-                "yearTo"        : year_end,
+                #'yearFrom'      : year_start,
+                #"yearTo"        : year_end,
                 'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
             }
 
@@ -868,7 +868,7 @@ def refresh_estimation_cars_organization():
 
                 analyticsByActualSales              = data['analyticsByActualSales']
                 
-                new_record = RegEstimationRefCarsOrganizations()
+                new_record              = RegEstimationRefCarsOrganizations()
                 new_record.car          = car
                 new_record.avg_price    = analyticsByActualSales['avgPriceWithCorrection']
                 new_record.avg_days     = analyticsByActualSales['avgDaysInSale']
@@ -1980,11 +1980,6 @@ def start_refresh_autohub():
     
     refresh_autohub()
     
-    try:
-        refresh_signal()
-    except:
-        s = 1
-
 def refresh_autohub():
     
     username       = "korsgroup@maxposter.ru"
