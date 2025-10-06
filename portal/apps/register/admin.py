@@ -26,6 +26,8 @@ class RegEstimationRefCarsOrganizationsAdmin(admin.ModelAdmin):
     list_display    = ('date', 'car', 'avg_price', 'avg_days', 'position', 'price', )
     raw_id_fields   = ('car', )
     search_fields   = ('car__vin',)
+    list_filter     = ('date',)
+    
 
 @admin.register(RegEstimationBalanceUnit)
 class RegEstimationBalanceUnitAdmin(admin.ModelAdmin):
