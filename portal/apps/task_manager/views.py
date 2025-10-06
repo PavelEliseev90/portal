@@ -16,7 +16,7 @@ from telephony.views import refresh_history_task
 from requests.auth import HTTPBasicAuth
 import time
 from avtosalon.models import Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
-from register.models import RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
+from register.models import RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
 from openpyxl import Workbook, load_workbook
 import re
 from django.core.mail import EmailMultiAlternatives
@@ -792,7 +792,12 @@ def refresh_estimation_cars_organization_run():
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
+    cars            = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
+    car_all_count   = cars.count()
+    car_success     = 0 
+    car_error       = 0
+    start_date      = DT.datetime.now()
+
     for car in cars:
         try:
             sleep(5)
@@ -877,6 +882,7 @@ def refresh_estimation_cars_organization_run():
                 new_record.total        = analyticsByActualSales['usefulSalesTotal']
                 new_record.price        = car.price
                 new_record.save()
+                car_success = car_success + 1 
             else:
                 text_error              = r.text
                 new_record              = RegEstimationRefCarsOrganizations()
@@ -887,7 +893,8 @@ def refresh_estimation_cars_organization_run():
                 new_record.total        = 0
                 new_record.price        = car.price
                 new_record.error        = text_error
-                new_record.save()     
+                new_record.save()
+                car_error = car_error + 1      
         except:
             s = 1
             text_error              = 'Неопределено' 
@@ -900,6 +907,15 @@ def refresh_estimation_cars_organization_run():
             new_record.price        = car.price
             new_record.error        = text_error
             new_record.save()
+            car_error               = car_error + 1      
+
+    new_record = RegInfoRefreshEstimationCarsExpress()
+    new_record.date             = start_date
+    new_record.date_end         = DT.datetime.now()
+    new_record.count_all        = car_all_count
+    new_record.count_success    = car_success
+    new_record.count_error      = car_error
+    new_record.save()
 
 
 ####
@@ -1244,6 +1260,7 @@ def get_region(region_name):
 # Обновление каталогов
 @background(queue='refresh_catalog')
 def start_refresh_catalog():
+    
     try:
         refresh_catalog_avito_ru()
     except:
@@ -1256,174 +1273,174 @@ def start_refresh_catalog():
             
 def refresh_catalog_auto_ru():
     
-    response    = requests.get(url_catalog_autoru)
-    if response.status_code == requests.codes.ok:
+    try:
         
-        path = default_storage.save('temp/catalog_auto_ru.xml', ContentFile(response.content))
-        tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        response    = requests.get(url_catalog_autoru)
+        if response.status_code == requests.codes.ok:
             
-        parser      = ETree.XMLParser(encoding="utf-8")
-        tree        = ETree.parse(tmp_file, parser=parser)
-
-        for mark in tree.getroot():
-        
-            name_mark       = mark.get('name')
-            id_site_mark    = mark.get('id')
-            if id_site_mark == None:
-                autoru_mark_count = AutoruMark.objects.filter(name = name_mark).filter(idSite = None).count()
-                if autoru_mark_count == 0:
-                    autoru_mark = AutoruMark()
-                else:
-                    autoru_mark = AutoruMark.objects.filter(name = name_mark).filter(idSite = None)[0]    
-            else:
-                autoru_mark_count = AutoruMark.objects.filter(idSite = int(id_site_mark)).count()
-                if autoru_mark_count == 0:
-                    autoru_mark = AutoruMark()
-                else:
-                    autoru_mark = AutoruMark.objects.filter(idSite = int(id_site_mark))[0]
-            
-
-            autoru_mark.name    = name_mark
-            autoru_mark.idSite  = id_site_mark
-            try:
-                autoru_mark.nameEn = mark.find('code').text
-            except:
-                s = 1
-            autoru_mark.save()
-
-            ###
-
-            for model in mark.findall('folder'):
-                name_model      = model.get('name')
-                id_site_model   = model.get('id')
+            path = default_storage.save('temp/catalog_auto_ru.xml', ContentFile(response.content))
+            tmp_file = os.path.join(settings.MEDIA_ROOT, path)
                 
-                try:
-                    autoru_model = AutoruModel.objects.get(idSite = id_site_model)
-                except:
-                    autoru_model = AutoruModel()
+            parser      = ETree.XMLParser(encoding="utf-8")
+            tree        = ETree.parse(tmp_file, parser=parser)
 
-                autoru_model.mark   = autoru_mark
-                autoru_model.name   = name_model
-                autoru_model.idSite = id_site_model
+            for mark in tree.getroot():
+            
+                name_mark       = mark.get('name')
+                id_site_mark    = mark.get('id')
+                if id_site_mark == None:
+                    autoru_mark_count = AutoruMark.objects.filter(name = name_mark).filter(idSite = None).count()
+                    if autoru_mark_count == 0:
+                        autoru_mark = AutoruMark()
+                    else:
+                        autoru_mark = AutoruMark.objects.filter(name = name_mark).filter(idSite = None)[0]    
+                else:
+                    autoru_mark_count = AutoruMark.objects.filter(idSite = int(id_site_mark)).count()
+                    if autoru_mark_count == 0:
+                        autoru_mark = AutoruMark()
+                    else:
+                        autoru_mark = AutoruMark.objects.filter(idSite = int(id_site_mark))[0]
+                
+
+                autoru_mark.name    = name_mark
+                autoru_mark.idSite  = id_site_mark
                 try:
-                    autoru_model.nameEn = model.find('model').text
+                    autoru_mark.nameEn = mark.find('code').text
                 except:
                     s = 1
-                autoru_model.save()
-                
-                idSiteGeneration = 0
-                try:
-                    idSiteGeneration = int(model.find('generation').text)
-                except:
-                    s = 1
-                    
-                for modification in model.findall('modification'):
-                    modificationName    = modification.get('name')
-                    modificationID      = modification.get('id')
+                autoru_mark.save()
 
-                    result = re.search(r'(\d\.\d)?(HYB|D|Electro)?\s(AT|MT|AMT|CVT)?\s\((.+)\)', modificationName, re.IGNORECASE)
-                    engineVolume = result.group(1) if result.group(1) else '0.0'      
+                ###
 
-                    # тип двигателя: Бензин, Дизель, Электро, Гибрид
-                    engineFuel = result.group(2) if result.group(2) else 'Бензин'
-                    if engineFuel.upper() == 'D':
-                        engineFuel = 'Дизель'
-                    elif engineFuel.upper() == 'HYP':
-                        engineFuel = 'Гибрид'
-                    elif engineFuel.upper() == 'ELECTRO':
-                        engineFuel = 'Электро'
-                    else:
-                        engineFuel = 'Бензин'
-                    typeEngine = RefTypeEngine.objects.get_or_create(name=engineFuel)[0]
-
-                    transmissionType = str(result.group(3)).upper()
-                    if transmissionType=='AT':
-                        transmissionType = 'Автомат'
-                    elif transmissionType=='MT':
-                        transmissionType = 'Механика'
-                    elif transmissionType=='AMT':
-                        transmissionType = 'Робот'
-                    elif transmissionType=='CVT':
-                        transmissionType = 'Вариатор'
+                for model in mark.findall('folder'):
+                    name_model      = model.get('name')
+                    id_site_model   = model.get('id')
                     
-                    typeKpp = RefTypeKpp.objects.get_or_create(name=str(transmissionType))[0]
-                    
-                    enginePower = str(result.group(4)).lower()
-                    if enginePower.endswith(' л.с.'):
-                        enginePower = enginePower[:-5] # отрежем хвост - последние 5 символов
-                        try:
-                            enginePower = float(enginePower)
-                        except:
-                            enginePower = 0.0
-                    elif enginePower.endswith(' квт'):
-                        enginePower = enginePower[:-4]
-                        try:
-                            enginePower = round(float(enginePower) * 1.35962)
-                        except:
-                            enginePower = 0.0
-                    else:
-                        enginePower = 0.0
-
-                    yearsList   = modification.find('years').text.split('-')
-                    yearFrom    = yearsList[0].rstrip()
-                    yearsTo     = yearsList[1].lstrip() 
-                    yearsTo     = yearsTo if yearsTo.isdigit() else '2050'
-                    
-                    bt = modification.find('body_type').text
-                    
-                    idSiteTech = 0
                     try:
-                        idSiteTech = int(modification.find('tech_param_id').text)
+                        autoru_model = AutoruModel.objects.get(idSite = id_site_model)
+                    except:
+                        autoru_model = AutoruModel()
+
+                    autoru_model.mark   = autoru_mark
+                    autoru_model.name   = name_model
+                    autoru_model.idSite = id_site_model
+                    try:
+                        autoru_model.nameEn = model.find('model').text
                     except:
                         s = 1
-
-                    idSiteKonf = 0
+                    autoru_model.save()
+                    
+                    idSiteGeneration = 0
                     try:
-                        idSiteKonf = int(modification.find('configuration_id').text)
+                        idSiteGeneration = int(model.find('generation').text)
                     except:
                         s = 1
-                    
-                    typeBody = RefTypeBody.objects.get_or_create(name=bt)[0]
-                    
-                    try:
-                        newAutoruModification = AutoruModification.objects.get(idSite = modificationID)
-                    except:
-                        newAutoruModification = AutoruModification()
-
-                    newAutoruModification.name                  = modificationName
-                    newAutoruModification.idSite                = modificationID
-                    newAutoruModification.model                 = autoru_model
-                    newAutoruModification.engineVolume          = engineVolume
-                    newAutoruModification.ProductionStartYear   = yearFrom
-                    newAutoruModification.ProductionEndYear     = yearsTo
-                    newAutoruModification.enginePower           = enginePower
-                    newAutoruModification.typeEngine            = typeEngine
-                    newAutoruModification.typeGear              = typeKpp
-                    newAutoruModification.typeBody              = typeBody
-                    newAutoruModification.idSiteTech            = idSiteTech
-                    newAutoruModification.idSiteKonf            = idSiteKonf
-                    newAutoruModification.idSiteGeneration      = idSiteGeneration
-                    newAutoruModification.save()
-
-                    complectations = modification[7]
-                    if len(complectations) > 0:
-                        countComplectation = 0
                         
-                        while countComplectation < len(complectations):
-                            complectationName   = complectations[countComplectation].text
-                            complectationID     = complectations[countComplectation].get('id')
-                            try:
-                                newAutoruComplectation = AutoruComplectation.objects.get(idSite = complectationID, modification = newAutoruModification)
-                            except:
-                                newAutoruComplectation = AutoruComplectation()
-                            newAutoruComplectation.name         = complectationName
-                            newAutoruComplectation.idSite       = complectationID
-                            newAutoruComplectation.modification = newAutoruModification
-                            newAutoruComplectation.save()
-                            countComplectation = countComplectation + 1
+                    for modification in model.findall('modification'):
+                        modificationName    = modification.get('name')
+                        modificationID      = modification.get('id')
 
-        try:
-            
+                        result = re.search(r'(\d\.\d)?(HYB|D|Electro)?\s(AT|MT|AMT|CVT)?\s\((.+)\)', modificationName, re.IGNORECASE)
+                        engineVolume = result.group(1) if result.group(1) else '0.0'      
+
+                        # тип двигателя: Бензин, Дизель, Электро, Гибрид
+                        engineFuel = result.group(2) if result.group(2) else 'Бензин'
+                        if engineFuel.upper() == 'D':
+                            engineFuel = 'Дизель'
+                        elif engineFuel.upper() == 'HYP':
+                            engineFuel = 'Гибрид'
+                        elif engineFuel.upper() == 'ELECTRO':
+                            engineFuel = 'Электро'
+                        else:
+                            engineFuel = 'Бензин'
+                        typeEngine = RefTypeEngine.objects.get_or_create(name=engineFuel)[0]
+
+                        transmissionType = str(result.group(3)).upper()
+                        if transmissionType=='AT':
+                            transmissionType = 'Автомат'
+                        elif transmissionType=='MT':
+                            transmissionType = 'Механика'
+                        elif transmissionType=='AMT':
+                            transmissionType = 'Робот'
+                        elif transmissionType=='CVT':
+                            transmissionType = 'Вариатор'
+                        
+                        typeKpp = RefTypeKpp.objects.get_or_create(name=str(transmissionType))[0]
+                        
+                        enginePower = str(result.group(4)).lower()
+                        if enginePower.endswith(' л.с.'):
+                            enginePower = enginePower[:-5] # отрежем хвост - последние 5 символов
+                            try:
+                                enginePower = float(enginePower)
+                            except:
+                                enginePower = 0.0
+                        elif enginePower.endswith(' квт'):
+                            enginePower = enginePower[:-4]
+                            try:
+                                enginePower = round(float(enginePower) * 1.35962)
+                            except:
+                                enginePower = 0.0
+                        else:
+                            enginePower = 0.0
+
+                        yearsList   = modification.find('years').text.split('-')
+                        yearFrom    = yearsList[0].rstrip()
+                        yearsTo     = yearsList[1].lstrip() 
+                        yearsTo     = yearsTo if yearsTo.isdigit() else '2050'
+                        
+                        bt = modification.find('body_type').text
+                        
+                        idSiteTech = 0
+                        try:
+                            idSiteTech = int(modification.find('tech_param_id').text)
+                        except:
+                            s = 1
+
+                        idSiteKonf = 0
+                        try:
+                            idSiteKonf = int(modification.find('configuration_id').text)
+                        except:
+                            s = 1
+                        
+                        typeBody = RefTypeBody.objects.get_or_create(name=bt)[0]
+                        
+                        try:
+                            newAutoruModification = AutoruModification.objects.get(idSite = modificationID)
+                        except:
+                            newAutoruModification = AutoruModification()
+
+                        newAutoruModification.name                  = modificationName
+                        newAutoruModification.idSite                = modificationID
+                        newAutoruModification.model                 = autoru_model
+                        newAutoruModification.engineVolume          = engineVolume
+                        newAutoruModification.ProductionStartYear   = yearFrom
+                        newAutoruModification.ProductionEndYear     = yearsTo
+                        newAutoruModification.enginePower           = enginePower
+                        newAutoruModification.typeEngine            = typeEngine
+                        newAutoruModification.typeGear              = typeKpp
+                        newAutoruModification.typeBody              = typeBody
+                        newAutoruModification.idSiteTech            = idSiteTech
+                        newAutoruModification.idSiteKonf            = idSiteKonf
+                        newAutoruModification.idSiteGeneration      = idSiteGeneration
+                        newAutoruModification.save()
+
+                        complectations = modification[7]
+                        if len(complectations) > 0:
+                            countComplectation = 0
+                            
+                            while countComplectation < len(complectations):
+                                complectationName   = complectations[countComplectation].text
+                                complectationID     = complectations[countComplectation].get('id')
+                                try:
+                                    newAutoruComplectation = AutoruComplectation.objects.get(idSite = complectationID, modification = newAutoruModification)
+                                except:
+                                    newAutoruComplectation = AutoruComplectation()
+                                newAutoruComplectation.name         = complectationName
+                                newAutoruComplectation.idSite       = complectationID
+                                newAutoruComplectation.modification = newAutoruModification
+                                newAutoruComplectation.save()
+                                countComplectation = countComplectation + 1
+    
             new_info        = RegInfoRefreshCatalog()
             new_info.date   = DT.datetime.now()
             new_info.site   = 'AUTO RU'
@@ -1431,69 +1448,70 @@ def refresh_catalog_auto_ru():
             
             os.remove(tmp_file)
 
-        except:
-            s = 1
+    except:
+        s = 1
         
 def refresh_catalog_avito_ru():
     
-    response    = requests.get(url_catalog_avitoru)
-    if response.status_code == requests.codes.ok:
+    try:
         
-        path = default_storage.save('temp/catalog_avito_ru.xml', ContentFile(response.content))
-        tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        response    = requests.get(url_catalog_avitoru)
+        if response.status_code == requests.codes.ok:
             
-        parser      = ETree.XMLParser(encoding="utf-8")
-        tree        = ETree.parse(tmp_file, parser=parser)
-
-        for mark in tree.getroot():
-            mark_name       = mark.get('name')
-            mark_id         = mark.get('id')
-            mark_object     = get_object_avito(mark_name, mark_id, None)
-
-            for model in mark.findall('Model'):
-                model_name          = model.get('name')
-                model_id            = model.get('id')
-                model_object        = get_object_avito(model_name, model_id, mark_object)
-
-                for generation in model.findall('Generation'):
-                    generation_name         = generation.get('name')
-                    generation_id           = generation.get('id')
-                    generation_object       = get_object_avito(generation_name, generation_id, model_object)
+            path = default_storage.save('temp/catalog_avito_ru.xml', ContentFile(response.content))
+            tmp_file = os.path.join(settings.MEDIA_ROOT, path)
                 
-                    for modification in generation.findall('Modification'):
-                        modification_name           = modification.get('name')
-                        modification_id             = modification.get('id')
-                        
-                        type_drive_name             = modification.find('DriveType').text
-                        type_engine_name            = modification.find('FuelType').text
-                        type_transmission_name      = modification.find('Transmission').text
-                        type_body_name              = modification.find('BodyType').text
-                        doors_name                  = modification.find('Doors').text
-                        year_to                     = modification.find('YearTo').text
-                        year_from                   = modification.find('YearFrom').text
-                        engine_power                = modification.find('Power').text
-                        engine_volume               = modification.find('EngineSize').text
+            parser      = ETree.XMLParser(encoding="utf-8")
+            tree        = ETree.parse(tmp_file, parser=parser)
 
-                        modification_object             = get_object_avito(modification_name, modification_id, generation_object)
-                        modification_object.group       = False
-                        modification_object.body        = get_ref_object('RefTypeBodyAvito', type_body_name)
-                        modification_object.engine      = get_ref_object('RefTypeEngineAvito', type_engine_name) 
-                        modification_object.kpp         = get_ref_object('RefTypeKPPAvito', type_transmission_name) 
-                        modification_object.drive       = get_ref_object('RefTypeDriveAvito', type_drive_name) 
-                        modification_object.doors           = int(doors_name) 
-                        modification_object.year_end        = int(year_to) 
-                        modification_object.year_star       = int(year_from) 
-                        modification_object.engine_power    = int(engine_power) 
-                        modification_object.engine_volume   = float(engine_volume) 
-                        modification_object.save()
+            for mark in tree.getroot():
+                mark_name       = mark.get('name')
+                mark_id         = mark.get('id')
+                mark_object     = get_object_avito(mark_name, mark_id, None)
 
-                        for complectations in modification.findall('Complectations'):
-                            for complectation in complectations.findall('Complectation'): 
-                                complectation_id        = complectation.get('id')        
-                                complectation_name      = complectation.get('name')  
-                                complectation_object    = get_object_avito_complectation(complectation_name, complectation_id, modification_object)
+                for model in mark.findall('Model'):
+                    model_name          = model.get('name')
+                    model_id            = model.get('id')
+                    model_object        = get_object_avito(model_name, model_id, mark_object)
 
-        try:
+                    for generation in model.findall('Generation'):
+                        generation_name         = generation.get('name')
+                        generation_id           = generation.get('id')
+                        generation_object       = get_object_avito(generation_name, generation_id, model_object)
+                    
+                        for modification in generation.findall('Modification'):
+                            modification_name           = modification.get('name')
+                            modification_id             = modification.get('id')
+                            
+                            type_drive_name             = modification.find('DriveType').text
+                            type_engine_name            = modification.find('FuelType').text
+                            type_transmission_name      = modification.find('Transmission').text
+                            type_body_name              = modification.find('BodyType').text
+                            doors_name                  = modification.find('Doors').text
+                            year_to                     = modification.find('YearTo').text
+                            year_from                   = modification.find('YearFrom').text
+                            engine_power                = modification.find('Power').text
+                            engine_volume               = modification.find('EngineSize').text
+
+                            modification_object             = get_object_avito(modification_name, modification_id, generation_object)
+                            modification_object.group       = False
+                            modification_object.body        = get_ref_object('RefTypeBodyAvito', type_body_name)
+                            modification_object.engine      = get_ref_object('RefTypeEngineAvito', type_engine_name) 
+                            modification_object.kpp         = get_ref_object('RefTypeKPPAvito', type_transmission_name) 
+                            modification_object.drive       = get_ref_object('RefTypeDriveAvito', type_drive_name) 
+                            modification_object.doors           = int(doors_name) 
+                            modification_object.year_end        = int(year_to) 
+                            modification_object.year_star       = int(year_from) 
+                            modification_object.engine_power    = int(engine_power) 
+                            modification_object.engine_volume   = float(engine_volume) 
+                            modification_object.save()
+
+                            for complectations in modification.findall('Complectations'):
+                                for complectation in complectations.findall('Complectation'): 
+                                    complectation_id        = complectation.get('id')        
+                                    complectation_name      = complectation.get('name')  
+                                    complectation_object    = get_object_avito_complectation(complectation_name, complectation_id, modification_object)
+
             new_info        = RegInfoRefreshCatalog()
             new_info.date   = DT.datetime.now()
             new_info.site   = 'AVITO RU'
@@ -1501,8 +1519,8 @@ def refresh_catalog_avito_ru():
             
             os.remove(tmp_file)
 
-        except:
-            s = 1
+    except:
+        s = 1
         
 def get_object_avito_complectation(name, id, parent):
     

@@ -1,11 +1,17 @@
 from django.contrib import admin
-from .models import RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument
 
+
+@admin.register(RegInfoRefreshEstimationCarsExpress)
+class RegInfoRefreshEstimationCarsExpressAdmin(admin.ModelAdmin):
+    list_display    = ('date', 'date_end', 'count_all', 'count_success', 'count_error',)
+    
 
 @admin.register(RegEstimationBalanceStaffEco)
 class RegEstimationBalanceStaffEcoAdmin(admin.ModelAdmin):
     list_display    = ('date', 'staff', 'estimation', 'shipment', 'amount',)
     raw_id_fields   = ('staff', 'estimation', 'shipment')
+
 
 @admin.register(RegRefCarsOrganizationsCalculationPrice)
 class RegRefCarsOrganizationsCalculationPriceAdmin(admin.ModelAdmin):
@@ -23,11 +29,11 @@ class RegRefCarsOrganizationsPriceAdmin(admin.ModelAdmin):
 
 @admin.register(RegEstimationRefCarsOrganizations)
 class RegEstimationRefCarsOrganizationsAdmin(admin.ModelAdmin):
-    list_display    = ('date', 'car', 'avg_price', 'avg_days', 'position', 'price', )
+    list_display    = ('date', 'car', 'avg_price', 'avg_days', 'position', 'price', 'error', )
     raw_id_fields   = ('car', )
     search_fields   = ('car__vin',)
     list_filter     = ('date',)
-    
+
 
 @admin.register(RegEstimationBalanceUnit)
 class RegEstimationBalanceUnitAdmin(admin.ModelAdmin):
