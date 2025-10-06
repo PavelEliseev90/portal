@@ -79,6 +79,9 @@ ssl_context.load_verify_locations(localhost_pem)
 
 def add_task():
     s=1
+    
+    #start_refresh_signal(schedule = 60, repeat = 86400, verbose_name = "Получение данных сигнала")
+    #start_refresh_estimation_cars_organization(schedule = 60, repeat = 86400, verbose_name = "Получение оценок по автомобилям на складе")
     #start_get_info_max(schedule = 60, repeat = 120, verbose_name = "Анализ склада / продаж Автохаб по интерактивной оценке")
     #start_kors_estimation_data(schedule = 60, repeat = 120, verbose_name = "Анализ склада / продаж корсаавто по интерактивной оценке")
     #start_refresh_avtoteka_vin(schedule = 60, repeat = 120, verbose_name = "Получение автотека по интерактивным оценкам")
@@ -122,10 +125,11 @@ async def hello_ws_rlk_eco(text):
         response = await websocket.recv()
         s= 1
 
+
 ####
 ###
 ##
-# Расчет данных интерактивной оценки
+# Расчет данных интерактивной оценки 1С 
 @background(queue='kors_estimation_data')
 def start_kors_estimation_data():
     object_estimations_kors = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).order_by('-start_estimation') | RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).order_by('-start_estimation')
@@ -352,6 +356,11 @@ def kors_estimation_data(id_estimation):
     if save:
         estimation.save()
 
+
+####
+###
+##
+# Экспресс оценка автохаб - макспостерс
 @background(queue='get_info_max')
 def start_get_info_max():
 
@@ -591,6 +600,10 @@ def get_name_re(name, ind):
     return name_new.replace('_', ' ').strip()
 
 
+####
+###
+##
+# Функции отправки/обновления данных портала аукциона
 def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):
         return str(obj)
@@ -762,6 +775,14 @@ def refresh_car_my_kors_portal():
             s = 1
 
 
+####
+###
+##
+# Экспресс оценка автомобилей на складе по нашим фильтрам "Экспресс оценка"
+@background(queue='refresh_estimation_cars_organization')
+def start_refresh_estimation_cars_organization():
+    refresh_estimation_cars_organization()
+
 def refresh_estimation_cars_organization():
     
     username        = "korsgroup@maxposter.ru"
@@ -771,7 +792,7 @@ def refresh_estimation_cars_organization():
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(vin = 'YV1LF68ACJ1330757')
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None)
     for car in cars:
         try:
             
@@ -817,7 +838,7 @@ def refresh_estimation_cars_organization():
                 'generation'    : generation,
                 'modification'  : modification,
                 'geoDistance'   : 500,
-                'useAutoFilter'  : False,
+                'useAutoFilter' : True,
                 'yearFrom'      : year_start,
                 "yearTo"        : year_end,
                 'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
@@ -858,7 +879,8 @@ def refresh_estimation_cars_organization():
                 
         except:
             s = 1
-    
+
+
 ####
 ###
 ##
@@ -1076,7 +1098,17 @@ def get_token_avtoteka():
         return json.loads(response.text).get('access_token', '')
     return ''
 
+
+####
+###
+##
+# Получение данных сигнала
+@background(queue='refresh_signal')
+def start_refresh_signal():
+    refresh_signal()
+
 def refresh_signal():
+    
     token = ''
     header = {
             'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
@@ -1635,7 +1667,6 @@ def swap_estimation():
 
     s = 1
     
-
 def send_files_estimations():
     data            = RegRegInteractivOcenkaFiles.objects.get(pk = 28132)
     uin             = data.estimation.rlk.uin
@@ -1953,14 +1984,9 @@ def start_refresh_autohub():
         refresh_signal()
     except:
         s = 1
-    
-    try:
-        refresh_estimation_cars_organization()
-    except:
-        s = 1
-
 
 def refresh_autohub():
+    
     username       = "korsgroup@maxposter.ru"
     password        = "pJ%[QwwqH,YxP9J-"
     url             = "api.maxposter.ru"
@@ -2350,7 +2376,6 @@ def board_monitoring():
     if len(error_list) > 0:
         board_monitoring_alert_telegram(error_list)
     
-
 def get_free_space_mb(folder):
     """ Return folder/drive free space (in bytes)
     """
@@ -2361,7 +2386,6 @@ def get_free_space_mb(folder):
     else:
         st = os.statvfs(folder)
         return st.f_bavail * st.f_frsize/1024/1024
-
 
 def board_monitoring_alert_telegram(error_list):
     #https://api.telegram.org/bot5936060836:AAHvjlsiWmlZMv44pNdsD4-LW3HGo5Zr274/getUpdates
@@ -2393,6 +2417,7 @@ def board_monitoring_alert_telegram(error_list):
 @background(queue='queue_recognition_kg')
 def start_queue_recognition_kg():
     refresh_queue_recognition()
+
 
 ####
 ###
@@ -2469,7 +2494,6 @@ def sleep(times):
     time.sleep(3)
     return times
         
-
 def refresh_check_list_info(checklists_cvc_info):
     for check in checklists_cvc_info:
         check_list = Check_settings_cvc.objects.filter(id_cvc = check['checklist_id'])
@@ -2479,7 +2503,6 @@ def refresh_check_list_info(checklists_cvc_info):
             check_list.id_cvc     = check['checklist_id']
             check_list.save()
         
-
 def cvc_get_info():
     
     date_start = DT.datetime.now() + DT.timedelta(days=-7)
@@ -2585,7 +2608,6 @@ def cvc_get_info():
                                 if questions.priority_chapter > 0:
                                     Records_voice_recorder_cvc_checklist_kg.objects.filter(checklist_cvc = check_list).filter(questions_kg__chapter = questions.chapter).filter(questions_kg__priority_chapter__gt = questions.priority_chapter).delete()
                 check_list.save()
-
 
 def cvc_get_info_check():
     date_start = DT.datetime.now() + DT.timedelta(days=-7)
@@ -2721,7 +2743,6 @@ def cvc_get_info_check():
                                 Records_voice_recorder_cvc_checklist_kg.objects.filter(checklist_cvc = check_list).filter(questions_kg__chapter = questions.chapter).filter(questions_kg__priority_chapter__gt = questions.priority_chapter).delete()
             check_list.save() 
 
-
 def get_dictonary_cvc(id_dictonary_cvc, name):
     dictonarys = Records_voice_recorder_cvc_tematics.objects.filter(id_cvc = str(id_dictonary_cvc))
     if len(dictonarys) == 0:
@@ -2736,7 +2757,6 @@ def get_dictonary_cvc(id_dictonary_cvc, name):
         dictonary.activated     = True
         dictonary.save()
         return dictonary
-
 
 def get_check_cvc(token, id):
     url = 'https://int-kors.audio-control.by/api/get-call-details'
@@ -2753,7 +2773,6 @@ def get_check_cvc(token, id):
         return response.text
     return ''
 
-
 def get_token():
     url = 'https://int-kors.audio-control.by/api/get-token'
 
@@ -2765,7 +2784,6 @@ def get_token():
     if response.status_code == 200:
         return json.loads(response.text)['token']
     return ''
-
 
 def cvc_send_record(send_record, fragments):
     status_code     = 0 
@@ -2797,7 +2815,6 @@ def cvc_send_record(send_record, fragments):
         return status_code
     except:
         return status_code
-
 
 def cvc_record_info():
     record_query    = Records_voice_recorder.objects.get(pk = 410853)
@@ -2856,7 +2873,6 @@ def cvc_record_info():
 
     if len(fragments) > 0:
         s= 1 
-
 
 def cvc_get_record_info_no_send(record_query):
     date_start      = record_query.date.replace(hour=1)
@@ -2954,7 +2970,6 @@ def cvc_get_record_info_no_send(record_query):
         return fragments
 
     return fragments
-
 
 def cvc_get_record_info(record_query):
     
@@ -3102,8 +3117,7 @@ def cvc_get_record_info(record_query):
                 new_fragment.duration       = (new_fragment.time_end - new_fragment.time_start).seconds
                 new_fragment.save()
         '''                       
-            
-                  
+                             
 def cvc_get_send_info(record):
     infos   = Records_voice_recorder_cvc.objects.filter(records = record)
     send    = False

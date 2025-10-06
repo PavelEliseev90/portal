@@ -7010,7 +7010,7 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
-    refresh_estimation_cars_organization()
+    #refresh_estimation_cars_organization()
     
     '''
     estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
