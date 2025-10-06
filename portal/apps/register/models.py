@@ -2488,7 +2488,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['vin', 'avtoteka_web', 'avtoteka_preview', 'avtoteka_task', ])
+            models.Index(fields=['rlk', 'status', 'vin', 'avtoteka_web', 'avtoteka_preview', 'avtoteka_task', ])
         ]
         db_table = 'regInteractivOcenka'
         verbose_name = "Данные интерактивной оценки"

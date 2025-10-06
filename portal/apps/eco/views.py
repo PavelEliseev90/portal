@@ -406,7 +406,7 @@ def get_chats_list_online(request):
     chats = chats.annotate(
         type_estimation_ocenka = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__type_reception__name')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__type_reception__name')[:1]))).annotate(
         car_year                = Subquery(subqyery_reg_interactiv.values('year')[:1])).annotate( 
-        car_prev_img            = Subquery(subqyery_reg_interactiv.values('prev_img')[:1])).annotate( 
+        car_prev_img            = Subquery(subqyery_reg_interactiv.values('year')[:1])).annotate( 
         car_run                 = Coalesce(Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__run')[:1]))).annotate(    
         unit_name               = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__unit__name')[:1]))).annotate(
         unit_name_dc            = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__unit__id')[:1]))).annotate(
