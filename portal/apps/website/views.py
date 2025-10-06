@@ -5290,6 +5290,8 @@ def korsavto_settings_dc(request):
     date                = request.GET.get('date_start', '')
     date_ends           = request.GET.get('date_end', '')
 
+    data_page           = dict()  
+
     if len(date) == 0:
         date_period = DT.datetime.now()
         date_start 	= date_period.replace(day = 1, hour = 0, minute=0, second=0, microsecond=0)
@@ -5543,8 +5545,6 @@ def korsavto_settings_dc(request):
 
     if page == 'rlk_trade_in':
         
-
-
         date                = request.GET.get('date_start', '')
         date_ends           = request.GET.get('date_end', '')
 
@@ -6006,7 +6006,11 @@ def korsavto_settings_dc(request):
             type_reception_id = int(type_reception_id)
             balance_units = balance_units.filter(estimation__page_documents__type_reception__id = type_reception_id)
         
-        balance_units = balance_units.values('unit').order_by('unit').distinct().annotate(sum = Sum('amount')).values('unit', 'unit__name', 'sum' , ).order_by('-sum')
+        balance_units_sub = balance_units.filter(unit__id = OuterRef(name='unit__id'))
+
+        balance_units = balance_units.values('unit').order_by('unit').distinct().annotate(
+            sum = Sum('amount')).values('unit', 'unit__name', 'sum').order_by('-sum')
+        
         if len(name_unit) > 0:
             balance_units = balance_units.filter(unit__name__icontains = name_unit)
         
@@ -6042,6 +6046,7 @@ def korsavto_settings_dc(request):
         from register.models import RegEstimationBalanceUnit
         balance_unit = RegEstimationBalanceUnit.objects.filter(unit = unit)
         balance_unit = balance_unit.filter(date__gte = date_start).filter(date__lte = date_end)
+        
         if vin != '':
             balance_unit = balance_unit.filter(estimation__vin__icontains = vin)
         if type_reception_id != '':
@@ -6049,9 +6054,23 @@ def korsavto_settings_dc(request):
             balance_unit = balance_unit.filter(estimation__page_documents__type_reception__id = type_reception_id)
         balance_unit = balance_unit.order_by('-date')
         
+        count_all   = balance_unit.count() 
+        count_sale  = balance_unit.exclude(shipment = None).count()
+        
+        data_page['count_all']          = count_all
+        data_page['count_sale']         = count_sale
+        data_page['count_stok']         = count_all - count_sale
+        data_page['percent_sale']       = round(count_sale / count_all * 100, 2)
+        data_page['percent_stok']       = round((count_all - count_sale) / count_all * 100, 2)
+
+        
+        data_type_reception = balance_unit.order_by('estimation__page_documents__type_reception__id').values('estimation__page_documents__type_reception__name').distinct().annotate(count = Count('id')).annotate(count_shipment = Count('shipment__id'))
+        data_page['types_reception'] = data_type_reception
+
         selected = {
             'type_receptions'   : type_receptions
         }
+
         filtr = {
             'date_start'        : date_start,
             'date_end'          : date_end,
@@ -6086,9 +6105,10 @@ def korsavto_settings_dc(request):
         'estimations'   : estimations,
         'cars'          : cars,
         'select_units'  : select_units,
-        'settings'      : settings,
+        'settings'      : settings_,
         'balance_units' : balance_units,
-        'balance_unit'  : balance_unit
+        'balance_unit'  : balance_unit,
+        'data_page'     : data_page
     }
 
     return render(request, 'kors/settings_dc.html', {'params':params})  
@@ -6990,7 +7010,9 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
+    refresh_estimation_cars_organization()
     
+    '''
     estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
     count = estimations.count()
     s = 1
@@ -7001,7 +7023,7 @@ def test(request):
         except:
             ss = 1
         print(str(s) + ' / ' + str(count))
-    
+    '''
 
 
     

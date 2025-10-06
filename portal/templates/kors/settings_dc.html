@@ -1713,6 +1713,50 @@
     </form>
   
     <hr>
+    
+    <div class="row g-1">
+      <div class="col-auto">
+        <div class="card bg-gradient bg-success bg-opacity-25 text-center">
+          <div class="card-body">
+            <label class="fs-6">Всего операций</label>
+            <br>
+            <label class="fs-6 fw-bold">{{params.data_page.count_all}}</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-auto">
+        <div class="card bg-gradient bg-success bg-opacity-25 text-center">
+          <div class="card-body">
+            <label class="fs-6">Сток</label>
+            <br>
+            <label class="fs-6 fw-bold">{{params.data_page.count_stok}} ({{params.data_page.percent_stok}} %)</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-auto">
+        <div class="card bg-gradient bg-success bg-opacity-25 text-center">
+          <div class="card-body">
+            <label class="fs-6">Проданы</label>
+            <br>
+            <label class="fs-6 fw-bold">{{params.data_page.count_sale}} ({{params.data_page.percent_sale}} %)</label>
+          </div>
+        </div>
+      </div>
+      {% for type_reception in params.data_page.types_reception %}
+        <div class="col-auto">
+          <div class="card bg-gradient bg-warning bg-opacity-10 text-center">
+            <div class="card-body">
+              <label class="fs-6">{{type_reception.estimation__page_documents__type_reception__name}}</label>
+              <br>
+              <label class="fs-6 fw-bold">Всего: {{type_reception.count}} / Продано: {{type_reception.count_shipment}} ({% razdelit num_1=type_reception.count_shipment num_2=type_reception.count %} %)</label>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+    </div>
+
+    <hr>
   
     {% for info in params.balance_unit %}
        
