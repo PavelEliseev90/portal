@@ -50,7 +50,7 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-url_auction_kors_portal     = 'https://my.kors-group.ru'
+url_auction_kors_portal     = 'https://auction.kors-group.ru'
 
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
@@ -636,7 +636,7 @@ def send_auction(auction):
     
     data_info  = json.dumps(json_doc, default=datetime_handler)
     
-    r   = requests.post(url_auction_kors_portal + '/api/refresh_auction/', json = data_info, auth=('Admin_my_kors_portal', 'Audi80b4'))
+    r   = requests.post(url_auction_kors_portal + '/api/refresh_auction/', json = data_info, auth=('Admin_auction', 'Audi80b4'))
     if r.status_code == 200:
         s = 1
 
@@ -771,7 +771,7 @@ def refresh_estimation_cars_organization():
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None)
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(vin = 'YV1LF68ACJ1330757')
     for car in cars:
         try:
             
@@ -1946,6 +1946,7 @@ def get_token_wash(header):
 # Автохаб
 @background(queue='refresh_autohub')
 def start_refresh_autohub():
+    
     refresh_autohub()
     
     try:
