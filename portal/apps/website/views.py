@@ -46,7 +46,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
+from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -1814,6 +1814,16 @@ def board_monitoring(request):
     task_price_count        = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
     estimation_1c           = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).count()
     
+    count_signal = Autoteka_signal.objects.all().order_by('-date').count()
+    signal_last_date = DT.datetime(1, 1, 1)
+    if count_signal > 0:
+        signal_last_date = Autoteka_signal.objects.all().order_by('-date')[0].date
+
+    count_reg_estimations_exress = RegInfoRefreshEstimationCarsExpress.objects.all().count()
+    data_info_express_estimation_stok = None
+    if count_reg_estimations_exress > 0:
+        data_info_express_estimation_stok = RegInfoRefreshEstimationCarsExpress.objects.all().order_by('-date')
+
     params = {
         'type'                  : 'monitorings',
         'ip'                    : ip_list,
@@ -1845,6 +1855,8 @@ def board_monitoring(request):
         'push_count'            : push_count,
         'send_1c'               : send_1c,
         'task_price_count'      : task_price_count,
+        'signal_last_date'      : signal_last_date,
+        'data_info_express_estimation_stok' : data_info_express_estimation_stok,
         'now'                   : DT.datetime.now()
 
     }

@@ -1204,6 +1204,22 @@ class RegEstimationsSettings(models.Model):
         verbose_name_plural = "Настройки интерактивной оценки"
 
 
+class RegInfoRefreshEstimationCarsExpress(models.Model):
+    date            = models.DateTimeField('Дата начала', default=datetime.now, blank=False)
+    date_end        = models.DateTimeField('Дата окончания', default=datetime.now, blank=False)
+    count_all       = models.IntegerField('Всего авто', default=0, null=True, blank=True)
+    count_success   = models.IntegerField('Всего авто успешно', default=0, null=True, blank=True)
+    count_error     = models.IntegerField('Всего авто с ошибками', default=0, null=True, blank=True)
+
+    def __str__(self):
+        return "{} / {}".format(self.date, self.date_end)
+
+    class Meta:
+        db_table = 'regInfoRefreshEstimationCarsExpress'
+        verbose_name = "Обновление экспресс оценки автомобиля на складе"
+        verbose_name_plural = "Обновление экспресс оценок автомобилей на складе"
+
+
 class RegInfoRefreshCatalog(models.Model):
     date        = models.DateTimeField('Дата обновления', default=datetime.now, blank=False)
     site        = models.CharField("Сайт", null=True, blank=True, max_length=512)

@@ -83,7 +83,7 @@
 
     <div class="row g-2">
       
-      <div class="col-12 col-sm-3">
+      <div class="col-12 col-sm-2">
         <div class="card bg-opacity-75 {% if params.now|date:'d' == params.autohab|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
           <div class="card-body">
             <label class="fs-5">{% if params.now|date:'d' == params.autohab|date:'d' %} <span class="icon-mbri-success"></span> {{params.autohab}} {% else %} <span class="icon-mbri-close"></span> {{params.autohab}} {% endif %} </label>
@@ -93,7 +93,17 @@
         </div>
       </div>
 
-      <div class="col-12 col-sm-3">
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.data_info_express_estimation_stok.date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.now|date:'d' == params.data_info_express_estimation_stok.date|date:'d' %} <span class="icon-mbri-success"></span> {{params.data_info_express_estimation_stok.date}} {% else %} <span class="icon-mbri-close"></span> {{params.data_info_express_estimation_stok.date}} {% endif %} </label>
+            <hr>
+            <label class="fs-6">Экспресс {{params.data_info_express_estimation_stok.count_all}} / {{params.data_info_express_estimation_stok.count_success}} / {{params.data_info_express_estimation_stok.count_error}} </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-2">
         <div class="card bg-opacity-75 {% if params.now|date:'d' == params.robowash|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
           <div class="card-body">
             <label class="fs-5">{% if params.now|date:'d' == params.robowash|date:'d' %} <span class="icon-mbri-success"></span> {{params.robowash}} {% else %} <span class="icon-mbri-close"></span> {{params.robowash}} {% endif %} </label>
@@ -103,11 +113,21 @@
         </div>
       </div>
 
+      <div class="col-12 col-sm-2">
+        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.signal_last_date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
+          <div class="card-body">
+            <label class="fs-5">{% if params.now|date:'d' == params.signal_last_date|date:'d' %} <span class="icon-mbri-success"></span> {{params.signal_last_date}} {% else %} <span class="icon-mbri-close"></span> {{params.signal_last_date}} {% endif %} </label>
+            <hr>
+            <label class="fs-6">Сигнал </label>
+          </div>
+        </div>
+      </div>
+
       {% for catalog in params.info_refresh_catalogs %}
-        <div class="col-12 col-sm-3">
+        <div class="col-12 col-sm-2">
           <div class="card bg-opacity-75 {% if params.now|date:'d' == catalog.max_date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
             <div class="card-body">
-              <label class="fs-5 text-truncate">{% if params.now|date:'d' == catalog.max_date|date:'d' %}  <span class="icon-mbri-success"></span> {{catalog.max_date}} {% else %} <span class="icon-mbri-close"></span> {{catalog.max_date}} {% endif %} </label>
+              <label class="fs-5">{% if params.now|date:'d' == catalog.max_date|date:'d' %}  <span class="icon-mbri-success"></span> {{catalog.max_date}} {% else %} <span class="icon-mbri-close"></span> {{catalog.max_date}} {% endif %} </label>
               <hr>
               <label class="fs-6"> {{catalog.site}} </label>
             </div>
