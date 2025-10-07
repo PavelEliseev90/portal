@@ -1210,7 +1210,7 @@ class RegInfoRefreshEstimationCarsExpress(models.Model):
     count_all       = models.IntegerField('Всего авто', default=0, null=True, blank=True)
     count_success   = models.IntegerField('Всего авто успешно', default=0, null=True, blank=True)
     count_error     = models.IntegerField('Всего авто с ошибками', default=0, null=True, blank=True)
-
+    
     def __str__(self):
         return "{} / {}".format(self.date, self.date_end)
 
