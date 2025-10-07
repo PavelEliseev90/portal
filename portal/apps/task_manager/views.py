@@ -800,7 +800,7 @@ def refresh_estimation_cars_organization_run():
 
     for car in cars:
         try:
-            sleep(5)
+            sleep(3)
 
             year_start  = car.year
             year_end    = car.year
@@ -883,6 +883,7 @@ def refresh_estimation_cars_organization_run():
                 new_record.price        = car.price
                 new_record.save()
                 car_success = car_success + 1 
+
             else:
                 text_error              = r.text
                 new_record              = RegEstimationRefCarsOrganizations()
@@ -892,9 +893,11 @@ def refresh_estimation_cars_organization_run():
                 new_record.position     = 0
                 new_record.total        = 0
                 new_record.price        = car.price
-                new_record.error        = text_error
+                new_record.error        = text_error[0:2048]
                 new_record.save()
-                car_error = car_error + 1      
+
+                car_error = car_error + 1  
+
         except:
             s = 1
             text_error              = 'Неопределено' 
