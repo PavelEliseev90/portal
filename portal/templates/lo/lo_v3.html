@@ -4130,12 +4130,12 @@
                   <div class="card">
                     <div class="card-body">
                       <h6><span class="icon-mbri-users"></span> Участники 
-                        <button style="padding: 5px 10px;" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#exampleModalUsers" data-bs-whatever="@mdo">
+                        <button id="show_modal_users" style="padding: 5px 10px;" class="btn btn-outline-dark">
                           <span class="icon-mbri-edit2" ></span> 
                         </button>
                       </h6>
                       <hr style="width: 75%;">
-    
+                    
                       {% for access_user in params.estimation.access_user.all %}
                         <button style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
                           {% if access_user.profiles.eco_name != '' %} {{access_user.profiles.eco_name}} {% else %} {{access_user.last_name}} {{access_user.first_name}} {% endif %}
@@ -4146,8 +4146,15 @@
                         <div class="modal-dialog modal-dialog-scrollable modal-xl">
                           <div class="modal-content">
                           <div class="modal-header">
-                            <input class="form-control form-control-sm" type="text" id="filter_user" name="filter_user" value="" onkeyup="myFunction()" placeholder="Поиск...">
-                      
+                            <div class="row g-1 w-100">
+                              <div class="col-10">
+                                <input class="form-control" type="text" id="filter_user" name="filter_user" value="" placeholder="Ввведите ФИО или email сотрудника">                      
+                              </div>
+                              <div class="col-1">
+                                <button class="btn btn-outline-success" id="search_staff_access"><span class="icon-mbri-search"></span> </button>
+                              </div>
+                            </div>
+                            
                             <hr>
     
                           </div>
@@ -4156,7 +4163,7 @@
     
                               <ul id="myUL" style="margin: 0rem; padding: 0rem;">
                                 
-                            
+                            <!--
                                 {% for user_add in params.users %}
                                 
                                   
@@ -4183,30 +4190,66 @@
                                   
     
                                 {% endfor %}
-    
+    -->
                               </ul>
                               
                               <script>
-                                function myFunction() {
-                                  // Объявлять переменные
-                                  var input, filter, ul, li, a, i, txtValue;
-                                  input = document.getElementById('filter_user');
-                                  filter = input.value.toUpperCase();
-                                  ul = document.getElementById("myUL");
-                                  li = ul.getElementsByTagName('li');
-                                
-                                  // Выполните цикл по всем элементам списка и скройте те, которые не соответствуют запросу поиска
-                                  for (i = 0; i < li.length; i++) {
-                                    a = li[i].getElementsByTagName("a")[0];
-                                    txtValue = a.textContent || a.innerText;
-                                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                      li[i].style.display = "";
-                                    } else {
-                                      li[i].style.display = "none";
-                                    }
-                                  }
-                                }
-                                </script>
+
+                                $("#show_modal_users").click(function(e){
+                                  
+                                  document.querySelector('#myUL').innerHTML = '';
+                                  
+                                  $('#exampleModalUsers').modal('show');
+
+                                });
+
+                                $("#search_staff_access").click(function(e){
+                                  
+                                  document.querySelector('#myUL').innerHTML = '';
+                                  
+                                  var innerHTML = '';
+                                  var search_staff_access_value = $("#filter_user").val();
+
+                                  if (search_staff_access_value == ''){
+                                    document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + 'Заполните строку поиска.';
+                                  } else {
+                                    $.get( "/eco/js/get_users_list_online/{{params.estimation.rlk.pk}}/?search=" + search_staff_access_value , function( data, status ) { 
+                                      let i = data.length;
+                                        var puth = '{{request.get_full_path}}';
+                                        for (s = 0; s < i; s++) { 
+                                          
+                                          var object = data[s];
+
+                                          var html = ''
+                                          
+                                          html += '<li style="margin-bottom: 0.2rem; padding: 0.3rem;" class="btn text-start container-fluid btn-outline-secondary">';
+                                          html += '  <a href="' + puth  + '&add_u=' + object['id'] + '" class="text-dark" >';
+                                          html += '  <div class="row g-1">';
+                                          html += '  <div class="col-1 align-self-center">';
+                                          html += '<span class="icon-mbri-plus"></span>';
+                                          html += '</div>';
+                                          html += '<div class="col-11">';
+                                          html +=  object.profiles__eco_name;
+                                          html += '';
+                                          html += '<br>';
+                                          html += object.email;
+                                          html += '';
+                                          html += '</div>';
+                                          html += '</div>';
+                                          html += '</a>';
+                                          html += '</li>  ';
+
+                                          document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + html;
+
+                                        };
+                                        if (i == 0){
+                                          document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + 'Нечего не найдено. Уточните поиск.';
+                                        }
+                                    });
+                                  };                                  
+                                });                                
+
+                              </script>
     
                             </div>
                           </div>

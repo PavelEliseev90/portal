@@ -386,6 +386,18 @@ def get_chats_list_online_info(request, id):
     return JsonResponse(list(chats.values()), safe=False, status=status.HTTP_200_OK)
 
 
+def get_users_list_online(request, id):
+    search = request.GET.get('search', '')
+    users = list()
+    if id != '' and search != '':
+        estimation = RegInteractivOcenka.objects.get(rlk__id = id)
+        users = User.objects.exclude(pk__in = estimation.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True)
+        if search != '':
+            users = users.filter(Q(profiles__eco_name__icontains = search) | Q(email__icontains = search))    
+            users = list(users.order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email'))
+    return JsonResponse(users, safe=False, status=status.HTTP_200_OK)
+
+
 def get_chats_list_online(request):
     
     filtr_search                = request.GET.get('search', '')
@@ -932,7 +944,7 @@ def doc(request, id):
 
                 return HttpResponseRedirect(request.path_info + '?page=9') 
 
-            users = User.objects.exclude(pk__in = estimation.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True).order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email')
+            #users = User.objects.exclude(pk__in = estimation.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True).order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email')
             start_eco_1 = request.GET.get('start_eco_1','')
             if start_eco_1 != '':
                 estimation.staff_eco_1 = request.user
@@ -1690,6 +1702,7 @@ def body_estimation(estimation):
     
     
     return body
+
 
 def salon_estimation(estimation):
     

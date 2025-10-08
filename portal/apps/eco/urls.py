@@ -10,8 +10,9 @@ urlpatterns = [
     path('js/get_chats_list/',                  views.get_chats_list),
     path('js/post_chats_list/',                 views.post_chats_list),
     path('js/get_chats_list_online/',           views.get_chats_list_online),
-    path('js/get_chats_list_online_info/<id>/',      views.get_chats_list_online_info, name='id'),
-    
+    path('js/get_chats_list_online_info/<id>/', views.get_chats_list_online_info, name='id'),
+    path('js/get_users_list_online/<id>/',      views.get_users_list_online, name='id'),
+
     path('monitors/',                           views.eco_monitors),
     path('<id>/',                               views.doc, name='id'),
     
@@ -20,7 +21,4 @@ urlpatterns = [
     path('online/js/get_chats_list_online/',    views.get_chats_list_online),
     path('online/<id>/',                        views.doc, name='id'),
 
-    
-    
-    
 ]
