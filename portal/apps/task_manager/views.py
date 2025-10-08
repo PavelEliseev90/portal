@@ -50,8 +50,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-url_auction_kors_portal     = 'https://auction.kors-group.ru'
-
+#url_auction_kors_portal     = 'https://auction.kors-group.ru'
+url_auction_kors_portal     = 'http://k01-1c-prog01'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -364,14 +364,14 @@ def kors_estimation_data(id_estimation):
 @background(queue='get_info_max')
 def start_get_info_max():
 
-    object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).exclude(page_remote = None).exclude(page_remote__price_sale = 0).exclude(page_remote__run = 0).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk')
+    object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 10, 1)).exclude(modification = None).exclude(page_remote = None).exclude(page_remote__price_sale = 0).exclude(page_remote__run = 0).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk')
     for object_estimation_autohub in object_estimations_report_autohub:
         try:
             get_info_max_remote(object_estimation_autohub['pk'])
         except:
             s = 1    
 
-    object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk')
+    object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 10, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk')
     for object_estimation_autohub in object_estimations_report_autohub:
         try:
             get_info_max(object_estimation_autohub['pk'])
@@ -933,10 +933,11 @@ def refresh_avtoteka_vin():
     
     token = ''
     header = {
-            'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
-        }
-                    
-    object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 7, 1)).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation')
+        'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
+    }
+    
+    date_start = DT.datetime.now().replace(hour=1)
+    object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation')
     if len(object_estimations) > 0:
         
         token = get_token_avtoteka()
@@ -964,51 +965,9 @@ def refresh_avtoteka_vin():
                         data_prev   = json.loads(response.text)
                         task_id     = data_prev['result']['preview']['previewId']
                         object_estimation.avtoteka_preview = str(task_id)
-                        object_estimation.save(update_fields=['avtoteka_preview'])
-                                
-                        '''
-                        status_prev = ''
-                        
-                        while status_prev != 'success':
-                            
-                            url_prev = 'https://pro.autoteka.ru/autoteka/v1/previews/' + str(task_id)                        
-                            response_prev = requests.get(url_prev, headers=header)
-                            
-                            if response_prev.status_code == 200:
-                                status_prev = json.loads(response_prev.text)['result']['preview']['status']
-                                
-                                if status_prev == 'success':
-                                    js               = {'previewId': task_id}
-                                    url_report_id    = 'https://pro.autoteka.ru/autoteka/v1/reports'
-                                    status_report   = ''
-                                    
-                                    response_report = requests.post(url_report_id, headers=header, json=js)
-                                    time            = sleep(3)
-                                    
-                                    if response_report.status_code == 200:
-                                        reportId        = json.loads(response_report.text)['result']['report']['reportId']
-                                        object_estimation.avtoteka_task = str(reportId)
-                                        object_estimation.save()
+                        object_estimation.save(update_fields=['avtoteka_preview'])                                                    
 
-                                        url_report = 'https://pro.autoteka.ru/autoteka/v1/reports/' + str(reportId)
-                                        
-                                        while status_report != 'success':
-                                            response_report_data =  requests.get(url_report, headers=header)
-                                            if response_report_data.status_code == 200:
-                                                status_report = json.loads(response_report_data.text)['result']['report']['status']
-                                                if status_report == 'success':
-                                                    status      = status_report
-                                                    status_prev = status_report
-                                                    object_estimation.avtoteka_data = response_report_data.text
-                                                    response_report_json = json.loads(response_report_data.text)
-                                                    object_estimation.avtoteka_web = response_report_json['result']['report']['webLink']
-                                                    object_estimation.avtoteka_pdf = response_report_json['result']['report']['pdfLink'] 
-                                                    object_estimation.save()
-                                                else:
-                                                    time = sleep(3)
-                        '''
-
-    object_estimations_prev = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation')
+    object_estimations_prev = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation')
     if len(object_estimations_prev) > 0:
         
         if token == '':
@@ -1032,15 +991,12 @@ def refresh_avtoteka_vin():
                         status_report   = ''
                         
                         response_report = requests.post(url_report_id, headers=header, json=js)
-                        #time            = sleep(3)
-                        
                         if response_report.status_code == 200:
                             reportId        = json.loads(response_report.text)['result']['report']['reportId']
                             object_estimation.avtoteka_task = str(reportId)
                             object_estimation.save(update_fields=['avtoteka_task'])
 
-    
-    object_estimations_report = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = DT.date(2025, 6, 1)).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).order_by('start_estimation')
+    object_estimations_report = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).order_by('start_estimation')
     if len(object_estimations_report) > 0:
         
         if token == '':
@@ -1106,23 +1062,6 @@ def refresh_avtoteka_vin():
                                 s = 1
                             object_estimation.save()                 
     
-    
-    '''
-    object_estimations_kors = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 2, 5)).filter(kors_start_store = None).order_by('-start_estimation')
-    for object_estimation in object_estimations_kors:
-        try:
-            kors_estimation_data(object_estimation.pk)
-        except:
-            s = 1
-    
-    object_estimations_report_autohub = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 2, 5)).filter(hub_data = None).order_by('-start_estimation')
-    for object_estimation_autohub in object_estimations_report_autohub:
-        try:
-            get_info_max(object_estimation_autohub.pk)
-        except:
-            s = 1
-    '''
-    return ''
        
 def get_token_avtoteka():
     

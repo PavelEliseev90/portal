@@ -7022,8 +7022,14 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
-    refresh_estimation_cars_organization()
-    #refresh_estimation_cars_organization()
+    object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk')
+    for object_estimation_autohub in object_estimations_report_autohub:
+        try:
+            get_info_max(object_estimation_autohub['pk'])
+        except:
+            s = 1 
+    
+    #refresh_avtoteka_vin()
     
     '''
     estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
@@ -7038,17 +7044,15 @@ def test(request):
         print(str(s) + ' / ' + str(count))
     '''
 
-
-    
     '''
     date_start = DT.datetime.now()
-    date_start = date_start.replace(year=2025, month=9, day = 16, hour = 0, minute=0, second=0, microsecond=0)
+    date_start = date_start.replace(year=2025, month=10, day = 3, hour = 0, minute=0, second=0, microsecond=0)
     list_checklist_cvc = Records_voice_recorder_cvc_checklist.objects.filter(success = True).filter(rlk__dataTime__gte = date_start)
     for s in list_checklist_cvc:
         s.success = False
         s.save()
     '''
-
+    
     #object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     #refresh_estimation_cars_organization()
     
