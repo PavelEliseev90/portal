@@ -439,6 +439,10 @@ def get_info_max_remote(estimation_id):
         count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech).count()
         if count_avtohub_modification == 1:
             avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech)[0]    
+            if year_start < avtohub_modification.yearFrom:
+                year_start = avtohub_modification.yearFrom
+            if year_end > avtohub_modification.yearTo:
+                year_end = avtohub_modification.yearTo
 
         if avtohub_modification != None:
             brand = {
@@ -556,7 +560,11 @@ def get_info_max(estimation_id):
         count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech).count()
         if count_avtohub_modification == 1:
             avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech)[0]    
-
+            if year_start < avtohub_modification.yearFrom:
+                year_start = avtohub_modification.yearFrom
+            if year_end > avtohub_modification.yearTo:
+                year_end = avtohub_modification.yearTo
+                    
         if avtohub_modification != None:
             brand = {
                 'id'    : avtohub_modification.brandId,
@@ -564,15 +572,15 @@ def get_info_max(estimation_id):
             }
             model = {
                 'id'    : avtohub_modification.modelId,
-                'name'  : get_name_re(estimation.modification.model.name, 0)
+                'name'  : ''
             }
             generation = {
                 'id'    : avtohub_modification.generationId,
-                'name'  : get_name_re(estimation.modification.model.name, 1)
+                'name'  : ''
             }
             modification = {
                 'id'    : avtohub_modification.id_avtohub,
-                'name'  : estimation.modification.name
+                'name'  : ''
             }
         else:
             brand = {
@@ -904,6 +912,10 @@ def refresh_estimation_cars_organization_run():
             count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSiteTech).count()
             if count_avtohub_modification == 1:
                 avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSiteTech)[0]    
+                if year_start < avtohub_modification.yearFrom:
+                    year_start = avtohub_modification.yearFrom
+                if year_end > avtohub_modification.yearTo:
+                    year_end = avtohub_modification.yearTo
 
             if avtohub_modification != None:
                 brand = {
