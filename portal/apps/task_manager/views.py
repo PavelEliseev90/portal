@@ -15,7 +15,7 @@ import json
 from telephony.views import refresh_history_task
 from requests.auth import HTTPBasicAuth
 import time
-from avtosalon.models import Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
+from avtosalon.models import AvtohubModifications, Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
 from register.models import RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
 from openpyxl import Workbook, load_workbook
 import re
@@ -50,8 +50,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-#url_auction_kors_portal     = 'https://auction.kors-group.ru'
-url_auction_kors_portal     = 'http://k01-1c-prog01'
+url_auction_kors_portal     = 'https://auction.kors-group.ru'
+#url_auction_kors_portal     = 'http://k01-1c-prog01'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -360,6 +360,42 @@ def kors_estimation_data(id_estimation):
 ####
 ###
 ##
+# Обновление каталога модификаций автохаб для экспресс оценки
+def refresh_autohub_modification():
+    url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-modifications'  
+    r   = requests.get(url_request)
+    if r.status_code == 200:   
+        data        = r.text
+        s = 1 
+        json_data   = json.loads(data)
+        if json_data['status'] == 'success':
+            data_modification = json_data['data']
+            vehicleModifications = data_modification['vehicleModifications']
+            for vehicleModification in vehicleModifications:
+                avtohub_modifications = AvtohubModifications.objects.get_or_create(id_avtohub = vehicleModification['id'])[0]
+                avtohub_modifications.brandId               = vehicleModification['brandId']
+                avtohub_modifications.modelId               = vehicleModification['modelId']
+                avtohub_modifications.generationId          = vehicleModification['generationId']
+                avtohub_modifications.bodyConfigurationId   = vehicleModification['bodyConfigurationId']
+                avtohub_modifications.name              = vehicleModification['name']
+                avtohub_modifications.autoruId          = vehicleModification['autoruId'] if vehicleModification['autoruId'] != None else 0
+                avtohub_modifications.yearFrom          = vehicleModification['yearFrom']
+                avtohub_modifications.yearTo            = vehicleModification['yearTo']
+                avtohub_modifications.bodyType          = vehicleModification['bodyType']
+                avtohub_modifications.bodyDoorCount     = vehicleModification['bodyDoorCount']
+                avtohub_modifications.engineType        = vehicleModification['engineType']
+                avtohub_modifications.engineVolume      = vehicleModification['engineVolume']
+                avtohub_modifications.enginePower       = vehicleModification['enginePower']
+                avtohub_modifications.driveType         = vehicleModification['driveType']
+                avtohub_modifications.gearboxType       = vehicleModification['gearboxType']
+                avtohub_modifications.gearboxGearCount  = vehicleModification['gearboxGearCount']
+                avtohub_modifications.isActive          = vehicleModification['isActive']
+                avtohub_modifications.save()
+                
+
+####
+###
+##
 # Экспресс оценка автохаб - макспостерс
 @background(queue='get_info_max')
 def start_get_info_max():
@@ -389,30 +425,55 @@ def get_info_max_remote(estimation_id):
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    year_start  = estimation.year - 1
-    year_end    = estimation.year + 1
+    year_curent = DT.datetime.now().year
+    if year_curent - estimation.year > 5:
+        year_start  = estimation.year - 1   
+        year_end    = estimation.year + 1
+    else:
+        year_start  = estimation.year   
+        year_end    = estimation.year
 
     try:
+        
+        avtohub_modification = None
+        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite).count()
+        if count_avtohub_modification == 1:
+            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite)[0]    
 
-        brand = {
-            'id'    : None,
-            'name'  : estimation.modification.model.mark.name.strip()
-        }
-
-        model = {
-            'id'    : None,
-            'name'  : get_name_re(estimation.modification.model.name, 0)
-        }
-
-        generation = {
-            'id'    : None,
-            'name'  : get_name_re(estimation.modification.model.name, 1)
-        }
-
-        modification = {
-            'id'    : None,
-            'name'  : estimation.modification.name
-        }
+        if avtohub_modification != None:
+            brand = {
+                'id'    : avtohub_modification.brandId,
+                'name'  : estimation.modification.model.mark.name.strip()
+            }
+            model = {
+                'id'    : avtohub_modification.modelId,
+                'name'  : get_name_re(estimation.modification.model.name, 0)
+            }
+            generation = {
+                'id'    : avtohub_modification.generationId,
+                'name'  : get_name_re(estimation.modification.model.name, 1)
+            }
+            modification = {
+                'id'    : avtohub_modification.id_avtohub,
+                'name'  : estimation.modification.name
+            }
+        else:
+            brand = {
+                'id'    : None,
+                'name'  : estimation.modification.model.mark.name.strip()
+            }
+            model = {
+                'id'    : None,
+                'name'  : get_name_re(estimation.modification.model.name, 0)
+            }
+            generation = {
+                'id'    : None,
+                'name'  : get_name_re(estimation.modification.model.name, 1)
+            }
+            modification = {
+                'id'    : None,
+                'name'  : estimation.modification.name
+            }
 
         marketFilter = {
             'brand'         : brand,
@@ -420,8 +481,8 @@ def get_info_max_remote(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            #'yearFrom'      : year_start,
-            #"yearTo"        : year_end
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end
         }
         
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
@@ -433,9 +494,9 @@ def get_info_max_remote(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'useAutoFilter' : True,
-            #'yearFrom'      : year_start,
-            #"yearTo"        : year_end,
+            'useAutoFilter' : False,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end,
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 
@@ -451,6 +512,7 @@ def get_info_max_remote(estimation_id):
             'filter'            : filter,
             'vehicle'           : vehicle 
         }
+        
         r   = requests.post(URL_TEMPLATE, auth=HTTPBasicAuth(username, password), json=data_info)
         if r.status_code == 200:
             
@@ -465,6 +527,7 @@ def get_info_max_remote(estimation_id):
             page_remote                         = estimation.page_remote 
             page_remote.hub_avg                 = analyticsByActualSales['avgPriceWithCorrection']
             page_remote.save()
+
     except:
         s = 1
 
@@ -479,39 +542,64 @@ def get_info_max(estimation_id):
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    year_start  = estimation.year  - 1 
-    year_end    = estimation.year  + 1
-    
+    year_curent = DT.datetime.now().year
+    if year_curent - estimation.year > 5:
+        year_start  = estimation.year - 1   
+        year_end    = estimation.year + 1
+    else:
+        year_start  = estimation.year   
+        year_end    = estimation.year 
+
     try:
-       
-        brand = {
-            'id'    : None,
-            'name'  : estimation.modification.model.mark.name.strip()
-        }
+        
+        avtohub_modification = None
+        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite).count()
+        if count_avtohub_modification == 1:
+            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite)[0]    
 
-        model = {
-            'id'    : None,
-            'name'  : get_name_re(estimation.modification.model.name, 0)
-        }
-
-        generation = {
-            'id'    : None,
-            'name'  : get_name_re(estimation.modification.model.name, 1)
-        }
-
-        modification = {
-            'id'    : None,
-            'name'  : estimation.modification.name
-        }
-
+        if avtohub_modification != None:
+            brand = {
+                'id'    : avtohub_modification.brandId,
+                'name'  : estimation.modification.model.mark.name.strip()
+            }
+            model = {
+                'id'    : avtohub_modification.modelId,
+                'name'  : get_name_re(estimation.modification.model.name, 0)
+            }
+            generation = {
+                'id'    : avtohub_modification.generationId,
+                'name'  : get_name_re(estimation.modification.model.name, 1)
+            }
+            modification = {
+                'id'    : avtohub_modification.id_avtohub,
+                'name'  : estimation.modification.name
+            }
+        else:
+            brand = {
+                'id'    : None,
+                'name'  : estimation.modification.model.mark.name.strip()
+            }
+            model = {
+                'id'    : None,
+                'name'  : get_name_re(estimation.modification.model.name, 0)
+            }
+            generation = {
+                'id'    : None,
+                'name'  : get_name_re(estimation.modification.model.name, 1)
+            }
+            modification = {
+                'id'    : None,
+                'name'  : estimation.modification.name
+            }
+        
         marketFilter = {
             'brand'         : brand,
             'model'         : model,
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            #'yearFrom'      : year_start,
-            #"yearTo"        : year_end
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end
         }
         
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
@@ -523,9 +611,9 @@ def get_info_max(estimation_id):
             'generation'    : generation,
             'modification'  : modification,
             'geoDistance'   : 500,
-            'useAutoFilter' : True,
-            #'yearFrom'      : year_start,
-            #"yearTo"        : year_end,
+            'useAutoFilter' : False,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end,
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 
@@ -541,6 +629,7 @@ def get_info_max(estimation_id):
             'filter'            : filter,
             'vehicle'           : vehicle 
         }
+        
         r   = requests.post(URL_TEMPLATE, auth=HTTPBasicAuth(username, password), json=data_info)
         if r.status_code == 200:
             
@@ -581,6 +670,7 @@ def get_info_max(estimation_id):
             estimation.hub_start    = DT.datetime.now()
             estimation.hub_data_2   = r.text
             estimation.save()
+
     except:
         s = 1
 
@@ -802,37 +892,62 @@ def refresh_estimation_cars_organization_run():
         try:
             sleep(3)
 
-            year_start  = car.year
-            year_end    = car.year
+            year_current = DT.datetime.now().year
+            if year_current - car.year > 5:
+                year_start  = car.year - 1
+                year_end    = car.year + 1
+            else:
+                year_start  = car.year
+                year_end    = car.year
 
-            brand = {
-                'id'    : None,
-                'name'  : car.modification_autoru.model.mark.name.strip()
-            }
+            avtohub_modification = None
+            count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSite).count()
+            if count_avtohub_modification == 1:
+                avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSite)[0]    
 
-            model = {
-                'id'    : None,
-                'name'  : get_name_re(car.modification_autoru.model.name, 0)
-            }
-
-            generation = {
-                'id'    : None,
-                'name'  : get_name_re(car.modification_autoru.model.name, 1)
-            }
-
-            modification = {
-                'id'    : None,
-                'name'  : car.modification_autoru.name
-            }
-
+            if avtohub_modification != None:
+                brand = {
+                    'id'    : avtohub_modification.brandId,
+                    'name'  : car.modification_autoru.model.mark.name.strip()
+                }
+                model = {
+                    'id'    : avtohub_modification.modelId,
+                    'name'  : get_name_re(car.modification_autoru.model.name, 0)
+                }
+                generation = {
+                    'id'    : avtohub_modification.generationId,
+                    'name'  : get_name_re(car.modification_autoru.model.name, 1)
+                }
+                modification = {
+                    'id'    : avtohub_modification.id_avtohub,
+                    'name'  : car.modification_autoru.name
+                }
+            else:
+                brand = {
+                    'id'    : None,
+                    'name'  : car.modification_autoru.model.mark.name.strip()
+                }
+                model = {
+                    'id'    : None,
+                    'name'  : get_name_re(car.modification_autoru.model.name, 0)
+                }
+                generation = {
+                    'id'    : None,
+                    'name'  : get_name_re(car.modification_autoru.model.name, 1)
+                }
+                modification = {
+                    'id'    : None,
+                    'name'  : car.modification_autoru.name
+                }
+            
             marketFilter = {
                 'brand'         : brand,
                 'model'         : model,
                 'generation'    : generation,
                 'modification'  : modification,
                 'geoDistance'   : 500,
-                #'yearFrom'      : year_start,
-                #"yearTo"        : year_end
+                'yearFrom'      : year_start,
+                "yearTo"        : year_end
             }
             
             salesFromDate = DT.datetime.now() - relativedelta(months=2)
@@ -844,9 +959,9 @@ def refresh_estimation_cars_organization_run():
                 'generation'    : generation,
                 'modification'  : modification,
                 'geoDistance'   : 500,
-                'useAutoFilter' : True,
-                #'yearFrom'      : year_start,
-                #"yearTo"        : year_end,
+                'useAutoFilter' : False,
+                'yearFrom'      : year_start,
+                "yearTo"        : year_end,
                 'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
             }
 
@@ -899,6 +1014,7 @@ def refresh_estimation_cars_organization_run():
                 car_error = car_error + 1  
 
         except:
+            
             s = 1
             text_error              = 'Неопределено' 
             new_record              = RegEstimationRefCarsOrganizations()
@@ -935,7 +1051,7 @@ def refresh_avtoteka_vin():
     header = {
         'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
     }
-    
+
     date_start = DT.datetime.now().replace(hour=1)
     object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation')
     if len(object_estimations) > 0:
@@ -1061,8 +1177,7 @@ def refresh_avtoteka_vin():
                             except:
                                 s = 1
                             object_estimation.save()                 
-    
-       
+          
 def get_token_avtoteka():
     
     url = avtoteka_url + 'token'
@@ -1763,6 +1878,7 @@ def refresh_price():
                         price               = float(re.sub('[^\d\.,]', '', str(price.replace(',','.')))) 
 
                     if len(name) > 0 and len(article) > 0:
+                        
                         reg_price, created = RegPrices.objects.filter(Q(manufacturer = manufacturer) 
                                                             and Q(article_search = article_search)).get_or_create(manufacturer = manufacturer,
                                 article_search = article_search

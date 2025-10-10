@@ -37,6 +37,39 @@ class RefreshCarsLog(models.Model):
         verbose_name_plural = "Логи загрузок данных"
 
 
+class AvtohubModifications(models.Model):
+    id_avtohub                  = models.IntegerField('id', default=0, null=False, blank=False)
+    brandId                     = models.IntegerField('brandId', default=0, null=False, blank=False)
+    modelId                     = models.IntegerField('modelId', default=0, null=False, blank=False)
+    generationId                = models.IntegerField('generationId', default=0, null=False, blank=False)
+    bodyConfigurationId         = models.IntegerField('bodyConfigurationId', default=0, null=False, blank=False)
+    name                        = models.CharField('name',  default='', null=True, max_length=250, blank=True)  
+    autoruId                    = models.IntegerField('autoruId', default=0, null=False, blank=False)
+    yearFrom                    = models.IntegerField('yearFrom', default=0, null=False, blank=False)
+    yearTo                      = models.IntegerField('yearTo', default=0, null=False, blank=False)
+    bodyType                    = models.CharField('bodyType',  default='', null=True, max_length=250, blank=True)  
+    bodyDoorCount               = models.IntegerField('bodyDoorCount', default=0, null=False, blank=False)
+    engineType                  = models.CharField('engineType',  default='', null=True, max_length=250, blank=True)  
+    engineVolume                = models.IntegerField('engineVolume', default=0, null=False, blank=False)
+    enginePower                 = models.IntegerField('enginePower', default=0, null=False, blank=False)
+    driveType                   = models.CharField('driveType',  default='', null=True, max_length=250, blank=True)  
+    gearboxType                 = models.CharField('gearboxType',  default='', null=True, max_length=250, blank=True)  
+    gearboxGearCount            = models.IntegerField('gearboxGearCount', default=0, null=False, blank=False)
+    isActive                    = models.BooleanField('isActive', default=False, null=False, blank=False)
+    
+    def __str__(self):
+        return "{} / {} / {}".format(self.id, self.vin, self.dealer_name)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id_avtohub']),
+            models.Index(fields=['autoruId'])
+        ]
+        db_table = 'avtohubModifications'
+        verbose_name = 'Автохаб модификации'
+        verbose_name_plural = "Автохаб - https://api.maxposter.ru/partners-api/directories/vehicle-modifications"
+
+
 class Avtohub(models.Model):
     date                = models.DateTimeField('date - dateTimeField - Дата запроса', default=datetime.now, blank=False)
     id_vencle           = models.IntegerField('id - integer - ID объявления', default=0, null=False, blank=False) 
