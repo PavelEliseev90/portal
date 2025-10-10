@@ -436,9 +436,9 @@ def get_info_max_remote(estimation_id):
     try:
         
         avtohub_modification = None
-        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite).count()
+        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech).count()
         if count_avtohub_modification == 1:
-            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite)[0]    
+            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech)[0]    
 
         if avtohub_modification != None:
             brand = {
@@ -553,9 +553,9 @@ def get_info_max(estimation_id):
     try:
         
         avtohub_modification = None
-        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite).count()
+        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech).count()
         if count_avtohub_modification == 1:
-            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSite)[0]    
+            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech)[0]    
 
         if avtohub_modification != None:
             brand = {
@@ -901,9 +901,9 @@ def refresh_estimation_cars_organization_run():
                 year_end    = car.year
 
             avtohub_modification = None
-            count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSite).count()
+            count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSiteTech).count()
             if count_avtohub_modification == 1:
-                avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSite)[0]    
+                avtohub_modification = AvtohubModifications.objects.filter(autoruId = car.modification_autoru.idSiteTech)[0]    
 
             if avtohub_modification != None:
                 brand = {
