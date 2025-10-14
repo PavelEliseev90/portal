@@ -251,7 +251,7 @@ class AutoruModificationAdmin(admin.ModelAdmin):
 @admin.register(AutoruComplectation)
 class AutoruComplectationAdmin(admin.ModelAdmin):
     list_display    = ('modification', 'name', 'idSite',)
-    search_fields   = ('name', )
+    search_fields   = ('name', 'idSite', )
     raw_id_fields   = ('modification',)
     list_filter     = ('modification__model__mark', 'idSite',)
 

@@ -65,12 +65,38 @@
             
           </div>
 
+          {% if params.lo != None %}
+            <div class="form-floating text-dark">
+              
+              <input class="form-control form-control-sm  {% if params.estimation.status.id == 1 %} 
+                  border_gray 
+                {% elif params.estimation.status.id == 2 or params.estimation.status.id == 9 %} 
+                  border_red                    
+                {% elif params.estimation.status.id == 7 %} 
+                  border_red    
+                {% elif params.estimation.status.id == 3 %} 
+                  border_yeloow 
+                {% elif params.estimation.status.id == 4 %} 
+                  border_green 
+                {% elif params.estimation.status.id == 6 %} 
+                  border_orange 
+                {% elif params.estimation.status.id == 8 %} 
+                  border_green  
+                {% else %} 
+                  border_blue 
+                {% endif %}" type="text" id="" name="" value="{{params.lo.nomer}}" readonly>
+
+              <label for="floatingInput text-dark" >Лист оценки</label>
+              
+            </div>
+          {% endif %}
+
           {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
               <br>  
               <a href="/estimations/{{params.estimation.rlk.id}}/" class="btn btn-outline-danger" ><span class="icon-mbri-play"></span> Редактировать </a>
             
           {% endif %}
-                  
+        
         </div>
         
           <hr>
@@ -3502,10 +3528,138 @@
                 
 
                   {% if params.json_autoteka != '' %}
-                  
+
                     <div class="row">
                       
                       <div class="col-sm">
+
+                        <div class="card">
+                          <div class="card-body">
+                            
+                            <h6><span class="icon-mbri-info"></span> Данные автотека - {{params.json_autoteka.head.createdAt |fromunix }}</h6>
+                            <hr style="width: 75%;">
+                            
+                              <label class="fs-6">{{params.json_autoteka.head.brand|title}} {{params.json_autoteka.head.model|title}} {{params.json_autoteka.head.year}} г.в.</label>
+                              
+                              <br> {{params.json_autoteka.head.vin}}
+                              <br> {{params.json_autoteka.head.regNumber}} 
+                              
+                              <br> 
+
+                              {% for reg_number in params.json_autoteka.head.regNumbersHistory %}
+                                <label class="fs-5"><span class="badge text-white bg-dark bg-opacity-50" id="car_price">{{reg_number.number}}</span></label>
+                              {% endfor %}
+                              
+                              <br><br>
+
+                              {% if params.json_autoteka.accidents.crashesHistory|length > 0 %}
+                                <label class="fs-5"><span class="badge text-white bg-danger bg-opacity-50" id="car_price">ДТП - {{params.json_autoteka.accidents.crashesHistory|length}}</span></label>
+                              {% else %}
+                                <label class="fs-5"><span class="badge text-white bg-success bg-opacity-50" id="car_price">ДТП - {{params.json_autoteka.accidents.crashesHistory|length}}</span></label>
+                              {% endif %}
+
+                              {% if params.json_autoteka.taxiData.events|length > 0 %}
+                                <label class="fs-5"><span class="badge text-white bg-danger bg-opacity-50" id="car_price">Такси - {{params.json_autoteka.taxiData.events|length}}</span></label>
+                              {% else %}
+                                <label class="fs-5"><span class="badge text-white bg-success bg-opacity-50" id="car_price">Такси - {{params.json_autoteka.taxiData.events|length}}</span></label>
+                              {% endif %}
+
+                              {% if params.json_autoteka.carsharingData.events|length > 0 %}
+                                <label class="fs-5"><span class="badge text-white bg-danger bg-opacity-50" id="car_price">Каршеринг - {{params.json_autoteka.carsharingData.events|length}}</span></label>
+                              {% else %}
+                                <label class="fs-5"><span class="badge text-white bg-success bg-opacity-50" id="car_price">Каршеринг - {{params.json_autoteka.carsharingData.events|length}}</span></label>
+                              {% endif %}
+
+                              
+                              {% if params.json_autoteka.accidents.crashesHistory|length > 0 %}
+                                <label class="fs-5"><span class="badge text-white bg-danger bg-opacity-50" id="car_price">Расчет ремонта - {{params.json_autoteka.accidents.crashesHistory|length}}</span></label>
+                              {% else %}
+                                <label class="fs-5"><span class="badge text-white bg-success bg-opacity-50" id="car_price">Расчет ремонта - {{params.json_autoteka.accidents.crashesHistory|length}}</span></label>
+                              {% endif %}
+
+                              {% if params.json_autoteka.eventsOthersHistory|length == 0 %}
+                                <label class="fs-5"><span class="badge text-white bg-danger bg-opacity-50" id="car_price">Записи в истории эксплуатации - {{params.json_autoteka.eventsOthersHistory|length}}</span></label>
+                              {% else %}
+                                <label class="fs-5"><span class="badge text-white bg-success bg-opacity-50" id="car_price">Записи в истории эксплуатации - {{params.json_autoteka.eventsOthersHistory|length}}</span></label>
+                              {% endif %}
+                              
+
+                            <div class="row g-1">
+        
+                            </div>
+        
+                          </div>
+                        </div>
+
+                        <br>
+
+                        <div class="card">
+                          <div class="card-body">
+                            <h6><span class="icon-mbri-info"></span> Объявления - {{params.json_autoteka.avitoItems|length}}</h6>
+                            <hr style="width: 75%;">
+
+                            {% for avitoItem in params.json_autoteka.avitoItems %}
+
+                              <div class="card" style="margin-top: 0.2rem;">
+                                <div class="card-body">
+                                  <div class="row g-1">
+                                    
+                                    <div class="col-sm">
+                                     
+                                      <div style="object-fit: cover; border-radius: 10px; height: 200px;" id="carouselExampleIndicatorsSTS" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                      
+                                        <div class="carousel-indicators">
+                                          {% for img in avitoItem.images %}
+                                            <button type="button" data-bs-target="#carouselExampleIndicatorsSTS" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                                          {% endfor %}
+                                        </div>
+                                        
+                                        <div class="carousel-inner gallery-container">
+                                          
+                                          {% for img in avitoItem.images %}
+                                          
+                                            <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} gallery-item">
+                                              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 200px;" src="{{img.previewUrl}}" src1="{{img.originalUrl}}" src1="{{img.originalUrl}}" data-index="{{forloop.counter}}">
+                                            </div>
+      
+                                          {% endfor %}
+                                              
+                                        </div>
+                                        
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsSTS"  data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Предыдущий</span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsSTS"  data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Следующий</span>
+                                        </button>
+      
+                                      </div>
+
+                                    </div>
+
+                                    <div class="col-sm-4">
+                                     <label class="fs-6">{{avitoItem.date}}</label><br>
+                                     <label class="fs-6">{{avitoItem.title}}</label><br>
+                                     <label class="fs-6">{{avitoItem.mileage|floatformat:"0g"}} км.</label><br>
+                                     <label class="fs-6">{{avitoItem.price|floatformat:"2g"}} &#8381;</label><br>                                     
+                                    </div>
+
+                                  </div>
+                                  <br>
+                                  <label class="fs-6">{{avitoItem.description}}</label><br>
+                                </div>
+                              </div>
+                                                      
+                            {% endfor %}
+
+                           
+                            
+                          </div>
+                        </div>
+
+                        <br>
 
                         <div class="card">
                           <div class="card-body">
@@ -3559,11 +3713,8 @@
                                   </div>
                                 </div>
                               </div>
-                              
-                              
-
+                                                      
                             {% endfor %}
-
                             
                           </div>
                         </div>
@@ -3635,7 +3786,7 @@
                             
                             {% for accidents in params.json_autoteka.eventsOthersHistory %}
 
-                              <div class="card">
+                              <div class="card" style="margin-top: 0.2rem;">
                                 <div class="card-body">
                                   <div class="row g-1">
                                     <div class="col-sm">
@@ -3658,9 +3809,7 @@
                                   </div>
                                 </div>
                               </div>
-                              
-                              
-
+                                                          
                             {% endfor %}
 
                             
@@ -16278,8 +16427,15 @@
                               <input hidden type="text" name="custom_type_sale_auction" id="custom_type_sale_auction" value="{{params.price_custom.auction}}">
                               <input hidden type="text" name="custom_type_sale_comment" id="custom_type_sale_comment" value="{{params.price_custom.auction_comment}}">
                               
-                              <button type="submit" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
-
+                              <div class="row g-1">
+                                <div class="col">
+                                  <button type="submit" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
+                                </div>
+                                <div class="col text-end">
+                                  <a class="btn btn-outline-secondary justify-content-end" href="{{request.get_full_path}}&refresh_data=data1c"> <span class="icon-mbri-update"></span> Обновить в 1С</a>    
+                                </div>
+                              </div>
+                              
                             {% endif %}
 
                           {% else %}

@@ -5,6 +5,7 @@ from refs.models import RefUnit, AutoruModification, AutoruComplectation
 import uuid
 import random
 import json
+from django.contrib.postgres.fields import ArrayField
 
 
 class RefreshSpecificationsAutoRU(models.Model):
@@ -68,6 +69,69 @@ class AvtohubModifications(models.Model):
         db_table = 'avtohubModifications'
         verbose_name = 'Автохаб модификации'
         verbose_name_plural = "Автохаб - https://api.maxposter.ru/partners-api/directories/vehicle-modifications"
+
+
+class AvtohubGroupOptions(models.Model):
+    id_avtohub                  = models.IntegerField('id', default=0, null=False, blank=False)
+    name                        = models.CharField('name',  default='', null=True, max_length=250, blank=True)  
+    sortOrder                   = models.IntegerField('sortOrder', default=0, null=False, blank=False)
+    
+    def __str__(self):
+        return "{} / {}".format(self.id_avtohub, self.name)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id_avtohub'])
+        ]
+        db_table = 'avtohubGroupOptions'
+        verbose_name = 'Автохаб группы опций'
+        verbose_name_plural = "Автохаб группа опций- https://api.maxposter.ru/partners-api/directories/vehicle-equipment-groups"
+
+
+class AvtohubOptions(models.Model):
+    id_avtohub                  = models.IntegerField('id', default=0, null=False, blank=False)
+    name                        = models.CharField('name',  default='', null=True, max_length=250, blank=True)  
+    sortOrder                   = models.IntegerField('sortOrder', default=0, null=False, blank=False)
+    groupId                     = models.ForeignKey(AvtohubGroupOptions, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Группа опций")
+    keyEquipment                = models.BooleanField("Ключевая опция",  default=False, null=True) 
+    include                     = ArrayField(models.IntegerField(null=True, blank=True), null=True, blank=True)
+    exclude                     = ArrayField(models.IntegerField(null=True, blank=True), null=True, blank=True)
+
+    def __str__(self):
+        return "{} / {}".format(self.id_avtohub, self.name)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id_avtohub'])
+        ]
+        db_table = 'avtohubOptions'
+        verbose_name = 'Автохаб опции'
+        verbose_name_plural = "Автохаб опции- https://api.maxposter.ru/partners-api/directories/vehicle-equipment"
+
+
+class AvtohubComplectations(models.Model):
+    id_avtohub                  = models.IntegerField('id', default=0, null=False, blank=False)
+    name                        = models.CharField('name',  default='', null=True, max_length=250, blank=True)  
+    brandId                     = models.IntegerField('brandId', default=0, null=False, blank=False)
+    modelId                     = models.IntegerField('modelId', default=0, null=False, blank=False)
+    generationId                = models.IntegerField('generationId', default=0, null=False, blank=False)
+    modificationId              = models.IntegerField('modificationId', default=0, null=False, blank=False)
+    bodyConfigurationId         = models.IntegerField('bodyConfigurationId', default=0, null=False, blank=False)
+    autoruId                    = models.IntegerField('autoruId', default=0, null=True, blank=False)
+    isActive                    = models.BooleanField('isActive', default=False, null=False, blank=False)
+    equipment                   = models.ManyToManyField(AvtohubOptions, verbose_name='Опции', blank=True)
+
+    def __str__(self):
+        return "{} / {}".format(self.id_avtohub, self.name)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id_avtohub']),
+            models.Index(fields=['autoruId'])
+        ]
+        db_table = 'avtohubComplectations'
+        verbose_name = 'Автохаб комплектации'
+        verbose_name_plural = "Автохаб комплектации - https://api.maxposter.ru/partners-api/directories/vehicle-complectations"
 
 
 class Avtohub(models.Model):
