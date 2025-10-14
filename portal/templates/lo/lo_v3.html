@@ -6543,9 +6543,15 @@
                                 <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.lo.agreement_number}}</b> {% else %} - {% endif %}</label>
                               </div>
 
-                              <div class="col-12 col-sm-12">
-                                <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-mbri-star"> </span> &nbsp; {{params.agreement.cm_actual|floatformat:"2g"}} &#8381 </b> {% else %} - {% endif %}</label>
-                              </div>
+                              {% if params.agreement.car_shipment_count > 0 %}
+                                <div class="col-12 col-sm-12">
+                                  <label class="fs-5"> {% if params.lo.agreement_number != '' %} <b><span class="icon-mbri-star"> </span> &nbsp; {{params.agreement.cm_actual|floatformat:"2g"}} &#8381 </b> {% else %} - {% endif %}</label>
+                                </div>
+                              {% else %}
+                                <div class="col-12 col-sm-12">
+                                  <label class="fs-5"> <b><span class="icon-mbri-star"> </span> &nbsp; Пока нет отгрузки </b></label>
+                                </div>
+                              {% endif %}
 
                               <div class="col-12 col-sm-12 text-end">
                                 {% if params.lo.agreement_number != '' %} <a сlass="text-dark" href="/docs_car_agreement/{{params.agreement.pk}}/" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a> {% else %} - {% endif %}

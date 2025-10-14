@@ -742,6 +742,10 @@ class DocCarAgreement(models.Model):
     cm_goal                                 = models.FloatField("КМ целевой", default=0.0, blank=True)
     date_planed_sale                        = models.DateTimeField('Планируемая дата выдачи', default=datetime.now, blank=False)    
 
+    def car_shipment_count(self):
+        from documents.models import DocCarShipment 
+        return DocCarShipment.objects.filter(agreement = self).filter(active = True).count()
+
     def opcion(self):
         return self.cm_actual - (self.amount - (self.cost_price + self.outlay + self.discountAmount))
 
