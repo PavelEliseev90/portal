@@ -15,7 +15,7 @@ import json
 from telephony.views import refresh_history_task
 from requests.auth import HTTPBasicAuth
 import time
-from avtosalon.models import AvtohubModifications, Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
+from avtosalon.models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations,  AvtohubModifications, Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
 from register.models import RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
 from openpyxl import Workbook, load_workbook
 import re
@@ -50,8 +50,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-url_auction_kors_portal     = 'https://auction.kors-group.ru'
-#url_auction_kors_portal     = 'http://k01-1c-prog01'
+#url_auction_kors_portal     = 'https://auction.kors-group.ru'
+url_auction_kors_portal     = 'http://k01-1c-prog01'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -361,6 +361,89 @@ def kors_estimation_data(id_estimation):
 ###
 ##
 # Обновление каталога модификаций автохаб для экспресс оценки
+def refresh_auctohub_guide():
+    
+    #refresh_group_options_autohub()
+    #refresh_options_autohub()
+    refresh_complectations_autohub()
+    #refresh_autohub_modification()
+
+
+def refresh_complectations_autohub():
+    url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-complectations'  
+    r   = requests.get(url_request)
+    if r.status_code == 200:   
+        data        = r.text
+        s = 1 
+        json_data   = json.loads(data)
+        if json_data['status'] == 'success':
+            data_response = json_data['data']
+            vehicleComplectations = data_response['vehicleComplectations']
+            for vehicleComplectation in vehicleComplectations:
+                avtohub_complectation                         = AvtohubComplectations.objects.get_or_create(id_avtohub = vehicleComplectation['id'])[0]
+                avtohub_complectation.id_avtohub              = vehicleComplectation['id']
+                avtohub_complectation.brandId                 = vehicleComplectation['brandId']
+                avtohub_complectation.modelId                 = vehicleComplectation['modelId']
+                avtohub_complectation.generationId            = vehicleComplectation['generationId']
+                avtohub_complectation.bodyConfigurationId     = vehicleComplectation['bodyConfigurationId']
+                avtohub_complectation.modificationId          = vehicleComplectation['modificationId']
+                avtohub_complectation.autoruId                = vehicleComplectation['autoruId']
+                avtohub_complectation.isActive                = vehicleComplectation['isActive']
+                avtohub_complectation.name                    = vehicleComplectation['name']
+                equintments = vehicleComplectation['equipment']
+                avtohub_complectation.equipment.clear()
+                for equintment in equintments: 
+                    try:
+                        avtohub_complectation.equipment.add(AvtohubOptions.objects.get(id_avtohub = equintment))
+                    except:
+                        s = 1
+                avtohub_complectation.save()
+
+
+
+def refresh_options_autohub():
+    url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-equipment'  
+    r   = requests.get(url_request)
+    if r.status_code == 200:   
+        data        = r.text
+        s = 1 
+        json_data   = json.loads(data)
+        if json_data['status'] == 'success':
+            data_response = json_data['data']
+            vehicleEquipments = data_response['vehicleEquipment']
+            for vehicleEquipment in vehicleEquipments:
+                avtohub_options               = AvtohubOptions.objects.get_or_create(id_avtohub = vehicleEquipment['id'])[0]
+                avtohub_options.id_avtohub    = vehicleEquipment['id']
+                avtohub_options.name          = vehicleEquipment['name']
+                avtohub_options.sortOrder     = vehicleEquipment['sortOrder']
+                try:
+                    avtohub_options.groupId   = AvtohubGroupOptions.objects.get(id_avtohub = vehicleEquipment['groupId'])
+                except:
+                    s == 1
+                avtohub_options.include         = vehicleEquipment['include']
+                avtohub_options.exclude         = vehicleEquipment['exclude']
+                avtohub_options.keyEquipment    = vehicleEquipment['keyEquipment']
+                avtohub_options.save()
+
+
+def refresh_group_options_autohub():
+    url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-equipment-groups'  
+    r   = requests.get(url_request)
+    if r.status_code == 200:   
+        data        = r.text
+        s = 1 
+        json_data   = json.loads(data)
+        if json_data['status'] == 'success':
+            data_response = json_data['data']
+            vehicleEquipmentGroups = data_response['vehicleEquipmentGroups']
+            for vehicleEquipmentGroup in vehicleEquipmentGroups:
+                avtohub_group_options               = AvtohubGroupOptions.objects.get_or_create(id_avtohub = vehicleEquipmentGroup['id'])[0]
+                avtohub_group_options.id_avtohub    = vehicleEquipmentGroup['id']
+                avtohub_group_options.name          = vehicleEquipmentGroup['name']
+                avtohub_group_options.sortOrder     = vehicleEquipmentGroup['sortOrder']
+                avtohub_group_options.save()
+                
+
 def refresh_autohub_modification():
     url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-modifications'  
     r   = requests.get(url_request)

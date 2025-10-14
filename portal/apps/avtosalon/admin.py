@@ -1,6 +1,21 @@
 from django.contrib import admin
-from .models import Avtohub, AvtohubSite, AvtohubSiteInfo, RefreshCarsLog, RefreshSpecificationsAutoRU, Autoteka_signal, Autoteka_signal_last_id, Autoteka_signal_region
+from .models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations, Avtohub, AvtohubSite, AvtohubSiteInfo, RefreshCarsLog, RefreshSpecificationsAutoRU, Autoteka_signal, Autoteka_signal_last_id, Autoteka_signal_region
 
+
+@admin.register(AvtohubGroupOptions)
+class AvtohubGroupOptionsAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'id_avtohub', 'name', 'sortOrder',)
+
+
+@admin.register(AvtohubOptions)
+class AvtohubOptionsAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'id_avtohub', 'name', 'sortOrder', 'groupId', 'keyEquipment',)
+    
+
+@admin.register(AvtohubComplectations)
+class AvtohubComplectationsAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'id_avtohub', 'name', 'autoruId', 'isActive',)
+    search_fields   = ('autoruId', 'id_avtohub', 'name',)
 
 
 @admin.register(Autoteka_signal)

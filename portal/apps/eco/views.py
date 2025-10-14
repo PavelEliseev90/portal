@@ -1869,6 +1869,12 @@ def estimations_price_calculation(estimation, type_calculation):
     list_work_service       = list()
     list_work_mcu           = list()
 
+    run = 0
+    if estimation.page_salon != None:  
+        run = estimation.page_salon.run
+    elif estimation.page_remote != None:
+        run = estimation.page_remote.run
+
     auction_success     = False
     auction             = False
     auction_comment     = ''
@@ -2919,24 +2925,28 @@ def estimations_price_calculation(estimation, type_calculation):
         kors_hub_correction = round((kors_hub_correction_sale + kors_hub_correction_store) / 2 * 0.82, 0)
     
     ###Проверяем пробег
-    run_ok = True
+    run_ok  = True
+    run_sum = 0
     if estimation.avtoteka_data != None and len(estimation.avtoteka_data) > 100:
         data_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
         eventsOthersHistory = data_autoteka.get('eventsOthersHistory')
         run         = 0
         run_other   = 0
-        run_sum     = 0
+        
         for event in eventsOthersHistory:
-            if event['source'] != 'Audatex' and event['source'] != 'Данные о техосмотре':
+            if event['source'] != 'Audatex':
                 if event['mileage'] > 0:
                     run = event['mileage']
                     if run_other > run:
-                        if run_other - run > 20000:
+                        if run_other - run > 1000:
                             run_ok = False
                             run_sum = run_sum + (run_other - run)
                             auction = True
-                            auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.)'
+                            
                     run_other = run
+        if run_sum > 0:
+            real_runs = run + run_sum 
+            auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.). Реальный пробег примерно: ' + '{0:,}'.format(real_runs).replace(',', ' ')  + ' км.'
 
     ###Проверяем требуется ли замена аккамулятора
     if battery > 0:
@@ -3526,6 +3536,7 @@ def estimations_price_calculation(estimation, type_calculation):
         'cna_expenses'                  : cna_expenses,
         'zachita_ot_ubitka'             : zachita_ot_ubitka,
         'finance_price'                 : finance_price,
+        'run_sum'                       : run_sum,
         'iznos_price'                   : iznos_price
     }
 
