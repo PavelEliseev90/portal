@@ -689,6 +689,7 @@ def doc(request, id):
     rlk     = DocRLK.objects.get(pk=id)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
 
+
     if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
@@ -715,6 +716,8 @@ def doc(request, id):
     agreement               = None
     agreement_car           = None
     balance                 = None
+    if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
+        lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
 
     if request.method == "GET":
         
@@ -807,6 +810,13 @@ def doc(request, id):
                 elif refresh == 'all':
                     get_info_max(estimation.id)
                     kors_estimation_data(estimation.id)
+                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+                elif refresh == 'data1c':
+                    from task_manager.views import estimation_send_1c
+                    try:
+                        estimation_send_1c(estimation.id)
+                    except:
+                        s= 1
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'analitik':
                     from website.views import refresh_estimation_analitik
@@ -1869,11 +1879,11 @@ def estimations_price_calculation(estimation, type_calculation):
     list_work_service       = list()
     list_work_mcu           = list()
 
-    run = 0
+    run_estimation = 0
     if estimation.page_salon != None:  
-        run = estimation.page_salon.run
+        run_estimation = estimation.page_salon.run
     elif estimation.page_remote != None:
-        run = estimation.page_remote.run
+        run_estimation = estimation.page_remote.run
 
     auction_success     = False
     auction             = False
@@ -2945,7 +2955,7 @@ def estimations_price_calculation(estimation, type_calculation):
                             
                     run_other = run
         if run_sum > 0:
-            real_runs = run + run_sum 
+            real_runs = run_estimation + run_sum 
             auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.). Реальный пробег примерно: ' + '{0:,}'.format(real_runs).replace(',', ' ')  + ' км.'
 
     ###Проверяем требуется ли замена аккамулятора

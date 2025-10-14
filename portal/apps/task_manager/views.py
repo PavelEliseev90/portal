@@ -1823,6 +1823,17 @@ def send_push_estimation():
 def start_swap_estimation():
     swap_estimation()
 
+def estimation_send_1c(id):
+    
+    estimation = RegInteractivOcenka.objects.get(id = id)
+    js_data = {
+        'Type' : 'estimation',
+        'Estimation': RegInteractivOcenkaSerializer(estimation, many=False).data
+    }
+    response = requests.post(url_hs_kors_auto, json=js_data)
+    return response.status_code
+    
+
 def swap_estimation():
     RegSwapKors.objects.filter(estimation__id = 5892).delete()
     

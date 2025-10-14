@@ -65,12 +65,38 @@
             
           </div>
 
+          {% if params.lo != None %}
+            <div class="form-floating text-dark">
+              
+              <input class="form-control form-control-sm  {% if params.estimation.status.id == 1 %} 
+                  border_gray 
+                {% elif params.estimation.status.id == 2 or params.estimation.status.id == 9 %} 
+                  border_red                    
+                {% elif params.estimation.status.id == 7 %} 
+                  border_red    
+                {% elif params.estimation.status.id == 3 %} 
+                  border_yeloow 
+                {% elif params.estimation.status.id == 4 %} 
+                  border_green 
+                {% elif params.estimation.status.id == 6 %} 
+                  border_orange 
+                {% elif params.estimation.status.id == 8 %} 
+                  border_green  
+                {% else %} 
+                  border_blue 
+                {% endif %}" type="text" id="" name="" value="{{params.lo.nomer}}" readonly>
+
+              <label for="floatingInput text-dark" >Лист оценки</label>
+              
+            </div>
+          {% endif %}
+
           {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
               <br>  
               <a href="/estimations/{{params.estimation.rlk.id}}/" class="btn btn-outline-danger" ><span class="icon-mbri-play"></span> Редактировать </a>
             
           {% endif %}
-                  
+        
         </div>
         
           <hr>
@@ -16401,8 +16427,15 @@
                               <input hidden type="text" name="custom_type_sale_auction" id="custom_type_sale_auction" value="{{params.price_custom.auction}}">
                               <input hidden type="text" name="custom_type_sale_comment" id="custom_type_sale_comment" value="{{params.price_custom.auction_comment}}">
                               
-                              <button type="submit" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
-
+                              <div class="row g-1">
+                                <div class="col">
+                                  <button type="submit" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
+                                </div>
+                                <div class="col text-end">
+                                  <a class="btn btn-outline-secondary justify-content-end" href="{{request.get_full_path}}&refresh_data=data1c"> <span class="icon-mbri-update"></span> Обновить в 1С</a>    
+                                </div>
+                              </div>
+                              
                             {% endif %}
 
                           {% else %}
