@@ -16,6 +16,7 @@ from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, Htt
 from django.contrib.auth.models import User, Group
 from django.db.models.functions import Cast, Coalesce
 from avtosalon.models import Autoteka_signal
+from dateutil.relativedelta import relativedelta
 
 import re
 from django.core.mail import EmailMultiAlternatives
@@ -689,7 +690,6 @@ def doc(request, id):
     rlk     = DocRLK.objects.get(pk=id)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
 
-
     if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
@@ -702,6 +702,12 @@ def doc(request, id):
         return render(request, 'errors/403.html', {'params': params})
 
     params  = {}
+    
+    balance_date        = estimation.start_estimation 
+    balance_date_start  = balance_date - relativedelta(months=2)
+    balance_date_start  = balance_date_start.replace(day=1, hour=1)
+    balance_date_end    = balance_date
+
     chat    = Chat.objects.get_or_create(name = rlk.pk, slug = 'rlk_' + str(rlk.pk))[0]
     user    = request.user
     messages = chat.get_last_messages()
@@ -716,6 +722,8 @@ def doc(request, id):
     agreement               = None
     agreement_car           = None
     balance                 = None
+    balance_unit            = None
+    
     if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
         lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
 
@@ -798,7 +806,7 @@ def doc(request, id):
                 if not request.user.profiles.eco and not request.user.profiles.eco_page_price_info:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
 
-            signal = Autoteka_signal.objects.filter(vin = estimation.vin)
+            signal  = Autoteka_signal.objects.filter(vin = estimation.vin)
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
                 if refresh == 'autohub':
@@ -817,6 +825,13 @@ def doc(request, id):
                         estimation_send_1c(estimation.id)
                     except:
                         s= 1
+                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+                elif refresh == 'balance_doc':
+                    try:
+                        from website.views import refresh_estimation_balance_unit
+                        refresh_estimation_balance_unit(estimation.rlk.id)
+                    except:
+                        s = 1
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'analitik':
                     from website.views import refresh_estimation_analitik
@@ -849,6 +864,31 @@ def doc(request, id):
             price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
             body            = body_estimation(estimation=estimation)
             salon           = salon_estimation(estimation=estimation)
+            
+            if page == 20:
+                
+                if lo != None and lo.agreement_number != '':
+                    query_balance_unit = RegEstimationBalanceUnit.objects.filter(unit = lo.agreement_unit).filter(date__gte = balance_date_start).filter(date__lte = balance_date_end).aggregate(Sum('amount'))
+                    if query_balance_unit['amount__sum'] == None:
+                        balance_unit = 0
+                    else:
+                        balance_unit = query_balance_unit['amount__sum']
+                elif estimation.rlk.unit_dc != None:
+                    query_balance_unit = RegEstimationBalanceUnit.objects.filter(unit = estimation.rlk.unit_dc).filter(date__gte = balance_date_start).filter(date__lte = balance_date_end).aggregate(Sum('amount'))
+                    if query_balance_unit['amount__sum'] == None:
+                        balance_unit = 0
+                    else:
+                        balance_unit = query_balance_unit['amount__sum']
+                else:
+                    query_balance_unit = RegEstimationBalanceUnit.objects.filter(unit = estimation.rlk.unit).filter(date__gte = balance_date_start).filter(date__lte = balance_date_end).aggregate(Sum('amount'))
+                    if query_balance_unit['amount__sum'] == None:
+                        balance_unit = 0
+                    else:
+                        balance_unit = query_balance_unit['amount__sum']
+
+                    #lo.agreement_number
+                    #estimation.rlk.unit
+                    #estimation.rlk.unit
 
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
@@ -1000,6 +1040,9 @@ def doc(request, id):
                 'agreement'             : agreement,
                 'agreement_car'         : agreement_car,
                 'balance'               : balance,
+                'balance_date_start'    : balance_date_start,
+                'balance_date_end'      : balance_date_end,
+                'balance_unit'          : balance_unit,
                 'signal'                : signal
             }
     
@@ -1900,6 +1943,8 @@ def estimations_price_calculation(estimation, type_calculation):
     zachita_ot_ubitka   = 0
     finance_price       = 0
     iznos_price         = 0
+    damage_gear         = False
+    damage_wheels       = False
 
     if type_calculation == 'kors':
         zna         = estimation.kors_price
@@ -2459,7 +2504,7 @@ def estimations_price_calculation(estimation, type_calculation):
     }
     list_info_price.append(inf_price)
 
-
+    
     # продажи и статистика корсавто
     # пока убрали
     #if estimation.kors_sale_cost_price_avg > 0:
@@ -2548,7 +2593,7 @@ def estimations_price_calculation(estimation, type_calculation):
             amount_podgotovka = amount_podgotovka + diff_sum
 
         #Руль +
-        if estimation.page_salon.damage_wheel_int == 1:
+        if estimation.page_salon.damage_wheel_int == 2:
             diff_sum = 0
             work = RegPodgotovkaWork.objects.get(pk = 96) 
             diff_sum = diff_sum + work.price_kors 
@@ -2560,6 +2605,28 @@ def estimations_price_calculation(estimation, type_calculation):
             }
             list_work_podgotovka.append(dop)  
             work = RegPodgotovkaWork.objects.get(pk = 99) 
+            diff_sum = diff_sum + work.price_kors 
+            dop = {
+                'name'      : work.name_group + " / " +  work.name,
+                'quantity'  : work.normo,
+                'amount_pod': work.price_podrad,   
+                'amount'    : work.price_kors
+            }
+            list_work_podgotovka.append(dop)  
+            amount_podgotovka = amount_podgotovka + diff_sum
+        #Руль +
+        if estimation.page_salon.damage_wheel_int == 1:
+            diff_sum = 0
+            work = RegPodgotovkaWork.objects.get(pk = 96) 
+            diff_sum = diff_sum + work.price_kors 
+            dop = {
+                'name'      : work.name_group + " / " +  work.name,
+                'quantity'  : work.normo,
+                'amount_pod': work.price_podrad,   
+                'amount'    : work.price_kors
+            }
+            list_work_podgotovka.append(dop)  
+            work = RegPodgotovkaWork.objects.get(pk = 133) 
             diff_sum = diff_sum + work.price_kors 
             dop = {
                 'name'      : work.name_group + " / " +  work.name,
@@ -2975,6 +3042,8 @@ def estimations_price_calculation(estimation, type_calculation):
                 amount_podgotovka = amount_podgotovka + diff_sum 
         except:
             s = 1
+
+    
 
     salon_info = salon_estimation(estimation)
     for info in salon_info['array']:

@@ -6073,10 +6073,16 @@ def korsavto_settings_dc(request):
         count_sale  = balance_unit.exclude(shipment = None).count()
         
         data_page['count_all']          = count_all
+        
         data_page['count_sale']         = count_sale
         data_page['count_stok']         = count_all - count_sale
-        data_page['percent_sale']       = round(count_sale / count_all * 100, 2)
-        data_page['percent_stok']       = round((count_all - count_sale) / count_all * 100, 2)
+        
+        if count_all != 0:            
+            data_page['percent_sale']       = round(count_sale / count_all * 100, 2)
+            data_page['percent_stok']       = round((count_all - count_sale) / count_all * 100, 2)
+        else:
+            data_page['percent_sale']       = 0
+            data_page['percent_stok']       = 0
 
         
         data_type_reception = balance_unit.order_by('estimation__page_documents__type_reception__id').values('estimation__page_documents__type_reception__name').distinct().annotate(count = Count('id')).annotate(count_shipment = Count('shipment__id'))
