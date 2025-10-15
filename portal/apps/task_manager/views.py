@@ -835,11 +835,15 @@ def info_car_auction(slug):
     cars    = cars.annotate(
         int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
         int_ocenka_diagnostika  = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
+        int_ocenka_url_salon    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_pered    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_zad      = Value('', output_field=CharField())).annotate(
         int_ocenka_url_up       = Value('', output_field=CharField())).annotate(
         int_ocenka_url_right    = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_left     = Value('', output_field=CharField()))
+        int_ocenka_url_left     = Value('', output_field=CharField())).annotate(
+        price_moderate          = Value(0, output_field=IntegerField())).annotate(
+        price_medium            = Value(0, output_field=IntegerField())).annotate(
+        price_significant       = Value(0, output_field=IntegerField()))
 
     data = list(cars.values('vin', 
                        'slug', 
