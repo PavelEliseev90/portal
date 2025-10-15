@@ -16,7 +16,7 @@ from telephony.views import refresh_history_task
 from requests.auth import HTTPBasicAuth
 import time
 from avtosalon.models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations,  AvtohubModifications, Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
-from register.models import RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
+from register.models import SettingsMatrixAuction, RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
 from openpyxl import Workbook, load_workbook
 import re
 from django.core.mail import EmailMultiAlternatives
@@ -50,8 +50,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-#url_auction_kors_portal     = 'https://auction.kors-group.ru'
-url_auction_kors_portal     = 'http://k01-1c-prog01'
+url_auction_kors_portal     = 'https://auction.kors-group.ru'
+#url_auction_kors_portal     = 'http://k01-1c-prog01'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -368,7 +368,6 @@ def refresh_auctohub_guide():
     refresh_complectations_autohub()
     #refresh_autohub_modification()
 
-
 def refresh_complectations_autohub():
     url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-complectations'  
     r   = requests.get(url_request)
@@ -399,8 +398,6 @@ def refresh_complectations_autohub():
                         s = 1
                 avtohub_complectation.save()
 
-
-
 def refresh_options_autohub():
     url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-equipment'  
     r   = requests.get(url_request)
@@ -425,7 +422,6 @@ def refresh_options_autohub():
                 avtohub_options.keyEquipment    = vehicleEquipment['keyEquipment']
                 avtohub_options.save()
 
-
 def refresh_group_options_autohub():
     url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-equipment-groups'  
     r   = requests.get(url_request)
@@ -443,7 +439,6 @@ def refresh_group_options_autohub():
                 avtohub_group_options.sortOrder     = vehicleEquipmentGroup['sortOrder']
                 avtohub_group_options.save()
                 
-
 def refresh_autohub_modification():
     url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-modifications'  
     r   = requests.get(url_request)
@@ -859,11 +854,16 @@ def info_car_auction(slug):
                        'description_podgotovka',
                        'int_ocenka_diagnostika',
                        'int_ocenka_id',
+                       'int_ocenka_url_salon',
                        'int_ocenka_url_pered',
                        'int_ocenka_url_zad',
                        'int_ocenka_url_up',
                        'int_ocenka_url_right',
                        'int_ocenka_url_left',
+                       'price_moderate',
+                       'price_medium',
+                       'price_significant',
+                       group    = F('group_price'),
                        type_sale_name = F('type_sale__name'),
                        type_reception_name = F('type_reception__name'),
                        stage_price_name = F('stage_price__name'),
@@ -875,8 +875,43 @@ def info_car_auction(slug):
     for car in data:
         car['url']                  = get_url_images(car['slug'])
         
+        zg      = car['group']
+        matrix  = SettingsMatrixAuction.objects.get(id = 1)
+        if zg == 1: #400
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_400
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_400
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_400
+        elif zg == 2 or zg == 9: #1200
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_1200
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_1200
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_1200
+        elif zg == 3 or zg == 10 : #2000
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_2000
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_2000
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_2000
+        elif zg == 4 or zg == 5: #3000
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_3000
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_3000
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_3000 
+        elif zg == 6: #700
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_700
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_700
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_700
+        elif zg == 7: #200
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_200
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_200
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_200
+        elif zg == 11: #5000
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_5000
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_5000
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_5000
+        elif zg == 12: #5000+
+            car['price_moderate']       = car['price'] - matrix.charge_km_stage_1_5000
+            car['price_medium']         = car['price'] - matrix.charge_km_stage_2_5000
+            car['price_significant']    = car['price'] - matrix.charge_km_stage_3_5000
+            
         int_ocenka_id               = car['int_ocenka_id']
-         
+        car['int_ocenka_url_salon'] = get_url_image_salon(car['int_ocenka_id'], 'osmotr_salon')
         car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
         car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
         car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
@@ -884,6 +919,15 @@ def info_car_auction(slug):
         car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
     
     return car
+
+def get_url_image_salon(estimation_id, type_file):
+    photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
+    try:
+        if photos_count > 0:
+            return RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file)[0].file.url.replace('/media/','/media_dop/')
+    except:
+        return '/media/nophoto.png'
+    return '/media/nophoto.png'
     
 def get_url_image_osmotr(estimation_id, type_file):
     photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
@@ -1835,9 +1879,9 @@ def estimation_send_1c(id):
     
 
 def swap_estimation():
-    RegSwapKors.objects.filter(estimation__id = 5892).delete()
     
     infos = RegSwapKors.objects.filter(status_code = 60).order_by('rlk','date')
+    
     for info in infos:
         if info.estimation != None:
             js_data = {

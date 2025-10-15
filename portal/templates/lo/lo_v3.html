@@ -68,25 +68,9 @@
           {% if params.lo != None %}
             <div class="form-floating text-dark">
               
-              <input class="form-control form-control-sm  {% if params.estimation.status.id == 1 %} 
-                  border_gray 
-                {% elif params.estimation.status.id == 2 or params.estimation.status.id == 9 %} 
-                  border_red                    
-                {% elif params.estimation.status.id == 7 %} 
-                  border_red    
-                {% elif params.estimation.status.id == 3 %} 
-                  border_yeloow 
-                {% elif params.estimation.status.id == 4 %} 
-                  border_green 
-                {% elif params.estimation.status.id == 6 %} 
-                  border_orange 
-                {% elif params.estimation.status.id == 8 %} 
-                  border_green  
-                {% else %} 
-                  border_blue 
-                {% endif %}" type="text" id="" name="" value="{{params.lo.nomer}}" readonly>
+              <input class="form-control" type="text" id="" name="" value="{{params.lo.nomer}}" readonly>
 
-              <label for="floatingInput text-dark" >Лист оценки</label>
+              <label for="floatingInput text-dark" >Лист оценки в 1С</label>
               
             </div>
           {% endif %}
@@ -3529,7 +3513,7 @@
 
                   {% if params.json_autoteka != '' %}
 
-                    <div class="row">
+                    <div class="row g-1">
                       
                       <div class="col-sm">
 
@@ -3588,74 +3572,6 @@
         
                             </div>
         
-                          </div>
-                        </div>
-
-                        <br>
-
-                        <div class="card">
-                          <div class="card-body">
-                            <h6><span class="icon-mbri-info"></span> Объявления - {{params.json_autoteka.avitoItems|length}}</h6>
-                            <hr style="width: 75%;">
-
-                            {% for avitoItem in params.json_autoteka.avitoItems %}
-
-                              <div class="card" style="margin-top: 0.2rem;">
-                                <div class="card-body">
-                                  <div class="row g-1">
-                                    
-                                    <div class="col-sm">
-                                     
-                                      <div style="object-fit: cover; border-radius: 10px; height: 200px;" id="carouselExampleIndicatorsSTS" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
-                                      
-                                        <div class="carousel-indicators">
-                                          {% for img in avitoItem.images %}
-                                            <button type="button" data-bs-target="#carouselExampleIndicatorsSTS" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
-                                          {% endfor %}
-                                        </div>
-                                        
-                                        <div class="carousel-inner gallery-container">
-                                          
-                                          {% for img in avitoItem.images %}
-                                          
-                                            <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} gallery-item">
-                                              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 200px;" src="{{img.previewUrl}}" src1="{{img.originalUrl}}" src1="{{img.originalUrl}}" data-index="{{forloop.counter}}">
-                                            </div>
-      
-                                          {% endfor %}
-                                              
-                                        </div>
-                                        
-                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsSTS"  data-bs-slide="prev">
-                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                        <span class="visually-hidden">Предыдущий</span>
-                                        </button>
-                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsSTS"  data-bs-slide="next">
-                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                        <span class="visually-hidden">Следующий</span>
-                                        </button>
-      
-                                      </div>
-
-                                    </div>
-
-                                    <div class="col-sm-4">
-                                     <label class="fs-6">{{avitoItem.date}}</label><br>
-                                     <label class="fs-6">{{avitoItem.title}}</label><br>
-                                     <label class="fs-6">{{avitoItem.mileage|floatformat:"0g"}} км.</label><br>
-                                     <label class="fs-6">{{avitoItem.price|floatformat:"2g"}} &#8381;</label><br>                                     
-                                    </div>
-
-                                  </div>
-                                  <br>
-                                  <label class="fs-6">{{avitoItem.description}}</label><br>
-                                </div>
-                              </div>
-                                                      
-                            {% endfor %}
-
-                           
-                            
                           </div>
                         </div>
 
@@ -3889,6 +3805,74 @@
 
                         <div class="card">
                           <div class="card-body">
+                            <h6><span class="icon-mbri-info"></span> Объявления - {{params.json_autoteka.avitoItems|length}}</h6>
+                            <hr style="width: 75%;">
+
+                            {% for avitoItem in params.json_autoteka.avitoItems %}
+
+                              <div class="card" style="margin-top: 0.2rem;">
+                                <div class="card-body">
+                                  <div class="row g-1">
+                                    
+                                    <div class="col-sm">
+                                     
+                                      <div style="object-fit: cover; border-radius: 10px; height: 200px;" id="carouselExampleIndicatorsSTS" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                      
+                                        <div class="carousel-indicators">
+                                          {% for img in avitoItem.images %}
+                                            <button type="button" data-bs-target="#carouselExampleIndicatorsSTS" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                                          {% endfor %}
+                                        </div>
+                                        
+                                        <div class="carousel-inner gallery-container">
+                                          
+                                          {% for img in avitoItem.images %}
+                                          
+                                            <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} gallery-item">
+                                              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 200px;" src="{{img.previewUrl}}" src1="{{img.originalUrl}}" src1="{{img.originalUrl}}" data-index="{{forloop.counter}}">
+                                            </div>
+      
+                                          {% endfor %}
+                                              
+                                        </div>
+                                        
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsSTS"  data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Предыдущий</span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsSTS"  data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Следующий</span>
+                                        </button>
+      
+                                      </div>
+
+                                    </div>
+
+                                    <div class="col-sm-4">
+                                     <label class="fs-6">{{avitoItem.date}}</label><br>
+                                     <label class="fs-6">{{avitoItem.title}}</label><br>
+                                     <label class="fs-6">{{avitoItem.mileage|floatformat:"0g"}} км.</label><br>
+                                     <label class="fs-6">{{avitoItem.price|floatformat:"2g"}} &#8381;</label><br>                                     
+                                    </div>
+
+                                  </div>
+                                  <br>
+                                  <label class="fs-6">{{avitoItem.description}}</label><br>
+                                </div>
+                              </div>
+                                                      
+                            {% endfor %}
+
+                           
+                            
+                          </div>
+                        </div>
+
+                        <br>
+
+                        <div class="card">
+                          <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Расчет ремонта - {{params.json_autoteka.accidents.crashesHistory|length}}</h6>
                             <hr style="width: 75%;">
                             
@@ -3918,7 +3902,6 @@
 
                     </div>
                     
-
                   {% else %}
                     
                     <br>
@@ -3937,6 +3920,7 @@
     
                       </div>
                     </div>
+
                   {% endif %}
 
                 {% else %}
@@ -6378,7 +6362,7 @@
                       </div>
                    
                   </div>
-
+                 
                 <div class="row g-1">
                   
                   <div class="col-12 col-sm-4">
@@ -6398,7 +6382,7 @@
                                 </div>
 
                                 <div class="col-12 col-sm-12">
-                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.lo.agreement_unit.balance|floatformat:"2g"}} &#8381</b></label>
+                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                                 </div>
 
                                 <div class="col-12 col-sm-12">
@@ -6410,7 +6394,7 @@
                               <div class="position-relative-bottom">
                                 
                                 <div class="justify-content-end w-100 text-end" >
-                                  <a сlass="text-dark" href="/korsavto/settings/?dc={{params.lo.agreement_unit.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                                  <a сlass="text-dark" href="/korsavto/settings/?dc={{params.lo.agreement_unit.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                                 </div>
 
                               </div>
@@ -6431,7 +6415,7 @@
                                 </div>
 
                                 <div class="col-12 col-sm-12">
-                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.page_documents.unit.balance|floatformat:"2g"}} &#8381</b></label>
+                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                                 </div>
 
                                 <div class="col-12 col-sm-12">
@@ -6443,7 +6427,7 @@
                               <div class="position-relative-bottom">
                                 
                                 <div class="justify-content-end w-100 text-end" >
-                                  <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.page_documents.unit.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                                  <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.page_documents.unit.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                                 </div>
 
                               </div>
@@ -6464,7 +6448,7 @@
                                 </div>
 
                                 <div class="col-12 col-sm-12">
-                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit.balance|floatformat:"2g"}} &#8381</b></label>
+                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                                 </div>
 
                                 <div class="col-12 col-sm-12">
@@ -6476,7 +6460,7 @@
                               <div class="position-relative-bottom">
                                 
                                 <div class="justify-content-end w-100 text-end" >
-                                  <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                                  <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                                 </div>
 
                               </div>
@@ -6500,7 +6484,7 @@
                                 </div>
 
                                 <div class="col-12 col-sm-12">
-                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance|floatformat:"2g"}} &#8381</b></label>
+                                  <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                                 </div>
 
                                 <div class="col-12 col-sm-12">
@@ -6510,7 +6494,7 @@
                               </div>
                               <div class="d-flex align-content-end flex-wrap mb-2">
                               <div class="justify-content-end w-100 text-end" >
-                                <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit_dc.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                                <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit_dc.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                               </div>
                             </div>
                           </div> 
@@ -6726,7 +6710,7 @@
 
                                   {% if request.user.profiles.eco_page_price_info %}
                                     <div class="col-12 col-sm-auto fw-bold text-secondary text-end">
-                                      <a class="text-secondary" href="/balance_edit/{{params.balance.pk}}/" target="_blank"> <span class="icon-mbri-update"> Обновить</span> </a>
+                                      <a class="text-secondary" href="{{request.get_full_path}}&refresh_data=balance_doc"> <span class="icon-mbri-update"> Обновить</span> </a>
                                     </div>
                                   {% endif %}
 
@@ -10281,7 +10265,7 @@
                               </div>
 
                               <div class="col-12 col-sm-12">
-                                <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.page_documents.unit.balance|floatformat:"2g"}} &#8381</b></label>
+                                <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                               </div>
 
                               <div class="col-12 col-sm-12">
@@ -10293,7 +10277,7 @@
                             <div class="position-relative-bottom">
                               
                               <div class="justify-content-end w-100 text-end" >
-                                <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.page_documents.unit.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                                <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.page_documents.unit.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                               </div>
 
                             </div>
@@ -10314,7 +10298,7 @@
                               </div>
 
                               <div class="col-12 col-sm-12">
-                                <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit.balance|floatformat:"2g"}} &#8381</b></label>
+                                <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                               </div>
 
                               <div class="col-12 col-sm-12">
@@ -10326,7 +10310,7 @@
                             <div class="position-relative-bottom">
                               
                               <div class="justify-content-end w-100 text-end" >
-                                <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                                <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                               </div>
 
                             </div>
@@ -10350,7 +10334,7 @@
                               </div>
 
                               <div class="col-12 col-sm-12">
-                                <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.estimation.rlk.unit_dc.balance|floatformat:"2g"}} &#8381</b></label>
+                                <label class="fs-5"> <b><span class="icon-mbri-credit-card"> </span> &nbsp; {{params.balance_unit|floatformat:"2g"}} &#8381</b></label>
                               </div>
 
                               <div class="col-12 col-sm-12">
@@ -10360,7 +10344,7 @@
                             </div>
                             <div class="d-flex align-content-end flex-wrap mb-2">
                             <div class="justify-content-end w-100 text-end" >
-                              <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit_dc.pk}}&page=balance_unit" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
+                              <a сlass="text-dark" href="/korsavto/settings/?dc={{params.estimation.rlk.unit_dc.pk}}&page=balance_unit&date_start={{params.balance_date_start|date:'Y-m-d'}}&date_end={{params.balance_date_end|date:'Y-m-d'}}" target="_blank"><label class="fs-5 text-dark"> <b><span class="icon-doc"> </span></b> &nbsp; перейти</label></a>
                             </div>
                           </div>
                         </div> 

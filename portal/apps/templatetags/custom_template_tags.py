@@ -4,6 +4,7 @@ from django.utils.http import urlencode
 import re
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Value, IntegerField
 import datetime as DT
+from dateutil.relativedelta import relativedelta
 
 register = Library()
 
@@ -40,7 +41,6 @@ register.filter('second_to_time', second_to_time)
 
 def replace_simbol(value):
     return str(value).replace("_", " ")
-
 @register.filter('replace_simbol', replace_simbol)
 
 
@@ -103,3 +103,70 @@ def url_replace_download(context, **kwargs):
                 url = url + list_url + '_export' + '/'
     
     return url
+
+
+@register.simple_tag(takes_context=True)
+def balance_unit(context, **kwargs):
+    unit_id = kwargs['unit_id'] 
+    date    = kwargs['date'] 
+    date_start  = date - relativedelta(months=2)
+    date_start  = date_start.replace(day=1, hour=1)
+    date_end    = date
+
+    from register.models import RegEstimationBalanceUnit
+    request = RegEstimationBalanceUnit.objects.filter(unit__id = unit_id).order_by('-date')
+
+    return None
+
+@register.simple_tag(takes_context=True)
+def balance_detail(context, **kwargs):
+    unit_id = kwargs['unit_id'] 
+    date    = kwargs['date'] 
+    date_start  = date - relativedelta(months=2)
+    date_start  = date_start.replace(day=1, hour=1)
+    date_end    = date
+    
+    from register.models import RegEstimationBalanceUnit
+    request = RegEstimationBalanceUnit.objects.filter(unit__id = unit_id).filter(date__gte = date_start).filter(date__lte = date_end).order_by('-date')
+    return request
+
+@register.simple_tag(takes_context=True)
+def balance(context, **kwargs):
+    unit_id = kwargs['unit_id'] 
+    date    = kwargs['date'] 
+    date_start  = date - relativedelta(months=2)
+    date_start  = date_start.replace(day=1, hour=1)
+    date_end    = date
+    
+    from register.models import RegEstimationBalanceUnit
+    request = RegEstimationBalanceUnit.objects.filter(unit = unit_id).filter(date__gte = date_start).filter(date__lte = date_end).aggregate(Sum('amount'))
+    if request['amount__sum'] == None:
+        return 0
+    return request['amount__sum']
+
+@register.simple_tag(takes_context=True)
+def balance_top_unit(context, **kwargs):
+    
+    unit_id = kwargs['unit_id'] 
+    date    = kwargs['date'] 
+    date_start  = date - relativedelta(months=2)
+    date_start  = date_start.replace(day=1, hour=1)
+    date_end    = date
+    from register.models import RegEstimationBalanceUnit
+    
+    request = RegEstimationBalanceUnit.objects.filter(date__gte = date_start).filter(date__lte = date_end).values('unit').order_by('unit').distinct().annotate(sum = Sum('amount')).values('unit','sum' , ).order_by('-sum')
+    
+    all_count = RegEstimationBalanceUnit.objects.all().filter(date__gte = date_start).filter(date__lte = date_end).order_by('unit').distinct('unit').count()
+    
+    position = 0
+    for uni in request:
+        position = position + 1
+        if unit_id == uni['unit']:
+            break
+        
+    info = {
+        'position'  : position,
+        'all'       : all_count,
+        'name'      : '' + str(position) + ' / ' + str(all_count)
+    }
+    return info
