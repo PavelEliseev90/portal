@@ -165,8 +165,6 @@ def get_info_article_products(request):
         article         = data_info['article']
         manufacturen    = data_info['manufacturen']
         
-        list_info = list()
-
         if len(article) > 0 or len(manufacturen) > 0:
 
             infos = RegPrices.objects.all().exclude(manufacturer = None).order_by('name')
