@@ -1019,12 +1019,14 @@ class RefManufacturer(models.Model):
     search_fields       = models.CharField("Строка поиска", blank=True, max_length=5120, default='')
     name_rus            = models.CharField("Наименование на русском", blank=True, max_length=5120, default='')
     slug                = models.SlugField(max_length=512, null=True, blank=True)
+    name_upper          = models.CharField("Наименование в верхнем регистре ", max_length=300, default='')
 
     def __str__(self):
         return "{}".format(self.name)
 
     def save(self, *args, **kwargs):
         self.name_rus       = translit(self.name, 'ru')
+        self.name_upper     = self.name.upper()
         
         text_search     = re.sub("[^A-Za-z А-Яа-я 0-9]", " ", self.name.lower()).rstrip() + ' ' + re.sub("[^A-Za-z А-Яа-я 0-9]", " ", self.alias.lower()).rstrip() + ' ' + self.group_name.lower()
         text_search     = re.sub(" +", " ", text_search)

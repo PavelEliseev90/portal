@@ -153,6 +153,7 @@ urlpatterns = [
    path('info_brand_article_image/',            views.info_brand_article_image),
 
    path('info_article/',                        views.get_info_article_product),
+   path('info_articles/',                       views.get_info_article_products),
 
    
 ]

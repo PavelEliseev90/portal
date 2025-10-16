@@ -90,10 +90,11 @@ def get_info_article_product(request):
 
         if len(article) > 0:
             article_search = re.sub("[^A-Za-z А-Яа-я 0-9]", "", article).rstrip()
-            infos = infos.filter(article_search__icontains = article_search).exclude(manufacturer = None)
+            infos = infos.filter(article_search = article_search).exclude(manufacturer = None)
         
         if len(manufacturen) > 0:
-            infos = infos.filter(manufacturer__name__icontains = manufacturen).exclude(manufacturer = None)
+            manufacturen = manufacturen.upper()
+            infos = infos.filter(manufacturer__name_upper = manufacturen).exclude(manufacturer = None)
         
         count_all   = infos.count()
         paginator   = Paginator(infos, count_answer)	
@@ -150,6 +151,70 @@ def get_info_article_product(request):
     }
     
     return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def get_info_article_products(request):
+    
+    body_unicode    = request.body.decode().replace("'", '"')
+    data            = json.loads(body_unicode) 
+    list_info       = list()
+    list_search     = data['products']  
+    for data_info in list_search:
+        
+        article         = data_info['article']
+        manufacturen    = data_info['manufacturen']
+        
+        list_info = list()
+
+        if len(article) > 0 or len(manufacturen) > 0:
+
+            infos = RegPrices.objects.all().exclude(manufacturer = None).order_by('name')
+
+            if len(article) > 0:
+                article_search = re.sub("[^A-Za-z А-Яа-я 0-9]", "", article).rstrip()
+                infos = infos.filter(article_search = article_search).exclude(manufacturer = None)
+            
+            if len(manufacturen) > 0:
+                manufacturen = manufacturen.upper()
+                infos = infos.filter(manufacturer__name_upper = manufacturen).exclude(manufacturer = None)
+            product = {}
+
+            for info in infos:
+            
+                if info.category != None:
+                    category              = info.category.name
+                else:
+                    category              = None
+
+                if info.group != None:
+                    group              = info.group.name
+                else:
+                    group              = None
+                
+                product = {
+                    'manufacturer'          : info.manufacturer.name,
+                    'date'                  : info.date,
+                    'name'                  : info.name,
+                    'article'               : info.article,
+                    'article_search'        : info.article_search,
+                    'category'              : category,
+                    'group'                 : group,
+                    'price'                 : info.price,
+                    'price_min'             : info.price_min
+                }
+            prod = {
+                    'data'      : data_info,
+                    'product'   : product
+                }
+            list_info.append(prod)                  
+    
+    to_json = {
+        'list_info'             : list_info
+    }
+    
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+
 
 
 @api_view(['GET', 'POST'])
