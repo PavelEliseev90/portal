@@ -747,10 +747,10 @@ class DocCarAgreement(models.Model):
         return DocCarShipment.objects.filter(agreement = self).filter(active = True).count()
 
     def opcion(self):
-        return self.cm_actual - (self.amount - (self.cost_price + self.outlay + self.discountAmount))
+        return self.cm_actual - (self.amount - (self.cost_price + self.outlay))
 
     def cum(self):
-        return self.amount - (self.cost_price + self.outlay + self.discountAmount)
+        return self.amount - (self.cost_price + self.outlay)
     
     def save(self, *args, **kwargs):
         
