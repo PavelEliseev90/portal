@@ -1038,6 +1038,7 @@ def refresh_estimation_cars_organization_run():
 
     for car in cars:
         try:
+
             sleep(3)
 
             year_current = DT.datetime.now().year
@@ -2746,8 +2747,10 @@ def cvc_background():
     '''
 
 def sleep(times):
-    time.sleep(3)
-    return times
+    s = 1
+    while s < 10000:
+        s = s + 1
+    return 0
         
 def refresh_check_list_info(checklists_cvc_info):
     for check in checklists_cvc_info:
