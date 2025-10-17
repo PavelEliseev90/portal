@@ -214,7 +214,6 @@ def get_info_article_products(request):
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
 
-
 @api_view(['GET', 'POST'])
 def get_qrcode(request):
     

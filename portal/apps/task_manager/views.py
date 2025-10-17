@@ -50,8 +50,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
-#url_auction_kors_portal     = 'https://auction.kors-group.ru'
-url_auction_kors_portal     = 'http://k01-1c-prog01'
+url_auction_kors_portal     = 'https://auction.kors-group.ru'
+#url_auction_kors_portal     = 'http://k01-1c-prog01'
 
 url_catalog_autoru  = 'https://auto-export.s3.yandex.net/auto/price-list/catalog/cars.xml'
 url_catalog_avitoru = 'http://autoload.avito.ru/format/Autocatalog.xml'
@@ -1021,7 +1021,11 @@ def refresh_estimation_cars_organization_run():
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    cars            = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
+    cars                    = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
+
+    #subqyery_message_info   = RegEstimationRefCarsOrganizations.objects.filter(car__id = OuterRef(name = 'id')).filter(date = OuterRef(name = 'max_date'))
+    #subqyery_message        = Subquery(ChatMessage.objects.filter(chat__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
+    
     car_all_count   = cars.count()
     car_success     = 0 
     car_error       = 0

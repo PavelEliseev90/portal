@@ -7031,7 +7031,7 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
-    refresh_catalog_auto_ru()
+    #refresh_price()
 
     #refresh_auctohub_guide()
 
