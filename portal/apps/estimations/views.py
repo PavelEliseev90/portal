@@ -1605,6 +1605,12 @@ def estimation(request):
     
     return render(request, 'estimation/estimation.html', {'params': params})	
 
+def estimation_start(request, rlk_id):
+
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    return render(request, 'estimation/estimation_start.html')	
 
 def years(request, rlk_id):
 

@@ -137,28 +137,43 @@
 				<div class="card-body">
 					<div class="row">
 						
-						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Дата создания</label>
 								<input type="text" list='options' class="form-control form-control-kors" id="" name="" placeholder="Укажите стоянку" value="{{params.auction.dataTime}}" readonly>											
 							</div>
 						</div>
-						
+
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">										
+								<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
+								<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" readonly>	
+							</div>
+						</div>
+						<!--
 						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Код</label>
 								<input type="text" class="form-control form-control-kors" id="" name="" placeholder="0.00" value="{{params.auction.uid}}" readonly>	
 							</div>
 						</div>
+						-->
 
-						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
-								<label for="exampleInputEmail1" class="form-label fs-6">Статус</label>
-								<input type="text" class="form-control form-control-kors" id="" name="" value="{{params.auction.status}}" readonly>	
+								<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
+								<input type="text" list='options' class="form-control form-control-kors" id="store" name="store" placeholder="Укажите стоянку" value="{{params.auction.store.name}}" readonly>											
 							</div>
 						</div>
 
-						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">
+								<label for="exampleInputEmail1" class="form-label fs-6">Статус</label>
+								<input type="text" class="form-control form-control-kors" id="" name="" value="{{params.auction.status|default_if_none:'Новый'}}" readonly>	
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Ответственный</label>
 								<input type="text" class="form-control form-control-kors" id="" name="" readonly required value="{{params.auction.user.last_name}} {{params.auction.user.first_name}}">	
@@ -166,38 +181,22 @@
 						</div>
 
 					</div>
+					
 					<div class="row">
 						
 						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
-							<div class="mb-3">
-								<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
-								<input type="text" list='options' class="form-control form-control-kors" id="store" name="store" placeholder="Укажите стоянку" value="{{params.auction.store.name}}" readonly>											
-							</div>
-						</div>
-						
-						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
-							<div class="mb-3">
+							<label class="fs-4"><span class="badge text-white bg-secondary bg-opacity-75" id="">Цена лота: - {{params.auction.start_price|floatformat:"2g"}} ₽ </span></label>
+
+							<div class="mb-3 d-none">
 								<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота</label>
 								<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" value="{{params.auction.start_price}}" readonly>	
 							</div>
 						</div>
 
-						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
-							<div class="mb-3">										
-								<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
-								<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" readonly>	
-							</div>
-						</div>
-
-						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
-							<div class="mb-3">
-								<label for="exampleInputEmail1" class="form-label fs-6">Ответственный</label>
-								<input type="text" class="form-control form-control-kors" id="user" name="user" readonly required value="{{params.auction.user.last_name}} {{params.auction.user.first_name}}">	
-							</div>
-						</div>
-
 					</div>
+
 					<br>
+
 					<div class="mb-3">
 						<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
 						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="3" readonly>{{params.auction.description}}</textarea>
@@ -358,12 +357,39 @@
 			<hr style="width: 75%;">
 
 			<div class="row">
+				
 				<div class="col-12 col-sm-12 col-md-6 lg-3">
-					<div class="">
-						<label for="info_car_run" class="form-label fs-6">Пробег</label>
-						<input type="text" class="form-control form-control-kors" id="info_car_run" readonly>	
+					
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-cd"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label class="fs-7 text-secondary">Модификация</label>
+								<br>
+								<label id="info_car_modification_value"  class="fs-6">-</label>
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" readonly>	
+							</div>
+						</div>
+					</div>	
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-cd"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_run" class="fs-7 text-secondary">Пробег</label>
+								<br>
+								<label id="info_car_run_value"  class=" fs-6">-</label>
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" readonly>	
+							</div>
+						</div>
 					</div>
+
 				</div>
+
 				<div class="col-12 col-sm-12 col-md-6 lg-3">
 					<div class="">
 						<label for="info_car_days_in_stok" class="form-label fs-6">Дней на складе</label>
@@ -656,6 +682,10 @@
 					$('#info_car_bcp').val(car_bcp);
 					$('#info_car_outlay').val(car_outlay);
 					$('#info_car_price').val(car_price);
+					
+					$('#info_car_run_value').html(car_run + ' км.'); 
+					$('#info_car_modification_value').html(modification);
+
 					$('#info_car_run').val(car_run);
 					$('#info_car_price').val(car_price);
 					$('#info_car_description_podgotovka').val(obj.description_podgotovka);
