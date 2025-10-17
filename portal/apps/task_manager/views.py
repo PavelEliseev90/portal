@@ -1022,10 +1022,15 @@ def refresh_estimation_cars_organization_run():
     headers         = { 'Authorization' : 'Basic %s' % token }
 
     cars                    = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
-
-    #subqyery_message_info   = RegEstimationRefCarsOrganizations.objects.filter(car__id = OuterRef(name = 'id')).filter(date = OuterRef(name = 'max_date'))
-    #subqyery_message        = Subquery(ChatMessage.objects.filter(chat__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
+    date_start              = DT.datetime.now().replace(hour = 0, minute=0, second=1) 
+    subqyery_cars           = Subquery(RegEstimationRefCarsOrganizations.objects.filter(car__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
+    cars                    = cars.annotate(max_date = subqyery_cars)
+    cars = cars.filter(Q(max_date__lte = date_start) | Q(max_date = None))
+    cars = cars.order_by('max_date')
+    cars = cars[:10]
     
+    #cars                    = RefCarsOrganization.objects.filter(vin = 'XTAGFL440NY659465').exclude(modification_autoru = None).exclude(quantity = 0)
+
     car_all_count   = cars.count()
     car_success     = 0 
     car_error       = 0
@@ -1055,19 +1060,19 @@ def refresh_estimation_cars_organization_run():
             if avtohub_modification != None:
                 brand = {
                     'id'    : avtohub_modification.brandId,
-                    'name'  : car.modification_autoru.model.mark.name.strip()
+                    'name'  : ''
                 }
                 model = {
                     'id'    : avtohub_modification.modelId,
-                    'name'  : get_name_re(car.modification_autoru.model.name, 0)
+                    'name'  : ''
                 }
                 generation = {
                     'id'    : avtohub_modification.generationId,
-                    'name'  : get_name_re(car.modification_autoru.model.name, 1)
+                    'name'  : ''
                 }
                 modification = {
                     'id'    : avtohub_modification.id_avtohub,
-                    'name'  : car.modification_autoru.name
+                    'name'  : ''
                 }
             else:
                 brand = {
@@ -1182,7 +1187,7 @@ def refresh_estimation_cars_organization_run():
     new_record.count_success    = car_success
     new_record.count_error      = car_error
     new_record.save()
-
+    
 
 ####
 ###
