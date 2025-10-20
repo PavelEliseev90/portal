@@ -59,18 +59,19 @@ def zna_info(request):
     list_info   = list()
     
     objects         = RegEstimationRefCarsOrganizations.objects.all()
-
+    
     date_start      = request.GET.get('date_start', '')
     if date_start != '':
         objects = objects.filter(date__gte = date_start)
+    
     date_end        = request.GET.get('date_end', '')
     if date_end != '':
         objects = objects.filter(date__lte = date_end)
+    
     vin             = request.GET.get('vin', '')
     if vin != '':
         objects = objects.filter(car__vin = vin)
-        
-        
+            
     for object in objects:
         car_inf = {
             'date'      : object.date,

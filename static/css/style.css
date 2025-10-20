@@ -4220,8 +4220,8 @@ hr[style*="width: 75%"] {
 	background: #ffffff;
 	border: 1px solid #e9ecef;
 	border-radius: 0.75rem;
-	padding: 1.25rem;
-	margin-bottom: 1rem;
+	padding: 0.5rem;
+	margin-bottom: 0.2rem;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 	transition: all 0.3s ease;
 	animation: filterSectionFadeIn 0.5s ease-out forwards;
