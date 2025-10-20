@@ -6730,10 +6730,12 @@ def auction_doc_get_cars(request):
 
     search = request.GET.get('search', '')
 
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).filter(type_sale__name__icontains = 'Аукцион')
+
     if len(search) > 0:
-        cars = RefCarsOrganization.objects.filter(search_fields__icontains = search)
+        cars = cars.filter(search_fields__icontains = search)
     else:    
-        cars = RefCarsOrganization.objects.exclude(quantity = 0)[:10]
+        cars = cars.exclude(quantity = 0)[:10]
     
     data = list(cars.values('vin', 
                        'slug', 
@@ -6759,8 +6761,11 @@ def auction_doc_get_cars_info(request, slug):
         int_ocenka_url_pered = Value('', output_field=CharField())).annotate(
         int_ocenka_url_zad = Value('', output_field=CharField())).annotate(
         int_ocenka_url_up = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_right = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_left = Value('', output_field=CharField()))
+        int_ocenka_url_right    = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_left     = Value('', output_field=CharField())).annotate(
+        work_podgotovka         = Value('', output_field=CharField())).annotate(
+        work_service            = Value('', output_field=CharField())).annotate(
+        work_mcu                = Value('', output_field=CharField()))
     
     
     data = list(cars.values('vin', 
@@ -6781,6 +6786,9 @@ def auction_doc_get_cars_info(request, slug):
                        'int_ocenka_url_up',
                        'int_ocenka_url_right',
                        'int_ocenka_url_left',
+                       'work_podgotovka',
+                       'work_service',
+                       'work_mcu',
                        type_sale_name = F('type_sale__name'),
                        type_reception_name = F('type_reception__name'),
                        stage_price_name = F('stage_price__name'),
@@ -6796,8 +6804,35 @@ def auction_doc_get_cars_info(request, slug):
         car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
         car['int_ocenka_url_right'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pass')
         car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
-    
+        car['work_podgotovka']      = list()
+        car['work_service']         = list()
+        car['work_mcu']             = list()
+        if car['int_ocenka_id'] != None:
+            car['work_podgotovka']  = list_work(car['int_ocenka_id']) 
+            
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
+def list_work(int_ocenka):
+    work_podgotovka = list()
+    podgotovkas     = RegEstimationPodgotovka.objects.filter(estimation__id = int_ocenka)
+    for podgotovka in podgotovkas:
+        list_work = {
+            'name': podgotovka.name
+        }
+        work_podgotovka.append(list_work)
+    podgotovkas     = RegEstimationSS.objects.filter(estimation__id = int_ocenka)
+    for podgotovka in podgotovkas:
+        list_work = {
+            'name': podgotovka.name
+        }
+        work_podgotovka.append(list_work)
+    podgotovkas     = RegEstimationMCU.objects.filter(estimation__id = int_ocenka)
+    for podgotovka in podgotovkas:
+        list_work = {
+            'name': podgotovka.name
+        }
+        work_podgotovka.append(list_work)
+    return work_podgotovka 
 
 def get_url_image_osmotr(estimation_id, type_file):
     photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
@@ -7031,8 +7066,7 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
-    refresh_estimation_cars_organization_run()
-
+    
     #refresh_price()
 
     #refresh_auctohub_guide()
