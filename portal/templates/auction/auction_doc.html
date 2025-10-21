@@ -30,12 +30,13 @@
 					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
 						<div class="mb-3">
 							<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
-							<input type="text" list='options' class="form-control form-control-kors" id="store" name="store" placeholder="Укажите стоянку" required>
-							<datalist id='options'>
+							
+							<select class="form-select" aria-label="" id="store" name="store">
+								<option selected text=""></option>
 								{% for store in params.select.stores %}
-									<option value='{{store.name}}'>
-								{% endfor %}              
-							</datalist>						
+									<option value='{{store.name}}' text="{{store.id}}">{{store.name}}</option>
+								{% endfor %} 
+							</select>										
 						</div>
 					</div>
 					
@@ -320,15 +321,17 @@
 	<div class="offcanvas-body" style="padding-top: 0;">
 		<section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe">
 			<div class="">
-				
-				<div id="load_gif" class="justify-content-center text-center d-none" data-page="1" data-max="15">
-					<img src="/media/loading.gif" alt="">
-				</div>
-
+			
 				<div class="row align-items-center align-self-center cars-list" id="cars-list" name="cars-list">
 				
 				</div>
 
+				<div id="load_gif" class="justify-content-center text-center d-none" data-page="1" data-max="15">
+					<img src="/media/loading.gif" alt="">
+				</div>
+
+				<button class="btn btn-sm w-100 btn-secondary bg-gradient" id="more"> <span class="fs-5 icon-mbri-down" id="refresh"></span> Показать еще</button>
+				
 			</div>
 		</section>
 
@@ -502,31 +505,6 @@
 
 			<br>
 
-			<!--
-			<div class="row">
-				
-				<div class="col-12 col-sm-12 col-md-6 lg-3">
-					<div class="">
-						<label for="info_car_cost_price" class="form-label fs-6">Себестоимость</label>
-						<input type="text" class="form-control form-control-kors" id="info_car_cost_price" readonly>	
-					</div>
-				</div>
-				<div class="col-12 col-sm-12 col-md-6 lg-3">
-					<div class="">
-						<label for="info_car_outlay" class="form-label fs-6">Расходы</label>
-						<input type="text" class="form-control form-control-kors" id="info_car_outlay" readonly>	
-					</div>
-				</div>
-				<div class="col-12 col-sm-12 col-md-6 lg-3">
-					<div class="">
-						<label for="info_car_bcp" class="form-label fs-6">БЦП</label>
-						<input type="text" class="form-control form-control-kors" id="info_car_bcp" readonly>	
-					</div>
-				</div>
-				
-			</div>
-			-->
-
 			<hr style="width: 75%;">
 			<div class="row">
 				<div class="col-12 col-sm-12 col-md-6 lg-3">
@@ -583,12 +561,20 @@
 
 	<script>
 
-		$( document ).ready(function() {
+		var store_id 	= '';
+		var page 		= 0;
+		var scroll_data	= true;
+
+		$(document).ready(function() {
 			refresh_board();
 		});
 
 		$("#refresh").click(function(){
 			
+			page = 0;
+			
+			scroll_data = true;
+
 			visible_loader(true);
 
 			document.querySelector('#cars-list').innerHTML = '';
@@ -597,15 +583,26 @@
 			
 		});
 		
+		$("#more").click(function(){
+			
+			page = page + 1;
+			
+			visible_loader(true);
+
+			refresh_data_online();
+			
+		});
+
 		$("#add_cars").click(function(){
 			
-			var store = $("#search").val();
+			store_id = $('select#store option:selected').attr("text")
 
-			if (store == ''){
+			if (store_id == ''){
+
 				var html = ''
 				document.querySelector('#container_toast').innerHTML = html;
 
-				html = '<div id="toast_" class="toast bg-warning" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">';
+				html = '<div id="toast_" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">';
 				html += '   <div class="toast-header">';
 				html += '    <strong class="rounded me-2"><span class="icon-mbri-speed "></span></strong>';
 				html += '    ';
@@ -621,15 +618,20 @@
 				document.querySelector('#container_toast').innerHTML += html;
 				
 				$('#toast_').toast('show');
-			}
 
-			document.querySelector('#cars-list').innerHTML = '';
+			} else {
 
-			visible_loader(true);
+				document.querySelector('#cars-list').innerHTML = '';
+				
+				page = 0;
 
-			refresh_data_online();
-			
-			visible_canvas();
+				visible_loader(true);
+
+				refresh_data_online();
+				
+				visible_canvas();
+
+			};
 
 		});
 
@@ -891,11 +893,19 @@
 		function refresh_data_online(){
 			
 			var search  = $("#search").val();
-			var page 	= 0;
-			var url     = '/auction/js/get_cars_lot_online/?search=' + search + '&page='+page;
+			
+			var url     = '/auction/js/get_cars_lot_online/?store_id=' + store_id + '&search=' + search + '&page='+page;
+
 			$.get(url, function( data, status ) { 
 				
 				let i = data.length;
+
+				if (i == 0){
+					scroll_data = false;					
+				}else{
+					scroll_data = true;
+				};
+
 				for (s = 0; s < i; s++) { 
 					
 					let obj = data[s];
@@ -930,10 +940,13 @@
 					document.querySelector('#cars-list').innerHTML = document.querySelector('#cars-list').innerHTML  + html_list ;
 					
 				};
+				
 				visible_loader(false);
+				
 			});
 		};
 
+	
 		function visible_loader(visible){
 			if (visible == true){
 				$('#load_gif').removeClass('d-none');
@@ -941,8 +954,14 @@
 				$('#load_gif').addClass('d-none');
 			};
 
-		};
+			if (scroll_data == true){
+				$("#more").removeClass('d-none')
+			} else {
+				$('#more').addClass('d-none');
+			};
 
+		};
+		
 
 	</script>
 

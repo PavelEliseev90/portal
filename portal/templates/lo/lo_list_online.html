@@ -131,7 +131,7 @@ z-index: 1044;">
     });
    
     $('#btn_reconect').click(function() {   
-        console.log('reconect');
+        
         connect_ws();
         
         $("#div_reconect").addClass('d-none');
@@ -148,13 +148,15 @@ z-index: 1044;">
     scrollToBottom();
 
     function scrollIntoViewIfNotVisible(target) { 
+        
         if (target.getBoundingClientRect().bottom > window.innerHeight) {
             target.scrollIntoView(false);
-        }
+        };
         
         if (target.getBoundingClientRect().top < 0) {
             target.scrollIntoView();
-        } 
+        };
+
     };
 
     
@@ -401,7 +403,7 @@ z-index: 1044;">
 
                 document.querySelector('#message-list').innerHTML = document.querySelector('#message-list').innerHTML  + html_list ;
 
-            } 
+            }; 
             
 	    })
 
@@ -758,8 +760,6 @@ z-index: 1044;">
         connect_ws();
         
         $("#div_reconect").addClass('d-none');
-        
-        //refresh_data_online();
         
     });
 
