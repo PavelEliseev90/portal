@@ -6728,15 +6728,24 @@ def auction_doc(request, slug_auction):
 
 def auction_doc_get_cars(request):
 
-    search = request.GET.get('search', '')
+    search      = request.GET.get('search', '')
+    store_id    = request.GET.get('store_id', '')
+    page        = int(request.GET.get('page', '0'))
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).filter(type_sale__name__icontains = 'Аукцион')
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).filter(type_sale__name__icontains = 'Аукцион').filter(store__id = store_id)
 
     if len(search) > 0:
         cars = cars.filter(search_fields__icontains = search)
     else:    
-        cars = cars.exclude(quantity = 0)[:10]
-    
+        cars = cars.exclude(quantity = 0)
+
+    if page == 0:
+        cars = cars[:10]
+    else:
+        start_cars  = page * 10
+        end_cars    = start_cars + 10
+        cars = cars[start_cars:end_cars]
+
     data = list(cars.values('vin', 
                        'slug', 
                        'year',
@@ -7066,6 +7075,7 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
+    #refresh_price()
     
     #refresh_price()
 

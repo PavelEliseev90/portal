@@ -2021,25 +2021,30 @@ def refresh_price():
                             group = get_refGroupProduct(group)                          
                     
                     if number_price_min > 0:
-                        price_min           = str(worksheet.cell(row = row, column = number_price_min).value)
-                        if len(price_min) == 0:
-                            price = '0.00'
+                        try:
+                            price_min           = str(worksheet.cell(row = row, column = number_price_min).value)
+                            if len(price_min) == 0:
+                                price = '0.00'
 
-                        if price_min.find('.') < 0 and price_min.find(',') < 0:
-                            price_min = price_min + '.00'
-                        price_min           = float(re.sub('[^\d\.,]', '', str(price_min.replace(',','.'))))
+                            if price_min.find('.') < 0 and price_min.find(',') < 0:
+                                price_min = price_min + '.00'
+                            price_min           = float(re.sub('[^\d\.,]', '', str(price_min.replace(',','.'))))
+                        except:
+                            price_min = 0
                     
                     if number_price > 0:
-                        
-                        price               = str(worksheet.cell(row = row, column = number_price).value)
-                        
-                        if len(price) == 0:
-                            price = '0.00'
+                        try:
+                            price               = str(worksheet.cell(row = row, column = number_price).value)
+                            
+                            if len(price) == 0:
+                                price = '0.00'
 
-                        if price.find('.') < 0 and price.find(',') < 0:
-                            price = price + '.00'
+                            if price.find('.') < 0 and price.find(',') < 0:
+                                price = price + '.00'
 
-                        price               = float(re.sub('[^\d\.,]', '', str(price.replace(',','.')))) 
+                            price               = float(re.sub('[^\d\.,]', '', str(price.replace(',','.')))) 
+                        except:
+                            price = 0
 
                     if len(name) > 0 and len(article) > 0:
                         
