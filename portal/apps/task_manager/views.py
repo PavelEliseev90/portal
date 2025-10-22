@@ -2047,6 +2047,7 @@ def start_refresh_price():
 def refresh_price():
     
     task_prices = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка')
+    #task_prices = TaskRegPrices.objects.filter(id = 133)
     
     for task in task_prices:
        
