@@ -4435,6 +4435,18 @@ hr[style*="width: 75%"] {
 	color: #ffffff;
 }
 
+.bg-kors-card{
+	background: #fff;
+	border-radius: 0.5rem;
+	border-color: #ff9a4d;
+}
+
+.bg-kors-card-body{
+	background: linear-gradient(0deg, #ff9a4d90 0%, #ff9a4d50 50%, #ff9a4d90 100%);
+	border-radius: 0.5rem;
+	padding: 0.5rem;
+}
+
 #mobileFiltersModal .btn-primary:hover {
 	background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
 	border-color: #c0392b;

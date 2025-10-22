@@ -34,7 +34,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import refresh_estimation_cars_organization_run, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -6668,15 +6668,21 @@ def auction_list(request):
 
 @login_required
 def auction_doc(request, slug_auction):
+    
     auction = None
     new = False
+    user = request.user
     if slug_auction == 'new_lots':
-        new = True
+        auction = Auction()
+        auction.user = user
+        auction.save()
+        return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
     else:
         new = False
         auction = Auction.objects.get(uid = slug_auction)
-
-    user = request.user
+        user = auction.user
+    if user == None:
+        user = request.user   
 
     if user.is_superuser:
         select_stores =  RefStore.objects.filter(active_eco = True)
@@ -6688,12 +6694,19 @@ def auction_doc(request, slug_auction):
     }
 
     if request.method == 'POST':
+        
         if new:
             auction = Auction()
             auction.user = user
         else:
             auction = Auction.objects.get(uid = slug_auction)
+
+        if 'update' in request.POST:
+            refresh_auction(auction)
+            return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
+
         auction.user                = user
+        
         auction.store               = RefStore.objects.get(name = request.POST.get('store', ''))
         auction.start_price         = int(request.POST.get('price_start', '0')) 
         auction.dateStart           = DT.datetime.strptime(request.POST.get('dateStart', ''), "%Y-%m-%dT%H:%M")
@@ -6708,12 +6721,15 @@ def auction_doc(request, slug_auction):
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
                 structure = AuctionStructure()
-                structure.auction = auction
+                structure.auction       = auction 
+                structure.diagnostic    = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
+                structure.works         = request.POST.get('cars_list_data_' + pk + '_works' , '')
                 structure.car = car
                 structure.save()
 
         if 'send' in request.POST:
             send_auction(auction)
+
         return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
      
     params = {
