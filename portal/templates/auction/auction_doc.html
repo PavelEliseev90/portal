@@ -10,7 +10,453 @@
     
 {% block content %}
 
-{% if params.new %}
+<form method="post">
+	{% csrf_token %}
+
+
+	<div class="bg-kors-card"> 
+		<div class="bg-kors-card-body">
+			<label class="fs-4"> <span class="icon-mbri-flag"></span> Аукцион -</label>  <label class="fs-4"><span class="badge text-white bg-dark bg-opacity-75" id="">{{params.auction.status|default_if_none:'подготавливается'}}</span></label> 
+			<div class="row">
+				
+				<div class="col-12 col-sm-auto">
+					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_count">Автомобилей: - </span></label>
+				</div>
+				<div class="col-12 col-sm-auto">
+					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_cost_price">Себестоимость: - </span></label>
+				</div>
+				<div class="col-12 col-sm-auto">
+					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_outlay">Затраты: - </span></label>
+				</div>
+				<div class="col-12 col-sm-auto">
+					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_price">Сумма продажи: - </span></label>
+				</div>					
+				<div class="col-12 col-sm-auto">
+					<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75 bg-gradient" id="car_profit">Профит: - </span></label>
+				</div>
+				<div class="col-12 col-sm-auto">
+					<label class="fs-5"><span class="badge text-white bg-success bg-gradient" id="car_profit_auction">Профит аукцион от: - </span></label>
+				</div>
+			</div>
+			<hr style="width: 75%;">
+			<div class="row g-3">
+				<div class="col-12 col-sm-4">
+					
+					<div class="mb-3">										
+						<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
+						<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" >	
+					</div>
+
+					<div class="mb-3">
+						<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
+						
+						<select class="form-select" aria-label="" id="store" name="store">
+							<option selected text=""></option>
+							{% for store in params.select.stores %}
+								<option value='{{store.name}}' text="{{store.id}}" {% if store.id == params.auction.store.id %} selected {% endif %}>{{store.name}}</option>
+							{% endfor %} 
+						</select>										
+					</div>
+
+					<div class="mb-3">
+						<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота &#8381;</label>
+						<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" value="{{params.auction.start_price}}">	
+					</div>
+					
+				</div>
+
+				<div class="col-12 col-sm-8 h-100">
+					<div class="mb-3">
+						<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
+						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="8">{{params.auction.description}}</textarea>
+					</div>					
+				</div>
+
+			</div>
+
+			<hr style="width: 75%;">
+			<label for="exampleInputEmail1" class="form-label fs-6">Создан: {{params.auction.dataTime}}</label>
+			<label for="exampleInputEmail1" class="form-label fs-6">Ответственный: {{params.auction.user.profiles.eco_name}}</label> 
+			
+			<br>
+			<div class="row g-3">
+				<div class="col-auto">
+					<button type="submit" class="btn btn-success bg-gradient" id="save" name="save"> <span class="icon-mbri-save"> Сохранить</span></button>
+				</div>
+				<div class="col-auto">
+					<button type="submit" name="send" id="send" class="btn btn-success bg-gradient"><span class="icon-mbri-play"></span> Отправить </button>
+				</div>
+				<div class="col-auto">
+					<button type="submit"  name="update" id="update" class="btn btn-success bg-gradient"><span class="icon-mbri-update"></span> Обновить информацию </button>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	{% if params.auction.winner_price > 0 %}
+	<br>
+	<div class="card bg-success bg-gradient text-white">
+		<div class="card-body">
+			<div class="row g-4">
+				<div class="col-auto align-self-center">
+					<span class="icon-mbri-success fs-3 text-white"></span>
+				</div>
+				<div class="col-auto">
+					<label class="fs-5">Победитель аукциона:</label>
+					<br>
+					<div class="row g-3">
+						<div class="col-auto">
+							<label class="fs-4">{{params.auction.winner_name}}</label>
+						</div>
+						<div class="col-auto">
+							<label class="fs-4">{{params.auction.winner_phone}}</label>
+						</div>
+						<div class="col-auto">
+							<label class="fs-4">{{params.auction.winner_email}}</label>
+						</div>
+					</div>
+					
+				</div>
+				<div class="col-auto">
+					<label class="fs-5">Выигрышная цена:</label>
+					<br>
+					
+					<label class="fs-2 text-white">{{params.auction.winner_price|floatformat:"2g"}} ₽</label>
+						
+					
+					
+				</div>
+			</div>
+		</div>
+	</div>		
+	{% endif %}
+
+	{% if params.auction.rejection_reason != '' and params.auction.winner_price == 0 %}
+	<br>
+	<div class="card bg-danger bg-gradient text-white">
+		<div class="card-body">
+			<div class="row g-4">
+				<div class="col-auto align-self-center">
+					<span class="icon-mbri-close fs-3 text-white"></span>
+				</div>
+				<div class="col">
+					<label class="fs-5">Лот отклонен модератором по причине:</label>
+					<br>
+					<label class="fs-4">{{params.auction.rejection_reason}}</label>
+				</div>
+			</div>
+		</div>
+	</div>		
+	{% endif %}
+	<br>
+	
+	<div class="bg-kors-card"> 
+		<div class="bg-kors-card-body">
+			
+			<label class="fs-4"> <span class="icon-truck"></span> Автомобили</label>
+			
+			<hr style="width: 75%;">
+			
+			<div class="" id="cars">
+			
+				{% for structure in params.auction.cars %}
+					
+					<div class="card bg-white" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}" style="margin-bottom: 0.5rem;">
+						<div class="card-body">
+							<div class="row g-1  text-dark" style="border-radius:0.5rem; padding: 0.2rem;">
+								<div class="col-12 col-sm-3">
+									<img class="h-100" style="max-height: 200px; border-radius:0.5rem;"  src="{{structure.car.get_photo}}">
+								</div>
+								<div class="col-12 col-sm-3">
+									<label class="fs-5"> {{structure.car.modification_autoru.model.mark}} <br> {{structure.car.modification_autoru.model}} <br> {{structure.car.modification_autoru}} <br>  {{structure.car.year}}  г.в. <br>{{structure.car.run|floatformat:"0g"}} км.<br></label>
+								</div>
+								<div class="col-12 col-sm-6">
+									
+									<hr class="hidesite" style="width: 75%; ">
+
+									<label class="fs-5"> Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽ <br> Затраты: {{structure.car.outlay|floatformat:"2g"}} ₽ <br> БЦП: {{structure.car.bcp|floatformat:"2g"}} ₽ <br>  Продажа: {{structure.car.price|floatformat:"2g"}} ₽<br></label>
+
+								</div>
+							</div>
+							<hr class="hidesite" style="width: 75%; ">
+							<label class="fs-6" id="edit_car_info_{{structure.car.slug}}"> <span class="icon-mbri-edit"></span> Редактировать</label>
+							
+						</div>
+						
+						<input hidden id="cars_list_data_cost_price_{{structure.car.slug}}" value="{{structure.car.cost_price}}">
+						<input hidden id="cars_list_data_price_{{structure.car.slug}}" value="{{structure.car.price}}">
+						<input hidden id="cars_list_data_outlay_{{structure.car.slug}}" value="{{structure.car.outlay}}">
+						<input hidden name="cars_list_data_slug_{{structure.car.slug}}" value="{{structure.car.slug}}">
+						
+						<div class="modal fade" id="cars_list_data_slug_{{structure.car.slug}}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+							
+							<div class="modal-dialog modal-xl modal-dialog-scrollable">
+								<div class="modal-content">
+									<div class="modal-header">
+										<span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-truck"></span>Редактирование данных автомомобиля</h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+								<div class="modal-body">
+									<div class="fs-5 fw-bold" id="info_car_name"></div>
+									
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Тип продажи: - {{structure.car.type_sale.name}} </span></label> 
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Тип приема: - {{structure.car.type_reception.name}}</span></label>
+									
+									<hr style="width: 75%;">
+						
+									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Автомобиль</span></label>
+						
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos">
+										
+										{% for obj in structure.car.get_files %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
+											</div>											
+										{% endfor %}
+										
+									</div>
+
+									<input type="file" class="form-control" id="images_car" name="images_car" accept="image/*;capture=camera" multiple/>
+                          
+									<hr style="width: 75%;">
+						
+									<div class="row">
+										
+										<div class="col-12 col-sm-12 col-md-4 lg-3">
+											
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-setting2"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label class="fs-7 text-secondary">Модификация</label>
+														<br>
+														<label id="info_car_modification_value"  class="fs-6">{{structure.car.modification_autoru.name}}</label>
+														
+													</div>
+												</div>
+											</div>	
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-cd"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_run" class="fs-7 text-secondary">Пробег</label>
+														<br>
+														<label id="info_car_run_value"  class=" fs-6">{{structure.car.run|floatformat:"0g"}} км.</label>
+															
+													</div>
+												</div>
+											</div>
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-credit-card"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_price" class="fs-7 text-secondary">Текущая цена</label>
+														<br>
+														<label id="info_car_price_value"  class=" fs-6">{{structure.car.price|floatformat:"2g"}} ₽ </label>
+															
+													</div>
+												</div>
+											</div>
+						
+										</div>
+						
+										<div class="col-12 col-sm-12 col-md-4 lg-3">
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-calendar"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_days_in_stok" class="fs-7 text-secondary">Дней на складе</label>
+														<br>
+														<label id="info_car_days_in_stok_value"  class="fs-6">{{structure.car.days_in_stok}} д.</label>
+																
+													</div>
+												</div>
+											</div>
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-flag"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_status_name" class="fs-7 text-secondary">Cтатус</label>
+														<br>
+														<label id="info_car_status_name_value"  class="fs-6">{{structure.car.status}}</label>
+															
+													</div>
+												</div>
+											</div>
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-delivery"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_stage_price" class="fs-7 text-secondary">Этап</label>
+														<br>
+														<label id="info_car_stage_price_value"  class="fs-6">{{structure.car.stage_price}}</label>
+														
+													</div>
+												</div>
+											</div>
+						
+										</div>
+						
+										<div class="col-12 col-sm-12 col-md-4 lg-3">
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-cash"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_cost_price" class="fs-7 text-secondary">Себестоимость</label>
+														<br>
+														<label id="info_car_cost_price_value"  class="fs-6">{{structure.car.cost_price|floatformat:"2g"}} ₽ </label>
+																
+													</div>
+												</div>
+											</div>
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-cash"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_outlay" class="fs-7 text-secondary">Расходы</label>
+														<br>
+														<label id="info_car_outlay_value"  class="fs-6">{{structure.car.outlay|floatformat:"2g"}} ₽</label>
+															
+													</div>
+												</div>
+											</div>
+						
+											<div class="row g-1">
+												<div class="col-1 text-center align-self-center">
+													<span class="fs-5 icon-mbri-delivery"></span>
+												</div>
+												<div class="col">
+													<div class="">
+														<label for="info_car_bcp" class="fs-7 text-secondary">БЦП</label>
+														<br>
+														<label id="info_car_bcp_value"  class="fs-6">{{structure.car.bcp|floatformat:"2g"}} ₽</label>
+																
+													</div>
+												</div>
+											</div>
+						
+										</div>
+									
+									</div>
+						
+									<br>
+						
+									<div class="row">
+										<div class="col-12 col-sm-12 col-md-6 lg-3">
+											<div class="mb-3">
+												<label for="" class="form-label fs-6">Комментарий для отдела подготовки</label>
+												<textarea class="form-control" id="" rows="10">{{structure.car.description_podgotovka}}</textarea>
+											</div>
+										</div>
+										<div class="col-12 col-sm-12 col-md-6 lg-3">
+											<div class="mb-3">
+												<label for="" class="form-label fs-6">Комментарий для отдела продаж</label>
+												<textarea class="form-control" id="" rows="10">{{structure.car.description_op}}</textarea>
+											</div>
+										</div>
+									</div>
+						
+									<hr style="width: 75%;">
+									
+									<label class="fs-6"><span class="badge text-white bg-success bg-opacity-75">Интерактивная оценка </span></label> 
+									<br>
+									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний осмотр</span></label>
+									
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+										
+										
+									</div>
+									<br>
+									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
+									
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+										
+										
+									</div>
+									<br>
+									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП</span></label>
+									
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
+										
+										
+									</div>
+									<br>
+									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Фото повреждений</span></label>
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
+										
+										
+									</div>
+									<br>
+									<div class="row g-1">
+										<div class="col-12 col-sm-6">
+											<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">Работы по автомобилю</span></label>
+											<br>
+											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_works" rows="10">{{structure.works}}</textarea>
+										</div>	
+										<div class="col-12 col-sm-6">
+											<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">Диагностика</span></label>
+											<br>
+											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_diagnostika" rows="10">{{structure.diagnostic}}</textarea>
+										</div>			
+									</div>
+						
+								</div>
+
+								<div class="modal-footer">
+									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+								</div>
+
+							</div>
+							</div>
+
+						</div>
+
+					</div>
+
+				{% endfor %}
+
+			</div>
+
+			<hr style="width: 75%;">
+
+			<button type="button" class="btn btn-secondary bg-gradient" id="add_cars"> <span class="icon-mbri-plus"> Добавить автомобиль</span></button>
+		
+		</div>
+	</div>
+
+</form>
+
+<div class="toast-container position-fixed top-0 start-0 p-3" id="container_toast"  >
+
+</div>
+
+
+<!-- 
+	<br>
 
 	<div class="toast-container position-fixed top-0 start-0 p-3" id="container_toast"  >
 
@@ -19,7 +465,6 @@
 	<form method="post">
 
 		{% csrf_token %}
-
 
 	<div class="col-12 col-md-12 col-lg-12 col-xl-12">
 		<div class="card bg-white bg-opacity-50"> 
@@ -42,7 +487,7 @@
 					
 					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
 						<div class="mb-3">
-							<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота</label>
+							<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота &#8381;</label>
 							<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" required>	
 						</div>
 					</div>
@@ -57,7 +502,7 @@
 					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
 						<div class="mb-3">
 							<label for="exampleInputEmail1" class="form-label fs-6">Ответственный</label>
-							<input type="text" class="form-control form-control-kors" id="user" name="user" readonly required value="{{params.user.last_name}} {{params.user.first_name}}">	
+							<input type="text" class="form-control form-control-kors" id="user" name="user"  required value="{{params.user.last_name}} {{params.user.first_name}}">	
 						</div>
 					</div>
 
@@ -106,7 +551,6 @@
 
 					<p class="fs-4 text-center" id="no_cars"> <br> В данном лоте пока нет автомобилей <br> </p>
 					
-					<button type="button" class="btn btn-outline-secondary" id="add_cars"> <span class="icon-mbri-plus"> Добавить</span></button>
 					
 					<br>
 					<br>
@@ -126,8 +570,6 @@
 
 	</form>
 
-{% else %}
-
 	<form method="post">
 
 		{% csrf_token %}
@@ -141,43 +583,43 @@
 						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Дата создания</label>
-								<input type="text" list='options' class="form-control form-control-kors" id="" name="" placeholder="Укажите стоянку" value="{{params.auction.dataTime}}" readonly>											
+								<input type="text" list='options' class="form-control form-control-kors" id="" name="" placeholder="Укажите стоянку" value="{{params.auction.dataTime}}" >											
 							</div>
 						</div>
 
 						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">										
 								<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
-								<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" readonly>	
+								<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" >	
 							</div>
 						</div>
-						<!--
+						
 						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Код</label>
-								<input type="text" class="form-control form-control-kors" id="" name="" placeholder="0.00" value="{{params.auction.uid}}" readonly>	
+								<input type="text" class="form-control form-control-kors" id="" name="" placeholder="0.00" value="{{params.auction.uid}}" >	
 							</div>
 						</div>
-						-->
+						
 
 						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
-								<input type="text" list='options' class="form-control form-control-kors" id="store" name="store" placeholder="Укажите стоянку" value="{{params.auction.store.name}}" readonly>											
+								<input type="text" list='options' class="form-control form-control-kors" id="store" name="store" placeholder="Укажите стоянку" value="{{params.auction.store.name}}" >											
 							</div>
 						</div>
 
 						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Статус</label>
-								<input type="text" class="form-control form-control-kors" id="" name="" value="{{params.auction.status|default_if_none:'Новый'}}" readonly>	
+								<input type="text" class="form-control form-control-kors" id="" name="" value="{{params.auction.status|default_if_none:'Подгота́вливается'}}" >	
 							</div>
 						</div>
 
 						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
 							<div class="mb-3">
 								<label for="exampleInputEmail1" class="form-label fs-6">Ответственный</label>
-								<input type="text" class="form-control form-control-kors" id="" name="" readonly required value="{{params.auction.user.last_name}} {{params.auction.user.first_name}}">	
+								<input type="text" class="form-control form-control-kors" id="" name=""  required value="{{params.auction.user.last_name}} {{params.auction.user.first_name}}">	
 							</div>
 						</div>
 
@@ -189,8 +631,8 @@
 							<label class="fs-4"><span class="badge text-white bg-secondary bg-opacity-75" id="">Цена лота: - {{params.auction.start_price|floatformat:"2g"}} ₽ </span></label>
 
 							<div class="mb-3 d-none">
-								<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота</label>
-								<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" value="{{params.auction.start_price}}" readonly>	
+								<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота &#8381;</label>
+								<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" value="{{params.auction.start_price}}" >	
 							</div>
 						</div>
 
@@ -200,7 +642,7 @@
 
 					<div class="mb-3">
 						<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
-						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="3" readonly>{{params.auction.description}}</textarea>
+						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="3" >{{params.auction.description}}</textarea>
 					</div>
 					
 					<br>
@@ -256,10 +698,11 @@
 						<br>
 						<br>
 
-						<div class="row row-cols-1 g-4" id="cars" name="cars">
+						
 							
 							{% for structure in params.auction.cars %}
-							
+							<div class="row row-cols-1 g-1" id="cars" name="cars"></div>
+								
 								<div class="col text-dark bg-secondary bg-opacity-10"  id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}" style="margin-bottom:0.5rem; border-radius:0.5rem">
 									<div class="row row-cols-1 row-cols-md-2 row-cols-sm-2 row-cols-xl-4 g-4">
 										<div class="col"><img class="h-100" style="max-height:200px; border-radius:0.5rem;"  src="{{structure.car.get_photo}}"></div>
@@ -274,7 +717,6 @@
 										</div>
 										<div class="col">
 										<span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="info_car('{{structure.car.slug}}')"></span><br>					
-										
 										</div>
 									</div>
 									<input hidden id="cars_list_data_cost_price_{{structure.car.slug}}" value="{{structure.car.cost_price}}">
@@ -282,11 +724,11 @@
 									<input hidden id="cars_list_data_outlay_{{structure.car.slug}}" value="{{structure.car.outlay}}">
 									<input hidden name="cars_list_data_slug_{{structure.car.slug}}" value="{{structure.car.slug}}">
 								</div>
-
+							</div>
 							{% endfor %}
 
 							
-						</div>
+						
 						
 						<br>
 						<br>
@@ -298,8 +740,7 @@
 		</div>
 
 	</form>
-
-{% endif %}
+-->
 	
 	<div class="offcanvas offcanvas-start bg-dark text-white"  data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
 		<div class="offcanvas-header">
@@ -374,7 +815,7 @@
 								<label class="fs-7 text-secondary">Модификация</label>
 								<br>
 								<label id="info_car_modification_value"  class="fs-6">-</label>
-								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" readonly>	
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" >	
 							</div>
 						</div>
 					</div>	
@@ -388,7 +829,7 @@
 								<label for="info_car_run" class="fs-7 text-secondary">Пробег</label>
 								<br>
 								<label id="info_car_run_value"  class=" fs-6">-</label>
-								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" readonly>	
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" >	
 							</div>
 						</div>
 					</div>
@@ -401,8 +842,8 @@
 							<div class="">
 								<label for="info_car_price" class="fs-7 text-secondary">Текущая цена</label>
 								<br>
-								<label id="info_car_price_value"  class=" fs-6 fw-bold">-</label>
-								<input type="text" class="d-none form-control form-control-kors" id="info_car_price" readonly>	
+								<label id="info_car_price_value"  class=" fs-6">-</label>
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_price" >	
 							</div>
 						</div>
 					</div>
@@ -420,7 +861,7 @@
 								<label for="info_car_days_in_stok" class="fs-7 text-secondary">Дней на складе</label>
 								<br>
 								<label id="info_car_days_in_stok_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_days_in_stok" readonly>		
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_days_in_stok" >		
 							</div>
 						</div>
 					</div>
@@ -434,7 +875,7 @@
 								<label for="info_car_status_name" class="fs-7 text-secondary">Cтатус</label>
 								<br>
 								<label id="info_car_status_name_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_status_name" readonly>		
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_status_name" >		
 							</div>
 						</div>
 					</div>
@@ -448,7 +889,7 @@
 								<label for="info_car_stage_price" class="fs-7 text-secondary">Этап</label>
 								<br>
 								<label id="info_car_stage_price_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_stage_price" readonly>		
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_stage_price" >		
 							</div>
 						</div>
 					</div>
@@ -466,7 +907,7 @@
 								<label for="info_car_cost_price" class="fs-7 text-secondary">Себестоимость</label>
 								<br>
 								<label id="info_car_cost_price_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_cost_price" readonly>		
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_cost_price" >		
 							</div>
 						</div>
 					</div>
@@ -480,7 +921,7 @@
 								<label for="info_car_outlay" class="fs-7 text-secondary">Расходы</label>
 								<br>
 								<label id="info_car_outlay_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_outlay" readonly>		
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_outlay" >		
 							</div>
 						</div>
 					</div>
@@ -494,7 +935,7 @@
 								<label for="info_car_bcp" class="fs-7 text-secondary">БЦП</label>
 								<br>
 								<label id="info_car_bcp_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_bcp" readonly>		
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_bcp" >		
 							</div>
 						</div>
 					</div>
@@ -525,9 +966,29 @@
 			
 			<label class="fs-6"><span class="badge text-white bg-success bg-opacity-75">Интерактивная оценка </span></label> 
 			<br>
-
-			<label class="fs-6">Схема ЛКП</label>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний осмотр</span></label>
+			
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+				
+				
+			</div>
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
+			
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+				
+				
+			</div>
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП</span></label>
+			
 			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
+				
+				
+			</div>
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Фото повреждений</span></label>
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
 				
 				
 			</div>
@@ -536,7 +997,7 @@
 				<div class="col-12">
 					<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Работы по автомобилю</span></label>
 					<br>
-					<label class="fs-6" id="work_car">-</label>
+					<textarea class="form-control" id="work_car" rows="10"></textarea>
 				</div>				
 			</div>
 
@@ -698,7 +1159,7 @@
 				var html = ''
 				document.querySelector('#container_toast').innerHTML = html;
 
-				html = '<div id="toast_" class="toast bg-warning" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">';
+				html = '<div id="toast_" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">';
 				html += '   <div class="toast-header">';
 				html += '    <strong class="rounded me-2"><span class="icon-mbri-speed "></span></strong>';
 				html += '    ';
@@ -834,11 +1295,11 @@
 					html = ''
 					for (s_work = 0; s_work < i_work_podgotovka; s_work++) {
 						
-						html = html + obj.work_podgotovka[s_work]['name'] + '<br>';
+						html = html + obj.work_podgotovka[s_work]['name'] + '\n';
 						
 					};
 
-					$('#work_car').html(html);
+					$('#work_car').val(html);
 
 					let i_photo = obj.url.length;
 					
@@ -887,7 +1348,7 @@
 		};
 
 		$("#offcanvasRightClose" ).on("click", function() {
-		$('#offcanvasRight').removeClass('show');
+			$('#offcanvasRight').removeClass('show');
 		});
 
 		function refresh_data_online(){
@@ -946,7 +1407,6 @@
 			});
 		};
 
-	
 		function visible_loader(visible){
 			if (visible == true){
 				$('#load_gif').removeClass('d-none');
@@ -962,6 +1422,13 @@
 
 		};
 		
+		$('[id*="edit_car_info_"]').on("click", function() {
+			
+			var id = this.id.replace('edit_car_info_', '');
+			var id_open = 'cars_list_data_slug_' + id + '_modal';
+			$('#' + id_open).modal('show');
+
+		});
 
 	</script>
 

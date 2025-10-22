@@ -29,7 +29,7 @@ from django.core.files.base import ContentFile
 from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 import time
-from register.models import RegInteractivOcenka, RegSwapKors
+from register.models import RegEstimationPodgotovka, RegEstimationMCU, RegEstimationSS, RegInteractivOcenka, RegSwapKors
 from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
@@ -784,6 +784,23 @@ def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):
         return str(obj)
 
+def refresh_auction(auction):
+    
+    r   = requests.get(url_auction_kors_portal + '/api/get_auction/' + str(auction.uid)  +'/', auth=('Admin_auction', 'Audi80b4'))
+    if r.status_code == 200:
+        data = json.loads(r.text)
+        lot_info = data['lot_info']
+        if lot_info != None:
+            auction.rejection_reason = lot_info['rejection_reason']
+            if lot_info['profile_winner'] != None:
+                winner = lot_info['profile_winner']
+                auction.winner_name = winner['name']
+                auction.winner_phone = winner['phone']
+                auction.winner_email = winner['email']
+                auction.winner_price = lot_info['winning_bid']
+            auction.save()
+
+
 def send_auction(auction):
     
     store_serializer = RefStoreSerializer(auction.store, many=False).data
@@ -832,9 +849,12 @@ def send_auction(auction):
 def info_car_auction(slug):
     cars        = RefCarsOrganization.objects.filter(slug = slug)
     subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
-    cars    = cars.annotate(
+    cars        = cars.annotate(
         int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
         int_ocenka_diagnostika  = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
+        int_ocenka_work         = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_vnesh    = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_damage   = Value('', output_field=CharField())).annotate(
         int_ocenka_url_salon    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_pered    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_zad      = Value('', output_field=CharField())).annotate(
@@ -843,7 +863,8 @@ def info_car_auction(slug):
         int_ocenka_url_left     = Value('', output_field=CharField())).annotate(
         price_moderate          = Value(0, output_field=IntegerField())).annotate(
         price_medium            = Value(0, output_field=IntegerField())).annotate(
-        price_significant       = Value(0, output_field=IntegerField()))
+        price_significant       = Value(0, output_field=IntegerField())).annotate(
+        market_price            = Value(0, output_field=IntegerField()))
 
     data = list(cars.values('vin', 
                        'slug', 
@@ -857,6 +878,7 @@ def info_car_auction(slug):
                        'description_op',
                        'description_podgotovka',
                        'int_ocenka_diagnostika',
+                       'int_ocenka_work',
                        'int_ocenka_id',
                        'int_ocenka_url_salon',
                        'int_ocenka_url_pered',
@@ -864,9 +886,12 @@ def info_car_auction(slug):
                        'int_ocenka_url_up',
                        'int_ocenka_url_right',
                        'int_ocenka_url_left',
+                       'int_ocenka_url_vnesh',
+                       'int_ocenka_url_damage',
                        'price_moderate',
                        'price_medium',
                        'price_significant',
+                       'market_price',
                        group    = F('group_price'),
                        type_sale_name = F('type_sale__name'),
                        type_reception_name = F('type_reception__name'),
@@ -878,7 +903,7 @@ def info_car_auction(slug):
                        url          = F('prev_photo')))
     for car in data:
         car['url']                  = get_url_images(car['slug'])
-        
+        car['market_price']         = get_market_price(car)
         zg      = car['group']
         matrix  = SettingsMatrixAuction.objects.get(id = 1)
         if zg == 1: #400
@@ -915,6 +940,18 @@ def info_car_auction(slug):
             car['price_significant']    = car['price'] - matrix.charge_km_stage_3_5000
             
         int_ocenka_id               = car['int_ocenka_id']
+        
+        estimation = None
+        diagnostika = ''
+        if car['int_ocenka_id'] != None and car['int_ocenka_id'] != '': 
+            estimation  = RegInteractivOcenka.objects.get(id = car['int_ocenka_id'])
+            diagnostika = estimation.page_soglasovanie.comment_diagnostica
+
+        car['int_ocenka_url_vnesh']     = get_url_int(car['int_ocenka_id'], 'vnesh_car_all')
+        car['int_ocenka_url_damage']    = get_url_int(car['int_ocenka_id'], 'damage')
+        car['int_ocenka_diagnostika']   = diagnostika
+        car['int_ocenka_work']          = list_work(car['int_ocenka_id'])
+
         car['int_ocenka_url_salon'] = get_url_image_salon(car['int_ocenka_id'], 'osmotr_salon')
         car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
         car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
@@ -923,6 +960,33 @@ def info_car_auction(slug):
         car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
     
     return car
+
+def get_market_price(car):
+    infos = RegEstimationRefCarsOrganizations.objects.filter(car__slug = car['slug']).order_by('-date')
+    for info in infos:
+        return info.avg_price
+
+def list_work(int_ocenka):
+    work_podgotovka = list()
+    podgotovkas     = RegEstimationPodgotovka.objects.filter(estimation__id = int_ocenka)
+    for podgotovka in podgotovkas:
+        list_work = {
+            'name': podgotovka.name
+        }
+        work_podgotovka.append(list_work)
+    podgotovkas     = RegEstimationSS.objects.filter(estimation__id = int_ocenka)
+    for podgotovka in podgotovkas:
+        list_work = {
+            'name': podgotovka.name
+        }
+        work_podgotovka.append(list_work)
+    podgotovkas     = RegEstimationMCU.objects.filter(estimation__id = int_ocenka)
+    for podgotovka in podgotovkas:
+        list_work = {
+            'name': podgotovka.name
+        }
+        work_podgotovka.append(list_work)
+    return work_podgotovka 
 
 def get_url_image_salon(estimation_id, type_file):
     photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
@@ -941,6 +1005,27 @@ def get_url_image_osmotr(estimation_id, type_file):
     except:
         return '/media/nophoto.png'
     return '/media/nophoto.png'
+
+def get_url_int(estimation_id, type_file):
+    list_url = list()
+    if type_file == 'vnesh_car_all':
+        photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(Q(type_file = 'vnesh_car_all') | Q(type_file = 'pod_capot') | Q(type_file = 'vin'))
+    elif type_file == 'damage':
+        photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id  = estimation_id).filter(Q(type_file = 'salon_error') | Q(type_file = 'array_images_pered') | Q(type_file = 'array_images_vod') | Q(type_file = 'array_images_zad')
+                                                                                                       | Q(type_file = 'array_images_up')
+                                                                                                        | Q(type_file = 'array_images_pass')
+                                                                                                         | Q(type_file = 'fotos_salon_error')
+                                                                                                         | Q(type_file = 'light_error')
+                                                                                                          | Q(type_file = 'windshield_error') ).order_by('file_number') 
+        
+
+    for photo in photos:
+        try:
+            list_url.append(photo.file.url.replace('/media/','/media_dop/'))
+        except:
+            s = 1
+
+    return list_url
 
 def get_url_image(slug):
     photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization__slug = slug).filter(main = True).count()

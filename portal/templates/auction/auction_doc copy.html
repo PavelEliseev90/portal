@@ -1,0 +1,984 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %}  {% if params.new %} Новый лот аукциона {% else %} Лот аукциона {% endif %} {% endblock %}
+
+{% block title_navbar %} - {% if params.new %} Новый лот аукциона {% else %} Лот аукциона {% endif %} {% endblock %}
+    
+{% block content %}
+
+
+
+	<div class="toast-container position-fixed top-0 start-0 p-3" id="container_toast"  >
+
+	</div>
+	
+	<form method="post">
+
+		{% csrf_token %}
+
+	<div class="col-12 col-md-12 col-lg-12 col-xl-12">
+		<div class="card bg-white bg-opacity-50"> 
+			
+			<div class="card-body">
+				<div class="row">
+					
+					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="mb-3">
+							<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
+							
+							<select class="form-select" aria-label="" id="store" name="store">
+								<option selected text=""></option>
+								{% for store in params.select.stores %}
+									<option value='{{store.name}}' text="{{store.id}}">{{store.name}}</option>
+								{% endfor %} 
+							</select>										
+						</div>
+					</div>
+					
+					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="mb-3">
+							<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота</label>
+							<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" required>	
+						</div>
+					</div>
+
+					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="mb-3">
+							<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
+							<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" required>	
+						</div>
+					</div>
+
+					<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+						<div class="mb-3">
+							<label for="exampleInputEmail1" class="form-label fs-6">Ответственный</label>
+							<input type="text" class="form-control form-control-kors" id="user" name="user"  required value="{{params.user.last_name}} {{params.user.first_name}}">	
+						</div>
+					</div>
+
+				</div>
+				<br>
+				<div class="mb-3">
+					<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
+					<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="3" required></textarea>
+				</div>
+			
+			</div>
+		</div>
+	</div>
+
+	<hr style="width: 75%;">
+
+	<div class="col-12 col-md-12 col-lg-12 col-xl-12">
+		<div class="card bg-white bg-opacity-50"> 
+			
+			<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
+				<label class="form-label fs-6">Автомобили </label>
+				<div class="">
+					<div class="row">
+						<div class="col-auto">
+							
+						</div>
+						<div class="col-auto">
+							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_count">Автомобилей: - </span></label>
+						</div>
+						<div class="col-auto">
+							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_cost_price">Себестоимость: - </span></label>
+						</div>
+						<div class="col-auto">
+							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_outlay">Затраты: - </span></label>
+						</div>
+						<div class="col-auto">
+							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_price">Сумма продажи: - </span></label>
+						</div>					
+						<div class="col-auto">
+							<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="car_profit">Профит: - </span></label>
+						</div>
+						<div class="col-auto">
+							<label class="fs-5"><span class="badge text-white bg-success" id="car_profit_auction">Профит аукцион от: - </span></label>
+						</div>
+					</div>
+
+					<p class="fs-4 text-center" id="no_cars"> <br> В данном лоте пока нет автомобилей <br> </p>
+					
+					<button type="button" class="btn btn-outline-secondary" id="add_cars"> <span class="icon-mbri-plus"> Добавить</span></button>
+					
+					<br>
+					<br>
+
+					<div class="row row-cols-1 g-4" id="cars" name="cars">
+						
+					</div>
+					
+					<br>
+					<br>
+					<button class="btn btn-outline-success d-none" id="save"> <span class="icon-mbri-plus"> Сохранить</span></button>
+					
+				</div>
+			</div>
+		</div>
+	</div>
+
+	</form>
+
+	<form method="post">
+
+		{% csrf_token %}
+
+		<div class="col-12 col-md-12 col-lg-12 col-xl-12">
+			<div class="card bg-white bg-opacity-50"> 
+				
+				<div class="card-body">
+					<div class="row">
+						
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">
+								<label for="exampleInputEmail1" class="form-label fs-6">Дата создания</label>
+								<input type="text" list='options' class="form-control form-control-kors" id="" name="" placeholder="Укажите стоянку" value="{{params.auction.dataTime}}" >											
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">										
+								<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
+								<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" >	
+							</div>
+						</div>
+						
+						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+							<div class="mb-3">
+								<label for="exampleInputEmail1" class="form-label fs-6">Код</label>
+								<input type="text" class="form-control form-control-kors" id="" name="" placeholder="0.00" value="{{params.auction.uid}}" >	
+							</div>
+						</div>
+						
+
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">
+								<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
+								<input type="text" list='options' class="form-control form-control-kors" id="store" name="store" placeholder="Укажите стоянку" value="{{params.auction.store.name}}" >											
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">
+								<label for="exampleInputEmail1" class="form-label fs-6">Статус</label>
+								<input type="text" class="form-control form-control-kors" id="" name="" value="{{params.auction.status|default_if_none:'Подгота́вливается'}}" >	
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-2 col-xl-2">
+							<div class="mb-3">
+								<label for="exampleInputEmail1" class="form-label fs-6">Ответственный</label>
+								<input type="text" class="form-control form-control-kors" id="" name=""  required value="{{params.auction.user.last_name}} {{params.auction.user.first_name}}">	
+							</div>
+						</div>
+
+					</div>
+					
+					<div class="row">
+						
+						<div class="col-12 col-md-6 col-lg-3 col-xl-3">
+							<label class="fs-4"><span class="badge text-white bg-secondary bg-opacity-75" id="">Цена лота: - {{params.auction.start_price|floatformat:"2g"}} ₽ </span></label>
+
+							<div class="mb-3 d-none">
+								<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота</label>
+								<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" value="{{params.auction.start_price}}" >	
+							</div>
+						</div>
+
+					</div>
+
+					<br>
+
+					<div class="mb-3">
+						<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
+						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="3" >{{params.auction.description}}</textarea>
+					</div>
+					
+					<br>
+					<div class="row">
+						<div class="col-auto">
+							<button type="submit" name="send" id="send" class="btn btn-outline-success"><span class="icon-mbri-play"></span> Отправить </button>
+						</div>
+						<div class="col-auto">
+							<button type="submit"  name="update" id="update" class="btn btn-outline-success"><span class="icon-mbri-update"></span> Обновить информацию </button>
+						</div>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+
+		<hr style="width: 75%;">
+
+		<div class="col-12 col-md-12 col-lg-12 col-xl-12">
+			<div class="card bg-white bg-opacity-50"> 
+				
+				<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
+					<label class="form-label fs-6">Автомобили </label>
+					<div class="">
+						<div class="row">
+							<div class="col-auto">
+								
+							</div>
+							<div class="col-auto">
+								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_count">Автомобилей: - </span></label>
+							</div>
+							<div class="col-auto">
+								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_cost_price">Себестоимость: - </span></label>
+							</div>
+							<div class="col-auto">
+								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_outlay">Затраты: - </span></label>
+							</div>
+							<div class="col-auto">
+								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_price">Сумма продажи: - </span></label>
+							</div>					
+							<div class="col-auto">
+								<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="car_profit">Профит: - </span></label>
+							</div>
+							<div class="col-auto">
+								<label class="fs-5"><span class="badge text-white bg-success" id="car_profit_auction">Профит аукцион от: - </span></label>
+							</div>
+						</div>
+
+						<p class="fs-4 text-center d-none" id="no_cars"> <br> В данном лоте пока нет автомобилей <br> </p>
+						
+						<button type="button" class="btn btn-outline-secondary d-none" id="add_cars"> <span class="icon-mbri-plus"> Добавить</span></button>
+						
+						<br>
+						<br>
+
+						
+							
+							{% for structure in params.auction.cars %}
+							<div class="row row-cols-1 g-1" id="cars" name="cars"></div>
+								
+								<div class="col text-dark bg-secondary bg-opacity-10"  id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}" style="margin-bottom:0.5rem; border-radius:0.5rem">
+									<div class="row row-cols-1 row-cols-md-2 row-cols-sm-2 row-cols-xl-4 g-4">
+										<div class="col"><img class="h-100" style="max-height:200px; border-radius:0.5rem;"  src="{{structure.car.get_photo}}"></div>
+										<div class="col fs-5"> 
+											{{structure.car.modification_autoru.model.mark}} <br> {{structure.car.modification_autoru.model}} <br> {{structure.car.modification_autoru}} <br>  {{structure.car.year}}  г.в. <br>{{structure.car.run|floatformat:"0g"}} км.<br>
+										</div>
+										<div class="col">
+											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽ </span></label>
+											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Затраты: {{structure.car.outlay|floatformat:"2g"}} ₽ </span></label> 
+											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">БЦП: {{structure.car.bcp|floatformat:"2g"}} ₽ </span></label> 
+											<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="">Продажа: {{structure.car.price|floatformat:"2g"}} ₽ </span></label> 
+										</div>
+										<div class="col">
+										<span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="info_car('{{structure.car.slug}}')"></span><br>					
+										</div>
+									</div>
+									<input hidden id="cars_list_data_cost_price_{{structure.car.slug}}" value="{{structure.car.cost_price}}">
+									<input hidden id="cars_list_data_price_{{structure.car.slug}}" value="{{structure.car.price}}">
+									<input hidden id="cars_list_data_outlay_{{structure.car.slug}}" value="{{structure.car.outlay}}">
+									<input hidden name="cars_list_data_slug_{{structure.car.slug}}" value="{{structure.car.slug}}">
+								</div>
+							</div>
+							{% endfor %}
+
+							
+						
+						
+						<br>
+						<br>
+						<button class="btn btn-outline-success d-none" id="save"> <span class="icon-mbri-plus"> Сохранить</span></button>
+						
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</form>
+
+	
+	<div class="offcanvas offcanvas-start bg-dark text-white"  data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+		<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="offcanvasRightLabel"> Автомобили</h5>
+		<button type="button" class="btn-close bg-white" data-bs-dismiss="offcanvas" id="offcanvasRightClose" aria-label="Закрыть"></button>
+	</div>
+
+	<div class="row" style="margin-right: 0.2rem; margin-left: 0.2rem;">
+		<div class="col-11" style="padding: 0;">
+			<div class="mb-3">
+				<input type="text" class="form-control form-control-kors" id="search" name="search" placeholder="VIN, Марка, Модель, Цена" autocomplete="off">	
+			</div>		
+		</div>
+		<div class="col-1 h-100 align-items-center align-self-center justify-content-center" style="padding: 0;">
+			<span class="fs-5 icon-mbri-update" id="refresh"></span>
+		</div>
+	</div>
+	<hr style="width: 75%;">
+	<div class="offcanvas-body" style="padding-top: 0;">
+		<section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe">
+			<div class="">
+			
+				<div class="row align-items-center align-self-center cars-list" id="cars-list" name="cars-list">
+				
+				</div>
+
+				<div id="load_gif" class="justify-content-center text-center d-none" data-page="1" data-max="15">
+					<img src="/media/loading.gif" alt="">
+				</div>
+
+				<button class="btn btn-sm w-100 btn-secondary bg-gradient" id="more"> <span class="fs-5 icon-mbri-down" id="refresh"></span> Показать еще</button>
+				
+			</div>
+		</section>
+
+	</div>
+	</div>
+
+	<div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-scrollable">
+		<div class="modal-content">
+		<div class="modal-header">
+		<span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-truck"></span> Информация о автомобиле</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+			<div class="fs-5 fw-bold" id="info_car_name"></div>
+			
+			<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="info_car_type_reception">Тип продажи: - </span></label> 
+			<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="info_car_type_sale">Тип приема: - </span></label>
+			
+			<hr style="width: 75%;">
+
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Автомобиль</span></label>
+
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos">
+				
+			</div>
+
+			<hr style="width: 75%;">
+
+			<div class="row">
+				
+				<div class="col-12 col-sm-12 col-md-4 lg-3">
+					
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-setting2"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label class="fs-7 text-secondary">Модификация</label>
+								<br>
+								<label id="info_car_modification_value"  class="fs-6">-</label>
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" >	
+							</div>
+						</div>
+					</div>	
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-cd"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_run" class="fs-7 text-secondary">Пробег</label>
+								<br>
+								<label id="info_car_run_value"  class=" fs-6">-</label>
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" >	
+							</div>
+						</div>
+					</div>
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-cd"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_price" class="fs-7 text-secondary">Текущая цена</label>
+								<br>
+								<label id="info_car_price_value"  class=" fs-6">-</label>
+								<input type="text" class="d-none form-control form-control-kors" id="info_car_price" >	
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="col-12 col-sm-12 col-md-4 lg-3">
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-calendar"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_days_in_stok" class="fs-7 text-secondary">Дней на складе</label>
+								<br>
+								<label id="info_car_days_in_stok_value"  class="fs-6">-</label>
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_days_in_stok" >		
+							</div>
+						</div>
+					</div>
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-flag"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_status_name" class="fs-7 text-secondary">Cтатус</label>
+								<br>
+								<label id="info_car_status_name_value"  class="fs-6">-</label>
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_status_name" >		
+							</div>
+						</div>
+					</div>
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-delivery"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_stage_price" class="fs-7 text-secondary">Этап</label>
+								<br>
+								<label id="info_car_stage_price_value"  class="fs-6">-</label>
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_stage_price" >		
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="col-12 col-sm-12 col-md-4 lg-3">
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-calendar"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_cost_price" class="fs-7 text-secondary">Себестоимость</label>
+								<br>
+								<label id="info_car_cost_price_value"  class="fs-6">-</label>
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_cost_price" >		
+							</div>
+						</div>
+					</div>
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-flag"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_outlay" class="fs-7 text-secondary">Расходы</label>
+								<br>
+								<label id="info_car_outlay_value"  class="fs-6">-</label>
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_outlay" >		
+							</div>
+						</div>
+					</div>
+
+					<div class="row g-1">
+						<div class="col-1 text-center align-self-center">
+							<span class="fs-5 icon-mbri-delivery"></span>
+						</div>
+						<div class="col">
+							<div class="">
+								<label for="info_car_bcp" class="fs-7 text-secondary">БЦП</label>
+								<br>
+								<label id="info_car_bcp_value"  class="fs-6">-</label>
+								<input type="text" class="form-control d-none form-control-kors" id="info_car_bcp" >		
+							</div>
+						</div>
+					</div>
+
+				</div>
+			
+			</div>
+
+			<br>
+
+			<hr style="width: 75%;">
+			<div class="row">
+				<div class="col-12 col-sm-12 col-md-6 lg-3">
+					<div class="mb-3">
+						<label for="info_car_description_podgotovka" class="form-label fs-6">Комментарий для отдела подготовки</label>
+						<textarea class="form-control" id="info_car_description_podgotovka" rows="10"></textarea>
+					</div>
+				</div>
+				<div class="col-12 col-sm-12 col-md-6 lg-3">
+					<div class="mb-3">
+						<label for="info_car_description_op" class="form-label fs-6">Комментарий для отдела продаж</label>
+						<textarea class="form-control" id="info_car_description_op" rows="10"></textarea>
+					</div>
+				</div>
+			</div>
+
+			<hr style="width: 75%;">
+			
+			<label class="fs-6"><span class="badge text-white bg-success bg-opacity-75">Интерактивная оценка </span></label> 
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний осмотр</span></label>
+			
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+				
+				
+			</div>
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
+			
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+				
+				
+			</div>
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП</span></label>
+			
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
+				
+				
+			</div>
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Фото повреждений</span></label>
+			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
+				
+				
+			</div>
+			<br>
+			<div class="row g-1">
+				<div class="col-12">
+					<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Работы по автомобилю</span></label>
+					<br>
+					<textarea class="form-control" id="work_car" rows="10"></textarea>
+				</div>				
+			</div>
+
+			<br>
+			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Диагностика</span></label>
+			<div class="row">
+				<div class="col-12 col-sm-12">
+					<div class="mb-3">
+						
+						<textarea class="form-control" id="info_car_comment_diagnostica" rows="10"></textarea>
+					</div>
+				</div>
+			</div>
+			
+		</div>
+		<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+		</div>
+		</div>
+		</div>
+	</div>
+
+	<script>
+
+		var store_id 	= '';
+		var page 		= 0;
+		var scroll_data	= true;
+
+		$(document).ready(function() {
+			refresh_board();
+		});
+
+		$("#refresh").click(function(){
+			
+			page = 0;
+			
+			scroll_data = true;
+
+			visible_loader(true);
+
+			document.querySelector('#cars-list').innerHTML = '';
+
+			refresh_data_online();
+			
+		});
+		
+		$("#more").click(function(){
+			
+			page = page + 1;
+			
+			visible_loader(true);
+
+			refresh_data_online();
+			
+		});
+
+		$("#add_cars").click(function(){
+			
+			store_id = $('select#store option:selected').attr("text")
+
+			if (store_id == ''){
+
+				var html = ''
+				document.querySelector('#container_toast').innerHTML = html;
+
+				html = '<div id="toast_" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">';
+				html += '   <div class="toast-header">';
+				html += '    <strong class="rounded me-2"><span class="icon-mbri-speed "></span></strong>';
+				html += '    ';
+				html += '    <strong class="me-auto">АХ Корс</strong>';
+				html += '		<small></small>';
+				html += '		<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>';
+				html += '	</div>';
+				html += '	<div class="toast-body">';
+				html += '		Укажите стоянку';
+				html += '	</div>';
+				html += '</div>';
+				
+				document.querySelector('#container_toast').innerHTML += html;
+				
+				$('#toast_').toast('show');
+
+			} else {
+
+				document.querySelector('#cars-list').innerHTML = '';
+				
+				page = 0;
+
+				visible_loader(true);
+
+				refresh_data_online();
+				
+				visible_canvas();
+
+			};
+
+		});
+
+		function subbmit_car(slug){
+			
+			var count_car = $('#cars_list_data_id_' + slug).length;
+			
+			if (count_car == 0){
+				
+				var url     = '/auction/js/get_cars_lot_online/' + slug + '/';
+				$.get(url, function( data, status ) { 
+					
+					let i = data.length;
+
+					for (s = 0; s < i; s++) { 
+						
+						let obj = data[s];
+						var mark            = obj.mark_name;
+						var model           = obj.model_name;
+						var modification    = obj.modification_name;
+						var car_run 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.run,);
+						var car_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.price,);
+						var car_outlay 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.outlay,);
+						var car_bcp 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.bcp,);
+						var car_cost_price  = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.cost_price,);
+						var id  = obj.slug;
+
+						var click_delete = "delete_car('" + id + "')";
+						var click 		 = "info_car('" + id + "')";
+
+						html_list = '	<div class="col text-dark bg-white bg-opacity-10"  id="cars_list_data_id_' + id + '" name="cars_list_data_id_' + id + ' style="margin-bottom:0.5rem; border-radius:0.5rem">'
+						html_list += '		<div class="row row-cols-1 row-cols-md-2 row-cols-sm-2 row-cols-xl-4 g-4">'
+						html_list += '			<div class="col"><img class="h-100" style="max-height:200px; border-radius:0.5rem;"  src="' + obj.url[0] + '"></div>'
+						html_list += '			<div class="col fs-5">' + mark  + '<br>' + model + '<br>' + modification + '<br>' + obj.year + ' г.в.'  + '<br>' + car_run + ' км.' + '<br>' +'</div>'
+						html_list += '			<div class="col">'
+						html_list += '				<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Себестоимость: ' + car_cost_price  + ' ₽ </span></label>'
+						html_list += '				<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Затраты: ' + car_outlay  + ' ₽ </span></label> '
+						html_list += '				<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">БЦП: ' + car_bcp  + ' ₽ </span></label> '
+						html_list += '				<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="">Продажа: ' + car_price  + ' ₽ </span></label> '
+						html_list += '			</div>'
+						html_list += '			<div class="col">'
+						html_list += '              <span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click + '"></span><br>'					
+						html_list += '              <span class="fs-5 icon-mbri-close bg-danger bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click_delete + '"></span>'					
+						html_list += '			</div>'
+						html_list += '		</div>'
+						html_list += '		<input hidden id="cars_list_data_cost_price_' + id + '" value="'+ obj.cost_price + '">'
+						html_list += '		<input hidden id="cars_list_data_price_' + id + '" value="'+ obj.price + '">'
+						html_list += '		<input hidden id="cars_list_data_outlay_' + id + '" value="'+ obj.outlay + '">'
+						html_list += '		<input hidden name="cars_list_data_slug_' + id + '" value="'+ id + '">'
+						html_list += '	</div>';
+						
+						var html_before = document.querySelector('#cars').innerHTML;
+						document.querySelector('#cars').innerHTML = html_before + html_list ;
+						
+						$('#offcanvasRight').removeClass('show');
+					};
+
+					refresh_board();
+					
+				});
+				
+			} else {
+
+				var html = ''
+				document.querySelector('#container_toast').innerHTML = html;
+
+				html = '<div id="toast_" class="toast bg-warning" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">';
+				html += '   <div class="toast-header">';
+				html += '    <strong class="rounded me-2"><span class="icon-mbri-speed "></span></strong>';
+				html += '    ';
+				html += '    <strong class="me-auto">АХ Корс</strong>';
+				html += '		<small></small>';
+				html += '		<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>';
+				html += '	</div>';
+				html += '	<div class="toast-body">';
+				html += '		Автомобиль уже добавлен в документ аукциона!';
+				html += '	</div>';
+				html += '</div>';
+				
+				document.querySelector('#container_toast').innerHTML += html;
+				
+				$('#toast_').toast('show');
+
+			};		
+		}
+
+		function delete_car(slug){
+			
+			var id = '#cars_list_data_id_' + slug;
+			
+			var count_car = $(id).length;
+			if (count_car == 1 ){
+				$(id).remove();
+			};
+			refresh_board();
+		};
+
+		$('#price_start').bind('input', function() {
+			refresh_board(); // get the current value of the input field.
+		});
+
+		function refresh_board(){
+			
+			var price_lot = $('#price_start').val();
+
+			var count_car = $('[id*="cars_list_data_id_"]').length;
+			
+			var price_cars = 0;
+			var cost_price_cars = 0;
+			var outlay_cars = 0;
+			
+			var list_car = $('[id*="cars_list_data_id_"]');
+			for (s = 0; s < count_car; s++) {
+				var id = list_car[s].id.replace('cars_list_data_id_', '');
+				var price = $('#cars_list_data_price_' + id).val();
+				price_cars = price_cars + Number(price);
+				var cost_price = $('#cars_list_data_cost_price_' + id).val();
+				cost_price_cars = cost_price_cars + Number(cost_price);
+				var outlay = $('#cars_list_data_outlay_' + id).val();
+				outlay_cars = outlay_cars + Number(outlay);
+			}; 
+
+			price_cars_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(price_cars,);
+			cost_price_cars_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(cost_price_cars,);
+			outlay_cars_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(outlay_cars,);
+			
+			document.querySelector('#car_outlay').innerHTML = 'Затраты: ' + outlay_cars_str + ' ₽';
+			document.querySelector('#car_cost_price').innerHTML = 'Себестоимость: ' + cost_price_cars_str + ' ₽';
+			document.querySelector('#car_price').innerHTML = 'Продажа: ' + price_cars_str + ' ₽';
+			
+			car_profit_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(price_cars - cost_price_cars - outlay_cars,); 
+			document.querySelector('#car_profit').innerHTML = 'Профит: ' + car_profit_str + ' ₽'; 
+			
+			car_profit_auction_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(price_lot - cost_price_cars - outlay_cars,);
+			document.querySelector('#car_profit_auction').innerHTML = 'Профит аукцион от: ' + car_profit_auction_str + ' ₽'; 
+
+			document.querySelector('#car_count').innerHTML = 'Автомобилей: ' + count_car + ' шт.';
+			
+			if (count_car > 0){
+				$('#no_cars').addClass('d-none'); 
+				$('#save').removeClass('d-none'); 
+			}else{
+				$('#no_cars').removeClass('d-none'); 
+				$('#save').addClass('d-none'); 
+				
+			};
+		};
+
+		function info_car(slug){
+			
+			$('#rlk').modal('show');
+			var url     = '/auction/js/get_cars_lot_online/' + slug + '/';
+			$.get(url, function( data, status ) { 
+				
+				let i = data.length;
+				for (s = 0; s < i; s++) { 
+					
+					let obj = data[s];
+					var razdel = '<span class="icon-mbri-minus"></span>';
+					var mark            = obj.mark_name;
+					var model           = obj.model_name;
+					var modification    = obj.modification_name;
+					var car_run 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.run,);
+					var car_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.price,);
+					var car_outlay 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.outlay,);
+					var car_bcp 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.bcp,);
+					var car_cost_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.cost_price,);
+					
+
+					$('#info_car_status_name').val(obj.status_name);
+					$('#info_car_stage_price').val(obj.stage_price_name);
+
+					$('#info_car_days_in_stok').val(obj.days_in_stok);
+					
+					$('#info_car_cost_price').val(car_cost_price);
+					$('#info_car_bcp').val(car_bcp);
+					$('#info_car_outlay').val(car_outlay);
+					$('#info_car_price').val(car_price);
+					
+					$('#info_car_run_value').html(car_run + ' км.'); 
+					$('#info_car_modification_value').html(modification);
+					$('#info_car_days_in_stok_value').html(obj.days_in_stok);
+					$('#info_car_status_name_value').html(obj.status_name);
+					$('#info_car_price_value').html(car_price + ' &#8381;');
+					$('#info_car_stage_price_value').html(obj.stage_price_name);
+					$('#info_car_cost_price_value').html(car_cost_price + ' &#8381;');
+					$('#info_car_bcp_value').html(car_bcp + ' &#8381;');
+					$('#info_car_outlay_value').html(car_outlay + ' &#8381;');
+					
+
+					$('#info_car_run').val(car_run);
+					$('#info_car_price').val(car_price);
+					$('#info_car_description_podgotovka').val(obj.description_podgotovka);
+					$('#info_car_comment_diagnostica').val(obj.int_ocenka_diagnostika);
+					$('#info_car_type_sale').html('Тип продажи: ' + obj.type_sale_name);
+					$('#info_car_type_reception').html('Тип приема автомобиля: ' + obj.type_reception_name);
+					$('#info_car_name').html('<label>' + mark + ' ' + model + ' ' + modification  + razdel + obj.year + razdel + obj.vin +  '</label>');
+					
+					let i_work_podgotovka = obj.work_podgotovka.length;					
+					html = ''
+					for (s_work = 0; s_work < i_work_podgotovka; s_work++) {
+						
+						html = html + obj.work_podgotovka[s_work]['name'] + '\n';
+						
+					};
+
+					$('#work_car').val(html);
+
+					let i_photo = obj.url.length;
+					
+					html = ''
+
+					for (s_photo = 0; s_photo < i_photo; s_photo++) {
+						
+						var index = '" data-index=' + s_photo;
+						var dop = ' active-mobile ';
+						if (s_photo > 0){
+							dop = '';	
+						} 
+						html += '<div class="gallery-item ' + dop + '" id="foto_' + s_photo + index + '>'
+						html += '	<img src="' + obj.url[s_photo] + '" src1="' + obj.url[s_photo] + '">'
+						html += '</div>'
+						
+					};
+					html_body = '';
+					html_body += '<div class="gallery-item ' + dop + '" id="foto_body' + 1 + 1 + '">'
+					html_body += '	<img src="' + obj.int_ocenka_url_pered + '" src1="' + obj.int_ocenka_url_pered + '">'
+					html_body += '</div>'
+					html_body += '<div class="gallery-item ' + dop + '" id="foto_body' + 1 + 2 + '">'
+					html_body += '	<img src="' + obj.int_ocenka_url_up + '" src1="' + obj.int_ocenka_url_up + '">'
+					html_body += '</div>'
+					html_body += '<div class="gallery-item ' + dop + '" id="foto_body' + 1 + 3 + '">'
+					html_body += '	<img src="' + obj.int_ocenka_url_zad + '" src1="' + obj.int_ocenka_url_zad + '">'
+					html_body += '</div>'
+					html_body += '<div class="gallery-item ' + dop + '" id="foto_body' + 1 + 4 + '">'
+					html_body += '	<img src="' + obj.int_ocenka_url_left + '" src1="' + obj.int_ocenka_url_left + '">'				
+					html_body += '</div>'
+					html_body += '<div class="gallery-item ' + dop + '" id="foto_body' + 1 + 5 + '">'
+					html_body += '	<img src="' + obj.int_ocenka_url_right + '" src1="' + obj.int_ocenka_url_right + '">'
+					html_body += '</div>'
+					
+					document.querySelector('#info_car_photos_int_body').innerHTML = html_body;
+					document.querySelector('#info_car_photos').innerHTML = html;
+
+				} 
+				
+			});
+			
+		};
+
+		function visible_canvas(){
+		$('#offcanvasRight').addClass('show');
+		};
+
+		$("#offcanvasRightClose" ).on("click", function() {
+		$('#offcanvasRight').removeClass('show');
+		});
+
+		function refresh_data_online(){
+			
+			var search  = $("#search").val();
+			
+			var url     = '/auction/js/get_cars_lot_online/?store_id=' + store_id + '&search=' + search + '&page='+page;
+
+			$.get(url, function( data, status ) { 
+				
+				let i = data.length;
+
+				if (i == 0){
+					scroll_data = false;					
+				}else{
+					scroll_data = true;
+				};
+
+				for (s = 0; s < i; s++) { 
+					
+					let obj = data[s];
+					
+					var id  = obj.slug;
+
+					var html = '';
+					
+					var mark            = obj.mark_name;
+					var model           = obj.model_name;
+					var modification    = obj.modification_name;
+					var car_run 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.run,);
+					var car_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.price,);
+					var html 				= '';
+					var click 				= "info_car('" + id + "')";
+					var click_success 		= "subbmit_car('" + id + "')";
+
+					html_list = '			<div id="cars-list_data_' + id + '" href="' + obj.id + '/" target="_blank" class="text-white bg-white bg-opacity-10 " style="margin-bottom:0.5rem; border-radius:0.5rem">'
+					html_list += '   			<div class="col-12">'
+					html_list += '                <div class="">'
+					html_list += '                      <div class="row">'
+					html_list += '							<div class="col-5" style="padding:0;"><img class="h-100" style="border-radius:0.5rem;"  src="' + obj.url + '"></div>'
+					html_list += '							<div class="col">' + mark  + '<br>' + model + '<br>' + modification + '<br>' + obj.year + ' г.в.'  + '<br>' + car_run + ' км.' + '<br><label class="fs-6 fw-bold">' + car_price + ' ₽' +'</label></div>'
+					html_list += '                		</div>'
+					html_list += '                		<hr width: 75%;">'
+					html_list += '                		<span class="fs-5 icon-mbri-plus bg-success bg-opacity-50 text-white" style="border-radius:50%;" onclick="' + click_success + '"></span>'
+					html_list += '                		<span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click + '")></span>'
+					html_list += '                </div>'
+					html_list += '            </div>'
+					html_list += '        </div>'
+
+					document.querySelector('#cars-list').innerHTML = document.querySelector('#cars-list').innerHTML  + html_list ;
+					
+				};
+				
+				visible_loader(false);
+				
+			});
+		};
+
+	
+		function visible_loader(visible){
+			if (visible == true){
+				$('#load_gif').removeClass('d-none');
+			} else{
+				$('#load_gif').addClass('d-none');
+			};
+
+			if (scroll_data == true){
+				$("#more").removeClass('d-none')
+			} else {
+				$('#more').addClass('d-none');
+			};
+
+		};
+		
+
+	</script>
+
+{% endblock %}

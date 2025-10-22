@@ -1983,17 +1983,22 @@ class RefCarsOrganizationAuctionStatus(models.Model):
 
 
 class Auction(models.Model):
-    uid             = models.UUIDField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
-    status          = models.ForeignKey(RefCarsOrganizationAuctionStatus, on_delete=models.PROTECT, null=True, verbose_name="Статус")  
-    number          = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
-    dataTime        = models.DateTimeField('Дата', default=datetime.now, blank=False)
-    dateStart       = models.DateTimeField('Желаемая дата аукциона', null=True, blank=True)
-    dateEnd         = models.DateTimeField('Дата завершения аукциона', null=True, blank=True)
-    store           = models.ForeignKey(RefStore, on_delete=models.SET_NULL, null=True, verbose_name="Стоянка")
-    user            = models.ForeignKey(User, null=True, on_delete=models.SET_NULL,verbose_name="Ответственный", blank=True)
-    description     = models.CharField('Описание', default='', null=True, max_length=12500, blank=False)
-    start_price     = models.IntegerField("Стартовая цена", default=0, blank=True)
-
+    uid                 = models.UUIDField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
+    status              = models.ForeignKey(RefCarsOrganizationAuctionStatus, on_delete=models.PROTECT, null=True, verbose_name="Статус")  
+    number              = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
+    dataTime            = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    dateStart           = models.DateTimeField('Желаемая дата аукциона', null=True, blank=True)
+    dateEnd             = models.DateTimeField('Дата завершения аукциона', null=True, blank=True)
+    store               = models.ForeignKey(RefStore, on_delete=models.SET_NULL, null=True, verbose_name="Стоянка")
+    user                = models.ForeignKey(User, null=True, on_delete=models.SET_NULL,verbose_name="Ответственный", blank=True)
+    description         = models.CharField('Описание', default='', null=True, max_length=12500, blank=False)
+    start_price         = models.IntegerField("Стартовая цена", default=0, blank=True)
+    rejection_reason    = models.TextField('Причина отклонения', blank=True, null=True, max_length=1000, default='')
+    winner_name         = models.TextField('Победитель наименование', blank=True, null=True, max_length=1000, default='')
+    winner_phone        = models.TextField('Победитель телефон', blank=True, null=True, max_length=1000, default='')
+    winner_email        = models.TextField('Победитель email', blank=True, null=True, max_length=1000, default='')
+    winner_price        = models.IntegerField("Выигрышная цена", default=0, blank=True)
+    
     def count_cars(self):
         return AuctionStructure.objects.filter(auction = self).count()
     
@@ -2020,7 +2025,9 @@ class AuctionStructure(models.Model):
     auction         = models.ForeignKey(Auction, on_delete=models.SET_NULL, null=True, verbose_name="Документ аукциона") 
     car             = models.ForeignKey(RefCarsOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Автомобиль") 
     description     = models.CharField('Описание', default='', null=True, max_length=12500, blank=False)
-        
+    diagnostic      = models.CharField('Диагностика', default='', null=True, max_length=12500, blank=False)
+    works           = models.CharField('Запланированные работы', default='', null=True, max_length=12500, blank=False)
+
     def __str__(self):
         return "{} ({} - {})".format(self.auction, self.car, self.description)
 
