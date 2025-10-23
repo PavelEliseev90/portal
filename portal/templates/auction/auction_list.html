@@ -96,260 +96,6 @@
 	</div>
 </div>
 
-<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-fullscreen-sm-down modal-dialog-scrollable">
-		<div class="modal-content">
-			<div class="modal-header bg-dark text-white">
-				<h5 class="modal-title" id="mobileFiltersModalLabel">
-					<span class="icon-mbri-setting me-2"></span>Фильтры поиска
-				</h5>
-				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-			</div>
-			<div class="modal-body">
-				
-			</div>
-			<div class="modal-footer bg-light">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-				<button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
-					<span class="icon-mbri-search me-2"></span>Применить фильтры
-				</button>
-			</div>
-		</div>
-	</div>
-</div>
-
-<form method="get" id="mobileFiltersForm">
-	
-	<div class="row g-1">
-		
-
-		<div class="col-auto">
-			<!-- Город -->
-			<div class="filter-section">
-				<div class="filter-title_">Город</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_city" placeholder="Поиск по городу">
-				</div>
-				<div class="filter-options">
-					{% for city in params.selected.citys %}
-						{% if city.city__name|length > 0 %}
-							<label class="filter-option" id="mobile_city_{{city.city}}">
-								<input type="checkbox" name="city[]" value="{{city.city}}" 
-									{% if city.city in params.filtr.filter_city %} checked {% endif %}>
-								<span class="filter-text">{{city.city__name}}</span>
-							</label>
-						{% endif %}
-					{% endfor %}
-				</div>
-			</div>
-		</div>
-		<div class="col-auto">
-		<!-- Марка -->
-		<div class="filter-section">
-			<div class="filter-title_">Марка</div>
-			<div class="filter-search">
-				<input type="text" class="form-control" id="mobile_search_marks" placeholder="Поиск по марке">
-			</div>
-			<div class="filter-options">
-				{% for mark in params.selected.marks %}
-					<label class="filter-option" id="mobile_mark_{{mark.pk}}">
-						<input type="checkbox" name="mark[]" value="{{mark.pk}}" 
-							{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
-						<span class="filter-text">{{mark.name}}</span>
-					</label>
-				{% endfor %}
-			</div>
-		</div>
-		</div>
-		<div class="col-auto">
-			<!-- Коробка передач -->
-			<div class="filter-section">
-				<div class="filter-title_">Коробка передач</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_gear" placeholder="Поиск по коробке передач">
-				</div>
-				<div class="filter-options">
-					{% for gear in params.selected.gears %}
-						<label class="filter-option" id="mobile_gear_{{gear.pk}}">
-							<input type="checkbox" name="gear[]" value="{{gear.pk}}" 
-								{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
-							<span class="filter-text">{{gear.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-		</div>
-		<div class="col-auto">
-		<!-- Кузов -->
-			<div class="filter-section">
-				<div class="filter-title_">Кузов</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_body" placeholder="Поиск по кузову">
-				</div>
-				<div class="filter-options">
-					{% for body in params.selected.bodys %}
-						<label class="filter-option" id="mobile_body_{{body.pk}}">
-							<input type="checkbox" name="body[]" value="{{body.pk}}" 
-								{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
-							<span class="filter-text">{{body.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-		</div>
-		<div class="col-auto">
-		<!-- Привод -->
-		<div class="filter-section">
-			<div class="filter-title_">Привод</div>
-			<div class="filter-search">
-				<input type="text" class="form-control" id="mobile_search_drives" placeholder="Поиск по приводу">
-			</div>
-			<div class="filter-options">
-				{% for drive in params.selected.drives %}
-					{% if drive.name|length > 0 %}
-						<label class="filter-option" id="mobile_drive_{{drive.pk}}">
-							<input type="checkbox" name="drive[]" value="{{drive.pk}}" 
-								{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
-							<span class="filter-text">{{drive.name}}</span>
-						</label>
-					{% endif %}
-				{% endfor %}
-			</div>
-		</div>
-		</div>
-		<div class="col-auto">
-		<!-- Год выпуска -->
-		<div class="filter-section">
-			<div class="filter-title_">Год выпуска</div>
-			<div class="filter-range">
-				<div class="row">
-					<div class="col-6">
-						<input type="number" class="form-control" name="year_start" 
-							value="{{params.filtr.year_start}}" placeholder="1950">
-						
-					</div>
-					<div class="col-6">
-						<input type="number" class="form-control" name="year_end" 
-							value="{{params.filtr.year_end}}" placeholder="2025">
-					
-					</div>
-				</div>
-			</div>
-		</div>
-		</div>
-		<div class="col-auto">
-		<!-- Пробег -->
-		<div class="filter-section">
-			<div class="filter-title_">Пробег</div>
-			<div class="filter-range">
-				<div class="row">
-					<div class="col-6">
-						<input type="number" class="form-control" name="run_start" 
-							value="{{params.filtr.run_start}}" placeholder="0">
-						
-					</div>
-					<div class="col-6">
-						<input type="number" class="form-control" name="run_end" 
-							value="{{params.filtr.run_end}}" placeholder="500000">
-						
-					</div>
-				</div>
-			</div>
-		</div>
-		</div>
-		<div class="col-auto">
-		<!-- Цена -->
-		<div class="filter-section">
-			<div class="filter-title_">Цена</div>
-			<div class="filter-range">
-				<div class="row">
-					<div class="col-6">
-						<input type="number" class="form-control" name="price_start" 
-							value="{{params.filtr.price_start}}" placeholder="0">
-						
-					</div>
-					<div class="col-6">
-						<input type="number" class="form-control" name="price_end" 
-							value="{{params.filtr.price_end}}" placeholder="10000000">
-						
-					</div>
-				</div>
-			</div>
-		</div>
-		</div>
-
-		{% if request.user.is_authenticated %}
-			
-			<div class="col-auto">
-				<!-- VIN -->
-				<div class="filter-section">
-					<div class="filter-title_">VIN</div>
-					<div class="filter-input">
-						<input type="text" class="form-control" name="vin" 
-							value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
-					</div>
-				</div>
-			</div>
-			<div class="col-auto">
-			<!-- Статус -->
-			<div class="filter-section">
-				<div class="filter-title_">Статус</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_status" placeholder="Поиск по статусу">
-				</div>
-				<div class="filter-options">
-					{% for status in params.selected.statuses %}
-						<label class="filter-option" id="mobile_status_{{status.pk}}">
-							<input type="checkbox" name="status[]" value="{{status.pk}}" 
-								{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
-							<span class="filter-text">{{status.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-			</div>
-			<div class="col-auto">
-			<!-- Этап УС -->
-			<div class="filter-section">
-				<div class="filter-title_">Этап УС</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_stage_price" placeholder="Поиск по этапу УС">
-				</div>
-				<div class="filter-options">
-					{% for stage_price in params.selected.stage_prices %}
-						<label class="filter-option" id="mobile_stage_price_{{stage_price.pk}}">
-							<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" 
-								{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
-							<span class="filter-text">{{stage_price.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-			</div>
-			<div class="col-auto">
-			<!-- Вид продажи -->
-			<div class="filter-section">
-				<div class="filter-title_">Вид продажи</div>
-				<div class="filter-search">
-					<input type="text" class="form-control" id="mobile_search_type_sale" placeholder="Поиск по виду продажи">
-				</div>
-				<div class="filter-options">
-					{% for type_sale in params.selected.type_sales %}
-						<label class="filter-option" id="mobile_type_sale_{{type_sale.pk}}">
-							<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" 
-								{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
-							<span class="filter-text">{{type_sale.name}}</span>
-						</label>
-					{% endfor %}
-				</div>
-			</div>
-			</div>
-		{% endif %}
-		
-	</div>
-	
-
-</form>
 
 <!-- Мобильная кнопка фильтров -->
 <div class="d-block d-md-none">
@@ -362,6 +108,7 @@
 	</div>
 </div>
 <!--
+
 <form method="get" id="filtersForm">
 	<div class="pc-filters-container d-none d-md-block">
 		<div class="pc-filters-header">
@@ -617,28 +364,27 @@
 	</div>
 </form>
 -->
-	<div class="pc-filters-footer">
-		<div class="pc-filters-actions">
-			<a href="new_lots/" class="btn btn-outline-secondary">
-				<span class="icon-mbri-play me-2"></span>Новый лот аукциона
-			</a>
-			<button type="submit" class="btn btn-primary">
-				<span class="icon-mbri-search me-2"></span>Показать
-			</button>
-		</div>
-	</div>
 
+<div class="row">
+	<div class="col-auto">
+		<a href="new_lots/" class="btn btn-secondary bg-gradient">
+			<span class="icon-mbri-play me-2"></span>Новый лот аукциона
+		</a>
+	</div>
+</div>
+
+	
 	<br>
 
 	<div class="row">
 		<div class="col-auto">
-			<label class="fs-4"><span class="badge text-white bg-success bg-opacity-75" id="car_profit_auction"> <span class="icon-tag"></span> Лотов: {{params.count}} </span></label>
+			<label class="fs-4"><span class="badge text-white bg-success bg-gradient bg-opacity-75" id="car_profit_auction"> <span class="icon-tag"></span> Лотов: {{params.count}} </span></label>
 		</div>
 		<div class="col-auto">
-			<label class="fs-4"><span class="badge text-white bg-success bg-opacity-75" id="car_profit_auction"> <span class="icon-mbri-credit-card"></span> Сумма лотов: {{params.amount|floatformat:"2g"}} </span></label>
+			<label class="fs-4"><span class="badge text-white bg-success bg-gradient bg-opacity-75" id="car_profit_auction"> <span class="icon-mbri-credit-card"></span> Сумма лотов: {{params.amount|floatformat:"2g"}} </span></label>
 		</div>
 		<div class="col-auto">
-			<label class="fs-4"><span class="badge text-white bg-success bg-opacity-75" id="car_profit_auction"> <span class="icon-truck"></span> Автомобилей: {{params.count_cars}} </span></label>
+			<label class="fs-4"><span class="badge text-white bg-success bg-gradient bg-opacity-75" id="car_profit_auction"> <span class="icon-truck"></span> Автомобилей: {{params.count_cars}} </span></label>
 		</div>
 	</div>
 
@@ -648,19 +394,21 @@
 		
 		<div class="row g-3">
     		{% for object in params.paginator.object_list %}
-    			<div class="col-12 col-md-12 col-lg-12 col-xl-12">
-    				<div class="card bg-white bg-opacity-50"> 
+    			<div class="col-12 col-md-12 col-lg-12 col-xl-12 text-white">
+    				<div class="bg-kors-card"> 
     					
-    					<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
+    					<div class="bg-kors-card-body" style="padding: 0rem; padding-top: 0rem;">
+							
+							<div style="padding-left: 0.8rem; padding-right: 0.8rem;">
+								{% if object.status == None %} <label class="fs-5"><span class="badge text-white bg-warning bg-gradient"> <span class="fs-6 icon-tag"></span> подгатавливается </span></label> {% else %} <label class="fs-5"><span class="badge text-white bg-secondary bg-gradient"> <span class="fs-6 icon-tag"></span> {{object.status}} </span></label> {% endif %}
+							</div>
+							
+							<br>
 
     						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
     						
     							<div class="col-12 col-sm-2">
     								<span class="fs-6  icon-mbri-plus"> {{object.dataTime}}</span>
-    							</div>
-
-								<div class="col-12 col-sm-1">
-    								{% if object.status == None %} <label class="fs-5"><span class="badge text-white bg-warning" id="car_profit_auction"> <span class="fs-6  icon-tag"></span> Новый </span></label> {% else %} {{object.status}} {% endif %}
     							</div>
 
 								<div class="col-12 col-sm-2">
@@ -675,19 +423,32 @@
     								<span class="fs-6  icon-mbri-pin"> {{object.store.name}}</span>
     							</div>
 								
+								<div class="col-12 col-sm-1">
+									<span class="fs-6  icon-truck"> {{object.count_cars}}</span>
+								</div>
+
 								<div class="col-12 col-sm-2">
     								<span class="fs-6  icon-mbri-credit-card"> {{object.start_price|floatformat:"2g"}} &#8381;</span>
     							</div>
-								<div class="col-12 col-sm-1">
-    								<span class="fs-6  icon-truck"> {{object.count_cars}}</span>
-    							</div>
-								<div class="col-6">
-    								<span class="fs-6  icon-mbri-user">{{object.user.last_name}} {{object.user.first_name}}</span>
-    							</div>
-								<div class="col-6 text-end">
-    								<a href="{{object.uid}}/"> <span class="fs-6  icon-mbri-preview"> Посмотреть</span></a>
-    							</div>
+								
     						</div>
+
+							<br>
+
+							<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
+								
+								<div class="col-6">
+									<span class="fs-6  icon-mbri-user">{{object.user.last_name}} {{object.user.first_name}}</span>
+								</div>
+								<div class="col-6 text-end">
+									
+								</div>
+							</div>
+							
+							<br>
+							
+							<a href="{{object.uid}}/"> <span class="fs-6  icon-mbri-preview"> Посмотреть</span></a>
+							
     					</div>
     				</div>
     			</div>

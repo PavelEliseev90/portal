@@ -44,13 +44,13 @@
 					
 					<div class="mb-3">										
 						<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
-						<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" >	
+						<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" {% if params.auction.dateStart == None  %} min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% else %} min="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% endif %}  {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>	
 					</div>
 
 					<div class="mb-3">
 						<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
 						
-						<select class="form-select" aria-label="" id="store" name="store">
+						<select class="form-select" aria-label="" id="store" name="store" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
 							<option selected text=""></option>
 							{% for store in params.select.stores %}
 								<option value='{{store.name}}' text="{{store.id}}" {% if store.id == params.auction.store.id %} selected {% endif %}>{{store.name}}</option>
@@ -60,7 +60,8 @@
 
 					<div class="mb-3">
 						<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота &#8381;</label>
-						<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" placeholder="0.00" value="{{params.auction.start_price}}">	
+						<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" min="0" placeholder="0.00" value="{{params.auction.start_price}}" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+						<label for="exampleInputEmail1" id="min_price_start" class="form-label fs-8 text-secondary"> </label>	
 					</div>
 					
 				</div>
@@ -68,7 +69,7 @@
 				<div class="col-12 col-sm-8 h-100">
 					<div class="mb-3">
 						<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
-						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="8">{{params.auction.description}}</textarea>
+						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="8" {% if params.auction.winner_price > 0 %} readonly {% endif %}>{{params.auction.description}}</textarea>
 					</div>					
 				</div>
 
@@ -79,7 +80,7 @@
 			<label for="exampleInputEmail1" class="form-label fs-6">Ответственный: {{params.auction.user.profiles.eco_name}}</label> 
 			
 			<br>
-			<div class="row g-3">
+			<div class="row g-3 {% if params.auction.winner_price > 0 %} d-none {% endif %} ">
 				<div class="col-auto">
 					<button type="submit" class="btn btn-success bg-gradient" id="save" name="save"> <span class="icon-mbri-save"> Сохранить</span></button>
 				</div>
@@ -443,7 +444,7 @@
 
 			<hr style="width: 75%;">
 
-			<button type="button" class="btn btn-secondary bg-gradient" id="add_cars"> <span class="icon-mbri-plus"> Добавить автомобиль</span></button>
+			<button type="button" class="btn btn-secondary bg-gradient {% if params.auction.winner_price > 0 %} d-none {% endif %}" id="add_cars"> <span class="icon-mbri-plus"> Добавить автомобиль</span></button>
 		
 		</div>
 	</div>
@@ -1197,7 +1198,7 @@
 		function refresh_board(){
 			
 			var price_lot = $('#price_start').val();
-
+			
 			var count_car = $('[id*="cars_list_data_id_"]').length;
 			
 			var price_cars = 0;
@@ -1223,20 +1224,47 @@
 			document.querySelector('#car_cost_price').innerHTML = 'Себестоимость: ' + cost_price_cars_str + ' ₽';
 			document.querySelector('#car_price').innerHTML = 'Продажа: ' + price_cars_str + ' ₽';
 			
-			car_profit_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(price_cars - cost_price_cars - outlay_cars,); 
+			var car_profit_int = price_cars - cost_price_cars - outlay_cars;
+			car_profit_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(car_profit_int,); 
 			document.querySelector('#car_profit').innerHTML = 'Профит: ' + car_profit_str + ' ₽'; 
-			
-			car_profit_auction_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(price_lot - cost_price_cars - outlay_cars,);
+			if (car_profit_int < 0){
+				$('#car_profit').addClass('bg-danger'); 
+				$('#car_profit').removeClass('bg-success');
+			}else{
+				$('#car_profit').removeClass('bg-danger'); 
+				$('#car_profit').addClass('bg-success');
+			};
+
+			var car_profit_auction_int = price_lot - cost_price_cars - outlay_cars;
+			car_profit_auction_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(car_profit_auction_int,);
 			document.querySelector('#car_profit_auction').innerHTML = 'Профит аукцион от: ' + car_profit_auction_str + ' ₽'; 
+			
+			$('#price_start').attr('min', price_cars);
+			document.querySelector('#min_price_start').innerHTML = 'минимальная стартовая цена лота: ' + price_cars_str + ' ₽';
+
+			if (car_profit_auction_int < 0){
+				$('#car_profit_auction').addClass('bg-danger'); 
+				$('#car_profit_auction').removeClass('bg-success');
+			}else{
+				$('#car_profit_auction').removeClass('bg-danger'); 
+				$('#car_profit_auction').addClass('bg-success');
+			};
 
 			document.querySelector('#car_count').innerHTML = 'Автомобилей: ' + count_car + ' шт.';
 			
+			price_cars
+
 			if (count_car > 0){
 				$('#no_cars').addClass('d-none'); 
 				$('#save').removeClass('d-none'); 
+				$('#update').removeClass('d-none'); 
+				$('#send').removeClass('d-none'); 
+
 			}else{
 				$('#no_cars').removeClass('d-none'); 
 				$('#save').addClass('d-none'); 
+				$('#update').addClass('d-none'); 
+				$('#send').addClass('d-none'); 
 				
 			};
 		};

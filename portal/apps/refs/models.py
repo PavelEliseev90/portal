@@ -1972,6 +1972,7 @@ class RefCarsOrganizationFiles(models.Model):
 
 class RefCarsOrganizationAuctionStatus(models.Model):
     name                    = models.CharField("Наименование", max_length=512, default='', blank=True)
+    name_auction            = models.CharField("Наименование на сайте аукциона", max_length=512, default='', blank=True)
     
     def __str__(self):
         return "{}".format(self.name)

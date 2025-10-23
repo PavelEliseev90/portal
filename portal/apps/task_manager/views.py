@@ -4,7 +4,7 @@ import glob, os
 from powerbi.models import Bi_logs, Bi_wash
 from django.conf import settings
 import requests
-from refs.models import RefCarsOrganizationFiles, RefCarsOrganization, RefManufacturer, RefIb, RefCategoryProduct, RefGroupProduct, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefAvito, RefAvitoComplectation
+from refs.models import RefCarsOrganizationAuctionStatus, RefCarsOrganizationFiles, RefCarsOrganization, RefManufacturer, RefIb, RefCategoryProduct, RefGroupProduct, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefAvito, RefAvitoComplectation
 from documents.models import DocCarShipment, DocRLK, DocRLKEvents, DocLO
 from recognition.models import Check_settings_cvc, Records_voice_recorder_cvc_checklist_tematics, Records_voice_recorder_cvc_tematics, Records_voice_recorder_cvc_checklist, Records_voice_recorder, Records_voice_recorder_cvc, Records_voice_recorder_queue, Records_voice_recorder_cvc_checklist_kg, Records_questions
 import platform
@@ -791,15 +791,21 @@ def refresh_auction(auction):
         data = json.loads(r.text)
         lot_info = data['lot_info']
         if lot_info != None:
-            auction.rejection_reason = lot_info['rejection_reason']
+            auction.status              = get_status(lot_info['status'])
+            auction.rejection_reason    = lot_info['rejection_reason']
+
             if lot_info['profile_winner'] != None:
                 winner = lot_info['profile_winner']
                 auction.winner_name = winner['name']
                 auction.winner_phone = winner['phone']
                 auction.winner_email = winner['email']
                 auction.winner_price = lot_info['winning_bid']
+
             auction.save()
 
+def get_status(status_name):
+    status, created = RefCarsOrganizationAuctionStatus.objects.filter(name = status_name).get_or_create(name = status_name)
+    return status
 
 def send_auction(auction):
     
@@ -844,7 +850,11 @@ def send_auction(auction):
     
     r   = requests.post(url_auction_kors_portal + '/api/refresh_auction/', json = data_info, auth=('Admin_auction', 'Audi80b4'))
     if r.status_code == 200:
-        s = 1
+        data_answer   = json.loads(r.text)
+        if data_answer['success']:
+            status = data_answer['status']
+            auction.status = get_status(status)
+            auction.save()
 
 def info_car_auction(slug):
     cars        = RefCarsOrganization.objects.filter(slug = slug)
@@ -2048,7 +2058,7 @@ def refresh_price():
     
     task_prices = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка')
     #task_prices = TaskRegPrices.objects.filter(id = 133)
-    
+
     for task in task_prices:
        
         task.status = 'Начата обработка'
