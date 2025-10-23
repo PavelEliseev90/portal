@@ -2028,6 +2028,10 @@ class AuctionStructure(models.Model):
     description     = models.CharField('Описание', default='', null=True, max_length=12500, blank=False)
     diagnostic      = models.CharField('Диагностика', default='', null=True, max_length=12500, blank=False)
     works           = models.CharField('Запланированные работы', default='', null=True, max_length=12500, blank=False)
+    op              = models.CharField('Комментарий для ОП', default='', null=True, max_length=12500, blank=False)
+    podgotovka      = models.CharField('Комментарий для подготовки', default='', null=True, max_length=12500, blank=False)
+    autoteka_prev   = models.BooleanField('Показывать автотеку', default = False)
+    success         = models.BooleanField('Проверено', default = False)
 
     def __str__(self):
         return "{} ({} - {})".format(self.auction, self.car, self.description)
