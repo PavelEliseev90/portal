@@ -6722,9 +6722,15 @@ def auction_doc(request, slug_auction):
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
                 structure = AuctionStructure()
-                structure.auction       = auction 
-                structure.diagnostic    = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
-                structure.works         = request.POST.get('cars_list_data_' + pk + '_works' , '')
+                structure.auction           = auction 
+                structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
+                structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
+                structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
+                structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
+                if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
+                    structure.autoteka_prev     = True
+                else:
+                    structure.autoteka_prev     = False
                 structure.car = car
                 structure.save()
 

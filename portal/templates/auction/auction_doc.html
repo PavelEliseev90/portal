@@ -50,7 +50,7 @@
 					<div class="mb-3">
 						<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
 						
-						<select class="form-select" aria-label="" id="store" name="store" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+						<select class="form-select" aria-label="" id="store" name="store" {% if params.auction.winner_price > 0 %} disabled {% endif %}>
 							<option selected text=""></option>
 							{% for store in params.select.stores %}
 								<option value='{{store.name}}' text="{{store.id}}" {% if store.id == params.auction.store.id %} selected {% endif %}>{{store.name}}</option>
@@ -180,7 +180,15 @@
 
 								</div>
 							</div>
+
+							{% if structure.success %}
+								<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75 bg-gradient"> Данные по автомобилю проверены </span></label>
+							{% else %}
+								<label class="fs-5"><span class="badge text-white bg-danger bg-opacity-75 bg-gradient"> Проверьте данные автомобиля </span></label>
+							{% endif %}
+							
 							<hr class="hidesite" style="width: 75%; ">
+							
 							<label class="fs-6" id="edit_car_info_{{structure.car.slug}}"> <span class="icon-mbri-edit"></span> Редактировать</label>
 							
 						</div>
@@ -370,13 +378,22 @@
 										<div class="col-12 col-sm-12 col-md-6 lg-3">
 											<div class="mb-3">
 												<label for="" class="form-label fs-6">Комментарий для отдела подготовки</label>
-												<textarea class="form-control" id="" rows="10">{{structure.car.description_podgotovka}}</textarea>
+												{% if structure.podgotovka  != '' %}
+													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.podgotovka}}</textarea>
+												{% else %}
+													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_podgotovka}}</textarea>
+												{% endif %}
 											</div>
 										</div>
 										<div class="col-12 col-sm-12 col-md-6 lg-3">
 											<div class="mb-3">
 												<label for="" class="form-label fs-6">Комментарий для отдела продаж</label>
-												<textarea class="form-control" id="" rows="10">{{structure.car.description_op}}</textarea>
+												{% if structure.op  != '' %}
+													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.op}}</textarea>
+												{% else %}
+												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_op}}</textarea>
+												{% endif %}
+												
 											</div>
 										</div>
 									</div>
@@ -424,7 +441,16 @@
 											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_diagnostika" rows="10">{{structure.diagnostic}}</textarea>
 										</div>			
 									</div>
-						
+
+									<br>
+									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" name="" id="">Автотека</span></label>
+									<br>
+									<div class="btn-group" role="group" aria-label="Вертикальная группа кнопок-переключателей">
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="vbtn-radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
+										<label class="btn btn-outline-danger " for="vbtn-radio1">Не показывать</label>
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="vbtn-radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
+										<label class="btn btn-outline-success " for="vbtn-radio2">Показывать</label>
+									</div>
 								</div>
 
 								<div class="modal-footer">

@@ -829,7 +829,12 @@ def send_auction(auction):
         car_info = {
             'car'           : RefCarsOrganizationSerializer(auction_car.car, many=False).data,
             'description'   : auction_car.description,
-            'dop_info'      : info_car_auction(auction_car.car.slug)
+            'dop_info'      : info_car_auction(auction_car.car.slug),
+            'diagnostic'    : auction_car.diagnostic,
+            'works'         : auction_car.works,
+            'op'            : auction_car.op,
+            'podgotovka'    : auction_car.podgotovka,
+            'autoteka_prev' : auction_car.autoteka_prev,
         }
         list_cars.append(car_info)
     
@@ -864,6 +869,9 @@ def info_car_auction(slug):
         int_ocenka_diagnostika  = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
         int_ocenka_work         = Value('', output_field=CharField())).annotate(
         int_ocenka_url_vnesh    = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_salon_all    = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_wheel        = Value('', output_field=CharField())).annotate(
+        int_ocenka_url_diagnostic    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_damage   = Value('', output_field=CharField())).annotate(
         int_ocenka_url_salon    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_pered    = Value('', output_field=CharField())).annotate(
@@ -890,6 +898,9 @@ def info_car_auction(slug):
                        'int_ocenka_diagnostika',
                        'int_ocenka_work',
                        'int_ocenka_id',
+                       'int_ocenka_url_salon_all',
+                       'int_ocenka_url_wheel',
+                       'int_ocenka_url_diagnostic',
                        'int_ocenka_url_salon',
                        'int_ocenka_url_pered',
                        'int_ocenka_url_zad',
@@ -959,6 +970,11 @@ def info_car_auction(slug):
 
         car['int_ocenka_url_vnesh']     = get_url_int(car['int_ocenka_id'], 'vnesh_car_all')
         car['int_ocenka_url_damage']    = get_url_int(car['int_ocenka_id'], 'damage')
+        
+        car['int_ocenka_url_diagnostic']    = get_url_int(car['int_ocenka_id'], 'diagnostic')
+        car['int_ocenka_url_wheel']         = get_url_int(car['int_ocenka_id'], 'wheel')
+        car['int_ocenka_url_salon_all']     = get_url_int(car['int_ocenka_id'], 'salon')
+
         car['int_ocenka_diagnostika']   = diagnostika
         car['int_ocenka_work']          = list_work(car['int_ocenka_id'])
 
@@ -1018,17 +1034,26 @@ def get_url_image_osmotr(estimation_id, type_file):
 
 def get_url_int(estimation_id, type_file):
     list_url = list()
+    
     if type_file == 'vnesh_car_all':
         photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(Q(type_file = 'vnesh_car_all') | Q(type_file = 'pod_capot') | Q(type_file = 'vin'))
+    
     elif type_file == 'damage':
         photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id  = estimation_id).filter(Q(type_file = 'salon_error') | Q(type_file = 'array_images_pered') | Q(type_file = 'array_images_vod') | Q(type_file = 'array_images_zad')
                                                                                                        | Q(type_file = 'array_images_up')
                                                                                                         | Q(type_file = 'array_images_pass')
                                                                                                          | Q(type_file = 'fotos_salon_error')
                                                                                                          | Q(type_file = 'light_error')
-                                                                                                          | Q(type_file = 'windshield_error') ).order_by('file_number') 
-        
-
+                                                                                                          | Q(type_file = 'windshield_error') ).order_by('file_number')
+    elif type_file == 'diagnostic':
+        photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id  = estimation_id).filter(type_file = 'diagnostic').order_by('file_number') 
+    
+    elif type_file == 'wheel':
+        photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id  = estimation_id).filter(Q(type_file = 'kolesa') | Q(type_file = 'kolesa2')).order_by('file_number') 
+    
+    elif type_file == 'salon':
+        photos = RegRegInteractivOcenkaFiles.objects.filter(estimation__id  = estimation_id).filter(type_file = 'salon_all').order_by('file_number') 
+         
     for photo in photos:
         try:
             list_url.append(photo.file.url.replace('/media/','/media_dop/'))
