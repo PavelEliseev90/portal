@@ -6681,6 +6681,7 @@ def auction_doc(request, slug_auction):
         new = False
         auction = Auction.objects.get(uid = slug_auction)
         user = auction.user
+    
     if user == None:
         user = request.user   
 
@@ -6737,7 +6738,8 @@ def auction_doc(request, slug_auction):
         'auction'       : auction,
         'new'           : new,
         'user'          : user,
-        'select'        : select
+        'select'        : select,
+        'now'           : DT.datetime.now()
     }
     
     return render(request, "auction/auction_doc.html", {'params': params})

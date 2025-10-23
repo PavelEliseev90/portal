@@ -4442,9 +4442,15 @@ hr[style*="width: 75%"] {
 }
 
 .bg-kors-card-body{
-	background: linear-gradient(0deg, #ff9a4d90 0%, #ff9a4d50 50%, #ff9a4d90 100%);
+	background: linear-gradient(45deg, #f3f3f4 15%, #dadce080 30%, #f3f3f4 100%);
 	border-radius: 0.5rem;
 	padding: 0.5rem;
+	transition: all 0.5s ease;
+	border-color: #f3f3f4;
+}
+
+.bg-kors-card-body:hover {
+	background: linear-gradient(45deg, #f3f3f4 0%, #dadce0 30%, #f3f3f4 100%);
 }
 
 #mobileFiltersModal .btn-primary:hover {
