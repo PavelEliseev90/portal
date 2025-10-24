@@ -6723,22 +6723,24 @@ def auction_doc(request, slug_auction):
                 car     = RefCarsOrganization.objects.get(slug = pk)
                 
                 structure, created = AuctionStructure.objects.filter(Q(auction = auction) and Q(car = car)).get_or_create(Q(auction = auction) and Q(car = car)) 
-    
-                structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
-                structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
-                structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
-                structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
+
+                try:
+                    structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
+                    structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
+                    structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
+                    structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
                 
-                if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
-                    structure.autoteka_prev     = True
-                else:
-                    structure.autoteka_prev     = False
-                
-                if request.POST.get('cars_list_data_' + pk + '_success' , False)  == 'true':
-                    structure.success     = True
-                else:
-                    structure.success     = False
-                
+                    if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
+                        structure.autoteka_prev     = True
+                    else:
+                        structure.autoteka_prev     = False
+                    
+                    if request.POST.get('cars_list_data_' + pk + '_success' , False)  == 'true':
+                        structure.success     = True
+                    else:
+                        structure.success     = False
+                except:
+                    s=1
                 structure.save()
 
         if 'send' in request.POST:
