@@ -2399,10 +2399,11 @@ def exchange_bu(request):
     list_los                = list()
     list_agreements         = list()
 
-    #Филиалы
-    filials  = data['Filials']
-    if len(filials) > 0:
-        list_filials = load_filials(filials)
+    if 'Filials' in data:
+        #Филиалы
+        filials  = data['Filials']
+        if len(filials) > 0:
+            list_filials = load_filials(filials)
 
     #Сотрудники
     staffs  = data['Staffs']
