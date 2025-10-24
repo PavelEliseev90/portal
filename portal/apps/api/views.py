@@ -2387,6 +2387,7 @@ def exchange_bu(request):
     data            = json.loads(body_unicode)
     
     list_staff              = list()
+    list_filials            = list()
     list_cars               = list()
     list_сustomers          = list()
     list_order_service      = list()
@@ -2397,6 +2398,11 @@ def exchange_bu(request):
     list_smss               = list()
     list_los                = list()
     list_agreements         = list()
+
+    #Филиалы
+    filials  = data['Filials']
+    if len(filials) > 0:
+        list_filials = load_filials(filials)
 
     #Сотрудники
     staffs  = data['Staffs']
@@ -2454,6 +2460,7 @@ def exchange_bu(request):
 
     #Ответ
     to = {
+        'Filials'           : list_filials,
         'Staffs'            : list_staff,
         'Cars'              : list_cars,
         'Customers'         : list_сustomers,
@@ -2696,6 +2703,21 @@ def load_staffs(staffs):
             answer_data.append(answer)
         except:
             error = staff 
+    return answer_data
+
+def load_filials(filials):
+    
+    answer_data = list()
+    for filial in filials:
+        try:
+            filial_object = get_filial(filial)
+            answer = {
+                'Uin'       : filial_object.uin,
+                'Version'   : filial['Version']
+            }
+            answer_data.append(answer)
+        except:
+            error = 1 
     return answer_data
 
 def load_cars(cars):
