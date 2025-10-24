@@ -166,19 +166,38 @@
 					<div class="card bg-white" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}" style="margin-bottom: 0.5rem;">
 						<div class="card-body">
 							<div class="row g-1  text-dark" style="border-radius:0.5rem; padding: 0.2rem;">
+								
 								<div class="col-12 col-sm-3">
 									<img class="h-100" style="max-height: 200px; border-radius:0.5rem;"  src="{{structure.car.get_photo}}">
 								</div>
+
 								<div class="col-12 col-sm-3">
-									<label class="fs-5"> {{structure.car.modification_autoru.model.mark}} <br> {{structure.car.modification_autoru.model}} <br> {{structure.car.modification_autoru}} <br>  {{structure.car.year}}  г.в. <br>{{structure.car.run|floatformat:"0g"}} км.<br></label>
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Марка:</label> {{structure.car.modification_autoru.model.mark}} </p> 
+									
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Модель:</label> {{structure.car.modification_autoru.model}} </p> 
+
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Модификация:</label> {{structure.car.modification_autoru}} </p> 
+
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Год выпуска:</label> {{structure.car.year}}  г.в.  </p> 
+
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Пробег:</label> {{structure.car.run|floatformat:"0g"}} км. </p> 
+
 								</div>
+
 								<div class="col-12 col-sm-6">
 									
 									<hr class="hidesite" style="width: 75%; ">
 
-									<label class="fs-5"> Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽ <br> Затраты: {{structure.car.outlay|floatformat:"2g"}} ₽ <br> БЦП: {{structure.car.bcp|floatformat:"2g"}} ₽ <br>  Продажа: {{structure.car.price|floatformat:"2g"}} ₽<br></label>
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Себестоимость:</label> {{structure.car.cost_price|floatformat:"2g"}} ₽ </p> 
+									
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Затраты:</label> {{structure.car.outlay|floatformat:"2g"}} ₽ </p> 
+
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">БЦП:</label> {{structure.car.bcp|floatformat:"2g"}} ₽ </p> 
+
+									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Продажа:</label> {{structure.car.price|floatformat:"2g"}} ₽ </p> 
 
 								</div>
+
 							</div>
 
 							{% if structure.success %}
@@ -203,7 +222,7 @@
 							<div class="modal-dialog modal-xl modal-dialog-scrollable">
 								<div class="modal-content">
 									<div class="modal-header">
-										<span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-truck"></span>Редактирование данных автомомобиля</h5>
+										<span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-truck"></span> {{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}} 	&#8226; {{structure.car.year}} 	&#8226; {{structure.car.vin}} </h5>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 									</div>
 								<div class="modal-body">
@@ -211,23 +230,7 @@
 									
 									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Тип продажи: - {{structure.car.type_sale.name}} </span></label> 
 									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Тип приема: - {{structure.car.type_reception.name}}</span></label>
-									
-									<hr style="width: 75%;">
-						
-									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Автомобиль</span></label>
-						
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos">
-										
-										{% for obj in structure.car.get_files %}
-											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-												<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
-											</div>											
-										{% endfor %}
-										
-									</div>
-
-									<input type="file" class="form-control" id="images_car" name="images_car" accept="image/*;capture=camera" multiple/>
-                          
+																		
 									<hr style="width: 75%;">
 						
 									<div class="row">
@@ -348,8 +351,7 @@
 													<div class="">
 														<label for="info_car_outlay" class="fs-7 text-secondary">Расходы</label>
 														<br>
-														<label id="info_car_outlay_value"  class="fs-6">{{structure.car.outlay|floatformat:"2g"}} ₽</label>
-															
+														<label id="info_car_outlay_value"  class="fs-6">{{structure.car.outlay|floatformat:"2g"}} ₽</label>															
 													</div>
 												</div>
 											</div>
@@ -362,8 +364,7 @@
 													<div class="">
 														<label for="info_car_bcp" class="fs-7 text-secondary">БЦП</label>
 														<br>
-														<label id="info_car_bcp_value"  class="fs-6">{{structure.car.bcp|floatformat:"2g"}} ₽</label>
-																
+														<label id="info_car_bcp_value"  class="fs-6">{{structure.car.bcp|floatformat:"2g"}} ₽</label>																
 													</div>
 												</div>
 											</div>
@@ -371,14 +372,13 @@
 										</div>
 									
 									</div>
-						
 									<br>
 						
 									<div class="row">
 										<div class="col-12 col-sm-12 col-md-6 lg-3">
 											<div class="mb-3">
 												<label for="" class="form-label fs-6">Комментарий для отдела подготовки</label>
-												{% if structure.podgotovka  != '' %}
+												{% if structure.podgotovka != '' or structure.success %}
 													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.podgotovka}}</textarea>
 												{% else %}
 													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_podgotovka}}</textarea>
@@ -388,10 +388,10 @@
 										<div class="col-12 col-sm-12 col-md-6 lg-3">
 											<div class="mb-3">
 												<label for="" class="form-label fs-6">Комментарий для отдела продаж</label>
-												{% if structure.op  != '' %}
-													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.op}}</textarea>
+												{% if structure.op != '' or structure.success %}
+													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.op}}</textarea>
 												{% else %}
-												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_op}}</textarea>
+												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.car.description_op}}</textarea>
 												{% endif %}
 												
 											</div>
@@ -400,61 +400,135 @@
 						
 									<hr style="width: 75%;">
 									
-									<label class="fs-6"><span class="badge text-white bg-success bg-opacity-75">Интерактивная оценка </span></label> 
-									<br>
-									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний осмотр</span></label>
-									
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний вид</span></label>
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_vnesh">
 										
-										
+										{% for obj in structure.car.get_files %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
+											</div>											
+										{% endfor %}
+										{% for obj in structure.info_car_auction_data.int_ocenka_url_vnesh %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj}}" src1="{{obj}}">												
+											</div>											
+										{% endfor %}
 									</div>
-									<br>
-									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
+									<input type="file" class="form-control" id="images_car_{{structure.car.slug}}" name="images_car_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+                          			<br>
+
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
 									
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
-										
-										
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
+										{% for obj in structure.info_car_auction_data.int_ocenka_url_salon_all %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj}}" src1="{{obj}}">												
+											</div>											
+										{% endfor %}										
 									</div>
-									<br>
-									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП</span></label>
-									
+									<input type="file" class="form-control" id="images_salon_{{structure.car.slug}}" name="images_salon_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+                          			<br>
+						
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП и салона</span></label>
 									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
-										
-										
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_pered}}" src1="{{structure.info_car_auction_data.int_ocenka_url_pered}}">												
+										</div>
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_right}}" src1="{{structure.info_car_auction_data.int_ocenka_url_right}}">												
+										</div>
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_zad}}" src1="{{structure.info_car_auction_data.int_ocenka_url_zad}}">												
+										</div>
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_left}}" src1="{{structure.info_car_auction_data.int_ocenka_url_left}}">												
+										</div>
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_up}}" src1="{{structure.info_car_auction_data.int_ocenka_url_up}}">												
+										</div>
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_salon}}" src1="{{structure.info_car_auction_data.int_ocenka_url_salon}}">												
+										</div>
 									</div>
+									<input type="file" class="form-control" id="images_shema_{{structure.car.slug}}" name="images_shema_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
 									<br>
-									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Фото повреждений</span></label>
+
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Повреждения</span></label>
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
+											{% for obj in structure.info_car_auction_data.int_ocenka_url_damage %}
+												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+													<img src="{{obj}}" src1="{{obj}}">												
+												</div>											
+											{% endfor %}										
+										</div>
+									</div>
+									<input type="file" class="form-control" id="images_damage_{{structure.car.slug}}" name="images_damage_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+									<br>
+
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Колеса</span></label>
+									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
+										{% for obj in structure.info_car_auction_data.int_ocenka_url_wheel %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj}}" src1="{{obj}}">												
+											</div>											
+										{% endfor %}
+									</div>
+									<input type="file" class="form-control" id="images_damage_{{structure.car.slug}}" name="images_damage_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+									<br>
+
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Диагностика</span></label>
 									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
 										
-										
+										{% for obj in structure.info_car_auction_data.int_ocenka_url_diagnostic %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj}}" src1="{{obj}}">												
+											</div>											
+										{% endfor %}										
 									</div>
 									<br>
+
 									<div class="row g-1">
 										<div class="col-12 col-sm-6">
-											<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">Работы по автомобилю</span></label>
+											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">Работы по автомобилю</span></label>
 											<br>
 											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_works" rows="10">{{structure.works}}</textarea>
 										</div>	
 										<div class="col-12 col-sm-6">
-											<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">Диагностика</span></label>
+											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">Диагностика</span></label>
 											<br>
 											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_diagnostika" rows="10">{{structure.diagnostic}}</textarea>
 										</div>			
 									</div>
 
 									<br>
-									<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" name="" id="">Автотека</span></label>
+									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" name="" id="">Автотека</span></label>
 									<br>
 									<div class="btn-group" role="group" aria-label="Вертикальная группа кнопок-переключателей">
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="vbtn-radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
-										<label class="btn btn-outline-danger " for="vbtn-radio1">Не показывать</label>
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="vbtn-radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
-										<label class="btn btn-outline-success " for="vbtn-radio2">Показывать</label>
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
+										<label class="btn btn-outline-danger " style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_vbtn-radio1"><span class="icon-mbri-unlink"></span> Не показывать</label>
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
+										<label class="btn btn-outline-success " style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_vbtn-radio2"><span class="icon-mbri-link"></span> Показывать</label>
 									</div>
+
+									<br>
+									<br>
+
+									<hr style="width: 75%;">
+									
+									<label class="fs-5">Данные по автомобилю проверены, информация достоверна и готова к передаче на портал аукциона</label>
+									<br>
+									<div class="btn-group" role="group" aria-label="">
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
+										<label class="btn btn-outline-danger" style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_success_radio1"> <span class="icon-mbri-close"></span> Нет</label>
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
+										<label class="btn btn-outline-success" style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_success_radio2"> <span class="icon-mbri-success"></span> Да </label>
+									</div>
+
 								</div>
 
 								<div class="modal-footer">
-									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>
 								</div>
 
 							</div>

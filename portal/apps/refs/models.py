@@ -2033,6 +2033,10 @@ class AuctionStructure(models.Model):
     autoteka_prev   = models.BooleanField('Показывать автотеку', default = False)
     success         = models.BooleanField('Проверено', default = False)
 
+    def info_car_auction_data(self):
+        from task_manager.views import info_car_auction
+        return info_car_auction(self.car.slug)
+
     def __str__(self):
         return "{} ({} - {})".format(self.auction, self.car, self.description)
 
@@ -2047,3 +2051,34 @@ class AuctionStructure(models.Model):
         db_table = 'auctionStructure'
         verbose_name = "Аукцион состав"
         verbose_name_plural = "Аукцион состав"
+
+
+class AuctionStructureFiles(models.Model):
+    auction_structure     = models.ForeignKey(AuctionStructure, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль аукциона")
+    file        = models.ImageField(upload_to='cars_images_auction/%Y/%m/%d/', max_length=100, verbose_name="Файл", blank=True, null=True)
+    file_mini   = models.ImageField(upload_to='cars_images_auction/%Y/%m/%d/', max_length=100, verbose_name="Файл маленький", blank=True, null=True)
+    file_bak    = models.ImageField(upload_to='cars_images_auction/%Y/%m/%d/', max_length=100, verbose_name="Файл без фона", blank=True, null=True)
+    main        = models.BooleanField('Главный', default=False) 
+    url         = models.CharField("УРЛ", max_length=512, default='', blank=True)
+    url_mini    = models.CharField("УРЛ мини", max_length=512, default='', blank=True)
+    name        = models.CharField("Наименование", max_length=512, default='', blank=True)
+    car         = models.BooleanField('Автомобиль', default=False) 
+    type_file   = models.BooleanField('Тип файла', default=False) 
+
+    def is_video(self):
+        list_world_name = self.file.name.lower().split('.')
+        format = list_world_name[-1]
+        if format.find('jpg') > -1 or format.find('jpeg') > -1 or format.find('svg') > -1 or format.find('gif') > -1 or format.find('png') > -1 or format.find('tiff') > -1:
+            return False
+        return True
+
+    def __str__(self):
+        return "{}".format(self.auction_structure)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['auction_structure'])
+        ]
+        db_table = 'auctionStructureFiles'
+        verbose_name = "Фото автомобиля для аукциона"
+        verbose_name_plural = "Фотографии автомобиля для аукциона"
