@@ -34,7 +34,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -86,7 +86,6 @@ def get_path_in_dict(dict_filtr):
         else:
             path = path + '&' + str(key) + '=' + dict_filtr[key]
     return path
-
 
 def custom_page_not_found_view(request, exception):
     
@@ -3253,6 +3252,7 @@ def upload_auto_ru_post(request):
                     else:
                         newAutoruModification = AutoruModification.objects.filter(model = autoru_model).filter(idSite = int(modificationID))[0]
                 '''
+
                 try:
                     newAutoruModification = AutoruModification.objects.get(idSite = modificationID)
                 except:
@@ -6714,24 +6714,31 @@ def auction_doc(request, slug_auction):
         auction.description         = request.POST.get('description', '')        
         auction.save()
 
-        AuctionStructure.objects.filter(auction = auction).delete()
+        #cars_struct = AuctionStructure.objects.filter(auction = auction).delete()
 
         for key in request.POST.keys():
             if key.startswith('cars_list_data_slug_'):
                 val_key = request.POST.get(key)
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
-                structure = AuctionStructure()
-                structure.auction           = auction 
+                
+                structure, created = AuctionStructure.objects.filter(Q(auction = auction) and Q(car = car)).get_or_create(Q(auction = auction) and Q(car = car)) 
+    
                 structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
                 structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
                 structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
                 structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
+                
                 if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
                     structure.autoteka_prev     = True
                 else:
                     structure.autoteka_prev     = False
-                structure.car = car
+                
+                if request.POST.get('cars_list_data_' + pk + '_success' , False)  == 'true':
+                    structure.success     = True
+                else:
+                    structure.success     = False
+                
                 structure.save()
 
         if 'send' in request.POST:
