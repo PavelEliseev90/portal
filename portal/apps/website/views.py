@@ -6722,7 +6722,7 @@ def auction_doc(request, slug_auction):
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
                 
-                structure, created = AuctionStructure.objects.filter(Q(auction = auction) and Q(car = car)).get_or_create(Q(auction = auction) and Q(car = car)) 
+                structure, created = AuctionStructure.objects.filter(auction = auction).filter(car = car).get_or_create(auction = auction, car = car) 
 
                 try:
                     structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
