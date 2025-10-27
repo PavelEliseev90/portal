@@ -6669,9 +6669,12 @@ def auction_list(request):
 @login_required
 def auction_doc(request, slug_auction):
     
+    error   = ''
     auction = None
-    new = False
-    user = request.user
+    new     = False
+    user    = request.user
+    answer  = ''
+    
     if slug_auction == 'new_lots':
         auction = Auction()
         auction.user = user
@@ -6714,8 +6717,6 @@ def auction_doc(request, slug_auction):
         auction.description         = request.POST.get('description', '')        
         auction.save()
 
-        #cars_struct = AuctionStructure.objects.filter(auction = auction).delete()
-
         for key in request.POST.keys():
             if key.startswith('cars_list_data_slug_'):
                 val_key = request.POST.get(key)
@@ -6744,9 +6745,11 @@ def auction_doc(request, slug_auction):
                 structure.save()
 
         if 'send' in request.POST:
-            send_auction(auction)
-
-        return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
+            if AuctionStructure.objects.filter(auction = auction).filter(car = car).filter(success = False).count() > 0:
+                error = 'Не все автомобили проверены, отправка не возможна. Проверьте автомобили и информацию о них.'
+            else:
+                send_auction(auction)
+                return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
      
     params = {
         'type'          : 'auction',
@@ -6754,6 +6757,7 @@ def auction_doc(request, slug_auction):
         'new'           : new,
         'user'          : user,
         'select'        : select,
+        'error'         : error,
         'now'           : DT.datetime.now()
     }
     
