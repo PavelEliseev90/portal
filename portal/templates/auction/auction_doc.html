@@ -1122,6 +1122,35 @@
 		</div>
 		</div>
 	</div>
+	
+
+	{% if params.error != '' %}
+		<div class="modal fade show" id="error_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="error_modal" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<span class=""></span><h5 class="modal-title" id="error_modal"> <span class="icon-mbri-close"></span> Ошибка </h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					
+					<label class="fs-6"> {{params.error}}</label>
+
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>
+				</div>
+			</div>
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			$(window).on('load',function(){
+				$('#error_modal').modal('show');
+			});
+		</script>
+
+	{% endif %}
 
 	<script>
 
@@ -1237,7 +1266,7 @@
 						html_list += '				<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="">Продажа: ' + car_price  + ' ₽ </span></label> '
 						html_list += '			</div>'
 						html_list += '			<div class="col">'
-						html_list += '              <span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click + '"></span><br>'					
+						//html_list += '              <span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click + '"></span><br>'					
 						html_list += '              <span class="fs-5 icon-mbri-close bg-danger bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click_delete + '"></span>'					
 						html_list += '			</div>'
 						html_list += '		</div>'
