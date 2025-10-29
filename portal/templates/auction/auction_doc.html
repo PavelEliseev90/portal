@@ -8,548 +8,1352 @@
 
 {% block title_navbar %} - {% if params.new %} Новый лот аукциона {% else %} Лот аукциона {% endif %} {% endblock %}
     
+{% block head %}
+    {{ block.super }}
+    <style>
+        :root {
+            --auction-accent: #F58220;
+            --auction-dark: #000000;
+            --auction-light: #F4F4F4;
+        }
+
+        .auction-doc-page {
+            background-color: var(--auction-light);
+            padding: 2rem 1.5rem 4rem;
+            color: var(--auction-dark);
+        }
+
+        @media (max-width: 767.98px) {
+            .auction-doc-page {
+                padding: 1.25rem 1rem 2.5rem;
+            }
+        }
+
+        .auction-doc-page .doc-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .auction-doc-page .doc-subtitle {
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .doc-card {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.07);
+            padding: 1.75rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .doc-card-body {
+            padding: 0;
+        }
+
+        .doc-card-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .doc-status {
+            padding: 0;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: rgba(0, 0, 0, 0.6);
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+
+        .doc-status.accent {
+            color: #ffffff;
+            position: relative;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            padding: 0.5rem 1rem 0.5rem 1rem;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #F58220 0%, #FF9A3D 100%);
+            box-shadow: 0 3px 12px rgba(245, 130, 32, 0.3);
+            animation: statusGlow 2.5s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .doc-status.accent:hover {
+            box-shadow: 0 4px 16px rgba(245, 130, 32, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .doc-status.accent .icon-mbri-flag {
+            font-size: 0.95em;
+            margin-right: 0.1rem;
+        }
+
+        @keyframes statusGlow {
+            0%, 100% {
+                box-shadow: 0 3px 12px rgba(245, 130, 32, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(245, 130, 32, 0.45);
+            }
+        }
+
+        .doc-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .doc-metric {
+            background: var(--auction-light);
+            border-radius: 1rem;
+            padding: 1rem 1.2rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .doc-metric .metric-label {
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            color: rgba(0, 0, 0, 0.55);
+        }
+
+        .doc-metric .metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--auction-dark);
+        }
+
+        .profit-positive {
+            color: #176b12 !important;
+            font-weight: 700;
+        }
+
+        .profit-negative {
+            color: #dc3545 !important;
+            font-weight: 700;
+        }
+
+        .doc-divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.12);
+            margin: 1.5rem 0 2rem;
+        }
+
+        .auction-doc-page .form-label {
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .auction-doc-page .form-control,
+        .auction-doc-page .form-select,
+        .auction-doc-page textarea {
+            border-radius: 0.85rem;
+            border-color: rgba(0, 0, 0, 0.12);
+            box-shadow: none;
+            padding: 0.75rem 1rem;
+        }
+
+        .auction-doc-page .form-control:focus,
+        .auction-doc-page .form-select:focus,
+        .auction-doc-page textarea:focus {
+            border-color: var(--auction-accent);
+            box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.15);
+        }
+
+        .doc-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .btn-auction-primary {
+            background: var(--auction-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 0.75rem 1.4rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn-auction-primary:hover,
+        .btn-auction-primary:focus {
+            background: #d66a14;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .btn-auction-outline {
+            border-radius: 0.85rem;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: var(--auction-dark);
+            padding: 0.75rem 1.4rem;
+            font-weight: 600;
+        }
+
+        .btn-auction-outline:hover,
+        .btn-auction-outline:focus {
+            border-color: var(--auction-accent);
+            color: var(--auction-accent);
+        }
+
+        .doc-success-card {
+            background: rgba(0, 128, 0, 0.1);
+            border: 1px solid rgba(0, 128, 0, 0.15);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            color: var(--auction-dark);
+            box-shadow: 0 20px 45px rgba(0, 128, 0, 0.08);
+            margin-bottom: 1.75rem;
+        }
+
+        .doc-success-card .winner-price {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #176b12;
+        }
+
+        .doc-warning-card {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            color: #8c1f2d;
+            box-shadow: 0 20px 45px rgba(220, 53, 69, 0.08);
+            margin-bottom: 1.75rem;
+        }
+
+        .doc-section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .doc-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .doc-status-badge.success {
+            background: rgba(23, 107, 18, 0.12);
+            color: #176b12;
+        }
+
+        .doc-status-badge.danger {
+            background: rgba(220, 53, 69, 0.12);
+            color: #a32030;
+        }
+
+        .doc-edit-link {
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, var(--auction-accent) 0%, #FF9A3D 100%);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(245, 130, 32, 0.25);
+        }
+
+        .doc-edit-link:hover {
+            background: linear-gradient(135deg, #d66a14 0%, #F58220 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 130, 32, 0.35);
+        }
+
+        .doc-edit-link:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(245, 130, 32, 0.3);
+        }
+
+        .doc-car-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .doc-car-card:hover {
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .doc-car-layout {
+            display: grid;
+            grid-template-columns: 180px 1fr auto;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        @media (max-width: 991px) {
+            .doc-car-layout {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .doc-car-photo {
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: var(--auction-light);
+            width: 180px;
+            height: 135px;
+        }
+
+        @media (max-width: 991px) {
+            .doc-car-photo {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+        }
+
+        .doc-car-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .doc-car-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .doc-car-info p {
+            margin: 0;
+            color: rgba(0, 0, 0, 0.7);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .doc-car-info p strong {
+            color: var(--auction-accent);
+            font-weight: 600;
+            min-width: 110px;
+            display: inline-block;
+        }
+
+        .doc-car-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 220px;
+        }
+
+        @media (max-width: 991px) {
+            .doc-car-meta {
+                min-width: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        .doc-car-meta .meta-item {
+            background: linear-gradient(135deg, var(--auction-light) 0%, rgba(244, 244, 244, 0.5) 100%);
+            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--auction-dark);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .doc-car-meta .meta-item:hover {
+            background: var(--auction-light);
+            border-color: var(--auction-accent);
+        }
+
+        .doc-card table {
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .doc-card .table > :not(caption) > * > * {
+            padding: 0.85rem 1rem;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .doc-card .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        .auction-doc-page .modal-content {
+            border-radius: 1.25rem;
+            border: none;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            background: #ffffff;
+        }
+
+        .auction-doc-page .modal-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            background: linear-gradient(135deg, var(--auction-accent) 0%, #d66a14 100%);
+            color: #ffffff;
+            padding: 1.5rem 2rem;
+            border-radius: 1.25rem 1.25rem 0 0;
+        }
+
+        .auction-doc-page .modal-header .modal-title {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .auction-doc-page .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+
+        .auction-doc-page .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+
+        .auction-doc-page .modal-body {
+            padding: 2rem;
+            background: #ffffff;
+        }
+
+        .auction-doc-page .modal-footer {
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--auction-light);
+            padding: 1.25rem 2rem;
+            border-radius: 0 0 1.25rem 1.25rem;
+        }
+
+        .modal-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .modal-info-item .icon-wrapper {
+            width: 38px;
+            height: 38px;
+            background: var(--auction-light);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--auction-accent);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .modal-info-item .info-content {
+            flex: 1;
+        }
+
+        .modal-info-item .info-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(0, 0, 0, 0.5);
+            margin-bottom: 0.2rem;
+        }
+
+        .modal-info-item .info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--auction-dark);
+        }
+
+        .modal-section {
+            margin-bottom: 2rem;
+        }
+
+        .modal-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--auction-dark);
+            margin-bottom: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--auction-light);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .modal-gallery {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.12);
+            margin: 1.5rem 0;
+        }
+
+        .modal-radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .modal-radio-group .btn-check + .btn {
+            min-width: 170px;
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.75rem 1.4rem;
+        }
+
+        .modal-confirmation-box {
+            background: var(--auction-light);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .modal-confirmation-box .confirmation-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--auction-dark);
+            margin-bottom: 1rem;
+        }
+
+        .auction-doc-page input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 0;
+            margin-top: 0.75rem;
+            border: none;
+            background: transparent;
+        }
+
+        .auction-doc-page input[type="file"]::file-selector-button {
+            background: var(--auction-light);
+            color: var(--auction-dark);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.85rem;
+            padding: 0.75rem 1.4rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 1rem;
+        }
+
+        .auction-doc-page input[type="file"]::file-selector-button:hover {
+            background: var(--auction-accent);
+            color: #ffffff;
+            border-color: var(--auction-accent);
+            transform: translateY(-1px);
+        }
+
+        .auction-doc-page input[type="file"]::-webkit-file-upload-button {
+            background: var(--auction-light);
+            color: var(--auction-dark);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.85rem;
+            padding: 0.75rem 1.4rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 1rem;
+        }
+
+        .auction-doc-page input[type="file"]::-webkit-file-upload-button:hover {
+            background: var(--auction-accent);
+            color: #ffffff;
+            border-color: var(--auction-accent);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 767.98px) {
+            .auction-doc-page .modal-body {
+                padding: 1.25rem;
+            }
+
+            .modal-info-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .auction-doc-page .modal-header {
+                padding: 1.25rem;
+            }
+
+            .auction-doc-page .modal-footer {
+                padding: 1rem 1.25rem;
+            }
+        }
+
+        .doc-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(0, 0, 0, 0.08);
+            color: var(--auction-dark);
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .doc-empty {
+            background: #ffffff;
+            border: 1px dashed rgba(0, 0, 0, 0.18);
+            border-radius: 1.25rem;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            color: rgba(0, 0, 0, 0.65);
+        }
+
+        .auction-doc-page .offcanvas {
+            background: #ffffff;
+            color: var(--auction-dark);
+        }
+
+        .auction-doc-page .offcanvas-header {
+            background: linear-gradient(135deg, var(--auction-accent) 0%, #d66a14 100%);
+            color: #ffffff;
+            padding: 1.5rem;
+            border-bottom: none;
+        }
+
+        .auction-doc-page .offcanvas-title {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auction-doc-page .offcanvas-header .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+
+        .auction-doc-page .offcanvas-header .btn-close:hover {
+            opacity: 1;
+        }
+
+        .auction-doc-page .offcanvas-body {
+            background: var(--auction-light);
+            padding: 1.5rem;
+        }
+
+        .auction-doc-page .offcanvas-body .form-control {
+            border-radius: 0.85rem;
+            border-color: rgba(0, 0, 0, 0.12);
+            box-shadow: none;
+            padding: 0.75rem 1rem;
+        }
+
+        .auction-doc-page .offcanvas-body .form-control:focus {
+            border-color: var(--auction-accent);
+            box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.15);
+        }
+
+        .auction-doc-page .offcanvas-body #refresh {
+            color: var(--auction-accent);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .auction-doc-page .offcanvas-body #refresh:hover {
+            background: rgba(245, 130, 32, 0.1);
+            transform: rotate(180deg);
+        }
+
+        .auction-doc-page .offcanvas-body #more {
+            background: var(--auction-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 0.75rem 1.4rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .auction-doc-page .offcanvas-body #more:hover {
+            background: #d66a14;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
+        }
+
+        .auction-doc-page .offcanvas-body hr {
+            background: rgba(0, 0, 0, 0.12);
+            opacity: 1;
+            margin: 1rem 0;
+        }
+
+        .car-list-item {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .car-list-item:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .cars-list {
+            transition: opacity 0.3s ease;
+        }
+
+        .cars-list.fade-out {
+            opacity: 0;
+        }
+
+        .car-list-item img {
+            border-radius: 0.75rem;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .car-list-info {
+            color: var(--auction-dark);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .car-list-info strong {
+            color: var(--auction-accent);
+            font-weight: 700;
+        }
+
+        .car-list-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .car-list-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .car-list-btn.add {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .car-list-btn.add:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
+        .car-list-btn.view {
+            background: linear-gradient(135deg, var(--auction-accent) 0%, #FF9A3D 100%);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(245, 130, 32, 0.3);
+        }
+
+        .car-list-btn.view:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(245, 130, 32, 0.4);
+        }
+
+        .btn-outline-danger {
+            border-color: #dc3545;
+            color: #dc3545;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-danger:hover {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-outline-danger:active {
+            transform: translateY(0);
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
 
-<form method="post">
-	{% csrf_token %}
-
-
-	<div class="bg-kors-card"> 
-		<div class="bg-kors-card-body">
-			<label class="fs-4"> <span class="icon-mbri-flag"></span> Аукцион -</label>  <label class="fs-4"><span class="badge text-white bg-dark bg-opacity-75" id="">{{params.auction.status|default_if_none:'подготавливается'}}</span></label> 
-			<div class="row">
-				
-				<div class="col-12 col-sm-auto">
-					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_count">Автомобилей: - </span></label>
-				</div>
-				<div class="col-12 col-sm-auto">
-					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_cost_price">Себестоимость: - </span></label>
-				</div>
-				<div class="col-12 col-sm-auto">
-					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_outlay">Затраты: - </span></label>
-				</div>
-				<div class="col-12 col-sm-auto">
-					<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75 bg-gradient" id="car_price">Сумма продажи: - </span></label>
-				</div>					
-				<div class="col-12 col-sm-auto">
-					<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75 bg-gradient" id="car_profit">Профит: - </span></label>
-				</div>
-				<div class="col-12 col-sm-auto">
-					<label class="fs-5"><span class="badge text-white bg-success bg-gradient" id="car_profit_auction">Профит аукцион от: - </span></label>
-				</div>
-			</div>
-			<hr style="width: 75%;">
-			<div class="row g-3">
-				<div class="col-12 col-sm-4">
-					
-					<div class="mb-3">										
-						<label for="exampleInputEmail1" class="form-label fs-6">Дата начала аукциона</label>
-						<input type="datetime-local" class="form-control form-control-kors" id="dateStart" name="dateStart" {% if params.auction.dateStart == None  %} min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% else %} min="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% endif %}  {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>	
-					</div>
-
-					<div class="mb-3">
-						<label for="exampleInputEmail1" class="form-label fs-6">Стоянка</label>
-						
-						<select class="form-select" aria-label="" id="store" name="store" {% if params.auction.winner_price > 0 %} disabled {% endif %}>
-							<option selected text=""></option>
-							{% for store in params.select.stores %}
-								<option value='{{store.name}}' text="{{store.id}}" {% if store.id == params.auction.store.id %} selected {% endif %}>{{store.name}}</option>
-							{% endfor %} 
-						</select>										
-					</div>
-
-					<div class="mb-3">
-						<label for="exampleInputEmail1" class="form-label fs-6">Стартовая цена лота &#8381;</label>
-						<input type="number" class="form-control form-control-kors" id="price_start" name="price_start" min="0" placeholder="0.00" value="{{params.auction.start_price}}" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
-						<label for="exampleInputEmail1" id="min_price_start" class="form-label fs-8 text-secondary"> </label>	
-					</div>
-					
-				</div>
-
-				<div class="col-12 col-sm-8 h-100">
-					<div class="mb-3">
-						<label for="exampleFormControlTextarea1" class="form-label fs-6">Описание</label>
-						<textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="8" {% if params.auction.winner_price > 0 %} readonly {% endif %}>{{params.auction.description}}</textarea>
-					</div>					
-				</div>
-
-			</div>
-
-			<hr style="width: 75%;">
-			<label for="exampleInputEmail1" class="form-label fs-6">Создан: {{params.auction.dataTime}}</label>
-			<label for="exampleInputEmail1" class="form-label fs-6">Ответственный: {{params.auction.user.profiles.eco_name}}</label> 
-			
-			<br>
-			<div class="row g-3 {% if params.auction.winner_price > 0 %} d-none {% endif %} ">
-				<div class="col-auto">
-					<button type="submit" class="btn btn-success bg-gradient" id="save" name="save"> <span class="icon-mbri-save"> Сохранить</span></button>
-				</div>
-				<div class="col-auto">
-					<button type="submit" name="send" id="send" class="btn btn-success bg-gradient"><span class="icon-mbri-play"></span> Отправить </button>
-				</div>
-				<div class="col-auto">
-					<button type="submit"  name="update" id="update" class="btn btn-success bg-gradient"><span class="icon-mbri-update"></span> Обновить информацию </button>
-				</div>
-			</div>
-
-		</div>
-	</div>
-
-	{% if params.auction.winner_price > 0 %}
-	<br>
-	<div class="card bg-success bg-gradient text-white">
-		<div class="card-body">
-			<div class="row g-4">
-				<div class="col-auto align-self-center">
-					<span class="icon-mbri-success fs-3 text-white"></span>
-				</div>
-				<div class="col-auto">
-					<label class="fs-5">Победитель аукциона:</label>
-					<br>
-					<div class="row g-3">
-						<div class="col-auto">
-							<label class="fs-4">{{params.auction.winner_name}}</label>
-						</div>
-						<div class="col-auto">
-							<label class="fs-4">{{params.auction.winner_phone}}</label>
-						</div>
-						<div class="col-auto">
-							<label class="fs-4">{{params.auction.winner_email}}</label>
-						</div>
-					</div>
-					
-				</div>
-				<div class="col-auto">
-					<label class="fs-5">Выигрышная цена:</label>
-					<br>
-					
-					<label class="fs-2 text-white">{{params.auction.winner_price|floatformat:"2g"}} ₽</label>
-						
-					
-					
-				</div>
-			</div>
-		</div>
-	</div>		
-	{% endif %}
-
-	{% if params.auction.rejection_reason != '' and params.auction.winner_price == 0 %}
-	<br>
-	<div class="card bg-danger bg-gradient text-white">
-		<div class="card-body">
-			<div class="row g-4">
-				<div class="col-auto align-self-center">
-					<span class="icon-mbri-close fs-3 text-white"></span>
-				</div>
-				<div class="col">
-					<label class="fs-5">Лот отклонен модератором по причине:</label>
-					<br>
-					<label class="fs-4">{{params.auction.rejection_reason}}</label>
-				</div>
-			</div>
-		</div>
-	</div>		
-	{% endif %}
-	<br>
+<div class="auction-doc-page">
+	<form method="post">
+			{% csrf_token %}
 	
-	<div class="bg-kors-card"> 
-		<div class="bg-kors-card-body">
+			<div class="doc-card">
+					<div class="doc-card-header">
+							<div>
+									<div class="doc-title">{% if params.new %}Новый лот аукциона{% else %}Лот аукциона{% endif %}</div>
+									<div class="doc-subtitle">Работа с лотом и основными параметрами аукциона</div>
+							</div>
+							{% if params.auction.status %}
+									<span class="doc-status"><span class="icon-mbri-flag"></span>{{params.auction.status}}</span>
+							{% else %}
+									<span class="doc-status accent"><span class="icon-mbri-flag"></span>подготавливается</span>
+							{% endif %}
+					</div>
+	
+					<div class="doc-metric-grid">
+							<div class="doc-metric">
+									<span class="metric-label">Автомобилей</span>
+									<span class="metric-value" id="car_count">-</span>
+							</div>
+							<div class="doc-metric">
+									<span class="metric-label">Себестоимость</span>
+									<span class="metric-value" id="car_cost_price">-</span>
+							</div>
+							<div class="doc-metric">
+									<span class="metric-label">Затраты</span>
+									<span class="metric-value" id="car_outlay">-</span>
+							</div>
+							<div class="doc-metric">
+									<span class="metric-label">Сумма продажи</span>
+									<span class="metric-value" id="car_price">-</span>
+							</div>
+							<div class="doc-metric">
+									<span class="metric-label">Профит</span>
+									<span class="metric-value" id="car_profit">-</span>
+							</div>
+							<div class="doc-metric">
+									<span class="metric-label">Профит аукциона</span>
+									<span class="metric-value" id="car_profit_auction">-</span>
+							</div>
+					</div>
+	
+					<div class="row g-3">
+							<div class="col-12 col-lg-4">
+									<div class="mb-3">
+											<label for="dateStart" class="form-label">Дата начала аукциона</label>
+											<input type="datetime-local" class="form-control" id="dateStart" name="dateStart" {% if params.auction.dateStart == None  %} min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% else %} min="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% endif %}  {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+									</div>
+									<div class="mb-3">
+											<label for="store" class="form-label">Стоянка</label>
+											<select class="form-select" aria-label="" id="store" name="store" {% if params.auction.winner_price > 0 %} disabled {% endif %}>
+													<option selected text=""></option>
+													{% for store in params.select.stores %}
+															<option value='{{store.name}}' text="{{store.id}}" {% if store.id == params.auction.store.id %} selected {% endif %}>{{store.name}}</option>
+													{% endfor %}
+											</select>
+									</div>
+									<div class="mb-3">
+											<label for="price_start" class="form-label">Стартовая цена лота &#8381;</label>
+											<input type="number" class="form-control" id="price_start" name="price_start" min="0" placeholder="0.00" value="{{params.auction.start_price}}" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+											<div id="min_price_start" class="form-text"></div>
+									</div>
+							</div>
+							<div class="col-12 col-lg-8">
+									<div class="mb-3 h-100 d-flex flex-column">
+											<label for="exampleFormControlTextarea1" class="form-label">Описание</label>
+											<textarea class="form-control flex-grow-1" name="description" id="exampleFormControlTextarea1" rows="8" {% if params.auction.winner_price > 0 %} readonly {% endif %}>{{params.auction.description}}</textarea>
+									</div>
+							</div>
+					</div>
+	
+					<div class="doc-divider"></div>
+					<div class="d-flex flex-wrap gap-3">
+							<span class="doc-tag"><span class="icon-mbri-plus"></span> Создан: {{params.auction.dataTime}}</span>
+							<span class="doc-tag"><span class="icon-mbri-user"></span> Ответственный: {{params.auction.user.profiles.eco_name}}</span>
+					</div>
+	
+					<div class="doc-divider"></div>
+					<div class="doc-actions {% if params.auction.winner_price > 0 %}d-none{% endif %}">
+							<button type="submit" class="btn btn-auction-primary" id="save" name="save"><span class="icon-mbri-save"></span> Сохранить</button>
+							<button type="submit" name="send" id="send" class="btn btn-auction-primary"><span class="icon-mbri-play"></span> Отправить</button>
+							<button type="submit"  name="update" id="update" class="btn btn-auction-primary"><span class="icon-mbri-update"></span> Обновить информацию</button>
+					</div>
+			</div>
+	
+	{% if params.auction.winner_price > 0 %}
+			<div class="doc-success-card">
+					<div class="d-flex flex-wrap justify-content-between gap-3">
+							<div>
+									<div class="text-uppercase fw-semibold small text-success">Победитель аукциона</div>
+									<div class="fs-5 fw-semibold">{{params.auction.winner_name}}</div>
+									<div class="text-muted">{{params.auction.winner_phone}}</div>
+									<div class="text-muted">{{params.auction.winner_email}}</div>
+							</div>
+							<div class="text-end">
+									<div class="text-uppercase small text-muted fw-semibold">Выигрышная цена</div>
+									<div class="winner-price">{{params.auction.winner_price|floatformat:"2g"}} ₽</div>
+							</div>
+					</div>
+			</div>
+			{% endif %}
+	
+	{% if params.auction.rejection_reason != '' and params.auction.winner_price == 0 %}
+			<div class="doc-warning-card">
+					<div class="d-flex flex-column gap-2">
+							<div class="text-uppercase fw-semibold small">Лот отклонен модератором</div>
+							<div class="fs-5">{{params.auction.rejection_reason}}</div>
+					</div>
+			</div>
+			{% endif %}
+
+	
+	
+			<div class="doc-card">
+                <div class="doc-card-body">
 			
-			<label class="fs-4"> <span class="icon-truck"></span> Автомобили</label>
+					<div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
+						<div>
+								<div class="doc-section-title"><span class="icon-truck me-2"></span>Автомобили</div>
+								<p class="text-muted mb-0">Сводка по автомобилям, участвующим в лоте</p>
+						</div>
+						<span class="doc-tag"><span class="icon-mbri-numbered-list"></span> Всего: <span id="total_cars_count">{{params.auction.cars|length}}</span></span>
+				</div>
 			
-			<hr style="width: 75%;">
-			
-			<div class="" id="cars">
-			
-				
+				<div class="" id="cars">
 
-				{% for structure in params.auction.cars %}
-					
-					<div class="card bg-white" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}" style="margin-bottom: 0.5rem;">
-						<div class="card-body">
-							<div class="row g-1  text-dark" style="border-radius:0.5rem; padding: 0.2rem;">
-								
-								<div class="col-12 col-sm-3">
-									<img class="h-100" style="max-height: 200px; border-radius:0.5rem;"  src="{{structure.car.get_photo}}">
-								</div>
+					{% if params.auction.cars %}
 
-								<div class="col-12 col-sm-3">
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Марка:</label> {{structure.car.modification_autoru.model.mark}} </p> 
-									
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Модель:</label> {{structure.car.modification_autoru.model}} </p> 
 
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Модификация:</label> {{structure.car.modification_autoru}} </p> 
 
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Год выпуска:</label> {{structure.car.year}}  г.в.  </p> 
+					{% for structure in params.auction.cars %}
 
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Пробег:</label> {{structure.car.run|floatformat:"0g"}} км. </p> 
-
-								</div>
-
-								<div class="col-12 col-sm-6">
-									
-									<hr class="hidesite" style="width: 75%; ">
-
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Себестоимость:</label> {{structure.car.cost_price|floatformat:"2g"}} ₽ </p> 
-									
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Затраты:</label> {{structure.car.outlay|floatformat:"2g"}} ₽ </p> 
-
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">БЦП:</label> {{structure.car.bcp|floatformat:"2g"}} ₽ </p> 
-
-									<p class="fs-5 text-dark"><label class="fs-6 text-secondary">Продажа:</label> {{structure.car.price|floatformat:"2g"}} ₽ </p> 
-
-								</div>
-
+					<div class="doc-car-card" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}">
+							<div class="doc-car-layout">
+									<div class="doc-car-photo">
+											<img src="{{structure.car.get_photo}}" alt="{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}}">
+									</div>
+									<div class="doc-car-info">
+											<p><strong>Марка:</strong> {{structure.car.modification_autoru.model.mark}}</p>
+											<p><strong>Модель:</strong> {{structure.car.modification_autoru.model}}</p>
+											<p><strong>Модификация:</strong> {{structure.car.modification_autoru}}</p>
+											<p><strong>Год выпуска:</strong> {{structure.car.year}} г.</p>
+											<p><strong>Пробег:</strong> {{structure.car.run|floatformat:"0g"}} км</p>
+									</div>
+									<div>
+											<div class="doc-car-meta">
+													<div class="meta-item">Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽</div>
+													<div class="meta-item">Затраты: {{structure.car.outlay|floatformat:"2g"}} ₽</div>
+													<div class="meta-item">БЦП: {{structure.car.bcp|floatformat:"2g"}} ₽</div>
+													<div class="meta-item" style="background: rgba(23, 107, 18, 0.1); color: #176b12; border-color: rgba(23, 107, 18, 0.15);">Продажа: {{structure.car.price|floatformat:"2g"}} ₽</div>
+											</div>
+									</div>
 							</div>
 
-							{% if structure.success %}
-								<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75 bg-gradient"> Данные по автомобилю проверены </span></label>
-							{% else %}
-								<label class="fs-5"><span class="badge text-white bg-danger bg-opacity-75 bg-gradient"> Проверьте данные автомобиля </span></label>
-							{% endif %}
-							
-							<hr class="hidesite" style="width: 75%; ">
-							
-							<label class="fs-6" id="edit_car_info_{{structure.car.slug}}"> <span class="icon-mbri-edit"></span> Редактировать</label>
-							
-						</div>
-						
+							<div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
+									{% if structure.success %}
+											<span class="doc-status-badge success"><span class="icon-mbri-success"></span>Данные проверены</span>
+									{% else %}
+											<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>
+									{% endif %}
+
+									<div style="display: flex; gap: 0.75rem;">
+										<label class="doc-edit-link" id="edit_car_info_{{structure.car.slug}}"><span class="icon-mbri-edit"></span> Редактировать</label>
+										<button type="button" class="btn btn-sm btn-outline-danger" style="border-radius: 0.5rem;" onclick="delete_car('{{structure.car.slug}}')" title="Удалить"><span class="icon-mbri-trash"></span></button>
+									</div>
+							</div>
+
+					</div>
+
 						<input hidden id="cars_list_data_cost_price_{{structure.car.slug}}" value="{{structure.car.cost_price}}">
 						<input hidden id="cars_list_data_price_{{structure.car.slug}}" value="{{structure.car.price}}">
 						<input hidden id="cars_list_data_outlay_{{structure.car.slug}}" value="{{structure.car.outlay}}">
 						<input hidden name="cars_list_data_slug_{{structure.car.slug}}" value="{{structure.car.slug}}">
 						
-						<div class="modal fade" id="cars_list_data_slug_{{structure.car.slug}}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
-							
-							<div class="modal-dialog modal-xl modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-truck"></span> {{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}} 	&#8226; {{structure.car.year}} 	&#8226; {{structure.car.vin}} </h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-								<div class="modal-body">
-									<div class="fs-5 fw-bold" id="info_car_name"></div>
+					<div class="modal fade" id="cars_list_data_slug_{{structure.car.slug}}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+						
+						<div class="modal-dialog modal-xl modal-dialog-scrollable">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h5 class="modal-title" id="rlkLabel">
+										<span class="icon-truck"></span>
+										{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}} &#8226; {{structure.car.year}} &#8226; {{structure.car.vin}}
+									</h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+							<div class="modal-body">
+								
+								<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+									<span class="doc-tag">
+										<span class="icon-mbri-star"></span>
+										{{structure.car.type_sale.name}}
+									</span>
+									<span class="doc-tag">
+										<span class="icon-mbri-features"></span>
+										{{structure.car.type_reception.name}}
+									</span>
+								</div>
+
+								<div class="modal-info-grid">
 									
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Тип продажи: - {{structure.car.type_sale.name}} </span></label> 
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Тип приема: - {{structure.car.type_reception.name}}</span></label>
-																		
-									<hr style="width: 75%;">
-						
-									<div class="row">
-										
-										<div class="col-12 col-sm-12 col-md-4 lg-3">
-											
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-setting2"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label class="fs-7 text-secondary">Модификация</label>
-														<br>
-														<label id="info_car_modification_value"  class="fs-6">{{structure.car.modification_autoru.name}}</label>
-														
-													</div>
-												</div>
-											</div>	
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-cd"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_run" class="fs-7 text-secondary">Пробег</label>
-														<br>
-														<label id="info_car_run_value"  class=" fs-6">{{structure.car.run|floatformat:"0g"}} км.</label>
-															
-													</div>
-												</div>
-											</div>
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-credit-card"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_price" class="fs-7 text-secondary">Текущая цена</label>
-														<br>
-														<label id="info_car_price_value"  class=" fs-6">{{structure.car.price|floatformat:"2g"}} ₽ </label>
-															
-													</div>
-												</div>
-											</div>
-						
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-setting2"></span>
 										</div>
-						
-										<div class="col-12 col-sm-12 col-md-4 lg-3">
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-calendar"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_days_in_stok" class="fs-7 text-secondary">Дней на складе</label>
-														<br>
-														<label id="info_car_days_in_stok_value"  class="fs-6">{{structure.car.days_in_stok}} д.</label>
-																
-													</div>
-												</div>
-											</div>
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-flag"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_status_name" class="fs-7 text-secondary">Cтатус</label>
-														<br>
-														<label id="info_car_status_name_value"  class="fs-6">{{structure.car.status}}</label>
-															
-													</div>
-												</div>
-											</div>
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-delivery"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_stage_price" class="fs-7 text-secondary">Этап</label>
-														<br>
-														<label id="info_car_stage_price_value"  class="fs-6">{{structure.car.stage_price}}</label>
-														
-													</div>
-												</div>
-											</div>
-						
+										<div class="info-content">
+											<div class="info-label">Модификация</div>
+											<div class="info-value" id="info_car_modification_value">{{structure.car.modification_autoru.name}}</div>
 										</div>
-						
-										<div class="col-12 col-sm-12 col-md-4 lg-3">
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-cash"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_cost_price" class="fs-7 text-secondary">Себестоимость</label>
-														<br>
-														<label id="info_car_cost_price_value"  class="fs-6">{{structure.car.cost_price|floatformat:"2g"}} ₽ </label>
-																
-													</div>
-												</div>
-											</div>
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-cash"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_outlay" class="fs-7 text-secondary">Расходы</label>
-														<br>
-														<label id="info_car_outlay_value"  class="fs-6">{{structure.car.outlay|floatformat:"2g"}} ₽</label>															
-													</div>
-												</div>
-											</div>
-						
-											<div class="row g-1">
-												<div class="col-1 text-center align-self-center">
-													<span class="fs-5 icon-mbri-delivery"></span>
-												</div>
-												<div class="col">
-													<div class="">
-														<label for="info_car_bcp" class="fs-7 text-secondary">БЦП</label>
-														<br>
-														<label id="info_car_bcp_value"  class="fs-6">{{structure.car.bcp|floatformat:"2g"}} ₽</label>																
-													</div>
-												</div>
-											</div>
-						
-										</div>
-									
 									</div>
-									<br>
-						
-									<div class="row">
-										<div class="col-12 col-sm-12 col-md-6 lg-3">
-											<div class="mb-3">
-												<label for="" class="form-label fs-6">Комментарий для отдела подготовки</label>
-												{% if structure.podgotovka != '' or structure.success %}
-													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.podgotovka}}</textarea>
-												{% else %}
-													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_podgotovka}}</textarea>
-												{% endif %}
-											</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-cd"></span>
 										</div>
-										<div class="col-12 col-sm-12 col-md-6 lg-3">
-											<div class="mb-3">
-												<label for="" class="form-label fs-6">Комментарий для отдела продаж</label>
-												{% if structure.op != '' or structure.success %}
-													<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.op}}</textarea>
-												{% else %}
+										<div class="info-content">
+											<div class="info-label">Пробег</div>
+											<div class="info-value" id="info_car_run_value">{{structure.car.run|floatformat:"0g"}} км</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-credit-card"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">Текущая цена</div>
+											<div class="info-value" id="info_car_price_value">{{structure.car.price|floatformat:"2g"}} ₽</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-calendar"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">Дней на складе</div>
+											<div class="info-value" id="info_car_days_in_stok_value">{{structure.car.days_in_stok}} д.</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-flag"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">Статус</div>
+											<div class="info-value" id="info_car_status_name_value">{{structure.car.status}}</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-delivery"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">Этап</div>
+											<div class="info-value" id="info_car_stage_price_value">{{structure.car.stage_price}}</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-cash"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">Себестоимость</div>
+											<div class="info-value" id="info_car_cost_price_value">{{structure.car.cost_price|floatformat:"2g"}} ₽</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-cash"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">Расходы</div>
+											<div class="info-value" id="info_car_outlay_value">{{structure.car.outlay|floatformat:"2g"}} ₽</div>
+										</div>
+									</div>
+
+									<div class="modal-info-item">
+										<div class="icon-wrapper">
+											<span class="icon-mbri-delivery"></span>
+										</div>
+										<div class="info-content">
+											<div class="info-label">БЦП</div>
+											<div class="info-value" id="info_car_bcp_value">{{structure.car.bcp|floatformat:"2g"}} ₽</div>
+										</div>
+									</div>
+								
+								</div>
+								
+								<div class="modal-divider"></div>
+
+								<div class="modal-section">
+									<div class="row g-3">
+										<div class="col-12 col-md-6">
+											<label for="" class="form-label">Комментарий для отдела подготовки</label>
+											{% if structure.podgotovka != '' or structure.success %}
+												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.podgotovka}}</textarea>
+											{% else %}
+												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_podgotovka}}</textarea>
+											{% endif %}
+										</div>
+										<div class="col-12 col-md-6">
+											<label for="" class="form-label">Комментарий для отдела продаж</label>
+											{% if structure.op != '' or structure.success %}
+												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.op}}</textarea>
+											{% else %}
 												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.car.description_op}}</textarea>
-												{% endif %}
-												
+											{% endif %}
+										</div>
+									</div>
+								</div>
+					
+								<div class="modal-divider"></div>
+								
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-preview"></span>
+										Внешний вид
+									</div>
+								<div class="modal-gallery">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_vnesh">
+											{% for obj in structure.car.get_files %}
+												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+													<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
+												</div>											
+											{% endfor %}
+											{% for obj in structure.info_car_auction_data.int_ocenka_url_vnesh %}
+												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+													<img src="{{obj}}" src1="{{obj}}">												
+												</div>											
+											{% endfor %}
+										</div>
+										<input type="file" id="images_car_{{structure.car.slug}}" name="images_car_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+									</div>
+								</div>
+
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-drag-n-drop2"></span>
+										Салон
+									</div>
+									<div class="modal-gallery">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
+											{% for obj in structure.info_car_auction_data.int_ocenka_url_salon_all %}
+												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+													<img src="{{obj}}" src1="{{obj}}">												
+												</div>											
+											{% endfor %}										
+										</div>
+										<input type="file" id="images_salon_{{structure.car.slug}}" name="images_salon_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+									</div>
+								</div>
+					
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-layers"></span>
+										Схема ЛКП и салона
+									</div>
+								<div class="modal-gallery">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
+											<div class="gallery-item" id="foto_body1" data-index="1">
+												<img src="{{structure.info_car_auction_data.int_ocenka_url_pered}}" src1="{{structure.info_car_auction_data.int_ocenka_url_pered}}">												
+											</div>
+											<div class="gallery-item" id="foto_body1" data-index="1">
+												<img src="{{structure.info_car_auction_data.int_ocenka_url_right}}" src1="{{structure.info_car_auction_data.int_ocenka_url_right}}">												
+											</div>
+											<div class="gallery-item" id="foto_body1" data-index="1">
+												<img src="{{structure.info_car_auction_data.int_ocenka_url_zad}}" src1="{{structure.info_car_auction_data.int_ocenka_url_zad}}">												
+											</div>
+											<div class="gallery-item" id="foto_body1" data-index="1">
+												<img src="{{structure.info_car_auction_data.int_ocenka_url_left}}" src1="{{structure.info_car_auction_data.int_ocenka_url_left}}">												
+											</div>
+											<div class="gallery-item" id="foto_body1" data-index="1">
+												<img src="{{structure.info_car_auction_data.int_ocenka_url_up}}" src1="{{structure.info_car_auction_data.int_ocenka_url_up}}">												
+											</div>
+											<div class="gallery-item" id="foto_body1" data-index="1">
+												<img src="{{structure.info_car_auction_data.int_ocenka_url_salon}}" src1="{{structure.info_car_auction_data.int_ocenka_url_salon}}">												
 											</div>
 										</div>
+										<input type="file" id="images_shema_{{structure.car.slug}}" name="images_shema_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
 									</div>
-						
-									<hr style="width: 75%;">
-									
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний вид</span></label>
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_vnesh">
-										
-										{% for obj in structure.car.get_files %}
-											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-												<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
-											</div>											
-										{% endfor %}
-										{% for obj in structure.info_car_auction_data.int_ocenka_url_vnesh %}
-											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-												<img src="{{obj}}" src1="{{obj}}">												
-											</div>											
-										{% endfor %}
-									</div>
-									<input type="file" class="form-control" id="images_car_{{structure.car.slug}}" name="images_car_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-                          			<br>
+								</div>
 
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
-									
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
-										{% for obj in structure.info_car_auction_data.int_ocenka_url_salon_all %}
-											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-												<img src="{{obj}}" src1="{{obj}}">												
-											</div>											
-										{% endfor %}										
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-alert"></span>
+										Повреждения
 									</div>
-									<input type="file" class="form-control" id="images_salon_{{structure.car.slug}}" name="images_salon_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-                          			<br>
-						
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП и салона</span></label>
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
-										<div class="gallery-item" id="foto_body1" data-index="1">
-											<img src="{{structure.info_car_auction_data.int_ocenka_url_pered}}" src1="{{structure.info_car_auction_data.int_ocenka_url_pered}}">												
-										</div>
-										<div class="gallery-item" id="foto_body1" data-index="1">
-											<img src="{{structure.info_car_auction_data.int_ocenka_url_right}}" src1="{{structure.info_car_auction_data.int_ocenka_url_right}}">												
-										</div>
-										<div class="gallery-item" id="foto_body1" data-index="1">
-											<img src="{{structure.info_car_auction_data.int_ocenka_url_zad}}" src1="{{structure.info_car_auction_data.int_ocenka_url_zad}}">												
-										</div>
-										<div class="gallery-item" id="foto_body1" data-index="1">
-											<img src="{{structure.info_car_auction_data.int_ocenka_url_left}}" src1="{{structure.info_car_auction_data.int_ocenka_url_left}}">												
-										</div>
-										<div class="gallery-item" id="foto_body1" data-index="1">
-											<img src="{{structure.info_car_auction_data.int_ocenka_url_up}}" src1="{{structure.info_car_auction_data.int_ocenka_url_up}}">												
-										</div>
-										<div class="gallery-item" id="foto_body1" data-index="1">
-											<img src="{{structure.info_car_auction_data.int_ocenka_url_salon}}" src1="{{structure.info_car_auction_data.int_ocenka_url_salon}}">												
-										</div>
-									</div>
-									<input type="file" class="form-control" id="images_shema_{{structure.car.slug}}" name="images_shema_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									<br>
-
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Повреждения</span></label>
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
+									<div class="modal-gallery">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
 											{% for obj in structure.info_car_auction_data.int_ocenka_url_damage %}
 												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
 													<img src="{{obj}}" src1="{{obj}}">												
 												</div>											
 											{% endfor %}										
 										</div>
+										<input type="file" id="images_damage_{{structure.car.slug}}" name="images_damage_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
 									</div>
-									<input type="file" class="form-control" id="images_damage_{{structure.car.slug}}" name="images_damage_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									<br>
+								</div>
 
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Колеса</span></label>
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
-										{% for obj in structure.info_car_auction_data.int_ocenka_url_wheel %}
-											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-												<img src="{{obj}}" src1="{{obj}}">												
-											</div>											
-										{% endfor %}
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-update"></span>
+										Колеса
 									</div>
-									<input type="file" class="form-control" id="images_damage_{{structure.car.slug}}" name="images_damage_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									<br>
-
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Диагностика</span></label>
-									<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
-										
-										{% for obj in structure.info_car_auction_data.int_ocenka_url_diagnostic %}
-											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-												<img src="{{obj}}" src1="{{obj}}">												
-											</div>											
-										{% endfor %}										
+									<div class="modal-gallery">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_wheels">
+											{% for obj in structure.info_car_auction_data.int_ocenka_url_wheel %}
+												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+													<img src="{{obj}}" src1="{{obj}}">												
+												</div>											
+											{% endfor %}
+										</div>
+										<input type="file" id="images_wheels_{{structure.car.slug}}" name="images_wheels_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
 									</div>
-									<br>
+								</div>
 
-									<div class="row g-1">
-										<div class="col-12 col-sm-6">
-											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">Работы по автомобилю</span></label>
-											<br>
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-setting2"></span>
+										Диагностика
+									</div>
+									<div class="modal-gallery">
+										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_diagnostic">
+											{% for obj in structure.info_car_auction_data.int_ocenka_url_diagnostic %}
+												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+													<img src="{{obj}}" src1="{{obj}}">												
+												</div>											
+											{% endfor %}										
+										</div>
+									</div>
+								</div>
+
+								<div class="modal-section">
+									<div class="row g-3">
+										<div class="col-12 col-md-6">
+											<label class="form-label" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">
+												<span class="icon-mbri-setting2"></span> Работы по автомобилю
+											</label>
 											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_works" rows="10">{{structure.works}}</textarea>
 										</div>	
-										<div class="col-12 col-sm-6">
-											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">Диагностика</span></label>
-											<br>
+										<div class="col-12 col-md-6">
+											<label class="form-label" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">
+												<span class="icon-mbri-features"></span> Диагностика
+											</label>
 											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_diagnostika" rows="10">{{structure.diagnostic}}</textarea>
 										</div>			
 									</div>
+								</div>
 
-									<br>
-									<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" name="" id="">Автотека</span></label>
-									<br>
-									<div class="btn-group" role="group" aria-label="Вертикальная группа кнопок-переключателей">
+								<div class="modal-divider"></div>
+
+								<div class="modal-section">
+									<div class="modal-section-title">
+										<span class="icon-mbri-link"></span>
+										Автотека
+									</div>
+									<div class="modal-radio-group">
 										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
-										<label class="btn btn-outline-danger " style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_vbtn-radio1"><span class="icon-mbri-unlink"></span> Не показывать</label>
+										<label class="btn btn-outline-danger" for="cars_list_data_{{structure.car.slug}}_vbtn-radio1"><span class="icon-mbri-unlink"></span> Не показывать</label>
 										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
-										<label class="btn btn-outline-success " style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_vbtn-radio2"><span class="icon-mbri-link"></span> Показывать</label>
+										<label class="btn btn-outline-success" for="cars_list_data_{{structure.car.slug}}_vbtn-radio2"><span class="icon-mbri-link"></span> Показывать</label>
 									</div>
-
-									<br>
-									<br>
-
-									<hr style="width: 75%;">
-									
-									<label class="fs-5">Данные по автомобилю проверены, информация достоверна и готова к передаче на портал аукциона</label>
-									<br>
-									<div class="btn-group" role="group" aria-label="">
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
-										<label class="btn btn-outline-danger" style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_success_radio1"> <span class="icon-mbri-close"></span> Нет</label>
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
-										<label class="btn btn-outline-success" style="min-width: 170px;" for="cars_list_data_{{structure.car.slug}}_success_radio2"> <span class="icon-mbri-success"></span> Да </label>
-									</div>
-
 								</div>
 
-								<div class="modal-footer">
-									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>
+								<div class="modal-divider"></div>
+								
+								<div class="modal-confirmation-box">
+									<div class="confirmation-text">
+										<span class="icon-mbri-success"></span>
+										Данные по автомобилю проверены, информация достоверна и готова к передаче на портал аукциона
+									</div>
+									<div class="modal-radio-group">
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio1" autocomplete="off"  {% if structure.success == False %} checked {% endif %} value="false">
+										<label class="btn btn-outline-danger" for="cars_list_data_{{structure.car.slug}}_success_radio1"> <span class="icon-mbri-close"></span> Нет</label>
+										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio2" autocomplete="off" {% if structure.success == True %} checked {% endif %} value="true">
+										<label class="btn btn-outline-success" for="cars_list_data_{{structure.car.slug}}_success_radio2"> <span class="icon-mbri-success"></span> Да </label>
+									</div>
 								</div>
 
 							</div>
+
+							<div class="modal-footer">
+								<button type="button" class="btn btn-auction-outline" data-bs-dismiss="modal">
+									<span class="icon-mbri-close"></span> Закрыть
+								</button>
 							</div>
 
+						</div>
 						</div>
 
 					</div>
 
-				{% endfor %}
+					</div>
+
+					{% endfor %}
+					{% else %}
+					<div class="doc-empty">Автомобили ещё не добавлены. Используйте кнопку ниже, чтобы добавить транспорт.</div>
+					{% endif %}
 
 			</div>
 
-			<hr style="width: 75%;">
+			<div class="doc-divider"></div>
 
-			<button type="button" class="btn btn-secondary bg-gradient {% if params.auction.winner_price > 0 %} d-none {% endif %}" id="add_cars"> <span class="icon-mbri-plus"> Добавить автомобиль</span></button>
-		
-		</div>
-	</div>
+			<button type="button" class="btn btn-auction-outline {% if params.auction.winner_price > 0 %} d-none {% endif %}" id="add_cars"> <span class="icon-mbri-plus"></span> Добавить автомобиль</button>
+
+                </div>
+        </div>
 
 </form>
 
@@ -645,10 +1449,10 @@
 							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_price">Сумма продажи: - </span></label>
 						</div>					
 						<div class="col-auto">
-							<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="car_profit">Профит: - </span></label>
+							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_profit">Профит: - </span></label>
 						</div>
 						<div class="col-auto">
-							<label class="fs-5"><span class="badge text-white bg-success" id="car_profit_auction">Профит аукцион от: - </span></label>
+							<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_profit_auction">Профит аукцион от: - </span></label>
 						</div>
 					</div>
 
@@ -787,10 +1591,10 @@
 								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_price">Сумма продажи: - </span></label>
 							</div>					
 							<div class="col-auto">
-								<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="car_profit">Профит: - </span></label>
+								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_profit">Профит: - </span></label>
 							</div>
 							<div class="col-auto">
-								<label class="fs-5"><span class="badge text-white bg-success" id="car_profit_auction">Профит аукцион от: - </span></label>
+								<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="car_profit_auction">Профит аукцион от: - </span></label>
 							</div>
 						</div>
 
@@ -845,24 +1649,26 @@
 	</form>
 -->
 	
-	<div class="offcanvas offcanvas-start bg-dark text-white"  data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+	<div class="offcanvas offcanvas-start"  data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
 		<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="offcanvasRightLabel"> Автомобили</h5>
-		<button type="button" class="btn-close bg-white" data-bs-dismiss="offcanvas" id="offcanvasRightClose" aria-label="Закрыть"></button>
-	</div>
+			<h5 class="offcanvas-title" id="offcanvasRightLabel">
+				<span class="icon-truck"></span>
+				Автомобили
+			</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" id="offcanvasRightClose" aria-label="Закрыть"></button>
+		</div>
 
-	<div class="row" style="margin-right: 0.2rem; margin-left: 0.2rem;">
-		<div class="col-11" style="padding: 0;">
-			<div class="mb-3">
-				<input type="text" class="form-control form-control-kors" id="search" name="search" placeholder="VIN, Марка, Модель, Цена" autocomplete="off">	
-			</div>		
-		</div>
-		<div class="col-1 h-100 align-items-center align-self-center justify-content-center" style="padding: 0;">
-			<span class="fs-5 icon-mbri-update" id="refresh"></span>
-		</div>
-	</div>
-	<hr style="width: 75%;">
-	<div class="offcanvas-body" style="padding-top: 0;">
+		<div class="offcanvas-body">
+			<div class="row g-3 mb-3">
+				<div class="col-11" style="padding: 0;">
+					<input type="text" class="form-control" id="search" name="search" placeholder="VIN, Марка, Модель, Цена" autocomplete="off">	
+				</div>
+				<div class="col-1 d-flex align-items-center justify-content-center" style="padding: 0;">
+					<span class="fs-5 icon-mbri-update" id="refresh" title="Обновить"></span>
+				</div>
+			</div>
+
+			<hr>
 		<section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe">
 			<div class="">
 			
@@ -874,7 +1680,9 @@
 					<img src="/media/loading.gif" alt="">
 				</div>
 
-				<button class="btn btn-sm w-100 btn-secondary bg-gradient" id="more"> <span class="fs-5 icon-mbri-down" id="refresh"></span> Показать еще</button>
+				<button class="btn w-100" id="more">
+					<span class="icon-mbri-down me-2"></span> Показать еще
+				</button>
 				
 			</div>
 		</section>
@@ -886,238 +1694,230 @@
 		<div class="modal-dialog modal-xl modal-dialog-scrollable">
 		<div class="modal-content">
 		<div class="modal-header">
-		<span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-truck"></span> Информация о автомобиле</h5>
-		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			<h5 class="modal-title" id="rlkLabel">
+				<span class="icon-truck"></span>
+				Информация о автомобиле
+			</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 		<div class="modal-body">
-			<div class="fs-5 fw-bold" id="info_car_name"></div>
+			<div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;" id="info_car_name"></div>
 			
-			<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="info_car_type_reception">Тип продажи: - </span></label> 
-			<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="info_car_type_sale">Тип приема: - </span></label>
-			
-			<hr style="width: 75%;">
-
-			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Автомобиль</span></label>
-
-			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos">
-				
+			<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+				<span class="doc-tag" id="info_car_type_reception_tag">
+					<span class="icon-mbri-star"></span>
+					<span id="info_car_type_reception">Тип продажи: -</span>
+				</span>
+				<span class="doc-tag" id="info_car_type_sale_tag">
+					<span class="icon-mbri-features"></span>
+					<span id="info_car_type_sale">Тип приема: -</span>
+				</span>
 			</div>
 
-			<hr style="width: 75%;">
+			<div class="modal-section">
+				<div class="modal-section-title">
+					<span class="icon-mbri-preview"></span>
+					Автомобиль
+				</div>
+				<div class="modal-gallery">
+					<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos">
+					</div>
+				</div>
+			</div>
 
-			<div class="row">
+			<div class="modal-divider"></div>
+
+			<div class="modal-info-grid">
 				
-				<div class="col-12 col-sm-12 col-md-4 lg-3">
-					
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-setting2"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label class="fs-7 text-secondary">Модификация</label>
-								<br>
-								<label id="info_car_modification_value"  class="fs-6">-</label>
-								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" >	
-							</div>
-						</div>
-					</div>	
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-cd"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_run" class="fs-7 text-secondary">Пробег</label>
-								<br>
-								<label id="info_car_run_value"  class=" fs-6">-</label>
-								<input type="text" class="d-none form-control form-control-kors" id="info_car_run" >	
-							</div>
-						</div>
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-setting2"></span>
 					</div>
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-cd"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_price" class="fs-7 text-secondary">Текущая цена</label>
-								<br>
-								<label id="info_car_price_value"  class=" fs-6">-</label>
-								<input type="text" class="d-none form-control form-control-kors" id="info_car_price" >	
-							</div>
-						</div>
+					<div class="info-content">
+						<div class="info-label">Модификация</div>
+						<div class="info-value" id="info_car_modification_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_modification_input">
 					</div>
-
 				</div>
 
-				<div class="col-12 col-sm-12 col-md-4 lg-3">
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-calendar"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_days_in_stok" class="fs-7 text-secondary">Дней на складе</label>
-								<br>
-								<label id="info_car_days_in_stok_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_days_in_stok" >		
-							</div>
-						</div>
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-cd"></span>
 					</div>
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-flag"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_status_name" class="fs-7 text-secondary">Cтатус</label>
-								<br>
-								<label id="info_car_status_name_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_status_name" >		
-							</div>
-						</div>
+					<div class="info-content">
+						<div class="info-label">Пробег</div>
+						<div class="info-value" id="info_car_run_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_run">
 					</div>
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-delivery"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_stage_price" class="fs-7 text-secondary">Этап</label>
-								<br>
-								<label id="info_car_stage_price_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_stage_price" >		
-							</div>
-						</div>
-					</div>
-
 				</div>
 
-				<div class="col-12 col-sm-12 col-md-4 lg-3">
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-calendar"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_cost_price" class="fs-7 text-secondary">Себестоимость</label>
-								<br>
-								<label id="info_car_cost_price_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_cost_price" >		
-							</div>
-						</div>
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-credit-card"></span>
 					</div>
-
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-flag"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_outlay" class="fs-7 text-secondary">Расходы</label>
-								<br>
-								<label id="info_car_outlay_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_outlay" >		
-							</div>
-						</div>
+					<div class="info-content">
+						<div class="info-label">Текущая цена</div>
+						<div class="info-value" id="info_car_price_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_price">
 					</div>
+				</div>
 
-					<div class="row g-1">
-						<div class="col-1 text-center align-self-center">
-							<span class="fs-5 icon-mbri-delivery"></span>
-						</div>
-						<div class="col">
-							<div class="">
-								<label for="info_car_bcp" class="fs-7 text-secondary">БЦП</label>
-								<br>
-								<label id="info_car_bcp_value"  class="fs-6">-</label>
-								<input type="text" class="form-control d-none form-control-kors" id="info_car_bcp" >		
-							</div>
-						</div>
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-calendar"></span>
 					</div>
+					<div class="info-content">
+						<div class="info-label">Дней на складе</div>
+						<div class="info-value" id="info_car_days_in_stok_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_days_in_stok">
+					</div>
+				</div>
 
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-flag"></span>
+					</div>
+					<div class="info-content">
+						<div class="info-label">Статус</div>
+						<div class="info-value" id="info_car_status_name_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_status_name">
+					</div>
+				</div>
+
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-delivery"></span>
+					</div>
+					<div class="info-content">
+						<div class="info-label">Этап</div>
+						<div class="info-value" id="info_car_stage_price_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_stage_price">
+					</div>
+				</div>
+
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-cash"></span>
+					</div>
+					<div class="info-content">
+						<div class="info-label">Себестоимость</div>
+						<div class="info-value" id="info_car_cost_price_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_cost_price">
+					</div>
+				</div>
+
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-cash"></span>
+					</div>
+					<div class="info-content">
+						<div class="info-label">Расходы</div>
+						<div class="info-value" id="info_car_outlay_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_outlay">
+					</div>
+				</div>
+
+				<div class="modal-info-item">
+					<div class="icon-wrapper">
+						<span class="icon-mbri-delivery"></span>
+					</div>
+					<div class="info-content">
+						<div class="info-label">БЦП</div>
+						<div class="info-value" id="info_car_bcp_value">-</div>
+						<input type="text" class="d-none form-control" id="info_car_bcp">
+					</div>
 				</div>
 			
 			</div>
 
-			<br>
 
-			<hr style="width: 75%;">
-			<div class="row">
-				<div class="col-12 col-sm-12 col-md-6 lg-3">
-					<div class="mb-3">
-						<label for="info_car_description_podgotovka" class="form-label fs-6">Комментарий для отдела подготовки</label>
+			<div class="modal-divider"></div>
+
+			<div class="modal-section">
+				<div class="row g-3">
+					<div class="col-12 col-md-6">
+						<label for="info_car_description_podgotovka" class="form-label">Комментарий для отдела подготовки</label>
 						<textarea class="form-control" id="info_car_description_podgotovka" rows="10"></textarea>
 					</div>
-				</div>
-				<div class="col-12 col-sm-12 col-md-6 lg-3">
-					<div class="mb-3">
-						<label for="info_car_description_op" class="form-label fs-6">Комментарий для отдела продаж</label>
+					<div class="col-12 col-md-6">
+						<label for="info_car_description_op" class="form-label">Комментарий для отдела продаж</label>
 						<textarea class="form-control" id="info_car_description_op" rows="10"></textarea>
 					</div>
 				</div>
 			</div>
 
-			<hr style="width: 75%;">
+			<div class="modal-divider"></div>
 			
-			<label class="fs-6"><span class="badge text-white bg-success bg-opacity-75">Интерактивная оценка </span></label> 
-			<br>
-			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Внешний осмотр</span></label>
-			
-			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
-				
-				
-			</div>
-			<br>
-			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Салон</span></label>
-			
-			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
-				
-				
-			</div>
-			<br>
-			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Схема ЛКП</span></label>
-			
-			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
-				
-				
-			</div>
-			<br>
-			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Фото повреждений</span></label>
-			<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
-				
-				
-			</div>
-			<br>
-			<div class="row g-1">
-				<div class="col-12">
-					<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Работы по автомобилю</span></label>
-					<br>
-					<textarea class="form-control" id="work_car" rows="10"></textarea>
-				</div>				
+			<div class="modal-section">
+				<div class="modal-section-title" style="background: rgba(23, 107, 18, 0.12); color: #176b12;">
+					<span class="icon-mbri-star"></span>
+					Интерактивная оценка
+				</div>
 			</div>
 
-			<br>
-			<label class="fs-6"><span class="badge text-white bg-dark bg-opacity-75" id="">Диагностика</span></label>
-			<div class="row">
-				<div class="col-12 col-sm-12">
-					<div class="mb-3">
-						
-						<textarea class="form-control" id="info_car_comment_diagnostica" rows="10"></textarea>
+			<div class="modal-section">
+				<div class="modal-section-title">
+					<span class="icon-mbri-preview"></span>
+					Внешний осмотр
+				</div>
+				<div class="modal-gallery">
+					<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_vnesh">
 					</div>
 				</div>
+			</div>
+
+			<div class="modal-section">
+				<div class="modal-section-title">
+					<span class="icon-mbri-drag-n-drop2"></span>
+					Салон
+				</div>
+				<div class="modal-gallery">
+					<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_salon">
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-section">
+				<div class="modal-section-title">
+					<span class="icon-mbri-layers"></span>
+					Схема ЛКП
+				</div>
+				<div class="modal-gallery">
+					<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-section">
+				<div class="modal-section-title">
+					<span class="icon-mbri-alert"></span>
+					Фото повреждений
+				</div>
+				<div class="modal-gallery">
+					<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-section">
+				<label class="form-label">
+					<span class="icon-mbri-setting2"></span> Работы по автомобилю
+				</label>
+				<textarea class="form-control" id="work_car" rows="10"></textarea>
+			</div>
+
+			<div class="modal-section">
+				<label class="form-label">
+					<span class="icon-mbri-features"></span> Диагностика
+				</label>
+				<textarea class="form-control" id="info_car_comment_diagnostica" rows="10"></textarea>
 			</div>
 			
 		</div>
 		<div class="modal-footer">
-		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+			<button type="button" class="btn btn-auction-outline" data-bs-dismiss="modal">
+				<span class="icon-mbri-close"></span> Закрыть
+			</button>
 		</div>
 		</div>
 		</div>
@@ -1128,17 +1928,19 @@
 		<div class="modal fade show" id="error_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="error_modal" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
-				<div class="modal-header">
-					<span class=""></span><h5 class="modal-title" id="error_modal"> <span class="icon-mbri-close"></span> Ошибка </h5>
+				<div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);">
+					<h5 class="modal-title" id="error_modal">
+						<span class="icon-mbri-close"></span> Ошибка
+					</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					
-					<label class="fs-6"> {{params.error}}</label>
-
+					<div style="font-size: 1rem; color: var(--auction-dark);">{{params.error}}</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>
+					<button type="button" class="btn btn-auction-outline" data-bs-dismiss="modal">
+						<span class="icon-mbri-close"></span> Закрыть
+					</button>
 				</div>
 			</div>
 			</div>
@@ -1252,37 +2054,79 @@
 						var car_cost_price  = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.cost_price,);
 						var id  = obj.slug;
 
-						var click_delete = "delete_car('" + id + "')";
-						var click 		 = "info_car('" + id + "')";
+					var click_delete = "delete_car('" + id + "')";
+					var click 		 = "info_car('" + id + "')";
 
-						html_list = '	<div class="col text-dark bg-white bg-opacity-10"  id="cars_list_data_id_' + id + '" name="cars_list_data_id_' + id + ' style="margin-bottom:0.5rem; border-radius:0.5rem">'
-						html_list += '		<div class="row row-cols-1 row-cols-md-2 row-cols-sm-2 row-cols-xl-4 g-4">'
-						html_list += '			<div class="col"><img class="h-100" style="max-height:200px; border-radius:0.5rem;"  src="' + obj.url[0] + '"></div>'
-						html_list += '			<div class="col fs-5">' + mark  + '<br>' + model + '<br>' + modification + '<br>' + obj.year + ' г.в.'  + '<br>' + car_run + ' км.' + '<br>' +'</div>'
-						html_list += '			<div class="col">'
-						html_list += '				<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Себестоимость: ' + car_cost_price  + ' ₽ </span></label>'
-						html_list += '				<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Затраты: ' + car_outlay  + ' ₽ </span></label> '
-						html_list += '				<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">БЦП: ' + car_bcp  + ' ₽ </span></label> '
-						html_list += '				<label class="fs-5"><span class="badge text-white bg-success bg-opacity-75" id="">Продажа: ' + car_price  + ' ₽ </span></label> '
-						html_list += '			</div>'
-						html_list += '			<div class="col">'
-						//html_list += '              <span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click + '"></span><br>'					
-						html_list += '              <span class="fs-5 icon-mbri-close bg-danger bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click_delete + '"></span>'					
-						html_list += '			</div>'
-						html_list += '		</div>'
-						html_list += '		<input hidden id="cars_list_data_cost_price_' + id + '" value="'+ obj.cost_price + '">'
-						html_list += '		<input hidden id="cars_list_data_price_' + id + '" value="'+ obj.price + '">'
-						html_list += '		<input hidden id="cars_list_data_outlay_' + id + '" value="'+ obj.outlay + '">'
-						html_list += '		<input hidden name="cars_list_data_slug_' + id + '" value="'+ id + '">'
-						html_list += '	</div>';
-						
-						var html_before = document.querySelector('#cars').innerHTML;
-						document.querySelector('#cars').innerHTML = html_before + html_list ;
-						
-						$('#offcanvasRight').removeClass('show');
-					};
+					html_list = '	<div class="doc-car-card" id="cars_list_data_id_' + id + '" name="cars_list_data_id_' + id + '">'
+					html_list += '		<div class="doc-car-layout">'
+					html_list += '			<div class="doc-car-photo"><img src="' + obj.url[0] + '" alt="' + mark + ' ' + model + '"></div>'
+					html_list += '			<div class="doc-car-info">'
+					html_list += '				<p><strong>Марка:</strong> ' + mark  + '</p>'
+					html_list += '				<p><strong>Модель:</strong> ' + model + '</p>'
+					html_list += '				<p><strong>Модификация:</strong> ' + modification + '</p>'
+					html_list += '				<p><strong>Год выпуска:</strong> ' + obj.year + ' г.</p>'
+					html_list += '				<p><strong>Пробег:</strong> ' + car_run + ' км</p>'
+					html_list += '			</div>'
+					html_list += '			<div>'
+					html_list += '				<div class="doc-car-meta">'
+					html_list += '					<div class="meta-item">Себестоимость: ' + car_cost_price  + ' ₽</div>'
+					html_list += '					<div class="meta-item">Затраты: ' + car_outlay  + ' ₽</div>'
+					html_list += '					<div class="meta-item">БЦП: ' + car_bcp  + ' ₽</div>'
+					html_list += '					<div class="meta-item" style="background: rgba(23, 107, 18, 0.1); color: #176b12; border-color: rgba(23, 107, 18, 0.15);">Продажа: ' + car_price  + ' ₽</div>'
+					html_list += '				</div>'
+					html_list += '			</div>'
+					html_list += '		</div>'
+					html_list += '		<div class="d-flex flex-wrap justify-content-between align-items-center mt-3">'
+					html_list += '			<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>'
+					html_list += '			<div style="display: flex; gap: 0.75rem;">'
+					html_list += '				<label class="doc-edit-link" id="edit_car_info_' + id + '"><span class="icon-mbri-edit"></span> Редактировать</label>'
+					html_list += '				<button type="button" class="btn btn-sm btn-outline-danger" style="border-radius: 0.5rem;" onclick="' + click_delete + '" title="Удалить"><span class="icon-mbri-trash"></span></button>'
+					html_list += '			</div>'
+					html_list += '		</div>'
+					html_list += '		<input hidden id="cars_list_data_cost_price_' + id + '" value="'+ obj.cost_price + '">'
+					html_list += '		<input hidden id="cars_list_data_price_' + id + '" value="'+ obj.price + '">'
+					html_list += '		<input hidden id="cars_list_data_outlay_' + id + '" value="'+ obj.outlay + '">'
+					html_list += '		<input hidden name="cars_list_data_slug_' + id + '" value="'+ id + '">'
+					html_list += '	</div>';
 
-					refresh_board();
+					var modal_html = '<div class="modal fade" id="cars_list_data_slug_' + id + '_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">';
+					modal_html += '	<div class="modal-dialog modal-xl modal-dialog-scrollable">';
+					modal_html += '		<div class="modal-content">';
+					modal_html += '			<div class="modal-header">';
+					modal_html += '				<h5 class="modal-title"><span class="icon-truck"></span> ' + mark + ' ' + model + ' &#8226; ' + obj.year + ' &#8226; ' + obj.vin + '</h5>';
+					modal_html += '				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>';
+					modal_html += '			</div>';
+					modal_html += '			<div class="modal-body">';
+					modal_html += '				<p>Модальное окно для редактирования будет доступно после сохранения аукциона</p>';
+					modal_html += '			</div>';
+					modal_html += '			<div class="modal-footer">';
+					modal_html += '				<button type="button" class="btn btn-auction-outline" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Закрыть</button>';
+					modal_html += '			</div>';
+					modal_html += '		</div>';
+					modal_html += '	</div>';
+					modal_html += '</div>';
+						
+					var html_before = document.querySelector('#cars').innerHTML;
+					document.querySelector('#cars').innerHTML = html_before + html_list + modal_html;
+					
+					$('.doc-empty').remove();
+					
+					var currentCount = parseInt($('#total_cars_count').text()) || 0;
+					$('#total_cars_count').text(currentCount + 1);
+					
+					$('#edit_car_info_' + id).on("click", function() {
+						var edit_id = this.id.replace('edit_car_info_', '');
+						var id_open = 'cars_list_data_slug_' + edit_id + '_modal';
+						$('#' + id_open).modal('show');
+					});
+					
+					var offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasRight'));
+					if (offcanvas) {
+						offcanvas.hide();
+					}
+				};
+
+				refresh_board();
 					
 				});
 				
@@ -1311,16 +2155,24 @@
 			};		
 		}
 
-		function delete_car(slug){
+	function delete_car(slug){
+		
+		var id = '#cars_list_data_id_' + slug;
+		
+		var count_car = $(id).length;
+		if (count_car == 1 ){
+			$(id).remove();
+			$('#cars_list_data_slug_' + slug + '_modal').remove();
 			
-			var id = '#cars_list_data_id_' + slug;
+			var currentCount = parseInt($('#total_cars_count').text()) || 0;
+			$('#total_cars_count').text(Math.max(0, currentCount - 1));
 			
-			var count_car = $(id).length;
-			if (count_car == 1 ){
-				$(id).remove();
-			};
-			refresh_board();
+			if ($('.doc-car-card').length === 0) {
+				$('#cars').append('<div class="doc-empty">Автомобили ещё не добавлены. Используйте кнопку ниже, чтобы добавить транспорт.</div>');
+			}
 		};
+		refresh_board();
+	};
 
 		$('#price_start').bind('input', function() {
 			refresh_board(); // get the current value of the input field.
@@ -1356,30 +2208,17 @@
 			document.querySelector('#car_price').innerHTML = 'Продажа: ' + price_cars_str + ' ₽';
 			
 			var car_profit_int = price_cars - cost_price_cars - outlay_cars;
-			car_profit_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(car_profit_int,); 
-			document.querySelector('#car_profit').innerHTML = 'Профит: ' + car_profit_str + ' ₽'; 
-			if (car_profit_int < 0){
-				$('#car_profit').addClass('bg-danger'); 
-				$('#car_profit').removeClass('bg-success');
-			}else{
-				$('#car_profit').removeClass('bg-danger'); 
-				$('#car_profit').addClass('bg-success');
-			};
+			car_profit_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(car_profit_int,);
+			var profit_class = car_profit_int < 0 ? 'profit-negative' : 'profit-positive';
+			document.querySelector('#car_profit').innerHTML = 'Профит: <span class="' + profit_class + '">' + car_profit_str + ' ₽</span>';
 
 			var car_profit_auction_int = price_lot - cost_price_cars - outlay_cars;
 			car_profit_auction_str = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(car_profit_auction_int,);
-			document.querySelector('#car_profit_auction').innerHTML = 'Профит аукцион от: ' + car_profit_auction_str + ' ₽'; 
+			var profit_auction_class = car_profit_auction_int < 0 ? 'profit-negative' : 'profit-positive';
+			document.querySelector('#car_profit_auction').innerHTML = 'Профит аукцион от: <span class="' + profit_auction_class + '">' + car_profit_auction_str + ' ₽</span>'; 
 			
 			$('#price_start').attr('min', price_cars);
 			document.querySelector('#min_price_start').innerHTML = 'минимальная стартовая цена лота: ' + price_cars_str + ' ₽';
-
-			if (car_profit_auction_int < 0){
-				$('#car_profit_auction').addClass('bg-danger'); 
-				$('#car_profit_auction').removeClass('bg-success');
-			}else{
-				$('#car_profit_auction').removeClass('bg-danger'); 
-				$('#car_profit_auction').addClass('bg-success');
-			};
 
 			document.querySelector('#car_count').innerHTML = 'Автомобилей: ' + count_car + ' шт.';
 			
@@ -1502,13 +2341,26 @@
 			
 		};
 
-		function visible_canvas(){
-		$('#offcanvasRight').addClass('show');
-		};
+	function visible_canvas(){
+		var offcanvasElement = document.getElementById('offcanvasRight');
+		var offcanvas = new bootstrap.Offcanvas(offcanvasElement);
+		offcanvas.show();
+	};
 
-		$("#offcanvasRightClose" ).on("click", function() {
-			$('#offcanvasRight').removeClass('show');
-		});
+	var offcanvasElement = document.getElementById('offcanvasRight');
+	
+	offcanvasElement.addEventListener('hide.bs.offcanvas', function () {
+		$('#cars-list').addClass('fade-out');
+	});
+	
+	offcanvasElement.addEventListener('hidden.bs.offcanvas', function () {
+		$('#cars-list').empty().removeClass('fade-out');
+		page = 1;
+	});
+	
+	offcanvasElement.addEventListener('shown.bs.offcanvas', function () {
+		$('#cars-list').removeClass('fade-out');
+	});
 
 		function refresh_data_online(){
 			
@@ -1543,19 +2395,24 @@
 					var click 				= "info_car('" + id + "')";
 					var click_success 		= "subbmit_car('" + id + "')";
 
-					html_list = '			<div id="cars-list_data_' + id + '" href="' + obj.id + '/" target="_blank" class="text-white bg-white bg-opacity-10 " style="margin-bottom:0.5rem; border-radius:0.5rem">'
-					html_list += '   			<div class="col-12">'
-					html_list += '                <div class="">'
-					html_list += '                      <div class="row">'
-					html_list += '							<div class="col-5" style="padding:0;"><img class="h-100" style="border-radius:0.5rem;"  src="' + obj.url + '"></div>'
-					html_list += '							<div class="col">' + mark  + '<br>' + model + '<br>' + modification + '<br>' + obj.year + ' г.в.'  + '<br>' + car_run + ' км.' + '<br><label class="fs-6 fw-bold">' + car_price + ' ₽' +'</label></div>'
-					html_list += '                		</div>'
-					html_list += '                		<hr width: 75%;">'
-					html_list += '                		<span class="fs-5 icon-mbri-plus bg-success bg-opacity-50 text-white" style="border-radius:50%;" onclick="' + click_success + '"></span>'
-					html_list += '                		<span class="fs-5 icon-mbri-preview bg-warning bg-opacity-75 text-white" style="border-radius:50%;" onclick="' + click + '")></span>'
-					html_list += '                </div>'
-					html_list += '            </div>'
-					html_list += '        </div>'
+				html_list = '			<div id="cars-list_data_' + id + '" class="car-list-item">'
+				html_list += '   			<div class="row g-2">'
+				html_list += '					<div class="col-4">'
+				html_list += '						<img src="' + obj.url + '" alt="' + mark + ' ' + model + '">'
+				html_list += '					</div>'
+				html_list += '					<div class="col-8 car-list-info">'
+				html_list += '						<div><strong>' + mark + '</strong> ' + model + '</div>'
+				html_list += '						<div>' + modification + '</div>'
+				html_list += '						<div>' + obj.year + ' г.в.</div>'
+				html_list += '						<div>' + car_run + ' км</div>'
+				html_list += '						<div style="font-weight: 700; font-size: 1rem; color: var(--auction-accent); margin-top: 0.25rem;">' + car_price + ' ₽</div>'
+				html_list += '					</div>'
+				html_list += '				</div>'
+				html_list += '				<div class="car-list-actions">'
+				html_list += '					<span class="car-list-btn add icon-mbri-plus" onclick="' + click_success + '" title="Добавить в аукцион"></span>'
+				html_list += '					<span class="car-list-btn view icon-mbri-preview" onclick="' + click + '" title="Посмотреть детали"></span>'
+				html_list += '				</div>'
+				html_list += '        </div>'
 
 					document.querySelector('#cars-list').innerHTML = document.querySelector('#cars-list').innerHTML  + html_list ;
 					
