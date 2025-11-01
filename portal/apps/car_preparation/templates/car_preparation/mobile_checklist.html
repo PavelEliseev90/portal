@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чек-лист подготовки - {{ preparation.car }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .car-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .car-info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .status-pending { background: #f39c12; }
+        .status-in_progress { background: #3498db; }
+        .status-completed { background: #27ae60; }
+        .status-rejected { background: #e74c3c; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 0.3s;
+        }
+        
+        .work-item {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .work-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .work-title {
+            font-weight: bold;
+            font-size: 16px;
+            flex: 1;
+        }
+        
+        .work-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .work-details {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: #fff;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .photo-item {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .comment-box {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            min-height: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Подготовка автомобиля</h1>
+            <div class="car-info">
+                <div class="car-info-item">
+                    <span><strong>VIN:</strong> {{ preparation.car.vin }}</span>
+                </div>
+                <div class="car-info-item">
+                    <span><strong>Модель:</strong> {{ preparation.car.name }}</span>
+                </div>
+                <div class="car-info-item">
+                    <span><strong>Статус:</strong> 
+                        <span class="status-badge status-{{ preparation.status.code }}">
+                            {{ preparation.status.name }}
+                        </span>
+                    </span>
+                </div>
+                <div class="car-info-item">
+                    <span><strong>Прогресс:</strong> {{ preparation.progress_percent }}%</span>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ preparation.progress_percent }}%"></div>
+            </div>
+        </div>
+        
+        {% for work_item in preparation.work_items.all %}
+        <div class="work-item">
+            <div class="work-header">
+                <span class="work-title">{{ work_item.work.name }}</span>
+                <span class="work-status status-{{ work_item.status }}">
+                    {{ work_item.get_status_display }}
+                </span>
+            </div>
+            <div class="work-details">
+                {% if work_item.performer %}
+                    <p>Исполнитель: {{ work_item.performer.name }}</p>
+                {% endif %}
+                {% if work_item.actual_time %}
+                    <p>Время: {{ work_item.actual_time }} мин</p>
+                {% endif %}
+                {% if work_item.comment %}
+                    <p>Комментарий: {{ work_item.comment }}</p>
+                {% endif %}
+            </div>
+            
+            {% if work_item.photos.all %}
+            <div class="photo-gallery">
+                {% for photo in work_item.photos.all %}
+                    <img src="{{ photo.photo.url }}" alt="{{ photo.description }}" class="photo-item">
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if work_item.status != 'completed' %}
+            <button class="btn btn-primary" onclick="openWorkDialog({{ work_item.id }})">
+                {% if work_item.status == 'pending' %}Начать работу{% else %}Продолжить{% endif %}
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <button class="btn btn-success" onclick="submitChecklist()">
+            Завершить подготовку
+        </button>
+    </div>
+    
+    <script>
+        function openWorkDialog(workItemId) {
+            // Открыть модальное окно для выполнения работы
+            window.location.href = `/car_preparation/work/${workItemId}/`;
+        }
+        
+        function submitChecklist() {
+            if (confirm('Вы уверены, что все работы выполнены?')) {
+                // Отправить запрос на завершение подготовки
+                fetch('/car_preparation/api/preparation/{{ preparation.id }}/complete/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Подготовка завершена!');
+                        window.location.reload();
+                    } else {
+                        alert('Ошибка: ' + data.message);
+                    }
+                });
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
+

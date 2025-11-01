@@ -34,7 +34,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import send_matrix_auction, info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -6264,7 +6264,11 @@ def settings_matrix_auction(request):
         'type'          : 'settings',
         'settings'      : setting_auction
     }
-    
+    try:
+        send_matrix_auction()
+    except:
+        s = 1
+
     return render(request, "kors/settings_matrix_auction.html", {'params': params})
 
 @login_required
@@ -6674,7 +6678,7 @@ def auction_doc(request, slug_auction):
     new     = False
     user    = request.user
     answer  = ''
-    
+
     if slug_auction == 'new_lots':
         auction = Auction()
         auction.user = user
@@ -7112,6 +7116,7 @@ def refresh_estimation_analitik(estimation_rlk_id):
 
 def test(request):
     
+    RegInteractivOcenka.objects.get(pk = 35708).save()
     #refresh_price()
     
     #refresh_price()

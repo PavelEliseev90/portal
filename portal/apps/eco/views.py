@@ -4,7 +4,7 @@ from register.models import RegEstimationBalanceUnit, RegEstimationsCalculationD
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
-from documents.models import DocCarAgreement, DocRLK, DocZN, DocLO
+from documents.models import DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
 import json
 from checklists.models import CheckListTradeIn
@@ -701,6 +701,8 @@ def doc(request, id):
         }
         return render(request, 'errors/403.html', {'params': params})
 
+    warning_list = list()
+
     params  = {}
     
     balance_date        = estimation.start_estimation 
@@ -723,7 +725,16 @@ def doc(request, id):
     agreement_car           = None
     balance                 = None
     balance_unit            = None
-    
+
+    car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True)
+    for car_sale in car_sales:
+        if car_sale.dataTime > estimation.start_estimation - DT.timedelta(days = 30):
+            info_warning = {
+                'text'  : 'Автомобиль продан нами менее 30 дней назад',
+                'dop'   : 'Документ продажи (отгрузка ам) ' + car_sale.nomer + ' от ' + car_sale.dataTime.strftime("%d.%m.%Y") + "г. ДЦ продажи " + car_sale.unit.name
+            }
+            warning_list.append(info_warning)
+
     if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
         lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
 
@@ -1043,7 +1054,8 @@ def doc(request, id):
                 'balance_date_start'    : balance_date_start,
                 'balance_date_end'      : balance_date_end,
                 'balance_unit'          : balance_unit,
-                'signal'                : signal
+                'signal'                : signal,
+                'warning_list'          : warning_list
             }
     
     elif request.method == "POST":
@@ -3043,8 +3055,6 @@ def estimations_price_calculation(estimation, type_calculation):
         except:
             s = 1
 
-    
-
     salon_info = salon_estimation(estimation)
     for info in salon_info['array']:
         if info['name'] == 'ручка кпп':
@@ -3095,6 +3105,56 @@ def estimations_price_calculation(estimation, type_calculation):
                 }
                 list_work_podgotovka.append(dop)
                 amount_podgotovka = amount_podgotovka + diff_sum 
+        elif info['name'].find('сиденье') > 0 or info['name'].find('сидение') > 0:
+            if info['pereshiv'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 134)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum
+            elif info['vost'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 135)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum
+            elif info['dirka'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 130)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo * info['dirka'],
+                    'amount_pod': work.price_podrad * info['dirka'], 
+                    'amount'    : work.price_kors * info['dirka']
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum
+            elif info['perecras'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 130)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo * info['dirka'],
+                    'amount_pod': work.price_podrad * info['dirka'], 
+                    'amount'    : work.price_kors * info['dirka']
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum   
+
 
     body_info = body_estimation(estimation)            
     elem_rzav = 0
@@ -3213,7 +3273,128 @@ def estimations_price_calculation(estimation, type_calculation):
                 elem_rzav = elem_rzav + 1
                 elem_rzav_data    = elem_rzav_data + info['name'] + "; "
             
-            if info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['rzav_strong'] > 0:
+            if info['replace_add'] > 0:
+                if info['name'] == 'передний бампер':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 14)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum 
+                elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 43) 
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'задний бампер':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 9)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 59)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 46)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'крыша':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 51)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'крышка багажника':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 4)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 24)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 28)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                elif info['name'] ==  'капот':
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 38)
+                    diff_sum    = work.price_podrad
+                    dop = {
+                        'name'      : work.name_group + ' / ' +  work.name  + ' / замена',
+                        'quantity'  : work.normo * 2,
+                        'amount_pod': work.price_podrad * 2, 
+                        'amount'    : work.price_kors * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+            if (info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 14)
@@ -3455,7 +3636,7 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum
-            
+ 
             if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
             
                 diff_sum    = 0

@@ -8,5 +8,5 @@ class RegInteractivOcenkaSerializer(serializers.ModelSerializer):
         
         model = RegInteractivOcenka
         fields = [field.name for field in model._meta.fields]
-       
+        
         depth = 4
