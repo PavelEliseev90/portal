@@ -706,7 +706,7 @@ def doc(request, id):
     params  = {}
     
     balance_date        = estimation.start_estimation 
-    balance_date_start  = balance_date - relativedelta(months=2)
+    balance_date_start  = balance_date - relativedelta(months=1)
     balance_date_start  = balance_date_start.replace(day=1, hour=1)
     balance_date_end    = balance_date
 
