@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь подготовки автомобилей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #3498db;
+            color: #fff;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #ddd;
+            border: 1px solid #ddd;
+        }
+        
+        .calendar-day-header {
+            background: #34495e;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .calendar-day {
+            background: #fff;
+            min-height: 120px;
+            padding: 8px;
+            position: relative;
+        }
+        
+        .calendar-day.today {
+            background: #e8f4f8;
+            border: 2px solid #3498db;
+        }
+        
+        .calendar-day.weekend {
+            background: #f8f8f8;
+        }
+        
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .schedule-item {
+            background: #3498db;
+            color: #fff;
+            padding: 4px 6px;
+            margin: 2px 0;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .schedule-item:hover {
+            background: #2980b9;
+        }
+        
+        .schedule-item.priority-high {
+            background: #e74c3c;
+        }
+        
+        .schedule-item.priority-urgent {
+            background: #c0392b;
+        }
+        
+        .schedule-item.status-in_progress {
+            border-left: 3px solid #f39c12;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Календарь подготовки автомобилей</h1>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Подразделение</label>
+                    <select id="unit_filter" onchange="applyFilters()">
+                        <option value="">Все подразделения</option>
+                        {% for unit in units %}
+                        <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+                            {{ unit.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Начало периода</label>
+                    <input type="date" id="start_date" value="{{ start_date|date:'Y-m-d' }}" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>Конец периода</label>
+                    <input type="date" id="end_date" value="{{ end_date|date:'Y-m-d' }}" onchange="applyFilters()">
+                </div>
+            </div>
+        </div>
+        
+        <div class="calendar-nav">
+            <button class="btn btn-secondary" onclick="previousMonth()">← Предыдущий месяц</button>
+            <span style="flex: 1; text-align: center; font-weight: bold;">
+                {{ start_date|date:"F Y" }}
+            </span>
+            <button class="btn btn-secondary" onclick="nextMonth()">Следующий месяц →</button>
+        </div>
+        
+        <div class="calendar-grid">
+            <div class="calendar-day-header">Пн</div>
+            <div class="calendar-day-header">Вт</div>
+            <div class="calendar-day-header">Ср</div>
+            <div class="calendar-day-header">Чт</div>
+            <div class="calendar-day-header">Пт</div>
+            <div class="calendar-day-header">Сб</div>
+            <div class="calendar-day-header">Вс</div>
+            
+            {% for item in schedules_list %}
+            <div class="calendar-day {% if item.date == today %}today{% endif %} {% if item.date.weekday >= 5 %}weekend{% endif %}">
+                <div class="day-number">{{ item.date.day }}</div>
+                {% if item.schedules %}
+                    {% for schedule in item.schedules %}
+                    <div class="schedule-item priority-{{ schedule.priority }} status-{{ schedule.planning_status }}" 
+                         title="{{ schedule.work_item.work.name }} - {{ schedule.planned_performer.name|default:'Не назначен' }}">
+                        {% if schedule.planned_start %}
+                            {{ schedule.planned_start|time:"H:i" }}
+                        {% endif %}
+                        {% if schedule.planned_end %}
+                             - {{ schedule.planned_end|time:"H:i" }}
+                        {% endif %}
+                        <br>
+                        {{ schedule.work_item.work.name|truncatewords:3 }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498db;"></div>
+                <span>Обычный приоритет</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>Высокий приоритет</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #c0392b;"></div>
+                <span>Срочный приоритет</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12; border-left: 3px solid #f39c12;"></div>
+                <span>В работе</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function applyFilters() {
+            const unitId = document.getElementById('unit_filter').value;
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            let url = '/car_preparation/calendar/?';
+            if (unitId) url += 'unit_id=' + unitId + '&';
+            if (startDate) url += 'start_date=' + startDate + '&';
+            if (endDate) url += 'end_date=' + endDate;
+            
+            window.location.href = url;
+        }
+        
+        function previousMonth() {
+            const startDate = new Date('{{ start_date|date:"Y-m-d" }}');
+            startDate.setMonth(startDate.getMonth() - 1);
+            const endDate = new Date(startDate);
+            endDate.setDate(new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate());
+            
+            window.location.href = `/car_preparation/calendar/?start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`;
+        }
+        
+        function nextMonth() {
+            const startDate = new Date('{{ start_date|date:"Y-m-d" }}');
+            startDate.setMonth(startDate.getMonth() + 1);
+            const endDate = new Date(startDate);
+            endDate.setDate(new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate());
+            
+            window.location.href = `/car_preparation/calendar/?start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`;
+        }
+    </script>
+</body>
+</html>
+

@@ -3949,57 +3949,20 @@
           </div>
 
             <div class="my_pages_info_doc_eco">
-            
-              <div class="card" style="margin: 0.2rem;">
-                <div class="card-body">
-                  
-                  <div class="row g-1">
-                    <div class="col">
-                      <div class="card bg-secondary bg-gradient text-white" style="margin: 0.2rem;">
-                        <div class="card-body">
-                          <label class="fs-6">ДЦ Нового АМ</label>
-                          <br>
-                          
-                          {% if params.estimation.rlk.unit_dc == None %}
-    
-                            {% if params.lo.agreement_number != '' %}
-                              
-                              <label class="fs-6">{{params.lo.agreement_unit.name}}</label>  
-                          
-                            {% elif params.estimation.rlk.unit == None %}
-                              
-                              <label class="fs-6">{{params.estimation.page_documents.unit.name}}</label>    
-                            
-                            {% else %}
-                              
-                              <label class="fs-6">{{params.estimation.rlk.unit.name}}</label>
-    
-                            {% endif %}
-    
-                          {% else %}
-                            <label class="fs-6">{{params.estimation.rlk.unit_dc.name}}</label>
-                          {% endif %}
-    
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="col">
-                      <div class="card bg-secondary bg-gradient text-white" style="margin: 0.2rem;">
-                        <div class="card-body">
-                          <label class="fs-6">Филиал листа оценки</label>
-                          <br>
-                          <label class="fs-6">{{params.lo.filial}}</label>
-                        </div>
-                      </div>
-                    </div>
+              
+              {% for warning in params.warning_list %}
+                <div class="card bg-danger bg-gradient text-white" style="margin: 0.2rem;">
+                  <div class="card-body">
+                    
+                    <label class="fs-5">{{warning.text}}</label> 
+                    <br>
+                    <label class="fs-6">{{warning.dop}}</label>
 
                   </div>
-
                 </div>
-              </div>
 
-              <br>
+                <br>
+              {% endfor %}
 
               <div class="row g-1">
                 
@@ -6104,6 +6067,20 @@
             <main>
 
               <div class="row g-1">
+
+                {% for warning in params.warning_list %}
+                <div class="card bg-danger bg-gradient text-white" style="margin: 0.2rem;">
+                  <div class="card-body">
+                    
+                    <label class="fs-5">{{warning.text}}</label> 
+                    <br>
+                    <label class="fs-6">{{warning.dop}}</label>
+
+                  </div>
+                </div>
+
+                <br>
+              {% endfor %}
 
                 <div class="row g-1">
                   <div class="col-12 col-sm-12">
@@ -10308,6 +10285,19 @@
 
             <main>
 
+              {% for warning in params.warning_list %}
+                <div class="card bg-danger bg-gradient text-white" style="margin: 0.2rem;">
+                  <div class="card-body">
+                    
+                    <label class="fs-5">{{warning.text}}</label> 
+                    <br>
+                    <label class="fs-6">{{warning.dop}}</label>
+
+                  </div>
+                </div>
+
+                <br>
+              {% endfor %}
 
               <div class="row g-1">
                   
@@ -14107,6 +14097,22 @@
             </div>
 
             <main>
+              
+             
+
+              {% for warning in params.warning_list %}
+                <div class="card bg-danger bg-gradient text-white" style="margin: 0.2rem;">
+                  <div class="card-body">
+                    
+                    <label class="fs-5">{{warning.text}}</label> 
+                    <br>
+                    <label class="fs-6">{{warning.dop}}</label>
+
+                  </div>
+                </div>
+
+                <br>
+              {% endfor %}
               
               <div class="card" style="margin: 0.2rem;">
                 <div class="card-body">

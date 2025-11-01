@@ -27,8 +27,9 @@ class RefFilialSerializer(serializers.ModelSerializer):
 class RefUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = RefUnit
-        fields = '__all__'
-        depth = 1
+        #fields = '__all__'
+        exclude = ['ratio_1с_test_price_200', 'ratio_1с_test_price_400']
+        #depth = 1
 
 
 class RefStoreSerializer(serializers.ModelSerializer):

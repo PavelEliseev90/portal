@@ -6,6 +6,11 @@ from rest_framework_swagger.views import get_swagger_view
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from rest_framework.routers import DefaultRouter
+
+
+
+
 
 # swagger
 schema_view = get_schema_view(
@@ -30,6 +35,8 @@ urlpatterns = [
 
 
    path('post_info/',                         views.post_info),
+   # API подготовки автомобилей (подключаем urls приложения)
+   path('car_preparation/', include('car_preparation.api_urls')),
    
    # мобильное приложение андроид версии 1
    path('a/v1/user_desctop/',                         views_mobile_android_api_v1.user_desctop),

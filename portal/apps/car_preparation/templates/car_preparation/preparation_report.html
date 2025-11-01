@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчет по подготовке - {{ preparation.car }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "Times New Roman", serif;
+            padding: 20px;
+            color: #000;
+            background: #fff;
+        }
+        
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background: #f0f0f0;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+        
+        .signature-box {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            text-align: center;
+        }
+        
+        .photo-section {
+            margin: 20px 0;
+        }
+        
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .photo-item {
+            width: 100%;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ОТЧЕТ О ПОДГОТОВКЕ АВТОМОБИЛЯ</h1>
+        <p>Дата: {{ preparation.date_end|date:"d.m.Y"|default:"Не завершена" }}</p>
+    </div>
+    
+    <div class="info-section">
+        <h2>Информация об автомобиле</h2>
+        <div class="info-grid">
+            <div class="info-label">VIN:</div>
+            <div>{{ preparation.car.vin }}</div>
+            
+            <div class="info-label">Модель:</div>
+            <div>{{ preparation.car.name }}</div>
+            
+            <div class="info-label">Год выпуска:</div>
+            <div>{{ preparation.car.year }}</div>
+            
+            <div class="info-label">Пробег:</div>
+            <div>{{ preparation.car.run|default:"-" }} км</div>
+            
+            <div class="info-label">Подразделение:</div>
+            <div>{{ preparation.unit.name|default:"-" }}</div>
+        </div>
+    </div>
+    
+    <div class="info-section">
+        <h2>Информация о подготовке</h2>
+        <div class="info-grid">
+            <div class="info-label">Дата начала:</div>
+            <div>{{ preparation.date_start|date:"d.m.Y H:i"|default:"-" }}</div>
+            
+            <div class="info-label">Планируемая дата окончания:</div>
+            <div>{{ preparation.date_planned_end|date:"d.m.Y H:i"|default:"-" }}</div>
+            
+            <div class="info-label">Дата окончания:</div>
+            <div>{{ preparation.date_end|date:"d.m.Y H:i"|default:"В процессе" }}</div>
+            
+            <div class="info-label">Статус:</div>
+            <div>{{ preparation.status.name|default:"-" }}</div>
+            
+            <div class="info-label">Ответственный:</div>
+            <div>{{ preparation.responsible.name|default:"-" }}</div>
+            
+            <div class="info-label">Инспектор качества:</div>
+            <div>{{ preparation.inspector.name|default:"-" }}</div>
+            
+            <div class="info-label">Прогресс выполнения:</div>
+            <div>{{ preparation.progress_percent }}%</div>
+        </div>
+    </div>
+    
+    <div class="info-section">
+        <h2>Выполненные работы</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Этап</th>
+                    <th>Вид работы</th>
+                    <th>Исполнитель</th>
+                    <th>Время (мин)</th>
+                    <th>Стоимость (руб.)</th>
+                    <th>Статус</th>
+                    <th>Примечание</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for work_item in preparation.work_items.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ work_item.work.stage.name|default:"-" }}</td>
+                    <td>{{ work_item.work.name }}</td>
+                    <td>{{ work_item.performer.name|default:"-" }}</td>
+                    <td>{{ work_item.actual_time|default:"-" }}</td>
+                    <td>{{ work_item.cost|floatformat:2|default:"0.00" }}</td>
+                    <td>{{ work_item.get_status_display }}</td>
+                    <td>{{ work_item.comment|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="4"><strong>ИТОГО:</strong></td>
+                    <td><strong>{{ preparation.get_total_time|default:0 }} мин</strong></td>
+                    <td><strong>{{ preparation.get_total_cost|floatformat:2|default:"0.00" }} руб.</strong></td>
+                    <td colspan="2"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    {% if preparation.checklist %}
+    <div class="info-section">
+        <h2>Результаты контроля качества</h2>
+        <div class="info-grid">
+            <div class="info-label">Общая оценка качества:</div>
+            <div>{{ preparation.checklist.overall_quality }}/10</div>
+            
+            <div class="info-label">Оценка чистоты:</div>
+            <div>{{ preparation.checklist.cleanliness_score }}/10</div>
+            
+            <div class="info-label">Оценка комплектности:</div>
+            <div>{{ preparation.checklist.completeness_score }}/10</div>
+            
+            <div class="info-label">Оценка отсутствия дефектов:</div>
+            <div>{{ preparation.checklist.defect_score }}/10</div>
+            
+            <div class="info-label">Проверено экстерьера:</div>
+            <div>{{ preparation.checklist.exterior_checked|yesno:"Да,Нет" }}</div>
+            
+            <div class="info-label">Проверено интерьера:</div>
+            <div>{{ preparation.checklist.interior_checked|yesno:"Да,Нет" }}</div>
+            
+            <div class="info-label">Проверена техника:</div>
+            <div>{{ preparation.checklist.technical_checked|yesno:"Да,Нет" }}</div>
+            
+            <div class="info-label">Проверены документы:</div>
+            <div>{{ preparation.checklist.documents_checked|yesno:"Да,Нет" }}</div>
+        </div>
+        
+        {% if preparation.checklist.defects_found %}
+        <div style="margin-top: 15px;">
+            <strong>Обнаруженные дефекты:</strong>
+            <p>{{ preparation.checklist.defects_found }}</p>
+        </div>
+        {% endif %}
+        
+        {% if preparation.checklist.recommendations %}
+        <div style="margin-top: 15px;">
+            <strong>Рекомендации:</strong>
+            <p>{{ preparation.checklist.recommendations }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if preparation.photos.all %}
+    <div class="info-section photo-section">
+        <h2>Фотофиксация</h2>
+        <div class="photo-grid">
+            {% for photo in preparation.photos.all %}
+            <div class="photo-item">
+                <img src="{{ photo.photo.url }}" alt="{{ photo.description }}">
+                {% if photo.description %}
+                <p style="font-size: 10px; margin-top: 5px;">{{ photo.description }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if preparation.comment_final %}
+    <div class="info-section">
+        <h2>Комментарии</h2>
+        <p>{{ preparation.comment_final }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="signature-section">
+        <div class="signature-box">
+            <p>Ответственный</p>
+            <p style="margin-top: 50px;">__________________ {{ preparation.responsible.name|default:"" }}</p>
+        </div>
+        
+        {% if preparation.checklist %}
+        <div class="signature-box">
+            <p>Инспектор качества</p>
+            <p style="margin-top: 50px;">__________________ {{ preparation.checklist.checked_by.name|default:"" }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="no-print" style="margin-top: 30px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+            Печать
+        </button>
+    </div>
+</body>
+</html>
+

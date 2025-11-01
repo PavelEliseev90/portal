@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>График работ по сотрудникам</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header h1::before {
+            content: "👥";
+            font-size: 32px;
+        }
+        
+        .filters {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .filters form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .filter-group input, .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 8px 20px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .performer-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .performer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        
+        .performer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, #667eea 0%, #764ba2 100%) 1;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .performer-name {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .performer-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-badge {
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        .stat-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        .stat-pending {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            color: #fff;
+        }
+        
+        .stat-progress {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: #fff;
+        }
+        
+        .stat-completed {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: #fff;
+        }
+        
+        .works-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .works-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        .works-table th, .works-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .works-table th {
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .works-table tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .works-table tbody tr:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            transform: scale(1.01);
+        }
+        
+        .works-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .status-pending { 
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+        .status-in_progress { 
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        .status-completed { 
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+        
+        .car-info {
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .car-vin {
+            font-size: 11px;
+            color: #999;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+        
+        .work-name {
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 15px;
+            border: 2px dashed rgba(102, 126, 234, 0.3);
+        }
+        
+        .empty-state h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .works-count {
+            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+            display: inline-block;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .performer-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .performer-stats {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .works-table {
+                font-size: 12px;
+            }
+            
+            .works-table th, .works-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>График работ по сотрудникам</h1>
+            
+            <!-- Фильтры -->
+            <div class="filters">
+                <form method="get" action="">
+                    <div class="filter-group">
+                        <label>Подразделение</label>
+                        <select name="unit_id">
+                            <option value="">Все подразделения</option>
+                            {% for unit in units %}
+                            <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+                                {{ unit.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Дата с</label>
+                        <input type="date" name="date_from" value="{{ date_from }}">
+                    </div>
+                    <div class="filter-group">
+                        <label>Дата по</label>
+                        <input type="date" name="date_to" value="{{ date_to }}">
+                    </div>
+                    <div class="filter-group">
+                        <label>Статус</label>
+                        <select name="status">
+                            <option value="">Все статусы</option>
+                            <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Ожидают</option>
+                            <option value="in_progress" {% if status_filter == "in_progress" %}selected{% endif %}>В работе</option>
+                            <option value="completed" {% if status_filter == "completed" %}selected{% endif %}>Выполнено</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button type="submit" class="btn">Применить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- График по исполнителям -->
+        {% if performers_data %}
+        {% for data in performers_data %}
+        <div class="performer-card">
+            <div class="performer-header">
+                <div class="performer-name">
+                    {{ data.performer.name }}
+                    {% if data.performer.post %}
+                    <span style="font-size: 14px; color: #666; font-weight: normal;">- {{ data.performer.post }}</span>
+                    {% endif %}
+                </div>
+                <div class="performer-stats">
+                    <div class="stat-badge stat-total">Всего: {{ data.statistics.total }}</div>
+                    <div class="stat-badge stat-pending">Ожидают: {{ data.statistics.pending }}</div>
+                    <div class="stat-badge stat-progress">В работе: {{ data.statistics.in_progress }}</div>
+                    <div class="stat-badge stat-completed">Выполнено: {{ data.statistics.completed }}</div>
+                </div>
+            </div>
+            
+            {% if data.works %}
+            <table class="works-table">
+                <thead>
+                    <tr>
+                        <th>Автомобиль</th>
+                        <th>Работа</th>
+                        <th>Статус</th>
+                        <th>Планируемое начало</th>
+                        <th>Планируемое окончание</th>
+                        <th>Фактическое начало</th>
+                        <th>Фактическое окончание</th>
+                        <th>Время (мин)</th>
+                        <th>Приоритет</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for work in data.works %}
+                    <tr>
+                        <td>
+                            <div class="car-info">{{ work.preparation.car.name|default:"-" }}</div>
+                            <div class="car-vin">{{ work.preparation.car.vin|default:"-" }}</div>
+                        </td>
+                        <td class="work-name">{{ work.work.name }}</td>
+                        <td>
+                            <span class="status-badge status-{{ work.status }}">
+                                {% if work.status == 'pending' %}Ожидает
+                                {% elif work.status == 'in_progress' %}В работе
+                                {% elif work.status == 'completed' %}Выполнено
+                                {% else %}{{ work.get_status_display }}{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if work.schedule.planned_start %}
+                            {{ work.schedule.planned_start|date:"d.m.Y H:i" }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if work.schedule.planned_end %}
+                            {{ work.schedule.planned_end|date:"d.m.Y H:i" }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if work.date_start %}
+                            {{ work.date_start|date:"d.m.Y H:i" }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if work.date_end %}
+                            {{ work.date_end|date:"d.m.Y H:i" }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if work.actual_time %}
+                            {{ work.actual_time }} / {{ work.planned_time|default:"-" }}
+                            {% else %}
+                            {{ work.planned_time|default:"-" }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if work.schedule %}
+                            <span style="font-size: 11px; color: #666;">
+                                {{ work.schedule.get_priority_display }}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Нет работ для отображения</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        {% else %}
+        <div class="empty-state">
+            <h3>Нет данных для отображения</h3>
+            <p>Попробуйте изменить параметры фильтрации</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+

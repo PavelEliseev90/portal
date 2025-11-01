@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список подготовок автомобилей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+        
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.completed {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .stat-card.filtered {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .stat-card h3 {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        
+        thead {
+            background: #34495e;
+            color: #fff;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .status-new { background: #95a5a6; }
+        .status-in_progress { background: #3498db; }
+        .status-quality_check { background: #f39c12; }
+        .status-completed { background: #27ae60; }
+        .status-cancelled { background: #e74c3c; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 0.3s;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 3px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-view {
+            background: #3498db;
+            color: #fff;
+        }
+        
+        .btn-schedule {
+            background: #f39c12;
+            color: #fff;
+        }
+        
+        .btn-report {
+            background: #27ae60;
+            color: #fff;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .pagination .current {
+            background: #3498db;
+            color: #fff;
+            border-color: #3498db;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .car-info {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .car-vin {
+            font-size: 11px;
+            color: #666;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Список подготовок автомобилей</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <a href="{% url 'car_preparation:performer_dashboard' %}" 
+                   style="padding: 10px 20px; background: #f39c12; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                    🛠️ Мои работы
+                </a>
+                <a href="{% url 'car_preparation:performers_works' %}" 
+                   style="padding: 10px 20px; background: #9b59b6; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                    👥 График по сотрудникам
+                </a>
+                <a href="{% url 'car_preparation:calendar' %}" 
+                   style="padding: 10px 20px; background: #1abc9c; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                    📅 Календарь
+                </a>
+                <a href="{% url 'car_preparation:notifications_list' %}" 
+                   style="padding: 10px 20px; background: #3498db; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold; position: relative;">
+                    🔔 Уведомления
+                    {% if request.user.is_authenticated %}
+                        {% with request.user as user %}
+                            {% if user.staff %}
+                                <span id="notification-badge" style="position: absolute; top: -5px; right: -5px; background: #e74c3c; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px;">
+                                    <span id="unread-count">0</span>
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+        
+        <!-- Статистика -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <h3>Всего</h3>
+                <div class="value">{{ total_count }}</div>
+            </div>
+            <div class="stat-card active">
+                <h3>Активных</h3>
+                <div class="value">{{ active_count }}</div>
+            </div>
+            <div class="stat-card completed">
+                <h3>Завершенных</h3>
+                <div class="value">{{ completed_count }}</div>
+            </div>
+            <div class="stat-card filtered">
+                <h3>Отфильтровано</h3>
+                <div class="value">{{ filtered_count }}</div>
+            </div>
+        </div>
+        
+        <!-- Фильтры -->
+        <div class="filters">
+            <form method="get" action="">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Поиск (VIN, модель)</label>
+                        <input type="text" name="search" value="{{ search_query }}" placeholder="Поиск...">
+                    </div>
+                    <div class="filter-group">
+                        <label>Подразделение</label>
+                        <select name="unit_id">
+                            <option value="">Все подразделения</option>
+                            {% for unit in units %}
+                            <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+                                {{ unit.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Статус</label>
+                        <select name="status_id">
+                            <option value="">Все статусы</option>
+                            {% for status in statuses %}
+                            <option value="{{ status.id }}" {% if selected_status_id == status.id|stringformat:"s" %}selected{% endif %}>
+                                {{ status.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Дата с</label>
+                        <input type="date" name="date_from" value="{{ date_from }}">
+                    </div>
+                    <div class="filter-group">
+                        <label>Дата по</label>
+                        <input type="date" name="date_to" value="{{ date_to }}">
+                    </div>
+                    <div class="filter-group">
+                        <label>Сортировка</label>
+                        <select name="sort_by">
+                            <option value="-date_created" {% if sort_by == "-date_created" %}selected{% endif %}>Дата создания (новые)</option>
+                            <option value="date_created" {% if sort_by == "date_created" %}selected{% endif %}>Дата создания (старые)</option>
+                            <option value="-date_start" {% if sort_by == "-date_start" %}selected{% endif %}>Дата начала (новые)</option>
+                            <option value="date_start" {% if sort_by == "date_start" %}selected{% endif %}>Дата начала (старые)</option>
+                            <option value="-progress_percent" {% if sort_by == "-progress_percent" %}selected{% endif %}>Прогресс (высокий)</option>
+                            <option value="progress_percent" {% if sort_by == "progress_percent" %}selected{% endif %}>Прогресс (низкий)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-group" style="margin-bottom: 10px;">
+                    <label>
+                        <input type="checkbox" name="show_active" {% if show_active %}checked{% endif %} onchange="this.form.submit()">
+                        Показывать активные
+                    </label>
+                    <label style="margin-left: 15px;">
+                        <input type="checkbox" name="show_completed" {% if show_completed %}checked{% endif %} onchange="this.form.submit()">
+                        Показывать завершенные
+                    </label>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">Применить фильтры</button>
+                    <a href="{% url 'car_preparation:list' %}" class="btn btn-secondary">Сбросить</a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Таблица -->
+        <div class="table-container">
+            {% if preparations %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Автомобиль</th>
+                        <th>VIN</th>
+                        <th>Подразделение</th>
+                        <th>Статус</th>
+                        <th>Ответственный</th>
+                        <th>Дата создания</th>
+                        <th>Дата начала</th>
+                        <th>План окончания</th>
+                        <th>Прогресс</th>
+                        <th>Работы</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prep in preparations %}
+                    <tr>
+                        <td>
+                            <div class="car-info">{{ prep.car.name|default:"-" }}</div>
+                            <div class="car-vin">{{ prep.car.year|default:"" }}</div>
+                        </td>
+                        <td>
+                            <div class="car-vin">{{ prep.car.vin|default:"-" }}</div>
+                        </td>
+                        <td>{{ prep.unit.name|default:"-" }}</td>
+                        <td>
+                            {% if prep.status %}
+                            <span class="status-badge status-{{ prep.status.code }}">
+                                {{ prep.status.name }}
+                            </span>
+                            {% else %}
+                            <span class="status-badge status-new">Не определен</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ prep.responsible.name|default:"Не назначен" }}</td>
+                        <td>{{ prep.date_created|date:"d.m.Y H:i"|default:"-" }}</td>
+                        <td>{{ prep.date_start|date:"d.m.Y H:i"|default:"Не начата" }}</td>
+                        <td>{{ prep.date_planned_end|date:"d.m.Y H:i"|default:"-" }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span style="font-weight: bold; min-width: 40px;">{{ prep.progress_percent }}%</span>
+                                <div class="progress-bar" style="flex: 1;">
+                                    <div class="progress-fill" style="width: {{ prep.progress_percent }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size: 11px;">
+                                Всего: {{ prep.total_works|default:0 }}<br>
+                                Выполнено: {{ prep.completed_works|default:0 }}<br>
+                                Подтверждено: {{ prep.confirmed_works|default:0 }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'car_preparation:schedule' prep.id %}" class="btn-small btn-view" title="Планирование">
+                                    📅
+                                </a>
+                                <a href="{% url 'car_preparation:preparation_report' prep.id %}" class="btn-small btn-report" title="Отчет" target="_blank">
+                                    📄
+                                </a>
+                                {% if prep.qr_code %}
+                                <a href="{% url 'car_preparation:mobile_checklist' prep.id %}" class="btn-small btn-schedule" title="Мобильный интерфейс">
+                                    📱
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Пагинация -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_unit_id %}&unit_id={{ selected_unit_id }}{% endif %}{% if selected_status_id %}&status_id={{ selected_status_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if show_active %}&show_active=true{% endif %}{% if show_completed %}&show_completed=true{% endif %}">&laquo; Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_unit_id %}&unit_id={{ selected_unit_id }}{% endif %}{% if selected_status_id %}&status_id={{ selected_status_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if show_active %}&show_active=true{% endif %}{% if show_completed %}&show_completed=true{% endif %}">Предыдущая</a>
+                {% endif %}
+                
+                <span class="current">
+                    Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_unit_id %}&unit_id={{ selected_unit_id }}{% endif %}{% if selected_status_id %}&status_id={{ selected_status_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if show_active %}&show_active=true{% endif %}{% if show_completed %}&show_completed=true{% endif %}">Следующая</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_unit_id %}&unit_id={{ selected_unit_id }}{% endif %}{% if selected_status_id %}&status_id={{ selected_status_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if show_active %}&show_active=true{% endif %}{% if show_completed %}&show_completed=true{% endif %}">Последняя &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="no-results">
+                <h3>Нет результатов</h3>
+                <p>Попробуйте изменить параметры фильтрации</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // Загрузка количества непрочитанных уведомлений
+        {% if request.user.is_authenticated %}
+        fetch('/api/car_preparation/notifications/stats/')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('notification-badge');
+                const count = document.getElementById('unread-count');
+                if (data.unread_count > 0) {
+                    count.textContent = data.unread_count;
+                    if (badge) badge.style.display = 'flex';
+                } else {
+                    if (badge) badge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+            });
+        {% endif %}
+    </script>
+</body>
+</html>
+

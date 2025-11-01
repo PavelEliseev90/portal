@@ -48,6 +48,7 @@ import pathlib
 url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
+#url_hs_kors_auto    = 'http://a01srv1cka/zbusiness030724/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
 url_auction_kors_portal     = 'https://auction.kors-group.ru'
@@ -75,6 +76,92 @@ avtoteka_url            = 'https://api.avito.ru/'
 ssl_context         = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 localhost_pem       = 'D:\\kors_group\\portal\\portal\\apps\\task_manager\\certificate.pem'
 ssl_context.load_verify_locations(localhost_pem)
+
+#Отправка информации о матрице бцп аукциона
+def send_matrix_auction():
+    
+    settings_matrix = SettingsMatrixAuction.objects.get(pk = 1)
+    
+    list_settings = list()
+    cg_200 = {
+        'ЦГ': '200',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_200,
+        'МинимальныйКМ'         : settings_matrix.min_km_200,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_200,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_200,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_200
+    }
+    list_settings.append(cg_200)
+    cg_400 = {
+        'ЦГ': '400',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_400,
+        'МинимальныйКМ'         : settings_matrix.min_km_400,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_400,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_400,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_400
+    }
+    list_settings.append(cg_400)
+    cg_700 = {
+        'ЦГ': '700',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_700,
+        'МинимальныйКМ'         : settings_matrix.min_km_700,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_700,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_700,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_700
+    }
+    list_settings.append(cg_700)
+    cg_1200 = {
+        'ЦГ': '1 200',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_1200,
+        'МинимальныйКМ'         : settings_matrix.min_km_1200,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_1200,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_1200,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_1200
+    }
+    list_settings.append(cg_1200)
+    cg_2000 = {
+        'ЦГ': '2 000',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_2000,
+        'МинимальныйКМ'         : settings_matrix.min_km_2000,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_2000,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_2000,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_2000
+    }
+    list_settings.append(cg_2000)
+    cg_3000 = {
+        'ЦГ': '3 000',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_3000,
+        'МинимальныйКМ'         : settings_matrix.min_km_3000,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_3000,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_3000,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_3000
+    }
+    list_settings.append(cg_3000)
+    cg_5000 = {
+        'ЦГ': '5 000',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_5000,
+        'МинимальныйКМ'         : settings_matrix.min_km_5000,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_5000,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_5000,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_5000
+    }
+    list_settings.append(cg_5000)
+    cg_5001 = {
+        'ЦГ': '5 000+',
+        'БазоваяНаценка'        : settings_matrix.charge_bcp_5001,
+        'МинимальныйКМ'         : settings_matrix.min_km_5001,
+        'УмеренноеСнижение'     : settings_matrix.charge_km_stage_1_5001,
+        'СреднееСнижение'       : settings_matrix.charge_km_stage_2_5001,
+        'ЗначительноеСнижение'  : settings_matrix.charge_km_stage_3_5001
+    }
+    list_settings.append(cg_5001)
+
+    js_data = {
+        'Type'      : 'matrix',
+        'Settings'  : list_settings 
+    }
+    response = requests.post(url_hs_kors_auto, json=js_data)
+    return response.status_code
 
 
 def add_task():
