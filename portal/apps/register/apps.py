@@ -6,6 +6,3 @@ class RegisterConfig(AppConfig):
     name = 'register'
     verbose_name = "Регистры"
 
-    def ready(self):
-        print("at ready")
-        import register.signals

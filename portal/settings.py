@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'mptt',
     'django_mptt_admin',
     #'mail_templated',
-    'car_preparation.apps.CarPreparationConfig',
+    #'car_preparation.apps.CarPreparationConfig',
     'api.apps.ApiConfig',
     'refs.apps.RefsConfig',
     'documents.apps.DocumentsConfig',

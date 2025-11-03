@@ -726,7 +726,7 @@ def doc(request, id):
     balance                 = None
     balance_unit            = None
 
-    car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True)
+    car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True).filter(dataTime__lte = estimation.start_estimation)
     for car_sale in car_sales:
         if car_sale.dataTime > estimation.start_estimation - DT.timedelta(days = 30):
             info_warning = {
@@ -3277,7 +3277,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 14)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3289,7 +3289,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 43) 
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3301,7 +3301,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'задний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 9)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3313,7 +3313,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 59)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3325,7 +3325,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 46)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3337,7 +3337,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крыша':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 51)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3349,7 +3349,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крышка багажника':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 4)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3361,7 +3361,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 24)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3373,7 +3373,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 28)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3385,7 +3385,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'капот':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 38)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name  + ' / замена',
                         'quantity'  : work.normo * 2,
