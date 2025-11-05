@@ -551,11 +551,18 @@
                                     Единный центр оценки
                                 </a>
                             </li>
-                            <div class="collapse {% if params.type == 'eco' or params.type == 'eco_monitors' or params.type == 'korsavto_settings' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
+                            
+                            <div class="collapse {% if params.type == 'eco' or params.type == 'sales_funnel' or params.type == 'eco_monitors' or params.type == 'korsavto_settings' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'eco' %}secondary active {% else %}white {% endif %}" href="/eco/">
                                     <span class="icon-mbri-video-play"></span>
                                     Листы оценки
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'sales_funnel' %}secondary active {% else %}white {% endif %}" href="/korsavto/sales_funnel/">
+                                    <span class="icon-mbri-video-play"></span>
+                                    Выкуп
                                     </a>
                                 </li>
                                 <!--
