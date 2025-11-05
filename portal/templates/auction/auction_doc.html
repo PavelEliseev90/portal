@@ -846,16 +846,19 @@
 			{% csrf_token %}
 	
 			<div class="doc-card">
+					
 					<div class="doc-card-header">
-							<div>
-									<div class="doc-title">{% if params.new %}Новый лот аукциона{% else %}Лот аукциона{% endif %}</div>
-									<div class="doc-subtitle">Работа с лотом и основными параметрами аукциона</div>
-							</div>
+						<div>
+							<div class="doc-title">{% if params.new %}Новый лот аукциона{% else %}Лот аукциона{% endif %}</div>
+							<div class="doc-subtitle">Работа с лотом и основными параметрами аукциона</div>
+						</div>
+						<div class="">
 							{% if params.auction.status %}
-									<span class="doc-status"><span class="icon-mbri-flag"></span>{{params.auction.status}}</span>
+									<span class="doc-status fs-3"><span class="icon-mbri-flag"></span>{{params.auction.status}}</span>
 							{% else %}
-									<span class="doc-status accent"><span class="icon-mbri-flag"></span>подготавливается</span>
+									<span class="doc-status accent fs-3"><span class="icon-mbri-flag"></span>подготавливается</span>
 							{% endif %}
+						</div>
 					</div>
 	
 					<div class="doc-metric-grid">
@@ -1837,11 +1840,11 @@
 				<div class="row g-3">
 					<div class="col-12 col-md-6">
 						<label for="info_car_description_podgotovka" class="form-label">Комментарий для отдела подготовки</label>
-						<textarea class="form-control" id="info_car_description_podgotovka" rows="10"></textarea>
+						<textarea class="form-control" id="info_car_description_podgotovka" rows="10" readonly></textarea>
 					</div>
 					<div class="col-12 col-md-6">
 						<label for="info_car_description_op" class="form-label">Комментарий для отдела продаж</label>
-						<textarea class="form-control" id="info_car_description_op" rows="10"></textarea>
+						<textarea class="form-control" id="info_car_description_op" rows="10" readonly></textarea>
 					</div>
 				</div>
 			</div>
@@ -1903,14 +1906,14 @@
 				<label class="form-label">
 					<span class="icon-mbri-setting2"></span> Работы по автомобилю
 				</label>
-				<textarea class="form-control" id="work_car" rows="10"></textarea>
+				<textarea class="form-control" id="work_car" rows="10" readonly></textarea>
 			</div>
 
 			<div class="modal-section">
 				<label class="form-label">
 					<span class="icon-mbri-features"></span> Диагностика
 				</label>
-				<textarea class="form-control" id="info_car_comment_diagnostica" rows="10"></textarea>
+				<textarea class="form-control" id="info_car_comment_diagnostica" rows="10" readonly></textarea>
 			</div>
 			
 		</div>

@@ -104,7 +104,8 @@ class DocRLKAdmin(admin.ModelAdmin):
 
 @admin.register(DocRLKEvents)
 class DocRLKEventsAdmin(admin.ModelAdmin):
-    list_display    = ('rlk', 'dataTime', 'dataTimeEvent')
+    list_display    = ('rlk', 'dataTime', 'dataTimeEvent', 'contacType', )
+    list_filter     = ('contacType',)
     search_fields   = ('rlk__nomer', )
 
 

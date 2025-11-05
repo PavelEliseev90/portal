@@ -8,64 +8,119 @@
 
 {% block content %}
 
+<form method="get">
 
-<div class="table-responsive-sm">
-  <table class="table">
-    {% for object in params.objects %}
-      <tr>
-        <td>
-          {{object.unit.name}}
-        </td>
-        <td>
-          {{object.name}}
-        </td>
-        <td class="text-end">
-          {{object.group_price.name}}
-        </td>
-        <td class="text-end">
-          {{object.days_in_stok}}
-        </td>
-        <td class="text-end">
-          {{object.year}}
-        </td>
-        <td class="text-end">
-          {{object.car_modification_store}}
-        </td>
-        <td class="text-end {% if object.run > 175000 %} bg-danger bg-opacity-25 {% endif %} ">
-          {{object.run|floatformat:"0g"}}
-        </td>
-        <td class="text-end">
-          {{object.agreement_cost_price|floatformat:"2g"}}
-        </td>
-        <td class="text-end">
-          {{object.agreement_kso_actual|floatformat:"2g"}}
-        </td>
-        <td class="text-end">
-          {{object.agreement_bu_wheels_actual|floatformat:"2g"}}
-        </td>
-        
-        <td class="text-end">
-          {{object.agreement_amount|floatformat:"2g"}}
-        </td>
-        <td class="text-end" title="КМ фактический">
-          {{object.agreement_cm|floatformat:"2g"}}
-        </td>
-        <td class="col-auto">
-          <a href="/cars/{{object.slug}}/" class="text-dark" target="_blank"> <span class="icon-truck" title="Карточка автомобиля"></span></a>
-        </td>
-        <td class="col-auto">
-          <a href="/docs_car_agreement/{{object.agreement_pk}}/" class="text-dark" target="_blank"><span class="icon-doc" title="Соглашение о покупке"></span></a>
-        </td>
-        <td class="col-auto">
-          <a class="text-dark" onclick="go_info('{{object.slug}}')"><span class="icon-mbri-info fw-bold" title="Информация"></span></a>
-        </td>
-      </tr>
-    {% endfor %}
+  <div class="card">
+    <div class="card-body">
+      <div class="col-auto">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filter.name}}" autocomplete="off">
+          <label for="floatingInput">Марка, модель, VIN </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
 
-  </table>
-</div>
+  <button type="submit" class="btn btn-success bg-gradient">Применить</button>
+
+</form>
+
+<hr style="width: 75%;">
+
+{% if params.objects|length == 0 %}
   
+  <div class="card" style="margin-bottom: 0.2rem;">
+    <div class="card-body">
+      <label class="fs-6"> <span class="icon-mbri-info"></span> Нет данных </label>        
+    </div>
+  </div>
 
+{% else %}
+
+  {% for object in params.objects %}
+    
+    <div class="card" style="margin-bottom: 0.2rem;">
+      <div class="card-body">
+        
+        <label class="fs-7 text-secondary">Подразделение:&nbsp; </label><label class="fs-6"> {{object.unit.name}}</label>
+        
+        <div class="row">
+          <div class="col">
+            <label class="fs-7 text-secondary">Автомобиль:&nbsp; </label><label class="fs-6"> {{object.name}}</label>
+          </div>
+          <div class="col-auto text-end">
+            <label class="fs-7 text-secondary">км фактический:</label> <label class="fs-6"> {{object.agreement_cm|floatformat:"2g"}}</label>
+          </div>
+        </div>
+        
+        <div class="row g-1">
+          <div class="col">
+            <label class="fs-7 text-secondary">Год выпуска:&nbsp; </label><label class="fs-6"> {{object.year}}</label><br>
+            <label class="fs-7 text-secondary">Дней на складе:&nbsp; </label><label class="fs-6"> {{object.days_in_stok}} д.</label><br>
+            <label class="fs-7 text-secondary">Ценовая группа:&nbsp; </label><label class="fs-6"> {{object.group_price.name}}</label><br>          
+          </div>
+          <div class="col">
+            <label class="fs-7 text-secondary">Пробег:&nbsp; </label><label class="fs-6"> {{object.run|floatformat:"0g"}} км.</label><br>
+            <label class="fs-7 text-secondary">Себестоимость:&nbsp; </label><label class="fs-6"> {{object.agreement_cost_price|floatformat:"2g"}} ₽</label><br>
+            <label class="fs-7 text-secondary">Затраты:&nbsp; </label><label class="fs-6"> {{object.outlay|floatformat:"2g"}} ₽</label><br>          
+          </div>
+          <div class="col">
+            <label class="fs-7 text-secondary">Цена продажи:&nbsp; </label><label class="fs-6"> {{object.agreement_amount|floatformat:"0g"}} км.</label><br>
+            <label class="fs-7 text-secondary">КСО:&nbsp; </label><label class="fs-6"> {{object.agreement_kso_actual|floatformat:"2g"}} ₽</label><br>
+            <label class="fs-7 text-secondary">Колеса:&nbsp; </label><label class="fs-6"> {{object.agreement_bu_wheels_actual|floatformat:"2g"}} ₽</label><br>          
+          </div>
+          <div class="col">
+            <label class="fs-7 text-secondary">Предложений по компании:&nbsp; </label><label class="fs-6"> {{object.car_modification_store}}</label><br>
+            <label class="fs-7 text-secondary">Предложений по подразделению:&nbsp; </label><label class="fs-6"> {{object.car_modification_dc}}</label><br>
+            <label class="fs-7 text-secondary">Подобрано AUTO.RU:&nbsp; </label><label class="fs-6"> - </label><br>          
+          </div>
+        </div>  
+
+      </div>
+
+    </div>
+  
+  {% endfor %}
+
+{% endif %}
+
+<div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
+	
+	<div class="col-auto align-items-center align-self-center justify-content-center">
+        <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+
+                        {% if params.objects.has_previous %}
+                                <li class="page-num mbr-section-btn">
+                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
+                                </li>
+                        {% endif %}
+
+                        {% for p in params.objects.paginator.page_range %}
+                                {% if params.objects.number == p %}
+                                        <li class="page-num mbr-section-btn disabled">
+                                                <a class="btn btn-secondary display-7">
+                                                        <b>{{p}}</b>
+                                                </a>
+                                        </li>
+                                {% elif p >=  params.objects.number|add:-2 and p <=  params.objects.number|add:2  %}
+                                        <li class="page-num mbr-section-btn">
+                                                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+                                        </li>
+                                {% endif %}
+                        {% endfor %}
+
+                        {% if params.objects.has_next %}
+                                <li class="page-num mbr-section-btn">
+                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.objects.next_page_number %}">&gt;</a>
+                                </li>
+                        {% endif %}
+
+                </ul>
+        </nav>
+  </div>
+</div>
 
 <div class="modal fade" id="modal_car_info" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
   <div class="modal-dialog modal-fullscreen">
@@ -77,7 +132,7 @@
     
     <div class="modal-body" id="modal_body_info">
 
-          ыывафывафывафы
+        
     </div>
     
     </div>

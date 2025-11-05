@@ -6170,11 +6170,20 @@ def rating_nps_sale_unit(units, date_start, date_end):
 @login_required
 def sales_funnel(request):
     
+    name = request.GET.get('name', '')
+    select_count    = 50 
+    
     date_end        = DT.datetime.now() + DT.timedelta(days=-1)
     date_start      = date_end + DT.timedelta(days=-13)
-    cars            = RefCarsOrganization.objects.filter(quantity = 0).filter(date_refresh__gte = date_start).filter(stage_price__id = 4)
+    
+    cars                    = RefCarsOrganization.objects.filter(quantity = 0).filter(date_refresh__gte = date_start).filter(stage_price__id = 4)
+    
+    if name != '':
+        cars = cars.filter(search_fields__icontains = name)
+
     sub_qyery               = DocCarAgreement.objects.filter(lo__pk = OuterRef(name='lo__pk'))
-    sub_cars_store_mod      = RefCarsOrganization.objects.exclude(quantity = 0).filter(modification_autoru__pk = OuterRef(name='modification_autoru__pk')).annotate(count=Func(F('id'), function='Count')).values('count')
+    sub_cars_store_mod          = RefCarsOrganization.objects.exclude(quantity = 0).filter(modification_autoru__pk = OuterRef(name='modification_autoru__pk')).annotate(count=Func(F('id'), function='Count')).values('count')
+    sub_cars_store_mod_dc       = RefCarsOrganization.objects.exclude(quantity = 0).filter(modification_autoru__pk = OuterRef(name='modification_autoru__pk')).filter(store__pk = OuterRef(name='store__pk')).annotate(count=Func(F('id'), function='Count')).values('count')
     
     cars    = cars.annotate(
         agreement_cm                    = Subquery(sub_qyery.values('cm_actual')[:1])).annotate(
@@ -6184,14 +6193,23 @@ def sales_funnel(request):
         agreement_kso_actual            = Subquery(sub_qyery.values('kso_actual')[:1])).annotate(
         agreement_bu_wheels_actual      = Subquery(sub_qyery.values('bu_wheels_actual')[:1])).annotate(
         car_modification_store          = Subquery(sub_cars_store_mod)).annotate(
-        agreement_type_sale   = Subquery(sub_qyery.values('typeSale')[:1]))
-        
+        car_modification_dc             = Subquery(sub_cars_store_mod_dc)).annotate(
+        agreement_type_sale             = Subquery(sub_qyery.values('typeSale')[:1])).annotate(
+        agreement_amount                = Subquery(sub_qyery.values('amount')[:1]))
+         
     
-    objects = cars.filter(agreement_cm__gt = 0)
+    objects = cars.filter(agreement_cm__gt = 0).filter(type_sale__name = 'Розница')
+    page_number = int(request.GET.get('page', '0'))
+    paginator   = Paginator(list(objects), select_count)
+    paginator   = paginator.get_page(page_number)
 
+    filter = {
+        'name': name
+    }
     params = {
-        'type'          : 'korsavto_settings',
-        'objects'       : objects[:50]
+        'type'          : 'sales_funnel',
+        'objects'       : paginator,
+        'filter'         : filter
     }
     
     return render(request, "kors/sales_funnel.html", {'params': params})
