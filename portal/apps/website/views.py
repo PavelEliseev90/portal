@@ -7130,7 +7130,12 @@ def refresh_estimation_analitik(estimation_rlk_id):
                                        'status_soglasovanie_posle_kd'
             ]) 
         #
-    
+
+
+#оценка автомобиля клиентом на основании рлк оп
+def customer_est(request, slug):
+
+    return render(request, "customer/customer_est_rlk_op.html")
 
 def test(request):
     

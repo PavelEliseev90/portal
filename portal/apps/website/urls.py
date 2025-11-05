@@ -12,7 +12,7 @@ urlpatterns = [
    path('login/',             views.loging),
    path('logout/',            views.logout),
    
-
+   path('est/<slug:slug>/',      views.customer_est, name='slug'),
    path('stok_im/',              views.stok_im),
    path('stok_im/product/',      views.product),
 
