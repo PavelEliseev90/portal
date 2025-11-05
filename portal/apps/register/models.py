@@ -2385,6 +2385,29 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
             return True
         return False
 
+    def get_bcp(self):
+        bcp = 0
+        if self.page_soglasovanie != None:
+            if self.page_soglasovanie.price_auto_bcp_1 > 0:
+                bcp = self.page_soglasovanie.price_auto_bcp_1
+            elif self.page_soglasovanie.price_auto_bcp_2 > 0:
+                bcp = self.page_soglasovanie.price_auto_bcp_2
+            elif self.page_soglasovanie.price_auto_bcp_3 > 0:
+                bcp = self.page_soglasovanie.price_auto_bcp_3
+         
+        return bcp
+
+    def get_zna(self):
+        zna = 0
+        if self.page_soglasovanie != None:
+            if self.page_soglasovanie.price_zna_1 > 0:
+                zna = self.page_soglasovanie.price_zna_1
+            elif self.page_soglasovanie.price_zna_2 > 0:
+                zna = self.page_soglasovanie.price_zna_2
+            elif self.page_soglasovanie.price_zna_3 > 0:
+                zna = self.page_soglasovanie.price_zna_3
+         
+        return zna
 
     def save(self, *args, **kwargs):
         
