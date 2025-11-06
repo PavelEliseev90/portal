@@ -23,7 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -6740,19 +6740,74 @@ def auction_doc(request, slug_auction):
         auction.save()
 
         for key in request.POST.keys():
+            
+                    
             if key.startswith('cars_list_data_slug_'):
                 val_key = request.POST.get(key)
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
-                
+
+                diagnostic  = list()
+                kolesa      = list()
+                damage      = list()
+                shema       = list()
+                salon       = list()
+                vnesh       = list()
+
                 structure, created = AuctionStructure.objects.filter(auction = auction).filter(car = car).get_or_create(auction = auction, car = car) 
 
                 try:
+                    for key in request.POST.keys():
+                        if key.startswith(pk + '_photo_diagnostic_'):
+                            diagnostic.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_kolesa_'):
+                            kolesa.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_damage'):
+                            damage.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_shema'):
+                            shema.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_salon'):
+                            salon.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_vnesh'):
+                            vnesh.append(request.POST.get(key, ''))
+                    
+                    list_files_kolesa = request.FILES.getlist('images_wheels_' + pk)
+                    list_kolesa = dowload_files_auction(structure, list_files_kolesa, 'kolesa')
+                    for list_koles in list_kolesa:
+                        kolesa.append(list_koles)
+
+                    list_files_damage = request.FILES.getlist('images_damages_' + pk)
+                    list_damage = dowload_files_auction(structure, list_files_damage, 'damage')
+                    for list_damag in list_damage:
+                        damage.append(list_damag)
+
+                    list_files = request.FILES.getlist('images_shema_' + pk)
+                    list_files_down = dowload_files_auction(structure, list_files, 'shema')
+                    for list_file_down in list_files_down:
+                        shema.append(list_file_down)
+
+                    list_files = request.FILES.getlist('images_salon_' + pk)
+                    list_files_down = dowload_files_auction(structure, list_files, 'salon')
+                    for list_file_down in list_files_down:
+                        salon.append(list_file_down)
+
+                    list_files = request.FILES.getlist('images_car_' + pk)
+                    list_files_down = dowload_files_auction(structure, list_files, 'vnesh')
+                    for list_file_down in list_files_down:
+                        vnesh.append(list_file_down)
+
                     structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
                     structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
                     structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
                     structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
-                
+                    
+                    structure.files_diagnostic  = json.dumps(diagnostic)
+                    structure.files_kolesa      = json.dumps(kolesa)
+                    structure.files_damages     = json.dumps(damage)
+                    structure.files_shema       = json.dumps(shema)
+                    structure.files_salon       = json.dumps(salon)
+                    structure.files_car         = json.dumps(vnesh)
+                    
                     if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
                         structure.autoteka_prev     = True
                     else:
@@ -6784,6 +6839,19 @@ def auction_doc(request, slug_auction):
     }
     
     return render(request, "auction/auction_doc.html", {'params': params})
+
+def dowload_files_auction(structure, list_files, type_file):
+    files = list()
+    for file_object in list_files: 
+        name = file_object.name.lower()
+        new_estimation_files, created       = AuctionStructureFiles.objects.get_or_create(auction_structure = structure, name = name)
+        new_estimation_files.name           = name
+        new_estimation_files.file           = file_object
+        new_estimation_files.type_file      = type_file
+        new_estimation_files.save()
+        files.append(new_estimation_files.file.url)
+    return files
+
 
 def auction_doc_get_cars(request):
 
