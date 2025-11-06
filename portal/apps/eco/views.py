@@ -3546,7 +3546,7 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_mcu.append(dop)
                     amount_mcu = amount_mcu + diff_sum
-            elif info['vmyat'] > 0 or info['carap'] > 0:
+            elif info['carap'] > 0:
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 16)
@@ -3667,6 +3667,18 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum
+            elif info['vmyat'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 131)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
+                    'quantity'  : work.normo * info['vmyat'],
+                    'amount_pod': work.price_podrad * info['vmyat'], 
+                    'amount'    : work.price_kors * info['vmyat']
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum                 
  
             if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
             
