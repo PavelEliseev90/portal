@@ -1120,6 +1120,7 @@ def get_url_image_osmotr(estimation_id, type_file):
     return '/media/nophoto.png'
 
 def get_url_int(estimation_id, type_file):
+    
     list_url = list()
     
     if type_file == 'vnesh_car_all':

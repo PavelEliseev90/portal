@@ -17,6 +17,11 @@
             --auction-light: #F4F4F4;
         }
 
+		.form-check-input[type="checkbox"]:checked {
+			background-color: #F58220!important;
+			border-color: #F58220!important;
+		}
+
         .auction-doc-page {
             background-color: var(--auction-light);
             padding: 2rem 1.5rem 4rem;
@@ -1276,7 +1281,8 @@
 											{% for obj in structure.info_car_auction_data.int_ocenka_url_diagnostic %}
 												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
 													<img src="{{obj}}" src1="{{obj}}">												
-												</div>											
+												</div>	
+												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_diagnostic_{{forloop.counter}}" id="photo_diagnostic" checked value="{{obj}}">										
 											{% endfor %}										
 										</div>
 									</div>

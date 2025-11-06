@@ -3680,8 +3680,8 @@ def estimations_price_calculation(estimation, type_calculation):
                     'amount_pod': work.price_podrad * info['vmyat'], 
                     'amount'    : work.price_kors * info['vmyat']
                 }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum                 
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum                 
  
             if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
             
