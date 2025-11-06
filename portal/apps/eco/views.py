@@ -1664,9 +1664,12 @@ def body_estimation(estimation):
                         name = '' + body.body_elem_name + ' - окрашено'
                     else:
                         name = ''
-                if name != '':
+                if elem_name != '':
                     try:
-                        index = array_body.index(name)
+                        index = array_body.index(elem_name)
+                        for elem_data in array_info:
+                            if elem_data['name'] == elem_name:
+                                dict_elem = elem_data
                     except ValueError:
                         for elem_data in array_info:
                             if elem_data['name'] == elem_name:
@@ -1698,71 +1701,71 @@ def body_estimation(estimation):
                             dict_elem['kors']               = 0
                             
 
-                        if file.type_point == 'толщиномер':
-                            if file.kraska > 300:
-                                dict_elem['perecras'] = dict_elem['perecras'] + 1
-                                perecras = perecras + 1
-                            if file.kraska > 900:
-                                dict_elem['perecras_strong'] = dict_elem['perecras_strong'] + 1
-                                perecras_strong = perecras_strong + 1
-                        if file.type_point == 'ржавчина':
-                            dict_elem['rzav']           = dict_elem['rzav']  + 1
-                            rzav = rzav + 1
-                            all = all + 1
-                        elif file.type_point == 'ржавчина сквозная':
-                            dict_elem['rzav_strong']    =  dict_elem['rzav_strong']  + 1
-                            rzav_strong = rzav_strong + 1
-                            all = all + 1
-                        elif file.type_point == 'царапина':
-                            dict_elem['carap']          =  dict_elem['carap']  + 1
-                            carap = carap + 1
-                            all = all + 1
-                        elif file.type_point == 'царапина сильная':
-                            dict_elem['carap_strong']    =  dict_elem['carap_strong']  + 1
-                            carap_strong = carap_strong + 1
-                            all = all + 1
-                        elif file.type_point == 'вмятина':
-                            dict_elem['vmyat']          =  dict_elem['vmyat']  + 1
-                            vmyat = vmyat + 1
-                            all = all + 1
-                        elif file.type_point == 'вмятина сильная':
-                            dict_elem['vmyat_strong']    =  dict_elem['vmyat_strong']  + 1
-                            vmyat_strong = vmyat_strong + 1
-                            all = all + 1
-                        elif file.type_point == 'скол':
-                            dict_elem['skol']               =  dict_elem['skol']  + 1
-                            skol = skol + 1
-                            all = all + 1
-                        elif file.type_point == 'трещина':
-                            dict_elem['tr']               =  dict_elem['tr']  + 1
-                            tr = tr + 1
-                            all = all + 1
-                        elif file.type_point == 'заменить':
-                            dict_elem['replace_add'] = dict_elem['replace_add']  + 1
-                            replace_add = replace_add + 1
-                            all = all + 1
-                        elif file.type_point == 'заменен':
-                            dict_elem['replace'] = dict_elem['replace']  + 1
-                            replace = replace + 1
-                            all = all + 1
-                        elif file.type_point == 'наклейка':
-                            dict_elem['stiker'] = dict_elem['stiker']  + 1
-                            stiker = stiker + 1
-                            all = all + 1
-                        elif file.type_point == 'тонировка':
-                            dict_elem['toner'] = dict_elem['toner']  + 1
-                            toner = toner + 1
-                            all = all + 1
-                        elif file.type_point == 'полировка':
-                            dict_elem['poly'] = dict_elem['poly']  + 1
-                            poly = poly + 1
-                            all = all + 1
-                        dict_elem['all'] = all
-                        for elem_data in array_info:
-                            if elem_data['name'] == elem_name:
-                                elem_data = dict_elem
-                        
-                        array_body.append(name)
+                    if file.type_point == 'толщиномер':
+                        if file.kraska > 300:
+                            dict_elem['perecras'] = dict_elem['perecras'] + 1
+                            perecras = perecras + 1
+                        if file.kraska > 900:
+                            dict_elem['perecras_strong'] = dict_elem['perecras_strong'] + 1
+                            perecras_strong = perecras_strong + 1
+                    if file.type_point == 'ржавчина':
+                        dict_elem['rzav']           = dict_elem['rzav']  + 1
+                        rzav = rzav + 1
+                        all = all + 1
+                    elif file.type_point == 'ржавчина сквозная':
+                        dict_elem['rzav_strong']    =  dict_elem['rzav_strong']  + 1
+                        rzav_strong = rzav_strong + 1
+                        all = all + 1
+                    elif file.type_point == 'царапина':
+                        dict_elem['carap']          =  dict_elem['carap']  + 1
+                        carap = carap + 1
+                        all = all + 1
+                    elif file.type_point == 'царапина сильная':
+                        dict_elem['carap_strong']    =  dict_elem['carap_strong']  + 1
+                        carap_strong = carap_strong + 1
+                        all = all + 1
+                    elif file.type_point == 'вмятина':
+                        dict_elem['vmyat']          =  dict_elem['vmyat']  + 1
+                        vmyat = vmyat + 1
+                        all = all + 1
+                    elif file.type_point == 'вмятина сильная':
+                        dict_elem['vmyat_strong']    =  dict_elem['vmyat_strong']  + 1
+                        vmyat_strong = vmyat_strong + 1
+                        all = all + 1
+                    elif file.type_point == 'скол':
+                        dict_elem['skol']               =  dict_elem['skol']  + 1
+                        skol = skol + 1
+                        all = all + 1
+                    elif file.type_point == 'трещина':
+                        dict_elem['tr']               =  dict_elem['tr']  + 1
+                        tr = tr + 1
+                        all = all + 1
+                    elif file.type_point == 'заменить':
+                        dict_elem['replace_add'] = dict_elem['replace_add']  + 1
+                        replace_add = replace_add + 1
+                        all = all + 1
+                    elif file.type_point == 'заменен':
+                        dict_elem['replace'] = dict_elem['replace']  + 1
+                        replace = replace + 1
+                        all = all + 1
+                    elif file.type_point == 'наклейка':
+                        dict_elem['stiker'] = dict_elem['stiker']  + 1
+                        stiker = stiker + 1
+                        all = all + 1
+                    elif file.type_point == 'тонировка':
+                        dict_elem['toner'] = dict_elem['toner']  + 1
+                        toner = toner + 1
+                        all = all + 1
+                    elif file.type_point == 'полировка':
+                        dict_elem['poly'] = dict_elem['poly']  + 1
+                        poly = poly + 1
+                        all = all + 1
+                    dict_elem['all'] = all
+                    for elem_data in array_info:
+                        if elem_data['name'] == elem_name:
+                            elem_data = dict_elem
+                    
+                    array_body.append(elem_name)
 
     body = {
         'array'             : array_info,
@@ -3670,7 +3673,7 @@ def estimations_price_calculation(estimation, type_calculation):
             elif info['vmyat'] > 0:
                 diff_sum    = 0
                 work        = RegPodgotovkaWork.objects.get(pk = 131)
-                diff_sum    = work.price_kors
+                diff_sum    = work.price_kors * info['vmyat']
                 dop = {
                     'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
                     'quantity'  : work.normo * info['vmyat'],
