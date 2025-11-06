@@ -3425,7 +3425,7 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_mcu.append(dop)
                     amount_mcu = amount_mcu + diff_sum
-            if (info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
+            if (info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['tr'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 14)
