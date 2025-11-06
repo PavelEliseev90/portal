@@ -922,6 +922,12 @@ def send_auction(auction):
             'op'            : auction_car.op,
             'podgotovka'    : auction_car.podgotovka,
             'autoteka_prev' : auction_car.autoteka_prev,
+            'files_car'             : json.loads(auction_car.files_car),
+            'files_salon'           : json.loads(auction_car.files_salon),
+            'files_shema'           : json.loads(auction_car.files_shema),
+            'files_damages'         : json.loads(auction_car.files_damages),
+            'files_kolesa'          : json.loads(auction_car.files_kolesa),
+            'files_diagnostic'      : json.loads(auction_car.files_diagnostic)
         }
         list_cars.append(car_info)
     
