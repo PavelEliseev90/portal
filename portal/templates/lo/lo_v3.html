@@ -5315,6 +5315,7 @@
                         <textarea class="form-control" id="exampleFormControlTextarea1" rows="4" readonly>{{params.estimation.auction_comment}}</textarea>
                       </div>
                       <br>
+                      
                       {% endif %}
                     
                       БЦП
@@ -8815,6 +8816,7 @@
                         <label for="exampleFormControlTextarea1">Комментарий аукцион</label>
                         <textarea class="form-control" id="exampleFormControlTextarea1" rows="4">{{params.estimation.auction_comment}}</textarea>
                       </div>
+                      
                       <hr style="margin: 0.2rem;">
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
@@ -12459,6 +12461,7 @@
                         <label for="exampleFormControlTextarea1">Комментарий аукцион</label>
                         <textarea class="form-control" id="exampleFormControlTextarea1" rows="4">{{params.estimation.auction_comment}}</textarea>
                       </div>
+                      
                       <hr style="margin: 0.2rem;">
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
@@ -15751,6 +15754,41 @@
                             <label for="floatingInput">БЦП &#8381</label>
                           </div>
                           
+                          {% if params.price_autohub.auction %} 
+                          <br>
+                          <form method="POST">
+                            <div class="modal fade" id="edit_auction_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edit_auction_modal" aria-hidden="true">
+                              <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="">
+                                    <span class="icon-mbri-close"></span> Подтверждение отмены автоматического аукциона
+                                  </h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                  
+                                  <div class="mb-3 h-100 d-flex flex-column">
+                                      <label for="exampleFormControlTextarea1" class="form-label">Описание</label>
+                                      <textarea class="form-control flex-grow-1" name="auction_cancel" id="auction_cancel" rows="8" {% if params.estimation.auction_auto_comment > 0 %} readonly {% endif %}>{{params.estimation.auction_auto_comment}}</textarea>
+                                  </div>
+                                  
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" name="cancel_auction" class="btn btn-auction-outline" data-bs-dismiss="modal">
+                                    <span class="icon-mbri-play"></span>  Сохранить
+                                    </button>
+                                </div>
+                              </div>
+                              </div>
+                            </div>
+                          </form>
+                          
+
+                          <button class="btn btn-danger bg-gradient" type="button" data-bs-target="#edit_auction_modal" data-bs-toggle="modal"> <span class="icon-mbri-edit"></span> Аукцион не подтвержден </button>
+                          
+                          {% endif %}
+
                           {% if params.price_autohub.estimation_price > 0 or params.price_autohub.estimation_price_do_kd > 0 %}
                              <!--
                             <hr style="margin: 0.2rem;">
@@ -16464,11 +16502,27 @@
                                 </select>
                                 <label for="floatingInput">Продажа</label>
                               </div>
-
+                              <div id="div_auction_type" class="{% if params.estimation.auction %} {% else %} d-none {% endif %}">
+                                <label for="exampleFormControlTextarea1" {% if params.estimation.auction %} {% else %} d-none {% endif %}>Причина аукциона</label> {{params.estimation.auction_data}}
+                                <select class="form-select" id="auction_type" name="auction_type" aria-label="" {% if params.estimation.auction %} {% else %} d-none {% endif %}>
+                                  <option selected></option>
+                                  <option value="Иное">Иное</option>
+                                  <option value="Наличие сквозной коррозии" {% if params.estimation.auction_data == 'Наличие сквозной коррозии' %} selected {% endif %} >Наличие сквозной коррозии</option>
+                                  <option value="Нарушение системы безопастности" {% if params.estimation.auction_data == 'Нарушение системы безопастности' %} selected {% endif %}>Нарушение системы безопастности</option>
+                                  <option value="Не работает АКПП" {% if params.estimation.auction_data == 'Не работает АКПП' %} selected {% endif %}>Не работает АКПП</option>
+                                  <option value="Не работает полный привод" {% if params.estimation.auction_data == 'Не работает полный привод' %} selected {% endif %}>Не работает полный привод</option>
+                                  <option value="Не читается / не совпадает номер ДВС" {% if params.estimation.auction_data == 'Не читается / не совпадает номер ДВС' %} selected {% endif %}>Не читается / не совпадает номер ДВС</option>
+                                  <option value="Не читается VIN номер" {% if params.estimation.auction_data == 'Не читается VIN номер' %} selected {% endif %}>Не читается VIN номер</option>
+                                  <option value="Не читается номер рамы" {% if params.estimation.auction_data == 'Не читается номер рамы' %} selected {% endif %}>Не читается номер рамы</option>
+                                  <option value="скручен пробег" {% if params.estimation.auction_data == 'скручен пробег' %} selected {% endif %} >скручен пробег</option>
+                                </select>
+                                <br>
+                              </div>
                               <div class="form-group {% if params.estimation.auction %} {% else %} d-none {% endif %}" id="div_auction_comment">
                                 <label for="exampleFormControlTextarea1">Комментарий аукцион</label>
                                 <textarea class="form-control" id="auction_comment" name="auction_comment" rows="4">{% if params.estimation.auction_comment == None %} {% else %} {{params.estimation.auction_comment}} {% endif %}</textarea>
                               </div>
+                              
                               <hr style="margin: 0.2rem;">
                               
                               <div class="row g-1">
@@ -16807,8 +16861,11 @@
                   $(this).find(":selected").each(function () {
                       var value =  $(this).val();
                       if (value == 'Аукцион'){
+                        $('#div_auction_type').removeClass('d-none');
                         $('#div_auction_comment').removeClass('d-none');
                       }else{
+                        
+                        $('#div_auction_type').addClass('d-none');
                         $('#div_auction_comment').addClass('d-none');
                       };
                     });

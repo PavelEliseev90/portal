@@ -1893,9 +1893,13 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     
     v                       = models.IntegerField('Версия интерактивной оценки', default=3, null=True, blank=True)
     
+    auction_auto_no_user    = models.BooleanField("Аукцион не подтвержден", default = False, null=True, blank=True)
+    auction_auto_comment    = models.CharField("Аукцион не подтвержден комментарий", max_length=2500, default='', null=True, blank=True)
+    
     auction                 = models.BooleanField("Аукцион", default = False, null=True, blank=True)
     auction_comment         = models.CharField("Аукцион комментарий", max_length=2500, default='', null=True, blank=True)
-
+    auction_data            = models.CharField("Аукцион тип (причина)", max_length = 512, default='', null=True, blank=True)
+    
     type_price              = models.IntegerField('Тип формирования цены', default=0, null=True, blank=True)
     
     users_eco               = models.IntegerField('Сотрудников ецо в чате', default=0, null=True, blank=True)

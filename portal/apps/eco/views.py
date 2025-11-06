@@ -1,6 +1,6 @@
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
-from register.models import RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
@@ -1062,6 +1062,21 @@ def doc(request, id):
         
         reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
         
+        if 'cancel_auction' in request.POST:
+            comment_cancel_auction = request.POST.get('auction_cancel', '')
+            if comment_cancel_auction != '':
+                reg_interactiv_ocenka.auction_auto_no_user = True
+            else:
+                reg_interactiv_ocenka.auction_auto_no_user = False
+            reg_interactiv_ocenka.auction_auto_comment = comment_cancel_auction
+            reg_interactiv_ocenka.save()
+            if comment_cancel_auction != '':
+                send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Автоматический аукцион не подтвержден - ' + comment_cancel_auction, estimation_id= reg_interactiv_ocenka.id)
+            else:
+                send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Автоматический аукцион подтвержден - ' + comment_cancel_auction, estimation_id= reg_interactiv_ocenka.id)
+            
+            return HttpResponseRedirect(request.build_absolute_uri())
+
         add_swap(reg_interactiv_ocenka)
 
         if 'custom_zna' in request.POST:
@@ -1228,6 +1243,7 @@ def doc(request, id):
                 if auction == 'Аукцион':
                     reg_interactiv_ocenka.auction = True
                     reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
+                    reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
                     reg_interactiv_ocenka.save()  
                     text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                 else:
@@ -1355,6 +1371,7 @@ def doc(request, id):
                     if auction == 'Аукцион':
                         reg_interactiv_ocenka.auction = True
                         reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
+                        reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
                         reg_interactiv_ocenka.save()  
                         text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                     else:
@@ -1498,6 +1515,7 @@ def doc(request, id):
                     if auction == 'Аукцион':
                         reg_interactiv_ocenka.auction = True
                         reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
+                        reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
                         reg_interactiv_ocenka.save()  
                         text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                     else:
@@ -1994,9 +2012,13 @@ def estimations_price_calculation(estimation, type_calculation):
     percent_sale_1C     = 100
     percent_sale        = 100
     battery             = 0
-
+    matrix_auction      = 0
+    
+    settings_matrix = SettingsMatrixAuction.objects.get(pk = 1)
+    
     if zna < 200000:
         zg              = '200'
+        matrix_auction  = settings_matrix.charge_bcp_200
         kf              = dc.ratio_avtohub_txt_200
         percent_ss      = dc.percent_txt_200
         percent_torg    = dc.percent_torg_txt_200
@@ -2051,6 +2073,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
     elif zna < 400000:
         zg              = '400'
+        matrix_auction  = settings_matrix.charge_bcp_400
         fin_zg          = estimation_settings.percent_financity_400
         day_sale_zg     = estimation_settings.days_stok_financity_400
         kf              = dc.ratio_avtohub_txt_400
@@ -2104,6 +2127,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_400
     elif zna < 700000:
         zg              = '700'
+        matrix_auction  = settings_matrix.charge_bcp_700
         fin_zg          = estimation_settings.percent_financity_700
         day_sale_zg     = estimation_settings.days_stok_financity_700
         kf              = dc.ratio_avtohub_txt_700
@@ -2157,6 +2181,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_700
     elif zna < 1200000:
         zg              = '1 200'
+        matrix_auction  = settings_matrix.charge_bcp_1200
         fin_zg          = estimation_settings.percent_financity_1200
         day_sale_zg     = estimation_settings.days_stok_financity_1200
         kf              = dc.ratio_avtohub_txt_1200
@@ -2210,6 +2235,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_1200
     elif zna < 2000000:
         zg              = '2 000'
+        matrix_auction  = settings_matrix.charge_bcp_2000
         fin_zg          = estimation_settings.percent_financity_2000
         day_sale_zg     = estimation_settings.days_stok_financity_2000
         kf              = dc.ratio_avtohub_txt_2000
@@ -2263,6 +2289,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_2000
     elif zna < 3000000:
         zg              = '3 000'
+        matrix_auction  = settings_matrix.charge_bcp_3000
         fin_zg          = estimation_settings.percent_financity_3000
         day_sale_zg     = estimation_settings.days_stok_financity_3000
         kf              = dc.ratio_avtohub_txt_3000
@@ -2316,6 +2343,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_3000
     elif zna < 5000000:
         zg              = '5 000'
+        matrix_auction  = settings_matrix.charge_bcp_5000
         fin_zg          = estimation_settings.percent_financity_5000
         day_sale_zg     = estimation_settings.days_stok_financity_5000
         kf              = dc.ratio_avtohub_txt_5000
@@ -2369,6 +2397,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5000
     else:
         zg              = '5 000+'
+        matrix_auction  = settings_matrix.charge_bcp_5001
         fin_zg          = estimation_settings.percent_financity_5001
         day_sale_zg     = estimation_settings.days_stok_financity_5001
         kf              = dc.ratio_avtohub_txt_5001
@@ -2440,9 +2469,10 @@ def estimations_price_calculation(estimation, type_calculation):
             'name'      : "износ"
         }
         list_info_price.append(inf_price)
-        auction = True
-        auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
-        auction_success = True
+        if estimation.auction_auto_no_user != True:
+            auction = True
+            auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
+            auction_success = True
     elif estimation.iznos:
         price_new  = price - (price * 10 / 100)
         diff       = price - price_new
@@ -3030,7 +3060,8 @@ def estimations_price_calculation(estimation, type_calculation):
                         if run_other - run > 1000:
                             run_ok = False
                             run_sum = run_sum + (run_other - run)
-                            auction = True
+                            if estimation.auction_auto_no_user != True:
+                                auction = True
                             
                     run_other = run
         if run_sum > 0:
@@ -3651,7 +3682,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 list_work_podgotovka.append(dop)
                 amount_podgotovka = amount_podgotovka + diff_sum 
 
-    if elem_rzav > 3:
+    if elem_rzav > 3 and estimation.auction_auto_no_user != True:
         auction = True
         auction_comment = auction_comment + " " + "3 более элемента с сквозной корозией (" +  elem_rzav_data +  "). "
 
@@ -3688,16 +3719,17 @@ def estimations_price_calculation(estimation, type_calculation):
         }
         list_info_price.append(inf_price)
     
-    if auction_success == False and auction:
-        price_new  = price - (price * (100 - kf_auction) / 100)
-        diff       = price - price_new
-        price = price_new
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'  : "Цена скоректирована c учетом продажи АМ на АУКЦИОНЕ " + str(kf_auction) + "%"  
-        }
-        list_info_price.append(inf_price)
+    if estimation.auction_auto_no_user != True:
+        if auction_success == False and auction:
+            price_new  = price - (price * (100 - kf_auction) / 100)
+            diff       = price - price_new
+            price = price_new
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'  : "Цена скоректирована c учетом продажи АМ на АУКЦИОНЕ " + str(kf_auction) + "%"  
+            }
+            list_info_price.append(inf_price)
 
     #Финансирование
     if zna_type != '1C':
@@ -3744,7 +3776,10 @@ def estimations_price_calculation(estimation, type_calculation):
             }
             '''
             list_info_price.append(inf_price)
-    
+    if estimation.auction_auto_no_user == True:
+        auction = False
+        auction_comment = ''
+
     #ИТОГ
     estimation_price    = round(price, -2)
     amount_sum          = amount_mcu + amount_podgotovka + amount_ss
@@ -3766,6 +3801,9 @@ def estimations_price_calculation(estimation, type_calculation):
     if cna_expenses < 0:
         cna_expenses = zna
         
+    if auction:
+        cna_expenses = estimation_price + matrix_auction
+
     price = {
         'kors_price_reception'          : kors_price_reception,
         'profit'                        : profit,
