@@ -5033,8 +5033,9 @@ def doc_car_shipment(request, id):
 def korsavto_settings_dc(request):
     
     if request.method == 'POST':
+        
         if 'save_settings_estimation' in request.POST:
-            estimation_settings = RegEstimationsSettings.objects.get(pk = 1)
+            estimation_settings = RegEstimationsSettings()
             
             estimation_settings.all_percent_financity   = float(request.POST.get('all_percent_financity', 0))
             estimation_settings.all_days_stok_financity = float(request.POST.get('all_days_stok_financity', 0))
@@ -6102,7 +6103,7 @@ def korsavto_settings_dc(request):
         
     settings_ = ''
     if page == 'settings':
-        settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
+        settings_estimation = RegEstimationsSettings.objects.all().last()
         units = RefUnit.objects.filter(buauto = True).filter(name__icontains = 'КорсАвто').order_by('name')
         works = RegPodgotovkaWork.objects.all().order_by('name_group', 'name')
         settings_ = {
@@ -6292,7 +6293,7 @@ def settings_matrix_auction(request):
 @login_required
 def settings_diagnostic(request):
     
-    settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
+    settings_estimation = RegEstimationsSettings.objects.all().last()
     
     settings_data = {
         'settings_estimation' : settings_estimation
@@ -6307,7 +6308,7 @@ def settings_diagnostic(request):
 @login_required
 def settings_vnesh(request):
     
-    settings_estimation = RegEstimationsSettings.objects.get(pk = 1)
+    settings_estimation = RegEstimationsSettings.objects.all().last()
     
     settings_data = {
         'settings_estimation' : settings_estimation
@@ -6435,7 +6436,7 @@ def refresh_estimation_balance_unit(id_estimation):
             
             reg_interactiv_ocenka_soglasovanie = estimation.page_soglasovanie
             if reg_interactiv_ocenka_soglasovanie.settings == None:
-                reg_interactiv_ocenka_soglasovanie.settings = RegEstimationsSettings.objects.get(pk = 1)
+                reg_interactiv_ocenka_soglasovanie.settings = RegEstimationsSettings.objects.all().last()
 
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
             if price_autohub != None:
