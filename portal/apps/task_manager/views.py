@@ -230,7 +230,7 @@ def kors_estimation_data(id_estimation):
     
     save = True
     estimation                  = RegInteractivOcenka.objects.get(pk = id_estimation)
-    estimation_settings         = RegEstimationsSettings.objects.get(pk = 1)
+    estimation_settings         = RegEstimationsSettings.objects.all().last()
     
     kf                          = estimation_settings.max_kf_iznos
     kf_min                      = estimation.k_i - (estimation.k_i * kf / 100)
