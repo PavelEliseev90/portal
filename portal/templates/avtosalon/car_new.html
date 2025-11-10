@@ -34,40 +34,44 @@
 	<div class="row g-1 justify-content-center">
 	
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
-			<div class="gallery-container {% if request.user_agent.is_pc %}gallery-pc-slider{% else %}gallery-mobile-slider{% endif %}">
-			
-				{% for files in params.object.get_files %}
-										
-					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
-						{% if files.file_mini %}
-							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
-						{% else %}
-							<img src={{files}} alt="{{files}}" src1="{{files}}">
-						{% endif %}
-						
-						<!-- Кнопки навигации слайдера (только для ПК и только для первой картинки) -->
-						{% if request.user_agent.is_pc and forloop.first %}
-							<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
-								<span class="gallery-slider-arrow">‹</span>
+			{% with photos=params.object.get_files %}
+			<div class="car-gallery" data-gallery>
+				<div class="car-gallery-main" role="listbox" aria-label="Фотогалерея автомобиля">
+					{% for files in photos %}
+						<div class="gallery-item car-gallery-slide{% if forloop.first %} is-active{% endif %}" id="foto_{{forloop.counter}}" data-index="{{forloop.counter}}" data-slide="{{forloop.counter0}}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+							{% if files.file_mini %}
+								<img src="{{ files.file.url }}" alt="{{ files.name }}" src1="{{ files.file.url }}" loading="lazy">
+							{% else %}
+								<img src="{{ files }}" alt="{{ files }}" src1="{{ files }}" loading="lazy">
+							{% endif %}
+						</div>
+					{% endfor %}
+
+					{% if photos|length > 1 %}
+						<button class="car-gallery-nav car-gallery-nav-prev" type="button" aria-label="Предыдущее фото">
+							<span class="icon-mbri-arrow-prev"></span>
+						</button>
+						<button class="car-gallery-nav car-gallery-nav-next" type="button" aria-label="Следующее фото">
+							<span class="icon-mbri-arrow-next"></span>
+						</button>
+					{% endif %}
+				</div>
+
+				{% if photos|length > 1 %}
+					<div class="car-gallery-thumbs" role="tablist" aria-label="Миниатюры фотографий">
+						{% for files in photos %}
+							<button class="car-gallery-thumb{% if forloop.first %} is-active{% endif %}" type="button" data-target="{{ forloop.counter0 }}" aria-label="Фото {{ forloop.counter }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+								{% if files.file_mini %}
+									<img src="{{ files.file.url }}" alt="" loading="lazy">
+								{% else %}
+									<img src="{{ files }}" alt="" loading="lazy">
+								{% endif %}
 							</button>
-							<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
-								<span class="gallery-slider-arrow">›</span>
-							</button>
-						{% endif %}
+						{% endfor %}
 					</div>
-					
-				{% endfor %}
-				
-				<!-- Мобильные кнопки навигации (только для мобильных устройств) -->
-				{% if not request.user_agent.is_pc %}
-					<button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">
-						‹
-					</button>
-					<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">
-						›
-					</button>
 				{% endif %}
 			</div>
+			{% endwith %}
 	
 			
 
@@ -782,6 +786,112 @@
 
 
 	<script>
+
+		document.addEventListener('DOMContentLoaded', function () {
+			const galleries = document.querySelectorAll('[data-gallery]');
+
+			galleries.forEach(function (gallery) {
+				const slides = Array.from(gallery.querySelectorAll('.car-gallery-slide'));
+				if (!slides.length) {
+					return;
+				}
+
+				const mainArea = gallery.querySelector('.car-gallery-main');
+				const prevBtn = gallery.querySelector('.car-gallery-nav-prev');
+				const nextBtn = gallery.querySelector('.car-gallery-nav-next');
+				const thumbs = Array.from(gallery.querySelectorAll('.car-gallery-thumb'));
+
+				let activeIndex = slides.findIndex(function (slide) {
+					return slide.classList.contains('is-active');
+				});
+
+				if (activeIndex < 0) {
+					activeIndex = 0;
+				}
+
+				function updateSlides(nextIndex) {
+					if (!slides.length) {
+						return;
+					}
+
+					const total = slides.length;
+					activeIndex = (nextIndex + total) % total;
+
+					slides.forEach(function (slide, index) {
+						const isActive = index === activeIndex;
+						slide.classList.toggle('is-active', isActive);
+						slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+					});
+
+					thumbs.forEach(function (thumb, index) {
+						const isActive = index === activeIndex;
+						thumb.classList.toggle('is-active', isActive);
+						thumb.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+					});
+
+					if (prevBtn && nextBtn) {
+						const hideControls = total <= 1;
+						prevBtn.style.display = hideControls ? 'none' : 'flex';
+						nextBtn.style.display = hideControls ? 'none' : 'flex';
+						prevBtn.disabled = hideControls;
+						nextBtn.disabled = hideControls;
+					}
+
+					gallery.setAttribute('data-active-index', activeIndex);
+				}
+
+				if (prevBtn) {
+					prevBtn.addEventListener('click', function (event) {
+						event.preventDefault();
+						updateSlides(activeIndex - 1);
+					});
+				}
+
+				if (nextBtn) {
+					nextBtn.addEventListener('click', function (event) {
+						event.preventDefault();
+						updateSlides(activeIndex + 1);
+					});
+				}
+
+				thumbs.forEach(function (thumb, index) {
+					thumb.addEventListener('click', function (event) {
+						event.preventDefault();
+						updateSlides(index);
+					});
+				});
+
+				if (mainArea) {
+					let touchStartX = 0;
+					let touchStartY = 0;
+
+					mainArea.addEventListener('touchstart', function (event) {
+						if (event.touches.length !== 1) {
+							return;
+						}
+						touchStartX = event.touches[0].clientX;
+						touchStartY = event.touches[0].clientY;
+					}, { passive: true });
+
+					mainArea.addEventListener('touchend', function (event) {
+						if (!event.changedTouches.length) {
+							return;
+						}
+
+						const touchEndX = event.changedTouches[0].clientX;
+						const touchEndY = event.changedTouches[0].clientY;
+						const deltaX = touchEndX - touchStartX;
+						const deltaY = touchEndY - touchStartY;
+
+						if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+							updateSlides(deltaX > 0 ? activeIndex - 1 : activeIndex + 1);
+						}
+					}, { passive: true });
+				}
+
+				updateSlides(activeIndex);
+			});
+		});
 
 		$('#button_map').click(
 			function(){
