@@ -73,18 +73,9 @@ avtoteka_client_secret  = 'E2rfzwSZmdkzySZYRi_DJdwfzEYehXU6yoEn-XpU'
 avtoteka_url            = 'https://api.avito.ru/'
 
 
-import os
-
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-localhost_pem = os.path.join(settings.BASE_DIR, 'portal', 'apps', 'task_manager', 'certificate.pem')
-
-if os.path.exists(localhost_pem):
-    ssl_context.load_verify_locations(localhost_pem)
-else:
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-
+ssl_context         = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+localhost_pem       = 'D:\\kors_group\\portal\\portal\\apps\\task_manager\\certificate.pem'
+ssl_context.load_verify_locations(localhost_pem)
 
 #Отправка информации о матрице бцп аукциона
 def send_matrix_auction():
