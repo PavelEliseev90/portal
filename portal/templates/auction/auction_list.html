@@ -1324,7 +1324,7 @@
                         <div class="auction-lot-card">
                                 <div class="auction-lot-header">
                                         <div class="auction-lot-title">
-                                                <span class="text-uppercase text-muted small">Лот № {{object.uid}}</span>
+                                                <span class="text-uppercase text-muted small">Лот № {{object.pk_auction|default:object.pk}}</span>
                                                 <h3>{{object.name|default:"Аукционный лот"}}</h3>
                                         </div>
                                         {% if object.status == None %}
