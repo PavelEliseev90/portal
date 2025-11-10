@@ -1957,7 +1957,7 @@
     var image_cover = true;
     const galleryItem = document.getElementsByClassName("gallery-item");
     var lightBoxContainer = document.createElement("div");
-    lightBoxContainer.style.display=    'relation';
+    lightBoxContainer.style.display = 'none';
     lightBoxContainer.style.zIndex  = 15000;
     const lightBoxContent = document.createElement("div");
     const lightBoxImg = document.createElement("img");
@@ -1968,6 +1968,40 @@
     const lightBoxCount = document.createElement("span");
     const lightBoxTransformRight = document.createElement("div");
     const lightBoxTransformLeft = document.createElement("div");
+    const LIGHTBOX_BOX_WIDTH = 'min(1100px, 92vw)';
+    const LIGHTBOX_BOX_HEIGHT = 'min(92vh, 720px)';
+
+    function applyContainLayout() {
+        lightBoxContent.style.width = LIGHTBOX_BOX_WIDTH;
+        lightBoxContent.style.height = LIGHTBOX_BOX_HEIGHT;
+        lightBoxImg.style.width = '100%';
+        lightBoxImg.style.height = '100%';
+        lightBoxImg.style.maxWidth = '100%';
+        lightBoxImg.style.maxHeight = '100%';
+        lightBoxImg.style.objectFit = 'contain';
+    }
+
+    function applyCoverLayout() {
+        lightBoxContent.style.width = LIGHTBOX_BOX_WIDTH;
+        lightBoxContent.style.height = LIGHTBOX_BOX_HEIGHT;
+        lightBoxImg.style.width = '100%';
+        lightBoxImg.style.height = '100%';
+        lightBoxImg.style.maxWidth = '100%';
+        lightBoxImg.style.maxHeight = '100%';
+        lightBoxImg.style.objectFit = 'cover';
+    }
+
+    function applyCurrentLayout() {
+        if (image_cover) {
+            applyContainLayout();
+        } else {
+            applyCoverLayout();
+        }
+    }
+
+    function isLightboxOpen() {
+        return lightBoxContainer.style.display !== "none";
+    }
 
     lightBoxContainer.classList.add("lightbox");
     
@@ -1977,7 +2011,7 @@
     lightBoxNext.classList.add("fs-5", "bi", "bi-chevron-right", "lightbox-next");
     lightBoxClose.classList.add("fs-5", "bi", "bi-x-lg", "lightbox-close");
     lightBoxCount.classList.add("bi", "bi-images", "lightbox-count");
-    lightBoxCover.classList.add("bi", "bi-arrows-fullscreen", "lightbox-cover");
+    // lightBoxCover.classList.add("bi", "bi-arrows-fullscreen", "lightbox-cover");
     lightBoxTransformRight.classList.add("bi", "bi-arrow-clockwise", "lightbox-transform");
     //lightBoxTransformLeft.classList.add("bi", "bi-images", "lightbox-count");
 
@@ -1991,12 +2025,13 @@
     
     lightBoxContainer.appendChild(lightBoxClose);
     // lightBoxContainer.appendChild(lightBoxCount); // Убираем счетчик слайдов
-    lightBoxContainer.appendChild(lightBoxCover);
+    // lightBoxContainer.appendChild(lightBoxCover);
     lightBoxContainer.appendChild(lightBoxTransformRight);
     
     document.body.appendChild(lightBoxContainer);
 
     let index = 1;
+    applyContainLayout();
 
     function showLightBox(n) {
         if (n > galleryItem.length) {
@@ -2006,12 +2041,15 @@
         }
         let imageLocation = galleryItem[index-1].children[0].getAttribute("src1");
         lightBoxImg.setAttribute("src", imageLocation);
+        applyCurrentLayout();
         //lightBoxContent.style.backgroundImage = 'url("' + imageLocation + '")';
         // lightBoxCount.innerHTML = ' ' + index + ' / ' + galleryItem.length; // Убираем обновление счетчика
     }
 
     function currentImage() {
-        lightBoxContainer.style.display = "block";
+        lightBoxContainer.style.display = "flex";
+        document.body.classList.add('lightbox-open');
+        applyCurrentLayout();
 
         let imageIndex = parseInt(this.getAttribute("data-index"));
         showLightBox(index = imageIndex);
@@ -2052,14 +2090,9 @@
         if (this === event.target) {
             image_cover = !image_cover;
             if (image_cover){
-                lightBoxContent.style.width     = "99%";
-                lightBoxContent.style.height    = "99%";
-                lightBoxImg.style.objectFit     = "contain";
+                applyContainLayout();
             }else{
-                lightBoxContent.style.width     = "auto";
-                lightBoxContent.style.height    = "auto";
-                lightBoxImg.style.objectFit     = "cover";
-                
+                applyCoverLayout();
             }
             
         }
@@ -2068,11 +2101,11 @@
     function closeLightBox() {
         if (this === event.target) {
             lightBoxContainer.style.display = "none";
+            document.body.classList.remove('lightbox-open');
             rotate = 0;
             lightBoxImg.style.transform     = 'rotate(' + rotate + 'deg)';
-            lightBoxContent.style.width     = "99%";
-            lightBoxContent.style.height    = "99%";
-            lightBoxImg.style.objectFit     = "contain";
+            image_cover = true;
+            applyContainLayout();
             
             // Показываем мобильный слайдер при закрытии lightbox
             showMobileSlider();
@@ -2080,7 +2113,7 @@
     }
     lightBoxClose.addEventListener("click", closeLightBox);
     lightBoxContainer.addEventListener("click", closeLightBox);
-    lightBoxCover.addEventListener("click", cover_image);
+    // lightBoxCover.addEventListener("click", cover_image);
     lightBoxTransformRight.addEventListener("click", transform_image);
 
     let touchStartX = 0;
@@ -2103,20 +2136,20 @@
     }
 
     function handleTouchStart(e) {
-        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+        if (galleryItem.length > 1 && isLightboxOpen()) {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         }
     }
 
     function handleTouchMove(e) {
-        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+        if (galleryItem.length > 1 && isLightboxOpen()) {
             e.preventDefault();
         }
     }
 
     function handleTouchEnd(e) {
-        if (galleryItem.length > 1 && lightBoxContainer.style.display === 'block') {
+        if (galleryItem.length > 1 && isLightboxOpen()) {
             touchEndX = e.changedTouches[0].clientX;
             touchEndY = e.changedTouches[0].clientY;
             
@@ -2266,7 +2299,7 @@ function initGallerySlider(selector) {
 		const observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-					if (lightboxContainer.style.display === 'block') {
+					if (lightboxContainer.style.display !== 'none') {
 						// Скрываем кнопки слайдера
 						prevBtn.style.display = 'none';
 						nextBtn.style.display = 'none';
