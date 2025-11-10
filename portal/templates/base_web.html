@@ -301,6 +301,62 @@
                 font-size: .875rem;
             }
 
+            :root {
+                --app-header-height: 56px;
+            }
+
+            header.navbar {
+                min-height: var(--app-header-height);
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                z-index: 1030;
+            }
+
+            .menu-toggle-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                background: rgba(255, 255, 255, 0.08);
+                color: #ffffff;
+                transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+            }
+
+            .menu-toggle-btn:hover,
+            .menu-toggle-btn:focus {
+                background: rgba(255, 255, 255, 0.18);
+                border-color: rgba(255, 255, 255, 0.28);
+                color: #ffffff;
+                transform: translateY(-1px);
+                text-decoration: none;
+            }
+
+            .menu-toggle-btn.is-open {
+                background: rgba(255, 255, 255, 0.22);
+                border-color: rgba(255, 255, 255, 0.32);
+                color: #212529;
+            }
+
+            .menu-toggle-btn .bi {
+                font-size: 1.35rem;
+            }
+
+            @media (max-width: 767.98px) {
+                header.navbar {
+                    padding-left: 0.5rem;
+                    padding-right: 0.5rem;
+                }
+
+                .menu-toggle-btn {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 10px;
+                }
+            }
+
             .feather {
                 width: 16px;
                 height: 16px;
@@ -313,7 +369,7 @@
 
 .sidebar {
                 position: fixed;
-                top: 0;
+                top: var(--app-header-height);
                 /* rtl:raw:
                 right: 0;
                 */
@@ -321,7 +377,7 @@
                 /* rtl:remove */
                 left: 0;
                 z-index: 100; /* Behind the navbar */
-                padding: 48px 0 0; /* Height of navbar */
+                padding: 1.25rem 0 0;
                 box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
                 overflow: scroll; 
                 overflow-x: hidden;
@@ -818,13 +874,24 @@
 
     {% if request.user.is_authenticated %} 
         <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-        
-        <a class="navbar-brand col-10 col-lg-10 me-0 px-2" href="#">Корс Групп {% block title_navbar %}  {% endblock %}</a>
-        
-        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        
+            <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <button id="menu-toggle"
+                            class="menu-toggle-btn d-none d-md-inline-flex"
+                            type="button"
+                            aria-label="Toggle sidebar"
+                            aria-controls="sidebarMenu"
+                            aria-expanded="{% if request.COOKIES.menu == '1' %}false{% else %}true{% endif %}">
+                        <span class="bi {% if request.COOKIES.menu == '1' %}bi-list{% else %}bi-x-lg{% endif %}"></span>
+                    </button>
+
+                    <a class="navbar-brand me-0 px-2 flex-grow-1" href="#">Корс Групп {% block title_navbar %}  {% endblock %}</a>
+                </div>
+
+                <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
         </header>
     {% endif %}
 
@@ -832,20 +899,9 @@
   <div class="row">
     
     {% if request.user.is_authenticated %}
-        
-        <div {% if request.COOKIES.menu == '1' %} class="div-menu-close-1" {% else %} class="div-menu-close-0" {% endif %} id="action-menu-open">
-            <div class="col-md col-lg d-md-block bg-dark text-white sidebar collapse">    
-                <span class="sidebar-toggle-icon bi bi-chevron-right"></span>
-            </div>
-        </div>
 
         <div {% if request.COOKIES.menu == '1' %} class="menu-close-1" {% else %} class="menu-close-0" {% endif %} id="menu" style="transition: 0.5s;">
             <nav id="sidebarMenu" class="col-md-2 col-lg-2 d-md-block bg-dark text-white sidebar collapse" data-bs-spy="scroll">
-                
-                <div {% if request.COOKIES.menu == '1' %} class="action-menu-close-1" {% else %} class="action-menu-close-0" {% endif %} id="action-menu-close">
-                    <span class="sidebar-toggle-icon bi bi-chevron-left"></span>
-                </div>
-
                 <div class="position-sticky" id="position-sticky">
                     
                     <ul class="nav flex-column">
@@ -1361,17 +1417,48 @@
     });
     
     $(document).ready(function() {
-        $("#action-menu-close").click(function(){
-            document.cookie = "menu=1; path=/";
-            $('#menu').attr('class','menu-close-1');
-            $('#content').attr('class', 'col-md ms-sm col-lg px-md-1');
-        });
-        $("#action-menu-open").click(function(){
-            document.cookie = "menu=0; path=/";
-            $('#menu').attr('class','menu-close-0');
-            $('#content').attr('class', 'col-md-10 ms-sm-auto col-lg-10 px-md-1');
- 
-        });
+        const $menu = $('#menu');
+        const $content = $('#content');
+        const $toggle = $('#menu-toggle');
+
+        function updateToggle(isClosed) {
+            if (!$toggle.length) {
+                return;
+            }
+
+            const $icon = $toggle.find('.bi');
+
+            $toggle.attr('aria-expanded', !isClosed);
+            $toggle.toggleClass('is-open', !isClosed);
+
+            if ($icon.length) {
+                $icon.removeClass('bi-list bi-x-lg')
+                    .addClass(isClosed ? 'bi-list' : 'bi-x-lg');
+            }
+        }
+
+        function setMenuState(shouldClose) {
+            if (shouldClose) {
+                document.cookie = "menu=1; path=/";
+                $menu.attr('class', 'menu-close-1');
+                $content.attr('class', 'col-md ms-sm col-lg px-md-1');
+            } else {
+                document.cookie = "menu=0; path=/";
+                $menu.attr('class', 'menu-close-0');
+                $content.attr('class', 'col-md-10 ms-sm-auto col-lg-10 px-md-1');
+            }
+
+            updateToggle(shouldClose);
+        }
+
+        if ($toggle.length) {
+            $toggle.on('click', function() {
+                const isCurrentlyClosed = $menu.hasClass('menu-close-1');
+                setMenuState(!isCurrentlyClosed);
+            });
+
+            updateToggle($menu.hasClass('menu-close-1'));
+        }
     });
    
     function hide() {
