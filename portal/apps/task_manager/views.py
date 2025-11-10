@@ -880,7 +880,8 @@ def refresh_auction(auction):
         if lot_info != None:
             auction.status              = get_status(lot_info['status'])
             auction.rejection_reason    = lot_info['rejection_reason']
-
+            if 'pk_auction' in lot_info:
+                auction.pk_auction = str(lot_info['pk_auction'])
             if lot_info['profile_winner'] != None:
                 winner = lot_info['profile_winner']
                 auction.winner_name = winner['name']
@@ -952,6 +953,8 @@ def send_auction(auction):
         if data_answer['success']:
             status = data_answer['status']
             auction.status = get_status(status)
+            if 'pk_auction' in data_answer:
+                auction.pk_auction = str(data_answer['pk_auction'])
             auction.save()
 
 def info_car_auction(slug):

@@ -7208,7 +7208,15 @@ def customer_est(request, slug):
 
 def test(request):
     
-    RegInteractivOcenka.objects.get(pk = 35708).save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
+
+    #refresh_avtoteka_vin()
+
+    #refresh_wash()
     #refresh_price()
     
     #refresh_price()
