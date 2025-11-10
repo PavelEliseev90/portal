@@ -31,7 +31,8 @@ SECRET_KEY = 'django-insecure-5n(8gwhzo$((juk&(oy(+@xztt^69da^0re0fo92y5ey06*5%-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [   'ah.kors-group.com',
+ALLOWED_HOSTS = [   'ah.kors-group.ru',
+                    'ah.kors-group.com',
                     'k01srvdash',
                     '91.201.254.102',
                     '127.0.0.1',
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
     'mptt',
     'django_mptt_admin',
     #'mail_templated',
+    #'car_preparation.apps.CarPreparationConfig',
     'api.apps.ApiConfig',
     'refs.apps.RefsConfig',
     'documents.apps.DocumentsConfig',
@@ -118,8 +120,6 @@ CORS_ALLOW_PRIVATE_NETWORK = True
 
 ROOT_URLCONF = 'portal.urls'
 
-
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -156,11 +156,11 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'portal_kg_my',
+        'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': '494275Zcama',
+        'PASSWORD': 'Audi80b4',
         'HOST': '127.0.0.1',
-        'PORT': '5454',
+        'PORT': '5432',
     }
 }
 
@@ -196,7 +196,7 @@ AUTHENTICATION_BACKENDS = [
 LDAP_AUTH_URL = ["ldap://a01-srv-dc01:389",] 
 
 LDAP_AUTH_CONNECTION_USERNAME = 'portal.adm'
-LDAP_AUTH_CONNECTION_PASSWORD = 'DO`PD7+V~0sum8jTNpSY'
+LDAP_AUTH_CONNECTION_PASSWORD = 'Ymkdyf%bFsFyp1nt.~e7'
 
 # Initiate TLS on connection.
 LDAP_AUTH_USE_TLS = False
@@ -250,14 +250,15 @@ JQUERY_URL          = True
 USE_DJANGO_JQUERY   = True
 
 STATIC_URL  = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+#STATIC_ROOT = 'D:/kors_group/portal/static/'
+STATIC_ROOT = 'D:/portal_eliseev/portal_kg/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR,"")]
 
 MEDIA_URL   = '/media/'
-MEDIA_ROOT  = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT  = 'D:/kors_group/portal/media/'
 
 MEDIA_URL_DOP   = '/media/'
-MEDIA_ROOT_DOP  = os.path.join(BASE_DIR, 'media_dop')
+MEDIA_ROOT_DOP  = 'E:/portal/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

@@ -3824,6 +3824,26 @@ def estimations_price_calculation(estimation, type_calculation):
         cna_expenses = zna
         
     if auction:
+        if difference_sum > 0:
+            estimation_price = difference_sum
+                 
+        matrix_auction = 0
+        if estimation_price < 200000:
+            matrix_auction  = settings_matrix.charge_bcp_200
+        elif estimation_price < 400000:
+            matrix_auction  = settings_matrix.charge_bcp_400
+        elif estimation_price < 700000:
+            matrix_auction  = settings_matrix.charge_bcp_700
+        elif estimation_price < 1200000:
+            matrix_auction  = settings_matrix.charge_bcp_1200
+        elif estimation_price < 2000000:
+            matrix_auction  = settings_matrix.charge_bcp_2000
+        elif estimation_price < 3000000:
+            matrix_auction  = settings_matrix.charge_bcp_3000
+        elif estimation_price < 5000000:
+            matrix_auction  = settings_matrix.charge_bcp_5000
+        else:
+            matrix_auction  = settings_matrix.charge_bcp_5001        
         cna_expenses = estimation_price + matrix_auction
 
     price = {
