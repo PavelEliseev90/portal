@@ -1,6 +1,7 @@
 {% extends 'base_web.html' %}
 
 {% load custom_template_tags %}
+{% load static %}
 
 {% block url %} {% endblock %} 
 
@@ -38,11 +39,19 @@
 
         .auction-header {
             margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
         }
 
         .auction-header p {
             color: rgba(0, 0, 0, 0.6);
             font-size: 0.95rem;
+        }
+
+        .auction-header .section-title {
+            flex-grow: 1;
+            margin-bottom: 0.35rem;
         }
 
         .auction-toolbar {
@@ -78,6 +87,442 @@
             background: #d66a14;
             color: #ffffff;
             transform: translateY(-1px);
+        }
+
+        .auction-toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .auction-help-button {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: #ffffff;
+            color: var(--auction-accent);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: visible;
+        }
+
+        .auction-help-button:hover,
+        .auction-help-button:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
+            color: var(--auction-accent);
+            background: #ffffff;
+        }
+
+        .auction-help-button:active {
+            transform: translateY(0);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .auction-help-button::after {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 130, 32, 0.4);
+            animation: auctionHelpPulse 2.2s ease-out infinite;
+            pointer-events: none;
+        }
+
+        .auction-help-button:hover::after,
+        .auction-help-button:focus::after {
+            animation-play-state: paused;
+            opacity: 0;
+        }
+
+        @keyframes auctionHelpPulse {
+            0% {
+                transform: scale(0.85);
+                opacity: 0.6;
+            }
+            60% {
+                transform: scale(1.45);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1.45);
+                opacity: 0;
+            }
+        }
+
+        .auction-help-modal .modal-content,
+        #auctionHelpDetailModal .modal-content {
+            border-radius: 1.15rem;
+            border: 1px solid rgba(245, 130, 32, 0.35);
+            background: #ffffff;
+        }
+
+        .auction-help-modal .modal-header,
+        #auctionHelpDetailModal .modal-header {
+            background: linear-gradient(135deg, rgba(245, 130, 32, 0.9) 0%, #f89a48 100%);
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+            border-top-left-radius: 1.15rem;
+            border-top-right-radius: 1.15rem;
+            padding: 1.35rem 1.5rem;
+        }
+
+        .auction-help-modal .modal-title,
+        #auctionHelpDetailModal .modal-title {
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .auction-help-modal .modal-body,
+        #auctionHelpDetailModal .modal-body {
+            padding: 1.75rem;
+            background: linear-gradient(180deg, rgba(245, 130, 32, 0.05) 0%, rgba(255, 255, 255, 0) 60%);
+        }
+
+        .auction-help-modal .modal-footer,
+        #auctionHelpDetailModal .modal-footer {
+            border-top: 1px solid rgba(245, 130, 32, 0.2);
+            padding: 1.1rem 1.5rem 1.5rem;
+            background: #ffffff;
+            border-bottom-left-radius: 1.15rem;
+            border-bottom-right-radius: 1.15rem;
+        }
+
+        .auction-help-modal .modal-body {
+            padding: 0;
+            background: none;
+        }
+
+        .auction-help-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .auction-help-hero {
+            position: relative;
+            padding: 2.4rem 2.6rem;
+            color: #ffffff;
+            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.28) 0%, rgba(245, 130, 32, 0.95) 42%), radial-gradient(circle at 80% 80%, rgba(248, 154, 72, 0.95) 0%, rgba(245, 130, 32, 0.88) 55%);
+            overflow: hidden;
+            border-top-left-radius: 1.15rem;
+            border-top-right-radius: 1.15rem;
+        }
+
+        .auction-help-hero::after {
+            content: "";
+            position: absolute;
+            inset: 15% -30% -45% auto;
+            width: 460px;
+            height: 460px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
+            border-radius: 50%;
+            opacity: 0.32;
+            transform: rotate(28deg);
+        }
+
+        .auction-help-hero-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-width: 640px;
+        }
+
+        .auction-help-close {
+            position: absolute;
+            top: 1.4rem;
+            right: 1.6rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 197, 149, 0.95) 44%, rgba(245, 130, 32, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .auction-help-close:hover {
+            transform: translateY(-2px);
+            background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 1) 0%, rgba(255, 204, 158, 0.96) 40%, rgba(245, 130, 32, 1) 100%);
+            box-shadow: 0 18px 36px rgba(245, 130, 32, 0.25);
+        }
+
+        .auction-help-close:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+        }
+
+        .auction-help-close .btn-close {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            padding: 0;
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auction-help-close .btn-close::before,
+        .auction-help-close .btn-close::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 14px;
+            height: 2px;
+            border-radius: 999px;
+            background: rgba(59, 30, 0, 0.75);
+            transform-origin: center;
+        }
+
+        .auction-help-close .btn-close::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .auction-help-close .btn-close::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .auction-help-close:hover .btn-close::before,
+        .auction-help-close:hover .btn-close::after {
+            background: rgba(40, 20, 0, 0.85);
+        }
+
+        .auction-help-close:active .btn-close::before,
+        .auction-help-close:active .btn-close::after {
+            background: rgba(40, 20, 0, 0.95);
+        }
+
+        .auction-help-close .btn-close:hover {
+            border-radius: 50%;
+        }
+
+        .auction-help-close .btn-close:focus {
+            box-shadow: none;
+        }
+
+        .auction-help-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1.2rem;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.28);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .auction-help-hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin: 0;
+        }
+
+        .auction-help-hero-subtitle {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .auction-help-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+        }
+
+        .auction-help-hero-meta .meta-card {
+            min-width: 150px;
+            padding: 0.85rem 1rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.22);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .auction-help-hero-meta .meta-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .auction-help-hero-meta .meta-label {
+            font-size: 0.82rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .auction-help-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .auction-help-hero-actions .btn {
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.75rem 1.6rem;
+            box-shadow: 0 22px 42px rgba(0, 0, 0, 0.24);
+        }
+
+        .auction-help-content {
+            background: #ffffff;
+            padding: 2.4rem 2.6rem 2rem;
+            border-bottom-left-radius: 1.15rem;
+            border-bottom-right-radius: 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .auction-help-section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .auction-help-section-heading h4 {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--auction-dark);
+        }
+
+        .auction-help-section-heading span {
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            color: rgba(0, 0, 0, 0.55);
+        }
+
+        .auction-help-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.6rem;
+        }
+
+        .auction-help-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.6rem;
+            border-radius: 1rem;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 18px 32px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .auction-help-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 30px 48px rgba(245, 130, 32, 0.12);
+            border-color: rgba(245, 130, 32, 0.35);
+        }
+
+        .help-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: rgba(245, 130, 32, 0.12);
+            color: var(--auction-accent);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+
+        .help-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .help-card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--auction-dark);
+        }
+
+        .help-card-description {
+            margin: 0;
+            color: rgba(0, 0, 0, 0.72);
+            line-height: 1.55;
+        }
+
+        .help-card-actions {
+            margin-top: auto;
+        }
+
+        .help-card-actions .btn {
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.7rem 1.35rem;
+            box-shadow: 0 16px 32px rgba(245, 130, 32, 0.18);
+        }
+
+        @media (max-width: 767.98px) {
+            .auction-help-hero {
+                padding: 2rem 1.6rem;
+            }
+
+            .auction-help-content {
+                padding: 2rem 1.6rem 1.8rem;
+            }
+
+            .auction-help-hero-title {
+                font-size: 1.7rem;
+            }
+
+            .auction-help-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        .auction-help-detail-body p {
+            margin-bottom: 1rem;
+        }
+
+        .auction-help-detail-video-wrapper {
+            margin-top: 1rem;
+            border-radius: 1rem;
+            background: #101010;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(245, 130, 32, 0.35);
+            position: relative;
+        }
+
+        .auction-help-detail-video-frame {
+            position: relative;
+        }
+
+        .auction-help-detail-video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            object-position: center center;
         }
 
         .auction-stats {
@@ -323,6 +768,29 @@
             padding: 0.75rem 1rem;
             color: rgba(0, 0, 0, 0.8);
         }
+
+        .auction-page .btn-auction-secondary {
+            background: linear-gradient(135deg, rgba(255, 214, 174, 1) 0%, rgba(245, 130, 32, 1) 60%, rgba(188, 90, 13, 1) 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            box-shadow: 0 14px 28px rgba(245, 130, 32, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .auction-page .btn-auction-secondary:hover,
+        .auction-page .btn-auction-secondary:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 32px rgba(245, 130, 32, 0.32);
+            color: #ffffff;
+        }
+
+        .auction-page .btn-auction-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 20px rgba(245, 130, 32, 0.22);
+        }
     </style>
 {% endblock %}
     
@@ -416,6 +884,135 @@
       </div>
 </div>
 
+
+<div class="modal fade auction-help-modal" id="auctionHelpModal" tabindex="-1" aria-labelledby="auctionHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="auction-help-layout">
+                    <div class="auction-help-hero">
+                        <div class="auction-help-close">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                        </div>
+                        <div class="auction-help-hero-content">
+                            <div class="auction-help-hero-badge">
+                                <span class="icon-mbri-help"></span>
+                                КорсАвто Аукцион
+                            </div>
+                            <h2 class="auction-help-hero-title">Справка по управлению аукционом</h2>
+                            <p class="auction-help-hero-subtitle">Быстро разберитесь с основными сценариями: создавайте лоты, контролируйте метрики, настраивайте фильтры и изучайте карточку каждого аукциона.</p>
+                            <div class="auction-help-hero-meta">
+                                <div class="meta-card">
+                                    <span class="meta-value">{{params.count}}</span>
+                                    <span class="meta-label">Активных лотов</span>
+                                </div>
+                                <div class="meta-card">
+                                    <span class="meta-value">{{params.amount|floatformat:"2g"}} ₽</span>
+                                    <span class="meta-label">Сумма каталога</span>
+                                </div>
+                                <div class="meta-card">
+                                    <span class="meta-value">{{params.count_cars}}</span>
+                                    <span class="meta-label">Автомобилей</span>
+                                </div>
+                            </div>
+                            <div class="auction-help-hero-actions">
+                                <button type="button" class="btn btn-light help-detail-trigger" data-section-id="createLot">
+                                    <span class="icon-mbri-play me-2"></span>Быстрый старт
+                                </button>
+                                {% comment %} <button type="button" class="btn btn-outline-light help-detail-trigger" data-section-id="monitorStats">
+                                    <span class="icon-mbri-video me-2"></span>Смотреть инструкции
+                                </button> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="auction-help-content">
+                        <div class="auction-help-section-heading">
+                            <h4>Обучающие разделы</h4>
+                            <span>Видео и текстовые инструкции</span>
+                        </div>
+                        <div class="auction-help-grid">
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-plus"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Создание нового лота</h5>
+                                    <p class="help-card-description">Откройте `new_lots/`, по шагам заполните сведения об автомобиле, проверьте рассчитанную стоимость, приложите необходимые документы и подготовьте лот к публикации.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="createLot">Подробнее</button>
+                                </div>
+                            </div>
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-growing-chart"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Мониторинг ключевых показателей</h5>
+                                    <p class="help-card-description">Сводные карточки показывают количество лотов, суммарную стоимость и объём авто, помогая анализировать эффективность продаж.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="monitorStats">Подробнее</button>
+                                </div>
+                            </div>
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-setting"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Управление фильтрами</h5>
+                                    <p class="help-card-description">Используйте сохранённые наборы, модальные окна выбора дилера и гибкие фильтры, чтобы быстро находить нужные аукционы.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="filterManagement">Подробнее</button>
+                                </div>
+                            </div>
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-preview"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Работа с карточкой лота</h5>
+                                    <p class="help-card-description">Следите за статусом, датами, стоимостью и составом лота, а также переходите на страницу аукциона для детальной работы.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="lotCard">Подробнее</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-auction-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="auctionHelpDetailModal" tabindex="-1" aria-labelledby="auctionHelpDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="auctionHelpDetailModalLabel">Подробное описание</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div class="auction-help-detail-body"></div>
+                <div class="auction-help-detail-video-wrapper d-none">
+                    <div class="auction-help-detail-video-frame">
+                        <div class="ratio ratio-16x9">
+                            <video class="auction-help-detail-video" title="Видеоинструкция" playsinline muted controls></video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-auction-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Мобильная кнопка фильтров -->
 <div class="d-block d-md-none mb-3">
@@ -687,7 +1284,10 @@
 
 <div class="auction-header">
     <h1 class="section-title">Аукционы автомобилей</h1>
-    <p class="text-muted mb-0">Управляйте лотами, отслеживайте статус аукционов и контролируйте ключевые показатели.</p>
+    <button type="button" class="auction-help-button" data-bs-toggle="modal" data-bs-target="#auctionHelpModal" aria-label="Справка">
+        ?
+    </button>
+    {% comment %} <p class="text-muted mb-0">Управляйте лотами, отслеживайте статус аукционов и контролируйте ключевые показатели.</p> {% endcomment %}
 </div>
 
 	
@@ -698,18 +1298,20 @@
                     Новый лот аукциона
             </a>
     </div>
-    <div class="auction-stats">
-            <div class="auction-stat">
-                    <span class="stat-label"><span class="icon-tag me-2"></span>Лотов</span>
-                    <span class="stat-value">{{params.count}}</span>
-            </div>
-            <div class="auction-stat">
-                    <span class="stat-label"><span class="icon-mbri-credit-card me-2"></span>Сумма лотов</span>
-                    <span class="stat-value">{{params.amount|floatformat:"2g"}}</span>
-            </div>
-            <div class="auction-stat">
-                    <span class="stat-label"><span class="icon-truck me-2"></span>Автомобилей</span>
-                    <span class="stat-value">{{params.count_cars}}</span>
+    <div class="toolbar-right">
+            <div class="auction-stats">
+                    <div class="auction-stat">
+                            <span class="stat-label"><span class="icon-tag me-2"></span>Лотов</span>
+                            <span class="stat-value">{{params.count}}</span>
+                    </div>
+                    <div class="auction-stat">
+                            <span class="stat-label"><span class="icon-mbri-credit-card me-2"></span>Сумма лотов</span>
+                            <span class="stat-value">{{params.amount|floatformat:"2g"}}</span>
+                    </div>
+                    <div class="auction-stat">
+                            <span class="stat-label"><span class="icon-truck me-2"></span>Автомобилей</span>
+                            <span class="stat-value">{{params.count_cars}}</span>
+                    </div>
             </div>
     </div>
 </div>
@@ -1350,6 +1952,120 @@ function applyMobileFilters() {
         mainForm.submit();
     }
 }
+
+const auctionHelpSections = {
+    createLot: {
+        title: "Создание нового лота",
+        paragraphs: [
+            "При переходе на форму создания нового лота создаётся черновик аукциона: выберите дилерский центр, задайте стартовую цену и дату старта торгов, заполните текстовое описание лота.",
+            "Добавьте автомобили из каталога организации: для каждого заполняйте результаты диагностики, план работ, комментарии по подготовке, прикрепляйте фотографии по категориям (диагностика, колёса, повреждения, схема, салон и внешний вид).",
+            "Каждая загрузка сохраняется в карточке: можно отметить наличие отчёта «Автотека», статус «Проверено», добавить ссылки на мультимедиа и пересчитать стоимость при изменении данных.",
+            "Используйте черновое сохранение, обновление (кнопка «Обновить») и окончательную отправку: после проверки всех автомобилей отправьте лот на торги, чтобы его увидели дилеры и партнёры."
+        ],
+        video: "{% static 'razdell1.mp4' %}"
+    },
+    monitorStats: {
+        title: "Мониторинг ключевых показателей",
+        paragraphs: [
+            "Верхние карточки отображают текущее количество активных аукционов, суммарную стартовую стоимость и число автомобилей — данные подтягиваются из базы и обновляются после каждого сохранения лота.",
+            "При редактировании лота выполняется пересчёт (функция обновления), который учитывает изменения стоимости, статуса автомобильных карточек и наличие фото/отчётов, поэтому статистика на главной странице всегда актуальна.",
+            "Используйте показатели, чтобы отслеживать динамику: фильтруйте аукционы, сравнивайте суммы и оперативно реагируйте на отклонения (например, отсутствие готовых автомобилей или падение суммарной стоимости)."
+        ],
+        video: "{% static 'razdel2.mp4' %}"
+    },
+    filterManagement: {
+        title: "Управление фильтрами и сохраненными наборами",
+        paragraphs: [
+            "Модальное окно «Выбор дилерского центра» подставляет доступные площадки из личного кабинета пользователя, что позволяет моментально переключать контекст аукционов.",
+            "Сохранённые наборы фильтров доступны в отдельном модальном окне: создавайте свои пресеты, удаляйте устаревшие, переключайтесь между ними — они синхронизированы с поисковой формой и мобильной версией.",
+            "При очистке или применении фильтров система обновляет список аукционов и статистику; поддерживается подсчёт выбранных фильтров и визуальное отображение активных условий."
+        ],
+        video: "{% static 'razdel3.mp4' %}"
+    },
+    lotCard: {
+        title: "Работа с карточкой лота",
+        paragraphs: [
+            "Карточка лота показывает номер, статус, даты подготовки и запуска, ответственного менеджера и дилерский центр, а также быстрые ссылки на действия.",
+            "Внутренние блоки содержат сведения по каждому автомобилю: диагностика, план работ, подготовка, фотографии, данные по отчёту «Автотека» и отметка «Проверено».",
+            "Кнопка «Посмотреть» переносит на страницу редактирования, где можно актуализировать карточку, обновить фотографии, скорректировать цену и отправить лот на аукцион."
+        ],
+        video: "{% static 'razdel4.mp4' %}"
+    }
+};
+
+function initializeAuctionHelp() {
+    const helpModal = document.getElementById("auctionHelpModal");
+    const detailModal = document.getElementById("auctionHelpDetailModal");
+    if (!helpModal || !detailModal) {
+        return;
+    }
+    const detailTitle = detailModal.querySelector(".modal-title");
+    const detailBody = detailModal.querySelector(".auction-help-detail-body");
+    const detailVideoWrapper = detailModal.querySelector(".auction-help-detail-video-wrapper");
+    const detailVideoFrame = detailModal.querySelector(".auction-help-detail-video");
+    const triggers = helpModal.querySelectorAll(".help-detail-trigger");
+    triggers.forEach(function(trigger) {
+        trigger.addEventListener("click", function() {
+            const sectionId = this.getAttribute("data-section-id");
+            const section = auctionHelpSections[sectionId];
+            if (!section) {
+                return;
+            }
+            if (detailTitle) {
+                detailTitle.textContent = section.title;
+            }
+            if (detailBody) {
+                detailBody.innerHTML = section.paragraphs.map(function(paragraph) {
+                    return "<p>" + paragraph + "</p>";
+                }).join("");
+            }
+            if (detailVideoWrapper && detailVideoFrame) {
+                if (section.video) {
+                    detailVideoFrame.src = section.video;
+                    detailVideoFrame.muted = true;
+                    detailVideoFrame.volume = 0;
+                    detailVideoFrame.currentTime = 0;
+                    detailVideoFrame.controls = true;
+                    detailVideoWrapper.classList.remove("d-none");
+                } else {
+                    detailVideoFrame.pause();
+                    detailVideoFrame.removeAttribute("src");
+                    detailVideoWrapper.classList.add("d-none");
+                }
+            }
+            const helpInstance = bootstrap.Modal.getInstance(helpModal);
+            if (helpInstance) {
+                helpInstance.hide();
+            }
+            const detailInstance = bootstrap.Modal.getOrCreateInstance(detailModal);
+            detailInstance.show();
+        });
+    });
+    detailModal.addEventListener("hidden.bs.modal", function() {
+        if (detailVideoFrame) {
+            detailVideoFrame.pause();
+            detailVideoFrame.removeAttribute("src");
+            detailVideoFrame.currentTime = 0;
+        }
+        if (detailVideoWrapper) {
+            detailVideoWrapper.classList.add("d-none");
+        }
+        const helpInstance = bootstrap.Modal.getOrCreateInstance(helpModal);
+        helpInstance.show();
+    });
+
+    detailModal.addEventListener("hidden.bs.modal", function() {
+        if (document.fullscreenElement && (detailModal.contains(document.fullscreenElement))) {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initializeAuctionHelp);
 
 // Обработчики событий для модального окна
 document.getElementById('mobileFiltersModal').addEventListener('show.bs.modal', function() {
