@@ -35,32 +35,64 @@
 	
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
 			{% with photos=params.object.get_files %}
-			<div class="car-gallery" data-gallery>
-				<div class="car-gallery-main" role="listbox" aria-label="Фотогалерея автомобиля">
-					{% for files in photos %}
-						<div class="gallery-item car-gallery-slide{% if forloop.first %} is-active{% endif %}" id="foto_{{forloop.counter}}" data-index="{{forloop.counter}}" data-slide="{{forloop.counter0}}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
-							{% if files.file_mini %}
-								<img src="{{ files.file.url }}" alt="{{ files.name }}" src1="{{ files.file.url }}" loading="lazy">
-							{% else %}
-								<img src="{{ files }}" alt="{{ files }}" src1="{{ files }}" loading="lazy">
-							{% endif %}
-						</div>
-					{% endfor %}
+			{% with total=photos|length %}
+			<div class="car-gallery{% if total <= 1 %} car-gallery--single{% endif %}{% if total == 0 %} car-gallery--empty{% endif %}" data-gallery data-gallery-total="{{ total }}">
+				<div class="car-gallery-header">
+					<div class="car-gallery-title">
+						<span class="car-gallery-title-mark">{{ params.object.modification_autoru.model.mark.name|upper }}</span>
+						<span class="car-gallery-title-divider">•</span>
+						<span class="car-gallery-title-model text-uppercase">{{ params.object.modification_autoru.model.name }}</span>
+					</div>
+					<div class="car-gallery-meta">
+						<span class="car-gallery-counter" aria-live="polite">
+							<span data-gallery-current>{% if total > 0 %}1{% else %}0{% endif %}</span>
+							<span class="car-gallery-counter-divider">/</span>
+							<span data-gallery-total>{{ total }}</span>
+						</span>
+						{% if total > 1 %}
+							<span class="car-gallery-badge">листайте</span>
+						{% endif %}
+					</div>
+				</div>
 
-					{% if photos|length > 1 %}
-						<button class="car-gallery-nav car-gallery-nav-prev" type="button" aria-label="Предыдущее фото">
-							<span class="icon-mbri-arrow-prev"></span>
-						</button>
-						<button class="car-gallery-nav car-gallery-nav-next" type="button" aria-label="Следующее фото">
-							<span class="icon-mbri-arrow-next"></span>
-						</button>
+				<div class="car-gallery-progress" aria-hidden="true">
+					<span data-gallery-progress></span>
+				</div>
+
+				<div class="car-gallery-main" role="listbox" aria-label="Фотогалерея автомобиля">
+					{% if total > 0 %}
+						{% for files in photos %}
+							<div class="gallery-item car-gallery-slide{% if forloop.first %} is-active{% endif %}" id="foto_{{forloop.counter}}" data-index="{{forloop.counter}}" data-slide="{{forloop.counter0}}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+								{% if files.file_mini %}
+									<img src="{{ files.file.url }}" alt="{{ files.name }}" src1="{{ files.file.url }}" loading="lazy">
+								{% else %}
+									<img src="{{ files }}" alt="{{ files }}" src1="{{ files }}" loading="lazy">
+								{% endif %}
+							</div>
+						{% endfor %}
+
+						{% if total > 1 %}
+							<button class="car-gallery-nav car-gallery-nav-prev" type="button" aria-label="Предыдущее фото">
+								<span class="icon-mbri-arrow-prev"></span>
+							</button>
+							<button class="car-gallery-nav car-gallery-nav-next" type="button" aria-label="Следующее фото">
+								<span class="icon-mbri-arrow-next"></span>
+							</button>
+						{% endif %}
+					{% else %}
+						<div class="car-gallery-placeholder">
+							<div class="car-gallery-placeholder-body">
+								<span class="icon-mbri-photo car-gallery-placeholder-icon"></span>
+								<p class="car-gallery-placeholder-text">Фотографии скоро появятся</p>
+							</div>
+						</div>
 					{% endif %}
 				</div>
 
-				{% if photos|length > 1 %}
+				{% if total > 1 %}
 					<div class="car-gallery-thumbs" role="tablist" aria-label="Миниатюры фотографий">
 						{% for files in photos %}
-							<button class="car-gallery-thumb{% if forloop.first %} is-active{% endif %}" type="button" data-target="{{ forloop.counter0 }}" aria-label="Фото {{ forloop.counter }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+							<button class="car-gallery-thumb{% if forloop.first %} is-active{% endif %}" type="button" data-target="{{ forloop.counter0 }}" aria-label="Фото {{ forloop.counter }}" aria-controls="foto_{{forloop.counter}}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
 								{% if files.file_mini %}
 									<img src="{{ files.file.url }}" alt="" loading="lazy">
 								{% else %}
@@ -71,6 +103,7 @@
 					</div>
 				{% endif %}
 			</div>
+			{% endwith %}
 			{% endwith %}
 	
 			
@@ -810,12 +843,40 @@
 				}
 
 				function updateSlides(nextIndex) {
-					if (!slides.length) {
+					const total = slides.length;
+					const counterCurrent = gallery.querySelector('[data-gallery-current]');
+					const counterTotal = gallery.querySelector('[data-gallery-total]');
+					const progressBar = gallery.querySelector('[data-gallery-progress]');
+					const badge = gallery.querySelector('.car-gallery-badge');
+
+					gallery.dataset.galleryTotal = String(total);
+
+					if (!total) {
+						if (counterCurrent) {
+							counterCurrent.textContent = '00';
+						}
+						if (counterTotal) {
+							counterTotal.textContent = '00';
+						}
+						if (progressBar) {
+							progressBar.style.width = '0%';
+						}
+						if (badge) {
+							badge.style.display = 'none';
+						}
+						if (prevBtn && nextBtn) {
+							prevBtn.style.display = 'none';
+							nextBtn.style.display = 'none';
+							prevBtn.disabled = true;
+							nextBtn.disabled = true;
+						}
+						gallery.classList.add('car-gallery--empty', 'car-gallery--single');
+						gallery.removeAttribute('data-active-index');
 						return;
 					}
 
-					const total = slides.length;
-					activeIndex = (nextIndex + total) % total;
+					const safeIndex = (nextIndex + total) % total;
+					activeIndex = safeIndex;
 
 					slides.forEach(function (slide, index) {
 						const isActive = index === activeIndex;
@@ -837,6 +898,25 @@
 						nextBtn.disabled = hideControls;
 					}
 
+					const formattedCurrent = activeIndex + 1 < 10 ? '0' + (activeIndex + 1) : String(activeIndex + 1);
+					const formattedTotal = total < 10 ? '0' + total : String(total);
+
+					if (counterCurrent) {
+						counterCurrent.textContent = formattedCurrent;
+					}
+					if (counterTotal) {
+						counterTotal.textContent = formattedTotal;
+					}
+					if (progressBar) {
+						const percent = total <= 1 ? 100 : ((activeIndex + 1) / total) * 100;
+						progressBar.style.width = percent + '%';
+					}
+					if (badge) {
+						badge.style.display = total <= 1 ? 'none' : '';
+					}
+
+					gallery.classList.toggle('car-gallery--single', total <= 1);
+					gallery.classList.remove('car-gallery--empty');
 					gallery.setAttribute('data-active-index', activeIndex);
 				}
 

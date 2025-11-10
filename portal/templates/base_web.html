@@ -312,6 +312,39 @@
                 z-index: 1030;
             }
 
+            .navbar-brand--clamp {
+                display: flex;
+                align-items: center;
+                flex: 1 1 auto;
+                min-width: 0;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            .navbar-brand__title {
+                display: block;
+                max-width: 100%;
+                font-weight: 600;
+                font-size: 1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 1.2;
+                color: inherit;
+            }
+
+            @media (max-width: 767.98px) {
+                .navbar-brand__title {
+                    white-space: normal;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    font-size: 0.95rem;
+                }
+            }
+
             .menu-toggle-btn {
                 display: inline-flex;
                 align-items: center;
@@ -874,7 +907,7 @@
 
     {% if request.user.is_authenticated %} 
         <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-            <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
+            <div class="container-fluid d-flex align-items-center justify-content-between gap-2 flex-nowrap">
                 <div class="d-flex align-items-center gap-2 flex-grow-1">
                     <button id="menu-toggle"
                             class="menu-toggle-btn d-none d-md-inline-flex"
@@ -885,7 +918,9 @@
                         <span class="bi {% if request.COOKIES.menu == '1' %}bi-list{% else %}bi-x-lg{% endif %}"></span>
                     </button>
 
-                    <a class="navbar-brand me-0 px-2 flex-grow-1" href="#">КорсГрупп {% block title_navbar %}  {% endblock %}</a>
+                    <a class="navbar-brand me-0 px-2 flex-grow-1 navbar-brand--clamp" href="#">
+                        <span class="navbar-brand__title">КорсГрупп {% block title_navbar %}  {% endblock %}</span>
+                    </a>
                 </div>
 
                 <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
