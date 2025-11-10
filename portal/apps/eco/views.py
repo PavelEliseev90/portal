@@ -3813,6 +3813,13 @@ def estimations_price_calculation(estimation, type_calculation):
     
     cna_expenses = zna - amount_sum 
     
+    difference_sum = 0
+    if estimation.page_soglasovanie != None:
+        if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+            difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+    
+    estimation_price = estimation_price + difference_sum
+
     if cna_expenses < 0:
         cna_expenses = zna
         
@@ -3850,7 +3857,8 @@ def estimations_price_calculation(estimation, type_calculation):
         'zachita_ot_ubitka'             : zachita_ot_ubitka,
         'finance_price'                 : finance_price,
         'run_sum'                       : run_sum,
-        'iznos_price'                   : iznos_price
+        'iznos_price'                   : iznos_price,
+        'estimation_settings'           : estimation_settings
     }
 
     return price
