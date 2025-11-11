@@ -14,7 +14,6 @@
 {% include 'chats/chat.html' %}
 
   
-
   <div class="loads bg-secondary bg-gradient bg-opacity-75 d-none" id="loads" >
     
     <div class="loads_parr ">
@@ -5999,7 +5998,6 @@
                       <h6><span class="icon-mbri-credit-card"></span> Цены</h6>
 
                       <hr style="width: 75%;">
-
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" id="price_reception" name="price_reception" value="{{params.estimation.page_remote.price_reception}}" readonly>
                         <label class="fs-6" for="floatingInput">Цена приема &#8381;</label>
@@ -13938,71 +13936,50 @@
                 <hr style="width: 75%;">
 
                 <div class="justify-content-center" style="padding: 0; width: 100%;">
-                  <div class="col-sm content-head" style="padding: 0;">
-                    {% with photos=params.estimation.get_files_all %}
-                    {% with total=photos|length %}
-                    <div class="car-gallery{% if total <= 1 %} car-gallery--single{% endif %}{% if total == 0 %} car-gallery--empty{% endif %}" data-gallery data-gallery-total="{{ total }}">
-                      <div class="car-gallery-header">
-                        <div class="car-gallery-title">
-                          <span class="car-gallery-title-mark text-uppercase">Фото</span>
-                          <span class="car-gallery-title-divider">•</span>
-                          <span class="car-gallery-title-model text-uppercase">Интерактивная оценка</span>
-                        </div>
-                        <div class="car-gallery-meta">
-                          <span class="car-gallery-counter" aria-live="polite">
-                            <span data-gallery-current>{% if total > 0 %}1{% else %}0{% endif %}</span>
-                            <span class="car-gallery-counter-divider">/</span>
-                            <span data-gallery-total>{{ total }}</span>
-                          </span>
-                          {% if total > 1 %}
-                            <span class="car-gallery-badge">листайте</span>
-                          {% endif %}
-                        </div>
-                      </div>
+                <div class="col-sm content-head" style="padding: 0;">
+                {% if request.user_agent.is_pc %}
+                  <div class="gallery-container gallery-pc-slider">
 
-                      <div class="car-gallery-progress" aria-hidden="true">
-                        <span data-gallery-progress></span>
-                      </div>
-
-                      <div class="car-gallery-main" role="listbox" aria-label="Фотогалерея интерактивной оценки">
-                        {% if total > 0 %}
-                          {% for files in photos %}
-                            <div class="gallery-item car-gallery-slide{% if forloop.first %} is-active{% endif %}" id="foto_{{forloop.counter}}" data-index="{{forloop.counter}}" data-slide="{{forloop.counter0}}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
-                              <img src="{{ files.get_absolute_url }}" alt="{{ files.name }}" src1="{{ files.get_absolute_url }}" loading="lazy">
-                            </div>
-                          {% endfor %}
-
-                          {% if total > 1 %}
-                            <button class="car-gallery-nav car-gallery-nav-prev" type="button" aria-label="Предыдущее фото">
-                              <span class="icon-mbri-arrow-prev"></span>
+                    {% for files in params.estimation.get_files_all %}               
+                      <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+                        
+                          <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
+                          {% if forloop.first %}
+                           
+                            <button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
+                              <span class="gallery-slider-arrow">‹</span>
                             </button>
-                            <button class="car-gallery-nav car-gallery-nav-next" type="button" aria-label="Следующее фото">
-                              <span class="icon-mbri-arrow-next"></span>
+                            <button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
+                              <span class="gallery-slider-arrow">›</span>
                             </button>
                           {% endif %}
-                        {% else %}
-                          <div class="car-gallery-placeholder">
-                            <div class="car-gallery-placeholder-body">
-                              <span class="icon-mbri-photo car-gallery-placeholder-icon"></span>
-                              <p class="car-gallery-placeholder-text">Фотографии пока не загружены</p>
-                            </div>
-                          </div>
-                        {% endif %}
+                        
                       </div>
-
-                      {% if total > 1 %}
-                        <div class="car-gallery-thumbs" role="tablist" aria-label="Миниатюры фотографий">
-                          {% for files in photos %}
-                            <button class="car-gallery-thumb{% if forloop.first %} is-active{% endif %}" type="button" data-target="{{ forloop.counter0 }}" aria-label="Фото {{ forloop.counter }}" aria-controls="foto_{{forloop.counter}}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
-                              <img src="{{ files.get_absolute_url }}" alt="" loading="lazy">
-                            </button>
-                          {% endfor %}
-                        </div>
-                      {% endif %}
-                    </div>
-                    {% endwith %}
-                    {% endwith %}
+                      
+                    {% endfor %}
+                    
                   </div>
+                  {% else %}
+                  <div class="gallery-container gallery-mobile-slider">
+
+                    {% for files in params.estimation.get_files_all %}
+
+                      <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
+
+                          <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
+                          {% if forloop.first %}
+                           
+                          {% endif %}
+
+                      </div>
+
+                    {% endfor %}
+
+                    <button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">‹</button>
+                    <button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">›</button>
+                  </div>
+                  {% endif %}
+                </div>
               </div>
 
               </div>

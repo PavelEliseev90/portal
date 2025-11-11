@@ -6739,15 +6739,14 @@ def auction_doc(request, slug_auction):
         auction.dateStart           = DT.datetime.strptime(request.POST.get('dateStart', ''), "%Y-%m-%dT%H:%M")
         auction.description         = request.POST.get('description', '')        
         auction.save()
-
+        cars = list()
+        
         for key in request.POST.keys():
-            
-                    
             if key.startswith('cars_list_data_slug_'):
                 val_key = request.POST.get(key)
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
-
+                cars.append(car)
                 diagnostic  = list()
                 kolesa      = list()
                 damage      = list()
@@ -6797,10 +6796,25 @@ def auction_doc(request, slug_auction):
                     for list_file_down in list_files_down:
                         vnesh.append(list_file_down)
 
-                    structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
-                    structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
-                    structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
-                    structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
+                    if 'cars_list_data_work' + pk in request.POST:
+                        structure.works = request.POST.get('cars_list_data_work' + pk, '')  
+                    else:
+                        structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
+
+                    if 'cars_list_data_diag' + pk in request.POST:
+                        structure.diagnostic        = request.POST.get('cars_list_data_diag' + pk, '')
+                    else:
+                        structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
+                    
+                    if 'cars_list_data_pod' + pk in request.POST:
+                        structure.podgotovka                = request.POST.get('cars_list_data_pod' + pk, '')
+                    else:
+                        structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
+
+                    if 'cars_list_data_op' + pk in request.POST:
+                        structure.op                = request.POST.get('cars_list_data_op' + pk, '')
+                    else:
+                        structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
                     
                     structure.files_diagnostic  = json.dumps(diagnostic)
                     structure.files_kolesa      = json.dumps(kolesa)
@@ -6821,6 +6835,8 @@ def auction_doc(request, slug_auction):
                 except:
                     s=1
                 structure.save()
+
+        AuctionStructure.objects.filter(auction = auction).exclude(car__in = cars).delete()
 
         if 'send' in request.POST:
             if AuctionStructure.objects.filter(auction = auction).filter(car = car).filter(success = False).count() > 0:
@@ -6902,7 +6918,8 @@ def auction_doc_get_cars_info(request, slug):
         int_ocenka_url_left     = Value('', output_field=CharField())).annotate(
         work_podgotovka         = Value('', output_field=CharField())).annotate(
         work_service            = Value('', output_field=CharField())).annotate(
-        work_mcu                = Value('', output_field=CharField()))
+        work_mcu                = Value('', output_field=CharField())).annotate(
+        work                    = Value('', output_field=CharField()))
     
     
     data = list(cars.values('vin', 
@@ -6926,6 +6943,7 @@ def auction_doc_get_cars_info(request, slug):
                        'work_podgotovka',
                        'work_service',
                        'work_mcu',
+                       'work',
                        type_sale_name = F('type_sale__name'),
                        type_reception_name = F('type_reception__name'),
                        stage_price_name = F('stage_price__name'),
@@ -6944,9 +6962,12 @@ def auction_doc_get_cars_info(request, slug):
         car['work_podgotovka']      = list()
         car['work_service']         = list()
         car['work_mcu']             = list()
+        car['work']                 = ''
         if car['int_ocenka_id'] != None:
             car['work_podgotovka']  = list_work(car['int_ocenka_id']) 
-            
+            for inf_work in car['work_podgotovka']:
+                car['work']  = car['work']  + inf_work['name'] + '/n'
+
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
 def list_work(int_ocenka):
