@@ -3799,26 +3799,38 @@ def estimations_price_calculation(estimation, type_calculation):
     estimation_price    = round(price, -2)
     amount_sum          = amount_mcu + amount_podgotovka + amount_ss
     profit              = round(price_sale - price - amount_sum, -2)
+    estimation_price_do_kd  = estimation_price + amount_ss
+    difference_sum          = 0     
+    if zna_type == "custom":
+        if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
+            estimation_price = estimation_price_do_kd - amount_ss 
+            if estimation_price < 1000:
+                estimation_price = 1000
+        else:
+            estimation_price = 0
+
+        if estimation_price_do_kd < 1000:
+            estimation_price_do_kd = 1000 
+        
+        difference_sum = 0
+        if estimation.page_soglasovanie != None:
+            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+        
+        estimation_price = estimation_price + difference_sum
+
+    cna_expenses = zna - amount_sum 
     
-    estimation_price_do_kd = estimation_price + amount_ss
+    if estimation_price < 1000:
+        estimation_price = 1000
+    
     if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
         estimation_price = estimation_price_do_kd - amount_ss 
         if estimation_price < 1000:
             estimation_price = 1000
-    else:
-        estimation_price = 0
 
     if estimation_price_do_kd < 1000:
         estimation_price_do_kd = 1000 
-    
-    cna_expenses = zna - amount_sum 
-    
-    difference_sum = 0
-    if estimation.page_soglasovanie != None:
-        if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-            difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
-    
-    estimation_price = estimation_price + difference_sum
 
     if cna_expenses < 0:
         cna_expenses = zna

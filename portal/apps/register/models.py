@@ -3028,6 +3028,12 @@ class RegEstimationBalanceUnit(models.Model):
             self.date = self.estimation.start_estimation
         except:
             s=1
+
+        try:
+            if self.shipment != None:
+                self.date = self.shipment.dataTime
+        except:
+            s=1
         
         super().save(*args, **kwargs)
 

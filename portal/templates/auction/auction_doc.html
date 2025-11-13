@@ -22,6 +22,11 @@
 			border-color: #F58220!important;
 		}
 
+		.check_glav[type="checkbox"]:checked {
+			background-color: #000!important;
+			border-color: #000!important;
+		}
+
         .auction-doc-page {
             background-color: var(--auction-light);
             padding: 2rem 1.5rem 4rem;
@@ -1170,6 +1175,28 @@
 					
 								<div class="modal-divider"></div>
 								
+								<div class="row">
+									<div class="col-auto">
+										<input type="checkbox" class="form-check-input" disabled>
+										<label class="">Не будет выгружена на аукцион</label>		
+									</div>
+									<div class="col-auto">
+										<input type="checkbox" class="form-check-input" checked disabled>
+										<label class="">Будет выгружена на аукцион</label>		
+									</div>
+									<div class="col-auto">
+										<input type="checkbox" class="form-check-input check_glav" checked disabled>
+										<label class="">Главная фотография</label>		
+									</div>
+									<div class="col-auto">
+										<input type="checkbox" class="form-check-input check_glav bg-secondary" disabled>
+										<label class="">Нажмите что бы установить главной</label>		
+									</div>
+								</div>
+								<label class="">Добавленные файлы будут отображены после сохранения документа аукцион и автоматически помечены к выгрузке на аукцион</label>	
+
+								<div class="modal-divider"></div>
+								
 								<div class="modal-section">
 									<div class="modal-section-title">
 										<span class="icon-mbri-preview"></span>
@@ -1181,8 +1208,15 @@
 												{% if obj != '/media/nophoto.png' %}
 													<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
 														<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
-													</div>		
-													<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]' %} checked {% else %}  {% if obj.file.url in structure.files_car %} checked {% endif %} {% endif %} value="{{obj.file.url}}">																																								
+													</div>
+													<div class="row-auto">
+														<div class="col-12">
+															<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]' %} checked {% else %}  {% if obj.file.url in structure.files_car %} checked {% endif %} {% endif %} value="{{obj.file.url}}">
+														</div>
+														<div class="col-12">
+															<input type="checkbox" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav{{forloop.counter}}"  {% if structure.files_glav == obj.file.url %} checked {% endif %} value="{{obj.file.url}}">		
+														</div>														
+													</div>														
 												{% endif %}
 											{% endfor %}
 											{% for obj in structure.info_car_auction_data.int_ocenka_url_vnesh %}
@@ -1190,14 +1224,28 @@
 													<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
 														<img src="{{obj}}" src1="{{obj}}">												
 													</div>		
-													<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">																																								
+													<div class="row-auto">
+														<div class="col-12">
+															<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">
+														</div>
+														<div class="col-12">
+															<input type="checkbox" aria-label="Главная" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" {% if structure.files_glav == obj %} checked {% endif %}   value="{{obj}}">
+														</div>														
+													</div>
 												{% endif %}
 											{% endfor %}
 											{% for obj in structure.info_car_vnesh %}
 												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
 													<img src="{{obj}}" src1="{{obj}}">												
 												</div>	
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]' %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">																															
+												<div class="row-auto">
+													<div class="col-12">
+														<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">
+													</div>
+													<div class="col-12">
+														<input type="checkbox" aria-label="Главная" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" {% if structure.files_glav == obj %} checked {% endif %} value="{{obj}}">
+													</div>														
+												</div>
 											{% endfor %}	
 										</div>
 										<input type="file" id="images_car_{{structure.car.slug}}" name="images_car_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
@@ -1305,7 +1353,7 @@
 												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
 													<img src="{{obj}}" src1="{{obj}}">												
 												</div>
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_kolesa_{{forloop.counter}}" id="photo_kolesa_{{forloop.counter}}"  {% if structure.files_kolesa  == '' or structure.files_kolesa  == '[]' %} checked {% else %}  {% if obj in structure.files_kolesa %} checked {% endif %} {% endif %} value="{{obj}}">																					
+												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_kolesa_{{forloop.counter}}" id="photo_kolesa_{{forloop.counter}}"  {% if structure.files_kolesa  == '' or structure.files_kolesa  == '[]' %} checked {% else %}  {% if obj in structure.files_kolesa %} checked {% endif %} {% endif %} value="{{obj}}">																																	
 											{% endfor %}
 											{% for obj in structure.info_car_wheels %}
 												<div class="gallery-item" id="foto_body5{{foorlloop.counter}}" data-index="5{{forloop.counter}}">
@@ -1417,6 +1465,32 @@
 
 </div>
 
+<script >
+	
+	$('input:checkbox').click(function(){
+		var id = this.id;
+		if(id.indexOf('photo_vnesh_glav') !== -1){
+			var id_new = id.split('_photo_vnesh_glav')[0] + '_photo_vnesh_glav';
+			clear(id, id_new);
+		};
+		
+	});
+
+	function clear(slug, chek){
+		$('input:checkbox').each(function(){
+			if (this.id.indexOf(chek) !== -1){
+				if (this.id != slug){
+					$('#' + this.id).prop('checked', false);
+					
+				}else {
+					var new_id = this.id.replace('_glav', '');
+					$('#' + new_id).prop('checked', true);
+				};
+			};
+		});
+	}
+	
+</script>
 
 <!-- 
 	<br>

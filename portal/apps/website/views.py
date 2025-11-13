@@ -6520,7 +6520,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                         stage               = car_organization.stage_price
                                         zg                  = car_organization.group_price
                                         kf                  = 100
-                                        
+                                        kf_e                = 100
                                         if zg.name == '200':
                                             if stage.pk == 1:
                                                 kf = unit.ratio_avtohub_txt_200
@@ -6584,7 +6584,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                                 kf = unit.ratio_avtohub_kor_5000
                                             elif stage.pk == 4:
                                                 kf = unit.ratio_avtohub_test_price_5000
-                                        elif zg.name == '5 000' or zg.name == '5 000+':
+                                        elif zg.name == '5 001' or zg.name == '5 001+':
                                             if stage.pk == 1:
                                                 kf = unit.ratio_avtohub_txt_5001
                                             elif stage.pk == 2:
@@ -6594,6 +6594,79 @@ def refresh_estimation_balance_unit(id_estimation):
                                             elif stage.pk == 4:
                                                 kf = unit.ratio_avtohub_test_price_5001
 
+                                        if zna < 200000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_200
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_200
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_200
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_200                                           
+                                        elif zna < 400000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_400
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_400
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_400
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_400   
+                                        elif zna < 700000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_700
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_700
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_700
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_700
+                                        elif zna < 1200000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_1200
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_1200
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_1200
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_1200
+                                        elif zna < 2000000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_2000
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_2000
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_2000
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_2000
+                                        elif zna < 3000000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_3000
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_3000
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_3000
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_3000
+                                        elif zna < 5000000:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_5000
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_5000
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_5000
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_5000
+                                        else:
+                                            if stage.pk == 1:
+                                                kf_e = unit.ratio_avtohub_txt_5001
+                                            elif stage.pk == 2:
+                                                kf_e = unit.ratio_avtohub_rdo_5001
+                                            elif stage.pk == 3:
+                                                kf_e = unit.ratio_avtohub_kor_5001
+                                            elif stage.pk == 4:
+                                                kf_e = unit.ratio_avtohub_test_price_5001
+                                            
                                         if estimation != None:
                                             
                                             new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()     
@@ -6613,8 +6686,11 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     vr_int      = price_info['amount_sum'] 
                                                     var_sum     = vr_int - agreement.outlay
                                                     #iznos       = price_info['iznos_price']
-                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + fin_prim - fin_fact) 
+                                                    t           = zna - (zna - zna * kf_e / 100) - (zak + price_info['iznos_price'] + var_sum  + fin_prim - fin_fact) 
                                                     val_itog    = cum - (t + kso_fact + bu_wheels_fact)
+                                                    
+                                                    #t_new       = zna - (zna - zna * kf_e / 100) - (zak + var_sum  + fin_prim - fin_fact)
+                                                    #val_new     = cum - (t_new + kso_fact + bu_wheels_fact)
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
@@ -6625,7 +6701,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
                                                     new_record.shipment     = doc
                                                     new_record.amount_out   = val_itog
-                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf_e) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
                                                     new_record.save()                                
                 else:
                     count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
@@ -6753,6 +6829,7 @@ def auction_doc(request, slug_auction):
                 shema       = list()
                 salon       = list()
                 vnesh       = list()
+                glav        = ''
 
                 structure, created = AuctionStructure.objects.filter(auction = auction).filter(car = car).get_or_create(auction = auction, car = car) 
 
@@ -6768,8 +6845,11 @@ def auction_doc(request, slug_auction):
                             shema.append(request.POST.get(key, ''))
                         elif key.startswith(pk + '_photo_salon'):
                             salon.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_vnesh_glav'):
+                            glav = request.POST.get(key, '')
                         elif key.startswith(pk + '_photo_vnesh'):
                             vnesh.append(request.POST.get(key, ''))
+                        
                     
                     list_files_kolesa = request.FILES.getlist('images_wheels_' + pk)
                     list_kolesa = dowload_files_auction(structure, list_files_kolesa, 'kolesa')
@@ -6816,6 +6896,14 @@ def auction_doc(request, slug_auction):
                     else:
                         structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
                     
+                    structure.files_glav        = glav
+                    if glav != '':
+                        vnesh_new = list()
+                        vnesh_new.append(glav)
+                        for vn in vnesh:
+                            if vn != glav:
+                                vnesh_new.append(vn)
+                        vnesh = vnesh_new
                     structure.files_diagnostic  = json.dumps(diagnostic)
                     structure.files_kolesa      = json.dumps(kolesa)
                     structure.files_damages     = json.dumps(damage)
@@ -7229,11 +7317,21 @@ def customer_est(request, slug):
 
 def test(request):
     
+    docs = RegEstimationBalanceUnit.objects.exclude(shipment = None)
+    count = docs.count()
+    s = 0
+    for doc in docs:
+        doc.save()
+        s = s + 1 
+        print(str(s) + ' из ' + str(count) )
+
+    '''
     from background_task.models import Task
     task = Task.objects.all()
     for ts in task:
         ts.locked_by = ''
         ts.save()
+    '''
 
     #refresh_avtoteka_vin()
 

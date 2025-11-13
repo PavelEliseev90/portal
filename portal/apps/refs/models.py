@@ -2033,45 +2033,46 @@ class AuctionStructure(models.Model):
     podgotovka      = models.CharField('Комментарий для подготовки', default='', null=True, max_length=12500, blank=False)
     autoteka_prev   = models.BooleanField('Показывать автотеку', default = False)
     success         = models.BooleanField('Проверено',  default = False)
-
-    files_car       = models.CharField('Внешний вид',   default='', null=True, max_length=12500, blank=False)
-    files_salon     = models.CharField('Салон',         default='', null=True, max_length=12500, blank=False)
-    files_shema     = models.CharField('Схема',         default='', null=True, max_length=12500, blank=False)
-    files_damages   = models.CharField('Повреждения',   default='', null=True, max_length=12500, blank=False)
-    files_kolesa    = models.CharField('Колеса',        default='', null=True, max_length=12500, blank=False)
-    files_diagnostic= models.CharField('Диагностика',   default='', null=True, max_length=12500, blank=False)
+    
+    files_glav      = models.CharField('Главная',       default='', null=True, max_length=1000,     blank=False)
+    files_car       = models.CharField('Внешний вид',   default='', null=True, max_length=12500,    blank=False)
+    files_salon     = models.CharField('Салон',         default='', null=True, max_length=12500,    blank=False)
+    files_shema     = models.CharField('Схема',         default='', null=True, max_length=12500,    blank=False)
+    files_damages   = models.CharField('Повреждения',   default='', null=True, max_length=12500,    blank=False)
+    files_kolesa    = models.CharField('Колеса',        default='', null=True, max_length=12500,    blank=False)
+    files_diagnostic= models.CharField('Диагностика',   default='', null=True, max_length=12500,    blank=False)
 
     def info_car_vnesh(self):
         list_links = list()
-        list_qyeryset = AuctionStructureFiles.objects.filter(type_file = 'vnesh')
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(auction_structure = self).filter(type_file = 'vnesh')
         for list_qyery in list_qyeryset:
             list_links.append(list_qyery.file.url)
         return list_links
     
     def info_car_salon(self):
         list_links = list()
-        list_qyeryset = AuctionStructureFiles.objects.filter(type_file = 'salon')
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'salon')
         for list_qyery in list_qyeryset:
             list_links.append(list_qyery.file.url)
         return list_links
     
     def info_car_shema(self):
         list_links = list()
-        list_qyeryset = AuctionStructureFiles.objects.filter(type_file = 'shema')
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'shema')
         for list_qyery in list_qyeryset:
             list_links.append(list_qyery.file.url)
         return list_links
     
     def info_car_wheels(self):
         list_links = list()
-        list_qyeryset = AuctionStructureFiles.objects.filter(type_file = 'kolesa')
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'kolesa')
         for list_qyery in list_qyeryset:
             list_links.append(list_qyery.file.url)
         return list_links
     
     def info_car_damages(self):
         list_links = list()
-        list_qyeryset = AuctionStructureFiles.objects.filter(type_file = 'damage')
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'damage')
         for list_qyery in list_qyeryset:
             list_links.append(list_qyery.file.url)
         return list_links
