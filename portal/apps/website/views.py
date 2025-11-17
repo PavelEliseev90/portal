@@ -5097,6 +5097,11 @@ def build_kors_dashboard_context(request):
 
     subquery_sale   = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(count=Func(F('id'), function='Count')).values('count')
     subquery_sale_s = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(amount_car=Func(F('amount'), function='Sum')).values('amount_car')
+    reserve_subquery = RegEstimationBalanceUnit.objects.filter(
+        unit__id=OuterRef('id'),
+        date__gte=date_start,
+        date__lte=date_end
+    ).values('unit__id').annotate(total=Coalesce(Sum('amount'), Value(0.0))).values('total')
     subquery_intake_period = RefCarsOrganization.objects.filter(
         unit__id=OuterRef('id'),
         date_create__gte=date_start,
@@ -5240,7 +5245,8 @@ def build_kors_dashboard_context(request):
         count_5001_outlay=Coalesce(Subquery(subquery_5001_outlay), Value(0))).annotate(
         count_5001_cost=Coalesce(Subquery(subquery_5001_cost), Value(0))).annotate(
         plan_intake=Coalesce(Subquery(subquery_plan_intake, output_field=IntegerField()), Value(0))).annotate(
-        plan_sale=Coalesce(Subquery(subquery_plan_sale, output_field=IntegerField()), Value(0)))
+        plan_sale=Coalesce(Subquery(subquery_plan_sale, output_field=IntegerField()), Value(0))).annotate(
+        reserve_amount=Coalesce(Subquery(reserve_subquery, output_field=FloatField()), Value(0.0)))
 
     if len(filter_unit_ids) == 0:
         docs = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(eco=True)
@@ -5342,14 +5348,23 @@ def build_kors_dashboard_context(request):
         Sum('count_sale_s'),
         Sum('count_intake_period'),
         Sum('plan_intake'),
-        Sum('plan_sale')
+        Sum('plan_sale'),
+        Sum('reserve_amount')
     )
+
+    reserve_qs_total = RegEstimationBalanceUnit.objects.filter(
+        unit__in=list_dc.values('id'),
+        date__gte=date_start,
+        date__lte=date_end
+    )
+    reserve_summary = reserve_qs_total.aggregate(total=Coalesce(Sum('amount'), Value(0.0)))
 
     plan_summary = {
         'intake_plan': dash.get('plan_intake__sum') or 0,
         'intake_fact': dash.get('count_intake_period__sum') or 0,
         'sale_plan': dash.get('plan_sale__sum') or 0,
         'sale_fact': dash.get('count_sale__sum') or 0,
+        'reserve_total': reserve_summary.get('total') or 0,
     }
 
     def _calc_percent(fact, plan):
