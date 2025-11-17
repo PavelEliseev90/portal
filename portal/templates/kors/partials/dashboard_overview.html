@@ -113,6 +113,17 @@
     </div>
   </div>
 
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <span class="text-uppercase text-muted small">Резервы подразделений</span>
+      <div class="d-flex align-items-baseline justify-content-between mt-1">
+        <span class="display-6 fw-semibold">{{ params.plan_summary.reserve_total|default:0|floatformat:"2g" }} ₽</span>
+        <span class="text-muted small">за период</span>
+      </div>
+      <p class="text-muted small mb-0">Сумма резервов по выбранным подразделениям из RegEstimationBalanceUnit.</p>
+    </div>
+  </div>
+
   {% with summary=params.plan_summary %}
   <div class="row g-3 mb-4">
     <div class="col-12 col-lg-6">
@@ -855,6 +866,7 @@
               <th class="text-end">1С</th>
               <th class="text-end">УК</th>
               <th class="text-end">Экспресс</th>
+              <th class="text-end">Резервы, ₽</th>
               <th></th>
             </tr>
           </thead>
@@ -875,6 +887,7 @@
                   <td class="text-end">{{ unit.count_eval_1c|default:0 }}</td>
                   <td class="text-end">{{ unit.count_eval_uk|default:0 }}</td>
                   <td class="text-end">{{ unit.count_eval_express|default:0 }}</td>
+                  <td class="text-end">{{ unit.reserve_amount|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
                     {% with quick_base=params.quick_actions_base|default:request.path %}
                       <a class="btn btn-sm btn-outline-primary" href="{{ quick_base }}?dc={{ unit.id }}&page=cars">
@@ -886,10 +899,29 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="14" class="text-center py-4 text-muted">Нет данных для отображения. Измените период или выберите другие подразделения.</td>
+                <td colspan="15" class="text-center py-4 text-muted">Нет данных для отображения. Измените период или выберите другие подразделения.</td>
               </tr>
             {% endif %}
           </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <th>Итого</th>
+              <th class="text-end">{{ params.dash.count_cars__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_cars_s__sum|default:0|floatformat:"2g" }} ₽</th>
+              <th class="text-end">{{ params.dash.count_test__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_rdo__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_kor__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_txt__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_sale__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_sale_s__sum|default:0|floatformat:"2g" }} ₽</th>
+              <th class="text-end">{{ params.dash.count_eval_avtohab__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_eval_1c__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_eval_uk__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.count_eval_express__sum|default:0 }}</th>
+              <th class="text-end">{{ params.dash.reserve_amount__sum|default:0|floatformat:"2g" }} ₽</th>
+              <th></th>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
