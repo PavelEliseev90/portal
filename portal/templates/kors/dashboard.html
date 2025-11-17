@@ -1,0 +1,11 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - КорсАвто дашборд {% endblock %}
+
+{% block title_navbar %} - Дашборд директора {% endblock %}
+
+{% block content %}
+{% include 'kors/partials/dashboard_overview.html' %}
+{% endblock %}
+

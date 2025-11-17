@@ -30,8 +30,8 @@ from urllib.parse import unquote
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from refs.models import AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
-from documents.models import DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
+from refs.models import RefService, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
+from documents.models import DocZNServicesKA, DocZNPerformersKA, DocZNProductKA, DocZNWorkKA, DocZNKA, DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
 from refs.serializers import AutoruComplectationSerializer, AutoruMarkSerializer, AutoruModelSerializer, AutoruModificationSerializer
@@ -2447,6 +2447,11 @@ def exchange_bu(request):
         if len(surveys) > 0:
             list_surveys = load_surveys(surveys)
 
+    #Заказ-Наряды
+    orders_service = data['OrdersService']
+    if len(orders_service) > 0:
+        list_order_service = load_orders_service_ka(orders_service)
+
     #СМС документы
     if 'SMSS' in data:
         smss = data['SMSS']
@@ -2847,6 +2852,20 @@ def load_resource_planings(resource_planings):
         except:
             error = resource_planing
     return answer_data    
+
+def load_orders_service_ka(orders_service):
+    answer_data = list()
+    for order in orders_service:
+        try:
+            order_object = get_order_ka(order)
+            answer = {
+                'Uin'       : order_object.uin,
+                'Version'   : order['Version']
+            }
+            answer_data.append(answer)
+        except:
+            error = order
+    return answer_data 
 ######
 #####
 ####
@@ -3614,6 +3633,21 @@ def get_work(work):
     work_object.article = article
     work_object.save()
     return work_object 
+
+def get_service(service):
+    article = service['Article']
+    name    = service['Name']
+    uin     = service['Uin']
+    service_object = RefService.objects.filter(uin = uin)
+    if len(service_object) == 0:
+        service_object = RefService()
+    else:
+        service_object = service_object[0]
+    service_object.uin     = uin
+    service_object.name    = name
+    service_object.article = article
+    service_object.save()
+    return service_object 
 
 def get_staff(staff):
     
@@ -4395,7 +4429,107 @@ def get_model_object(model, name):
        return ref_object
     else:
        return ModelB.objects.filter(name = name)[0] 
+
+def get_order_ka(order):
     
+    uin     = order.get('Uin')
+    docs    = DocZNKA.objects.filter(uin = uin)
+    
+    if len(docs) == 0:
+        order_object = DocZNKA()
+    else:
+        order_object = docs[0]
+
+    order_object.uin            = uin
+    order_object.unit           = get_unit(order['Unit'])
+    order_object.master         = get_staff(order['MasterIn'])
+    order_object.nomer          = order['Number']
+    order_object.dataTime       = order['Date']
+    order_object.carsGRZ        = order['StateNumber']
+    order_object.customer       = get_сustomer(order['Customer'])
+    
+    try:
+        order_object.clientName     = order['Customer']['Name']
+    except:
+        order_object.clientName     = ''
+    try:
+        order_object.organization   = get_organization(order['Organization'])
+    except:
+        order_object.organization   = None
+    
+    order_object.cars           = get_car(order['Car'])
+    order_object.typeRemont     = get_type_remont(order['TypeRepair'])
+    order_object.readyStatus    = get_status_zn(order['ReadyStatus'])
+    order_object.customerWords  = order['Reason']
+    order_object.active         = order['Active']
+    order_object.dateStart      = order['DateStart']
+    order_object.run            = order['Run']
+    order_object.amount         = order['Amount']
+    order_object.nomer_dc       = order['Number_dc']
+    order_object.dataTime_dc    = order['Date_dc']
+    order_object.save()
+
+    if 'Lo' in order:
+        if order['Lo'] != None:
+            order_object.lo = DocLO.objects.get_or_create(uin = order['Lo_uin'])
+            #order_object.lo = get_lo(order['Lo_uin'])
+
+    if 'Performers' in order:
+        DocZNPerformersKA.objects.filter(zn = order_object).delete()
+        for performer in order['Performers']:
+            docZNPerformers_object          = DocZNPerformersKA()
+            docZNPerformers_object.zn       = order_object
+            docZNPerformers_object.uin      = performer['Uin']
+            docZNPerformers_object.staff    = get_staff(performer['Staff'])
+            docZNPerformers_object.percent  = performer['Percent']
+            docZNPerformers_object.save()
+    
+    if 'Works' in order:
+        DocZNWorkKA.objects.filter(zn = order_object).delete()
+        for work_zn in order['Works']:
+            work = get_work(work_zn['Work'])
+            work_zn_object = DocZNWorkKA()
+            work_zn_object.zn           = order_object
+            work_zn_object.work         = work
+            work_zn_object.quantity     = work_zn['Quantity']
+            work_zn_object.price        = work_zn['Price']
+            work_zn_object.amount       = work_zn['Amount']
+            if 'Uin' in work_zn:
+                work_zn_object.uin = work_zn['Uin']
+            work_zn_object.save()
+
+    if 'Products' in order:
+        DocZNProductKA.objects.filter(zn = order_object).delete()
+        for product_zn in order['Products']:
+            product = get_product(product_zn['Product'])
+            product_zn_object = DocZNProductKA()
+            product_zn_object.zn           = order_object
+            product_zn_object.product      = product
+            product_zn_object.quantity     = product_zn['Quantity']
+            product_zn_object.price        = product_zn['Price']
+            product_zn_object.amount       = product_zn['Amount']
+            if 'Uin' in product_zn:
+                product_zn_object.uin = product_zn['Uin'] 
+            product_zn_object.save()
+    
+    if 'Services' in order:
+        DocZNServicesKA.objects.filter(zn = order_object).delete()
+        for services_zn in order['Services']:
+            service = get_service(services_zn['Product'])
+            services_zn_object = DocZNServicesKA()
+            services_zn_object.zn           = order_object
+            services_zn_object.service      = service
+            services_zn_object.quantity     = services_zn['Quantity']
+            services_zn_object.price        = services_zn['Price']
+            services_zn_object.amount       = services_zn['Amount']
+            if 'Uin' in services_zn:
+                services_zn_object.uin = services_zn['Uin'] 
+            services_zn_object.save()
+
+    return order_object
+
+
+
 def get_item_spec(name):
     refCount = RefSpecification.objects.filter(name = name).count()
     if refCount > 0:

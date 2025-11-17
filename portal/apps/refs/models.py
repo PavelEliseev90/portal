@@ -540,6 +540,24 @@ class RefStatusEstimation(models.Model):
         verbose_name_plural = "Статусы оценки"
 
 
+# Услуги
+class RefService(models.Model):
+    uin             = models.CharField("uin", max_length=200, default='')
+    name            = models.CharField("Наименование", max_length=300, default='')
+    article         = models.CharField("Артикул", max_length=150, default='')
+   
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['uin'])
+        ]
+        db_table = 'refService'
+        verbose_name = "Услуга"
+        verbose_name_plural = "Услуги"
+        
+        
 # Товары
 class RefProduct(models.Model):
     uin             = models.CharField("uin", max_length=200, default='')

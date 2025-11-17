@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import DocLO, DocZN, DocZNPerformers, DocZNWork, DocZNProduct, DocRLK, DocRLKEvents, DocCarAgreement, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation,  DocRecomendationFiles, DoсRecomendationMCU, DocZNRecomendation, DocServiceRequest, ResourcePlanning, DocSMS
+from .models import DocZNKA, DocLO, DocZN, DocZNPerformers, DocZNWork, DocZNProduct, DocRLK, DocRLKEvents, DocCarAgreement, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation,  DocRecomendationFiles, DoсRecomendationMCU, DocZNRecomendation, DocServiceRequest, ResourcePlanning, DocSMS
 
 
 @admin.register(DocLO)
@@ -71,6 +71,15 @@ class DoсRecomendationAdmin(admin.ModelAdmin):
     search_fields   = ('kod_recomendation', 'zn__uin',)
     list_filter     = ('customerStatus', 'status',)
     raw_id_fields   = ('zn', )
+
+
+@admin.register(DocZNKA)
+class DocZNKAAdmin(admin.ModelAdmin):
+    list_display    = ('dataTime', 'nomer', 'active', 'organization', 'unit', 'customer', 'cars', 'typeRemont', 'amount', )
+    search_fields   = ('nomer', 'uin',)
+    raw_id_fields   = ('customer', 'cars', 'readyStatus', 'unit', 'organization',)
+    list_filter     = ('unit', 'active', )
+
 
 @admin.register(DocZN)
 class DocZNAdmin(admin.ModelAdmin):

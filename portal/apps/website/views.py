@@ -21,13 +21,14 @@ from django.core.paginator import Paginator
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
 from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField
 from django.db.models.functions import Cast, Coalesce
 from django.db import models
 from django.conf import settings
@@ -5030,6 +5031,468 @@ def doc_car_shipment(request, id):
     return render(request, 'website/doc_car_shipment.html', {'params':params}) 
 
 
+def build_kors_dashboard_context(request):
+    
+    date_start_str  = request.GET.get('date_start', '')
+    date_end_str    = request.GET.get('date_end', '')
+    filter_unit_raw = request.GET.getlist('unit[]')
+
+    filter_unit_ids = []
+    for value in filter_unit_raw:
+        try:
+            filter_unit_ids.append(int(value))
+        except (TypeError, ValueError):
+            continue
+
+    date_end = None
+    if len(date_start_str) == 0:
+        date_period = DT.datetime.now()
+        date_start  = date_period.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if date_period.month > 11:
+            month_end   = 1
+            year_end    = date_period.year + 1
+        else:
+            month_end   = date_period.month + 1
+            year_end    = date_period.year
+        if len(date_end_str) == 0:
+            date_end    = date_period.replace(year=year_end, month=month_end, day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        parts = date_start_str.split('-')
+        if len(parts) == 3:
+            year        = int(parts[0])
+            month       = int(parts[1])
+            day         = int(parts[2])
+            date_period = DT.datetime.now()
+            date_start  = date_period.replace(year=year, month=month, day=day, hour=0, minute=0, second=0, microsecond=0)
+            if month > 11:
+                month_end   = 1
+                year_end    = year + 1
+            else:
+                month_end   = month + 1
+                year_end    = year
+            if len(date_end_str) == 0:
+                date_end    = date_period.replace(year=year_end, month=month_end, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            date_start = DT.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    if len(date_end_str) > 0:
+        parts = date_end_str.split('-')
+        if len(parts) == 3:
+            year        = int(parts[0])
+            month       = int(parts[1])
+            day         = int(parts[2])
+            date_period = DT.datetime.now()
+            date_end    = date_period.replace(year=year, month=month, day=day, hour=0, minute=0, second=0, microsecond=0)
+
+    if date_end is None:
+        date_end = DT.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if len(filter_unit_ids) == 0:
+        list_dc = RefUnit.objects.filter(buauto=True).order_by('name')
+    else:
+        list_dc = RefUnit.objects.filter(id__in=filter_unit_ids).order_by('name')
+
+    subquery_sale   = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_sale_s = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(amount_car=Func(F('amount'), function='Sum')).values('amount_car')
+
+    subquery                    = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_s                  = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_outlay             = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_cost_price         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_test_price         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=4).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_test_price_s       = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_test_price_outlay  = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=4).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_test_price_cost    = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=4).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_rdo                = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=2).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_rdo_s              = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=2).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_rdo_outlay         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=2).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_rdo_cost           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=2).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_kor                = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=3).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_kor_s              = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=3).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_kor_outlay         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=3).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_kor_cost           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=3).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_txt                = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=1).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_txt_s              = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_txt_outlay         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=1).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_txt_cost           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(stage_price__id=1).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_eval_avtohab       = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=1).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_eval_1c            = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id__in=[2, 8]).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_eval_uk            = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=3).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_eval_man           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=4).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_eval_sed           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=5).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_eval_express       = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=7).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_eval_avtohab_s     = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_eval_1c_s          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id__in=[2, 8]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_eval_uk_s          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=3).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_eval_man_s         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_eval_sed_s         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=5).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_eval_express_s     = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(evaluation__id=7).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_200                = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=7).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_200_s              = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=7).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_200_outlay         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=7).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_200_cost           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=7).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_400                = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=1).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_400_s              = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_400_outlay         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=1).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_400_cost           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=1).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_700                = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=6).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_700_s              = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=6).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_700_outlay         = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=6).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_700_cost           = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=6).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_1200               = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[9, 2]).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_1200_s             = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[9, 2]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_1200_outlay        = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[9, 2]).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_1200_cost          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[9, 2]).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_2000               = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[10, 3]).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_2000_s             = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[10, 3]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_2000_outlay        = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[10, 3]).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_2000_cost          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[10, 3]).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_3000               = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=4).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_3000_s             = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_3000_outlay        = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=4).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_3000_cost          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=4).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_5000               = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[8, 5]).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_5000_s             = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[8, 5]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_5000_outlay        = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[8, 5]).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_5000_cost          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id__in=[8, 5]).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+    subquery_5001               = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=12).annotate(count=Func(F('id'), function='Count')).values('count')
+    subquery_5001_s             = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=12).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
+    subquery_5001_outlay        = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=12).annotate(outlay_car=Func(F('outlay'), function='Sum')).values('outlay_car')
+    subquery_5001_cost          = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).filter(group_price__id=12).annotate(cost_price_car=Func(F('cost_price'), function='Sum')).values('cost_price_car')
+
+    list_dc = list_dc.annotate(
+        count_eval_avtohab=Coalesce(Subquery(subquery_eval_avtohab), Value(0))).annotate(
+        count_eval_1c=Coalesce(Subquery(subquery_eval_1c), Value(0))).annotate(
+        count_eval_uk=Coalesce(Subquery(subquery_eval_uk), Value(0))).annotate(
+        count_eval_man=Coalesce(Subquery(subquery_eval_man), Value(0))).annotate(
+        count_eval_sed=Coalesce(Subquery(subquery_eval_sed), Value(0))).annotate(
+        count_eval_express=Coalesce(Subquery(subquery_eval_express), Value(0))).annotate(
+        count_eval_avtohab_s=Coalesce(Subquery(subquery_eval_avtohab_s), Value(0))).annotate(
+        count_eval_1c_s=Coalesce(Subquery(subquery_eval_1c_s), Value(0))).annotate(
+        count_eval_uk_s=Coalesce(Subquery(subquery_eval_uk_s), Value(0))).annotate(
+        count_eval_man_s=Coalesce(Subquery(subquery_eval_man_s), Value(0))).annotate(
+        count_eval_sed_s=Coalesce(Subquery(subquery_eval_sed_s), Value(0))).annotate(
+        count_eval_express_s=Coalesce(Subquery(subquery_eval_express_s), Value(0))).annotate(
+        count_sale=Subquery(subquery_sale)).annotate(
+        count_sale_s=Subquery(subquery_sale_s)).annotate(
+        count_cars=Subquery(subquery)).annotate(
+        count_cars_s=Subquery(subquery_s)).annotate(
+        count_cars_outlay=Coalesce(Subquery(subquery_outlay), Value(0))).annotate(
+        count_cars_cost_price=Coalesce(Subquery(subquery_cost_price), Value(0))).annotate(
+        count_test=Subquery(subquery_test_price)).annotate(
+        count_test_s=Subquery(subquery_test_price_s)).annotate(
+        count_test_outlay=Coalesce(Subquery(subquery_test_price_outlay), Value(0))).annotate(
+        count_test_cost=Coalesce(Subquery(subquery_test_price_cost), Value(0))).annotate(
+        count_rdo=Subquery(subquery_rdo)).annotate(
+        count_rdo_s=Subquery(subquery_rdo_s)).annotate(
+        count_rdo_outlay=Coalesce(Subquery(subquery_rdo_outlay), Value(0))).annotate(
+        count_rdo_cost=Coalesce(Subquery(subquery_rdo_cost), Value(0))).annotate(
+        count_kor=Subquery(subquery_kor)).annotate(
+        count_kor_s=Subquery(subquery_kor_s)).annotate(
+        count_kor_outlay=Coalesce(Subquery(subquery_kor_outlay), Value(0))).annotate(
+        count_kor_cost=Coalesce(Subquery(subquery_kor_cost), Value(0))).annotate(
+        count_txt=Subquery(subquery_txt)).annotate(
+        count_txt_s=Subquery(subquery_txt_s)).annotate(
+        count_txt_outlay=Coalesce(Subquery(subquery_txt_outlay), Value(0))).annotate(
+        count_txt_cost=Coalesce(Subquery(subquery_txt_cost), Value(0))).annotate(
+        count_200=Subquery(subquery_200)).annotate(
+        count_200_s=Coalesce(Subquery(subquery_200_s), Value(0))).annotate(
+        count_200_outlay=Coalesce(Subquery(subquery_200_outlay), Value(0))).annotate(
+        count_200_cost=Coalesce(Subquery(subquery_200_cost), Value(0))).annotate(
+        count_400=Subquery(subquery_400)).annotate(
+        count_400_s=Coalesce(Subquery(subquery_400_s), Value(0))).annotate(
+        count_400_outlay=Coalesce(Subquery(subquery_400_outlay), Value(0))).annotate(
+        count_400_cost=Coalesce(Subquery(subquery_400_cost), Value(0))).annotate(
+        count_700=Subquery(subquery_700)).annotate(
+        count_700_s=Coalesce(Subquery(subquery_700_s), Value(0))).annotate(
+        count_700_outlay=Coalesce(Subquery(subquery_700_outlay), Value(0))).annotate(
+        count_700_cost=Coalesce(Subquery(subquery_700_cost), Value(0))).annotate(
+        count_1200=Subquery(subquery_1200)).annotate(
+        count_1200_s=Coalesce(Subquery(subquery_1200_s), Value(0))).annotate(
+        count_1200_outlay=Coalesce(Subquery(subquery_1200_outlay), Value(0))).annotate(
+        count_1200_cost=Coalesce(Subquery(subquery_1200_cost), Value(0))).annotate(
+        count_2000=Subquery(subquery_2000)).annotate(
+        count_2000_s=Coalesce(Subquery(subquery_2000_s), Value(0))).annotate(
+        count_2000_outlay=Coalesce(Subquery(subquery_2000_outlay), Value(0))).annotate(
+        count_2000_cost=Coalesce(Subquery(subquery_2000_cost), Value(0))).annotate(
+        count_3000=Subquery(subquery_3000)).annotate(
+        count_3000_s=Coalesce(Subquery(subquery_3000_s), Value(0))).annotate(
+        count_3000_outlay=Coalesce(Subquery(subquery_3000_outlay), Value(0))).annotate(
+        count_3000_cost=Coalesce(Subquery(subquery_3000_cost), Value(0))).annotate(
+        count_5000=Subquery(subquery_5000)).annotate(
+        count_5000_s=Coalesce(Subquery(subquery_5000_s), Value(0))).annotate(
+        count_5000_outlay=Coalesce(Subquery(subquery_5000_outlay), Value(0))).annotate(
+        count_5000_cost=Coalesce(Subquery(subquery_5000_cost), Value(0))).annotate(
+        count_5001=Subquery(subquery_5001)).annotate(
+        count_5001_s=Coalesce(Subquery(subquery_5001_s), Value(0))).annotate(
+        count_5001_outlay=Coalesce(Subquery(subquery_5001_outlay), Value(0))).annotate(
+        count_5001_cost=Coalesce(Subquery(subquery_5001_cost), Value(0)))
+
+    if len(filter_unit_ids) == 0:
+        docs = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(eco=True)
+    else:
+        docs = (DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(eco=True).filter(unit__in=list_dc) |
+                DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(eco=True).filter(unit_dc__in=list_dc))
+
+    subquery_estimation = RegInteractivOcenka.objects.filter(rlk__id=OuterRef(name='id'))
+    subquery_lo = DocLO.objects.filter(rlk__id=OuterRef(name='id'))
+    docs = docs.annotate(
+        unit_name=Subquery(subquery_estimation.values('page_documents__unit__name')[:1])).annotate(
+        unit_name_dc=Subquery(subquery_estimation.values('page_documents__unit__id')[:1])).annotate(
+        status_estimation=Subquery(subquery_estimation.values('status__name')[:1])).annotate(
+        status_estimation_id=Subquery(subquery_estimation.values('status__id')[:1])).annotate(
+        start_estimation=Subquery(subquery_estimation.values('start_estimation')[:1])).annotate(
+        end_estimation=Subquery(subquery_estimation.values('end_estimation')[:1])).annotate(
+        staff_estimation_name=Subquery(subquery_estimation.values('staff__name')[:1])).annotate(
+        staff_estimation=Subquery(subquery_estimation.values('staff')[:1])).annotate(
+        mark=Subquery(subquery_estimation.values('modification__model__mark__name')[:1])).annotate(
+        model=Subquery(subquery_estimation.values('modification__model__name')[:1])).annotate(
+        modification=Subquery(subquery_estimation.values('modification__name')[:1])).annotate(
+        type_estimation_ocenka=Subquery(subquery_estimation.values('page_documents__type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id=Subquery(subquery_estimation.values('page_documents__type_reception__id')[:1])).annotate(
+        year=Subquery(subquery_estimation.values('year')[:1])).annotate(
+        vin=Subquery(subquery_estimation.values('vin')[:1])).annotate(
+        lo_pk=Subquery(subquery_estimation.values('id')[:1])).annotate(
+        lo_active=Subquery(subquery_lo.values('active')[:1])).annotate(
+        count_data=Value(1, output_field=IntegerField())
+    )
+
+    data = docs.order_by('type_estimation_ocenka').values('type_estimation_ocenka').exclude(type_estimation_ocenka=None).distinct().annotate(Sum('count_data'))
+
+    dash = list_dc.order_by('id').aggregate(
+        Sum('count_eval_avtohab'),
+        Sum('count_eval_1c'),
+        Sum('count_eval_man'),
+        Sum('count_eval_uk'),
+        Sum('count_eval_sed'),
+        Sum('count_eval_express'),
+        Sum('count_eval_avtohab_s'),
+        Sum('count_eval_1c_s'),
+        Sum('count_eval_man_s'),
+        Sum('count_eval_uk_s'),
+        Sum('count_eval_sed_s'),
+        Sum('count_eval_express_s'),
+        Sum('count_200'),
+        Sum('count_400'),
+        Sum('count_700'),
+        Sum('count_1200'),
+        Sum('count_2000'),
+        Sum('count_3000'),
+        Sum('count_5000'),
+        Sum('count_5001'),
+        Sum('count_200_s'),
+        Sum('count_400_s'),
+        Sum('count_700_s'),
+        Sum('count_1200_s'),
+        Sum('count_2000_s'),
+        Sum('count_3000_s'),
+        Sum('count_5000_s'),
+        Sum('count_5001_s'),
+        Sum('count_200_outlay'),
+        Sum('count_400_outlay'),
+        Sum('count_700_outlay'),
+        Sum('count_1200_outlay'),
+        Sum('count_2000_outlay'),
+        Sum('count_3000_outlay'),
+        Sum('count_5000_outlay'),
+        Sum('count_5001_outlay'),
+        Sum('count_200_cost'),
+        Sum('count_400_cost'),
+        Sum('count_700_cost'),
+        Sum('count_1200_cost'),
+        Sum('count_2000_cost'),
+        Sum('count_3000_cost'),
+        Sum('count_5000_cost'),
+        Sum('count_5001_cost'),
+        Sum('count_cars_outlay'),
+        Sum('count_cars_cost_price'),
+        Sum('count_test'),
+        Sum('count_rdo'),
+        Sum('count_kor'),
+        Sum('count_txt'),
+        Sum('count_test_s'),
+        Sum('count_rdo_s'),
+        Sum('count_kor_s'),
+        Sum('count_txt_s'),
+        Sum('count_test_outlay'),
+        Sum('count_rdo_outlay'),
+        Sum('count_kor_outlay'),
+        Sum('count_txt_outlay'),
+        Sum('count_test_cost'),
+        Sum('count_rdo_cost'),
+        Sum('count_kor_cost'),
+        Sum('count_txt_cost'),
+        Sum('count_cars'),
+        Sum('count_cars_s'),
+        Sum('count_sale'),
+        Sum('count_sale_s')
+    )
+
+    cars_qs = RefCarsOrganization.objects.filter(quantity=1, unit__in=list_dc.values('id'))
+
+    status_stats = list(
+        cars_qs.values(status_name=F('status__name'))
+        .annotate(
+            count=Count('id'),
+            sum_price=Coalesce(Sum('price'), Value(0), output_field=IntegerField()),
+            sum_outlay=Coalesce(Sum('outlay'), Value(0), output_field=FloatField()),
+            sum_cost_price=Coalesce(Sum('cost_price'), Value(0), output_field=FloatField())
+        )
+        .order_by('-count')
+    )
+
+    dash['status_stats'] = status_stats
+
+    status_keyword_map = {
+        'count_status_sale': ['продаж', 'продаже'],
+        'count_status_reserve': ['резерв'],
+        'count_status_preparation': ['подготов'],
+        'count_status_diagnostic': ['диагност'],
+        'count_status_evaluation': ['оценк'],
+        'count_status_removed': ['снят', 'снято', 'снята', 'закрыт', 'закрыта'],
+    }
+
+    for key in status_keyword_map.keys():
+        dash[key] = 0
+
+    for item in status_stats:
+        status_name = (item['status_name'] or '').lower()
+        for key, keywords in status_keyword_map.items():
+            if any(keyword in status_name for keyword in keywords):
+                dash[key] += item['count']
+                break
+
+    count_rlk_all   = docs.count()
+    count_kd        = docs.exclude(status_estimation_id=None).count()
+    count_affter_kd = docs.filter(status_estimation_id__in=[6, 8, 4, 7]).count()
+    count_success   = docs.filter(lo_active=True).count()
+
+    count_kd_percent = 0
+    count_after_kd_percent = 0
+    count_success_kd_percent = 0
+
+    if count_rlk_all > 0:
+        if count_kd > 0:
+            count_kd_percent = str(round(count_kd / count_rlk_all * 100, 2))
+            if count_affter_kd > 0:
+                count_after_kd_percent = str(round(count_affter_kd / count_kd * 100, 2))
+                if count_success > 0:
+                    count_success_kd_percent = str(round(count_success / count_affter_kd * 100, 2))
+
+    estimations = {
+        'count_rlk_all': count_rlk_all,
+        'count_kd': count_kd,
+        'count_affter_kd': count_affter_kd,
+        'count_success': count_success,
+        'count_kd_percent': count_kd_percent,
+        'count_after_kd_percent': count_after_kd_percent,
+        'count_success_kd_percent': count_success_kd_percent,
+        'data': data
+    }
+
+    rating = rating_nps_sale_unit(units=list_dc.values('id'), date_start=date_start, date_end=date_end)
+
+    # Расчет данных за последние 3 месяца для динамики
+    monthly_data = []
+    month_names_ru = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+    
+    for i in range(2, -1, -1):  # От 2 месяцев назад до текущего (0)
+        # Вычисляем даты для каждого месяца
+        month_date = date_end - relativedelta(months=i+1)
+        month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Конец месяца
+        if month_start.month == 12:
+            next_month_start = month_start.replace(year=month_start.year + 1, month=1, day=1)
+        else:
+            next_month_start = month_start.replace(month=month_start.month + 1, day=1)
+        month_end_date = next_month_start - relativedelta(days=1, hour=23, minute=59, second=59)
+        
+        # Ограничиваем даты выбранным периодом
+        #if month_start < date_start:
+        #    month_start = date_start
+        #if month_end_date > date_end:
+        #    month_end_date = date_end
+        
+        # Данные склада на конец месяца (текущее состояние на момент конца месяца)
+        # Для склада берем текущее состояние, так как это моментальный снимок
+        cars_qs_month = RefCarsOrganization.objects.filter(
+            unit__in=list_dc.values('id'),
+            date_refresh__gte=month_start,
+            date_refresh__lte=month_end_date
+        )
+        cars_month = cars_qs_month.aggregate(
+            count=Count('id'),
+            sum_price=Coalesce(Sum('price'), Value(0), output_field=IntegerField())
+        )
+        
+        # Данные продаж за месяц
+        sale_qs_month = DocCarShipment.objects.filter(
+            unit__in=list_dc.values('id'),
+            dataTime__gte=month_start,
+            dataTime__lte=month_end_date,
+            active=True
+        )
+        sale_month = sale_qs_month.aggregate(
+            count=Count('id'),
+            sum_amount=Coalesce(Sum('amount'), Value(0), output_field=FloatField())
+        )
+        
+        # Название месяца на русском
+        month_name = f"{month_names_ru[month_start.month - 1]} {month_start.year}"
+        
+        monthly_data.append({
+            'month': month_name,
+            'month_start': month_start,
+            'cars_count': cars_month['count'] or 0,
+            'cars_sum': cars_month['sum_price'] or 0,
+            'sale_count': sale_month['count'] or 0,
+            'sale_sum': sale_month['sum_amount'] or 0,
+        })
+    dash['monthly_data'] = monthly_data
+    
+    # Расчет процентов изменения (сравнение с предыдущим месяцем)
+    if len(monthly_data) >= 2:
+        prev_month = monthly_data[-2]
+        current_month = monthly_data[-1]
+        
+        dash['cars_count_change'] = 0
+        dash['cars_sum_change'] = 0
+        dash['sale_count_change'] = 0
+        dash['sale_sum_change'] = 0
+        
+        if prev_month['cars_count'] > 0:
+            dash['cars_count_change'] = round(((current_month['cars_count'] - prev_month['cars_count']) / prev_month['cars_count'] * 100), 1)
+        if prev_month['cars_sum'] > 0:
+            dash['cars_sum_change'] = round(((current_month['cars_sum'] - prev_month['cars_sum']) / prev_month['cars_sum'] * 100), 1)
+        if prev_month['sale_count'] > 0:
+            dash['sale_count_change'] = round(((current_month['sale_count'] - prev_month['sale_count']) / prev_month['sale_count'] * 100), 1)
+        if prev_month['sale_sum'] > 0:
+            dash['sale_sum_change'] = round(((current_month['sale_sum'] - prev_month['sale_sum']) / prev_month['sale_sum'] * 100), 1)
+    else:
+        dash['cars_count_change'] = 0
+        dash['cars_sum_change'] = 0
+        dash['sale_count_change'] = 0
+        dash['sale_sum_change'] = 0
+
+    filtr = {
+        'date_start': date_start,
+        'date_end': date_end,
+        'filter_unit': filter_unit_ids
+    }
+
+    return {
+        'list_dc': list_dc,
+        'dash': dash,
+        'estimations': estimations,
+        'rating': rating,
+        'filtr': filtr,
+        'filter_unit_ids': filter_unit_ids,
+        'date_start': date_start,
+        'date_end': date_end,
+    }
+
+
 def korsavto_settings_dc(request):
     
     if request.method == 'POST':
@@ -5346,218 +5809,12 @@ def korsavto_settings_dc(request):
             date_end 	    = date_period.replace(year = year, month = month, day = day, hour = 0, minute=0, second=0, microsecond=0)
 
     if page == '':
-        if len(filter_unit) == 0:
-            list_dc     = RefUnit.objects.filter(buauto = True).order_by('name')
-        else:
-            #unit        = RefUnit.objects.get(pk = dc)
-            filter_unit = list(map(int, filter_unit))
-            list_dc     = RefUnit.objects.filter(id__in = filter_unit).order_by('name')
-
-        subquery_sale   = DocCarShipment.objects.filter(unit__id = OuterRef(name='id')).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(active = True).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_sale_s = DocCarShipment.objects.filter(unit__id = OuterRef(name='id')).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(active = True).annotate(amount_car=Func(F('amount'), function='Sum')).values('amount_car')
-
-        subquery                    = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_s                  = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_test_price         = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 4).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_test_price_s       = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_rdo                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 2).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_rdo_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 2).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_kor                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 3).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_kor_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 3).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_txt                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 1).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_txt_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(stage_price__id = 1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_avtohab       = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 1).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_1c            = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id__in = [2, 8]).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_uk            = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 3).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_man           = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 4).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_sed           = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 5).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_express       = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 7).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_eval_avtohab_s     = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_1c_s          = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id__in = [2, 8]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_uk_s          = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 3).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_man_s         = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_sed_s         = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 5).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_eval_express_s     = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(evaluation__id = 7).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_200                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 7).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_200_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 7).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_400                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 1).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_400_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_700                = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 6).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_700_s              = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 6).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_1200               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [9,2]).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_1200_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [9,2]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_2000               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [10,3]).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_2000_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [10,3]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_3000               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 4).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_3000_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 4).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_5000               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [8,5]).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_5000_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id__in = [8,5]).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-        subquery_5001               = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 12).annotate(count=Func(F('id'), function='Count')).values('count')
-        subquery_5001_s             = RefCarsOrganization.objects.filter(unit__id = OuterRef(name='id')).filter(quantity = 1).filter(group_price__id = 12).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
-
-        list_dc     = list_dc.annotate(
-            count_eval_avtohab      = Coalesce(Subquery(subquery_eval_avtohab), Value(0))).annotate(
-            count_eval_1c           = Coalesce(Subquery(subquery_eval_1c), Value(0))).annotate( 
-            count_eval_uk           = Coalesce(Subquery(subquery_eval_uk), Value(0))).annotate( 
-            count_eval_man          = Coalesce(Subquery(subquery_eval_man), Value(0))).annotate(
-            count_eval_sed          = Coalesce(Subquery(subquery_eval_sed), Value(0))).annotate(
-            count_eval_express      = Coalesce(Subquery(subquery_eval_express), Value(0))).annotate(
-            count_eval_avtohab_s    = Coalesce(Subquery(subquery_eval_avtohab_s), Value(0))).annotate(
-            count_eval_1c_s         = Coalesce(Subquery(subquery_eval_1c_s), Value(0))).annotate(
-            count_eval_uk_s         = Coalesce(Subquery(subquery_eval_uk_s), Value(0))).annotate(
-            count_eval_man_s        = Coalesce(Subquery(subquery_eval_man_s), Value(0))).annotate(
-            count_eval_sed_s        = Coalesce(Subquery(subquery_eval_sed_s), Value(0))).annotate(
-            count_eval_express_s    = Coalesce(Subquery(subquery_eval_express_s), Value(0))).annotate(
-            count_sale      = Subquery(subquery_sale)).annotate(
-            count_sale_s    = Subquery(subquery_sale_s)).annotate(
-            count_cars      = Subquery(subquery)).annotate(
-            count_cars_s    = Subquery(subquery_s)).annotate(
-            count_test      = Subquery(subquery_test_price)).annotate(
-            count_test_s    = Subquery(subquery_test_price_s)).annotate(    
-            count_rdo       = Subquery(subquery_rdo)).annotate(
-            count_rdo_s     = Subquery(subquery_rdo_s)).annotate(
-            count_kor       = Subquery(subquery_kor)).annotate(
-            count_kor_s     = Subquery(subquery_kor_s)).annotate(
-            count_txt       = Subquery(subquery_txt)).annotate(
-            count_txt_s     = Subquery(subquery_txt_s)).annotate(
-            count_200       = Subquery(subquery_200)).annotate(
-            count_200_s     = Coalesce(Subquery(subquery_200_s), Value(0))).annotate(
-            count_400       = Subquery(subquery_400)).annotate(
-            count_400_s     = Coalesce(Subquery(subquery_400_s), Value(0))).annotate(
-            count_700       = Subquery(subquery_700)).annotate(
-            count_700_s     = Coalesce(Subquery(subquery_700_s), Value(0))).annotate(
-            count_1200      = Subquery(subquery_1200)).annotate(
-            count_1200_s    = Coalesce(Subquery(subquery_1200_s), Value(0))).annotate(
-            count_2000      = Subquery(subquery_2000)).annotate(
-            count_2000_s    = Coalesce(Subquery(subquery_2000_s), Value(0))).annotate(
-            count_3000      = Subquery(subquery_3000)).annotate(
-            count_3000_s    = Coalesce(Subquery(subquery_3000_s), Value(0))).annotate(
-            count_5000      = Subquery(subquery_5000)).annotate(
-            count_5000_s    = Coalesce(Subquery(subquery_5000_s), Value(0))).annotate(
-            count_5001      = Subquery(subquery_5001)).annotate(
-            count_5001_s    = Coalesce(Subquery(subquery_5001_s), Value(0)))
-        
-        #docs            = DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(type__id = 7).filter(eco = True).order_by('-dataTime')
-        #docs            = DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(unit__in = list_dc).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True).order_by('-dataTime')
-        if len(filter_unit) == 0:
-            docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True)
-        else:
-            docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True).filter(unit__in = list_dc) | DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True).filter(unit_dc__in = list_dc)
-        
-        subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
-        subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
-        docs        = docs.annotate(
-            unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
-            unit_name_dc               = Subquery(subquery.values('page_documents__unit__id')[:1])).annotate(
-            status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
-            status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-            start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
-            end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
-            staff_estimation_name    = Subquery(subquery.values('staff__name')[:1])).annotate(
-            staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
-            mark                = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-            model = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-            modification = Subquery(subquery.values('modification__name')[:1])).annotate(
-            type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-            type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-            year = Subquery(subquery.values('year')[:1])).annotate(
-            vin = Subquery(subquery.values('vin')[:1])).annotate(
-            lo_pk = Subquery(subquery.values('id')[:1])).annotate(
-            lo_active = Subquery(subquery_lo.values('active')[:1])).annotate(
-            count_data = Value(1, output_field=IntegerField())
-            )
-
-        data        = docs.order_by('type_estimation_ocenka').values('type_estimation_ocenka').exclude(type_estimation_ocenka = None).distinct().annotate(Sum('count_data'))
-        data_unit   = docs.order_by('unit_name').values('unit_name').distinct().annotate(Sum('count_data')).exclude(unit_name = None)
-        
-        dash = list_dc.order_by('id').aggregate(Sum('count_eval_avtohab'), 
-                                                Sum('count_eval_1c'), 
-                                                Sum('count_eval_man'), 
-                                                Sum('count_eval_uk'), 
-                                                Sum('count_eval_sed'),
-                                                Sum('count_eval_express'),  
-                                                Sum('count_eval_avtohab_s'), 
-                                                Sum('count_eval_1c_s'), 
-                                                Sum('count_eval_man_s'), 
-                                                Sum('count_eval_uk_s'), 
-                                                Sum('count_eval_sed_s'),
-                                                Sum('count_eval_express_s'), 
-                                                Sum('count_200'), 
-                                                Sum('count_400'), 
-                                                Sum('count_700'), 
-                                                Sum('count_1200'), 
-                                                Sum('count_2000'), 
-                                                Sum('count_3000'), 
-                                                Sum('count_5000'), 
-                                                Sum('count_5001'), 
-                                                Sum('count_200_s'), 
-                                                Sum('count_400_s'), 
-                                                Sum('count_700_s'), 
-                                                Sum('count_1200_s'), 
-                                                Sum('count_2000_s'), 
-                                                Sum('count_3000_s'), 
-                                                Sum('count_5000_s'),
-                                                Sum('count_5001_s'), 
-                                                Sum('count_test'), 
-                                                Sum('count_rdo'), 
-                                                Sum('count_kor'), 
-                                                Sum('count_txt'), 
-                                                Sum('count_test_s'), 
-                                                Sum('count_rdo_s'), 
-                                                Sum('count_kor_s'), 
-                                                Sum('count_txt_s'), 
-                                                Sum('count_cars'), 
-                                                Sum('count_cars_s'),
-                                                Sum('count_sale'),
-                                                Sum('count_sale_s'))
-
-        count_rlk_all           = docs.count()
-        count_kd                = docs.exclude(status_estimation_id = None).count()
-        count_affter_kd         = docs.filter(status_estimation_id__in = [6,8,4,7]).count()
-        count_success           = docs.filter(lo_active = True).count()
-
-        try:
-            count_kd_percent            = 0
-            count_after_kd_percent      = 0
-            count_success_kd_percent    = 0
-            if count_rlk_all > 0:
-                if count_kd > 0: 
-                    count_kd_percent = str(round(count_kd / count_rlk_all * 100, 2))
-                    if count_affter_kd > 0:
-                        count_after_kd_percent = str(round(count_affter_kd / count_kd * 100, 2))
-                        if count_success > 0:
-                            count_success_kd_percent = str(round(count_success / count_affter_kd * 100, 2))
-
-            estimations = {
-                'count_rlk_all'         : count_rlk_all,
-                'count_kd'              : count_kd,
-                'count_affter_kd'       : count_affter_kd,
-                'count_success'         : count_success,
-                'count_kd_percent'              : count_kd_percent,
-                'count_after_kd_percent'        : count_after_kd_percent,
-                'count_success_kd_percent'      : count_success_kd_percent,
-                'data'  : data
-            }
-        except:
-            estimations = {
-                'count_rlk_all'         : count_rlk_all,
-                'count_kd'              : count_kd,
-                'count_affter_kd'       : count_affter_kd,
-                'count_success'         : count_success,
-                'count_kd_percent'              : 0,
-                'count_after_kd_percent'        : 0,
-                'count_success_kd_percent'      : 0,
-                'data'  : data
-            }
-        
-        #unit = list_dc[0]
-        rating = rating_nps_sale_unit(units = list_dc.values('id'), date_start=date_start, date_end=date_end)
-        
-        filtr = {
-            'date_start'    : date_start,
-            'date_end'      : date_end,
-            'filter_unit'   : filter_unit
-        }
+        dashboard_context = build_kors_dashboard_context(request)
+        list_dc = dashboard_context['list_dc']
+        dash = dashboard_context['dash']
+        estimations = dashboard_context['estimations']
+        rating = dashboard_context['rating']
+        filtr = dashboard_context['filtr']
 
     if page == 'rlk_trade_in':
         
@@ -6130,10 +6387,31 @@ def korsavto_settings_dc(request):
         'settings'      : settings_,
         'balance_units' : balance_units,
         'balance_unit'  : balance_unit,
-        'data_page'     : data_page
+        'data_page'     : data_page,
+        'quick_actions_base': reverse('website:korsavto_settings'),
     }
 
     return render(request, 'kors/settings_dc.html', {'params':params})  
+
+
+@login_required
+def korsavto_dashboard(request):
+    
+    select_units = RefUnit.objects.filter(buauto=True).order_by('name')
+    dashboard_context = build_kors_dashboard_context(request)
+
+    params = {
+        'type': 'korsavto_dashboard',
+        'select_units': select_units,
+        'list_dc': dashboard_context['list_dc'],
+        'dash': dashboard_context['dash'],
+        'estimations': dashboard_context['estimations'],
+        'rating': dashboard_context['rating'],
+        'filtr': dashboard_context['filtr'],
+        'quick_actions_base': reverse('website:korsavto_settings'),
+    }
+
+    return render(request, 'kors/dashboard.html', {'params': params})
 
 
 def korsavto_settings_dc_cars(request, slug):
@@ -6520,7 +6798,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                         stage               = car_organization.stage_price
                                         zg                  = car_organization.group_price
                                         kf                  = 100
-                                        kf_e                = 100
+                                        
                                         if zg.name == '200':
                                             if stage.pk == 1:
                                                 kf = unit.ratio_avtohub_txt_200
@@ -6584,7 +6862,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                                 kf = unit.ratio_avtohub_kor_5000
                                             elif stage.pk == 4:
                                                 kf = unit.ratio_avtohub_test_price_5000
-                                        elif zg.name == '5 001' or zg.name == '5 001+':
+                                        elif zg.name == '5 000' or zg.name == '5 000+':
                                             if stage.pk == 1:
                                                 kf = unit.ratio_avtohub_txt_5001
                                             elif stage.pk == 2:
@@ -6594,79 +6872,6 @@ def refresh_estimation_balance_unit(id_estimation):
                                             elif stage.pk == 4:
                                                 kf = unit.ratio_avtohub_test_price_5001
 
-                                        if zna < 200000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_200
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_200
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_200
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_200                                           
-                                        elif zna < 400000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_400
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_400
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_400
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_400   
-                                        elif zna < 700000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_700
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_700
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_700
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_700
-                                        elif zna < 1200000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_1200
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_1200
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_1200
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_1200
-                                        elif zna < 2000000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_2000
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_2000
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_2000
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_2000
-                                        elif zna < 3000000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_3000
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_3000
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_3000
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_3000
-                                        elif zna < 5000000:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_5000
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_5000
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_5000
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_5000
-                                        else:
-                                            if stage.pk == 1:
-                                                kf_e = unit.ratio_avtohub_txt_5001
-                                            elif stage.pk == 2:
-                                                kf_e = unit.ratio_avtohub_rdo_5001
-                                            elif stage.pk == 3:
-                                                kf_e = unit.ratio_avtohub_kor_5001
-                                            elif stage.pk == 4:
-                                                kf_e = unit.ratio_avtohub_test_price_5001
-                                            
                                         if estimation != None:
                                             
                                             new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()     
@@ -6686,11 +6891,8 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     vr_int      = price_info['amount_sum'] 
                                                     var_sum     = vr_int - agreement.outlay
                                                     #iznos       = price_info['iznos_price']
-                                                    t           = zna - (zna - zna * kf_e / 100) - (zak + price_info['iznos_price'] + var_sum  + fin_prim - fin_fact) 
+                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + fin_prim - fin_fact) 
                                                     val_itog    = cum - (t + kso_fact + bu_wheels_fact)
-                                                    
-                                                    #t_new       = zna - (zna - zna * kf_e / 100) - (zak + var_sum  + fin_prim - fin_fact)
-                                                    #val_new     = cum - (t_new + kso_fact + bu_wheels_fact)
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
@@ -6701,7 +6903,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
                                                     new_record.shipment     = doc
                                                     new_record.amount_out   = val_itog
-                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf_e) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
                                                     new_record.save()                                
                 else:
                     count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
@@ -6829,7 +7031,6 @@ def auction_doc(request, slug_auction):
                 shema       = list()
                 salon       = list()
                 vnesh       = list()
-                glav        = ''
 
                 structure, created = AuctionStructure.objects.filter(auction = auction).filter(car = car).get_or_create(auction = auction, car = car) 
 
@@ -6845,11 +7046,8 @@ def auction_doc(request, slug_auction):
                             shema.append(request.POST.get(key, ''))
                         elif key.startswith(pk + '_photo_salon'):
                             salon.append(request.POST.get(key, ''))
-                        elif key.startswith(pk + '_photo_vnesh_glav'):
-                            glav = request.POST.get(key, '')
                         elif key.startswith(pk + '_photo_vnesh'):
                             vnesh.append(request.POST.get(key, ''))
-                        
                     
                     list_files_kolesa = request.FILES.getlist('images_wheels_' + pk)
                     list_kolesa = dowload_files_auction(structure, list_files_kolesa, 'kolesa')
@@ -6896,14 +7094,6 @@ def auction_doc(request, slug_auction):
                     else:
                         structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
                     
-                    structure.files_glav        = glav
-                    if glav != '':
-                        vnesh_new = list()
-                        vnesh_new.append(glav)
-                        for vn in vnesh:
-                            if vn != glav:
-                                vnesh_new.append(vn)
-                        vnesh = vnesh_new
                     structure.files_diagnostic  = json.dumps(diagnostic)
                     structure.files_kolesa      = json.dumps(kolesa)
                     structure.files_damages     = json.dumps(damage)
@@ -7317,21 +7507,11 @@ def customer_est(request, slug):
 
 def test(request):
     
-    docs = RegEstimationBalanceUnit.objects.exclude(shipment = None)
-    count = docs.count()
-    s = 0
-    for doc in docs:
-        doc.save()
-        s = s + 1 
-        print(str(s) + ' из ' + str(count) )
-
-    '''
     from background_task.models import Task
     task = Task.objects.all()
     for ts in task:
         ts.locked_by = ''
         ts.save()
-    '''
 
     #refresh_avtoteka_vin()
 

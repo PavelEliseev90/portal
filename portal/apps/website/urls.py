@@ -119,7 +119,8 @@ urlpatterns = [
    path('doc_car_shipment/<id>/',           views.doc_car_shipment, name='id'),
    path('docs_car_shipment/<id>/',           views.doc_car_shipment, name='id'),
 
-   path('korsavto/settings/',                views.korsavto_settings_dc),
+   path('korsavto/dashboard/',               views.korsavto_dashboard, name='korsavto_dashboard'),
+   path('korsavto/settings/',                views.korsavto_settings_dc, name='korsavto_settings'),
    path('korsavto/settings/<slug:slug>/',    views.korsavto_settings_dc_cars),
    path('korsavto/sales_funnel/',            views.sales_funnel),
    path('korsavto/kpi_eco/',                 views.kpi_eco),
