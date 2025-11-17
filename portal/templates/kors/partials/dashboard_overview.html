@@ -482,6 +482,130 @@
     </div>
   </div>
 
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="mb-0">Заказ-наряды КорсАвто по видам ремонта</h5>
+      {% if params.znka_summary.total.count %}
+        <span class="text-muted small">
+          Всего: {{ params.znka_summary.total.count|default:0 }} ЗН —
+          {{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽
+        </span>
+      {% endif %}
+    </div>
+    <div class="card-body p-0">
+      {% if params.znka_summary.units %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="min-width: 220px;">Подразделение</th>
+                <th>Вид ремонта</th>
+                <th class="text-end">Количество</th>
+                <th class="text-end">Сумма, ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for unit in params.znka_summary.units %}
+                {% with repairs=unit.repairs %}
+                  {% if repairs %}
+                    {% for repair in repairs %}
+                      <tr>
+                        {% if forloop.first %}
+                          <td rowspan="{{ repairs|length }}" class="fw-semibold align-top bg-body">{{ unit.unit_name }}</td>
+                        {% endif %}
+                        <td>{{ repair.type_name }}</td>
+                        <td class="text-end">{{ repair.count|default:0 }}</td>
+                        <td class="text-end">{{ repair.amount|default:0|floatformat:"2g" }} ₽</td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td class="fw-semibold">{{ unit.unit_name }}</td>
+                      <td colspan="3" class="text-muted">Нет заказ-нарядов</td>
+                    </tr>
+                  {% endif %}
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th colspan="2">Итого</th>
+                <th class="text-end">{{ params.znka_summary.total.count|default:0 }}</th>
+                <th class="text-end">{{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          Нет данных по заказ-нарядам за выбранный период.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="mb-0">Заказ-наряды КорсАвто по видам ремонта</h5>
+      {% if params.znka_summary.total.count %}
+        <span class="text-muted small">
+          Всего: {{ params.znka_summary.total.count|default:0 }} ЗН —
+          {{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽
+        </span>
+      {% endif %}
+    </div>
+    <div class="card-body p-0">
+      {% if params.znka_summary.units %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="min-width: 220px;">Подразделение</th>
+                <th>Вид ремонта</th>
+                <th class="text-end">Количество</th>
+                <th class="text-end">Сумма, ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for unit in params.znka_summary.units %}
+                {% with repairs=unit.repairs %}
+                  {% if repairs %}
+                    {% for repair in repairs %}
+                      <tr>
+                        {% if forloop.first %}
+                          <td rowspan="{{ repairs|length }}" class="fw-semibold align-top bg-body">{{ unit.unit_name }}</td>
+                        {% endif %}
+                        <td>{{ repair.type_name }}</td>
+                        <td class="text-end">{{ repair.count|default:0 }}</td>
+                        <td class="text-end">{{ repair.amount|default:0|floatformat:"2g" }} ₽</td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td class="fw-semibold">{{ unit.unit_name }}</td>
+                      <td colspan="3" class="text-muted">Нет заказ-нарядов</td>
+                    </tr>
+                  {% endif %}
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th colspan="2">Итого</th>
+                <th class="text-end">{{ params.znka_summary.total.count|default:0 }}</th>
+                <th class="text-end">{{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          Нет данных по заказ-нарядам за выбранный период.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="row g-3 mb-4">
     <div class="col-lg-6">
       <div class="card shadow-sm border-0 h-100">
@@ -729,6 +853,68 @@
           <canvas id="stagePriceChart" height="300"></canvas>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5 class="mb-0">Заказ-наряды КорсАвто по видам ремонта</h5>
+      {% if params.znka_summary.total.count %}
+        <span class="text-muted small">
+          Всего: {{ params.znka_summary.total.count|default:0 }} ЗН —
+          {{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽
+        </span>
+      {% endif %}
+    </div>
+    <div class="card-body p-0">
+      {% if params.znka_summary.units %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="min-width: 220px;">Подразделение</th>
+                <th>Вид ремонта</th>
+                <th class="text-end">Количество</th>
+                <th class="text-end">Сумма, ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for unit in params.znka_summary.units %}
+                {% with repairs=unit.repairs %}
+                  {% if repairs %}
+                    {% for repair in repairs %}
+                      <tr>
+                        {% if forloop.first %}
+                          <td rowspan="{{ repairs|length }}" class="fw-semibold align-top bg-body">{{ unit.unit_name }}</td>
+                        {% endif %}
+                        <td>{{ repair.type_name }}</td>
+                        <td class="text-end">{{ repair.count|default:0 }}</td>
+                        <td class="text-end">{{ repair.amount|default:0|floatformat:"2g" }} ₽</td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td class="fw-semibold">{{ unit.unit_name }}</td>
+                      <td colspan="3" class="text-muted">Нет заказ-нарядов</td>
+                    </tr>
+                  {% endif %}
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th colspan="2">Итого</th>
+                <th class="text-end">{{ params.znka_summary.total.count|default:0 }}</th>
+                <th class="text-end">{{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          Нет данных по заказ-нарядам за выбранный период.
+        </div>
+      {% endif %}
     </div>
   </div>
 

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from openpyxl import Workbook, load_workbook
-from documents.models import DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning
+from documents.models import DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning, DocZNKA
 import datetime as DT
 from dateutil.relativedelta import relativedelta
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
@@ -5475,6 +5475,61 @@ def build_kors_dashboard_context(request):
         dash['sale_count_change'] = 0
         dash['sale_sum_change'] = 0
 
+    # Данные по заказ-нарядам КорсАвто (docZNKA)
+    znka_qs = DocZNKA.objects.filter(
+        dataTime__gte=date_start,
+        dataTime__lte=date_end,
+        unit__in=list_dc.values('id')
+    )
+
+    znka_rows = znka_qs.values(
+        'unit_id',
+        'unit__name',
+        'typeRemont_id',
+        'typeRemont__name'
+    ).annotate(
+        total_count=Count('id'),
+        total_amount=Coalesce(Sum('amount'), Value(0.0), output_field=FloatField())
+    ).order_by('unit__name', 'typeRemont__name')
+
+    znka_summary_by_unit = {}
+    znka_total_count = 0
+    znka_total_amount = 0.0
+
+    for row in znka_rows:
+        unit_id = row.get('unit_id')
+        if unit_id is None:
+            continue
+
+        unit_entry = znka_summary_by_unit.setdefault(unit_id, {
+            'unit_id': unit_id,
+            'unit_name': row.get('unit__name') or '—',
+            'repairs': [],
+            'total_count': 0,
+            'total_amount': 0.0,
+        })
+
+        repair_name = row.get('typeRemont__name') or 'Не указан'
+        unit_entry['repairs'].append({
+            'type_id': row.get('typeRemont_id'),
+            'type_name': repair_name,
+            'count': row.get('total_count', 0),
+            'amount': row.get('total_amount', 0.0),
+        })
+
+        unit_entry['total_count'] += row.get('total_count', 0)
+        unit_entry['total_amount'] += row.get('total_amount', 0.0)
+        znka_total_count += row.get('total_count', 0)
+        znka_total_amount += row.get('total_amount', 0.0)
+
+    znka_summary = {
+        'units': sorted(znka_summary_by_unit.values(), key=lambda item: item['unit_name']),
+        'total': {
+            'count': znka_total_count,
+            'amount': znka_total_amount,
+        }
+    }
+
     filtr = {
         'date_start': date_start,
         'date_end': date_end,
@@ -5490,6 +5545,7 @@ def build_kors_dashboard_context(request):
         'filter_unit_ids': filter_unit_ids,
         'date_start': date_start,
         'date_end': date_end,
+        'znka_summary': znka_summary,
     }
 
 
@@ -5760,6 +5816,7 @@ def korsavto_settings_dc(request):
     paginator   = ''
     rating      = 0
     dash        = ''
+    znka_summary = {'units': [], 'total': {'count': 0, 'amount': 0}}
     filter_unit = request.GET.getlist('unit[]')
     selected    = dict()
 
@@ -5815,6 +5872,7 @@ def korsavto_settings_dc(request):
         estimations = dashboard_context['estimations']
         rating = dashboard_context['rating']
         filtr = dashboard_context['filtr']
+        znka_summary = dashboard_context['znka_summary']
 
     if page == 'rlk_trade_in':
         
@@ -6389,6 +6447,7 @@ def korsavto_settings_dc(request):
         'balance_unit'  : balance_unit,
         'data_page'     : data_page,
         'quick_actions_base': reverse('website:korsavto_settings'),
+        'znka_summary': znka_summary,
     }
 
     return render(request, 'kors/settings_dc.html', {'params':params})  
@@ -6409,6 +6468,7 @@ def korsavto_dashboard(request):
         'rating': dashboard_context['rating'],
         'filtr': dashboard_context['filtr'],
         'quick_actions_base': reverse('website:korsavto_settings'),
+        'znka_summary': dashboard_context['znka_summary'],
     }
 
     return render(request, 'kors/dashboard.html', {'params': params})
