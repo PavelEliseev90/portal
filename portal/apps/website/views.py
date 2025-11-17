@@ -47,7 +47,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog
+from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -5087,6 +5087,9 @@ def build_kors_dashboard_context(request):
     if date_end is None:
         date_end = DT.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
+    plan_year = date_start.year
+    plan_month = date_start.month
+
     if len(filter_unit_ids) == 0:
         list_dc = RefUnit.objects.filter(buauto=True).order_by('name')
     else:
@@ -5094,6 +5097,14 @@ def build_kors_dashboard_context(request):
 
     subquery_sale   = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(count=Func(F('id'), function='Count')).values('count')
     subquery_sale_s = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(amount_car=Func(F('amount'), function='Sum')).values('amount_car')
+    subquery_intake_period = RefCarsOrganization.objects.filter(
+        unit__id=OuterRef('id'),
+        date_create__gte=date_start,
+        date_create__lte=date_end
+    ).values('unit__id').annotate(total=Count('id')).values('total')
+    plan_subquery = RegUnitMonthlyPlan.objects.filter(unit__id=OuterRef('id'), year=plan_year, month=plan_month)
+    subquery_plan_intake = plan_subquery.values('intake_plan')[:1]
+    subquery_plan_sale = plan_subquery.values('sale_plan')[:1]
 
     subquery                    = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).annotate(count=Func(F('id'), function='Count')).values('count')
     subquery_s                  = RefCarsOrganization.objects.filter(unit__id=OuterRef(name='id')).filter(quantity=1).annotate(price_car=Func(F('price'), function='Sum')).values('price_car')
@@ -5175,6 +5186,7 @@ def build_kors_dashboard_context(request):
         count_eval_express_s=Coalesce(Subquery(subquery_eval_express_s), Value(0))).annotate(
         count_sale=Subquery(subquery_sale)).annotate(
         count_sale_s=Subquery(subquery_sale_s)).annotate(
+        count_intake_period=Coalesce(Subquery(subquery_intake_period, output_field=IntegerField()), Value(0))).annotate(
         count_cars=Subquery(subquery)).annotate(
         count_cars_s=Subquery(subquery_s)).annotate(
         count_cars_outlay=Coalesce(Subquery(subquery_outlay), Value(0))).annotate(
@@ -5226,7 +5238,9 @@ def build_kors_dashboard_context(request):
         count_5001=Subquery(subquery_5001)).annotate(
         count_5001_s=Coalesce(Subquery(subquery_5001_s), Value(0))).annotate(
         count_5001_outlay=Coalesce(Subquery(subquery_5001_outlay), Value(0))).annotate(
-        count_5001_cost=Coalesce(Subquery(subquery_5001_cost), Value(0)))
+        count_5001_cost=Coalesce(Subquery(subquery_5001_cost), Value(0))).annotate(
+        plan_intake=Coalesce(Subquery(subquery_plan_intake, output_field=IntegerField()), Value(0))).annotate(
+        plan_sale=Coalesce(Subquery(subquery_plan_sale, output_field=IntegerField()), Value(0)))
 
     if len(filter_unit_ids) == 0:
         docs = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(eco=True)
@@ -5325,8 +5339,26 @@ def build_kors_dashboard_context(request):
         Sum('count_cars'),
         Sum('count_cars_s'),
         Sum('count_sale'),
-        Sum('count_sale_s')
+        Sum('count_sale_s'),
+        Sum('count_intake_period'),
+        Sum('plan_intake'),
+        Sum('plan_sale')
     )
+
+    plan_summary = {
+        'intake_plan': dash.get('plan_intake__sum') or 0,
+        'intake_fact': dash.get('count_intake_period__sum') or 0,
+        'sale_plan': dash.get('plan_sale__sum') or 0,
+        'sale_fact': dash.get('count_sale__sum') or 0,
+    }
+
+    def _calc_percent(fact, plan):
+        if plan:
+            return round(fact / plan * 100, 1)
+        return 0
+
+    plan_summary['intake_percent'] = _calc_percent(plan_summary['intake_fact'], plan_summary['intake_plan'])
+    plan_summary['sale_percent'] = _calc_percent(plan_summary['sale_fact'], plan_summary['sale_plan'])
 
     cars_qs = RefCarsOrganization.objects.filter(quantity=1, unit__in=list_dc.values('id'))
 
@@ -5546,6 +5578,7 @@ def build_kors_dashboard_context(request):
         'date_start': date_start,
         'date_end': date_end,
         'znka_summary': znka_summary,
+        'plan_summary': plan_summary,
     }
 
 
@@ -5817,11 +5850,34 @@ def korsavto_settings_dc(request):
     rating      = 0
     dash        = ''
     znka_summary = {'units': [], 'total': {'count': 0, 'amount': 0}}
+    plan_summary = {'intake_plan': 0, 'intake_fact': 0, 'sale_plan': 0, 'sale_fact': 0, 'intake_percent': 0, 'sale_percent': 0}
+    plan_rows = []
+    plan_month_value = ''
+    plan_filter_unit_ids = []
     filter_unit = request.GET.getlist('unit[]')
     selected    = dict()
 
     select_units = RefUnit.objects.filter(buauto = True).order_by('name')
     list_dc_filtr = list()
+    plan_month_param = request.GET.get('plan_month', '')
+    if plan_month_param:
+        try:
+            plan_month_dt = DT.datetime.strptime(plan_month_param, '%Y-%m')
+        except ValueError:
+            plan_month_dt = DT.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        plan_month_dt = DT.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    plan_month_value = plan_month_dt.strftime('%Y-%m')
+    for value in filter_unit:
+        try:
+            plan_filter_unit_ids.append(int(value))
+        except (TypeError, ValueError):
+            continue
+
+    plan_units_queryset = select_units
+    if len(plan_filter_unit_ids) > 0:
+        plan_units_queryset = plan_units_queryset.filter(id__in=plan_filter_unit_ids)
+    plan_units_list = list(plan_units_queryset)
     
     date                = request.GET.get('date_start', '')
     date_ends           = request.GET.get('date_end', '')
@@ -5873,6 +5929,49 @@ def korsavto_settings_dc(request):
         rating = dashboard_context['rating']
         filtr = dashboard_context['filtr']
         znka_summary = dashboard_context['znka_summary']
+        plan_summary = dashboard_context['plan_summary']
+
+    if request.method == 'POST' and page == 'plans' and 'save_unit_plans' in request.POST:
+        plan_month_post_str = request.POST.get('plan_month', plan_month_value)
+        try:
+            plan_month_post = DT.datetime.strptime(plan_month_post_str, '%Y-%m')
+        except (TypeError, ValueError):
+            plan_month_post = plan_month_dt
+        plan_month_post_str = plan_month_post.strftime('%Y-%m')
+        year_post = plan_month_post.year
+        month_post = plan_month_post.month
+        for unit in plan_units_list:
+            intake_value_raw = request.POST.get(f'plan_intake_{unit.id}', '')
+            sale_value_raw = request.POST.get(f'plan_sale_{unit.id}', '')
+            try:
+                intake_value = int(float(intake_value_raw or 0))
+            except (TypeError, ValueError):
+                intake_value = 0
+            try:
+                sale_value = int(float(sale_value_raw or 0))
+            except (TypeError, ValueError):
+                sale_value = 0
+            intake_value = max(intake_value, 0)
+            sale_value = max(sale_value, 0)
+
+            if intake_value == 0 and sale_value == 0:
+                RegUnitMonthlyPlan.objects.filter(unit=unit, year=year_post, month=month_post).delete()
+                continue
+
+            plan_obj, _ = RegUnitMonthlyPlan.objects.get_or_create(
+                unit=unit,
+                year=year_post,
+                month=month_post,
+                defaults={'intake_plan': intake_value, 'sale_plan': sale_value}
+            )
+            plan_obj.intake_plan = intake_value
+            plan_obj.sale_plan = sale_value
+            plan_obj.save()
+
+        redirect_url = f"{request.path}?page=plans&plan_month={plan_month_post_str}"
+        for unit_id in plan_filter_unit_ids:
+            redirect_url += f"&unit[]={unit_id}"
+        return HttpResponseRedirect(redirect_url)
 
     if page == 'rlk_trade_in':
         
@@ -6415,6 +6514,19 @@ def korsavto_settings_dc(request):
             'unit'              : unit,
             'type_reception_id' : type_reception_id,
             }
+
+    if page == 'plans':
+        plan_objs = RegUnitMonthlyPlan.objects.filter(
+            year=plan_month_dt.year,
+            month=plan_month_dt.month,
+            unit__in=[unit.id for unit in plan_units_list]
+        )
+        plan_map = {obj.unit_id: obj for obj in plan_objs}
+        plan_rows = [{
+            'unit': unit,
+            'plan_intake': plan_map.get(unit.id).intake_plan if plan_map.get(unit.id) else 0,
+            'plan_sale': plan_map.get(unit.id).sale_plan if plan_map.get(unit.id) else 0,
+        } for unit in plan_units_list]
         
     settings_ = ''
     if page == 'settings':
@@ -6448,6 +6560,10 @@ def korsavto_settings_dc(request):
         'data_page'     : data_page,
         'quick_actions_base': reverse('website:korsavto_settings'),
         'znka_summary': znka_summary,
+        'plan_summary': plan_summary,
+        'plan_rows': plan_rows,
+        'plan_month_value': plan_month_value,
+        'plan_filter_ids': plan_filter_unit_ids,
     }
 
     return render(request, 'kors/settings_dc.html', {'params':params})  
@@ -6469,6 +6585,7 @@ def korsavto_dashboard(request):
         'filtr': dashboard_context['filtr'],
         'quick_actions_base': reverse('website:korsavto_settings'),
         'znka_summary': dashboard_context['znka_summary'],
+        'plan_summary': dashboard_context['plan_summary'],
     }
 
     return render(request, 'kors/dashboard.html', {'params': params})

@@ -8,8 +8,97 @@
 
 {% block content %}
 
-{% if not params.page %}
+{% if params.page == 'plans' %}
+<div class="container-fluid py-3" id="plans-dashboard">
+
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="mb-1">Планы по приему и продажам</h2>
+      <p class="text-muted mb-0">Введите месячные планы для каждого подразделения и отслеживайте выполнение на дашборде.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{{ request.path }}">Назад к дашборду</a>
+    </div>
+  </div>
+
+  <form method="get" class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-3">
+          <label class="form-label text-muted">Месяц</label>
+          <input type="month" class="form-control" name="plan_month" value="{{ params.plan_month_value }}">
+        </div>
+        <div class="col-sm">
+          <label class="form-label text-muted">Подразделения</label>
+          <select class="form-select" name="unit[]" multiple size="6">
+            {% for unit in params.select_units %}
+              <option value="{{ unit.pk }}" {% if unit.pk in params.plan_filter_ids %}selected{% endif %}>{{ unit.name }}</option>
+            {% endfor %}
+          </select>
+          <small class="text-muted">Оставьте поле пустым, чтобы показать все подразделения.</small>
+        </div>
+        <div class="col-sm-auto d-flex gap-2">
+          <input type="hidden" name="page" value="plans">
+          <button type="submit" class="btn btn-success align-self-end"><span class="icon-mbri-play"></span> Применить</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <form method="post" action="{{ request.path }}?page=plans{% if params.plan_month_value %}&plan_month={{ params.plan_month_value }}{% endif %}{% for unit_id in params.plan_filter_ids %}&unit[]={{ unit_id }}{% endfor %}" class="card shadow-sm border-0">
+    {% csrf_token %}
+    <input type="hidden" name="plan_month" value="{{ params.plan_month_value }}">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h5 class="mb-0">Планы на {{ params.plan_month_value }}</h5>
+        <small class="text-muted">Значения указываются в количестве автомобилей.</small>
+      </div>
+      <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
+        <span class="icon-mbri-save"></span> Сохранить планы
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Подразделение</th>
+              <th class="text-end" style="width: 160px;">Прием, шт.</th>
+              <th class="text-end" style="width: 160px;">Продажи, шт.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if params.plan_rows %}
+              {% for row in params.plan_rows %}
+                <tr>
+                  <td class="fw-semibold">{{ row.unit.name }}</td>
+                  <td>
+                    <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_intake_{{ row.unit.id }}" value="{{ row.plan_intake }}">
+                  </td>
+                  <td>
+                    <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_sale_{{ row.unit.id }}" value="{{ row.plan_sale }}">
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">Нет выбранных подразделений для отображения.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer bg-white text-end">
+      <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
+        <span class="icon-mbri-save"></span> Сохранить планы
+      </button>
+    </div>
+  </form>
+</div>
+{% else %}
 {% include 'kors/partials/dashboard_overview.html' %}
+{% endif %}
 {% comment %}
 
 <div class="container-fluid py-3" id="dc-dashboard">

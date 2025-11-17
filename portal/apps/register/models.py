@@ -3235,3 +3235,22 @@ class RegEstimationsCalculationDetail(models.Model):
         db_table = 'regEstimationsCalculationDetail'
         verbose_name = "Суммы понижений расчетов интерктивной оценки"
         verbose_name_plural = "Суммы понижений расчетов интерктивной оценки"
+
+
+class RegUnitMonthlyPlan(models.Model):
+    unit = models.ForeignKey(RefUnit, on_delete=models.CASCADE, verbose_name="Подразделение")
+    year = models.IntegerField("Год")
+    month = models.IntegerField("Месяц")
+    intake_plan = models.PositiveIntegerField("План по приему, шт.", default=0)
+    sale_plan = models.PositiveIntegerField("План по продажам, шт.", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'regUnitMonthlyPlan'
+        verbose_name = "План подразделения на месяц"
+        verbose_name_plural = "Планы подразделений на месяц"
+        unique_together = ('unit', 'year', 'month')
+
+    def __str__(self):
+        return f"{self.unit} — {self.month:02d}.{self.year}"
