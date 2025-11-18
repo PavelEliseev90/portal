@@ -720,6 +720,30 @@
     </div>
   </div>
 
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0">Средний срок продажи - динамика за 3 месяца</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="saleDurationChart" height="250" style="max-height: 350px;"></canvas>
+          <div class="mt-3 text-center">
+            <small class="text-muted d-block">
+              Изменение к предыдущему месяцу:
+              <span class="fw-semibold {% if params.dash.sale_avg_days_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {% if params.dash.sale_avg_days_change >= 0 %}+{% endif %}{{ params.dash.sale_avg_days_change|default:0 }}%
+              </span>
+            </small>
+            <small class="text-muted">
+              Средний срок за выбранный период: {{ params.dash.sale_avg_days_overall|default:0|floatformat:"1" }} дн.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
       <h5 class="mb-0">Подразделения</h5>
@@ -739,6 +763,7 @@
               <th class="text-end">TXT</th>
               <th class="text-end">Продано, шт.</th>
               <th class="text-end">Продано, ₽</th>
+              <th class="text-end">Ср. срок продажи, дн.</th>
               <th class="text-end">Автохаб</th>
               <th class="text-end">1С</th>
               <th class="text-end">УК</th>
@@ -760,6 +785,13 @@
                   <td class="text-end">{{ unit.count_txt|default:0 }}</td>
                   <td class="text-end">{{ unit.count_sale|default:0 }}</td>
                   <td class="text-end">{{ unit.count_sale_s|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if unit.avg_sale_days %}
+                      {{ unit.avg_sale_days|floatformat:"1" }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td class="text-end">{{ unit.count_eval_avtohab|default:0 }}</td>
                   <td class="text-end">{{ unit.count_eval_1c|default:0 }}</td>
                   <td class="text-end">{{ unit.count_eval_uk|default:0 }}</td>
@@ -776,7 +808,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="15" class="text-center py-4 text-muted">Нет данных для отображения. Измените период или выберите другие подразделения.</td>
+                <td colspan="16" class="text-center py-4 text-muted">Нет данных для отображения. Измените период или выберите другие подразделения.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -791,6 +823,7 @@
               <th class="text-end">{{ params.dash.count_txt__sum|default:0 }}</th>
               <th class="text-end">{{ params.dash.count_sale__sum|default:0 }}</th>
               <th class="text-end">{{ params.dash.count_sale_s__sum|default:0|floatformat:"2g" }} ₽</th>
+              <th class="text-end">{{ params.dash.sale_avg_days_overall|default:0|floatformat:"1" }}</th>
               <th class="text-end">{{ params.dash.count_eval_avtohab__sum|default:0 }}</th>
               <th class="text-end">{{ params.dash.count_eval_1c__sum|default:0 }}</th>
               <th class="text-end">{{ params.dash.count_eval_uk__sum|default:0 }}</th>
@@ -973,7 +1006,8 @@
           cars_count: '{{ month.cars_count|default:0 }}',
           cars_sum: '{{ month.cars_sum|default:0 }}',
           sale_count: '{{ month.sale_count|default:0 }}',
-          sale_sum: '{{ month.sale_sum|default:0 }}'
+              sale_sum: '{{ month.sale_sum|default:0 }}',
+              sale_avg_days: '{{ month.sale_avg_days|default:0 }}'
         }{% if not forloop.last %},{% endif %}
       {% endfor %}
     {% endif %}
@@ -999,7 +1033,8 @@
     cars_count: normalizeNumber(item.cars_count),
     cars_sum: normalizeNumber(item.cars_sum),
     sale_count: normalizeNumber(item.sale_count),
-    sale_sum: normalizeNumber(item.sale_sum)
+    sale_sum: normalizeNumber(item.sale_sum),
+    sale_avg_days: normalizeNumber(item.sale_avg_days)
   }));
 
   const monthLabels = monthlyData.map(item => item.month);
@@ -1215,6 +1250,56 @@
                 }
                 return value;
               }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Диаграмма среднего срока продажи
+  const saleDurationCtx = document.getElementById('saleDurationChart');
+  if (saleDurationCtx && monthlyData.length > 0) {
+    new Chart(saleDurationCtx, {
+      type: 'line',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Средний срок, дн.',
+          data: monthlyData.map(item => item.sale_avg_days),
+          borderColor: 'rgba(255, 159, 64, 1)',
+          backgroundColor: 'rgba(255, 159, 64, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label ? context.dataset.label + ': ' : '';
+                let value = context.parsed.y || 0;
+                label += value.toFixed(1) + ' дн.';
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Дни'
             }
           }
         }
