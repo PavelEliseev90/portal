@@ -28,8 +28,8 @@ from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCar
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField
-from django.db.models.functions import Cast, Coalesce
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField, ExpressionWrapper
+from django.db.models.functions import Cast, Coalesce, Extract
 from django.db import models
 from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
@@ -5095,8 +5095,27 @@ def build_kors_dashboard_context(request):
     else:
         list_dc = RefUnit.objects.filter(id__in=filter_unit_ids).order_by('name')
 
+    unit_ids = list(list_dc.values_list('id', flat=True))
+
     subquery_sale   = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(count=Func(F('id'), function='Count')).values('count')
     subquery_sale_s = DocCarShipment.objects.filter(unit__id=OuterRef(name='id')).filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(active=True).annotate(amount_car=Func(F('amount'), function='Sum')).values('amount_car')
+    duration_days_expression = ExpressionWrapper(
+        (Extract(F('dataTime'), 'epoch') - Extract(F('lo__dataTime'), 'epoch')) / Value(86400.0),
+        output_field=FloatField()
+    )
+    sale_duration_subquery = (
+        DocCarShipment.objects.filter(
+            unit__id=OuterRef('id'),
+            dataTime__gte=date_start,
+            dataTime__lte=date_end,
+            active=True,
+            lo__dataTime__isnull=False
+        )
+        .annotate(duration_days=duration_days_expression)
+        .values('unit')
+        .annotate(avg_days=Avg('duration_days'))
+        .values('avg_days')[:1]
+    )
     reserve_subquery = RegEstimationBalanceUnit.objects.filter(
         unit__id=OuterRef('id'),
         date__gte=date_start,
@@ -5191,6 +5210,7 @@ def build_kors_dashboard_context(request):
         count_eval_express_s=Coalesce(Subquery(subquery_eval_express_s), Value(0))).annotate(
         count_sale=Subquery(subquery_sale)).annotate(
         count_sale_s=Subquery(subquery_sale_s)).annotate(
+        avg_sale_days=Coalesce(Subquery(sale_duration_subquery, output_field=FloatField()), Value(0.0))).annotate(
         count_intake_period=Coalesce(Subquery(subquery_intake_period, output_field=IntegerField()), Value(0))).annotate(
         count_cars=Subquery(subquery)).annotate(
         count_cars_s=Subquery(subquery_s)).annotate(
@@ -5439,6 +5459,23 @@ def build_kors_dashboard_context(request):
 
     rating = rating_nps_sale_unit(units=list_dc.values('id'), date_start=date_start, date_end=date_end)
 
+    def calculate_avg_sale_days(range_start, range_end):
+        if not unit_ids:
+            return 0
+        sale_qs = (
+            DocCarShipment.objects.filter(
+                unit__in=unit_ids,
+                dataTime__gte=range_start,
+                dataTime__lte=range_end,
+                active=True,
+                lo__dataTime__isnull=False
+            )
+            .annotate(duration_days=duration_days_expression)
+        )
+        return sale_qs.aggregate(avg_days=Avg('duration_days')).get('avg_days') or 0
+
+    dash['sale_avg_days_overall'] = calculate_avg_sale_days(date_start, date_end)
+
     # Расчет данных за последние 3 месяца для динамики
     monthly_data = []
     month_names_ru = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
@@ -5484,6 +5521,11 @@ def build_kors_dashboard_context(request):
             count=Count('id'),
             sum_amount=Coalesce(Sum('amount'), Value(0), output_field=FloatField())
         )
+        sale_avg_days_month = sale_qs_month.filter(lo__dataTime__isnull=False).annotate(
+            duration_days=duration_days_expression
+        ).aggregate(
+            avg_days=Avg('duration_days')
+        ).get('avg_days') or 0
         
         # Название месяца на русском
         month_name = f"{month_names_ru[month_start.month - 1]} {month_start.year}"
@@ -5495,6 +5537,7 @@ def build_kors_dashboard_context(request):
             'cars_sum': cars_month['sum_price'] or 0,
             'sale_count': sale_month['count'] or 0,
             'sale_sum': sale_month['sum_amount'] or 0,
+            'sale_avg_days': sale_avg_days_month or 0,
         })
     dash['monthly_data'] = monthly_data
     
@@ -5507,6 +5550,7 @@ def build_kors_dashboard_context(request):
         dash['cars_sum_change'] = 0
         dash['sale_count_change'] = 0
         dash['sale_sum_change'] = 0
+        dash['sale_avg_days_change'] = 0
         
         if prev_month['cars_count'] > 0:
             dash['cars_count_change'] = round(((current_month['cars_count'] - prev_month['cars_count']) / prev_month['cars_count'] * 100), 1)
@@ -5516,11 +5560,14 @@ def build_kors_dashboard_context(request):
             dash['sale_count_change'] = round(((current_month['sale_count'] - prev_month['sale_count']) / prev_month['sale_count'] * 100), 1)
         if prev_month['sale_sum'] > 0:
             dash['sale_sum_change'] = round(((current_month['sale_sum'] - prev_month['sale_sum']) / prev_month['sale_sum'] * 100), 1)
+        if prev_month.get('sale_avg_days', 0) > 0:
+            dash['sale_avg_days_change'] = round(((current_month.get('sale_avg_days', 0) - prev_month.get('sale_avg_days', 0)) / prev_month.get('sale_avg_days', 0) * 100), 1)
     else:
         dash['cars_count_change'] = 0
         dash['cars_sum_change'] = 0
         dash['sale_count_change'] = 0
         dash['sale_sum_change'] = 0
+        dash['sale_avg_days_change'] = 0
 
     # Данные по заказ-нарядам КорсАвто (docZNKA)
     znka_qs = DocZNKA.objects.filter(
