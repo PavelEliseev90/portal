@@ -36,73 +36,85 @@
 		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
 			{% with photos=params.object.get_files %}
 			{% with total=photos|length %}
-			<div class="car-gallery{% if total <= 1 %} car-gallery--single{% endif %}{% if total == 0 %} car-gallery--empty{% endif %}" data-gallery data-gallery-total="{{ total }}">
-				<div class="car-gallery-header">
-					<div class="car-gallery-title">
-						<span class="car-gallery-title-mark">{{ params.object.modification_autoru.model.mark.name|upper }}</span>
-						<span class="car-gallery-title-divider">•</span>
-						<span class="car-gallery-title-model text-uppercase">{{ params.object.modification_autoru.model.name }}</span>
-					</div>
-					<div class="car-gallery-meta">
-						<span class="car-gallery-counter" aria-live="polite">
-							<span data-gallery-current>{% if total > 0 %}1{% else %}0{% endif %}</span>
-							<span class="car-gallery-counter-divider">/</span>
-							<span data-gallery-total>{{ total }}</span>
-						</span>
-						{% if total > 1 %}
-							<span class="car-gallery-badge">листайте</span>
-						{% endif %}
-					</div>
-				</div>
-
-				<div class="car-gallery-progress" aria-hidden="true">
-					<span data-gallery-progress></span>
-				</div>
-
-				<div class="car-gallery-main" role="listbox" aria-label="Фотогалерея автомобиля">
-					{% if total > 0 %}
-						{% for files in photos %}
-							<div class="gallery-item car-gallery-slide{% if forloop.first %} is-active{% endif %}" id="foto_{{forloop.counter}}" data-index="{{forloop.counter}}" data-slide="{{forloop.counter0}}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
-								{% if files.file_mini %}
-									<img src="{{ files.file.url }}" alt="{{ files.name }}" src1="{{ files.file.url }}" loading="lazy">
-								{% else %}
-									<img src="{{ files }}" alt="{{ files }}" src1="{{ files }}" loading="lazy">
-								{% endif %}
+			{% if total > 0 %}
+				<div class="modern-gallery-layout">
+					<div class="modern-gallery-wrapper">
+						<div class="modern-gallery-container" id="modernGalleryContainer">
+							{% for files in photos %}
+								<div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" data-alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}">
+									<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-image" loading="lazy">
+								</div>
+							{% endfor %}
+							
+							{% if total > 1 %}
+								<button class="modern-gallery-nav modern-gallery-prev" id="modernGalleryPrev" aria-label="Предыдущее изображение">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M15 18l-6-6 6-6"/>
+									</svg>
+								</button>
+								<button class="modern-gallery-nav modern-gallery-next" id="modernGalleryNext" aria-label="Следующее изображение">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M9 18l6-6-6-6"/>
+									</svg>
+								</button>
+							{% endif %}
+							
+							<div class="modern-gallery-counter" id="modernGalleryCounter">
+								<span class="modern-gallery-current" id="modernGalleryCurrent">1</span>
+								<span class="modern-gallery-separator">из</span>
+								<span class="modern-gallery-total" id="modernGalleryTotal">{{ total }}</span>
 							</div>
-						{% endfor %}
-
-						{% if total > 1 %}
-							<button class="car-gallery-nav car-gallery-nav-prev" type="button" aria-label="Предыдущее фото">
-								<span class="icon-mbri-arrow-prev"></span>
-							</button>
-							<button class="car-gallery-nav car-gallery-nav-next" type="button" aria-label="Следующее фото">
-								<span class="icon-mbri-arrow-next"></span>
-							</button>
-						{% endif %}
-					{% else %}
-						<div class="car-gallery-placeholder">
-							<div class="car-gallery-placeholder-body">
-								<span class="icon-mbri-photo car-gallery-placeholder-icon"></span>
-								<p class="car-gallery-placeholder-text">Фотографии скоро появятся</p>
-							</div>
+						</div>
+					</div>
+					
+					{% if total > 1 %}
+						<div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
+							{% for files in photos %}
+								<div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}">
+									<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-thumbnail-img" loading="lazy">
+								</div>
+							{% endfor %}
 						</div>
 					{% endif %}
 				</div>
 
-				{% if total > 1 %}
-					<div class="car-gallery-thumbs" role="tablist" aria-label="Миниатюры фотографий">
-						{% for files in photos %}
-							<button class="car-gallery-thumb{% if forloop.first %} is-active{% endif %}" type="button" data-target="{{ forloop.counter0 }}" aria-label="Фото {{ forloop.counter }}" aria-controls="foto_{{forloop.counter}}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
-								{% if files.file_mini %}
-									<img src="{{ files.file.url }}" alt="" loading="lazy">
-								{% else %}
-									<img src="{{ files }}" alt="" loading="lazy">
-								{% endif %}
+				<div class="modern-gallery-fullscreen" id="modernGalleryFullscreen">
+					<div class="modern-gallery-fullscreen-overlay"></div>
+					<button class="modern-gallery-close" id="modernGalleryClose" aria-label="Закрыть">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
+					</button>
+					<div class="modern-gallery-fullscreen-content">
+						<img src="" alt="" id="modernGalleryFullscreenImage" class="modern-gallery-fullscreen-img">
+						{% if total > 1 %}
+							<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-prev" id="modernGalleryFullscreenPrev" aria-label="Предыдущее изображение">
+								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<path d="M15 18l-6-6 6-6"/>
+								</svg>
 							</button>
-						{% endfor %}
+							<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-next" id="modernGalleryFullscreenNext" aria-label="Следующее изображение">
+								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<path d="M9 18l6-6-6-6"/>
+								</svg>
+							</button>
+						{% endif %}
+						<div class="modern-gallery-fullscreen-counter" id="modernGalleryFullscreenCounter">
+							<span class="modern-gallery-fullscreen-current" id="modernGalleryFullscreenCurrent">1</span>
+							<span class="modern-gallery-separator">из</span>
+							<span class="modern-gallery-fullscreen-total" id="modernGalleryFullscreenTotal">{{ total }}</span>
+						</div>
 					</div>
-				{% endif %}
-			</div>
+				</div>
+			{% else %}
+				<div class="car-gallery-placeholder">
+					<div class="car-gallery-placeholder-body">
+						<span class="icon-mbri-photo car-gallery-placeholder-icon"></span>
+						<p class="car-gallery-placeholder-text">Фотографии скоро появятся</p>
+					</div>
+				</div>
+			{% endif %}
 			{% endwith %}
 			{% endwith %}
 	
@@ -986,4 +998,634 @@
 		
 		})
 	</script>
+
+<style>
+.modern-gallery-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modern-gallery-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.modern-gallery-thumbnail {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.3s ease;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modern-gallery-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 123, 255, 0.5);
+}
+
+.modern-gallery-thumbnail.active {
+  border-color: #007bff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.modern-gallery-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.modern-gallery-thumbnail:hover .modern-gallery-thumbnail-img {
+  transform: scale(1.05);
+}
+
+.modern-gallery-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.modern-gallery-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+}
+
+.modern-gallery-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.modern-gallery-slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  z-index: 1;
+}
+
+.modern-gallery-slide.prev {
+  transform: translateX(-100%);
+}
+
+.modern-gallery-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  user-select: none;
+}
+
+.modern-gallery-image:hover {
+  transform: scale(1.02);
+}
+
+.modern-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modern-gallery-nav:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.modern-gallery-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.modern-gallery-prev {
+  left: 16px;
+}
+
+.modern-gallery-next {
+  right: 16px;
+}
+
+.modern-gallery-nav svg {
+  color: #333;
+  width: 20px;
+  height: 20px;
+}
+
+.modern-gallery-counter {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-gallery-current,
+.modern-gallery-total {
+  font-weight: 600;
+}
+
+.modern-gallery-separator {
+  opacity: 0.8;
+}
+
+.modern-gallery-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-gallery-fullscreen.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modern-gallery-fullscreen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(5px);
+}
+
+.modern-gallery-fullscreen-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 80px;
+}
+
+.modern-gallery-fullscreen-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modern-gallery-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.modern-gallery-fullscreen-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-fullscreen-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.modern-gallery-fullscreen-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.modern-gallery-fullscreen-prev {
+  left: 20px;
+}
+
+.modern-gallery-fullscreen-next {
+  right: 20px;
+}
+
+.modern-gallery-fullscreen-nav svg {
+  width: 28px;
+  height: 28px;
+}
+
+.modern-gallery-fullscreen-counter {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-gallery-fullscreen-current,
+.modern-gallery-fullscreen-total {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .modern-gallery-layout {
+    gap: 12px;
+  }
+  
+  .modern-gallery-thumbnails {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+  
+  .modern-gallery-container {
+    height: 350px;
+  }
+  
+  .modern-gallery-nav {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-nav svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .modern-gallery-prev {
+    left: 8px;
+  }
+  
+  .modern-gallery-next {
+    right: 8px;
+  }
+  
+  .modern-gallery-counter {
+    font-size: 12px;
+    padding: 6px 12px;
+    bottom: 12px;
+  }
+  
+  .modern-gallery-fullscreen-content {
+    padding: 40px 20px;
+  }
+  
+  .modern-gallery-fullscreen-nav {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .modern-gallery-fullscreen-nav svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .modern-gallery-fullscreen-prev {
+    left: 10px;
+  }
+  
+  .modern-gallery-fullscreen-next {
+    right: 10px;
+  }
+  
+  .modern-gallery-close {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-fullscreen-counter {
+    font-size: 14px;
+    padding: 8px 16px;
+    bottom: 20px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  'use strict';
+  
+  const container = document.getElementById('modernGalleryContainer');
+  if (!container) return;
+  
+  const slides = container.querySelectorAll('.modern-gallery-slide');
+  const totalSlides = slides.length;
+  let currentIndex = 0;
+  
+  const fullscreen = document.getElementById('modernGalleryFullscreen');
+  const fullscreenImage = document.getElementById('modernGalleryFullscreenImage');
+  const fullscreenCurrent = document.getElementById('modernGalleryFullscreenCurrent');
+  const fullscreenTotal = document.getElementById('modernGalleryFullscreenTotal');
+  const currentCounter = document.getElementById('modernGalleryCurrent');
+  const totalCounter = document.getElementById('modernGalleryTotal');
+  
+  const prevBtn = document.getElementById('modernGalleryPrev');
+  const nextBtn = document.getElementById('modernGalleryNext');
+  const closeBtn = document.getElementById('modernGalleryClose');
+  const fullscreenPrevBtn = document.getElementById('modernGalleryFullscreenPrev');
+  const fullscreenNextBtn = document.getElementById('modernGalleryFullscreenNext');
+  
+  const thumbnailsContainer = document.getElementById('modernGalleryThumbnails');
+  const thumbnails = thumbnailsContainer ? thumbnailsContainer.querySelectorAll('.modern-gallery-thumbnail') : [];
+  
+  if (totalCounter) {
+    totalCounter.textContent = totalSlides;
+  }
+  if (fullscreenTotal) {
+    fullscreenTotal.textContent = totalSlides;
+  }
+  
+  function updateSlider() {
+    slides.forEach((slide, index) => {
+      slide.classList.remove('active', 'prev');
+      if (index === currentIndex) {
+        slide.classList.add('active');
+      } else if (index < currentIndex) {
+        slide.classList.add('prev');
+      }
+    });
+    
+    thumbnails.forEach((thumbnail, index) => {
+      thumbnail.classList.remove('active');
+      if (index === currentIndex) {
+        thumbnail.classList.add('active');
+      }
+    });
+    
+    if (currentCounter) {
+      currentCounter.textContent = currentIndex + 1;
+    }
+  }
+  
+  function goToSlide(index) {
+    if (index >= 0 && index < totalSlides) {
+      currentIndex = index;
+      updateSlider();
+    }
+  }
+  
+  function showFullscreen(index) {
+    if (!fullscreen || !fullscreenImage) return;
+    
+    const slide = slides[index];
+    if (!slide) return;
+    
+    const imageSrc = slide.dataset.src;
+    const imageAlt = slide.dataset.alt || '';
+    
+    fullscreenImage.src = imageSrc;
+    fullscreenImage.alt = imageAlt;
+    
+    if (fullscreenCurrent) {
+      fullscreenCurrent.textContent = index + 1;
+    }
+    
+    fullscreen.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    currentIndex = index;
+    updateSlider();
+  }
+  
+  function hideFullscreen() {
+    if (!fullscreen) return;
+    
+    fullscreen.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  function nextSlide() {
+    currentIndex = (currentIndex + 1) % totalSlides;
+    updateSlider();
+  }
+  
+  function prevSlide() {
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    updateSlider();
+  }
+  
+  function nextFullscreen() {
+    currentIndex = (currentIndex + 1) % totalSlides;
+    showFullscreen(currentIndex);
+  }
+  
+  function prevFullscreen() {
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    showFullscreen(currentIndex);
+  }
+  
+  if (prevBtn) {
+    prevBtn.addEventListener('click', prevSlide);
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', nextSlide);
+  }
+  
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideFullscreen);
+  }
+  
+  if (fullscreenPrevBtn) {
+    fullscreenPrevBtn.addEventListener('click', prevFullscreen);
+  }
+  
+  if (fullscreenNextBtn) {
+    fullscreenNextBtn.addEventListener('click', nextFullscreen);
+  }
+  
+  slides.forEach((slide, index) => {
+    const image = slide.querySelector('.modern-gallery-image');
+    if (image) {
+      image.addEventListener('click', () => {
+        showFullscreen(index);
+      });
+    }
+  });
+  
+  thumbnails.forEach((thumbnail, index) => {
+    thumbnail.addEventListener('click', () => {
+      goToSlide(index);
+    });
+  });
+  
+  if (fullscreen) {
+    fullscreen.addEventListener('click', (e) => {
+      if (e.target === fullscreen || e.target.classList.contains('modern-gallery-fullscreen-overlay')) {
+        hideFullscreen();
+      }
+    });
+  }
+  
+  document.addEventListener('keydown', (e) => {
+    if (!fullscreen || !fullscreen.classList.contains('active')) return;
+    
+    if (e.key === 'Escape') {
+      hideFullscreen();
+    } else if (e.key === 'ArrowLeft') {
+      prevFullscreen();
+    } else if (e.key === 'ArrowRight') {
+      nextFullscreen();
+    }
+  });
+  
+  let touchStartX = 0;
+  let touchEndX = 0;
+  
+  container.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  
+  container.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+  
+  function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+  }
+  
+  if (fullscreen) {
+    let fullscreenTouchStartX = 0;
+    let fullscreenTouchEndX = 0;
+    
+    fullscreen.addEventListener('touchstart', (e) => {
+      fullscreenTouchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    fullscreen.addEventListener('touchend', (e) => {
+      fullscreenTouchEndX = e.changedTouches[0].screenX;
+      handleFullscreenSwipe();
+    }, { passive: true });
+    
+    function handleFullscreenSwipe() {
+      const swipeThreshold = 50;
+      const diff = fullscreenTouchStartX - fullscreenTouchEndX;
+      
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          nextFullscreen();
+        } else {
+          prevFullscreen();
+        }
+      }
+    }
+  }
+  
+  updateSlider();
+})();
+</script>
 {% endblock %}
