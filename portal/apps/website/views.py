@@ -5428,7 +5428,8 @@ def build_kors_dashboard_context(request):
             if any(keyword in status_name for keyword in keywords):
                 dash[key] += item['count']
                 break
-
+                
+               
     count_rlk_all   = docs.count()
     count_kd        = docs.exclude(status_estimation_id=None).count()
     count_affter_kd = docs.filter(status_estimation_id__in=[6, 8, 4, 7]).count()
