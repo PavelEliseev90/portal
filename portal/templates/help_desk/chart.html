@@ -15,13 +15,16 @@
 <style>
     @media (max-width: 767.98px) {
         .helpdesk-nav-btns .btn,
-        .chart-period .btn {
+        .chart-filters .btn {
             width: 100%;
             margin-bottom: .5rem;
         }
         .chart-card .card-body {
             padding: 1rem .75rem;
         }
+    }
+    .chart-canvas {
+        height: 220px !important;
     }
 </style>
 
@@ -39,21 +42,78 @@
     </div>
 </div>
 
-<div class="row mb-3">
-    <div class="col-sm chart-period">
-        <div class="btn-group w-100" role="group">
-            <a href="?period=week" class="btn btn-outline-primary {% if params.period == 'week' %}active{% endif %}">
-                Неделя
-            </a>
-            <a href="?period=month" class="btn btn-outline-primary {% if params.period == 'month' %}active{% endif %}">
-                Месяц
-            </a>
-            <a href="?period=year" class="btn btn-outline-primary {% if params.period == 'year' %}active{% endif %}">
-                Год
-            </a>
+<form method="get" class="card mb-4">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-12 col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="period">
+                        <option value="week" {% if params.period == 'week' %}selected{% endif %}>Неделя</option>
+                        <option value="month" {% if params.period == 'month' %}selected{% endif %}>Месяц</option>
+                        <option value="year" {% if params.period == 'year' %}selected{% endif %}>Год</option>
+                    </select>
+                    <label>Период</label>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="status" onchange="this.form.submit()">
+                        <option value="">Все статусы</option>
+                        {% for status in params.statuses %}
+                            <option value="{{ status.id }}" {% if params.filters.status == status.id %}selected{% endif %}>
+                                {{ status.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label>Статус</label>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="priority" onchange="this.form.submit()">
+                        <option value="">Все приоритеты</option>
+                        {% for priority in params.priorities %}
+                            <option value="{{ priority.id }}" {% if params.filters.priority == priority.id %}selected{% endif %}>
+                                {{ priority.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label>Приоритет</label>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="author" onchange="this.form.submit()">
+                        <option value="">Все авторы</option>
+                        {% for user in params.users %}
+                            <option value="{{ user.id }}" {% if params.filters.author == user.id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label>Автор</label>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="assignee" onchange="this.form.submit()">
+                        <option value="">Все исполнители</option>
+                        {% for user in params.users %}
+                            <option value="{{ user.id }}" {% if params.filters.assignee == user.id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label>Исполнитель</label>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Применить</button>
+            <a href="{% url 'helpdesk:chart' %}" class="btn btn-outline-secondary ms-2">Сбросить</a>
         </div>
     </div>
-</div>
+</form>
 
 <div class="row mb-4 g-3">
     <div class="col-12 col-lg-6">
@@ -62,7 +122,7 @@
                 <h6 class="mb-0">Статистика по статусам</h6>
             </div>
             <div class="card-body">
-                <canvas id="statusChart" height="300"></canvas>
+                <canvas id="statusChart" class="chart-canvas"></canvas>
             </div>
         </div>
     </div>
@@ -72,20 +132,30 @@
                 <h6 class="mb-0">Статистика по приоритетам</h6>
             </div>
             <div class="card-body">
-                <canvas id="priorityChart" height="300"></canvas>
+                <canvas id="priorityChart" class="chart-canvas"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row mb-4 g-3">
-    <div class="col-sm">
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">Распределение по проектам</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="projectChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
         <div class="card chart-card">
             <div class="card-header bg-success text-white">
                 <h6 class="mb-0">Динамика создания и закрытия задач</h6>
             </div>
             <div class="card-body">
-                <canvas id="timelineChart" height="100"></canvas>
+                <canvas id="timelineChart" class="chart-canvas"></canvas>
             </div>
         </div>
     </div>
@@ -98,7 +168,7 @@
                 <h6 class="mb-0">Топ исполнителей</h6>
             </div>
             <div class="card-body">
-                <canvas id="assigneeChart" height="200"></canvas>
+                <canvas id="assigneeChart" class="chart-canvas"></canvas>
             </div>
         </div>
     </div>
@@ -145,6 +215,31 @@ if (priorityData && priorityData.length > 0) {
             scales: {
                 y: {
                     beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// График по проектам
+const projectData = {{ params.project_stats|safe }};
+const projectCtx = document.getElementById('projectChart').getContext('2d');
+if (projectData && projectData.length > 0) {
+    new Chart(projectCtx, {
+        type: 'doughnut',
+        data: {
+            labels: projectData.map(item => item.name || 'Без проекта'),
+            datasets: [{
+                data: projectData.map(item => item.count),
+                backgroundColor: projectData.map(item => item.color || '#6c757d'),
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
                 }
             }
         }

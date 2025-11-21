@@ -5,6 +5,7 @@ from django.db.models import Count, Q, F, Sum, Avg
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.urls import reverse
+from django.contrib.auth.models import User
 from datetime import datetime, timedelta, date
 import json
 from calendar import monthrange
@@ -729,6 +730,41 @@ def chart(request):
             Q(observers=request.user)
         ).distinct()
     
+    filters = {}
+
+    # Фильтрация
+    status_id = request.GET.get('status')
+    if status_id:
+        try:
+            tasks = tasks.filter(status_id=int(status_id))
+            filters['status'] = int(status_id)
+        except:
+            pass
+
+    priority_id = request.GET.get('priority')
+    if priority_id:
+        try:
+            tasks = tasks.filter(priority_id=int(priority_id))
+            filters['priority'] = int(priority_id)
+        except:
+            pass
+
+    author_id = request.GET.get('author')
+    if author_id:
+        try:
+            tasks = tasks.filter(author_id=int(author_id))
+            filters['author'] = int(author_id)
+        except:
+            pass
+
+    assignee_id = request.GET.get('assignee')
+    if assignee_id:
+        try:
+            tasks = tasks.filter(assignee_id=int(assignee_id))
+            filters['assignee'] = int(assignee_id)
+        except:
+            pass
+
     # Период для графика
     period = request.GET.get('period', 'month')  # week, month, year
     end_date = timezone.now().date()
@@ -752,6 +788,28 @@ def chart(request):
     priority_stats = tasks.values('priority__name', 'priority__color').annotate(
         count=Count('id')
     ).order_by('-count')
+
+    # Статистика по проектам
+    project_stats_qs = tasks.values('projects__id', 'projects__name', 'projects__color').annotate(
+        count=Count('id', distinct=True)
+    ).order_by('-count')
+
+    project_stats = []
+    for item in project_stats_qs:
+        if item['projects__id']:
+            project_stats.append({
+                'name': item['projects__name'] or 'Без проекта',
+                'color': item['projects__color'] or '#6c757d',
+                'count': item['count']
+            })
+
+    no_project_count = tasks.filter(projects__isnull=True).distinct().count()
+    if no_project_count and not any(p['name'] == 'Без проекта' for p in project_stats):
+        project_stats.append({
+            'name': 'Без проекта',
+            'color': '#6c757d',
+            'count': no_project_count
+        })
     
     # График создания задач по дням
     creation_data = []
@@ -783,13 +841,22 @@ def chart(request):
         closed=Count('id', filter=Q(status__is_closed=True))
     ).order_by('-count')[:10]
     
+    statuses = TaskStatus.objects.filter(is_active=True).order_by('order')
+    priorities = Priority.objects.all().order_by('-level')
+    users = User.objects.filter(is_active=True).order_by('username')
+
     params = {
         'period': period,
         'status_stats': list(status_stats),
         'priority_stats': list(priority_stats),
+        'project_stats': project_stats,
         'creation_data': json.dumps(creation_data),
         'closure_data': json.dumps(closure_data),
         'assignee_stats': list(assignee_stats),
+        'filters': filters,
+        'statuses': statuses,
+        'priorities': priorities,
+        'users': users,
     }
     
     return render(request, "help_desk/chart.html", {'params': params})
