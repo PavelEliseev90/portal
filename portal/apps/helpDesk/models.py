@@ -215,3 +215,70 @@ class TaskHistory(models.Model):
 
     def __str__(self):
         return f"{self.action} - задача #{self.task.id}"
+
+
+class SavedFilter(models.Model):
+    """Модель сохраненных фильтров"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_filters',
+                            verbose_name="Пользователь")
+    name = models.CharField("Название фильтра", max_length=200)
+    filter_params = models.JSONField("Параметры фильтра", default=dict,
+                                    help_text="JSON с параметрами фильтрации")
+    is_default = models.BooleanField("По умолчанию", default=False)
+    date_created = models.DateTimeField("Дата создания", auto_now_add=True)
+    order = models.IntegerField("Порядок сортировки", default=0)
+
+    class Meta:
+        db_table = 'helpdesk_saved_filter'
+        verbose_name = "Сохраненный фильтр"
+        verbose_name_plural = "Сохраненные фильтры"
+        ordering = ['order', 'name']
+        unique_together = [['user', 'name']]
+
+    def __str__(self):
+        return f"{self.name} ({self.user.username})"
+
+
+class TaskReminder(models.Model):
+    """Модель напоминаний о дедлайнах задач"""
+    task = models.ForeignKey(HelpDeskTask, on_delete=models.CASCADE, related_name='reminders',
+                            verbose_name="Задача")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_reminders',
+                            verbose_name="Пользователь")
+    days_before = models.IntegerField("Дней до дедлайна", default=1,
+                                     help_text="За сколько дней до дедлайна напомнить")
+    is_sent = models.BooleanField("Отправлено", default=False)
+    date_sent = models.DateTimeField("Дата отправки", null=True, blank=True)
+    date_created = models.DateTimeField("Дата создания", auto_now_add=True)
+
+    class Meta:
+        db_table = 'helpdesk_task_reminder'
+        verbose_name = "Напоминание о задаче"
+        verbose_name_plural = "Напоминания о задачах"
+        ordering = ['days_before']
+        unique_together = [['task', 'user', 'days_before']]
+
+    def __str__(self):
+        return f"Напоминание для {self.user.username} о задаче #{self.task.id} за {self.days_before} дн."
+
+
+class AutoAssignmentRule(models.Model):
+    """Модель правил автоматического назначения исполнителя"""
+    name = models.CharField("Название правила", max_length=200)
+    project = models.ForeignKey(ProjectTag, on_delete=models.CASCADE, related_name='assignment_rules',
+                               verbose_name="Проект", null=True, blank=True)
+    default_assignee = models.ForeignKey(User, on_delete=models.PROTECT, related_name='assignment_rules',
+                                        verbose_name="Исполнитель по умолчанию", null=True, blank=True)
+    priority_condition = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True, blank=True,
+                                          verbose_name="Условие по приоритету")
+    is_active = models.BooleanField("Активно", default=True)
+    order = models.IntegerField("Порядок проверки", default=0)
+
+    class Meta:
+        db_table = 'helpdesk_auto_assignment_rule'
+        verbose_name = "Правило автоназначения"
+        verbose_name_plural = "Правила автоназначения"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
