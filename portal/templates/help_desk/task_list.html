@@ -359,6 +359,20 @@
 			</div>
 
             <div class="mobile-task-list">
+                <div class="mb-3 d-md-none">
+                    <label class="form-label small text-uppercase text-muted">Сортировать</label>
+                    <select class="form-select" id="mobileSort">
+                        <option value="date_created" {% if params.order_by == 'date_created' %}selected{% endif %}>Дата ↑</option>
+                        <option value="-date_created" {% if params.order_by == '-date_created' %}selected{% endif %}>Дата ↓</option>
+                        <option value="date_deadline" {% if params.order_by == 'date_deadline' %}selected{% endif %}>Срок ↑</option>
+                        <option value="-date_deadline" {% if params.order_by == '-date_deadline' %}selected{% endif %}>Срок ↓</option>
+                        <option value="priority__level" {% if params.order_by == 'priority__level' %}selected{% endif %}>Приоритет ↑</option>
+                        <option value="-priority__level" {% if params.order_by == '-priority__level' %}selected{% endif %}>Приоритет ↓</option>
+                        <option value="comments_count" {% if params.order_by == 'comments_count' %}selected{% endif %}>Комментарии ↑</option>
+                        <option value="-comments_count" {% if params.order_by == '-comments_count' %}selected{% endif %}>Комментарии ↓</option>
+                    </select>
+                </div>
+
                 {% for task in params.page_obj %}
                     <div class="card mobile-task-card mb-3" onclick="window.location.href='{% url 'helpdesk:task_detail' task.pk %}'" style="cursor:pointer;">
                         <div class="card-body">
@@ -484,6 +498,19 @@
 		url.searchParams.set('page', 1);
 		document.location.href = url.href;
 	}
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var mobileSelect = document.getElementById('mobileSort');
+        if (mobileSelect) {
+            mobileSelect.addEventListener('change', function() {
+                var value = this.value;
+                var url = new URL(document.location.href);
+                url.searchParams.set('order_by', value);
+                url.searchParams.set('page', 1);
+                document.location.href = url.href;
+            });
+        }
+    });
 </script>
 
 <script language="JavaScript">
