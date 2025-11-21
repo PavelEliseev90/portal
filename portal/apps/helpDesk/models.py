@@ -218,15 +218,16 @@ class TaskHistory(models.Model):
 
 
 class SavedFilter(models.Model):
-    """Модель сохраненных фильтров"""
+    """Модель сохраненных фильтров задач"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_filters',
                             verbose_name="Пользователь")
     name = models.CharField("Название фильтра", max_length=200)
-    filter_params = models.JSONField("Параметры фильтра", default=dict,
-                                    help_text="JSON с параметрами фильтрации")
-    is_default = models.BooleanField("По умолчанию", default=False)
-    date_created = models.DateTimeField("Дата создания", auto_now_add=True)
+    filter_data = models.JSONField("Данные фильтра", default=dict,
+                                   help_text="JSON объект с параметрами фильтра")
     order = models.IntegerField("Порядок сортировки", default=0)
+    date_created = models.DateTimeField("Дата создания", auto_now_add=True)
+    is_shared = models.BooleanField("Общий фильтр", default=False,
+                                   help_text="Доступен всем пользователям")
 
     class Meta:
         db_table = 'helpdesk_saved_filter'
@@ -239,45 +240,59 @@ class SavedFilter(models.Model):
         return f"{self.name} ({self.user.username})"
 
 
-class TaskReminder(models.Model):
-    """Модель напоминаний о дедлайнах задач"""
+class DeadlineReminder(models.Model):
+    """Модель напоминаний о дедлайнах"""
     task = models.ForeignKey(HelpDeskTask, on_delete=models.CASCADE, related_name='reminders',
                             verbose_name="Задача")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_reminders',
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='deadline_reminders',
                             verbose_name="Пользователь")
     days_before = models.IntegerField("Дней до дедлайна", default=1,
-                                     help_text="За сколько дней до дедлайна напомнить")
+                                     help_text="Напоминание будет отправлено за N дней до дедлайна")
     is_sent = models.BooleanField("Отправлено", default=False)
     date_sent = models.DateTimeField("Дата отправки", null=True, blank=True)
     date_created = models.DateTimeField("Дата создания", auto_now_add=True)
 
     class Meta:
-        db_table = 'helpdesk_task_reminder'
-        verbose_name = "Напоминание о задаче"
-        verbose_name_plural = "Напоминания о задачах"
-        ordering = ['days_before']
+        db_table = 'helpdesk_deadline_reminder'
+        verbose_name = "Напоминание о дедлайне"
+        verbose_name_plural = "Напоминания о дедлайнах"
+        ordering = ['days_before', 'task']
         unique_together = [['task', 'user', 'days_before']]
 
     def __str__(self):
-        return f"Напоминание для {self.user.username} о задаче #{self.task.id} за {self.days_before} дн."
+        return f"Напоминание для задачи #{self.task.id} за {self.days_before} дней"
 
 
-class AutoAssignmentRule(models.Model):
-    """Модель правил автоматического назначения исполнителя"""
+class TaskRule(models.Model):
+    """Модель правил автоматизации задач"""
     name = models.CharField("Название правила", max_length=200)
-    project = models.ForeignKey(ProjectTag, on_delete=models.CASCADE, related_name='assignment_rules',
-                               verbose_name="Проект", null=True, blank=True)
-    default_assignee = models.ForeignKey(User, on_delete=models.PROTECT, related_name='assignment_rules',
-                                        verbose_name="Исполнитель по умолчанию", null=True, blank=True)
-    priority_condition = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True, blank=True,
-                                          verbose_name="Условие по приоритету")
+    description = models.TextField("Описание", blank=True)
     is_active = models.BooleanField("Активно", default=True)
-    order = models.IntegerField("Порядок проверки", default=0)
+    
+    # Условия
+    condition_project = models.ForeignKey(ProjectTag, on_delete=models.SET_NULL, null=True, blank=True,
+                                         related_name='rules', verbose_name="Проект")
+    condition_status = models.ForeignKey(TaskStatus, on_delete=models.SET_NULL, null=True, blank=True,
+                                        related_name='rules', verbose_name="Статус")
+    condition_priority_min = models.IntegerField("Минимальный приоритет", null=True, blank=True)
+    days_before_deadline = models.IntegerField("Дней до дедлайна", null=True, blank=True,
+                                              help_text="Применить правило за N дней до дедлайна")
+    
+    # Действия
+    action_set_priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True, blank=True,
+                                           related_name='rules_priority', verbose_name="Установить приоритет")
+    action_set_assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                           related_name='rules_assignee', verbose_name="Назначить исполнителя")
+    action_set_status = models.ForeignKey(TaskStatus, on_delete=models.SET_NULL, null=True, blank=True,
+                                         related_name='rules_status', verbose_name="Установить статус")
+    
+    order = models.IntegerField("Порядок выполнения", default=0)
+    date_created = models.DateTimeField("Дата создания", auto_now_add=True)
 
     class Meta:
-        db_table = 'helpdesk_auto_assignment_rule'
-        verbose_name = "Правило автоназначения"
-        verbose_name_plural = "Правила автоназначения"
+        db_table = 'helpdesk_task_rule'
+        verbose_name = "Правило автоматизации"
+        verbose_name_plural = "Правила автоматизации"
         ordering = ['order', 'name']
 
     def __str__(self):

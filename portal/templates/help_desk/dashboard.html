@@ -166,6 +166,28 @@
                                         {% endfor %}
                                     {% endif %}
                                 </div>
+                                {% if user.is_superuser or task.author == user or task.assignee == user %}
+                                    <div class="mt-2 d-flex gap-1 flex-wrap">
+                                        {% if params.in_progress_status and task.status.id != params.in_progress_status.id and not task.status.is_closed %}
+                                            <button type="button" class="btn btn-sm btn-success quick-action-btn-dashboard" 
+                                                    data-task-id="{{ task.pk }}" 
+                                                    data-status-id="{{ params.in_progress_status.id }}"
+                                                    data-status-name="{{ params.in_progress_status.name }}"
+                                                    title="Взять в работу">
+                                                <i class="bi bi-play-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% if params.closed_status and not task.status.is_closed %}
+                                            <button type="button" class="btn btn-sm btn-danger quick-action-btn-dashboard" 
+                                                    data-task-id="{{ task.pk }}" 
+                                                    data-status-id="{{ params.closed_status.id }}"
+                                                    data-status-name="{{ params.closed_status.name }}"
+                                                    title="Закрыть">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     {% empty %}
@@ -183,6 +205,74 @@
         </div>
     {% endfor %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка быстрых действий на дашборде
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn-dashboard');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const taskId = this.dataset.taskId;
+            const statusId = this.dataset.statusId;
+            const statusName = this.dataset.statusName;
+            const originalHTML = this.innerHTML;
+            
+            // Отключаем кнопку и показываем загрузку
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            // Получаем CSRF токен из cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            
+            fetch(`/help_desk/task/${taskId}/quick-status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось изменить статус'));
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении статуса');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
+});
+</script>
 
 {% endblock %}
 
