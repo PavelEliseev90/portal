@@ -12,6 +12,7 @@ urlpatterns = [
     path('task/create/', views.task_create, name='task_create'),
     path('task/<int:pk>/edit/', views.task_edit, name='task_edit'),
     path('task/<int:pk>/comment/', views.task_add_comment, name='task_add_comment'),
+    path('task/<int:pk>/attachment/', views.task_add_attachment, name='task_add_attachment'),
     path('calendar/', views.calendar, name='calendar'),
     path('chart/', views.chart, name='chart'),
 ]

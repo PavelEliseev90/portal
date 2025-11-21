@@ -195,9 +195,22 @@ def task_list(request):
     
     # Сортировка
     order_by = request.GET.get('order_by', '-date_created')
-    if order_by in ['date_created', '-date_created', 'date_deadline', '-date_deadline', 
-                   'title', '-title', 'status', '-status']:
-        tasks = tasks.order_by(order_by)
+    allowed_orders = [
+        'date_created', '-date_created',
+        'date_deadline', '-date_deadline',
+        'title', '-title',
+        'status__order', '-status__order',
+        'priority__level', '-priority__level',
+        'id', '-id',
+        'author__username', '-author__username',
+        'assignee__username', '-assignee__username',
+        'comments_count', '-comments_count',
+        'observers_count', '-observers_count',
+        'attachments_count', '-attachments_count',
+    ]
+    if order_by not in allowed_orders:
+        order_by = '-date_created'
+    tasks = tasks.order_by(order_by)
     
     # Пагинация
     per_page = int(request.GET.get('count', 25))
@@ -526,6 +539,46 @@ def task_add_comment(request, pk):
         
         return redirect('helpdesk:task_detail', pk=task.pk)
     
+    return redirect('helpdesk:task_detail', pk=task.pk)
+
+
+@login_required
+def task_add_attachment(request, pk):
+    """Загрузка файлов к задаче"""
+
+    task = get_object_or_404(HelpDeskTask, pk=pk, is_deleted=False)
+
+    # Проверка прав доступа
+    if not request.user.is_superuser:
+        if task.author != request.user and task.assignee != request.user:
+            if not task.observers.filter(id=request.user.id).exists():
+                return JsonResponse({'error': 'Нет доступа'}, status=403)
+
+    if request.method == 'POST':
+        files = request.FILES.getlist('files')
+        description = request.POST.get('description', '')
+        saved_any = False
+
+        for upload in files:
+            attachment = TaskAttachment(
+                task=task,
+                uploaded_by=request.user,
+                original_filename=upload.name,
+                file=upload,
+                file_size=upload.size,
+                description=description
+            )
+            attachment.save()
+            saved_any = True
+
+        if saved_any:
+            TaskHistory.objects.create(
+                task=task,
+                user=request.user,
+                action='Добавлено вложение',
+                comment=f'Загружено файлов: {len(files)}'
+            )
+
     return redirect('helpdesk:task_detail', pk=task.pk)
 
 
