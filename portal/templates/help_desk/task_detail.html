@@ -1,0 +1,310 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - Задача #{{ params.task.id }} {% endblock %}
+
+{% block title_navbar %} - HelpDesk - Задача #{{ params.task.id }} {% endblock %}
+    
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-sm">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+        {% if user.is_superuser or params.task.author == user or params.task.assignee == user %}
+            <a href="{% url 'helpdesk:task_edit' params.task.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="col-sm">
+	<div class="card">
+		<div class="card-header" style="{% if params.task.status %}background-color: {{ params.task.status.color }}; color: white;{% else %}background-color: #6c757d; color: white;{% endif %}">
+			<h5 class="mb-0">
+				<i class="bi bi-ticket"></i> Задача #{{ params.task.id }} - {{ params.task.title }}
+				{% if params.task.is_overdue %}
+					<span class="badge bg-danger">Просрочена</span>
+				{% endif %}
+			</h5>
+		</div>
+	
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item" role="presentation">
+				<button class="nav-link active text-secondary" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">
+					<i class="bi bi-info-circle"></i> Основное
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link text-secondary" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
+					<i class="bi bi-chat-left-text"></i> Комментарии ({{ params.comments|length }})
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link text-secondary" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false">
+					<i class="bi bi-paperclip"></i> Вложения ({{ params.attachments|length }})
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link text-secondary" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">
+					<i class="bi bi-clock-history"></i> История ({{ params.history|length }})
+				</button>
+			</li>
+		</ul>
+		  
+		<div class="tab-content" id="myTabContent">
+			<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+				<div class="card-body">
+					<div class="row g-1">
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" value="{{ params.task.title }}" readonly>
+								<label>Тема</label>
+							</div>
+						</div>
+					</div>
+					
+					<div class="row g-1">
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" value="{{ params.task.author.get_full_name|default:params.task.author.username }}" readonly>
+								<label>Автор</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.assignee %}{{ params.task.assignee.get_full_name|default:params.task.assignee.username }}{% else %}Не назначен{% endif %}" readonly>
+								<label>Исполнитель</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.status %}{{ params.task.status.name }}{% else %}-{% endif %}" readonly>
+								<label>Статус</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.priority %}{{ params.task.priority.name }}{% else %}-{% endif %}" readonly>
+								<label>Приоритет</label>
+							</div>
+						</div>
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" value="{{ params.task.date_created|date:'d.m.Y H:i' }}" readonly>
+								<label>Дата создания</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.date_start %}{{ params.task.date_start|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+								<label>Дата начала</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm {% if params.task.is_overdue %}text-danger{% endif %}" 
+									value="{% if params.task.date_deadline %}{{ params.task.date_deadline|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+								<label>Срок выполнения</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.date_closed %}{{ params.task.date_closed|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+								<label>Дата закрытия</label>
+							</div>
+						</div>
+					</div>
+					
+					{% if params.task.projects.all %}
+						<div class="mb-3">
+							<label class="form-label">Проекты:</label>
+							{% for project in params.task.projects.all %}
+								<span class="badge" style="background-color: {{ project.color }}; color: white;">
+									{{ project.name }}
+								</span>
+							{% endfor %}
+						</div>
+					{% endif %}
+					
+					{% if params.task.tags %}
+						<div class="mb-3">
+							<label class="form-label">Дополнительные теги:</label>
+							<span class="badge bg-secondary">{{ params.task.tags }}</span>
+						</div>
+					{% endif %}
+					
+					{% if params.task.observers.all %}
+						<div class="mb-3">
+							<label class="form-label">Наблюдатели:</label>
+							{% for observer in params.task.observers.all %}
+								<span class="badge bg-info">{{ observer.get_full_name|default:observer.username }}</span>
+							{% endfor %}
+						</div>
+					{% endif %}
+					
+					<div class="card">
+						<div class="card-body">
+							<h6>Описание:</h6>
+							<div class="mb-3">
+								{{ params.task.description|safe }}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+				<div class="card-body">
+					{% if params.comments %}
+						{% for comment in params.comments %}
+							<div class="card mb-3 {% if comment.is_internal %}border-warning{% endif %}">
+								<div class="card-header">
+									<strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+									{% if comment.is_internal %}
+										<span class="badge bg-warning text-dark">Внутренний</span>
+									{% endif %}
+									<small class="text-muted float-end">{{ comment.date_created|date:"d.m.Y H:i" }}</small>
+								</div>
+								<div class="card-body">
+									{{ comment.text|safe }}
+								</div>
+							</div>
+						{% endfor %}
+					{% else %}
+						<div class="alert alert-info">
+							Нет комментариев по задаче
+						</div>
+					{% endif %}
+					
+					<hr>
+					
+					<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#commentModal">
+						<i class="bi bi-plus-circle"></i> Добавить комментарий
+					</button>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="files" role="tabpanel" aria-labelledby="files-tab">
+				<div class="card-body">
+					{% if params.attachments %}
+						<div class="list-group">
+							{% for attachment in params.attachments %}
+								<div class="list-group-item">
+									<div class="d-flex w-100 justify-content-between">
+										<h6 class="mb-1">
+											<a href="{{ attachment.file.url }}" target="_blank">
+												<i class="bi bi-file-earmark"></i> {{ attachment.original_filename }}
+											</a>
+										</h6>
+										<small>{{ attachment.date_uploaded|date:"d.m.Y H:i" }}</small>
+									</div>
+									<p class="mb-1">
+										<small>
+											Загрузил: {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+											{% if attachment.file_size %}
+												| Размер: {{ attachment.file_size|filesizeformat }}
+											{% endif %}
+										</small>
+									</p>
+									{% if attachment.description %}
+										<p class="mb-1">{{ attachment.description }}</p>
+									{% endif %}
+								</div>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="alert alert-info">
+							Нет вложенных файлов
+						</div>
+					{% endif %}
+				</div>
+			</div>
+			
+			<div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+				<div class="card-body">
+					{% if params.history %}
+						<div class="list-group">
+							{% for item in params.history %}
+								<div class="list-group-item">
+									<div class="d-flex w-100 justify-content-between">
+										<h6 class="mb-1">{{ item.action }}</h6>
+										<small>{{ item.date_created|date:"d.m.Y H:i" }}</small>
+									</div>
+									{% if item.user %}
+										<p class="mb-1"><small>Пользователь: {{ item.user.get_full_name|default:item.user.username }}</small></p>
+									{% endif %}
+									{% if item.field_name %}
+										<p class="mb-1">
+											<small>
+												<strong>{{ item.field_name }}:</strong>
+												{% if item.old_value %}
+													<del>{{ item.old_value }}</del>
+												{% endif %}
+												{% if item.new_value %}
+													→ {{ item.new_value }}
+												{% endif %}
+											</small>
+										</p>
+									{% endif %}
+									{% if item.comment %}
+										<p class="mb-1">{{ item.comment }}</p>
+									{% endif %}
+								</div>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="alert alert-info">
+							История изменений пуста
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal для комментария -->
+<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="commentModalLabel">
+					<i class="bi bi-chat-left-text"></i> Новый комментарий
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form method="POST" action="{% url 'helpdesk:task_add_comment' params.task.pk %}">
+				{% csrf_token %}
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="commentText" class="form-label">Комментарий</label>
+						<textarea class="form-control" id="commentText" name="text" rows="10" required></textarea>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" id="isInternal" name="is_internal">
+						<label class="form-check-label" for="isInternal">
+							Внутренний комментарий (виден только исполнителям)
+						</label>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+					<button type="submit" class="btn btn-success">
+						<i class="bi bi-check-circle"></i> Сохранить
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+{% endblock %}
+

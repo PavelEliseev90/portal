@@ -1,0 +1,209 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - График выполнения {% endblock %}
+
+{% block title_navbar %} - HelpDesk - График выполнения {% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+{% endblock %}
+    
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-sm">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+        <a href="{% url 'helpdesk:calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar"></i> Календарь
+        </a>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-sm">
+        <div class="btn-group" role="group">
+            <a href="?period=week" class="btn btn-outline-primary {% if params.period == 'week' %}active{% endif %}">
+                Неделя
+            </a>
+            <a href="?period=month" class="btn btn-outline-primary {% if params.period == 'month' %}active{% endif %}">
+                Месяц
+            </a>
+            <a href="?period=year" class="btn btn-outline-primary {% if params.period == 'year' %}active{% endif %}">
+                Год
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Статистика по статусам</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Статистика по приоритетам</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="priorityChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">Динамика создания и закрытия задач</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="timelineChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">Топ исполнителей</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="assigneeChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// График по статусам
+const statusData = {{ params.status_stats|safe }};
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+if (statusData && statusData.length > 0) {
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(item => item.status__name || 'Без статуса'),
+            datasets: [{
+                data: statusData.map(item => item.count),
+                backgroundColor: statusData.map(item => item.status__color || '#6c757d'),
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+        }
+    });
+}
+
+// График по приоритетам
+const priorityData = {{ params.priority_stats|safe }};
+const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+if (priorityData && priorityData.length > 0) {
+    new Chart(priorityCtx, {
+        type: 'bar',
+        data: {
+            labels: priorityData.map(item => item.priority__name || 'Без приоритета'),
+            datasets: [{
+                label: 'Количество задач',
+                data: priorityData.map(item => item.count),
+                backgroundColor: priorityData.map(item => item.priority__color || '#6c757d'),
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// График динамики
+const creationData = {{ params.creation_data|safe }};
+const closureData = {{ params.closure_data|safe }};
+const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+if (creationData && creationData.length > 0) {
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: creationData.map(item => item.date),
+            datasets: [{
+                label: 'Создано',
+                data: creationData.map(item => item.count),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }, {
+                label: 'Закрыто',
+                data: closureData.map(item => item.count),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// График по исполнителям
+const assigneeData = {{ params.assignee_stats|safe }};
+const assigneeCtx = document.getElementById('assigneeChart').getContext('2d');
+if (assigneeData && assigneeData.length > 0) {
+    new Chart(assigneeCtx, {
+        type: 'bar',
+        indexAxis: 'y',
+        data: {
+            labels: assigneeData.map(item => item.assignee__username),
+            datasets: [{
+                label: 'Всего задач',
+                data: assigneeData.map(item => item.count),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            }, {
+                label: 'Закрыто',
+                data: assigneeData.map(item => item.closed),
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+</script>
+
+{% endblock %}
+
