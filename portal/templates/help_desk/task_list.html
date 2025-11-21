@@ -39,6 +39,23 @@
             display: none;
         }
     }
+
+    .btn-sort {
+        border: none;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        font-weight: 600;
+        color: inherit;
+    }
+    .btn-sort:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    .sort-indicator {
+        font-size: .75rem;
+        margin-left: .25rem;
+    }
 </style>
 
 <div class="row mb-3">
@@ -164,18 +181,95 @@
 						<thead style="position: sticky;top: 0;">
 							<tr>
 								<th class='header_table bg-light' scope="col"></th>
-								<th class='header_table bg-light' scope="col">Дата</th>
-								<th class='header_table bg-light' scope="col">Номер</th>
-								<th class='header_table bg-light' scope="col">Тема</th>
-							<th class='header_table bg-light' scope="col">Автор</th>
-							<th class='header_table bg-light' scope="col">Исполнитель</th>
-								<th class='header_table bg-light' scope="col">Статус</th>
-							<th class='header_table bg-light' scope="col">Приоритет</th>
-							<th class='header_table bg-light' scope="col"><i class="bi bi-chat-left-text"></i></th>
-							<th class='header_table bg-light' scope="col"><i class="bi bi-people"></i></th>
-							<th class='header_table bg-light' scope="col"><i class="bi bi-paperclip"></i></th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('date_created')">
+                                        Дата
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'date_created' %}&uarr;{% elif params.order_by == '-date_created' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('id')">
+                                        Номер
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'id' %}&uarr;{% elif params.order_by == '-id' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('title')">
+                                        Тема
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'title' %}&uarr;{% elif params.order_by == '-title' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('author__username')">
+                                    Автор
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'author__username' %}&uarr;{% elif params.order_by == '-author__username' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('assignee__username')">
+                                    Исполнитель
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'assignee__username' %}&uarr;{% elif params.order_by == '-assignee__username' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('status__order')">
+                                        Статус
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'status__order' %}&uarr;{% elif params.order_by == '-status__order' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('priority__level')">
+                                    Приоритет
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'priority__level' %}&uarr;{% elif params.order_by == '-priority__level' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('comments_count')">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'comments_count' %}&uarr;{% elif params.order_by == '-comments_count' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('observers_count')">
+                                    <i class="bi bi-people"></i>
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'observers_count' %}&uarr;{% elif params.order_by == '-observers_count' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('attachments_count')">
+                                    <i class="bi bi-paperclip"></i>
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'attachments_count' %}&uarr;{% elif params.order_by == '-attachments_count' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
 							<th class='header_table bg-light' scope="col">Проекты</th>
-							<th class='header_table bg-light' scope="col">Срок</th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('date_deadline')">
+                                    Срок
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'date_deadline' %}&uarr;{% elif params.order_by == '-date_deadline' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
 							</tr>
 						</thead>
 						<tbody>
@@ -374,6 +468,20 @@
 	function a(page) {
 		var url = new URL(document.location.href);
 		url.searchParams.set('page', page);
+		document.location.href = url.href;
+	}
+
+	function setOrder(field) {
+		var url = new URL(document.location.href);
+		var current = url.searchParams.get('order_by');
+		if (current === field) {
+			url.searchParams.set('order_by', '-' + field);
+		} else if (current === '-' + field) {
+			url.searchParams.set('order_by', field);
+		} else {
+			url.searchParams.set('order_by', field);
+		}
+		url.searchParams.set('page', 1);
 		document.location.href = url.href;
 	}
 </script>
