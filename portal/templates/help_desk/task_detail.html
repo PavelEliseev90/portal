@@ -303,8 +303,15 @@
 							</div>
 							
 							<div class="form-floating mb-3">
-								<input type="text" class="form-control form-control-sm {% if params.task.is_overdue %}text-danger{% endif %}" 
-									value="{% if params.task.date_deadline %}{{ params.task.date_deadline|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+								<div class="input-group">
+									<input type="text" class="form-control form-control-sm {% if params.task.is_overdue %}text-danger{% endif %}" 
+										value="{% if params.task.date_deadline %}{{ params.task.date_deadline|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+									{% if params.task.date_deadline %}
+										<button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#reminderModal" title="Настроить напоминания">
+											<i class="bi bi-bell"></i>
+										</button>
+									{% endif %}
+								</div>
 								<label>Срок выполнения</label>
 							</div>
 							
@@ -729,6 +736,213 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Произошла ошибка при изменении статуса');
                 this.disabled = false;
                 this.innerHTML = originalText;
+            });
+        });
+    });
+});
+</script>
+
+<!-- Модальное окно управления напоминаниями -->
+<div class="modal fade" id="reminderModal" tabindex="-1" aria-labelledby="reminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="reminderModalLabel">
+                    <i class="bi bi-bell"></i> Напоминания о дедлайне
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if params.task.date_deadline %}
+                    <div class="mb-3">
+                        <p class="mb-2">
+                            <strong>Дедлайн:</strong> {{ params.task.date_deadline|date:"d.m.Y H:i" }}
+                        </p>
+                        <small class="text-muted">Напоминания будут отправлены на вашу почту за указанное количество дней до дедлайна</small>
+                    </div>
+                    
+                    <div id="remindersList" class="mb-3">
+                        {% if params.deadline_reminders %}
+                            {% for reminder in params.deadline_reminders %}
+                                <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2" data-reminder-id="{{ reminder.id }}">
+                                    <div>
+                                        <i class="bi bi-bell-fill text-warning"></i>
+                                        <strong>За {{ reminder.days_before }} {{ reminder.days_before|pluralize:"день,дня,дней" }}</strong>
+                                        {% if reminder.is_sent %}
+                                            <span class="badge bg-success ms-2">Отправлено</span>
+                                            {% if reminder.date_sent %}
+                                                <small class="text-muted ms-2">{{ reminder.date_sent|date:"d.m.Y H:i" }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary ms-2">Ожидает отправки</span>
+                                        {% endif %}
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-reminder-btn" data-reminder-id="{{ reminder.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info">Нет настроенных напоминаний</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Добавить напоминание</h6>
+                            <div class="input-group mb-2">
+                                <input type="number" class="form-control" id="reminderDays" min="1" value="1" placeholder="Количество дней">
+                                <span class="input-group-text">дней до дедлайна</span>
+                                <button type="button" class="btn btn-primary" id="addReminderBtn">
+                                    <i class="bi bi-plus-circle"></i> Добавить
+                                </button>
+                            </div>
+                            <small class="text-muted">Например: 3 дня до дедлайна = напоминание будет отправлено за 3 дня до {{ params.task.date_deadline|date:"d.m.Y" }}</small>
+                        </div>
+                    </div>
+                    
+                    <div id="reminderError" class="alert alert-danger d-none mt-3" role="alert"></div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Для настройки напоминаний необходимо установить дедлайн задачи
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление напоминания
+    const addReminderBtn = document.getElementById('addReminderBtn');
+    if (addReminderBtn) {
+        addReminderBtn.addEventListener('click', function() {
+            const daysBefore = parseInt(document.getElementById('reminderDays').value);
+            const errorDiv = document.getElementById('reminderError');
+            errorDiv.classList.add('d-none');
+            
+            if (!daysBefore || daysBefore < 1) {
+                errorDiv.textContent = 'Введите количество дней (минимум 1)';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            
+            const originalHTML = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Добавление...';
+            
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            const formData = new FormData();
+            formData.append('days_before', daysBefore);
+            
+            fetch(`/help_desk/task/{{ params.task.pk }}/reminder/add/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Произошла ошибка при добавлении напоминания';
+                    errorDiv.classList.remove('d-none');
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = 'Произошла ошибка при добавлении напоминания';
+                errorDiv.classList.remove('d-none');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Удаление напоминания
+    const deleteReminderBtns = document.querySelectorAll('.delete-reminder-btn');
+    deleteReminderBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('Удалить это напоминание?')) {
+                return;
+            }
+            
+            const reminderId = this.dataset.reminderId;
+            const reminderItem = document.querySelector(`[data-reminder-id="${reminderId}"]`);
+            const originalHTML = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            fetch(`/help_desk/task/{{ params.task.pk }}/reminder/${reminderId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем элемент из списка
+                    if (reminderItem) {
+                        reminderItem.remove();
+                    }
+                    
+                    // Если список пуст, показываем сообщение
+                    const remindersList = document.getElementById('remindersList');
+                    if (remindersList && remindersList.querySelectorAll('[data-reminder-id]').length === 0) {
+                        remindersList.innerHTML = '<div class="alert alert-info">Нет настроенных напоминаний</div>';
+                    }
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось удалить напоминание'));
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при удалении напоминания');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
             });
         });
     });

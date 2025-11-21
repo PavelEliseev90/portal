@@ -50,7 +50,14 @@
 </style>
 
 <div class="row mb-3">
-    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2 align-items-center">
+        <div class="flex-grow-1">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="dashboardSearch" placeholder="Быстрый поиск задач..." autocomplete="off">
+                <div id="dashboardSearchSuggestions" class="list-group position-absolute w-100 d-none" style="z-index: 1000; max-height: 300px; overflow-y: auto; margin-top: 38px;"></div>
+            </div>
+        </div>
         <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> Создать задачу
         </a>
@@ -65,6 +72,29 @@
         </a>
     </div>
 </div>
+
+<style>
+    #dashboardSearchSuggestions {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+    }
+    #dashboardSearchSuggestions .list-group-item {
+        cursor: pointer;
+        border-left: 3px solid transparent;
+    }
+    #dashboardSearchSuggestions .list-group-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #0d6efd;
+    }
+    #dashboardSearchSuggestions .task-id {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    #dashboardSearchSuggestions .task-meta {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
 
 <!-- Статистика -->
 <div class="row mb-4 gy-3">
@@ -271,6 +301,83 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    
+    // Поиск с автодополнением на дашборде
+    const dashboardSearchInput = document.getElementById('dashboardSearch');
+    const dashboardSearchSuggestions = document.getElementById('dashboardSearchSuggestions');
+    let dashboardSearchTimeout = null;
+    
+    if (dashboardSearchInput && dashboardSearchSuggestions) {
+        dashboardSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (dashboardSearchTimeout) {
+                clearTimeout(dashboardSearchTimeout);
+            }
+            
+            if (query.length < 2) {
+                dashboardSearchSuggestions.classList.add('d-none');
+                dashboardSearchSuggestions.innerHTML = '';
+                return;
+            }
+            
+            dashboardSearchTimeout = setTimeout(() => {
+                fetch(`{% url 'helpdesk:task_autocomplete' %}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.results && data.results.length > 0) {
+                            let html = '';
+                            data.results.forEach(task => {
+                                html += `
+                                    <a href="${task.url}" class="list-group-item list-group-item-action">
+                                        <div>
+                                            <span class="task-id">#${task.id}</span>
+                                            <strong>${task.title}</strong>
+                                        </div>
+                                        <div class="task-meta">
+                                            Автор: ${task.author} | Исполнитель: ${task.assignee} | Статус: ${task.status}
+                                        </div>
+                                    </a>
+                                `;
+                            });
+                            dashboardSearchSuggestions.innerHTML = html;
+                            dashboardSearchSuggestions.classList.remove('d-none');
+                        } else {
+                            dashboardSearchSuggestions.innerHTML = '<div class="list-group-item">Задачи не найдены</div>';
+                            dashboardSearchSuggestions.classList.remove('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        dashboardSearchSuggestions.classList.add('d-none');
+                    });
+            }, 300);
+        });
+        
+        dashboardSearchInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                dashboardSearchSuggestions.classList.add('d-none');
+            }, 200);
+        });
+        
+        dashboardSearchInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2) {
+                const event = new Event('input');
+                this.dispatchEvent(event);
+            }
+        });
+        
+        // Поиск по Enter
+        dashboardSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = this.value.trim();
+                if (query.length >= 2) {
+                    window.location.href = `{% url 'helpdesk:task_list' %}?search=${encodeURIComponent(query)}`;
+                }
+            }
+        });
+    }
 });
 </script>
 
