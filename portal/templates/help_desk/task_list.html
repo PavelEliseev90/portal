@@ -8,8 +8,41 @@
     
 {% block content %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .table-wrapper-scroll-y {
+            display: none;
+        }
+        .mobile-task-card {
+            border-left: 4px solid var(--bs-secondary);
+        }
+        .mobile-task-card .card-body {
+            padding: 1rem 1.25rem;
+        }
+        .mobile-task-card .task-meta span {
+            margin-right: .65rem;
+        }
+        .filters-card .card-body {
+            padding: 1rem;
+        }
+        .filters-card .form-floating {
+            margin-bottom: .75rem;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .mobile-task-list {
+            display: none;
+        }
+    }
+</style>
+
 <div class="row mb-3">
-    <div class="col-sm">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
             <i class="bi bi-speedometer2"></i> Дашборд
         </a>
@@ -29,7 +62,7 @@
 	
 	<div class="row">
 		<div class="col-sm">
-			<div class="card border-secondary">
+			<div class="card border-secondary filters-card">
 				<div class="card-header bg-secondary text-white">
 					<i class="bi bi-chevron-down" id="collapse_filtr_icon" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры</i>  
 				</div>
@@ -134,10 +167,13 @@
 								<th class='header_table bg-light' scope="col">Дата</th>
 								<th class='header_table bg-light' scope="col">Номер</th>
 								<th class='header_table bg-light' scope="col">Тема</th>
-								<th class='header_table bg-light' scope="col">Автор</th>
-								<th class='header_table bg-light' scope="col">Исполнитель</th>
+							<th class='header_table bg-light' scope="col">Автор</th>
+							<th class='header_table bg-light' scope="col">Исполнитель</th>
 								<th class='header_table bg-light' scope="col">Статус</th>
 							<th class='header_table bg-light' scope="col">Приоритет</th>
+							<th class='header_table bg-light' scope="col"><i class="bi bi-chat-left-text"></i></th>
+							<th class='header_table bg-light' scope="col"><i class="bi bi-people"></i></th>
+							<th class='header_table bg-light' scope="col"><i class="bi bi-paperclip"></i></th>
 							<th class='header_table bg-light' scope="col">Проекты</th>
 							<th class='header_table bg-light' scope="col">Срок</th>
 							</tr>
@@ -187,6 +223,15 @@
 										{% endif %}
 									</td>
 									<td>
+										<span class="badge bg-light text-dark">{{ task.comments_count|default:0 }}</span>
+									</td>
+									<td>
+										<span class="badge bg-light text-dark">{{ task.observers_count|default:0 }}</span>
+									</td>
+									<td>
+										<span class="badge bg-light text-dark">{{ task.attachments_count|default:0 }}</span>
+									</td>
+									<td>
 										{% if task.projects.all %}
 											{% for project in task.projects.all %}
 												<span class="badge" style="background-color: {{ project.color }}; color: white;">
@@ -211,13 +256,66 @@
 								</tr>
 							{% empty %}
 								<tr>
-									<td colspan="10" class="text-center">Задач не найдено</td>
+									<td colspan="13" class="text-center">Задач не найдено</td>
 								</tr>
 							{% endfor %}
 						</tbody>
 					</table>
 				</div>
 			</div>
+
+            <div class="mobile-task-list">
+                {% for task in params.page_obj %}
+                    <div class="card mobile-task-card mb-3" onclick="window.location.href='{% url 'helpdesk:task_detail' task.pk %}'" style="cursor:pointer;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="fw-semibold">#{{ task.id }}</span>
+                                    <small class="text-muted ms-2">{{ task.date_created|date:"d.m.Y H:i" }}</small>
+                                </div>
+                                {% if task.status %}
+                                    <span class="badge" style="background-color: {{ task.status.color }}; color: white;">{{ task.status.name }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="fw-semibold mb-2">{{ task.title|truncatechars:80 }}</p>
+                            <div class="task-meta text-muted small mb-2">
+                                <span><i class="bi bi-person"></i> {{ task.author.get_full_name|default:task.author.username }}</span>
+                                {% if task.assignee %}
+                                    <span><i class="bi bi-person-check"></i> {{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+                                {% else %}
+                                    <span class="text-warning"><i class="bi bi-person-x"></i> Нет исполнителя</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span class="badge bg-light text-dark"><i class="bi bi-chat-left-text me-1"></i>{{ task.comments_count|default:0 }}</span>
+                                <span class="badge bg-light text-dark"><i class="bi bi-people me-1"></i>{{ task.observers_count|default:0 }}</span>
+                                <span class="badge bg-light text-dark"><i class="bi bi-paperclip me-1"></i>{{ task.attachments_count|default:0 }}</span>
+                                {% if task.priority %}
+                                    <span class="badge" style="background-color: {{ task.priority.color }}; color: white;">{{ task.priority.name }}</span>
+                                {% endif %}
+                                {% if task.is_overdue %}
+                                    <span class="badge bg-danger">Просрочено</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                {% for project in task.projects.all %}
+                                    <span class="badge" style="background-color: {{ project.color }}; color: white;">{{ project.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted small">Проект не указан</span>
+                                {% endfor %}
+                            </div>
+                            <div class="small text-muted">
+                                <i class="bi bi-calendar2-week"></i>
+                                {% if task.date_deadline %}
+                                    <span class="{% if task.is_overdue %}text-danger{% endif %}">{{ task.date_deadline|date:"d.m.Y H:i" }}</span>
+                                {% else %}
+                                    <span>-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
 
 			<hr>
 

@@ -91,6 +91,12 @@ def task_list(request):
             Q(observers=request.user)
         ).distinct()
     
+    tasks = tasks.annotate(
+        comments_count=Count('comments', filter=Q(comments__is_deleted=False), distinct=True),
+        attachments_count=Count('attachments', distinct=True),
+        observers_count=Count('observers', distinct=True),
+    )
+    
     # Фильтры из GET параметров
     filtr = {}
     filtr_count = 0
@@ -306,6 +312,11 @@ def task_create(request):
             except:
                 pass
         
+        # Дополнительные теги
+        task.tags = request.POST.get('tags', '')
+        
+        task.save()
+        
         # Проекты
         project_ids = request.POST.getlist('projects')
         for project_id in project_ids:
@@ -314,11 +325,6 @@ def task_create(request):
                 task.projects.add(project)
             except:
                 pass
-        
-        # Дополнительные теги
-        task.tags = request.POST.get('tags', '')
-        
-        task.save()
         
         # Наблюдатели
         observer_ids = request.POST.getlist('observers')
@@ -454,9 +460,6 @@ def task_edit(request, pk):
             except:
                 pass
         
-        # Дополнительные теги
-        task.tags = request.POST.get('tags', '')
-        
         # Наблюдатели
         task.observers.clear()
         observer_ids = request.POST.getlist('observers')
@@ -543,6 +546,12 @@ def calendar(request):
             Q(assignee=request.user) | 
             Q(observers=request.user)
         ).distinct()
+    
+    tasks = tasks.annotate(
+        comments_count=Count('comments', filter=Q(comments__is_deleted=False), distinct=True),
+        attachments_count=Count('attachments', distinct=True),
+        observers_count=Count('observers', distinct=True),
+    )
     
     # Задачи с дедлайном в этом месяце
     tasks_in_month = tasks.filter(

@@ -12,8 +12,21 @@
     
 {% block content %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn,
+        .chart-period .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .chart-card .card-body {
+            padding: 1rem .75rem;
+        }
+    }
+</style>
+
 <div class="row mb-3">
-    <div class="col-sm">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
             <i class="bi bi-speedometer2"></i> Дашборд
         </a>
@@ -27,8 +40,8 @@
 </div>
 
 <div class="row mb-3">
-    <div class="col-sm">
-        <div class="btn-group" role="group">
+    <div class="col-sm chart-period">
+        <div class="btn-group w-100" role="group">
             <a href="?period=week" class="btn btn-outline-primary {% if params.period == 'week' %}active{% endif %}">
                 Неделя
             </a>
@@ -42,9 +55,9 @@
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
+<div class="row mb-4 g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card">
             <div class="card-header bg-primary text-white">
                 <h6 class="mb-0">Статистика по статусам</h6>
             </div>
@@ -53,8 +66,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">Статистика по приоритетам</h6>
             </div>
@@ -65,9 +78,9 @@
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-4 g-3">
     <div class="col-sm">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header bg-success text-white">
                 <h6 class="mb-0">Динамика создания и закрытия задач</h6>
             </div>
@@ -78,9 +91,9 @@
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-4 g-3">
     <div class="col-sm">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header bg-warning text-dark">
                 <h6 class="mb-0">Топ исполнителей</h6>
             </div>
