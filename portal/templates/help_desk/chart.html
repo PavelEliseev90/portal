@@ -115,6 +115,84 @@
     </div>
 </form>
 
+<!-- Общая статистика -->
+<div class="row mb-4 g-3">
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">Всего задач</h6>
+                <h2 class="mb-0">{{ params.total_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6 class="card-title">Закрыто</h6>
+                <h2 class="mb-0">{{ params.closed_tasks }}</h2>
+                <small>{% if params.total_tasks > 0 %}{% widthratio params.closed_tasks params.total_tasks 100 %}%{% else %}0%{% endif %}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h6 class="card-title">В работе</h6>
+                <h2 class="mb-0">{{ params.open_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h6 class="card-title">Просрочено</h6>
+                <h2 class="mb-0">{{ params.overdue_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h6 class="card-title">Без исполнителя</h6>
+                <h2 class="mb-0">{{ params.tasks_without_assignee }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h6 class="card-title">Среднее время выполнения</h6>
+                <h2 class="mb-0">{% if params.avg_completion_time %}{{ params.avg_completion_time }} дн.{% else %}-{% endif %}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6 class="card-title">В срок</h6>
+                <h2 class="mb-0">{{ params.on_time_tasks }}</h2>
+                {% if params.tasks_with_deadline > 0 %}
+                    <small>{% widthratio params.on_time_tasks params.tasks_with_deadline 100 %}%</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h6 class="card-title">С опозданием</h6>
+                <h2 class="mb-0">{{ params.late_tasks }}</h2>
+                {% if params.tasks_with_deadline > 0 %}
+                    <small>{% widthratio params.late_tasks params.tasks_with_deadline 100 %}%</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4 g-3">
     <div class="col-12 col-lg-6">
         <div class="card chart-card">
@@ -162,7 +240,7 @@
 </div>
 
 <div class="row mb-4 g-3">
-    <div class="col-sm">
+    <div class="col-12 col-lg-6">
         <div class="card chart-card">
             <div class="card-header bg-warning text-dark">
                 <h6 class="mb-0">Топ исполнителей</h6>
@@ -172,11 +250,34 @@
             </div>
         </div>
     </div>
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Топ авторов</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="authorChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-12">
+        <div class="card chart-card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Воронка выполнения задач</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="funnelChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 // График по статусам
-const statusData = {{ params.status_stats|safe }};
+const statusData = JSON.parse('{{ params.status_stats|escapejs }}');
 const statusCtx = document.getElementById('statusChart').getContext('2d');
 if (statusData && statusData.length > 0) {
     new Chart(statusCtx, {
@@ -196,7 +297,7 @@ if (statusData && statusData.length > 0) {
 }
 
 // График по приоритетам
-const priorityData = {{ params.priority_stats|safe }};
+const priorityData = JSON.parse('{{ params.priority_stats|escapejs }}');
 const priorityCtx = document.getElementById('priorityChart').getContext('2d');
 if (priorityData && priorityData.length > 0) {
     new Chart(priorityCtx, {
@@ -222,7 +323,7 @@ if (priorityData && priorityData.length > 0) {
 }
 
 // График по проектам
-const projectData = {{ params.project_stats|safe }};
+const projectData = JSON.parse('{{ params.project_stats|escapejs }}');
 const projectCtx = document.getElementById('projectChart').getContext('2d');
 if (projectData && projectData.length > 0) {
     new Chart(projectCtx, {
@@ -247,14 +348,17 @@ if (projectData && projectData.length > 0) {
 }
 
 // График динамики
-const creationData = {{ params.creation_data|safe }};
-const closureData = {{ params.closure_data|safe }};
+const creationData = JSON.parse('{{ params.creation_data|escapejs }}');
+const closureData = JSON.parse('{{ params.closure_data|escapejs }}');
 const timelineCtx = document.getElementById('timelineChart').getContext('2d');
 if (creationData && creationData.length > 0) {
     new Chart(timelineCtx, {
         type: 'line',
         data: {
-            labels: creationData.map(item => item.date),
+            labels: creationData.map(item => {
+                const date = new Date(item.date);
+                return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+            }),
             datasets: [{
                 label: 'Создано',
                 data: creationData.map(item => item.count),
@@ -282,14 +386,19 @@ if (creationData && creationData.length > 0) {
 }
 
 // График по исполнителям
-const assigneeData = {{ params.assignee_stats|safe }};
+const assigneeData = JSON.parse('{{ params.assignee_stats|escapejs }}');
 const assigneeCtx = document.getElementById('assigneeChart').getContext('2d');
 if (assigneeData && assigneeData.length > 0) {
     new Chart(assigneeCtx, {
         type: 'bar',
         indexAxis: 'y',
         data: {
-            labels: assigneeData.map(item => item.assignee__username),
+            labels: assigneeData.map(item => {
+                const name = item.assignee__first_name && item.assignee__last_name 
+                    ? `${item.assignee__first_name} ${item.assignee__last_name}`
+                    : item.assignee__username;
+                return name;
+            }),
             datasets: [{
                 label: 'Всего задач',
                 data: assigneeData.map(item => item.count),
@@ -311,7 +420,71 @@ if (assigneeData && assigneeData.length > 0) {
         }
     });
 }
+
+// График по авторам
+const authorData = JSON.parse('{{ params.author_stats|escapejs }}');
+const authorCtx = document.getElementById('authorChart').getContext('2d');
+if (authorData && authorData.length > 0) {
+    new Chart(authorCtx, {
+        type: 'bar',
+        indexAxis: 'y',
+        data: {
+            labels: authorData.map(item => {
+                const name = item.author__first_name && item.author__last_name 
+                    ? `${item.author__first_name} ${item.author__last_name}`
+                    : item.author__username;
+                return name;
+            }),
+            datasets: [{
+                label: 'Всего создано',
+                data: authorData.map(item => item.count),
+                backgroundColor: 'rgba(153, 102, 255, 0.5)',
+            }, {
+                label: 'Закрыто',
+                data: authorData.map(item => item.closed),
+                backgroundColor: 'rgba(255, 159, 64, 0.5)',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Воронка выполнения
+const funnelData = JSON.parse('{{ params.funnel_data|escapejs }}');
+const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+if (funnelData && funnelData.length > 0) {
+    new Chart(funnelCtx, {
+        type: 'bar',
+        data: {
+            labels: funnelData.map(item => item.name),
+            datasets: [{
+                label: 'Количество задач',
+                data: funnelData.map(item => item.count),
+                backgroundColor: funnelData.map(item => item.color || '#6c757d'),
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
 </script>
+
+{% include 'help_desk/quick_create_widget.html' %}
 
 {% endblock %}
 

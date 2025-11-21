@@ -296,6 +296,33 @@ def task_list(request):
     # Находим статус "Закрыто"
     closed_status = all_statuses.filter(is_closed=True).first()
     
+    # Получаем сохраненные фильтры пользователя
+    saved_filters = SavedFilter.objects.filter(
+        Q(user=request.user) | Q(is_shared=True)
+    ).order_by('order', 'name')
+    
+    # Применяем сохраненный фильтр, если указан
+    saved_filter_id = request.GET.get('saved_filter')
+    if saved_filter_id:
+        try:
+            saved_filter_obj = SavedFilter.objects.get(
+                id=int(saved_filter_id),
+                Q(user=request.user) | Q(is_shared=True)
+            )
+            # Применяем параметры фильтра
+            for key, value in saved_filter_obj.filter_data.items():
+                if key not in request.GET:  # Не перезаписываем явно указанные параметры
+                    request.GET = request.GET.copy()
+                    request.GET[key] = value
+            # Перенаправляем с параметрами фильтра
+            from django.http import QueryDict
+            filter_params = QueryDict(mutable=True)
+            filter_params.update(saved_filter_obj.filter_data)
+            filter_params['saved_filter'] = saved_filter_id
+            return redirect(f"{reverse('helpdesk:task_list')}?{filter_params.urlencode()}")
+        except:
+            pass
+    
     params = {
         'tasks': page_obj,
         'page_obj': page_obj,
@@ -309,6 +336,8 @@ def task_list(request):
         'order_by': order_by,
         'in_progress_status': in_progress_status,
         'closed_status': closed_status,
+        'saved_filters': saved_filters,
+        'users': User.objects.filter(is_active=True).order_by('username'),
     }
     
     return render(request, "help_desk/task_list.html", {'params': params})
@@ -423,6 +452,9 @@ def task_detail(request, pk):
     priorities = Priority.objects.all().order_by('-level')
     projects = ProjectTag.objects.filter(is_active=True).order_by('order', 'name')
     
+    # Получаем напоминания о дедлайне для текущего пользователя
+    deadline_reminders = task.reminders.filter(user=request.user).order_by('days_before')
+    
     params = {
         'task': task,
         'comments': comments,
@@ -436,6 +468,7 @@ def task_detail(request, pk):
         'users': users,
         'priorities': priorities,
         'projects': projects,
+        'deadline_reminders': deadline_reminders,
     }
     
     return render(request, "help_desk/task_detail.html", {'params': params})
@@ -1053,28 +1086,98 @@ def chart(request):
     
     # Статистика по исполнителям
     assignee_stats = tasks.filter(assignee__isnull=False).values(
-        'assignee__username'
+        'assignee__username', 'assignee__first_name', 'assignee__last_name'
     ).annotate(
         count=Count('id'),
         closed=Count('id', filter=Q(status__is_closed=True))
     ).order_by('-count')[:10]
     
+    # Статистика по авторам
+    author_stats = tasks.values(
+        'author__username', 'author__first_name', 'author__last_name'
+    ).annotate(
+        count=Count('id'),
+        closed=Count('id', filter=Q(status__is_closed=True))
+    ).order_by('-count')[:10]
+    
+    # Общая статистика
+    total_tasks = tasks.count()
+    closed_tasks = tasks.filter(status__is_closed=True).count()
+    open_tasks = total_tasks - closed_tasks
+    overdue_tasks = tasks.filter(
+        status__is_closed=False,
+        date_deadline__lt=timezone.now()
+    ).count()
+    tasks_without_assignee = tasks.filter(assignee__isnull=True).count()
+    
+    # Среднее время выполнения (для закрытых задач)
+    closed_tasks_with_dates = tasks.filter(
+        status__is_closed=True,
+        date_created__isnull=False,
+        date_closed__isnull=False
+    )
+    avg_completion_time = None
+    if closed_tasks_with_dates.exists():
+        total_days = 0
+        count = 0
+        for task in closed_tasks_with_dates:
+            if task.date_created and task.date_closed:
+                delta = task.date_closed - task.date_created
+                total_days += delta.total_seconds() / 86400  # дни
+                count += 1
+        if count > 0:
+            avg_completion_time = round(total_days / count, 1)
+    
+    # Воронка выполнения (по статусам в порядке workflow)
+    funnel_data = []
+    for status in TaskStatus.objects.filter(is_active=True).order_by('order'):
+        count = tasks.filter(status=status).count()
+        if count > 0:
+            funnel_data.append({
+                'name': status.name,
+                'count': count,
+                'color': status.color
+            })
+    
+    # Статистика по срокам выполнения
+    tasks_with_deadline = tasks.filter(date_deadline__isnull=False)
+    on_time_tasks = tasks_with_deadline.filter(
+        Q(status__is_closed=True) & Q(date_closed__lte=F('date_deadline'))
+    ).count()
+    late_tasks = tasks_with_deadline.filter(
+        Q(status__is_closed=True) & Q(date_closed__gt=F('date_deadline'))
+    ).count()
+    
     statuses = TaskStatus.objects.filter(is_active=True).order_by('order')
     priorities = Priority.objects.all().order_by('-level')
     users = User.objects.filter(is_active=True).order_by('username')
+    projects = ProjectTag.objects.filter(is_active=True).order_by('order', 'name')
 
     params = {
         'period': period,
-        'status_stats': list(status_stats),
-        'priority_stats': list(priority_stats),
-        'project_stats': project_stats,
+        'status_stats': json.dumps(list(status_stats)),
+        'priority_stats': json.dumps(list(priority_stats)),
+        'project_stats': json.dumps(project_stats),
         'creation_data': json.dumps(creation_data),
         'closure_data': json.dumps(closure_data),
-        'assignee_stats': list(assignee_stats),
+        'assignee_stats': json.dumps(list(assignee_stats)),
+        'author_stats': json.dumps(list(author_stats)),
+        'funnel_data': json.dumps(funnel_data),
         'filters': filters,
         'statuses': statuses,
         'priorities': priorities,
         'users': users,
+        'projects': projects,
+        # Общая статистика
+        'total_tasks': total_tasks,
+        'closed_tasks': closed_tasks,
+        'open_tasks': open_tasks,
+        'overdue_tasks': overdue_tasks,
+        'tasks_without_assignee': tasks_without_assignee,
+        'avg_completion_time': avg_completion_time,
+        'on_time_tasks': on_time_tasks,
+        'late_tasks': late_tasks,
+        'tasks_with_deadline': tasks_with_deadline.count(),
     }
     
     return render(request, "help_desk/chart.html", {'params': params})
@@ -1254,8 +1357,169 @@ def export_tasks(request):
             Q(observers=request.user)
         ).distinct()
     
-    # Фильтры из GET параметров (аналогично task_list)
-    # ... (код фильтрации аналогичен task_list)
+    # Применяем все фильтры из GET параметров (аналогично task_list)
+    # Фильтр по номеру
+    nomer = request.GET.get('nomer', '')
+    if nomer:
+        try:
+            tasks = tasks.filter(id=int(nomer))
+        except:
+            pass
+    
+    # Фильтр по статусу
+    status_id = request.GET.get('status', '')
+    if status_id:
+        try:
+            tasks = tasks.filter(status_id=int(status_id))
+        except:
+            pass
+    
+    # Фильтр по приоритету
+    priority_id = request.GET.get('priority', '')
+    if priority_id:
+        try:
+            tasks = tasks.filter(priority_id=int(priority_id))
+        except:
+            pass
+    
+    # Фильтр по автору
+    author_id = request.GET.get('author', '')
+    if author_id:
+        try:
+            tasks = tasks.filter(author_id=int(author_id))
+        except:
+            pass
+    
+    # Фильтр по исполнителю
+    assignee_id = request.GET.get('assignee', '')
+    if assignee_id:
+        try:
+            tasks = tasks.filter(assignee_id=int(assignee_id))
+        except:
+            pass
+    
+    # Фильтр по дате от
+    date_start = request.GET.get('date', '')
+    if date_start:
+        try:
+            date_obj = datetime.strptime(date_start, '%Y-%m-%d').date()
+            tasks = tasks.filter(date_created__date__gte=date_obj)
+        except:
+            pass
+    
+    # Фильтр по дате до
+    date_end = request.GET.get('date_end', '')
+    if date_end:
+        try:
+            date_obj = datetime.strptime(date_end, '%Y-%m-%d').date()
+            tasks = tasks.filter(date_created__date__lte=date_obj)
+        except:
+            pass
+    
+    # Фильтр по проекту
+    project_id = request.GET.get('project', '')
+    if project_id:
+        try:
+            tasks = tasks.filter(projects__id=int(project_id))
+        except:
+            pass
+    
+    # Поиск по тексту
+    search = request.GET.get('search', '')
+    if search:
+        tasks = tasks.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    # Фильтр: только мои задачи
+    only_my = request.GET.get('my')
+    if only_my:
+        tasks = tasks.filter(assignee=request.user)
+    
+    # Фильтр: просроченные
+    overdue_flag = request.GET.get('overdue')
+    if overdue_flag:
+        tasks = tasks.filter(
+            status__is_closed=False,
+            date_deadline__lt=timezone.now()
+        )
+    
+    # Фильтр: закрытые сегодня
+    closed_today = request.GET.get('closed_today')
+    if closed_today:
+        today = timezone.now().date()
+        tasks = tasks.filter(date_closed__date=today)
+    
+    # Применяем сохраненный фильтр, если указан
+    saved_filter_id = request.GET.get('saved_filter')
+    if saved_filter_id:
+        try:
+            saved_filter_obj = SavedFilter.objects.get(
+                id=int(saved_filter_id),
+                Q(user=request.user) | Q(is_shared=True)
+            )
+            # Применяем параметры фильтра
+            for key, value in saved_filter_obj.filter_data.items():
+                if key == 'nomer' and value:
+                    try:
+                        tasks = tasks.filter(id=int(value))
+                    except:
+                        pass
+                elif key == 'status' and value:
+                    try:
+                        tasks = tasks.filter(status_id=int(value))
+                    except:
+                        pass
+                elif key == 'priority' and value:
+                    try:
+                        tasks = tasks.filter(priority_id=int(value))
+                    except:
+                        pass
+                elif key == 'author' and value:
+                    try:
+                        tasks = tasks.filter(author_id=int(value))
+                    except:
+                        pass
+                elif key == 'assignee' and value:
+                    try:
+                        tasks = tasks.filter(assignee_id=int(value))
+                    except:
+                        pass
+                elif key == 'project' and value:
+                    try:
+                        tasks = tasks.filter(projects__id=int(value))
+                    except:
+                        pass
+                elif key == 'date' and value:
+                    try:
+                        date_obj = datetime.strptime(value, '%Y-%m-%d').date()
+                        tasks = tasks.filter(date_created__date__gte=date_obj)
+                    except:
+                        pass
+                elif key == 'date_end' and value:
+                    try:
+                        date_obj = datetime.strptime(value, '%Y-%m-%d').date()
+                        tasks = tasks.filter(date_created__date__lte=date_obj)
+                    except:
+                        pass
+                elif key == 'search' and value:
+                    tasks = tasks.filter(
+                        Q(title__icontains=value) | 
+                        Q(description__icontains=value)
+                    )
+                elif key == 'my' and value:
+                    tasks = tasks.filter(assignee=request.user)
+                elif key == 'overdue' and value:
+                    tasks = tasks.filter(
+                        status__is_closed=False,
+                        date_deadline__lt=timezone.now()
+                    )
+                elif key == 'closed_today' and value:
+                    today = timezone.now().date()
+                    tasks = tasks.filter(date_closed__date=today)
+        except:
+            pass
     
     format_type = request.GET.get('format', 'xlsx')
     
@@ -1457,3 +1721,69 @@ def task_autocomplete(request):
         })
     
     return JsonResponse({'results': results})
+
+
+@login_required
+def add_deadline_reminder(request, pk):
+    """Добавление напоминания о дедлайне"""
+    task = get_object_or_404(HelpDeskTask, pk=pk, is_deleted=False)
+    
+    # Проверка прав
+    if not request.user.is_superuser:
+        if task.author != request.user and task.assignee != request.user:
+            if not task.observers.filter(id=request.user.id).exists():
+                return JsonResponse({'error': 'Нет доступа'}, status=403)
+    
+    if request.method == 'POST':
+        if not task.date_deadline:
+            return JsonResponse({'error': 'У задачи не установлен дедлайн'}, status=400)
+        
+        days_before = request.POST.get('days_before', '1')
+        try:
+            days_before = int(days_before)
+            if days_before < 1:
+                days_before = 1
+        except:
+            days_before = 1
+        
+        # Создаем или обновляем напоминание
+        reminder, created = DeadlineReminder.objects.get_or_create(
+            task=task,
+            user=request.user,
+            days_before=days_before,
+            defaults={'is_sent': False}
+        )
+        
+        if not created:
+            reminder.is_sent = False
+            reminder.date_sent = None
+            reminder.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Напоминание добавлено',
+            'reminder_id': reminder.id,
+            'days_before': reminder.days_before
+        })
+    
+    return JsonResponse({'error': 'Неверный запрос'}, status=400)
+
+
+@login_required
+def delete_deadline_reminder(request, pk, reminder_id):
+    """Удаление напоминания о дедлайне"""
+    task = get_object_or_404(HelpDeskTask, pk=pk, is_deleted=False)
+    
+    if request.method == 'POST':
+        try:
+            reminder = DeadlineReminder.objects.get(
+                id=reminder_id,
+                task=task,
+                user=request.user
+            )
+            reminder.delete()
+            return JsonResponse({'success': True, 'message': 'Напоминание удалено'})
+        except DeadlineReminder.DoesNotExist:
+            return JsonResponse({'error': 'Напоминание не найдено'}, status=404)
+    
+    return JsonResponse({'error': 'Неверный запрос'}, status=400)

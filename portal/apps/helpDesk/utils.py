@@ -5,36 +5,44 @@ from django.urls import reverse
 from django.utils.html import strip_tags
 
 
-def send_task_notification(task, action_type, changed_by=None, comment=None, changes=None, request=None):
+def send_task_notification(task, action_type, changed_by=None, comment=None, changes=None, request=None, reminder_days=None, recipient_user=None):
     """
     Отправка email-уведомлений о изменении задачи
     
     Args:
         task: Объект HelpDeskTask
-        action_type: Тип действия ('status_changed', 'task_updated', 'comment_added', 'task_created')
+        action_type: Тип действия ('status_changed', 'task_updated', 'comment_added', 'task_created', 'deadline_reminder')
         changed_by: Пользователь, который внес изменения
         comment: Комментарий (если есть)
         changes: Словарь с изменениями (если есть)
         request: HttpRequest объект для формирования абсолютного URL
+        reminder_days: Количество дней до дедлайна (для напоминаний)
+        recipient_user: Конкретный пользователь-получатель (для напоминаний)
     """
-    # Получаем список получателей (автор + наблюдатели, исключая того кто внес изменения)
+    # Получаем список получателей
     recipients = set()
     
-    if task.author and task.author.email:
-        recipients.add(task.author.email)
-    
-    # Добавляем наблюдателей
-    for observer in task.observers.all():
-        if observer.email:
-            recipients.add(observer.email)
-    
-    # Добавляем исполнителя
-    if task.assignee and task.assignee.email:
-        recipients.add(task.assignee.email)
-    
-    # Убираем из списка того, кто внес изменения (чтобы не отправлять самому себе)
-    if changed_by and changed_by.email and changed_by.email in recipients:
-        recipients.remove(changed_by.email)
+    # Для напоминаний о дедлайнах отправляем только указанному пользователю
+    if action_type == 'deadline_reminder' and recipient_user:
+        if recipient_user.email:
+            recipients.add(recipient_user.email)
+    else:
+        # Обычная логика: автор + наблюдатели + исполнитель
+        if task.author and task.author.email:
+            recipients.add(task.author.email)
+        
+        # Добавляем наблюдателей
+        for observer in task.observers.all():
+            if observer.email:
+                recipients.add(observer.email)
+        
+        # Добавляем исполнителя
+        if task.assignee and task.assignee.email:
+            recipients.add(task.assignee.email)
+        
+        # Убираем из списка того, кто внес изменения (чтобы не отправлять самому себе)
+        if changed_by and changed_by.email and changed_by.email in recipients:
+            recipients.remove(changed_by.email)
     
     if not recipients:
         return  # Нет получателей
@@ -61,6 +69,7 @@ def send_task_notification(task, action_type, changed_by=None, comment=None, cha
         'changed_by': changed_by,
         'comment': comment,
         'changes': changes or {},
+        'reminder_days': reminder_days,
     }
     
     # Определяем тему письма в зависимости от типа действия
@@ -76,6 +85,9 @@ def send_task_notification(task, action_type, changed_by=None, comment=None, cha
     elif action_type == 'task_created':
         subject = f'[HelpDesk] Создана новая задача #{task.id}: {task.title}'
         template_name = 'help_desk/emails/task_created.html'
+    elif action_type == 'deadline_reminder':
+        subject = f'[HelpDesk] Напоминание: Дедлайн задачи #{task.id}: {task.title}'
+        template_name = 'help_desk/emails/deadline_reminder.html'
     else:
         subject = f'[HelpDesk] Уведомление о задаче #{task.id}: {task.title}'
         template_name = 'help_desk/emails/task_notification.html'

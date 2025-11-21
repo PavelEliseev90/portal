@@ -22,4 +22,6 @@ urlpatterns = [
     path('autocomplete/', views.task_autocomplete, name='task_autocomplete'),
     path('filter/save/', views.save_filter, name='save_filter'),
     path('filter/<int:filter_id>/delete/', views.delete_saved_filter, name='delete_saved_filter'),
+    path('task/<int:pk>/reminder/add/', views.add_deadline_reminder, name='add_deadline_reminder'),
+    path('task/<int:pk>/reminder/<int:reminder_id>/delete/', views.delete_deadline_reminder, name='delete_deadline_reminder'),
 ]
