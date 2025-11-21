@@ -539,6 +539,29 @@ class RefStatusEstimation(models.Model):
         verbose_name = "Статус оценки"
         verbose_name_plural = "Статусы оценки"
 
+# Тип документа поступления 
+class RefTypeDocService(models.Model):
+    name    = models.CharField("Наименование", max_length=150, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refTypeDocService'
+        verbose_name = "Тип документа поступления"
+        verbose_name_plural = "Типы документов поступления"
+
+# Тип документа поступления 
+class RefTypeItemServiceRepair(models.Model):
+    name    = models.CharField("Наименование ", max_length=150, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refTypeItemServiceRepair'
+        verbose_name = "Тип затраты поля поступления"
+        verbose_name_plural = "Типы затраты поля поступления"
 
 # Услуги
 class RefService(models.Model):

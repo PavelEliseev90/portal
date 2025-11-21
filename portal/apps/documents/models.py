@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from refs.models import RefService, RefReasonArchiveRLK, RefStatusRLK, RefFilial, AutoruModification, AutoruComplectation, RefTypeReceptionCarsOrganization, RefStore, RefTypeItemRepair, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefTypeCanceledSMS, RefTypeResourcePlanning, RefTypeCategoryNegative, RefTypeCategoryCustomer, RefSMSStatusBase, RefSMSStatusProvider
+from refs.models import RefTypeItemServiceRepair, RefTypeDocService, RefService, RefReasonArchiveRLK, RefStatusRLK, RefFilial, AutoruModification, AutoruComplectation, RefTypeReceptionCarsOrganization, RefStore, RefTypeItemRepair, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefTypeCanceledSMS, RefTypeResourcePlanning, RefTypeCategoryNegative, RefTypeCategoryCustomer, RefSMSStatusBase, RefSMSStatusProvider
 from django.db.models import Avg, Max, Min, Sum, F
 from datetime import datetime, timedelta
 import uuid
@@ -1453,3 +1453,49 @@ class DocZNPerformersKA(models.Model):
         verbose_name = "Исполнители заказ наряда КорсАвто"
         verbose_name_plural = "Исполнители заказ наряда КорсАвто"
 
+
+class DocServices(models.Model):
+    uin             = models.CharField('uin', default='', null=True, max_length=64, blank=False)
+    active          = models.BooleanField("Проведен", default=False)
+    nomer           = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
+    date_time       = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    organization    = models.ForeignKey(RefOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Организация")
+    unit            = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
+    author          = models.ForeignKey(RefStaff, related_name="author", on_delete=models.SET_NULL, null=True, verbose_name="Автор")
+    customer        = models.ForeignKey(RefCustomer, on_delete=models.SET_NULL, null=True, verbose_name="Клиент")
+    lo              = models.ForeignKey(DocLO, on_delete=models.SET_NULL, null=True, verbose_name="Лист оценки")
+    type_cost       = models.ForeignKey(RefTypeDocService, on_delete=models.SET_NULL, null=True, verbose_name="Вид поступления")
+    amount          = models.FloatField("Сумма", default=0.0, blank=True)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['uin']),
+            models.Index(fields=['lo'])
+        ]
+        db_table = 'docServices'
+        verbose_name = "Поступление услуг КорсАвто"
+        verbose_name_plural = "Поступления услугы КорсАвто"
+
+
+class DocServiceItem(models.Model):
+    doc_service         = models.ForeignKey(DocServices, on_delete=models.SET_NULL, null=True, verbose_name="Постпление услуг")
+    type_service        = models.ForeignKey(RefTypeItemServiceRepair, on_delete=models.SET_NULL, null=True, verbose_name="Тип затраты")
+    description         = models.CharField('Описание', default='', null=True, max_length=12500, blank=True)
+    service             = models.ForeignKey(RefService, on_delete=models.SET_NULL, null=True, verbose_name="Услуга")
+    quantity            = models.FloatField("Количество", default=0.0, blank=True)
+    price               = models.FloatField("Цена", default=0.0, blank=True)
+    amount              = models.FloatField("Сумма", default=0.0, blank=True)
+    
+    def __str__(self):
+        return "{} / {}".format(self.doc_service, self.service)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['doc_service'])
+        ]
+        db_table = 'docServiceItem'
+        verbose_name = "Услуги поступления услуг КорсАвто"
+        verbose_name_plural = "Услуги поступления услуг КорсАвто"
