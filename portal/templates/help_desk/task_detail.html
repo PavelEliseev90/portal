@@ -24,9 +24,165 @@
         .task-tabs .nav-link {
             min-width: 180px;
         }
+        .quick-action-btn {
+            width: 100%;
+        }
     }
     .task-info .form-floating {
         margin-bottom: 1rem;
+    }
+    .quick-action-btn {
+        transition: all 0.3s ease;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Timeline Styles */
+    .timeline-container {
+        position: relative;
+        padding: 1rem 0;
+    }
+    
+    .timeline-line {
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #dee2e6, #6c757d, #dee2e6);
+        z-index: 0;
+    }
+    
+    .timeline-items {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .timeline-date-separator {
+        margin: 1.5rem 0 1rem 0;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .timeline-date-separator .badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .timeline-item {
+        display: flex;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-marker {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: 1rem;
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-marker i {
+        font-size: 1.2rem;
+    }
+    
+    .timeline-item[data-type="created"] .timeline-marker {
+        border-color: #198754;
+        background: #f8fff9;
+    }
+    
+    .timeline-item[data-type="comment"] .timeline-marker {
+        border-color: #0dcaf0;
+        background: #f0f9ff;
+    }
+    
+    .timeline-item[data-type="attachment"] .timeline-marker {
+        border-color: #0d6efd;
+        background: #f0f4ff;
+    }
+    
+    .timeline-content {
+        flex: 1;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-content:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateX(4px);
+    }
+    
+    .timeline-header {
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .timeline-header h6 {
+        margin: 0;
+        color: #212529;
+        font-weight: 600;
+    }
+    
+    .timeline-date {
+        white-space: nowrap;
+    }
+    
+    .timeline-body {
+        color: #495057;
+    }
+    
+    @media (max-width: 767.98px) {
+        .timeline-line {
+            left: 15px;
+            width: 2px;
+        }
+        
+        .timeline-marker {
+            width: 30px;
+            height: 30px;
+            margin-right: 0.75rem;
+        }
+        
+        .timeline-marker i {
+            font-size: 1rem;
+        }
+        
+        .timeline-content {
+            padding: 0.75rem;
+        }
+        
+        .timeline-date {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+        
+        .timeline-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
     }
 </style>
 
@@ -42,6 +198,22 @@
             <a href="{% url 'helpdesk:task_edit' params.task.pk %}" class="btn btn-primary">
                 <i class="bi bi-pencil"></i> Редактировать
             </a>
+        {% endif %}
+        {% if params.in_progress_status and params.task.status.id != params.in_progress_status.id and not params.task.status.is_closed %}
+            <button type="button" class="btn btn-success quick-action-btn" 
+                    data-task-id="{{ params.task.pk }}" 
+                    data-status-id="{{ params.in_progress_status.id }}"
+                    data-status-name="{{ params.in_progress_status.name }}">
+                <i class="bi bi-play-circle"></i> Взять в работу
+            </button>
+        {% endif %}
+        {% if params.closed_status and not params.task.status.is_closed %}
+            <button type="button" class="btn btn-danger quick-action-btn" 
+                    data-task-id="{{ params.task.pk }}" 
+                    data-status-id="{{ params.closed_status.id }}"
+                    data-status-name="{{ params.closed_status.name }}">
+                <i class="bi bi-check-circle"></i> Закрыть
+            </button>
         {% endif %}
     </div>
 </div>
@@ -75,7 +247,7 @@
 			</li>
 			<li class="nav-item" role="presentation">
 				<button class="nav-link text-secondary" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">
-					<i class="bi bi-clock-history"></i> История ({{ params.history|length }})
+					<i class="bi bi-clock-history"></i> Timeline ({% if params.timeline %}{{ params.timeline|length }}{% else %}0{% endif %})
 				</button>
 			</li>
 		</ul>
@@ -272,35 +444,168 @@
 			
 			<div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
 				<div class="card-body">
-					{% if params.history %}
-						<div class="list-group">
-							{% for item in params.history %}
-								<div class="list-group-item">
-									<div class="d-flex w-100 justify-content-between">
-										<h6 class="mb-1">{{ item.action }}</h6>
-										<small>{{ item.date_created|date:"d.m.Y H:i" }}</small>
+					{% if params.timeline_grouped %}
+						<div class="timeline-container">
+							<div class="timeline-line"></div>
+							<div class="timeline-items">
+								{% for date_key, date_items in params.timeline_grouped %}
+									<div class="timeline-date-separator">
+										<span class="badge bg-light text-dark border">
+											<i class="bi bi-calendar3 me-1"></i>{{ date_key }}
+										</span>
 									</div>
-									{% if item.user %}
-										<p class="mb-1"><small>Пользователь: {{ item.user.get_full_name|default:item.user.username }}</small></p>
-									{% endif %}
-									{% if item.field_name %}
-										<p class="mb-1">
-											<small>
-												<strong>{{ item.field_name }}:</strong>
-												{% if item.old_value %}
-													<del>{{ item.old_value }}</del>
+									{% for item in date_items %}
+									<div class="timeline-item" data-type="{{ item.type }}">
+										<div class="timeline-marker">
+											{% if item.type == 'created' %}
+												<i class="bi bi-plus-circle-fill text-success"></i>
+											{% elif item.type == 'history' %}
+												{% if 'статус' in item.action|lower %}
+													<i class="bi bi-arrow-repeat text-primary"></i>
+												{% elif 'приоритет' in item.action|lower %}
+													<i class="bi bi-flag-fill text-warning"></i>
+												{% elif 'исполнитель' in item.action|lower %}
+													<i class="bi bi-person-check text-info"></i>
+												{% elif 'быстрое изменение' in item.action|lower %}
+													<i class="bi bi-lightning-charge text-primary"></i>
+												{% else %}
+													<i class="bi bi-pencil-square text-secondary"></i>
 												{% endif %}
-												{% if item.new_value %}
-													→ {{ item.new_value }}
+											{% elif item.type == 'comment' %}
+												<i class="bi bi-chat-left-text-fill text-info"></i>
+											{% elif item.type == 'attachment' %}
+												<i class="bi bi-paperclip text-primary"></i>
+											{% endif %}
+										</div>
+										<div class="timeline-content">
+											<div class="timeline-header">
+												<div class="d-flex justify-content-between align-items-center flex-wrap">
+													<div>
+														<h6 class="mb-1">
+															{% if item.type == 'created' %}
+																<i class="bi bi-plus-circle me-1"></i>
+															{% elif item.type == 'comment' %}
+																<i class="bi bi-chat-left-text me-1"></i>
+															{% elif item.type == 'attachment' %}
+																<i class="bi bi-paperclip me-1"></i>
+															{% endif %}
+															{{ item.action }}
+														</h6>
+														{% if item.user %}
+															<small class="text-muted">
+																<i class="bi bi-person me-1"></i>
+																{{ item.user.get_full_name|default:item.user.username }}
+															</small>
+														{% endif %}
+													</div>
+													<small class="text-muted timeline-date">
+														<i class="bi bi-clock me-1"></i>
+														{{ item.date|date:"d.m.Y H:i" }}
+													</small>
+												</div>
+											</div>
+											<div class="timeline-body">
+												{% if item.type == 'created' %}
+													<p class="mb-0">
+														<strong>Задача:</strong> {{ item.data.title }}
+													</p>
+												{% elif item.type == 'history' %}
+													{% if item.field_name %}
+														<div class="mb-2">
+															<strong>{{ item.field_name }}:</strong>
+															{% if item.old_value %}
+																<span class="badge bg-secondary me-1">
+																	<del>{{ item.old_value|truncatechars:50 }}</del>
+																</span>
+															{% endif %}
+															{% if item.new_value %}
+																<span class="badge bg-success">
+																	→ {{ item.new_value|truncatechars:50 }}
+																</span>
+															{% endif %}
+														</div>
+													{% endif %}
+													{% if item.comment %}
+														<div class="alert alert-light py-2 px-3 mb-0">
+															<small>{{ item.comment }}</small>
+														</div>
+													{% endif %}
+												{% elif item.type == 'comment' %}
+													<div class="card {% if item.is_internal %}border-warning{% else %}border-light{% endif %} mb-0">
+														<div class="card-body p-2">
+															{% if item.is_internal %}
+																<span class="badge bg-warning text-dark mb-2">
+																	<i class="bi bi-lock"></i> Внутренний комментарий
+																</span>
+															{% endif %}
+															<div class="comment-preview">{{ item.text|safe|truncatewords:30 }}</div>
+															{% if item.text|length > 200 %}
+																<a href="#comment-{{ item.date|date:'YmdHis' }}" class="small text-primary mt-2 d-inline-block" data-bs-toggle="modal" data-bs-target="#commentModal{{ item.date|date:'YmdHis' }}">
+																	Читать полностью...
+																</a>
+															{% endif %}
+														</div>
+													</div>
+												{% elif item.type == 'attachment' %}
+													<div class="d-flex align-items-center gap-2">
+														<i class="bi bi-file-earmark text-primary fs-5"></i>
+														<div class="flex-grow-1">
+															<a href="{{ item.file_url }}" target="_blank" class="text-decoration-none">
+																{{ item.filename }}
+															</a>
+															{% if item.description %}
+																<div class="small text-muted">{{ item.description }}</div>
+															{% endif %}
+														</div>
+													</div>
 												{% endif %}
-											</small>
-										</p>
-									{% endif %}
-									{% if item.comment %}
-										<p class="mb-1">{{ item.comment }}</p>
-									{% endif %}
-								</div>
-							{% endfor %}
+											</div>
+										</div>
+									</div>
+									{% endfor %}
+								{% endfor %}
+							</div>
+						</div>
+					{% elif params.timeline %}
+						{# Fallback для старого формата без группировки #}
+						<div class="timeline-container">
+							<div class="timeline-line"></div>
+							<div class="timeline-items">
+								{% for item in params.timeline %}
+									<div class="timeline-item" data-type="{{ item.type }}">
+										<div class="timeline-marker">
+											{% if item.type == 'created' %}
+												<i class="bi bi-plus-circle-fill text-success"></i>
+											{% elif item.type == 'history' %}
+												<i class="bi bi-pencil-square text-secondary"></i>
+											{% elif item.type == 'comment' %}
+												<i class="bi bi-chat-left-text-fill text-info"></i>
+											{% elif item.type == 'attachment' %}
+												<i class="bi bi-paperclip text-primary"></i>
+											{% endif %}
+										</div>
+										<div class="timeline-content">
+											<div class="timeline-header">
+												<div class="d-flex justify-content-between align-items-center flex-wrap">
+													<div>
+														<h6 class="mb-1">{{ item.action }}</h6>
+														{% if item.user %}
+															<small class="text-muted">
+																<i class="bi bi-person me-1"></i>
+																{{ item.user.get_full_name|default:item.user.username }}
+															</small>
+														{% endif %}
+													</div>
+													<small class="text-muted timeline-date">
+														<i class="bi bi-clock me-1"></i>
+														{{ item.date|date:"d.m.Y H:i" }}
+													</small>
+												</div>
+											</div>
+										</div>
+									</div>
+								{% endfor %}
+							</div>
 						</div>
 					{% else %}
 						<div class="alert alert-info">
@@ -347,6 +652,88 @@
 		</div>
 	</div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка быстрых действий
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const taskId = this.dataset.taskId;
+            const statusId = this.dataset.statusId;
+            const statusName = this.dataset.statusName;
+            const originalText = this.innerHTML;
+            
+            // Отключаем кнопку и показываем загрузку
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+            
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            
+            // Получаем CSRF токен из cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            fetch(`/help_desk/task/${taskId}/quick-status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем статус на странице
+                    const statusInput = document.querySelector('input[label="Статус"]');
+                    if (statusInput) {
+                        statusInput.value = data.status;
+                    }
+                    
+                    // Обновляем цвет заголовка карточки
+                    const cardHeader = document.querySelector('.card-header[style*="background-color"]');
+                    if (cardHeader && data.status_color) {
+                        cardHeader.style.backgroundColor = data.status_color;
+                    }
+                    
+                    // Показываем сообщение об успехе
+                    alert('Статус успешно изменен на: ' + data.status);
+                    
+                    // Перезагружаем страницу через небольшую задержку
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось изменить статус'));
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении статуса');
+                this.disabled = false;
+                this.innerHTML = originalText;
+            });
+        });
+    });
+});
+</script>
 
 {% endblock %}
 

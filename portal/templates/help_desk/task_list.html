@@ -270,6 +270,7 @@
                                     </span>
                                 </button>
                             </th>
+							<th class='header_table bg-light' scope="col">Действия</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -347,10 +348,34 @@
 											<span class="text-muted">-</span>
 										{% endif %}
 									</td>
+									<td onclick="event.stopPropagation();">
+										{% if user.is_superuser or task.author == user or task.assignee == user %}
+											<div class="d-flex gap-1">
+												{% if params.in_progress_status and task.status.id != params.in_progress_status.id and not task.status.is_closed %}
+													<button type="button" class="btn btn-sm btn-success quick-action-btn-list" 
+															data-task-id="{{ task.pk }}" 
+															data-status-id="{{ params.in_progress_status.id }}"
+															data-status-name="{{ params.in_progress_status.name }}"
+															title="Взять в работу">
+														<i class="bi bi-play-circle"></i>
+													</button>
+												{% endif %}
+												{% if params.closed_status and not task.status.is_closed %}
+													<button type="button" class="btn btn-sm btn-danger quick-action-btn-list" 
+															data-task-id="{{ task.pk }}" 
+															data-status-id="{{ params.closed_status.id }}"
+															data-status-name="{{ params.closed_status.name }}"
+															title="Закрыть">
+														<i class="bi bi-check-circle"></i>
+													</button>
+												{% endif %}
+											</div>
+										{% endif %}
+									</td>
 								</tr>
 							{% empty %}
 								<tr>
-									<td colspan="13" class="text-center">Задач не найдено</td>
+									<td colspan="14" class="text-center">Задач не найдено</td>
 								</tr>
 							{% endfor %}
 						</tbody>
@@ -412,7 +437,7 @@
                                     <span class="text-muted small">Проект не указан</span>
                                 {% endfor %}
                             </div>
-                            <div class="small text-muted">
+                            <div class="small text-muted mb-2">
                                 <i class="bi bi-calendar2-week"></i>
                                 {% if task.date_deadline %}
                                     <span class="{% if task.is_overdue %}text-danger{% endif %}">{{ task.date_deadline|date:"d.m.Y H:i" }}</span>
@@ -420,6 +445,26 @@
                                     <span>-</span>
                                 {% endif %}
                             </div>
+                            {% if user.is_superuser or task.author == user or task.assignee == user %}
+                                <div class="d-flex gap-2 mt-2" onclick="event.stopPropagation();">
+                                    {% if params.in_progress_status and task.status.id != params.in_progress_status.id and not task.status.is_closed %}
+                                        <button type="button" class="btn btn-sm btn-success flex-fill quick-action-btn-list" 
+                                                data-task-id="{{ task.pk }}" 
+                                                data-status-id="{{ params.in_progress_status.id }}"
+                                                data-status-name="{{ params.in_progress_status.name }}">
+                                            <i class="bi bi-play-circle"></i> Взять в работу
+                                        </button>
+                                    {% endif %}
+                                    {% if params.closed_status and not task.status.is_closed %}
+                                        <button type="button" class="btn btn-sm btn-danger flex-fill quick-action-btn-list" 
+                                                data-task-id="{{ task.pk }}" 
+                                                data-status-id="{{ params.closed_status.id }}"
+                                                data-status-name="{{ params.closed_status.name }}">
+                                            <i class="bi bi-check-circle"></i> Закрыть
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -522,6 +567,80 @@
 			$("#collapse_filtr_icon").removeClass('bi-chevron-down').addClass('bi-chevron-up');
 		});
 	});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка быстрых действий в списке задач
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn-list');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const taskId = this.dataset.taskId;
+            const statusId = this.dataset.statusId;
+            const statusName = this.dataset.statusName;
+            const originalHTML = this.innerHTML;
+            
+            // Отключаем кнопку и показываем загрузку
+            this.disabled = true;
+            if (this.innerHTML.includes('Взять в работу')) {
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+            } else if (this.innerHTML.includes('Закрыть')) {
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+            } else {
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            }
+            
+            // Получаем CSRF токен из cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            
+            fetch(`/help_desk/task/${taskId}/quick-status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось изменить статус'));
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении статуса');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
+});
 </script>
 
 {% endblock %}

@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import (TaskStatus, Priority, ProjectTag, HelpDeskTask, TaskComment, 
-                     TaskAttachment, TaskHistory, SavedFilter, TaskReminder, AutoAssignmentRule)
+                     TaskAttachment, TaskHistory, SavedFilter, DeadlineReminder, TaskRule)
 
 
 @admin.register(TaskStatus)
@@ -195,15 +195,16 @@ class TaskHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(SavedFilter)
 class SavedFilterAdmin(admin.ModelAdmin):
-    list_display = ['name', 'user', 'is_default', 'order', 'date_created']
-    list_filter = ['is_default', 'date_created']
+    list_display = ['name', 'user', 'is_shared', 'order', 'date_created']
+    list_filter = ['is_shared', 'date_created']
     search_fields = ['name', 'user__username']
-    list_editable = ['is_default', 'order']
+    list_editable = ['order', 'is_shared']
+    readonly_fields = ['date_created']
 
 
-@admin.register(TaskReminder)
-class TaskReminderAdmin(admin.ModelAdmin):
-    list_display = ['task_link', 'user', 'days_before', 'is_sent', 'date_sent']
+@admin.register(DeadlineReminder)
+class DeadlineReminderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'task_link', 'user', 'days_before', 'is_sent', 'date_sent']
     list_filter = ['is_sent', 'days_before', 'date_created']
     search_fields = ['task__title', 'user__username']
     readonly_fields = ['date_created', 'date_sent']
@@ -214,9 +215,22 @@ class TaskReminderAdmin(admin.ModelAdmin):
     task_link.short_description = 'Задача'
 
 
-@admin.register(AutoAssignmentRule)
-class AutoAssignmentRuleAdmin(admin.ModelAdmin):
-    list_display = ['name', 'project', 'default_assignee', 'priority_condition', 'is_active', 'order']
-    list_filter = ['is_active', 'project']
+@admin.register(TaskRule)
+class TaskRuleAdmin(admin.ModelAdmin):
+    list_display = ['name', 'is_active', 'order', 'date_created']
+    list_filter = ['is_active', 'date_created']
+    search_fields = ['name', 'description']
     list_editable = ['is_active', 'order']
-    search_fields = ['name']
+    readonly_fields = ['date_created']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name', 'description', 'is_active', 'order')
+        }),
+        ('Условия', {
+            'fields': ('condition_project', 'condition_status', 'condition_priority_min', 'days_before_deadline')
+        }),
+        ('Действия', {
+            'fields': ('action_set_priority', 'action_set_assignee', 'action_set_status')
+        }),
+    )
