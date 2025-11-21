@@ -192,12 +192,38 @@ def task_list(request):
         )
         filtr['search'] = search
         filtr_count += 1
+
+    # Фильтр: только мои задачи (прямой параметр)
+    only_my = request.GET.get('my')
+    if only_my:
+        tasks = tasks.filter(assignee=request.user)
+        filtr['my'] = 1
+        filtr_count += 1
+
+    # Фильтр: просроченные
+    overdue_flag = request.GET.get('overdue')
+    if overdue_flag:
+        tasks = tasks.filter(
+            status__is_closed=False,
+            date_deadline__lt=timezone.now()
+        )
+        filtr['overdue'] = 1
+        filtr_count += 1
+
+    # Фильтр: закрытые сегодня
+    closed_today = request.GET.get('closed_today')
+    if closed_today:
+        today = timezone.now().date()
+        tasks = tasks.filter(date_closed__date=today)
+        filtr['closed_today'] = 1
+        filtr_count += 1
     
     # Сортировка
     order_by = request.GET.get('order_by', '-date_created')
     allowed_orders = [
         'date_created', '-date_created',
         'date_deadline', '-date_deadline',
+        'date_closed', '-date_closed',
         'title', '-title',
         'status__order', '-status__order',
         'priority__level', '-priority__level',

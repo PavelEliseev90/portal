@@ -18,9 +18,7 @@
             max-height: 420px;
             overflow-y: auto;
         }
-        .status-columns .card {
-            height: 100%;
-        }
+        
         .status-columns .card .card-body .card {
             margin-bottom: .75rem;
         }
@@ -71,40 +69,48 @@
 <!-- Статистика -->
 <div class="row mb-4 gy-3">
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Всего задач</h5>
-                <h2>{{ params.total_tasks }}</h2>
+        <a href="{% url 'helpdesk:task_list' %}" class="text-decoration-none d-block">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Всего задач</h5>
+                    <h2>{{ params.total_tasks }}</h2>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card text-white bg-danger">
-            <div class="card-body">
-                <h5 class="card-title">Просрочено</h5>
-                <h2>{{ params.overdue_tasks }}</h2>
+        <a href="{% url 'helpdesk:task_list' %}?overdue=1&order_by=-date_deadline" class="text-decoration-none d-block">
+            <div class="card text-white bg-danger h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Просрочено</h5>
+                    <h2>{{ params.overdue_tasks }}</h2>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Мои задачи</h5>
-                <h2>{{ params.my_tasks }}</h2>
-                {% if params.my_overdue > 0 %}
-                    <small>Просрочено: {{ params.my_overdue }}</small>
-                {% endif %}
+        <a href="{% url 'helpdesk:task_list' %}?my=1" class="text-decoration-none d-block">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Мои задачи</h5>
+                    <h2>{{ params.my_tasks }}</h2>
+                    {% if params.my_overdue > 0 %}
+                        <small>Просрочено: {{ params.my_overdue }}</small>
+                    {% endif %}
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Закрыто сегодня</h5>
-                <h2>{{ params.today_closed }}</h2>
-                <small>Создано: {{ params.today_created }}</small>
+        <a href="{% url 'helpdesk:task_list' %}?closed_today=1&order_by=-date_closed" class="text-decoration-none d-block">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Закрыто сегодня</h5>
+                    <h2>{{ params.today_closed }}</h2>
+                    <small>Создано: {{ params.today_created }}</small>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 

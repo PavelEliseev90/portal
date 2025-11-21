@@ -9,8 +9,29 @@
     
 {% block content %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .task-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+        }
+        .task-tabs .nav-link {
+            min-width: 180px;
+        }
+    }
+    .task-info .form-floating {
+        margin-bottom: 1rem;
+    }
+</style>
+
 <div class="row mb-3">
-    <div class="col-sm">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
             <i class="bi bi-speedometer2"></i> Дашборд
         </a>
@@ -25,7 +46,7 @@
     </div>
 </div>
 
-<div class="col-sm">
+<div class="col-12">
 	<div class="card">
 		<div class="card-header" style="{% if params.task.status %}background-color: {{ params.task.status.color }}; color: white;{% else %}background-color: #6c757d; color: white;{% endif %}">
 			<h5 class="mb-0">
@@ -36,7 +57,7 @@
 			</h5>
 		</div>
 	
-		<ul class="nav nav-tabs" id="myTab" role="tablist">
+		<ul class="nav nav-tabs task-tabs" id="myTab" role="tablist">
 			<li class="nav-item" role="presentation">
 				<button class="nav-link active text-secondary" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">
 					<i class="bi bi-info-circle"></i> Основное
@@ -62,8 +83,8 @@
 		<div class="tab-content" id="myTabContent">
 			<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
 				<div class="card-body">
-					<div class="row g-1">
-						<div class="col-sm">
+					<div class="row g-1 task-info">
+						<div class="col-12">
 							<div class="form-floating mb-3">
 								<input type="text" class="form-control form-control-sm" value="{{ params.task.title }}" readonly>
 								<label>Тема</label>
@@ -71,8 +92,8 @@
 						</div>
 					</div>
 					
-					<div class="row g-1">
-						<div class="col-sm">
+					<div class="row g-2 task-info">
+						<div class="col-12 col-md-6">
 							<div class="form-floating mb-3">
 								<input type="text" class="form-control form-control-sm" value="{{ params.task.author.get_full_name|default:params.task.author.username }}" readonly>
 								<label>Автор</label>
@@ -97,7 +118,7 @@
 							</div>
 						</div>
 						
-						<div class="col-sm">
+						<div class="col-12 col-md-6">
 							<div class="form-floating mb-3">
 								<input type="text" class="form-control form-control-sm" value="{{ params.task.date_created|date:'d.m.Y H:i' }}" readonly>
 								<label>Дата создания</label>
