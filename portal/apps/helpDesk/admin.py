@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import TaskStatus, Priority, ProjectTag, HelpDeskTask, TaskComment, TaskAttachment, TaskHistory
+from .models import (TaskStatus, Priority, ProjectTag, HelpDeskTask, TaskComment, 
+                     TaskAttachment, TaskHistory, SavedFilter, TaskReminder, AutoAssignmentRule)
 
 
 @admin.register(TaskStatus)
@@ -190,3 +191,32 @@ class TaskHistoryAdmin(admin.ModelAdmin):
         url = reverse('admin:helpDesk_helpdesktask_change', args=[obj.task.pk])
         return format_html('<a href="{}">Задача #{}</a>', url, obj.task.pk)
     task_link.short_description = 'Задача'
+
+
+@admin.register(SavedFilter)
+class SavedFilterAdmin(admin.ModelAdmin):
+    list_display = ['name', 'user', 'is_default', 'order', 'date_created']
+    list_filter = ['is_default', 'date_created']
+    search_fields = ['name', 'user__username']
+    list_editable = ['is_default', 'order']
+
+
+@admin.register(TaskReminder)
+class TaskReminderAdmin(admin.ModelAdmin):
+    list_display = ['task_link', 'user', 'days_before', 'is_sent', 'date_sent']
+    list_filter = ['is_sent', 'days_before', 'date_created']
+    search_fields = ['task__title', 'user__username']
+    readonly_fields = ['date_created', 'date_sent']
+
+    def task_link(self, obj):
+        url = reverse('admin:helpDesk_helpdesktask_change', args=[obj.task.pk])
+        return format_html('<a href="{}">Задача #{}</a>', url, obj.task.pk)
+    task_link.short_description = 'Задача'
+
+
+@admin.register(AutoAssignmentRule)
+class AutoAssignmentRuleAdmin(admin.ModelAdmin):
+    list_display = ['name', 'project', 'default_assignee', 'priority_condition', 'is_active', 'order']
+    list_filter = ['is_active', 'project']
+    list_editable = ['is_active', 'order']
+    search_fields = ['name']
