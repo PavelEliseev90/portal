@@ -305,10 +305,9 @@ def task_list(request):
     saved_filter_id = request.GET.get('saved_filter')
     if saved_filter_id:
         try:
-            saved_filter_obj = SavedFilter.objects.get(
-                id=int(saved_filter_id),
-                Q(user=request.user) | Q(is_shared=True)
-            )
+            saved_filter_obj = SavedFilter.objects.filter(
+                Q(id=int(saved_filter_id)) & (Q(user=request.user) | Q(is_shared=True))
+            ).get()
             # Применяем параметры фильтра
             for key, value in saved_filter_obj.filter_data.items():
                 if key not in request.GET:  # Не перезаписываем явно указанные параметры
@@ -1455,10 +1454,9 @@ def export_tasks(request):
     saved_filter_id = request.GET.get('saved_filter')
     if saved_filter_id:
         try:
-            saved_filter_obj = SavedFilter.objects.get(
-                id=int(saved_filter_id),
-                Q(user=request.user) | Q(is_shared=True)
-            )
+            saved_filter_obj = SavedFilter.objects.filter(
+                Q(id=int(saved_filter_id)) & (Q(user=request.user) | Q(is_shared=True))
+            ).get()
             # Применяем параметры фильтра
             for key, value in saved_filter_obj.filter_data.items():
                 if key == 'nomer' and value:
