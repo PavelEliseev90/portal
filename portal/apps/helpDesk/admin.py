@@ -88,7 +88,7 @@ class HelpDeskTaskAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('id', 'title', 'description', 'tags')
+            'fields': ('id', 'title', 'description')
         }),
         ('Участники', {
             'fields': ('author', 'assignee', 'observers')
