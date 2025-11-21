@@ -40,7 +40,6 @@ from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
 from django.contrib.auth import get_user_model
-from helpDesk.views import tasks_user_desctop
 from avtosalon.models import Avtohub, Autoteka_signal
 from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
