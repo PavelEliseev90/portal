@@ -2,124 +2,219 @@
 
 {% block url %} {% endblock %} 
 
-{% block title %} - список задач {% endblock %}
+{% block title %} - HelpDesk - Список задач {% endblock %}
 
-{% block title_navbar %} - список задач {% endblock %}
+{% block title_navbar %} - HelpDesk - Список задач {% endblock %}
     
 {% block content %}
 
-
+<div class="row mb-3">
+    <div class="col-sm">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Создать задачу
+        </a>
+        <a href="{% url 'helpdesk:calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar"></i> Календарь
+        </a>
+        <a href="{% url 'helpdesk:chart' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-bar-chart"></i> График
+        </a>
+    </div>
+</div>
 
 <form method="GET" id="form" name="form">
 	
 	<div class="row">
-
 		<div class="col-sm">
-			
-				<div class="card border-secondary">
-					
-					<div class="card-header bg-secondary text-white">
-						<span class="icon-mbri-arrow-down"  id="collapse_filtr_" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры</span>  
-					</div>
-					
-					<div class="collapse {% if params.filtr_count > 0 %} show {% endif %}" id="collapse_filtr" style="transition: 0.25s;">
-						<div class="card-body">
-							{% csrf_token %}
-							<div class="row g-2">
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control" name="nomer" {% if params.filtr.nomer %} value = {{params.filtr.nomer}} {% endif %} onchange="this.form.submit()" autocomplete="off">
-										<label for="floatingInput">Номер</label>
-									</div>
-								</div>
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<select class="form-select" name = "status" id = "unit" onchange="this.form.submit()" onChange="change_link()">
-											<option></option>
-											<option id="ВРаботе" value="ВРаботе" {% if params.filtr.status == "ВРаботе" %} selected {% endif %}>В работе</option>
-											<option id="Выполнено" value="Выполнено" {% if params.filtr.status == "Выполнено" %} selected {% endif %}>Выполнено</option>
-											<option id="Оценка" value="Оценка" {% if params.filtr.status == "Оценка" %} selected {% endif %}>Требуется оценить</option>
-										</select>
-										<label for="floatingInput">Статус</label>
-									</div>
-								</div>
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										{% if params.filtr.dateStart %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date" value="{{params.filtr.dateStart}}">
-										{% else %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date">
-										{% endif%}
-										<label for="floatingInput">Дата от</label>
-									</div>
-								</div>
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										{% if params.filtr.dateEnd %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end" value="{{params.filtr.dateEnd}}">
-										{% else %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end">
-										{% endif%}
-										<label for="floatingInput">Дата по</label>
-									</div>
+			<div class="card border-secondary">
+				<div class="card-header bg-secondary text-white">
+					<i class="bi bi-chevron-down" id="collapse_filtr_icon" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры</i>  
+				</div>
+				<div class="collapse {% if params.filtr_count > 0 %} show {% endif %}" id="collapse_filtr" style="transition: 0.25s;">
+					<div class="card-body">
+						{% csrf_token %}
+						<div class="row g-2">
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" name="nomer" {% if params.filtr.nomer %} value="{{ params.filtr.nomer }}" {% endif %} onchange="this.form.submit()" autocomplete="off">
+									<label>Номер</label>
 								</div>
 							</div>
-
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<select class="form-select" name="status" id="status" onchange="this.form.submit()">
+										<option value="">Все статусы</option>
+										{% for status in params.statuses %}
+											<option value="{{ status.id }}" {% if params.filtr.status == status.id|stringformat:"s" %} selected {% endif %}>
+												{{ status.name }}
+											</option>
+										{% endfor %}
+									</select>
+									<label>Статус</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<select class="form-select" name="priority" id="priority" onchange="this.form.submit()">
+										<option value="">Все приоритеты</option>
+										{% for priority in params.priorities %}
+											<option value="{{ priority.id }}" {% if params.filtr.priority == priority.id|stringformat:"s" %} selected {% endif %}>
+												{{ priority.name }}
+											</option>
+										{% endfor %}
+									</select>
+									<label>Приоритет</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<select class="form-select" name="project" id="project" onchange="this.form.submit()">
+										<option value="">Все проекты</option>
+										{% for project in params.projects %}
+											<option value="{{ project.id }}" {% if params.filtr.project == project.id|stringformat:"s" %} selected {% endif %}>
+												{{ project.name }}
+											</option>
+										{% endfor %}
+									</select>
+									<label>Проект</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									{% if params.filtr.dateStart %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date" value="{{ params.filtr.dateStart }}">
+									{% else %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date">
+									{% endif %}
+									<label>Дата от</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									{% if params.filtr.dateEnd %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end" value="{{ params.filtr.dateEnd }}">
+									{% else %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end">
+									{% endif %}
+									<label>Дата по</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" name="search" {% if params.search %} value="{{ params.search }}" {% endif %} placeholder="Поиск...">
+									<label>Поиск</label>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-sm">
+								<button type="submit" class="btn btn-primary">Применить</button>
+								<a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">Сбросить</a>
+							</div>
 						</div>
 					</div>
-
 				</div>
+			</div>
 		</div>
 	</div>
-	<hr>	
+	
+	<hr>
+	
 	<div class="row">
-		
 		<div class="col-sm">
-			
 			<div class="table-wrapper-scroll-y my-custom-scrollbar">
 				<div class="table-responsive-sm">
 					<table class="table table-sm table-striped table-hover">
-					<thead style="position: sticky;top: 0;">
-						<tr>
-							<th class='header_table bg-light' scope="col"></th>
-							<th class='header_table bg-light' scope="col">Дата</th>
-							<th class='header_table bg-light' scope="col">Номер</th>
-							<th class='header_table bg-light' scope="col">Тема</th>
-							<th class='header_table bg-light' scope="col">Инициатор</th>
-							<th class='header_table bg-light' scope="col">Исполнитель</th>
-							<th class='header_table bg-light' scope="col">Статус</th>
-							<th class='header_table bg-light' scope="col">Процесс</th>
-						</tr>
-					</thead>
-					<tbody>
-					
-						{% if params.answer %}
-							{% for task in params.answer.tasks %}
-								<tr onclick="window.location.href='task/{{task.Номер}}/'; return false">
+						<thead style="position: sticky;top: 0;">
+							<tr>
+								<th class='header_table bg-light' scope="col"></th>
+								<th class='header_table bg-light' scope="col">Дата</th>
+								<th class='header_table bg-light' scope="col">Номер</th>
+								<th class='header_table bg-light' scope="col">Тема</th>
+								<th class='header_table bg-light' scope="col">Автор</th>
+								<th class='header_table bg-light' scope="col">Исполнитель</th>
+								<th class='header_table bg-light' scope="col">Статус</th>
+							<th class='header_table bg-light' scope="col">Приоритет</th>
+							<th class='header_table bg-light' scope="col">Проекты</th>
+							<th class='header_table bg-light' scope="col">Срок</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for task in params.page_obj %}
+								<tr onclick="window.location.href='{% url 'helpdesk:task_detail' task.pk %}'; return false" style="cursor: pointer;">
 									<td>
-										{% if task.ТекущийЭтап == "Регистрация" %}
-											<span class="icon-mbri-idea"></span>
-										{% elif task.ТекущийЭтап == "Выполнено" %}
-											<span class="icon-mbri-success"></span>
-										{% elif task.ТекущийЭтап == "Отменено" %}
-											<span class="icon-mbri-close"></span>
-										{% elif task.ТекущийЭтап == "Новый" %}
-											<span class="icon-mbri-briefcase"></span>
-										{% elif task.ТекущийЭтап == "Выполнение" %}
-											<span class="icon-mbri-play"></span>
+										{% if task.status %}
+											<span style="background-color: {{ task.status.color }}; color: white; padding: 3px 8px; border-radius: 3px;">●</span>
+										{% else %}
+											<span class="text-muted">○</span>
 										{% endif %}
 									</td>
-									<td>{{task.Дата}}</td>
-									<td>{{task.Номер}}</td>
-									<td><label>{{task.Тема|truncatechars:100}}</label></td>
-									<td><label>{{task.Инициатор}}</label></td>
-									<td><label>{{task.ТекущийИсполнитель}}</label></td>
-									<td><label>{{task.ТекущийЭтап}}</label></td>
-									<td><label>{{task.Процесс}}</label></td>
+									<td>{{ task.date_created|date:"d.m.Y H:i" }}</td>
+									<td>#{{ task.id }}</td>
+									<td>
+										{{ task.title|truncatechars:100 }}
+										{% if task.is_overdue %}
+											<span class="badge bg-danger">Просрочено</span>
+										{% endif %}
+									</td>
+									<td>{{ task.author.get_full_name|default:task.author.username }}</td>
+									<td>
+										{% if task.assignee %}
+											{{ task.assignee.get_full_name|default:task.assignee.username }}
+										{% else %}
+											<span class="text-warning">Не назначен</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.status %}
+											<span class="badge" style="background-color: {{ task.status.color }}; color: white;">
+												{{ task.status.name }}
+											</span>
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.priority %}
+											<span class="badge" style="background-color: {{ task.priority.color }}; color: white;">
+												{{ task.priority.name }}
+											</span>
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.projects.all %}
+											{% for project in task.projects.all %}
+												<span class="badge" style="background-color: {{ project.color }}; color: white;">
+													{{ project.name }}
+												</span>
+											{% endfor %}
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.date_deadline %}
+											{% if task.is_overdue %}
+												<span class="text-danger">{{ task.date_deadline|date:"d.m.Y H:i" }}</span>
+											{% else %}
+												{{ task.date_deadline|date:"d.m.Y H:i" }}
+											{% endif %}
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
 								</tr>
-							{% endfor %} 
-						{% endif %}
-					</tbody>
+							{% empty %}
+								<tr>
+									<td colspan="10" class="text-center">Задач не найдено</td>
+								</tr>
+							{% endfor %}
+						</tbody>
 					</table>
 				</div>
 			</div>
@@ -127,115 +222,71 @@
 			<hr>
 
 			<div class="row g-1">
-				
 				<div class="col-sm justify-content-center">
 					<div class="form-floating mb-3">
-						<select class="form-select" name = "count" onchange="this.form.submit()">
-							<option {% if params.filtr.rcount == '25' %} selected {% endif %}>25</option>
-							<option {% if params.filtr.count == '50' %} selected {% endif %}>50</option>
-							<option {% if params.filtr.count == '100' %} selected {% endif %}>100</option>
-							<option {% if params.filtr.count == '200' %} selected {% endif %}> 200</option>
+						<select class="form-select" name="count" onchange="this.form.submit()">
+							<option value="25" {% if not request.GET.count or request.GET.count == '25' %} selected {% endif %}>25</option>
+							<option value="50" {% if request.GET.count == '50' %} selected {% endif %}>50</option>
+							<option value="100" {% if request.GET.count == '100' %} selected {% endif %}>100</option>
+							<option value="200" {% if request.GET.count == '200' %} selected {% endif %}>200</option>
 						</select>
-						<label for="floatingInput">Выводить</label>
+						<label>Выводить</label>
 					</div>
 				</div>
 				
 				<div class="col-sm justify-content-center">
-					
 					<nav aria-label="Page navigation example">
 						<ul class="pagination justify-content-center">
+							{% if params.page_obj.has_previous %}
+								<li class="page-item">
+									<a class="page-link text-secondary" onclick="a({{ params.page_obj.previous_page_number }})">&lt;</a>
+								</li>
+							{% endif %}
 							
-							{% if params.filtr.page or params.filtr.page == 1 %}
-								
-								{% if params.filtr.page|add:-1  > 0 %}
+							{% for p in params.paginator.page_range %}
+								{% if params.page_obj.number == p %}
+									<li class="page-item active">
+										<span class="page-link bg-secondary text-white">{{ p }}</span>
+									</li>
+								{% elif p >= params.page_obj.number|add:-2 and p <= params.page_obj.number|add:2 %}
 									<li class="page-item">
-										<a class="page-link text-secondary" OnClick="a( {{params.filtr.page|add:-1}}  )"; name="page" value = "{{params.filtr.page|add:-1}}"> {{params.filtr.page|add:-1}} </a>
+										<a class="page-link text-secondary" onclick="a({{ p }})">{{ p }}</a>
 									</li>
-								{% endif %}
-
-								<li class="page-item">
-									<a class="page-link bg-secondary text-white disabled" OnClick="a( {{params.filtr.page}})"; name="page" value = "{{params.filtr.page}}"> {{params.filtr.page}} </a>
-								</li>
-								
-								{% if params.answer.pages_count > params.filtr.page %}
-								
-									<li class="page-num">
-										<a class="page-link text-secondary" OnClick="a( {{ params.filtr.page|add:1}})"; name="page" value = "{{params.filtr.page|add:1}}">&gt;</a>
-									</li>
-
-								{% endif %}
-								
-							{% else %}
-								<li class="page-item">
-									<a class="page-link bg-secondary text-white disabled" OnClick="a( {{1}})"; name="page" value = "1"> 1 </a>
-								</li>
-								{% if params.answer.pages_count > 1 %}
-									<li class="page-num">
-										<a class="page-link text-secondary" OnClick="a( {{ 2 }})"; name="page" value = "2">&gt;</a>
-									</li>
-								{% endif %}
-							{% endif %}
-
-							
-
-							{% if  params.page_obj.has_previous %}
-								<li class="page-num">
-									<a class="page-link text-secondary"  OnClick="a( {{ params.page_obj.previous_page_number }})"; name="page" value = " {{ params.page_obj.previous_page_number }} ">&lt;</a>
-								</li>
-							{% endif %}
-					
-							{% for p in params.answer.paginator.page_range %}
-								{% if  params.page_obj.number == p %}
-								<li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
-										{% elif p >=  params.page_obj.number|add:-2 and p <=  params.page_obj.number|add:2  %}
-								<li class="page-item">
-									<a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
-								</li>
 								{% endif %}
 							{% endfor %}
-								
+							
 							{% if params.page_obj.has_next %}
-								<li class="page-num">
-									<a class="page-link text-secondary" OnClick="a( {{ params.page_obj.next_page_number }})"; name="page" value = " {{ params.page_obj.next_page_number }} ">&gt;</a>
+								<li class="page-item">
+									<a class="page-link text-secondary" onclick="a({{ params.page_obj.next_page_number }})">&gt;</a>
 								</li>
 							{% endif %}
-					
 						</ul>
 					</nav>
 				</div>
 				
-				<div class="col-sm justify-content-center" >
-					Выведено : {{params.answer.tasks|length}} из {{params.answer.tasks_count}}
+				<div class="col-sm justify-content-center text-center">
+					Выведено: {{ params.page_obj|length }} из {{ params.paginator.count }}
 				</div>
-
 			</div>
-		
 		</div>
-
 	</div>
-	
 </form>
 
 <script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
+	function a(page) {
+		var url = new URL(document.location.href);
+		url.searchParams.set('page', page);
+		document.location.href = url.href;
 	}
-	
 </script>
 
 <script language="JavaScript">
 	$(document).ready(function() {
-		$("#collapse_filtr_").click(function(){
-			var class_filtr = $("#collapse_filtr_").attr('class');
-			if (class_filtr == 'icon-mbri-arrow-down'){
-				$('#collapse_filtr_').attr('class', 'icon-mbri-arrow-up');
-			}
-			else{
-				$('#collapse_filtr_').attr('class', 'icon-mbri-arrow-down');	
-			}
+		$("#collapse_filtr").on('show.bs.collapse', function() {
+			$("#collapse_filtr_icon").removeClass('bi-chevron-up').addClass('bi-chevron-down');
+		});
+		$("#collapse_filtr").on('hide.bs.collapse', function() {
+			$("#collapse_filtr_icon").removeClass('bi-chevron-down').addClass('bi-chevron-up');
 		});
 	});
 </script>

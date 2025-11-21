@@ -1,0 +1,139 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - Дашборд {% endblock %}
+
+{% block title_navbar %} - HelpDesk - Дашборд {% endblock %}
+    
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-sm">
+        <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Создать задачу
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+        <a href="{% url 'helpdesk:calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar"></i> Календарь
+        </a>
+        <a href="{% url 'helpdesk:chart' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-bar-chart"></i> График
+        </a>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Всего задач</h5>
+                <h2>{{ params.total_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Просрочено</h5>
+                <h2>{{ params.overdue_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Мои задачи</h5>
+                <h2>{{ params.my_tasks }}</h2>
+                {% if params.my_overdue > 0 %}
+                    <small>Просрочено: {{ params.my_overdue }}</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Закрыто сегодня</h5>
+                <h2>{{ params.today_closed }}</h2>
+                <small>Создано: {{ params.today_created }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Задачи по статусам -->
+<div class="row">
+    {% for item in params.tasks_by_status %}
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-header" style="background-color: {{ item.status.color }}; color: white;">
+                    <h5 class="mb-0">
+                        {{ item.status.name }}
+                        <span class="badge bg-light text-dark float-end">
+                            {{ item.tasks|length }}
+                        </span>
+                    </h5>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                    {% for task in item.tasks|slice:":20" %}
+                        <div class="card mb-2 {% if task.is_overdue %}border-danger{% endif %}">
+                            <div class="card-body p-2">
+                                <h6 class="card-title">
+                                    <a href="{% url 'helpdesk:task_detail' task.pk %}" class="text-decoration-none">
+                                        #{{ task.id }} - {{ task.title|truncatechars:50 }}
+                                    </a>
+                                </h6>
+                                <div class="small text-muted">
+                                    {% if task.assignee %}
+                                        <i class="bi bi-person"></i> {{ task.assignee.get_full_name|default:task.assignee.username }}
+                                    {% else %}
+                                        <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Исполнитель не назначен</span>
+                                    {% endif %}
+                                    <br>
+                                    {% if task.date_deadline %}
+                                        <i class="bi bi-calendar"></i> 
+                                        {% if task.is_overdue %}
+                                            <span class="text-danger">Просрочено: {{ task.date_deadline|date:"d.m.Y H:i" }}</span>
+                                        {% else %}
+                                            До {{ task.date_deadline|date:"d.m.Y H:i" }}
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if task.priority %}
+                                        <br>
+                                        <span class="badge" style="background-color: {{ task.priority.color }}; color: white;">
+                                            {{ task.priority.name }}
+                                        </span>
+                                    {% endif %}
+                                    {% if task.projects.all %}
+                                        <br>
+                                        {% for project in task.projects.all %}
+                                            <span class="badge" style="background-color: {{ project.color }}; color: white;">
+                                                {{ project.name }}
+                                            </span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center">Нет задач</p>
+                    {% endfor %}
+                    {% if item.tasks|length > 20 %}
+                        <div class="text-center mt-2">
+                            <a href="{% url 'helpdesk:task_list' %}?status={{ item.status.id }}" class="btn btn-sm btn-outline-secondary">
+                                Показать все ({{ item.tasks|length }})
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
