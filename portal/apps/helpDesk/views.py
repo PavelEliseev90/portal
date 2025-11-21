@@ -81,6 +81,11 @@ def dashboard(request):
     # Находим статус "Закрыто"
     closed_status = all_statuses.filter(is_closed=True).first()
     
+    # Данные для виджета быстрого создания
+    users = User.objects.filter(is_active=True).order_by('username')
+    priorities = Priority.objects.all().order_by('-level')
+    projects = ProjectTag.objects.filter(is_active=True).order_by('order', 'name')
+    
     params = {
         'tasks_by_status': tasks_by_status,
         'statuses': statuses,
@@ -94,6 +99,9 @@ def dashboard(request):
         'week_closed': week_closed,
         'in_progress_status': in_progress_status,
         'closed_status': closed_status,
+        'users': users,
+        'priorities': priorities,
+        'projects': projects,
     }
     
     return render(request, "help_desk/dashboard.html", {'params': params})
@@ -410,6 +418,11 @@ def task_detail(request, pk):
     # Находим статус "Закрыто" (закрывающий статус)
     closed_status = all_statuses.filter(is_closed=True).first()
     
+    # Данные для виджета быстрого создания
+    users = User.objects.filter(is_active=True).order_by('username')
+    priorities = Priority.objects.all().order_by('-level')
+    projects = ProjectTag.objects.filter(is_active=True).order_by('order', 'name')
+    
     params = {
         'task': task,
         'comments': comments,
@@ -420,6 +433,9 @@ def task_detail(request, pk):
         'in_progress_status': in_progress_status,
         'closed_status': closed_status,
         'all_statuses': all_statuses,
+        'users': users,
+        'priorities': priorities,
+        'projects': projects,
     }
     
     return render(request, "help_desk/task_detail.html", {'params': params})
@@ -1324,6 +1340,79 @@ def export_tasks(request):
         
         wb.save(response)
         return response
+
+
+@login_required
+def task_quick_create(request):
+    """Быстрое создание задачи через AJAX"""
+    if request.method == 'POST':
+        try:
+            # Создаем задачу
+            task = HelpDeskTask()
+            task.title = request.POST.get('title', '').strip()
+            
+            if not task.title:
+                return JsonResponse({'error': 'Тема задачи обязательна'}, status=400)
+            
+            task.description = request.POST.get('description', '')
+            task.author = request.user
+            
+            # Исполнитель
+            assignee_id = request.POST.get('assignee', '')
+            if assignee_id:
+                try:
+                    task.assignee = User.objects.get(id=int(assignee_id))
+                except:
+                    pass
+            
+            # Статус - берем первый по умолчанию
+            task.status = TaskStatus.objects.filter(is_active=True).order_by('order').first()
+            
+            # Приоритет
+            priority_id = request.POST.get('priority', '')
+            if priority_id:
+                try:
+                    task.priority = Priority.objects.get(id=int(priority_id))
+                except:
+                    pass
+            
+            task.save()
+            
+            # Проекты
+            project_ids = request.POST.getlist('projects')
+            for project_id in project_ids:
+                try:
+                    project = ProjectTag.objects.get(id=int(project_id))
+                    task.projects.add(project)
+                except:
+                    pass
+            
+            # Запись в историю
+            TaskHistory.objects.create(
+                task=task,
+                user=request.user,
+                action='Создана задача',
+            )
+            
+            # Отправляем уведомление
+            send_task_notification(
+                task=task,
+                action_type='task_created',
+                changed_by=request.user,
+                request=request
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'task_id': task.id,
+                'task_url': reverse('helpdesk:task_detail', kwargs={'pk': task.id}),
+                'message': 'Задача успешно создана'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Неверный запрос'}, status=400)
 
 
 @login_required

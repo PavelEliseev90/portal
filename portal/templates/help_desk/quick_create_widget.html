@@ -1,0 +1,247 @@
+{# Виджет быстрого создания задачи - плавающая кнопка и модальное окно #}
+
+<style>
+    .quick-create-fab {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-create-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        background: linear-gradient(135deg, #157347 0%, #1aa179 100%);
+    }
+    
+    .quick-create-fab:active {
+        transform: scale(0.95);
+    }
+    
+    @media (max-width: 767.98px) {
+        .quick-create-fab {
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            font-size: 22px;
+        }
+    }
+    
+    #quickCreateModal .form-floating {
+        margin-bottom: 1rem;
+    }
+    
+    #quickCreateModal .select2-container {
+        width: 100% !important;
+    }
+</style>
+
+<!-- Плавающая кнопка -->
+<button type="button" class="quick-create-fab" data-bs-toggle="modal" data-bs-target="#quickCreateModal" title="Быстрое создание задачи">
+    <i class="bi bi-plus-lg"></i>
+</button>
+
+<!-- Модальное окно быстрого создания -->
+<div class="modal fade" id="quickCreateModal" tabindex="-1" aria-labelledby="quickCreateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="quickCreateModalLabel">
+                    <i class="bi bi-plus-circle"></i> Быстрое создание задачи
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickCreateForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="quick_title" name="title" required placeholder="Тема задачи">
+                        <label for="quick_title">Тема задачи *</label>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="quick_description" name="description" 
+                            placeholder="Описание (необязательно)" style="height: 100px"></textarea>
+                        <label for="quick_description">Описание</label>
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="quick_assignee" name="assignee">
+                                    <option value="">Не назначен</option>
+                                    {% for user in params.users %}
+                                        <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label for="quick_assignee">Исполнитель</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="quick_priority" name="priority">
+                                    <option value="">Выберите приоритет</option>
+                                    {% for priority in params.priorities %}
+                                        <option value="{{ priority.id }}">{{ priority.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label for="quick_priority">Приоритет</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="quick_projects" name="projects" multiple>
+                            {% for project in params.projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="quick_projects">Проекты</label>
+                    </div>
+                    
+                    <div id="quickCreateError" class="alert alert-danger d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Создать задачу
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Select2 для проектов
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        $('#quick_projects').select2({
+            placeholder: 'Выберите проекты',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('#quickCreateModal')
+        });
+    }
+    
+    // Обработка формы быстрого создания
+    const quickCreateForm = document.getElementById('quickCreateForm');
+    if (quickCreateForm) {
+        quickCreateForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('quickCreateError');
+            errorDiv.classList.add('d-none');
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Создание...';
+            
+            // Получаем CSRF токен
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            // Собираем данные формы
+            const formData = new FormData(this);
+            
+            // Получаем выбранные проекты из Select2
+            if ($('#quick_projects').length && $('#quick_projects').val()) {
+                formData.delete('projects');
+                $('#quick_projects').val().forEach(function(projectId) {
+                    formData.append('projects', projectId);
+                });
+            }
+            
+            // Отправляем запрос
+            fetch('{% url "helpdesk:task_quick_create" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Закрываем модальное окно
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('quickCreateModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Очищаем форму
+                    quickCreateForm.reset();
+                    if ($('#quick_projects').length) {
+                        $('#quick_projects').val(null).trigger('change');
+                    }
+                    
+                    // Перенаправляем на страницу задачи или перезагружаем страницу
+                    if (data.task_url) {
+                        window.location.href = data.task_url;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    // Показываем ошибку
+                    errorDiv.textContent = data.error || 'Произошла ошибка при создании задачи';
+                    errorDiv.classList.remove('d-none');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = 'Произошла ошибка при создании задачи';
+                errorDiv.classList.remove('d-none');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Очистка формы при закрытии модального окна
+    const quickCreateModal = document.getElementById('quickCreateModal');
+    if (quickCreateModal) {
+        quickCreateModal.addEventListener('hidden.bs.modal', function() {
+            quickCreateForm.reset();
+            if ($('#quick_projects').length) {
+                $('#quick_projects').val(null).trigger('change');
+            }
+            const errorDiv = document.getElementById('quickCreateError');
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+            }
+        });
+    }
+});
+</script>
+
