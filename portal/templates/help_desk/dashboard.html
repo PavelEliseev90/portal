@@ -8,8 +8,36 @@
     
 {% block content %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .status-columns .card-body {
+            max-height: none;
+        }
+        .status-columns .card {
+            height: 100%;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .status-columns {
+            gap: 1rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: .5rem;
+        }
+        .status-columns > div {
+            min-width: 280px;
+            flex: 0 0 auto;
+        }
+    }
+</style>
+
 <div class="row mb-3">
-    <div class="col-sm">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> Создать задачу
         </a>
@@ -26,8 +54,8 @@
 </div>
 
 <!-- Статистика -->
-<div class="row mb-4">
-    <div class="col-md-3">
+<div class="row mb-4 gy-3">
+    <div class="col-12 col-sm-6 col-xl-3">
         <div class="card text-white bg-primary">
             <div class="card-body">
                 <h5 class="card-title">Всего задач</h5>
@@ -35,7 +63,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
         <div class="card text-white bg-danger">
             <div class="card-body">
                 <h5 class="card-title">Просрочено</h5>
@@ -43,7 +71,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
         <div class="card text-white bg-info">
             <div class="card-body">
                 <h5 class="card-title">Мои задачи</h5>
@@ -54,7 +82,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
         <div class="card text-white bg-success">
             <div class="card-body">
                 <h5 class="card-title">Закрыто сегодня</h5>
@@ -66,9 +94,9 @@
 </div>
 
 <!-- Задачи по статусам -->
-<div class="row">
+<div class="row status-columns">
     {% for item in params.tasks_by_status %}
-        <div class="col-md-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-3 mb-4">
             <div class="card">
                 <div class="card-header" style="background-color: {{ item.status.color }}; color: white;">
                     <h5 class="mb-0">

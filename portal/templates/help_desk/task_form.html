@@ -9,8 +9,30 @@
     
 {% block content %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .form-floating > label {
+            font-size: .9rem;
+        }
+        .form-floating .form-control,
+        .form-floating .form-select {
+            min-height: 3.1rem;
+        }
+        .mobile-section-title {
+            font-size: .95rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-top: 1.5rem;
+        }
+    }
+</style>
+
 <div class="row mb-3">
-    <div class="col-sm">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
         <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
             <i class="bi bi-speedometer2"></i> Дашборд
         </a>
@@ -20,7 +42,7 @@
     </div>
 </div>
 
-<div class="col-sm">
+<div class="col-12 col-xl-10 mx-auto">
 	<div class="card">
 		<div class="card-header bg-primary text-white">
 			<h5 class="mb-0">
@@ -33,7 +55,7 @@
 				{% csrf_token %}
 				
 				<div class="row g-2">
-					<div class="col-sm">
+					<div class="col-12">
 						<div class="form-floating mb-3">
 							<input type="text" class="form-control" id="title" name="title" 
 								value="{% if params.task %}{{ params.task.title }}{% endif %}" required>
@@ -42,8 +64,10 @@
 					</div>
 				</div>
 				
+                <h6 class="mobile-section-title d-md-none">Основные параметры</h6>
+
 				<div class="row g-2">
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<select class="form-select" id="status" name="status" required>
 								<option value="">Выберите статус</option>
@@ -58,7 +82,7 @@
 						</div>
 					</div>
 					
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<select class="form-select" id="priority" name="priority">
 								<option value="">Выберите приоритет</option>
@@ -74,8 +98,10 @@
 					</div>
 				</div>
 				
+                <h6 class="mobile-section-title d-md-none">Участники</h6>
+
 				<div class="row g-2">
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<select class="form-select" id="assignee" name="assignee">
 								<option value="">Не назначен</option>
@@ -90,7 +116,7 @@
 						</div>
 					</div>
 					
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<select class="form-select" id="observers" name="observers" multiple>
 								{% for user in params.users %}
@@ -102,12 +128,14 @@
 							</select>
 							<label for="observers">Наблюдатели</label>
 						</div>
-						<small class="text-muted">Удерживайте Ctrl для выбора нескольких пользователей</small>
+						<small class="text-muted">На ПК удерживайте Ctrl для множественного выбора</small>
 					</div>
 				</div>
 				
+                <h6 class="mobile-section-title d-md-none">Сроки</h6>
+
 				<div class="row g-2">
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<input type="datetime-local" class="form-control" id="date_start" name="date_start"
 								value="{% if params.task and params.task.date_start %}{{ params.task.date_start|date:'Y-m-d\TH:i' }}{% endif %}">
@@ -115,7 +143,7 @@
 						</div>
 					</div>
 					
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<input type="datetime-local" class="form-control" id="date_deadline" name="date_deadline"
 								value="{% if params.task and params.task.date_deadline %}{{ params.task.date_deadline|date:'Y-m-d\TH:i' }}{% endif %}">
@@ -124,8 +152,10 @@
 					</div>
 				</div>
 				
+                <h6 class="mobile-section-title d-md-none">Проекты и теги</h6>
+
 				<div class="row g-2">
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<select class="form-select" id="projects" name="projects" multiple>
 								{% for project in params.projects %}
@@ -137,10 +167,10 @@
 							</select>
 							<label for="projects">Проекты</label>
 						</div>
-						<small class="text-muted">Удерживайте Ctrl для выбора нескольких проектов</small>
+						<small class="text-muted">На ПК удерживайте Ctrl для множественного выбора</small>
 					</div>
 					
-					<div class="col-sm">
+					<div class="col-12 col-md-6">
 						<div class="form-floating mb-3">
 							<input type="text" class="form-control" id="tags" name="tags"
 								value="{% if params.task %}{{ params.task.tags }}{% endif %}"
@@ -156,7 +186,7 @@
 				</div>
 				
 				<div class="row">
-					<div class="col-sm">
+					<div class="col-sm d-flex flex-wrap gap-2">
 						<button type="submit" class="btn btn-success">
 							<i class="bi bi-check-circle"></i> Сохранить
 						</button>
@@ -180,11 +210,13 @@
 	$(document).ready(function() {
 		$('#observers').select2({
 			placeholder: 'Выберите наблюдателей',
-			allowClear: true
+			allowClear: true,
+            width: '100%'
 		});
 		$('#projects').select2({
 			placeholder: 'Выберите проекты',
-			allowClear: true
+			allowClear: true,
+            width: '100%'
 		});
 	});
 </script>
