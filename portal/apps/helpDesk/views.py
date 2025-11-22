@@ -308,17 +308,85 @@ def task_list(request):
             saved_filter_obj = SavedFilter.objects.filter(
                 Q(id=int(saved_filter_id)) & (Q(user=request.user) | Q(is_shared=True))
             ).get()
-            # Применяем параметры фильтра
+            
+            # Проверяем, нужно ли применять фильтр (если параметры уже все есть, не делаем редирект)
+            need_redirect = False
+            filter_params = request.GET.copy()
+            
+            # Добавляем параметры из сохраненного фильтра, если их нет
             for key, value in saved_filter_obj.filter_data.items():
-                if key not in request.GET:  # Не перезаписываем явно указанные параметры
-                    request.GET = request.GET.copy()
-                    request.GET[key] = value
-            # Перенаправляем с параметрами фильтра
-            from django.http import QueryDict
-            filter_params = QueryDict(mutable=True)
-            filter_params.update(saved_filter_obj.filter_data)
-            filter_params['saved_filter'] = saved_filter_id
-            return redirect(f"{reverse('helpdesk:task_list')}?{filter_params.urlencode()}")
+                if key not in filter_params or filter_params[key] != str(value):
+                    filter_params[key] = str(value)
+                    need_redirect = True
+            
+            # Убеждаемся, что saved_filter в параметрах
+            if 'saved_filter' not in filter_params or filter_params['saved_filter'] != saved_filter_id:
+                filter_params['saved_filter'] = saved_filter_id
+                need_redirect = True
+            
+            # Делаем редирект только если нужно применить недостающие параметры
+            if need_redirect:
+                return redirect(f"{reverse('helpdesk:task_list')}?{filter_params.urlencode()}")
+            
+            # Если редирект не нужен, применяем фильтры напрямую к tasks
+            for key, value in saved_filter_obj.filter_data.items():
+                if key == 'nomer' and value:
+                    try:
+                        tasks = tasks.filter(id=int(value))
+                    except:
+                        pass
+                elif key == 'status' and value:
+                    try:
+                        tasks = tasks.filter(status_id=int(value))
+                    except:
+                        pass
+                elif key == 'priority' and value:
+                    try:
+                        tasks = tasks.filter(priority_id=int(value))
+                    except:
+                        pass
+                elif key == 'author' and value:
+                    try:
+                        tasks = tasks.filter(author_id=int(value))
+                    except:
+                        pass
+                elif key == 'assignee' and value:
+                    try:
+                        tasks = tasks.filter(assignee_id=int(value))
+                    except:
+                        pass
+                elif key == 'project' and value:
+                    try:
+                        tasks = tasks.filter(projects__id=int(value))
+                    except:
+                        pass
+                elif key == 'date' and value:
+                    try:
+                        date_obj = datetime.strptime(value, '%Y-%m-%d').date()
+                        tasks = tasks.filter(date_created__date__gte=date_obj)
+                    except:
+                        pass
+                elif key == 'date_end' and value:
+                    try:
+                        date_obj = datetime.strptime(value, '%Y-%m-%d').date()
+                        tasks = tasks.filter(date_created__date__lte=date_obj)
+                    except:
+                        pass
+                elif key == 'search' and value:
+                    tasks = tasks.filter(
+                        Q(title__icontains=value) | 
+                        Q(description__icontains=value)
+                    )
+                elif key == 'my' and value:
+                    tasks = tasks.filter(assignee=request.user)
+                elif key == 'overdue' and value:
+                    tasks = tasks.filter(
+                        status__is_closed=False,
+                        date_deadline__lt=timezone.now()
+                    )
+                elif key == 'closed_today' and value:
+                    today = timezone.now().date()
+                    tasks = tasks.filter(date_closed__date=today)
         except:
             pass
     
