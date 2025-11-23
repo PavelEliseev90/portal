@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.disabled = true;
             this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
             
-            // Получаем CSRF токен из cookies
+            // Получаем CSRF токен из cookies или мета-тега
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -269,7 +269,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return cookieValue;
             }
-            const csrftoken = getCookie('csrftoken');
+            let csrftoken = getCookie('csrftoken');
+            // Если токен не найден в cookies, пытаемся получить из мета-тега
+            if (!csrftoken) {
+                const metaTag = document.querySelector('meta[name=csrf-token]');
+                if (metaTag) {
+                    csrftoken = metaTag.getAttribute('content');
+                }
+            }
+            if (!csrftoken) {
+                alert('Ошибка: CSRF токен не найден. Пожалуйста, обновите страницу.');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+                return;
+            }
             
             // Отправляем запрос
             const formData = new FormData();
@@ -283,10 +296,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Если ответ не JSON (например, HTML страница входа), это ошибка
+                    throw new Error('Сервер вернул неверный формат ответа. Возможно, требуется повторная авторизация.');
+                }
                 if (!response.ok) {
                     return response.json().then(data => {
                         throw new Error(data.error || 'Ошибка сервера');
-                    }).catch(() => {
+                    }).catch(err => {
+                        if (err.message) {
+                            throw err;
+                        }
                         throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
                     });
                 }

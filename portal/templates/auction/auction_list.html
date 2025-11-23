@@ -791,6 +791,64 @@
             transform: translateY(0);
             box-shadow: 0 10px 20px rgba(245, 130, 32, 0.22);
         }
+        
+        /* Стили для формы фильтров */
+        .auction-toolbar .form-floating {
+            margin-bottom: 0;
+        }
+        
+        .auction-toolbar .form-floating .form-control,
+        .auction-toolbar .form-floating .form-select {
+            height: 38px;
+            padding-top: 1.625rem;
+            padding-bottom: 0.625rem;
+        }
+        
+        .auction-toolbar .form-floating > label {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 991.98px) {
+            .auction-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .auction-toolbar .toolbar-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .auction-toolbar .toolbar-actions form {
+                width: 100%;
+            }
+            
+            .auction-toolbar .form-floating {
+                width: 100%;
+                min-width: 100% !important;
+            }
+            
+            .auction-toolbar .toolbar-right {
+                width: 100%;
+                margin-top: 1rem;
+            }
+            
+            .auction-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+        
+        @media (max-width: 575.98px) {
+            .auction-stats {
+                flex-direction: column;
+            }
+            
+            .auction-stat {
+                width: 100%;
+            }
+        }
     </style>
 {% endblock %}
     
@@ -807,19 +865,33 @@
         </div>
 
         <div class="modal-body">
-            <form action="GET">
+            <form method="get" action="" id="storeFilterForm">
                     <div class="form-floating mb-3">
-                            <select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
-                                    <option></option>
+                            <select class="form-select" id="store_id" name="store_id" placeholder="">
+                                    <option value="">Все стоянки</option>
                                     {% for store in params.selected.stores %}
-                                            <option value="{{store.id}}" {% if params.filtr.store_id == store.id %} selected {% endif %}> {{store.name}} </option>
+                                            <option value="{{store.id}}" {% if params.filtr.store_id == store.id|stringformat:"s" %} selected {% endif %}> {{store.name}} </option>
                                     {% endfor %}
                             </select>
-                            <label for="unit_group_id">Дилерский центр</label>
+                            <label for="store_id">Дилерский центр</label>
                     </div>
+                    
+                    <!-- Сохраняем другие параметры фильтров -->
+                    {% if params.filtr.status %}
+                        <input type="hidden" name="status" value="{{params.filtr.status}}">
+                    {% endif %}
+                    {% if params.filtr.vin %}
+                        <input type="hidden" name="vin" value="{{params.filtr.vin}}">
+                    {% endif %}
+                    {% if params.filtr.date_from %}
+                        <input type="hidden" name="date_from" value="{{params.filtr.date_from}}">
+                    {% endif %}
+                    {% if params.filtr.date_to %}
+                        <input type="hidden" name="date_to" value="{{params.filtr.date_to}}">
+                    {% endif %}
 
                     <div class="d-grid">
-                            <button class="btn btn-auction-primary" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>
+                            <button class="btn btn-auction-primary" type="submit"><span class="icon-mbri-success"></span> Применить</button>
                     </div>
             </form>
     </div>
@@ -1292,11 +1364,61 @@
 
 	
 <div class="auction-toolbar">
-    <div class="toolbar-actions d-flex align-items-center gap-2">
+    <div class="toolbar-actions d-flex align-items-center gap-2 flex-wrap">
             <a href="new_lots/" class="btn btn-auction-primary">
                     <span class="icon-mbri-play"></span>
                     Новый лот аукциона
             </a>
+            
+            <!-- Форма фильтров -->
+            <form method="get" action="" class="d-flex align-items-center gap-2 flex-wrap" id="auctionFiltersForm">
+                <!-- Фильтр по статусу -->
+                <div class="form-floating" style="min-width: 200px;">
+                    <select class="form-select form-select-sm" id="status" name="status" onchange="this.form.submit()">
+                        <option value="">Все статусы</option>
+                        {% for status in params.select.statuses %}
+                            <option value="{{status.id}}" {% if params.filtr.status == status.id|stringformat:"s" %}selected{% endif %}>
+                                {{status.name}}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="status">Статус</label>
+                </div>
+                
+                <!-- Поиск по VIN -->
+                <div class="form-floating" style="min-width: 200px;">
+                    <input type="text" class="form-control form-control-sm" id="vin" name="vin" 
+                           placeholder="VIN номер" value="{{params.filtr.vin}}"
+                           onkeypress="if(event.key === 'Enter') { event.preventDefault(); this.form.submit(); }">
+                    <label for="vin">VIN номер</label>
+                </div>
+                
+                <!-- Дата от -->
+                <div class="form-floating" style="min-width: 160px;">
+                    <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" 
+                           value="{{params.filtr.date_from}}" onchange="this.form.submit()">
+                    <label for="date_from">Дата от</label>
+                </div>
+                
+                <!-- Дата до -->
+                <div class="form-floating" style="min-width: 160px;">
+                    <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" 
+                           value="{{params.filtr.date_to}}" onchange="this.form.submit()">
+                    <label for="date_to">Дата до</label>
+                </div>
+                
+                <!-- Кнопка поиска по VIN -->
+                <button type="submit" class="btn btn-sm btn-outline-secondary" style="height: 38px;">
+                    <span class="icon-mbri-search"></span> Найти
+                </button>
+                
+                <!-- Кнопка сброса фильтров -->
+                {% if params.filtr.status or params.filtr.vin or params.filtr.date_from or params.filtr.date_to %}
+                    <a href="?" class="btn btn-sm btn-outline-secondary" style="height: 38px;">
+                        <span class="icon-mbri-close"></span> Сбросить
+                    </a>
+                {% endif %}
+            </form>
     </div>
     <div class="toolbar-right">
             <div class="auction-stats">
