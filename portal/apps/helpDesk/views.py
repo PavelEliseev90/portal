@@ -1527,13 +1527,22 @@ def delete_saved_filter(request, filter_id):
     """Удаление сохраненного фильтра"""
     if request.method == 'POST':
         try:
-            saved_filter = SavedFilter.objects.get(id=filter_id, user=request.user)
+            # Суперпользователь может удалять любые фильтры, обычный пользователь - только свои
+            if request.user.is_superuser:
+                saved_filter = SavedFilter.objects.get(id=filter_id)
+            else:
+                saved_filter = SavedFilter.objects.get(id=filter_id, user=request.user)
             saved_filter.delete()
             return JsonResponse({'success': True, 'message': 'Фильтр удален'})
         except SavedFilter.DoesNotExist:
-            return JsonResponse({'error': 'Фильтр не найден'}, status=404)
+            return JsonResponse({'success': False, 'error': 'Фильтр не найден'}, status=404)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception('Ошибка при удалении фильтра')
+            return JsonResponse({'success': False, 'error': f'Ошибка при удалении фильтра: {str(e)}'}, status=500)
     
-    return JsonResponse({'error': 'Неверный запрос'}, status=400)
+    return JsonResponse({'success': False, 'error': 'Неверный запрос'}, status=400)
 
 
 @login_required
