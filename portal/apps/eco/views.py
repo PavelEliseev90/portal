@@ -3071,12 +3071,12 @@ def estimations_price_calculation(estimation, type_calculation):
             real_runs = run_estimation + run_sum 
             auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.). Реальный пробег примерно: ' + '{0:,}'.format(real_runs).replace(',', ' ')  + ' км.'
 
-    ###Проверяем требуется ли замена аккамулятора
+    ###Проверяем требуется ли замена аккумулятора
     if battery > 0:
         try:
             if estimation.start_estimation.year - estimation.year > 4:
                 diff_sum    = 0
-                work        = 'Замена аккамулятора'
+                work        = 'Замена аккумулятора'
                 diff_sum    = battery
                 dop = {
                     'name'      : work,

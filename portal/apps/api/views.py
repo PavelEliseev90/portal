@@ -31,7 +31,7 @@ from urllib.parse import unquote
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
 from refs.models import RefService, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
-from documents.models import DocZNServicesKA, DocZNPerformersKA, DocZNProductKA, DocZNWorkKA, DocZNKA, DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
+from documents.models import DocServices, DocServiceItem, DocZNServicesKA, DocZNPerformersKA, DocZNProductKA, DocZNWorkKA, DocZNKA, DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
 from refs.serializers import AutoruComplectationSerializer, AutoruMarkSerializer, AutoruModelSerializer, AutoruModificationSerializer
@@ -2386,10 +2386,12 @@ def exchange_bu(request):
     body_unicode    = request.body.decode().replace("'", '"')
     data            = json.loads(body_unicode)
     
+    list_services           = list()
     list_staff              = list()
     list_filials            = list()
     list_cars               = list()
     list_сustomers          = list()
+    list_order_service      = list()
     list_order_service      = list()
     list_worksheets         = list()
     list_worksheets_events  = list()
@@ -2398,6 +2400,12 @@ def exchange_bu(request):
     list_smss               = list()
     list_los                = list()
     list_agreements         = list()
+
+    if 'Services' in data:
+        #Поступления услуг
+        services  = data['Services']
+        if len(services) > 0:
+            list_services = load_doc_services(services)
 
     if 'Filials' in data:
         #Филиалы
@@ -2477,7 +2485,8 @@ def exchange_bu(request):
         'Shipments'         : list_shipments,
         'Surveys'           : list_surveys,
         'SMSS'              : list_smss,
-        'Los'               : list_los
+        'Los'               : list_los,
+        'Services'          : list_services
     }   
 
     return JsonResponse(to, status=status.HTTP_200_OK)
@@ -2711,6 +2720,21 @@ def load_staffs(staffs):
             error = staff 
     return answer_data
 
+def load_doc_services(doc_services):
+    
+    answer_data = list()
+    for doc_service in doc_services:
+        try:
+            doc_service_object = get_doc_service(doc_service)
+            answer = {
+                'Uin'       : doc_service_object.uin,
+                'Version'   : doc_service['Version']
+            }
+            answer_data.append(answer)
+        except:
+            error = 1 
+    return answer_data
+
 def load_filials(filials):
     
     answer_data = list()
@@ -2872,6 +2896,65 @@ def load_orders_service_ka(orders_service):
 ###
 ##
 #Служебные функции
+def get_doc_service(doc_service):
+    
+    uin         = doc_service.get('Uin')
+    docs_service     = DocServices.objects.filter(uin = uin)
+    if len(docs_service) == 0:
+        object = DocServices()
+    else:
+        object = docs_service[0]
+    object.uin              = uin
+    object.save()
+
+    object.active           = doc_service['Active']
+    object.date_time        = doc_service['Date']
+    object.nomer            = doc_service['Number']
+    
+    if doc_service['Date_dc'] != '':
+        object.date_time_dc     = doc_service['Date_dc']
+    
+    if doc_service['Number_dc'] != '':
+        object.nomer_dc         = doc_service['Number_dc']
+
+    object.organization     = get_organization(doc_service['Organization'])
+    object.amount           = doc_service['Amount']
+    
+    if 'Lo_uin' in doc_service:
+        if doc_service['Lo_uin'] != '':
+            object_lo, create  = DocLO.objects.get_or_create(uin = doc_service['Lo_uin'])
+            object.lo = object_lo
+
+    if doc_service['Unit'] != '':
+        object.unit             = get_unit(doc_service['Unit'])
+    
+    if doc_service['Customer'] != '':
+        object.customer         = get_сustomer(doc_service['Customer'])
+    
+    if doc_service['MasterIn'] != '':
+        object.author         = get_staff(doc_service['MasterIn'])
+    
+    if doc_service['TypeRepair'] != '':
+        object.type_cost    = get_type_doc_service(doc_service['TypeRepair'])
+    
+    object.save()
+
+    DocServiceItem.objects.filter(doc_service = object).delete()
+
+    for item_service in doc_service['Services']:
+        new_item = DocServiceItem()
+        new_item.doc_service    = object
+        new_item.type_service   = get_type_item_service(item_service['TypeServices'])
+        new_item.description    = item_service['Description']
+        new_item.service        = get_service(item_service['Product'])
+        new_item.quantity       = item_service['Quantity']
+        new_item.price          = item_service['Price']
+        new_item.amount         = item_service['Amount']
+        new_item.save()
+
+    return object
+    
+
 def get_lo(lo):
     uin         = lo.get('Uin')
     docs_lo = DocLO.objects.filter(uin = uin)
@@ -4528,6 +4611,15 @@ def get_order_ka(order):
 
     return order_object
 
+def get_type_doc_service(name):
+    from refs.models import RefTypeDocService
+    obj, create = RefTypeDocService.objects.get_or_create(name = name)
+    return obj
+
+def get_type_item_service(name):
+    from refs.models import RefTypeItemServiceRepair
+    obj, create = RefTypeItemServiceRepair.objects.get_or_create(name = name)
+    return obj
 
 
 def get_item_spec(name):
