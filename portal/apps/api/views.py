@@ -2400,6 +2400,7 @@ def exchange_bu(request):
     list_smss               = list()
     list_los                = list()
     list_agreements         = list()
+    list_washings         = list()
 
     if 'Services' in data:
         #Поступления услуг
@@ -2428,7 +2429,6 @@ def exchange_bu(request):
     if len(сustomers) > 0:
         list_сustomers = load_сustomers(сustomers)
     
-    
     #Рабочие листы
     worksheets = data['Worksheets']
     if len(worksheets) > 0:
@@ -2455,6 +2455,22 @@ def exchange_bu(request):
         if len(surveys) > 0:
             list_surveys = load_surveys(surveys)
 
+    #Мойки / но их грузим как заказ наряды, нет смысла вести отдельную таблицу.
+    if 'Washings' in data:
+        orders_washings = data['Washings']
+        if len(orders_washings) > 0:
+            for washing in orders_washings:
+                uin = washing['Uin']
+                DocZNKA.objects.filter(uin__icontains = uin).delete()
+                orders_s = washing['Items']
+                list_orders_s = load_orders_service_ka(orders_s)
+                if len(orders_s) == len(list_orders_s):
+                    answer = {
+                        'Uin'       : uin,
+                        'Version'   : washing['Version']
+                    }
+                    list_washings.append(answer)
+                                    
     #Заказ-Наряды
     orders_service = data['OrdersService']
     if len(orders_service) > 0:
@@ -2486,7 +2502,8 @@ def exchange_bu(request):
         'Surveys'           : list_surveys,
         'SMSS'              : list_smss,
         'Los'               : list_los,
-        'Services'          : list_services
+        'Services'          : list_services,
+        'Washings'          : list_washings
     }   
 
     return JsonResponse(to, status=status.HTTP_200_OK)
@@ -4548,13 +4565,17 @@ def get_order_ka(order):
     order_object.dateStart      = order['DateStart']
     order_object.run            = order['Run']
     order_object.amount         = order['Amount']
-    order_object.nomer_dc       = order['Number_dc']
-    order_object.dataTime_dc    = order['Date_dc']
+    if order['Number_dc'] != '':
+        order_object.nomer_dc       = order['Number_dc']
+    if order['Date_dc'] != '': 
+        order_object.dataTime_dc    = order['Date_dc']
+    
     order_object.save()
 
-    if 'Lo' in order:
-        if order['Lo'] != None:
-            order_object.lo = DocLO.objects.get_or_create(uin = order['Lo_uin'])
+    if 'Lo_uin' in order:
+        if order['Lo_uin'] != None:
+            lo_obj, created = DocLO.objects.get_or_create(uin = order['Lo_uin'])
+            order_object.lo = lo_obj
             #order_object.lo = get_lo(order['Lo_uin'])
 
     if 'Performers' in order:

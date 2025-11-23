@@ -49,7 +49,7 @@ def send_task_notification(task, action_type, changed_by=None, comment=None, cha
     
     # Формируем URL задачи
     if request:
-        task_url = request.build_absolute_uri(f'/help_desk/task/{task.id}/')
+        task_url = request.build_absolute_uri(f'/helpdesk/task/{task.id}/')
     else:
         try:
             host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost'
@@ -57,9 +57,9 @@ def send_task_notification(task, action_type, changed_by=None, comment=None, cha
                 # Проверяем, используется ли HTTPS
                 protocol = 'https' if getattr(settings, 'SECURE_SSL_REDIRECT', False) else 'http'
                 host = f"{protocol}://{host}"
-            task_url = f"{host}/help_desk/task/{task.id}/"
+            task_url = f"{host}/helpdesk/task/{task.id}/"
         except:
-            task_url = f"http://localhost/help_desk/task/{task.id}/"
+            task_url = f"http://localhost/helpdesk/task/{task.id}/"
     
     # Подготовка контекста для шаблона
     context = {
