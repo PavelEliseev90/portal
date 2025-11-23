@@ -703,7 +703,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRFToken': csrftoken
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Ошибка сервера');
+                    }).catch(() => {
+                        throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Обновляем статус на странице
@@ -733,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Произошла ошибка при изменении статуса');
+                alert('Произошла ошибка при изменении статуса: ' + error.message);
                 this.disabled = false;
                 this.innerHTML = originalText;
             });
