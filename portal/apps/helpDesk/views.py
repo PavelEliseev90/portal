@@ -9,9 +9,20 @@ from django.contrib.auth.models import User
 from datetime import datetime, timedelta, date
 import json
 from calendar import monthrange
+from functools import wraps
 from .models import (HelpDeskTask, TaskStatus, Priority, ProjectTag, TaskComment, 
                      TaskAttachment, TaskHistory, SavedFilter, DeadlineReminder, TaskRule)
 from .utils import send_task_notification
+
+
+def ajax_login_required(view_func):
+    """Декоратор для AJAX запросов, возвращает JSON вместо редиректа"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Требуется авторизация'}, status=401)
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 
 @login_required
@@ -927,7 +938,7 @@ def task_add_attachment(request, pk):
     return redirect('helpdesk:task_detail', pk=task.pk)
 
 
-@login_required
+@ajax_login_required
 def task_quick_status_change(request, pk):
     """Быстрое изменение статуса задачи"""
     
