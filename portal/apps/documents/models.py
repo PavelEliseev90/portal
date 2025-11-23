@@ -1459,6 +1459,8 @@ class DocServices(models.Model):
     active          = models.BooleanField("Проведен", default=False)
     nomer           = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
     date_time       = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    nomer_dc        = models.CharField('Номер стороней базы', default='', null=True, max_length=25, blank=False)
+    date_time_dc    = models.DateTimeField('Дата стороней базы', default=datetime.now, blank=False)
     organization    = models.ForeignKey(RefOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Организация")
     unit            = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
     author          = models.ForeignKey(RefStaff, related_name="author", on_delete=models.SET_NULL, null=True, verbose_name="Автор")

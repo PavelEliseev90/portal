@@ -1380,58 +1380,58 @@ def chart(request):
     return render(request, "help_desk/chart.html", {'params': params})
 
 
-@login_required
-def task_quick_status_change(request, pk):
-    """Быстрое изменение статуса задачи"""
-    task = get_object_or_404(HelpDeskTask, pk=pk, is_deleted=False)
+# @login_required
+# def task_quick_status_change(request, pk):
+#     """Быстрое изменение статуса задачи"""
+#     task = get_object_or_404(HelpDeskTask, pk=pk, is_deleted=False)
     
-    # Проверка прав
-    if not request.user.is_superuser:
-        if task.author != request.user and task.assignee != request.user:
-            return JsonResponse({'error': 'Нет доступа'}, status=403)
+#     # Проверка прав
+#     if not request.user.is_superuser:
+#         if task.author != request.user and task.assignee != request.user:
+#             return JsonResponse({'error': 'Нет доступа'}, status=403)
     
-    if request.method == 'POST':
-        new_status_id = request.POST.get('status_id')
-        if new_status_id:
-            try:
-                old_status = task.status
-                new_status = TaskStatus.objects.get(id=int(new_status_id))
+#     if request.method == 'POST':
+#         new_status_id = request.POST.get('status_id')
+#         if new_status_id:
+#             try:
+#                 old_status = task.status
+#                 new_status = TaskStatus.objects.get(id=int(new_status_id))
                 
-                if old_status != new_status:
-                    task.status = new_status
+#                 if old_status != new_status:
+#                     task.status = new_status
                     
-                    # Если статус закрывающий, устанавливаем дату закрытия
-                    if new_status.is_closed and not task.date_closed:
-                        task.date_closed = timezone.now()
-                    elif not new_status.is_closed:
-                        task.date_closed = None
+#                     # Если статус закрывающий, устанавливаем дату закрытия
+#                     if new_status.is_closed and not task.date_closed:
+#                         task.date_closed = timezone.now()
+#                     elif not new_status.is_closed:
+#                         task.date_closed = None
                     
-                    task.save()
+#                     task.save()
                     
-                    # Запись в историю
-                    TaskHistory.objects.create(
-                        task=task,
-                        user=request.user,
-                        action='Быстрое изменение статуса',
-                        field_name='status',
-                        old_value=str(old_status) if old_status else '',
-                        new_value=str(new_status),
-                    )
+#                     # Запись в историю
+#                     TaskHistory.objects.create(
+#                         task=task,
+#                         user=request.user,
+#                         action='Быстрое изменение статуса',
+#                         field_name='status',
+#                         old_value=str(old_status) if old_status else '',
+#                         new_value=str(new_status),
+#                     )
                     
-                    # Отправляем уведомление
-                    send_task_notification(
-                        task=task,
-                        action_type='status_changed',
-                        changed_by=request.user,
-                        changes={'old_status': str(old_status) if old_status else '', 'new_status': str(new_status)},
-                        request=request
-                    )
+#                     # Отправляем уведомление
+#                     send_task_notification(
+#                         task=task,
+#                         action_type='status_changed',
+#                         changed_by=request.user,
+#                         changes={'old_status': str(old_status) if old_status else '', 'new_status': str(new_status)},
+#                         request=request
+#                     )
                     
-                    return JsonResponse({'success': True, 'status': new_status.name, 'status_color': new_status.color})
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=400)
+#                     return JsonResponse({'success': True, 'status': new_status.name, 'status_color': new_status.color})
+#             except Exception as e:
+#                 return JsonResponse({'error': str(e)}, status=400)
     
-    return JsonResponse({'error': 'Неверный запрос'}, status=400)
+#     return JsonResponse({'error': 'Неверный запрос'}, status=400)
 
 
 @login_required

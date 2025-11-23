@@ -1,5 +1,17 @@
 from django.contrib import admin
-from .models import DocZNKA, DocLO, DocZN, DocZNPerformers, DocZNWork, DocZNProduct, DocRLK, DocRLKEvents, DocCarAgreement, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation,  DocRecomendationFiles, DoсRecomendationMCU, DocZNRecomendation, DocServiceRequest, ResourcePlanning, DocSMS
+from .models import DocServices, DocServiceItem, DocZNKA, DocLO, DocZN, DocZNPerformers, DocZNWork, DocZNProduct, DocRLK, DocRLKEvents, DocCarAgreement, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation,  DocRecomendationFiles, DoсRecomendationMCU, DocZNRecomendation, DocServiceRequest, ResourcePlanning, DocSMS
+
+
+@admin.register(DocServices)
+class DocServicesAdmin(admin.ModelAdmin):
+    list_display    = ('date_time', 'organization', 'unit', 'nomer', 'author', 'amount',)
+    raw_id_fields   = ('organization', 'unit', 'author', 'customer', 'lo', 'type_cost',)
+
+
+@admin.register(DocServiceItem)
+class DocServiceItemAdmin(admin.ModelAdmin):
+    list_display    = ('doc_service', 'type_service', 'service', 'description', 'quantity', 'amount',)
+    raw_id_fields   = ('doc_service', 'type_service', 'service',)
 
 
 @admin.register(DocLO)
