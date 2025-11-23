@@ -287,13 +287,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Отправляем запрос
             const formData = new FormData();
             formData.append('status_id', statusId);
+            formData.append('csrfmiddlewaretoken', csrftoken); // Добавляем токен в FormData
             
             fetch(`/help_desk/task/${taskId}/quick-status/`, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': csrftoken
-                }
+                    'X-CSRFToken': csrftoken // Также отправляем в заголовке
+                },
+                credentials: 'same-origin' // Важно для отправки cookies
             })
             .then(response => {
                 const contentType = response.headers.get('content-type');

@@ -675,10 +675,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.disabled = true;
             this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
             
-            // Отправляем запрос
-            const formData = new FormData();
-            formData.append('status_id', statusId);
-            
             // Получаем CSRF токен из cookies или мета-тега
             function getCookie(name) {
                 let cookieValue = null;
@@ -709,12 +705,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            formData.append('csrfmiddlewaretoken', csrftoken); // Добавляем токен в FormData
+            
             fetch(`/help_desk/task/${taskId}/quick-status/`, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': csrftoken
-                }
+                    'X-CSRFToken': csrftoken // Также отправляем в заголовке
+                },
+                credentials: 'same-origin' // Важно для отправки cookies
             })
             .then(response => {
                 const contentType = response.headers.get('content-type');

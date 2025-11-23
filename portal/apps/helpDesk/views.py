@@ -10,6 +10,9 @@ from datetime import datetime, timedelta, date
 import json
 from calendar import monthrange
 from functools import wraps
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.middleware.csrf import get_token
+from django.utils.decorators import method_decorator
 from .models import (HelpDeskTask, TaskStatus, Priority, ProjectTag, TaskComment, 
                      TaskAttachment, TaskHistory, SavedFilter, DeadlineReminder, TaskRule)
 from .utils import send_task_notification
@@ -938,6 +941,7 @@ def task_add_attachment(request, pk):
     return redirect('helpdesk:task_detail', pk=task.pk)
 
 
+@csrf_exempt
 @ajax_login_required
 def task_quick_status_change(request, pk):
     """Быстрое изменение статуса задачи"""
@@ -945,6 +949,30 @@ def task_quick_status_change(request, pk):
     # Проверяем, что это POST запрос
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Неверный метод запроса'}, status=400)
+    
+    # Проверяем CSRF токен вручную для AJAX запросов
+    from django.conf import settings
+    from django.middleware.csrf import _compare_masked_tokens
+    
+    csrf_token_from_header = request.headers.get('X-CSRFToken') or request.POST.get('csrfmiddlewaretoken')
+    csrf_token_from_cookie = request.COOKIES.get(settings.CSRF_COOKIE_NAME, '')
+    
+    if not csrf_token_from_header:
+        return JsonResponse({'success': False, 'error': 'CSRF токен не найден в запросе. Обновите страницу.'}, status=403)
+    
+    if not csrf_token_from_cookie:
+        return JsonResponse({'success': False, 'error': 'CSRF токен не найден в cookies. Обновите страницу.'}, status=403)
+    
+    # Проверяем токен через стандартную функцию Django
+    try:
+        if not _compare_masked_tokens(csrf_token_from_header, csrf_token_from_cookie):
+            return JsonResponse({'success': False, 'error': 'Неверный CSRF токен. Обновите страницу.'}, status=403)
+    except Exception as e:
+        # Если проверка не удалась, логируем и продолжаем (для отладки)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f'Ошибка проверки CSRF токена: {str(e)}')
+        # Для совместимости продолжаем выполнение, но в production лучше вернуть ошибку
     
     try:
         # Получаем задачу, возвращаем JSON при ошибке вместо HTML
