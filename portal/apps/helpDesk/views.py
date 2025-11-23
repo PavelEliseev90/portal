@@ -931,53 +931,71 @@ def task_add_attachment(request, pk):
 def task_quick_status_change(request, pk):
     """Быстрое изменение статуса задачи"""
     
-    task = get_object_or_404(HelpDeskTask, pk=pk, is_deleted=False)
+    # Проверяем, что это POST запрос
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Неверный метод запроса'}, status=400)
     
-    # Проверка прав доступа
-    if not request.user.is_superuser:
-        if task.author != request.user and task.assignee != request.user:
-            if not task.observers.filter(id=request.user.id).exists():
-                return JsonResponse({'error': 'Нет доступа'}, status=403)
-    
-    if request.method == 'POST':
+    try:
+        # Получаем задачу, возвращаем JSON при ошибке вместо HTML
         try:
-            status_id = request.POST.get('status_id')
-            if not status_id:
-                return JsonResponse({'error': 'Не указан статус'}, status=400)
-            
-            new_status = get_object_or_404(TaskStatus, id=int(status_id), is_active=True)
-            old_status = task.status
-            
-            # Сохраняем старый статус для истории
-            old_status_name = old_status.name if old_status else 'Не указан'
-            
-            # Изменяем статус
-            task.status = new_status
-            
-            # Если статус закрыт, устанавливаем дату закрытия
-            if new_status.is_closed and not task.date_closed:
-                task.date_closed = timezone.now()
-            # Если статус не закрыт, сбрасываем дату закрытия
-            elif not new_status.is_closed:
-                task.date_closed = None
-            
-            # Если статус "В работе" и нет даты начала, устанавливаем её
-            if not task.date_start:
-                # Проверяем, является ли новый статус статусом "в работе"
-                # (обычно это статус, который не закрыт и не является начальным)
-                if not new_status.is_closed:
-                    task.date_start = timezone.now()
-            
-            task.save()
-            
-            # Создаем запись в истории
-            TaskHistory.objects.create(
-                task=task,
-                user=request.user,
-                action=f'Быстрое изменение статуса: {old_status_name} → {new_status.name}',
-            )
-            
-            # Отправляем уведомление об изменении статуса
+            task = HelpDeskTask.objects.get(pk=pk, is_deleted=False)
+        except HelpDeskTask.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Задача не найдена'}, status=404)
+        
+        # Проверка прав доступа
+        if not request.user.is_superuser:
+            if task.author != request.user and task.assignee != request.user:
+                if not task.observers.filter(id=request.user.id).exists():
+                    return JsonResponse({'success': False, 'error': 'Нет доступа к задаче'}, status=403)
+        
+        status_id = request.POST.get('status_id')
+        if not status_id:
+            return JsonResponse({'success': False, 'error': 'Не указан статус'}, status=400)
+        
+        try:
+            status_id_int = int(status_id)
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'Неверный формат ID статуса'}, status=400)
+        
+        # Получаем статус, возвращаем JSON при ошибке
+        try:
+            new_status = TaskStatus.objects.get(id=status_id_int, is_active=True)
+        except TaskStatus.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Статус не найден'}, status=404)
+        
+        old_status = task.status
+        
+        # Сохраняем старый статус для истории
+        old_status_name = old_status.name if old_status else 'Не указан'
+        
+        # Изменяем статус
+        task.status = new_status
+        
+        # Если статус закрыт, устанавливаем дату закрытия
+        if new_status.is_closed and not task.date_closed:
+            task.date_closed = timezone.now()
+        # Если статус не закрыт, сбрасываем дату закрытия
+        elif not new_status.is_closed:
+            task.date_closed = None
+        
+        # Если статус "В работе" и нет даты начала, устанавливаем её
+        if not task.date_start:
+            # Проверяем, является ли новый статус статусом "в работе"
+            # (обычно это статус, который не закрыт и не является начальным)
+            if not new_status.is_closed:
+                task.date_start = timezone.now()
+        
+        task.save()
+        
+        # Создаем запись в истории
+        TaskHistory.objects.create(
+            task=task,
+            user=request.user,
+            action=f'Быстрое изменение статуса: {old_status_name} → {new_status.name}',
+        )
+        
+        # Отправляем уведомление об изменении статуса
+        try:
             send_task_notification(
                 task=task,
                 action_type='status_changed',
@@ -986,18 +1004,24 @@ def task_quick_status_change(request, pk):
                 new_status=new_status,
                 request=request
             )
-            
-            return JsonResponse({
-                'success': True,
-                'status': new_status.name,
-                'status_color': new_status.color if new_status.color else '#6c757d',
-                'message': f'Статус изменен на: {new_status.name}'
-            })
-            
         except Exception as e:
-            return JsonResponse({'error': f'Ошибка при изменении статуса: {str(e)}'}, status=500)
-    
-    return JsonResponse({'error': 'Неверный метод запроса'}, status=400)
+            # Логируем ошибку отправки уведомления, но не прерываем выполнение
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Ошибка отправки уведомления: {str(e)}')
+        
+        return JsonResponse({
+            'success': True,
+            'status': new_status.name,
+            'status_color': new_status.color if new_status.color else '#6c757d',
+            'message': f'Статус изменен на: {new_status.name}'
+        })
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception('Ошибка при изменении статуса задачи')
+        return JsonResponse({'success': False, 'error': f'Ошибка при изменении статуса: {str(e)}'}, status=500)
 
 
 @login_required

@@ -24,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -7178,30 +7178,89 @@ def auction_list(request):
     else:
         select_stores =  user.profiles.korsavto_stores.all()
     
-    objects     = Auction.objects.all().order_by('dataTime')
-    page_number = request.GET.get('page', 0)
+    # Применяем фильтр по выбранным стоянкам из профиля пользователя
+    objects = Auction.objects.filter(store__in=select_stores).order_by('-dataTime')
+    
+    # Фильтр по статусу
+    status_id = request.GET.get('status', '')
+    if status_id:
+        try:
+            objects = objects.filter(status_id=int(status_id))
+        except (ValueError, TypeError):
+            pass
+    
+    # Поиск по VIN номеру (через AuctionStructure -> car -> vin)
+    vin_search = request.GET.get('vin', '').strip()
+    if vin_search:
+        objects = objects.filter(
+            auctionstructure__car__vin__icontains=vin_search
+        ).distinct()
+    
+    # Фильтр по периоду (дата от)
+    date_from = request.GET.get('date_from', '').strip()
+    if date_from:
+        try:
+            date_from_obj = DT.datetime.strptime(date_from, '%Y-%m-%d')
+            objects = objects.filter(dataTime__date__gte=date_from_obj.date())
+        except (ValueError, TypeError):
+            pass
+    
+    # Фильтр по периоду (дата до)
+    date_to = request.GET.get('date_to', '').strip()
+    if date_to:
+        try:
+            date_to_obj = DT.datetime.strptime(date_to, '%Y-%m-%d')
+            objects = objects.filter(dataTime__date__lte=date_to_obj.date())
+        except (ValueError, TypeError):
+            pass
+    
+    # Фильтр по стоянке (store_id)
+    store_id = request.GET.get('store_id', '')
+    if store_id:
+        try:
+            objects = objects.filter(store_id=int(store_id))
+        except (ValueError, TypeError):
+            pass
+    
+    page_number = request.GET.get('page', 1)
     
     subquery_1 = AuctionStructure.objects.filter(auction__id=OuterRef('pk')).values('auction__id').annotate(count=Count('pk')).values('count')
     
     objects    = objects.annotate(
         count_cars  = Subquery(subquery_1))
     
-    amount      = objects.aggregate(Sum('start_price'))['start_price__sum']
-    count_cars  = objects.aggregate(Sum('count_cars'))['count_cars__sum']
+    # Подсчитываем статистику по отфильтрованным объектам
+    amount      = objects.aggregate(Sum('start_price'))['start_price__sum'] or 0
+    count_cars  = objects.aggregate(Sum('count_cars'))['count_cars__sum'] or 0
         
     paginator   = Paginator(list(objects), select_count)
     paginator   = paginator.get_page(page_number)
 
+    # Получаем все статусы для фильтра
+    all_statuses = RefCarsOrganizationAuctionStatus.objects.all().order_by('name')
+
     select = {
-        'stores' : select_stores
+        'stores' : select_stores,
+        'statuses': all_statuses
     }
+    
+    # Сохраняем значения фильтров для отображения в форме
+    filtr = {
+        'status': status_id,
+        'vin': vin_search,
+        'date_from': date_from,
+        'date_to': date_to,
+        'store_id': store_id
+    }
+    
     params = {
         'type'          : 'auction',
         'paginator'     : paginator,
         'amount'        : amount,
         'count_cars'    : count_cars,
         'count'         : objects.count(),
-        'select'        : select
+        'select'        : select,
+        'filtr'         : filtr
     }
     
     return render(request, "auction/auction_list.html", {'params': params})
