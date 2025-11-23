@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('status_id', statusId);
             formData.append('csrfmiddlewaretoken', csrftoken); // Добавляем токен в FormData
             
-            fetch(`/help_desk/task/${taskId}/quick-status/`, {
+            fetch(`/helpdesk/task/${taskId}/quick-status/`, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -719,6 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'same-origin' // Важно для отправки cookies
             })
             .then(response => {
+                console.log(response.text);
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     // Если ответ не JSON (например, HTML страница входа), это ошибка
@@ -886,7 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('days_before', daysBefore);
             
-            fetch(`/help_desk/task/{{ params.task.pk }}/reminder/add/`, {
+            fetch(`/helpdesk/task/{{ params.task.pk }}/reminder/add/`, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -945,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const csrftoken = getCookie('csrftoken');
             
-            fetch(`/help_desk/task/{{ params.task.pk }}/reminder/${reminderId}/delete/`, {
+            fetch(`/helpdesk/task/{{ params.task.pk }}/reminder/${reminderId}/delete/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken
