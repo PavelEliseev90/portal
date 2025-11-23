@@ -118,12 +118,23 @@
                 {% if params.saved_filters %}
                     {% for saved_filter in params.saved_filters %}
                         <li>
-                            <a class="dropdown-item" href="{% url 'helpdesk:task_list' %}?saved_filter={{ saved_filter.id }}">
-                                <i class="bi bi-filter"></i> {{ saved_filter.name }}
-                                {% if saved_filter.is_shared %}
-                                    <span class="badge bg-secondary ms-1">Общий</span>
+                            <div class="dropdown-item d-flex justify-content-between align-items-center" style="padding: 0.5rem 1rem;">
+                                <a href="{% url 'helpdesk:task_list' %}?saved_filter={{ saved_filter.id }}" class="text-decoration-none flex-grow-1" style="color: inherit;">
+                                    <i class="bi bi-filter"></i> {{ saved_filter.name }}
+                                    {% if saved_filter.is_shared %}
+                                        <span class="badge bg-secondary ms-1">Общий</span>
+                                    {% endif %}
+                                </a>
+                                {% if saved_filter.user == user or user.is_superuser %}
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2 delete-filter-btn" 
+                                            data-filter-id="{{ saved_filter.id }}" 
+                                            data-filter-name="{{ saved_filter.name }}"
+                                            onclick="event.stopPropagation();"
+                                            title="Удалить фильтр">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 {% endif %}
-                            </a>
+                            </div>
                         </li>
                     {% endfor %}
                     <li><hr class="dropdown-divider"></li>
@@ -900,6 +911,104 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+});
+
+// Обработка удаления сохраненных фильтров
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteFilterBtns = document.querySelectorAll('.delete-filter-btn');
+    
+    deleteFilterBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const filterId = this.dataset.filterId;
+            const filterName = this.dataset.filterName;
+            
+            // Подтверждение удаления
+            if (!confirm(`Вы уверены, что хотите удалить фильтр "${filterName}"?`)) {
+                return;
+            }
+            
+            // Получаем CSRF токен
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            // Отключаем кнопку
+            this.disabled = true;
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            // Отправляем запрос на удаление
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', csrftoken);
+            
+            // Формируем URL для удаления фильтра
+            const deleteUrl = `/helpdesk/filter/${filterId}/delete/`;
+            
+            fetch(deleteUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    throw new Error('Сервер вернул неверный формат ответа');
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    // Удаляем элемент из списка
+                    const listItem = this.closest('li');
+                    if (listItem) {
+                        listItem.style.transition = 'opacity 0.3s';
+                        listItem.style.opacity = '0';
+                        setTimeout(() => {
+                            listItem.remove();
+                            
+                            // Если это был последний фильтр, обновляем страницу
+                            const remainingFilters = document.querySelectorAll('.delete-filter-btn');
+                            if (remainingFilters.length === 0) {
+                                window.location.reload();
+                            }
+                        }, 300);
+                    } else {
+                        // Если не удалось найти элемент, просто перезагружаем страницу
+                        window.location.reload();
+                    }
+                } else {
+                    alert(data.error || 'Произошла ошибка при удалении фильтра');
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при удалении фильтра. Попробуйте обновить страницу.');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
 });
 </script>
 
