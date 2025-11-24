@@ -6852,10 +6852,37 @@
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_expenses" aria-expanded="false" aria-controls="collapse_signal"> <b> &nbsp; Затраты - план / факт</b></label>  
                           <div class="collapse" id="collapse_expenses">
                             <hr>
-                            
-                            {% for expense in params.expenses %}
-                                {}
-                            {% endfor %}
+                            <div class="card">
+                              <div class="card-body fs-7">
+                                {% for expense in params.expenses %}
+                                    
+                                  <div class="row g-1" style="border-bottom: dashed; padding-bottom: 0.1rem; border-bottom-width: 0.1rem;">
+                                    <div class="col">
+                                      <span class="badge bg-info">{{expense.type}}</span>
+                                    </div>
+                                    <div class="col-2">
+                                      <label>{{expense.date}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.document}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.name}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.qyantity}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.price|floatformat:"2g" }} &#8381;</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.amount|floatformat:"2g" }} &#8381;</label>
+                                    </div>
+                                  </div>                                        
+                                      
+                                {% endfor %}
+                              </div>
+                            </div>
 
                           </div>
                         </div>

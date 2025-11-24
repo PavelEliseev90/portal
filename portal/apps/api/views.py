@@ -4565,18 +4565,19 @@ def get_order_ka(order):
     order_object.dateStart      = order['DateStart']
     order_object.run            = order['Run']
     order_object.amount         = order['Amount']
+    
     if order['Number_dc'] != '':
         order_object.nomer_dc       = order['Number_dc']
+    
     if order['Date_dc'] != '': 
         order_object.dataTime_dc    = order['Date_dc']
     
-    order_object.save()
-
     if 'Lo_uin' in order:
         if order['Lo_uin'] != None:
             lo_obj, created = DocLO.objects.get_or_create(uin = order['Lo_uin'])
             order_object.lo = lo_obj
-            #order_object.lo = get_lo(order['Lo_uin'])
+
+    order_object.save()
 
     if 'Performers' in order:
         DocZNPerformersKA.objects.filter(zn = order_object).delete()
