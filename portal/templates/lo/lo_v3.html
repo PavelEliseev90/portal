@@ -5347,6 +5347,15 @@
                             <label style="border-radius: 0.2rem; margin: 0.2rem; padding: 0.2rem;" class="bg-dark bg-opacity-50 text-white"> <span class="icon-mbri-preview fw-bold"></span> {{params.estimation.page_vnesh.color}} </label>
                             
                             <div>
+
+                              {% if params.estimation.check_run == False %}
+            
+                                <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
+                                  Есть расхождения в пробегах 
+                                </button>
+            
+                              {% endif %}
+                                
                               {% if params.estimation.page_vnesh.check_vin_int == 0 %}
                                       
                                 <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
@@ -5507,13 +5516,10 @@
             
                               {% endif %}
             
-                              {% if params.Krashenyj %}
-            
-                                <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-dark text-nowrap">
-                                Есть расхождения в пробегах 
-                                </button>
-            
-                              {% endif %}
+                             
+
+                              
+
                             </div>
                             
                             <br>
@@ -5536,8 +5542,7 @@
                               
                               </div>
                               <div class="col-12 col-sm-2">
-                                <img class="d- w-20" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_up}}" src1="{{params.estimation.fotos_vnesh_up}}"> 
-                  
+                                <img class="d- w-20" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_up}}" src1="{{params.estimation.fotos_vnesh_up}}">                   
                               </div>
                               
                             </div>
@@ -5689,8 +5694,12 @@
                               </div>
 
                             </div>
-                            
-                            
+                                                       
+                            <div class="form-floating">
+                              <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.estimation.page_soglasovanie.comment_diagnostica}}</textarea>
+                              <label for="floatingInput">Диагностика</label>                              
+                            </div>
+                              
                             <hr>
 
                             <br><br>
@@ -5712,7 +5721,9 @@
                                 </div>
                               </div>
                             </div>
+
                             <br><br>
+
                             <div class="modal-footer">
                               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> <span class="icon-mbri-close"></span> Закрыть</button>
                             </div>
@@ -6852,10 +6863,43 @@
                           <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_expenses" aria-expanded="false" aria-controls="collapse_signal"> <b> &nbsp; Затраты - план / факт</b></label>  
                           <div class="collapse" id="collapse_expenses">
                             <hr>
-                            
-                            {% for expense in params.expenses %}
-                                {}
-                            {% endfor %}
+                            <div class="card">
+                              <div class="card-body fs-7">
+                                {% for expense in params.expenses %}
+                                    
+                                  <div class="row g-1" style="border-bottom: dashed; padding-bottom: 0.1rem; border-bottom-width: 0.1rem;">
+                                    <div class="col">
+                                      <span class="badge bg-info">{{expense.type}}</span>
+                                    </div>
+                                    <div class="col-2">
+                                      <label>{{expense.date}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.document}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.name}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.qyantity}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.price|floatformat:"2g" }} &#8381;</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.amount|floatformat:"2g" }} &#8381;</label>
+                                    </div>
+                                    {% if expense.description != '' %}
+                                      <div class="col-12">
+                                        <br>
+                                        <label> <span class="icon-mbri-bookmark"></span> {{expense.description}}</label>
+                                      </div>
+                                    {% endif %}
+                                  </div>                                        
+                                      
+                                {% endfor %}
+                              </div>
+                            </div>
 
                           </div>
                         </div>

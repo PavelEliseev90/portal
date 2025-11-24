@@ -1058,7 +1058,8 @@ def doc(request, id):
                 'balance_date_end'      : balance_date_end,
                 'balance_unit'          : balance_unit,
                 'signal'                : signal,
-                'warning_list'          : warning_list
+                'warning_list'          : warning_list,
+                'expenses'              : expenses
             }
     
     elif request.method == "POST":
@@ -1587,10 +1588,57 @@ def list_expenses(estimation):
     if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
         lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]
         list_works                  = DocZNWorkKA.objects.filter(zn__lo = lo)
+        for list_work in list_works:
+            item = {
+                'type'          : list_work.zn.typeRemont,
+                'date'          : list_work.zn.dataTime,
+                'document'      : list_work.zn.nomer,
+                'name'          : list_work.work.name,
+                'qyantity'      : list_work.quantity,
+                'price'         : list_work.price,
+                'amount'        : list_work.amount,
+                'description'   : '',
+            }
+            list_info.append(item)
         list_products               = DocZNProductKA.objects.filter(zn__lo = lo)
+        for list_product in list_products:
+            item = {
+                'type'          : list_product.zn.typeRemont,
+                'date'          : list_product.zn.dataTime,
+                'document'      : list_product.zn.nomer,
+                'name'          : list_product.product.name,
+                'qyantity'      : list_product.quantity,
+                'price'         : list_product.price,
+                'amount'        : list_product.amount,
+                'description'   : '',
+            }
+            list_info.append(item)
         list_services               = DocZNServicesKA.objects.filter(zn__lo = lo)
+        for list_service in list_services:
+            item = {
+                'type'          : list_service.zn.typeRemont,
+                'date'          : list_service.zn.dataTime,
+                'document'      : list_service.zn.nomer,
+                'name'          : list_service.service.name,
+                'qyantity'      : list_service.quantity,
+                'price'         : list_service.price,
+                'amount'        : list_service.amount,
+                'description'   : '',
+            }
+            list_info.append(item)
         list_services_podgotovka    = DocServiceItem.objects.filter(doc_service__lo = lo)
-
+        for list_service_podgotovka in list_services_podgotovka:
+            item = {
+                'type'          : list_service_podgotovka.type_service.name,
+                'date'          : list_service_podgotovka.doc_service.date_time,
+                'document'      : list_service_podgotovka.doc_service.nomer,
+                'name'          : list_service_podgotovka.service.name,
+                'qyantity'      : list_service_podgotovka.quantity,
+                'price'         : list_service_podgotovka.price,
+                'amount'        : list_service_podgotovka.amount,
+                'description'   : list_service_podgotovka.description,
+            }
+            list_info.append(item)
     return list_info
 
 def body_estimation(estimation):
