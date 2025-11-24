@@ -434,7 +434,7 @@ def task_detail(request, pk):
     if not request.user.is_superuser:
         if task.author != request.user and task.assignee != request.user:
             if not task.observers.filter(id=request.user.id).exists():
-                return HttpResponseRedirect('/help_desk/')
+                return HttpResponseRedirect('/helpdesk/')
     
     # Комментарии
     comments = task.comments.filter(is_deleted=False).order_by('-date_created')
@@ -678,7 +678,7 @@ def task_edit(request, pk):
     # Проверка прав
     if not request.user.is_superuser:
         if task.author != request.user and task.assignee != request.user:
-            return HttpResponseRedirect('/help_desk/')
+            return HttpResponseRedirect('/helpdesk/')
     
     if request.method == 'POST':
         # Сохраняем старые значения для истории и отслеживания изменений
@@ -1442,7 +1442,7 @@ def task_duplicate(request, pk):
     # Проверка прав
     if not request.user.is_superuser:
         if original_task.author != request.user:
-            return HttpResponseRedirect('/help_desk/')
+            return HttpResponseRedirect('/helpdesk/')
     
     if request.method == 'POST':
         # Создаем копию задачи
