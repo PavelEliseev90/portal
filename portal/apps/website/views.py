@@ -7323,12 +7323,15 @@ def auction_doc(request, slug_auction):
                 pk      = key.replace('cars_list_data_slug_', '')
                 car     = RefCarsOrganization.objects.get(slug = pk)
                 cars.append(car)
+                
                 diagnostic  = list()
                 kolesa      = list()
                 damage      = list()
                 shema       = list()
                 salon       = list()
                 vnesh       = list()
+                glav        = ''
+
 
                 structure, created = AuctionStructure.objects.filter(auction = auction).filter(car = car).get_or_create(auction = auction, car = car) 
 
@@ -7344,8 +7347,11 @@ def auction_doc(request, slug_auction):
                             shema.append(request.POST.get(key, ''))
                         elif key.startswith(pk + '_photo_salon'):
                             salon.append(request.POST.get(key, ''))
+                        elif key.startswith(pk + '_photo_vnesh_glav'):
+                            glav = request.POST.get(key, '')
                         elif key.startswith(pk + '_photo_vnesh'):
                             vnesh.append(request.POST.get(key, ''))
+                        
                     
                     list_files_kolesa = request.FILES.getlist('images_wheels_' + pk)
                     list_kolesa = dowload_files_auction(structure, list_files_kolesa, 'kolesa')
@@ -7392,13 +7398,22 @@ def auction_doc(request, slug_auction):
                     else:
                         structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
                     
+                    if glav != '':
+                        vnesh_new = list()
+                        vnesh_new.append(glav)
+                        for vn in vnesh:
+                            if vn != glav:
+                               vnesh_new.append(vn)
+                        vnesh = vnesh_new     
+
                     structure.files_diagnostic  = json.dumps(diagnostic)
                     structure.files_kolesa      = json.dumps(kolesa)
                     structure.files_damages     = json.dumps(damage)
                     structure.files_shema       = json.dumps(shema)
                     structure.files_salon       = json.dumps(salon)
                     structure.files_car         = json.dumps(vnesh)
-                    
+                    structure.files_glav        = glav
+
                     if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
                         structure.autoteka_prev     = True
                     else:
