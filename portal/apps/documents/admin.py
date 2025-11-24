@@ -1,5 +1,38 @@
 from django.contrib import admin
-from .models import DocServices, DocServiceItem, DocZNKA, DocLO, DocZN, DocZNPerformers, DocZNWork, DocZNProduct, DocRLK, DocRLKEvents, DocCarAgreement, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation,  DocRecomendationFiles, DoсRecomendationMCU, DocZNRecomendation, DocServiceRequest, ResourcePlanning, DocSMS
+from .models import (
+    DocCarAgreement,
+    DocCarShipment,
+    DocLO,
+    DocOprosCarShipment,
+    DocOprosZN,
+    DocRecomendationFiles,
+    DocRecomendationFilesMCU,
+    DocRLK,
+    DocRLKEvents,
+    DocSMS,
+    DocServiceItem,
+    DocServiceRequest,
+    DocServices,
+    DocZN,
+    DocZNKA,
+    DocZNPerformers,
+    DocZNPerformersKA,
+    DocZNProduct,
+    DocZNProductCustomer,
+    DocZNProductKA,
+    DocZNRecomendation,
+    DocZNServicesKA,
+    DocZNWork,
+    DocZNWorkKA,
+    DoсRecomendation,
+    DoсRecomendationMCU,
+    DoсRecomendationProduct,
+    DoсRecomendationWork,
+    ResourcePlanning,
+    SurveysOP,
+    SurveysOP_questions,
+    SurveysOP_tematics,
+)
 
 
 @admin.register(DocServices)
@@ -63,6 +96,12 @@ class DocRecomendationFilesAdmin(admin.ModelAdmin):
     raw_id_fields   = ('recomendation', )
 
 
+@admin.register(DocRecomendationFilesMCU)
+class DocRecomendationFilesMCUAdmin(admin.ModelAdmin):
+    list_display    = ('recomendation', 'file', )
+    raw_id_fields   = ('recomendation', )
+
+
 @admin.register(DocZNPerformers)
 class DocZNPerformersAdmin(admin.ModelAdmin):
     list_display    = ('zn', 'staff', 'uin', 'percent', )
@@ -83,6 +122,20 @@ class DoсRecomendationAdmin(admin.ModelAdmin):
     search_fields   = ('kod_recomendation', 'zn__uin',)
     list_filter     = ('customerStatus', 'status',)
     raw_id_fields   = ('zn', )
+
+
+@admin.register(DoсRecomendationWork)
+class DoсRecomendationWorkAdmin(admin.ModelAdmin):
+    list_display    = ('recomendation', 'work', 'quantity', 'price', 'amount', )
+    search_fields   = ('recomendation__zn__nomer', 'work__name', )
+    raw_id_fields   = ('recomendation', 'work', )
+
+
+@admin.register(DoсRecomendationProduct)
+class DoсRecomendationProductAdmin(admin.ModelAdmin):
+    list_display    = ('recomendation', 'product', 'quantity', 'price', 'amount', )
+    search_fields   = ('recomendation__zn__nomer', 'product__name', )
+    raw_id_fields   = ('recomendation', 'product', )
 
 
 @admin.register(DocZNKA)
@@ -113,6 +166,40 @@ class DocZNProductAdmin(admin.ModelAdmin):
     list_display    = ('id', 'zn', 'product', 'type', )
     search_fields   = ('zn', )
     raw_id_fields   = ('zn', 'product', )
+
+
+@admin.register(DocZNProductCustomer)
+class DocZNProductCustomerAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'zn', 'product', 'quantity', 'price', 'amount', 'article', )
+    search_fields   = ('zn__nomer', 'product', 'article', )
+    raw_id_fields   = ('zn', )
+
+
+@admin.register(DocZNWorkKA)
+class DocZNWorkKAAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'zn', 'work', 'type', )
+    search_fields   = ('zn__nomer', )
+    raw_id_fields   = ('zn', 'work', )
+
+
+@admin.register(DocZNProductKA)
+class DocZNProductKAAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'zn', 'product', 'type', )
+    search_fields   = ('zn__nomer', )
+    raw_id_fields   = ('zn', 'product', )
+
+
+@admin.register(DocZNServicesKA)
+class DocZNServicesKAAdmin(admin.ModelAdmin):
+    list_display    = ('id', 'zn', 'service', 'type', )
+    search_fields   = ('zn__nomer', )
+    raw_id_fields   = ('zn', 'service', )
+
+
+@admin.register(DocZNPerformersKA)
+class DocZNPerformersKAAdmin(admin.ModelAdmin):
+    list_display    = ('zn', 'staff', 'uin', 'percent', )
+    raw_id_fields   = ('zn', 'staff', )
 
 
 @admin.register(DocRLK)
@@ -158,3 +245,26 @@ class DocOprosCarShipmentAdmin(admin.ModelAdmin):
     list_filter     = ('close', 'shipment__unit',)
     search_fields   = ('shipment__nomer', 'uin',  )
     raw_id_fields   = ('shipment', )
+
+
+@admin.register(SurveysOP)
+class SurveysOPAdmin(admin.ModelAdmin):
+    list_display    = ('dateTime', 'nomer', 'unit', 'staff', 'rlk', 'result', )
+    search_fields   = ('nomer', 'uin', 'rlk__nomer', )
+    list_filter     = ('unit', 'staff', )
+    raw_id_fields   = ('unit', 'staff', 'rlk', )
+
+
+@admin.register(SurveysOP_tematics)
+class SurveysOPTematicsAdmin(admin.ModelAdmin):
+    list_display    = ('surveys', 'name', 'entry_id', 'record', )
+    search_fields   = ('name', 'entry_id', 'record', )
+    raw_id_fields   = ('surveys', )
+
+
+@admin.register(SurveysOP_questions)
+class SurveysOPQuestionsAdmin(admin.ModelAdmin):
+    list_display    = ('surveys', 'name', 'answer', 'canceled', )
+    search_fields   = ('name', )
+    list_filter     = ('canceled', )
+    raw_id_fields   = ('surveys', )
