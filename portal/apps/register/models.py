@@ -2389,6 +2389,29 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
             return True
         return False
 
+    def check_run(self):
+        check = True
+        if self.avtoteka_data != None and len(self.avtoteka_data) > 100:
+            data_autoteka = json.loads(self.avtoteka_data)['result']['report']['data']
+            eventsOthersHistory = data_autoteka.get('eventsOthersHistory')
+            run_sum     = 0
+            run         = 0
+            run_other   = 0
+            
+            for event in eventsOthersHistory:
+                if event['source'] != 'Audatex':
+                    if event['mileage'] > 0:
+                        run = event['mileage']
+                        if run_other > run:
+                            if run_other - run > 1000:
+                                run_ok = False
+                                run_sum = run_sum + (run_other - run)                            
+                        run_other = run
+            if run_sum > 0:
+                check = False
+        return check
+    
+
     def get_bcp(self):
         bcp = 0
         if self.page_soglasovanie != None:
