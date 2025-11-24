@@ -1596,7 +1596,8 @@ def list_expenses(estimation):
                 'name'          : list_work.work.name,
                 'qyantity'      : list_work.quantity,
                 'price'         : list_work.price,
-                'amount'        : list_work.amount
+                'amount'        : list_work.amount,
+                'description'   : '',
             }
             list_info.append(item)
         list_products               = DocZNProductKA.objects.filter(zn__lo = lo)
@@ -1608,7 +1609,8 @@ def list_expenses(estimation):
                 'name'          : list_product.product.name,
                 'qyantity'      : list_product.quantity,
                 'price'         : list_product.price,
-                'amount'        : list_product.amount
+                'amount'        : list_product.amount,
+                'description'   : '',
             }
             list_info.append(item)
         list_services               = DocZNServicesKA.objects.filter(zn__lo = lo)
@@ -1620,7 +1622,8 @@ def list_expenses(estimation):
                 'name'          : list_service.service.name,
                 'qyantity'      : list_service.quantity,
                 'price'         : list_service.price,
-                'amount'        : list_service.amount
+                'amount'        : list_service.amount,
+                'description'   : '',
             }
             list_info.append(item)
         list_services_podgotovka    = DocServiceItem.objects.filter(doc_service__lo = lo)
@@ -1632,7 +1635,8 @@ def list_expenses(estimation):
                 'name'          : list_service_podgotovka.service.name,
                 'qyantity'      : list_service_podgotovka.quantity,
                 'price'         : list_service_podgotovka.price,
-                'amount'        : list_service_podgotovka.amount
+                'amount'        : list_service_podgotovka.amount,
+                'description'   : list_service_podgotovka.description,
             }
             list_info.append(item)
     return list_info

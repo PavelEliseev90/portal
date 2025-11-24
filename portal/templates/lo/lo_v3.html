@@ -6889,6 +6889,12 @@
                                     <div class="col">
                                       <label>{{expense.amount|floatformat:"2g" }} &#8381;</label>
                                     </div>
+                                    {% if expense.description != '' %}
+                                      <div class="col-12">
+                                        <br>
+                                        <label> <span class="icon-mbri-bookmark"></span> {{expense.description}}</label>
+                                      </div>
+                                    {% endif %}
                                   </div>                                        
                                       
                                 {% endfor %}
