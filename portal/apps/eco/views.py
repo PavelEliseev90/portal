@@ -4,7 +4,7 @@ from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, Reg
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
-from documents.models import DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
+from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
 import json
 from checklists.models import CheckListTradeIn
@@ -725,6 +725,7 @@ def doc(request, id):
     agreement_car           = None
     balance                 = None
     balance_unit            = None
+    expenses                = list()
 
     car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True).filter(dataTime__lte = estimation.start_estimation)
     for car_sale in car_sales:
@@ -816,7 +817,9 @@ def doc(request, id):
             elif page == 21:
                 if not request.user.profiles.eco and not request.user.profiles.eco_page_price_info:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
-
+            
+            expenses = list_expenses(estimation)
+            
             signal  = Autoteka_signal.objects.filter(vin = estimation.vin)
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
@@ -1577,6 +1580,18 @@ def doc(request, id):
     else:
         return render(request, 'lo/lo.html', {'params': params}) 
 
+
+def list_expenses(estimation):
+    list_info = list()
+    #DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem
+    if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
+        lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]
+        list_works                  = DocZNWorkKA.objects.filter(zn__lo = lo)
+        list_products               = DocZNProductKA.objects.filter(zn__lo = lo)
+        list_services               = DocZNServicesKA.objects.filter(zn__lo = lo)
+        list_services_podgotovka    = DocServiceItem.objects.filter(doc_service__lo = lo)
+
+    return list_info
 
 def body_estimation(estimation):
     
