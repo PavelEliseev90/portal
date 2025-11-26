@@ -144,7 +144,7 @@ def _get_int(value):
 
 
 def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None):
-    tradein_rlk = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(type__id=7).filter(eco=True).filter(tradeInModel__isnull=False).exclude(tradeInModel='')
+    tradein_rlk = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(type__id=7).filter(eco=True).filter(tradeInModel__isnull=False)
 
     if unit_id:
         tradein_rlk = tradein_rlk.filter(Q(unit__id=unit_id) | Q(unit_dc__id=unit_id))
@@ -172,7 +172,7 @@ def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst
     stage_diagnostics = stage_diagnostics_qs.count()
     stage_accepted = stage_diagnostics_qs.filter(status__name__icontains='ам принят').count()
 
-    return stage_work_orders, stage_estimations, stage_diagnostics, stage_accepted
+    return stage_work_orders, stage_estimations, stage_diagnostics, stage_accepted, stage_diagnostics_qs
 
 
 def tradein_funnel(request):
@@ -198,7 +198,9 @@ def tradein_funnel(request):
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
 
-    stage_counts = _get_stage_counts(date_start, date_end, unit_id, staff_id, analyst_id)
+    stage_counts_raw = _get_stage_counts(date_start, date_end, unit_id, staff_id, analyst_id)
+    stage_counts = stage_counts_raw[:4]
+    stage_diagnostics_qs = stage_counts_raw[4]
     stage_labels = [
         'Рабочие листы TRADE-IN',
         'Интерактивные оценки',
@@ -255,7 +257,8 @@ def tradein_funnel(request):
     for shift in range(2, -1, -1):
         month_start = base_month - relativedelta(months=shift)
         month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
-        counts = _get_stage_counts(month_start, month_end, unit_id, staff_id, analyst_id)
+        month_counts = _get_stage_counts(month_start, month_end, unit_id, staff_id, analyst_id)
+        counts = month_counts[:4]
         monthly_labels.append(month_start.strftime('%b %Y'))
         monthly_series['work_orders'].append(counts[0])
         monthly_series['evaluations'].append(counts[1])
@@ -306,6 +309,26 @@ def tradein_funnel(request):
 
     unit_trend_available = bool(unit_trend_chart)
 
+    unresolved_qs = stage_diagnostics_qs.exclude(status__name__icontains='ам принят')
+    unresolved_vins = list(
+        unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True)
+    )
+    autoteka_summary = {
+        'total': 0,
+        'unique': 0,
+        'rows': [],
+    }
+    if unresolved_vins:
+        leads_qs = Autoteka_signal.objects.filter(vin__in=unresolved_vins)
+        leads_qs = leads_qs.filter(date__gte=date_start).filter(date__lte=date_end)
+        autoteka_summary['total'] = leads_qs.count()
+        autoteka_summary['unique'] = leads_qs.values('vin').distinct().count()
+        autoteka_summary['rows'] = list(
+            leads_qs.order_by('-date').values(
+                'vin', 'brand', 'model', 'price', 'city_name', 'date', 'url'
+            )[:10]
+        )
+
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
         'date_end': date_end.strftime('%Y-%m-%d'),
@@ -325,6 +348,7 @@ def tradein_funnel(request):
         'staffs': staffs,
         'analysts': analysts,
         'unit_trend_available': unit_trend_available,
+        'autoteka_summary': autoteka_summary,
     }
 
     return render(request, 'lo/tradein_funnel.html', {'params': params})

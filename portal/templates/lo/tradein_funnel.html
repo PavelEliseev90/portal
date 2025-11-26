@@ -203,9 +203,61 @@
     </div>
   </div>
   {% endif %}
+
+  {% if params.autoteka_summary.total %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h3>Авто ушли в рынок</h3>
+            <p class="text-muted mb-0">Оценки без приёма, но VIN замечен в Autoteka</p>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold text-primary">Всего записей: {{ params.autoteka_summary.total }}</div>
+            <div class="text-muted">Уникальных VIN: {{ params.autoteka_summary.unique }}</div>
+          </div>
+        </div>
+        <div class="table-responsive mt-3">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Дата</th>
+                <th>VIN</th>
+                <th>Модель</th>
+                <th>Город</th>
+                <th class="text-end">Цена</th>
+                <th>Ссылка</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in params.autoteka_summary.rows %}
+              <tr>
+                <td>{{ row.date|date:"d.m.Y" }}</td>
+                <td>{{ row.vin }}</td>
+                <td>{{ row.brand }} {{ row.model }}</td>
+                <td>{{ row.city_name }}</td>
+                <td class="text-end">{% if row.price %}{{ row.price|intcomma }} ₽{% else %}—{% endif %}</td>
+                <td>
+                  {% if row.url %}
+                    <a href="{{ row.url }}" target="_blank" rel="noopener">Открыть</a>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
   const chartPayload = JSON.parse('{{ params.chart_data|escapejs }}');
 
@@ -225,6 +277,13 @@
       responsive: true,
       plugins: {
         legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'bottom',
+          formatter: (value) => value,
+          color: '#002a5a',
+          font: { weight: '600' },
+        },
       },
       scales: {
         x: {
@@ -260,6 +319,13 @@
       responsive: true,
       plugins: {
         legend: { position: 'bottom' },
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          formatter: (value) => value || '',
+          color: '#555',
+          font: { size: 10 },
+        },
       },
       scales: {
         y: {
@@ -292,9 +358,16 @@
       },
       options: {
         responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
+      plugins: {
+        legend: { position: 'bottom' },
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          formatter: (value) => value || '',
+          color: '#444',
+          font: { size: 9 },
         },
+      },
         scales: {
           y: {
             beginAtZero: true,
