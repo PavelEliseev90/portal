@@ -4687,8 +4687,9 @@ def eco_efficiency_analysis(request):
             end_estimation__isnull=False
         )
         
+        # Ограничиваем выборку для расчета времени
         time_diffs = []
-        for eval in evaluations_with_soglasovanie_times:
+        for eval in evaluations_with_soglasovanie_times[:500]:
             if eval.page_soglasovanie and eval.start_estimation and eval.end_estimation:
                 if (eval.page_soglasovanie.price_before_kd and eval.page_soglasovanie.price_before_kd > 0) or \
                    (eval.page_soglasovanie.price_after_kd and eval.page_soglasovanie.price_after_kd > 0):
@@ -4704,59 +4705,53 @@ def eco_efficiency_analysis(request):
         page_soglasovanie__price_after_kd__gt=0
     )
     
+    # Объединяем оба цикла по ценам в один для оптимизации
     price_diffs = []
+    price_percent_diffs = []
     higher_count = 0
     lower_count = 0
     equal_count = 0
     
-    for eval in evaluations_with_prices[:500]:
-        if eval.page_soglasovanie and eval.page_soglasovanie.price_after_kd:
-            soglas_price = eval.page_soglasovanie.price_after_kd
+    # Используем values для оптимизации - загружаем только нужные поля
+    price_data = evaluations_with_prices.values(
+        'page_soglasovanie__price_after_kd',
+        'page_soglasovanie__price_auto_1',
+        'page_soglasovanie__price_auto_2',
+        'page_soglasovanie__price_auto_3'
+    )[:500]
+    
+    for price_item in price_data:
+        soglas_price = price_item.get('page_soglasovanie__price_after_kd')
+        if not soglas_price or soglas_price <= 0:
+            continue
             
-            autoraschet_price = None
-            if hasattr(eval, 'page_soglasovanie') and eval.page_soglasovanie:
-                if hasattr(eval.page_soglasovanie, 'price_auto_1') and eval.page_soglasovanie.price_auto_1:
-                    autoraschet_price = eval.page_soglasovanie.price_auto_1
-                elif hasattr(eval.page_soglasovanie, 'price_auto_2') and eval.page_soglasovanie.price_auto_2:
-                    autoraschet_price = eval.page_soglasovanie.price_auto_2
-                elif hasattr(eval.page_soglasovanie, 'price_auto_3') and eval.page_soglasovanie.price_auto_3:
-                    autoraschet_price = eval.page_soglasovanie.price_auto_3
+        autoraschet_price = (
+            price_item.get('page_soglasovanie__price_auto_1') or
+            price_item.get('page_soglasovanie__price_auto_2') or
+            price_item.get('page_soglasovanie__price_auto_3') or
+            None
+        )
+        
+        if autoraschet_price and autoraschet_price > 0:
+            diff = soglas_price - autoraschet_price
+            diff_percent = round((diff / autoraschet_price) * 100, 1) if autoraschet_price > 0 else 0
             
-            if autoraschet_price and autoraschet_price > 0:
-                diff = soglas_price - autoraschet_price
-                diff_percent = round((diff / autoraschet_price) * 100, 1) if autoraschet_price > 0 else 0
-                price_diffs.append(diff)
-                
-                if diff > 1000:
-                    higher_count += 1
-                elif diff < -1000:
-                    lower_count += 1
-                else:
-                    equal_count += 1
+            price_diffs.append(diff)
+            price_percent_diffs.append(diff_percent)
+            
+            if diff > 1000:
+                higher_count += 1
+            elif diff < -1000:
+                lower_count += 1
+            else:
+                equal_count += 1
 
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
-    
-    price_percent_diffs = []
-    for eval in evaluations_with_prices[:500]:
-        if eval.page_soglasovanie and eval.page_soglasovanie.price_after_kd:
-            soglas_price = eval.page_soglasovanie.price_after_kd
-            autoraschet_price = None
-            if eval.page_soglasovanie.price_auto_1:
-                autoraschet_price = eval.page_soglasovanie.price_auto_1
-            elif eval.page_soglasovanie.price_auto_2:
-                autoraschet_price = eval.page_soglasovanie.price_auto_2
-            elif eval.page_soglasovanie.price_auto_3:
-                autoraschet_price = eval.page_soglasovanie.price_auto_3
-            
-            if autoraschet_price and autoraschet_price > 0:
-                diff = soglas_price - autoraschet_price
-                diff_percent = round((diff / autoraschet_price) * 100, 1)
-                price_percent_diffs.append(diff_percent)
-    
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
 
     # Получаем все оценки один раз с prefetch для оптимизации
-    all_eval_ids = list(base_qs.values_list('id', flat=True))
+    # Используем iterator() для больших наборов данных, чтобы не загружать все в память
+    all_eval_ids = list(base_qs.values_list('id', flat=True)[:10000])  # Ограничиваем на случай огромных выборок
     
     # Агрегируем данные по задачам и чатам сразу для всех оценок
     eval_task_counts = {}
@@ -4775,25 +4770,23 @@ def eco_efficiency_analysis(request):
     from collections import defaultdict
     eval_chat_data = defaultdict(lambda: {'count': 0, 'first_date': None, 'last_date': None})
     
-    # Получаем все rlk_id из оценок
-    rlk_ids_list = list(set(base_qs.select_related('rlk').filter(rlk__isnull=False).values_list('rlk__id', flat=True)))
+    # Получаем все rlk_id из оценок - используем distinct для оптимизации
+    rlk_ids_list = list(base_qs.filter(rlk__isnull=False).values_list('rlk__id', flat=True).distinct())
     
     if rlk_ids_list:
-        # Используем агрегацию для получения количества сообщений и дат
-        # Загружаем чаты и сообщения с оптимизацией
-        chats = Chat.objects.filter(rlk_id__in=rlk_ids_list).prefetch_related('chatmessage_set')
+        # Используем агрегацию для получения количества сообщений и дат - намного быстрее
+        chat_agg = Chat.objects.filter(rlk_id__in=rlk_ids_list).values('rlk_id').annotate(
+            msg_count=Count('chatmessage'),
+            first_msg_date=Min('chatmessage__date'),
+            last_msg_date=Max('chatmessage__date')
+        ).filter(msg_count__gt=0)
         
-        for chat in chats:
-            messages_qs = chat.chatmessage_set.all()
-            msg_count = messages_qs.count()
-            if msg_count > 0:
-                first_msg = messages_qs.order_by('date').first()
-                last_msg = messages_qs.order_by('-date').first()
-                eval_chat_data[chat.rlk_id] = {
-                    'count': msg_count,
-                    'first_date': first_msg.date if first_msg else None,
-                    'last_date': last_msg.date if last_msg else None,
-                }
+        for chat_stat in chat_agg:
+            eval_chat_data[chat_stat['rlk_id']] = {
+                'count': chat_stat['msg_count'],
+                'first_date': chat_stat['first_msg_date'],
+                'last_date': chat_stat['last_msg_date'],
+            }
     
     # Предзагружаем статистику по аналитикам одним запросом
     analyst_ids = list(User.objects.filter(
@@ -4816,23 +4809,26 @@ def eco_efficiency_analysis(request):
     
     # Получаем временные данные для аналитиков
     analyst_time_data = {}
-    for eval in base_qs.filter(
+    analyst_time_list = base_qs.filter(
         staff__id__in=analyst_ids,
         start_estimation__isnull=False,
         end_estimation__isnull=False
-    ).only('id', 'start_estimation', 'end_estimation', 'staff__id')[:2000]:
-        if eval.staff_id and eval.end_estimation and eval.start_estimation:
-            if eval.staff_id not in analyst_time_data:
-                analyst_time_data[eval.staff_id] = []
-            diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
-            if diff >= 0:
-                analyst_time_data[eval.staff_id].append(diff)
+    ).values_list('staff__id', 'start_estimation', 'end_estimation')[:2000]
     
-    # Создаем маппинг eval_id -> analyst_id
+    for analyst_id, start_time, end_time in analyst_time_list:
+        if analyst_id and start_time and end_time:
+            if analyst_id not in analyst_time_data:
+                analyst_time_data[analyst_id] = []
+            diff = (end_time - start_time).total_seconds() / 3600
+            if diff >= 0:
+                analyst_time_data[analyst_id].append(diff)
+    
+    # Создаем маппинг eval_id -> analyst_id (ограничиваем для больших выборок)
     eval_to_analyst_map = {}
-    for eval in base_qs.filter(staff__id__in=analyst_ids).only('id', 'staff__id', 'rlk__id', 'start_estimation'):
-        if eval.staff_id:
-            eval_to_analyst_map[eval.id] = eval.staff_id
+    eval_analyst_list = base_qs.filter(staff__id__in=analyst_ids).values_list('id', 'staff__id')[:5000]
+    for eval_id, analyst_id in eval_analyst_list:
+        if analyst_id:
+            eval_to_analyst_map[eval_id] = analyst_id
     
     # Группируем задачи и чаты по аналитикам
     analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []})
@@ -4847,18 +4843,20 @@ def eco_efficiency_analysis(request):
                 analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
                 analyst_task_stats[analyst_id]['task_counts'].append(task_data.get('total', 0))
     
-    for eval in base_qs.filter(staff__id__in=analyst_ids).select_related('rlk').only('id', 'rlk__id', 'staff__id', 'start_estimation')[:2000]:
-        if eval.rlk and eval.rlk.id and eval.staff_id:
-            chat_info = eval_chat_data.get(eval.rlk.id)
+    # Используем values_list для избежания конфликта (ограничиваем для оптимизации)
+    eval_chat_analyst_list = base_qs.filter(staff__id__in=analyst_ids).values_list('id', 'rlk__id', 'staff__id', 'start_estimation')[:1000]
+    for eval_id, rlk_id, analyst_id, start_estimation in eval_chat_analyst_list:
+        if rlk_id and analyst_id:
+            chat_info = eval_chat_data.get(rlk_id)
             if chat_info and chat_info['count'] > 0:
-                analyst_chat_stats[eval.staff_id]['total_messages'] += chat_info['count']
-                analyst_chat_stats[eval.staff_id]['evaluations_with_chat'].add(eval.id)
-                analyst_chat_stats[eval.staff_id]['message_counts'].append(chat_info['count'])
+                analyst_chat_stats[analyst_id]['total_messages'] += chat_info['count']
+                analyst_chat_stats[analyst_id]['evaluations_with_chat'].add(eval_id)
+                analyst_chat_stats[analyst_id]['message_counts'].append(chat_info['count'])
                 
-                if eval.start_estimation and chat_info['first_date']:
-                    time_to_first_msg = (chat_info['first_date'] - eval.start_estimation).total_seconds() / 3600
+                if start_estimation and chat_info['first_date']:
+                    time_to_first_msg = (chat_info['first_date'] - start_estimation).total_seconds() / 3600
                     if time_to_first_msg >= 0:
-                        analyst_chat_stats[eval.staff_id]['response_times'].append(time_to_first_msg)
+                        analyst_chat_stats[analyst_id]['response_times'].append(time_to_first_msg)
     
     # Формируем финальную статистику
     analyst_stats = []
@@ -4926,12 +4924,16 @@ def eco_efficiency_analysis(request):
         month_soglas = month_qs.filter(page_soglasovanie__isnull=False).count()
         month_accepted = month_qs.filter(status__name__icontains='ам принят').count()
         
-        # Оптимизируем расчет среднего времени
+        # Оптимизируем расчет среднего времени - используем values_list
         time_diffs = []
-        month_evals_with_time = month_qs.filter(start_estimation__isnull=False, end_estimation__isnull=False)
-        for eval in month_evals_with_time[:200]:  # Ограничиваем выборку
-            if eval.end_estimation and eval.start_estimation:
-                diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+        month_time_list = month_qs.filter(
+            start_estimation__isnull=False,
+            end_estimation__isnull=False
+        ).values_list('start_estimation', 'end_estimation')[:200]
+        
+        for start_time, end_time in month_time_list:
+            if start_time and end_time:
+                diff = (end_time - start_time).total_seconds() / 3600
                 if diff >= 0:
                     time_diffs.append(diff)
         
@@ -4952,9 +4954,10 @@ def eco_efficiency_analysis(request):
     all_chat_messages_total = 0
     
     rlk_ids_map = {}  # Создаем маппинг rlk_id -> evaluation_id
-    eval_rlk_data = base_qs.filter(rlk__isnull=False).select_related('rlk').only('id', 'rlk__id').values_list('id', 'rlk__id')
+    eval_rlk_data = base_qs.filter(rlk__isnull=False).values_list('id', 'rlk__id')
     for eval_id, rlk_id in eval_rlk_data:
-        rlk_ids_map[rlk_id] = eval_id
+        if rlk_id:
+            rlk_ids_map[rlk_id] = eval_id
     
     for rlk_id, eval_id in rlk_ids_map.items():
         chat_info = eval_chat_data.get(rlk_id)
@@ -5169,25 +5172,45 @@ def staff_performance_analysis(request):
         )
     
     # Получаем все оценки с временными метками для расчета среднего времени
+    # Используем values_list для избежания конфликта select_related/only
     eval_time_data = {}
-    for eval in eval_base_qs.filter(
+    eval_time_qs = RegInteractivOcenka.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
         rlk__staff__id__in=all_staff_ids,
         start_estimation__isnull=False,
         end_estimation__isnull=False
-    ).select_related('rlk__staff').only('id', 'start_estimation', 'end_estimation', 'rlk__staff__id')[:2000]:
-        if eval.rlk and eval.rlk.staff_id and eval.end_estimation and eval.start_estimation:
-            staff_id = eval.rlk.staff_id
+    )
+    
+    if unit_id:
+        eval_time_qs = eval_time_qs.filter(
+            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+        )
+    
+    if staff_id:
+        try:
+            RefStaff.objects.get(id=staff_id)
+            eval_time_qs = eval_time_qs.filter(rlk__staff__id=staff_id)
+        except RefStaff.DoesNotExist:
+            pass
+    
+    # Используем values_list для получения данных без загрузки объектов
+    eval_time_list = eval_time_qs.values_list('rlk__staff__id', 'start_estimation', 'end_estimation')[:2000]
+    
+    for staff_id, start_time, end_time in eval_time_list:
+        if staff_id and start_time and end_time:
             if staff_id not in eval_time_data:
                 eval_time_data[staff_id] = []
-            diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+            diff = (end_time - start_time).total_seconds() / 3600
             if diff >= 0:
                 eval_time_data[staff_id].append(diff)
     
     # Создаем маппинг eval_id -> staff_id для быстрого поиска
     eval_to_staff_map = {}
-    for eval in eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).select_related('rlk').only('id', 'rlk__staff__id'):
-        if eval.rlk and eval.rlk.staff_id:
-            eval_to_staff_map[eval.id] = eval.rlk.staff_id
+    eval_staff_list = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values_list('id', 'rlk__staff__id')
+    for eval_id, staff_id in eval_staff_list:
+        if staff_id:
+            eval_to_staff_map[eval_id] = staff_id
     
     # Группируем задачи и чаты по оценщикам
     staff_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
@@ -5201,12 +5224,14 @@ def staff_performance_analysis(request):
             if task_data.get('total', 0) > 0:
                 staff_task_stats[staff_id]['evaluations_with_tasks'].add(eval_id)
     
-    for eval in eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).select_related('rlk').only('id', 'rlk__id', 'rlk__staff__id'):
-        if eval.rlk and eval.rlk.id and eval.rlk.staff_id:
-            chat_info = eval_chat_data.get(eval.rlk.id)
+    # Используем values_list для избежания конфликта
+    eval_chat_list = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values_list('id', 'rlk__id', 'rlk__staff__id')
+    for eval_id, rlk_id, staff_id in eval_chat_list:
+        if rlk_id and staff_id:
+            chat_info = eval_chat_data.get(rlk_id)
             if chat_info and chat_info['count'] > 0:
-                staff_chat_stats[eval.rlk.staff_id]['total_messages'] += chat_info['count']
-                staff_chat_stats[eval.rlk.staff_id]['evaluations_with_chat'].add(eval.id)
+                staff_chat_stats[staff_id]['total_messages'] += chat_info['count']
+                staff_chat_stats[staff_id]['evaluations_with_chat'].add(eval_id)
     
     # Типы поступлений по оценщикам
     staff_type_stats = defaultdict(lambda: defaultdict(int))
