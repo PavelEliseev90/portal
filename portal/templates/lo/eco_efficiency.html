@@ -288,6 +288,88 @@
   </div>
 
   <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Сообщений в чатах</h3>
+        <div class="metric-value">{{ params.chat_stats.total_messages }}</div>
+        <div class="metric-label">Всего сообщений</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Оценок с чатами</h3>
+        <div class="metric-value">{{ params.chat_stats.evaluations_with_chat }}</div>
+        <div class="metric-label">{{ params.chat_stats.evaluations_with_chat_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Среднее сообщений</h3>
+        <div class="metric-value">
+          {% if params.chat_stats.avg_messages_per_eval %}
+            {{ params.chat_stats.avg_messages_per_eval }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="metric-label">Сообщений на оценку</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Активность в чатах</h3>
+        <div class="metric-value">
+          {% if params.chat_stats.evaluations_with_chat_percent >= 70 %}
+            <span class="text-success">Высокая</span>
+          {% elif params.chat_stats.evaluations_with_chat_percent >= 40 %}
+            <span class="text-warning">Средняя</span>
+          {% else %}
+            <span class="text-danger">Низкая</span>
+          {% endif %}
+        </div>
+        <div class="metric-label">Процент оценок с активностью</div>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Всего задач</h3>
+        <div class="metric-value">{{ params.task_stats.total_tasks }}</div>
+        <div class="metric-label">Созданных по оценкам</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Оценок с задачами</h3>
+        <div class="metric-value">{{ params.task_stats.evaluations_with_tasks }}</div>
+        <div class="metric-label">{{ params.task_stats.evaluations_with_tasks_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Среднее задач</h3>
+        <div class="metric-value">
+          {% if params.task_stats.avg_tasks_per_eval > 0 %}
+            {{ params.task_stats.avg_tasks_per_eval }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="metric-label">Задач на оценку</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Закрыто задач</h3>
+        <div class="metric-value">{{ params.task_stats.closed_tasks }}</div>
+        <div class="metric-label">{{ params.task_stats.closed_percent }}% от общего числа</div>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
     <div class="col-lg-6">
       <article class="kors-panel">
         <div class="kors-panel__head">
@@ -381,6 +463,12 @@
                 <th class="text-end">Среднее время</th>
                 <th class="text-end">Конверсия согласования</th>
                 <th class="text-end">Конверсия приема</th>
+                <th class="text-end">Сообщений</th>
+                <th class="text-end">Ср. сообщ./оценку</th>
+                <th class="text-end">Время ответа</th>
+                <th class="text-end">Задач</th>
+                <th class="text-end">Ср. задач/оценку</th>
+                <th class="text-end">Закрыто</th>
               </tr>
             </thead>
             <tbody>
@@ -406,6 +494,54 @@
                   <span class="{% if analyst.accept_rate >= 30 %}text-success{% elif analyst.accept_rate >= 20 %}text-warning{% else %}text-danger{% endif %}">
                     {{ analyst.accept_rate }}%
                   </span>
+                </td>
+                <td class="text-end" data-label="Сообщений">
+                  {% if analyst.chat_stats.total_messages > 0 %}
+                    {{ analyst.chat_stats.total_messages }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Ср. сообщ./оценку">
+                  {% if analyst.chat_stats.avg_messages_per_eval > 0 %}
+                    <span class="{% if analyst.chat_stats.avg_messages_per_eval >= 5 %}text-success{% elif analyst.chat_stats.avg_messages_per_eval >= 2 %}text-warning{% else %}text-muted{% endif %}">
+                      {{ analyst.chat_stats.avg_messages_per_eval }}
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Время ответа">
+                  {% if analyst.chat_stats.avg_response_time %}
+                    {{ analyst.chat_stats.avg_response_time }} ч
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Задач">
+                  {% if analyst.task_stats.total_tasks > 0 %}
+                    {{ analyst.task_stats.total_tasks }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Ср. задач/оценку">
+                  {% if analyst.task_stats.avg_tasks_per_eval > 0 %}
+                    <span class="{% if analyst.task_stats.avg_tasks_per_eval >= 2 %}text-warning{% else %}text-muted{% endif %}">
+                      {{ analyst.task_stats.avg_tasks_per_eval }}
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Закрыто">
+                  {% if analyst.task_stats.total_tasks > 0 %}
+                    <span class="{% if analyst.task_stats.closed_percent >= 80 %}text-success{% elif analyst.task_stats.closed_percent >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                      {{ analyst.task_stats.closed_tasks }} / {{ analyst.task_stats.total_tasks }} ({{ analyst.task_stats.closed_percent }}%)
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}
