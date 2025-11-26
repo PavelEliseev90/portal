@@ -106,6 +106,61 @@
   .kors-anchor-button {
     cursor: pointer;
   }
+
+  .collapsible-card {
+    padding: 0;
+    border-radius: 1.3rem;
+    overflow: hidden;
+  }
+
+  .collapsible-card__toggle {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+  }
+
+  .collapsible-card__toggle:focus {
+    outline: 2px solid rgba(0, 80, 157, 0.3);
+    outline-offset: 2px;
+  }
+
+  .collapsible-card__body {
+    padding: 0 1.5rem 1.5rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__body {
+    max-height: 2000px;
+    opacity: 1;
+  }
+
+  .collapsible-card__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: rgba(0, 42, 90, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #002a5a;
+    font-weight: 600;
+    transition: transform 0.25s ease, background 0.25s ease;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__icon {
+    transform: rotate(180deg);
+    background: #002a5a;
+    color: #fff;
+  }
 </style>
 
 <div class="kors-funnel-page">
@@ -205,12 +260,17 @@
   {% if params.unit_trend_available %}
   <div class="row g-3 mt-3">
     <div class="col-12">
-      <article class="kors-panel">
-        <div class="kors-panel__head">
-          <h3>Подразделения (3 месяца)</h3>
-          <p class="text-muted mb-0">Количество интерактивных оценок по каждому ДЦ</p>
+      <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
+        <button type="button" class="collapsible-card__toggle" aria-expanded="false">
+          <div class="kors-panel__head mb-0">
+            <h3>Подразделения (3 месяца)</h3>
+            <p class="text-muted mb-0">Количество интерактивных оценок по каждому ДЦ</p>
+          </div>
+          <span class="collapsible-card__icon" aria-hidden="true">▼</span>
+        </button>
+        <div class="collapsible-card__body">
+          <canvas id="unitTrendChart"></canvas>
         </div>
-        <canvas id="unitTrendChart"></canvas>
       </article>
     </div>
   </div>
@@ -246,49 +306,54 @@
   {% if params.source_stats %}
   <div class="row g-3 mt-3">
     <div class="col-12">
-      <article class="kors-panel">
-        <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div>
-            <h3>Источники поступлений</h3>
-            <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
+      <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
+        <button type="button" class="collapsible-card__toggle" aria-expanded="false">
+          <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2 mb-0 w-100">
+            <div>
+              <h3>Источники поступлений</h3>
+              <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
+            </div>
+            <div class="text-end ms-auto">
+              <div class="fw-bold text-primary">Рабочие листы: {{ params.source_totals.work_orders }}</div>
+              <div class="text-muted">Принято: {{ params.source_totals.accepted }}</div>
+            </div>
           </div>
-          <div class="text-end">
-            <div class="fw-bold text-primary">Рабочие листы: {{ params.source_totals.work_orders }}</div>
-            <div class="text-muted">Принято: {{ params.source_totals.accepted }}</div>
+          <span class="collapsible-card__icon" aria-hidden="true">▼</span>
+        </button>
+        <div class="collapsible-card__body">
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Источник</th>
+                  <th class="text-end">Рабочие листы</th>
+                  <th class="text-end">Оценки</th>
+                  <th class="text-end">Диагностика</th>
+                  <th class="text-end">Принято</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for source in params.source_stats %}
+                <tr>
+                  <td>{{ source.source }}</td>
+                  <td class="text-end">{{ source.work_orders }}</td>
+                  <td class="text-end">{{ source.evaluations }}</td>
+                  <td class="text-end">{{ source.diagnostics }}</td>
+                  <td class="text-end">{{ source.accepted }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <th>Итого</th>
+                  <th class="text-end">{{ params.source_totals.work_orders }}</th>
+                  <th class="text-end">{{ params.source_totals.evaluations }}</th>
+                  <th class="text-end">{{ params.source_totals.diagnostics }}</th>
+                  <th class="text-end">{{ params.source_totals.accepted }}</th>
+                </tr>
+              </tfoot>
+            </table>
           </div>
-        </div>
-        <div class="table-responsive mt-3">
-          <table class="table table-sm align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Источник</th>
-                <th class="text-end">Рабочие листы</th>
-                <th class="text-end">Оценки</th>
-                <th class="text-end">Диагностика</th>
-                <th class="text-end">Принято</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for source in params.source_stats %}
-              <tr>
-                <td>{{ source.source }}</td>
-                <td class="text-end">{{ source.work_orders }}</td>
-                <td class="text-end">{{ source.evaluations }}</td>
-                <td class="text-end">{{ source.diagnostics }}</td>
-                <td class="text-end">{{ source.accepted }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-            <tfoot class="table-light">
-              <tr>
-                <th>Итого</th>
-                <th class="text-end">{{ params.source_totals.work_orders }}</th>
-                <th class="text-end">{{ params.source_totals.evaluations }}</th>
-                <th class="text-end">{{ params.source_totals.diagnostics }}</th>
-                <th class="text-end">{{ params.source_totals.accepted }}</th>
-              </tr>
-            </tfoot>
-          </table>
         </div>
       </article>
     </div>
@@ -298,67 +363,72 @@
   {% if params.autoteka_summary.total %}
   <div class="row g-3 mt-3">
     <div class="col-12">
-      <article class="kors-panel">
-        <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div>
-            <h3>Авто ушли в рынок</h3>
-            <p class="text-muted mb-0">Оценки без приёма, но VIN замечен в Autoteka</p>
+      <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
+        <button type="button" class="collapsible-card__toggle" aria-expanded="false">
+          <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2 mb-0 w-100">
+            <div>
+              <h3>Авто ушли в рынок</h3>
+              <p class="text-muted mb-0">Оценки без приёма, но VIN замечен в Autoteka</p>
+            </div>
+            <div class="text-end ms-auto">
+              <div class="fw-bold text-primary">Записи: {{ params.autoteka_summary.total }}</div>
+              <div class="text-muted">Уникальных VIN: {{ params.autoteka_summary.unique }}</div>
+            </div>
           </div>
-          <div class="text-end">
-            <div class="fw-bold text-primary">Всего записей: {{ params.autoteka_summary.total }}</div>
-            <div class="text-muted">Уникальных VIN: {{ params.autoteka_summary.unique }}</div>
+          <span class="collapsible-card__icon" aria-hidden="true">▼</span>
+        </button>
+        <div class="collapsible-card__body">
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Дата</th>
+                  <th>VIN</th>
+                  <th>Модель</th>
+                  <th>Город</th>
+                  <th class="text-end">Цена</th>
+                  <th>Согласована</th>
+                  <th>Интерактивная оценка</th>
+                  <th>Ссылка</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in params.autoteka_summary.rows %}
+                <tr>
+                  <td>{{ row.date|date:"d.m.Y" }}</td>
+                  <td>{{ row.vin }}</td>
+                  <td>{{ row.brand }} {{ row.model }}</td>
+                  <td>{{ row.city_name }}</td>
+                  <td class="text-end">{% if row.price %}{{ row.price }} ₽{% else %}—{% endif %}</td>
+                  <td class="text-end">{% if row.price_reception %}{{ row.price_reception }} ₽{% else %}—{% endif %}</td>
+                  <td>
+                    {% if row.rlk_id %}
+                      <a href="{% url 'eco:id' row.rlk_id %}" target="_blank" rel="noopener">Открыть</a>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.url %}
+                      <a href="{{ row.url }}" target="_blank" rel="noopener">Открыть</a>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
-        </div>
-        <div class="table-responsive mt-3">
-          <table class="table table-sm align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Дата</th>
-                <th>VIN</th>
-                <th>Модель</th>
-                <th>Город</th>
-                <th class="text-end">Цена</th>
-            <th>Согласована</th>
-            <th>Интерактивная оценка</th>
-            <th>Ссылка</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in params.autoteka_summary.rows %}
-              <tr>
-                <td>{{ row.date|date:"d.m.Y" }}</td>
-                <td>{{ row.vin }}</td>
-                <td>{{ row.brand }} {{ row.model }}</td>
-                <td>{{ row.city_name }}</td>
-                <td class="text-end">{% if row.price %}{{ row.price }} ₽{% else %}—{% endif %}</td>
-                <td class="text-end">{% if row.price_reception %}{{ row.price_reception }} ₽{% else %}—{% endif %}</td>
-                <td>
-                  {% if row.rlk_id %}
-                    <a href="{% url 'eco:id' row.rlk_id %}" target="_blank" rel="noopener">Открыть</a>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-                <td>
-                  {% if row.url %}
-                    <a href="{{ row.url }}" target="_blank" rel="noopener">Открыть</a>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          <div class="text-center mt-3">
+            {% if params.autoteka_summary.show_all %}
+              <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}{% if params.autoteka_summary.query_base %}?{{ params.autoteka_summary.query_base }}{% endif %}">Показать первые 10</a>
+            {% else %}
+              <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}?{{ params.autoteka_summary.query_show_all }}">Показать все</a>
+            {% endif %}
+          </div>
         </div>
       </article>
-      <div class="text-center mt-3">
-        {% if params.autoteka_summary.show_all %}
-          <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}{% if params.autoteka_summary.query_base %}?{{ params.autoteka_summary.query_base }}{% endif %}">Показать первые 10</a>
-        {% else %}
-          <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}?{{ params.autoteka_summary.query_show_all }}">Показать все</a>
-        {% endif %}
-      </div>
     </div>
   </div>
   {% endif %}
@@ -368,6 +438,20 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
   const chartPayload = JSON.parse('{{ params.chart_data|escapejs }}');
+
+  document.querySelectorAll('[data-collapsible]').forEach((card) => {
+    const toggle = card.querySelector('.collapsible-card__toggle');
+    if (!toggle) return;
+    const updateState = () => {
+      const collapsed = card.classList.contains('is-collapsed');
+      toggle.setAttribute('aria-expanded', (!collapsed).toString());
+    };
+    toggle.addEventListener('click', () => {
+      card.classList.toggle('is-collapsed');
+      updateState();
+    });
+    updateState();
+  });
 
   const funnelCtx = document.getElementById('funnelChart').getContext('2d');
   new Chart(funnelCtx, {

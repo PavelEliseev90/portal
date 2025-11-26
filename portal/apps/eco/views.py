@@ -246,30 +246,32 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         'rlk__unit__name',
         Value('Без подразделения', output_field=CharField()),
     )
+    
+    diagnostics_qs = (
+        reg_qs.filter(page_soglasovanie__isnull=False)
+        .exclude(page_soglasovanie__comment_diagnostica='')
+        .filter(page_soglasovanie__no_diagnostica=False)
+    ) | (
+        reg_qs.filter(page_soglasovanie__isnull=False)
+        .filter(page_soglasovanie__no_diagnostica=True)
+    )
+    
     reg_stats = (
         reg_qs
         .annotate(source_name=reg_source_label)
         .values('source_name')
         .annotate(
             evaluations=Count('id'),
-            diagnostics=Sum(
-                Case(
-                    When(page_proverki__isnull=False, then=1),
-                    default=0,
-                    output_field=IntegerField(),
-                )
-            ),
-            accepted=Sum(
-                Case(
-                    When(
-                        page_proverki__isnull=False,
-                        status__name__icontains='ам принят',
-                        then=1,
-                    ),
-                    default=0,
-                    output_field=IntegerField(),
-                )
-            ),
+        )
+    )
+    
+    diagnostics_stats = (
+        diagnostics_qs
+        .annotate(source_name=reg_source_label)
+        .values('source_name')
+        .annotate(
+            diagnostics=Count('id'),
+            accepted=Count('id', filter=Q(status__name__icontains='ам принят')),
         )
     )
 
@@ -297,6 +299,19 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
             },
         )
         stats_map[name]['evaluations'] = row['evaluations']
+    
+    for row in diagnostics_stats:
+        name = row['source_name'] or 'Без подразделения'
+        stats_map.setdefault(
+            name,
+            {
+                'source': name,
+                'work_orders': 0,
+                'evaluations': 0,
+                'diagnostics': 0,
+                'accepted': 0,
+            },
+        )
         stats_map[name]['diagnostics'] = row['diagnostics']
         stats_map[name]['accepted'] = row['accepted']
 
