@@ -153,6 +153,15 @@
           {% endfor %}
         </select>
       </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Тип приёма</label>
+        <select class="form-select" name="type_reception_id">
+          <option value="">Все</option>
+          {% for type in params.type_receptions %}
+            <option value="{{ type.id }}" {% if type.id|stringformat:"s" == params.filters.type_reception_id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="col-12 text-end">
         <button class="btn btn-primary px-4" type="submit">Применить</button>
       </div>
@@ -204,6 +213,33 @@
         <canvas id="unitTrendChart"></canvas>
       </article>
     </div>
+  </div>
+  {% endif %}
+
+  {% if params.type_monthly_available or params.type_pie_available %}
+  <div class="row g-3 mt-3">
+    {% if params.type_monthly_available %}
+    <div class="col-xl-7">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Типы приёмов · динамика</h3>
+          <p class="text-muted mb-0">Сравнение типов интерактивных оценок по месяцам</p>
+        </div>
+        <canvas id="typeComparisonChart"></canvas>
+      </article>
+    </div>
+    {% endif %}
+    {% if params.type_pie_available %}
+    <div class="col-xl-{% if params.type_monthly_available %}5{% else %}6{% endif %}">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Типы приёмов · структура</h3>
+          <p class="text-muted mb-0">Доли типов приёмов за выбранный период</p>
+        </div>
+        <canvas id="typePieChart"></canvas>
+      </article>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -394,6 +430,79 @@
             ticks: { precision: 0 }
           }
         }
+      }
+    });
+  }
+
+  const typeCanvas = document.getElementById('typeComparisonChart');
+  if (typeCanvas && chartPayload.typeMonthly && chartPayload.typeMonthly.datasets && chartPayload.typeMonthly.datasets.length) {
+    const typeCtx = typeCanvas.getContext('2d');
+    new Chart(typeCtx, {
+      type: 'line',
+      data: {
+        labels: chartPayload.typeMonthly.labels,
+        datasets: chartPayload.typeMonthly.datasets.map(dataset => ({
+          label: dataset.label,
+          data: dataset.data,
+          borderWidth: 2,
+          tension: 0.35,
+          fill: false,
+          borderColor: dataset.color,
+          pointRadius: 3,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: dataset.color,
+        })),
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            formatter: (value) => value || '',
+            color: '#555',
+            font: { size: 10 },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 },
+          }
+        }
+      }
+    });
+  }
+
+  const pieCanvas = document.getElementById('typePieChart');
+  if (pieCanvas && chartPayload.typePie && chartPayload.typePie.labels && chartPayload.typePie.labels.length) {
+    const pieCtx = pieCanvas.getContext('2d');
+    new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: chartPayload.typePie.labels,
+        datasets: [{
+          data: chartPayload.typePie.values,
+          backgroundColor: chartPayload.typePie.colors,
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          datalabels: {
+            formatter: (value, ctx) => {
+              const total = ctx.chart.data.datasets[0].data.reduce((acc, curr) => acc + curr, 0);
+              if (!total) return '';
+              const percent = Math.round((value / total) * 100);
+              return percent > 0 ? percent + '%' : '';
+            },
+            color: '#fff',
+            font: { weight: '600' },
+          },
+        },
       }
     });
   }
