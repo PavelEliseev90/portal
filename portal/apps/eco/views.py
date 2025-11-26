@@ -143,8 +143,14 @@ def _get_int(value):
         return None
 
 
-def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None):
-    tradein_rlk = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(type__id=7).filter(eco=True).filter(tradeInModel__isnull=False)
+def _build_tradein_querysets(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    tradein_rlk = (
+        DocRLK.objects.filter(dataTime__gte=date_start)
+        .filter(dataTime__lte=date_end)
+        .filter(type__id=7)
+        .filter(eco=True)
+        .filter(tradeInModel__isnull=False)
+    )
 
     if unit_id:
         tradein_rlk = tradein_rlk.filter(Q(unit__id=unit_id) | Q(unit_dc__id=unit_id))
@@ -158,6 +164,11 @@ def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst
             Q(reginteractivocenka__staff_eco_2__id=analyst_id)
         )
 
+    if type_reception_id:
+        tradein_rlk = tradein_rlk.filter(
+            reginteractivocenka__page_documents__type_reception__id=type_reception_id
+        )
+
     reg_qs = RegInteractivOcenka.objects.filter(rlk__in=tradein_rlk.values('pk'))
 
     if analyst_id:
@@ -166,6 +177,22 @@ def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst
             Q(staff_eco_2__id=analyst_id)
         )
 
+    if type_reception_id:
+        reg_qs = reg_qs.filter(page_documents__type_reception__id=type_reception_id)
+
+    return tradein_rlk, reg_qs
+
+
+def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    tradein_rlk, reg_qs = _build_tradein_querysets(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
     stage_work_orders = tradein_rlk.count()
     stage_estimations = reg_qs.count()
     stage_diagnostics_qs = reg_qs.filter(page_proverki__isnull=False)
@@ -173,6 +200,23 @@ def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst
     stage_accepted = stage_diagnostics_qs.filter(status__name__icontains='ам принят').count()
 
     return stage_work_orders, stage_estimations, stage_diagnostics, stage_accepted, stage_diagnostics_qs
+
+
+def _get_type_distribution(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    _, reg_qs = _build_tradein_querysets(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
+    return (
+        reg_qs.values(name=F('page_documents__type_reception__name'))
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
 
 
 def tradein_funnel(request):
@@ -197,8 +241,19 @@ def tradein_funnel(request):
     unit_id = _get_int(request.GET.get('unit_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
 
-    stage_counts_raw = _get_stage_counts(date_start, date_end, unit_id, staff_id, analyst_id)
+    type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
+    color_palette = ['#2563eb', '#f97316', '#22c55e', '#a855f7', '#f43f5e', '#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#d946ef']
+
+    stage_counts_raw = _get_stage_counts(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
     stage_counts = stage_counts_raw[:4]
     stage_diagnostics_qs = stage_counts_raw[4]
     stage_labels = [
@@ -240,6 +295,35 @@ def tradein_funnel(request):
         },
     ]
 
+    type_distribution_total = list(
+        _get_type_distribution(
+            date_start,
+            date_end,
+            unit_id=unit_id,
+            staff_id=staff_id,
+            analyst_id=analyst_id,
+            type_reception_id=type_reception_id,
+        )
+    )
+    type_pie_chart = None
+    type_name_order = []
+    if type_distribution_total:
+        pie_labels = []
+        pie_values = []
+        pie_colors = []
+        for idx, item in enumerate(type_distribution_total):
+            name = item['name'] or 'Не указано'
+            pie_labels.append(name)
+            pie_values.append(item['total'])
+            pie_colors.append(color_palette[idx % len(color_palette)])
+            if name not in type_name_order:
+                type_name_order.append(name)
+        type_pie_chart = {
+            'labels': pie_labels,
+            'values': pie_values,
+            'colors': pie_colors,
+        }
+
     funnel_chart = {
         'labels': stage_labels,
         'values': stage_counts,
@@ -252,18 +336,63 @@ def tradein_funnel(request):
         'diagnostics': [],
         'accepted': [],
     }
+    monthly_type_data = []
 
     base_month = default_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     for shift in range(2, -1, -1):
         month_start = base_month - relativedelta(months=shift)
         month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
-        month_counts = _get_stage_counts(month_start, month_end, unit_id, staff_id, analyst_id)
+        month_label = month_start.strftime('%b %Y')
+        month_counts = _get_stage_counts(
+            month_start,
+            month_end,
+            unit_id=unit_id,
+            staff_id=staff_id,
+            analyst_id=analyst_id,
+            type_reception_id=type_reception_id,
+        )
         counts = month_counts[:4]
-        monthly_labels.append(month_start.strftime('%b %Y'))
+        monthly_labels.append(month_label)
         monthly_series['work_orders'].append(counts[0])
         monthly_series['evaluations'].append(counts[1])
         monthly_series['diagnostics'].append(counts[2])
         monthly_series['accepted'].append(counts[3])
+
+        month_type_counts = list(
+            _get_type_distribution(
+                month_start,
+                month_end,
+                unit_id=unit_id,
+                staff_id=staff_id,
+                analyst_id=analyst_id,
+                type_reception_id=type_reception_id,
+            )
+        )
+        month_type_map = {}
+        for item in month_type_counts:
+            name = item['name'] or 'Не указано'
+            month_type_map[name] = item['total']
+            if name not in type_name_order:
+                type_name_order.append(name)
+        monthly_type_data.append(month_type_map)
+
+    type_monthly_chart = None
+    if monthly_labels and type_name_order:
+        type_datasets = []
+        for idx, type_name in enumerate(type_name_order):
+            series = [entry.get(type_name, 0) for entry in monthly_type_data]
+            if not any(series):
+                continue
+            type_datasets.append({
+                'label': type_name,
+                'data': series,
+                'color': color_palette[idx % len(color_palette)],
+            })
+        if type_datasets:
+            type_monthly_chart = {
+                'labels': monthly_labels,
+                'datasets': type_datasets,
+            }
 
     trend_chart = {
         'labels': monthly_labels,
@@ -288,7 +417,14 @@ def tradein_funnel(request):
             for shift in range(2, -1, -1):
                 month_start = base_month - relativedelta(months=shift)
                 month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
-                counts = _get_stage_counts(month_start, month_end, unit.id, staff_id, analyst_id)
+                counts = _get_stage_counts(
+                    month_start,
+                    month_end,
+                    unit.id,
+                    staff_id,
+                    analyst_id,
+                    type_reception_id,
+                )
                 series_data.append(counts[1])
                 if counts[1]:
                     has_values = True
@@ -305,9 +441,13 @@ def tradein_funnel(request):
         'funnel': funnel_chart,
         'trend': trend_chart,
         'unitTrend': unit_trend_chart,
+        'typeMonthly': type_monthly_chart,
+        'typePie': type_pie_chart,
     }, ensure_ascii=False)
 
     unit_trend_available = bool(unit_trend_chart)
+    type_monthly_available = bool(type_monthly_chart and type_monthly_chart.get('datasets'))
+    type_pie_available = bool(type_pie_chart and type_pie_chart.get('labels'))
 
     unresolved_qs = stage_diagnostics_qs.exclude(status__name__icontains='ам принят')
     unresolved_vins = list(
@@ -368,6 +508,7 @@ def tradein_funnel(request):
         'unit_id': unit_id or '',
         'staff_id': staff_id or '',
         'analyst_id': analyst_id or '',
+        'type_reception_id': type_reception_id or '',
     }
 
     params = {
@@ -380,7 +521,10 @@ def tradein_funnel(request):
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
+        'type_receptions': type_receptions,
         'unit_trend_available': unit_trend_available,
+        'type_monthly_available': type_monthly_available,
+        'type_pie_available': type_pie_available,
         'autoteka_summary': autoteka_summary,
     }
 
