@@ -243,6 +243,58 @@
   </div>
   {% endif %}
 
+  {% if params.source_stats %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h3>Источники поступлений</h3>
+            <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold text-primary">Рабочие листы: {{ params.source_totals.work_orders }}</div>
+            <div class="text-muted">Принято: {{ params.source_totals.accepted }}</div>
+          </div>
+        </div>
+        <div class="table-responsive mt-3">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Источник</th>
+                <th class="text-end">Рабочие листы</th>
+                <th class="text-end">Оценки</th>
+                <th class="text-end">Диагностика</th>
+                <th class="text-end">Принято</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for source in params.source_stats %}
+              <tr>
+                <td>{{ source.source }}</td>
+                <td class="text-end">{{ source.work_orders }}</td>
+                <td class="text-end">{{ source.evaluations }}</td>
+                <td class="text-end">{{ source.diagnostics }}</td>
+                <td class="text-end">{{ source.accepted }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th>Итого</th>
+                <th class="text-end">{{ params.source_totals.work_orders }}</th>
+                <th class="text-end">{{ params.source_totals.evaluations }}</th>
+                <th class="text-end">{{ params.source_totals.diagnostics }}</th>
+                <th class="text-end">{{ params.source_totals.accepted }}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+
   {% if params.autoteka_summary.total %}
   <div class="row g-3 mt-3">
     <div class="col-12">
