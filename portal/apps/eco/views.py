@@ -315,17 +315,41 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         stats_map[name]['diagnostics'] = row['diagnostics']
         stats_map[name]['accepted'] = row['accepted']
 
+    stats_list = []
+    for item in stats_map.values():
+        conv_to_eval = round((item['evaluations'] / item['work_orders'] * 100) if item['work_orders'] > 0 else 0, 1)
+        conv_to_diag = round((item['diagnostics'] / item['evaluations'] * 100) if item['evaluations'] > 0 else 0, 1)
+        conv_to_accepted = round((item['accepted'] / item['diagnostics'] * 100) if item['diagnostics'] > 0 else 0, 1)
+        overall_conv = round((item['accepted'] / item['work_orders'] * 100) if item['work_orders'] > 0 else 0, 1)
+        
+        item['conv_to_eval'] = conv_to_eval
+        item['conv_to_diag'] = conv_to_diag
+        item['conv_to_accepted'] = conv_to_accepted
+        item['overall_conv'] = overall_conv
+        stats_list.append(item)
+    
     stats_list = sorted(
-        stats_map.values(),
+        stats_list,
         key=lambda item: item['work_orders'],
         reverse=True,
     )
+    
     totals = {
         'work_orders': sum(item['work_orders'] for item in stats_list),
         'evaluations': sum(item['evaluations'] for item in stats_list),
         'diagnostics': sum(item['diagnostics'] for item in stats_list),
         'accepted': sum(item['accepted'] for item in stats_list),
     }
+    
+    avg_conv_to_accepted = round((totals['accepted'] / totals['diagnostics'] * 100) if totals['diagnostics'] > 0 else 0, 1)
+    avg_overall_conv = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
+    
+    for item in stats_list:
+        is_good = False
+        if item['work_orders'] >= 5:
+            if item['conv_to_accepted'] >= max(avg_conv_to_accepted, 50) or item['overall_conv'] >= max(avg_overall_conv, 30):
+                is_good = True
+        item['is_good'] = is_good
 
     return stats_list, totals
 
@@ -630,6 +654,11 @@ def tradein_funnel(request):
         staff_id=staff_id,
         analyst_id=analyst_id,
         type_reception_id=type_reception_id,
+    )
+    
+    source_totals['conv_to_accepted'] = round(
+        (source_totals['accepted'] / source_totals['diagnostics'] * 100) if source_totals['diagnostics'] > 0 else 0,
+        1
     )
 
     filters = {

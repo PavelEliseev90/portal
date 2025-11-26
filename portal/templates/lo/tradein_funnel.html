@@ -113,6 +113,159 @@
     overflow: hidden;
   }
 
+  /* Мобильная адаптация */
+  @media (max-width: 768px) {
+    .kors-funnel-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-funnel-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .kors-filter {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+
+    .kors-filter .row > div {
+      margin-bottom: 0.5rem;
+    }
+
+    .kors-stage-card {
+      margin-bottom: 1rem;
+    }
+
+    .kors-stage-card h2 {
+      font-size: 1.6rem;
+    }
+
+    .kors-panel {
+      padding: 1rem;
+      border-radius: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .kors-panel canvas {
+      max-height: 300px;
+    }
+
+    .row.g-3 > div {
+      margin-bottom: 1rem;
+    }
+
+    /* Таблицы в карточки на мобильных */
+    .table-responsive {
+      overflow-x: visible;
+    }
+
+    .table-mobile-cards {
+      border: none;
+    }
+
+    .table-mobile-cards thead {
+      display: none;
+    }
+
+    .table-mobile-cards tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      background: #fff;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+    }
+
+    .table-mobile-cards tbody tr.source-good {
+      border-left: 4px solid #22c55e;
+      background: linear-gradient(to right, rgba(34, 197, 94, 0.05), #fff);
+    }
+
+    .table-mobile-cards tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+    }
+
+    .table-mobile-cards tbody td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #6c7a92;
+      text-align: left;
+      margin-right: 1rem;
+    }
+
+    .table-mobile-cards tbody td:first-child {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #002a5a;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+      margin-bottom: 0.5rem;
+    }
+
+    .table-mobile-cards tbody td:first-child:before {
+      display: none;
+    }
+
+    .table-mobile-cards tfoot {
+      display: block;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 2px solid rgba(0, 42, 90, 0.15);
+    }
+
+    .table-mobile-cards tfoot tr {
+      display: block;
+      background: #f8f9fa;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+    }
+
+    .table-mobile-cards tfoot th {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .table-mobile-cards tfoot th:before {
+      content: attr(data-label);
+      text-align: left;
+      margin-right: 1rem;
+    }
+
+    .table-mobile-cards tfoot th:first-child {
+      font-size: 1.1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.15);
+      margin-bottom: 0.5rem;
+    }
+
+    .table-mobile-cards tfoot th:first-child:before {
+      display: none;
+    }
+
+    .source-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background: #22c55e;
+      color: #fff;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+  }
+
   .collapsible-card__toggle {
     width: 100%;
     border: none;
@@ -322,7 +475,7 @@
         </button>
         <div class="collapsible-card__body">
           <div class="table-responsive mt-3">
-            <table class="table table-sm align-middle">
+            <table class="table table-sm align-middle table-mobile-cards">
               <thead class="table-light">
                 <tr>
                   <th>Источник</th>
@@ -330,26 +483,44 @@
                   <th class="text-end">Оценки</th>
                   <th class="text-end">Диагностика</th>
                   <th class="text-end">Принято</th>
+                  <th class="text-end">Конверсия</th>
                 </tr>
               </thead>
               <tbody>
                 {% for source in params.source_stats %}
-                <tr>
-                  <td>{{ source.source }}</td>
-                  <td class="text-end">{{ source.work_orders }}</td>
-                  <td class="text-end">{{ source.evaluations }}</td>
-                  <td class="text-end">{{ source.diagnostics }}</td>
-                  <td class="text-end">{{ source.accepted }}</td>
+                <tr class="{% if source.is_good %}source-good{% endif %}">
+                  <td data-label="Источник">
+                    {{ source.source }}
+                    {% if source.is_good %}<span class="source-badge">✓ Лучший</span>{% endif %}
+                  </td>
+                  <td class="text-end" data-label="Рабочие листы">{{ source.work_orders }}</td>
+                  <td class="text-end" data-label="Оценки">{{ source.evaluations }}</td>
+                  <td class="text-end" data-label="Диагностика">{{ source.diagnostics }}</td>
+                  <td class="text-end" data-label="Принято">{{ source.accepted }}</td>
+                  <td class="text-end" data-label="Конверсия в принятые">
+                    {% if source.diagnostics > 0 %}
+                      <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.conv_to_accepted }}%</strong>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
               <tfoot class="table-light">
                 <tr>
-                  <th>Итого</th>
-                  <th class="text-end">{{ params.source_totals.work_orders }}</th>
-                  <th class="text-end">{{ params.source_totals.evaluations }}</th>
-                  <th class="text-end">{{ params.source_totals.diagnostics }}</th>
-                  <th class="text-end">{{ params.source_totals.accepted }}</th>
+                  <th data-label="Итого">Итого</th>
+                  <th class="text-end" data-label="Рабочие листы">{{ params.source_totals.work_orders }}</th>
+                  <th class="text-end" data-label="Оценки">{{ params.source_totals.evaluations }}</th>
+                  <th class="text-end" data-label="Диагностика">{{ params.source_totals.diagnostics }}</th>
+                  <th class="text-end" data-label="Принято">{{ params.source_totals.accepted }}</th>
+                  <th class="text-end" data-label="Конверсия в принятые">
+                    {% if params.source_totals.conv_to_accepted %}
+                      <strong>{{ params.source_totals.conv_to_accepted }}%</strong>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </th>
                 </tr>
               </tfoot>
             </table>
@@ -379,7 +550,7 @@
         </button>
         <div class="collapsible-card__body">
           <div class="table-responsive mt-3">
-            <table class="table table-sm align-middle">
+            <table class="table table-sm align-middle table-mobile-cards">
               <thead class="table-light">
                 <tr>
                   <th>Дата</th>
@@ -395,20 +566,20 @@
               <tbody>
                 {% for row in params.autoteka_summary.rows %}
                 <tr>
-                  <td>{{ row.date|date:"d.m.Y" }}</td>
-                  <td>{{ row.vin }}</td>
-                  <td>{{ row.brand }} {{ row.model }}</td>
-                  <td>{{ row.city_name }}</td>
-                  <td class="text-end">{% if row.price %}{{ row.price }} ₽{% else %}—{% endif %}</td>
-                  <td class="text-end">{% if row.price_reception %}{{ row.price_reception }} ₽{% else %}—{% endif %}</td>
-                  <td>
+                  <td data-label="Дата">{{ row.date|date:"d.m.Y" }}</td>
+                  <td data-label="VIN">{{ row.vin }}</td>
+                  <td data-label="Модель">{{ row.brand }} {{ row.model }}</td>
+                  <td data-label="Город">{{ row.city_name }}</td>
+                  <td class="text-end" data-label="Цена">{% if row.price %}{{ row.price }} ₽{% else %}—{% endif %}</td>
+                  <td class="text-end" data-label="Согласована">{% if row.price_reception %}{{ row.price_reception }} ₽{% else %}—{% endif %}</td>
+                  <td data-label="Интерактивная оценка">
                     {% if row.rlk_id %}
                       <a href="{% url 'eco:id' row.rlk_id %}" target="_blank" rel="noopener">Открыть</a>
                     {% else %}
                       —
                     {% endif %}
                   </td>
-                  <td>
+                  <td data-label="Ссылка">
                     {% if row.url %}
                       <a href="{{ row.url }}" target="_blank" rel="noopener">Открыть</a>
                     {% else %}
