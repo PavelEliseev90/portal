@@ -195,7 +195,7 @@ def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst
 
     stage_work_orders = tradein_rlk.count()
     stage_estimations = reg_qs.count()
-    stage_diagnostics_qs = reg_qs.filter(page_proverki__isnull=False)
+    stage_diagnostics_qs = reg_qs.filter(page_soglasovanie__isnull=False).exclude(page_soglasovanie__comment_diagnostica = '').filter(page_soglasovanie__no_diagnostica = False) | reg_qs.filter(page_soglasovanie__isnull=False).filter(page_soglasovanie__no_diagnostica = True)
     stage_diagnostics = stage_diagnostics_qs.count()
     stage_accepted = stage_diagnostics_qs.filter(status__name__icontains='ам принят').count()
 
