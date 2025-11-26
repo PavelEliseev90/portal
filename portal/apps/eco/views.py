@@ -313,21 +313,54 @@ def tradein_funnel(request):
     unresolved_vins = list(
         unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True)
     )
+    query_without_flag = request.GET.copy()
+    if 'show_autoteka' in query_without_flag:
+        query_without_flag.pop('show_autoteka')
+    query_show_all = query_without_flag.copy()
+    query_show_all['show_autoteka'] = '1'
+
     autoteka_summary = {
         'total': 0,
         'unique': 0,
         'rows': [],
+        'show_all': request.GET.get('show_autoteka') == '1',
+        'query_base': query_without_flag.urlencode(),
+        'query_show_all': query_show_all.urlencode(),
     }
     if unresolved_vins:
+        vin_map = {}
+        for item in unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values(
+            'vin',
+            'pk',
+            'rlk__id',
+            'page_soglasovanie__price_reception',
+        ):
+            vin_map.setdefault(item['vin'], item)
+
         leads_qs = Autoteka_signal.objects.filter(vin__in=unresolved_vins)
         leads_qs = leads_qs.filter(date__gte=date_start).filter(date__lte=date_end)
         autoteka_summary['total'] = leads_qs.count()
         autoteka_summary['unique'] = leads_qs.values('vin').distinct().count()
-        autoteka_summary['rows'] = list(
-            leads_qs.order_by('-date').values(
-                'vin', 'brand', 'model', 'price', 'city_name', 'date', 'url'
-            )[:10]
-        )
+        leads_qs = leads_qs.order_by('-date')
+        if not autoteka_summary['show_all']:
+            leads_qs = leads_qs[:10]
+
+        rows = []
+        for row in leads_qs:
+            info = vin_map.get(row.vin)
+            rows.append({
+                'vin': row.vin,
+                'brand': row.brand,
+                'model': row.model,
+                'price': row.price,
+                'city_name': row.city_name,
+                'date': row.date,
+                'url': row.url,
+                'rlk_id': info['rlk__id'] if info else None,
+                'estimation_id': info['pk'] if info else None,
+                'price_reception': info['page_soglasovanie__price_reception'] if info else None,
+            })
+        autoteka_summary['rows'] = rows
 
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
@@ -4155,7 +4188,7 @@ def estimations_price_calculation(estimation, type_calculation):
             matrix_auction  = settings_matrix.charge_bcp_2000
         elif estimation_price_to_bcp < 3000000:
             matrix_auction  = settings_matrix.charge_bcp_3000
-        elif estiestimation_price_to_bcpmation_price < 5000000:
+        elif estimation_price_to_bcp < 5000000:
             matrix_auction  = settings_matrix.charge_bcp_5000
         else:
             matrix_auction  = settings_matrix.charge_bcp_5001        

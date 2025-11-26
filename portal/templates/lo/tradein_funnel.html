@@ -92,6 +92,9 @@
     box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
     height: 100%;
   }
+.kors-panel canvas {
+    max-height: 512px;
+}
 
   .kors-panel__head h3 {
     font-size: 1rem;
@@ -176,7 +179,7 @@
           <h3>Воронка</h3>
           <p class="text-muted mb-0">Сравнение текущего периода</p>
         </div>
-        <canvas id="funnelChart" height="260"></canvas>
+        <canvas id="funnelChart"></canvas>
       </article>
     </div>
     <div class="col-lg-7">
@@ -185,7 +188,7 @@
           <h3>Динамика за 3 месяца</h3>
           <p class="text-muted mb-0">Показываем, как меняется каждая ступень</p>
         </div>
-        <canvas id="trendChart" height="260"></canvas>
+        <canvas id="trendChart"></canvas>
       </article>
     </div>
   </div>
@@ -198,7 +201,7 @@
           <h3>Подразделения (3 месяца)</h3>
           <p class="text-muted mb-0">Количество интерактивных оценок по каждому ДЦ</p>
         </div>
-        <canvas id="unitTrendChart" height="260"></canvas>
+        <canvas id="unitTrendChart"></canvas>
       </article>
     </div>
   </div>
@@ -227,7 +230,9 @@
                 <th>Модель</th>
                 <th>Город</th>
                 <th class="text-end">Цена</th>
-                <th>Ссылка</th>
+            <th>Согласована</th>
+            <th>Интерактивная оценка</th>
+            <th>Ссылка</th>
               </tr>
             </thead>
             <tbody>
@@ -237,7 +242,15 @@
                 <td>{{ row.vin }}</td>
                 <td>{{ row.brand }} {{ row.model }}</td>
                 <td>{{ row.city_name }}</td>
-                <td class="text-end">{% if row.price %}{{ row.price|intcomma }} ₽{% else %}—{% endif %}</td>
+                <td class="text-end">{% if row.price %}{{ row.price }} ₽{% else %}—{% endif %}</td>
+                <td class="text-end">{% if row.price_reception %}{{ row.price_reception }} ₽{% else %}—{% endif %}</td>
+                <td>
+                  {% if row.rlk_id %}
+                    <a href="{% url 'eco:id' row.rlk_id %}" target="_blank" rel="noopener">Открыть</a>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
                 <td>
                   {% if row.url %}
                     <a href="{{ row.url }}" target="_blank" rel="noopener">Открыть</a>
@@ -251,6 +264,13 @@
           </table>
         </div>
       </article>
+      <div class="text-center mt-3">
+        {% if params.autoteka_summary.show_all %}
+          <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}{% if params.autoteka_summary.query_base %}?{{ params.autoteka_summary.query_base }}{% endif %}">Показать первые 10</a>
+        {% else %}
+          <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}?{{ params.autoteka_summary.query_show_all }}">Показать все</a>
+        {% endif %}
+      </div>
     </div>
   </div>
   {% endif %}
