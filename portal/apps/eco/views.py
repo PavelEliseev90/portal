@@ -5029,6 +5029,306 @@ def eco_efficiency_analysis(request):
     return render(request, 'lo/eco_efficiency.html', {'params': params})
 
 
+def staff_performance_analysis(request):
+    """Дашборд анализа работы оценщиков"""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'staff_performance',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+
+    # Базовый запрос для рабочих листов (RLK) - только trade-in
+    rlk_base_qs = DocRLK.objects.filter(
+        tradeInModel__isnull=False
+    ).filter(
+        dataTime__gte=date_start,
+        dataTime__lte=date_end,
+    ).select_related('staff', 'unit')
+
+    # Базовый запрос для интерактивных оценок
+    eval_base_qs = RegInteractivOcenka.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    ).select_related('staff', 'rlk', 'rlk__staff', 'status', 'page_soglasovanie')
+
+    if unit_id:
+        rlk_base_qs = rlk_base_qs.filter(
+            Q(unit__id=unit_id) | Q(unit_dc__id=unit_id)
+        )
+        eval_base_qs = eval_base_qs.filter(
+            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+        )
+
+    if staff_id:
+        try:
+            RefStaff.objects.get(id=staff_id)
+            rlk_base_qs = rlk_base_qs.filter(staff__id=staff_id)
+            eval_base_qs = eval_base_qs.filter(rlk__staff__id=staff_id)
+        except RefStaff.DoesNotExist:
+            pass
+
+    # Получаем список всех оценщиков, которые работали в период
+    staff_ids_from_rlk = set(rlk_base_qs.filter(staff__isnull=False).values_list('staff__id', flat=True))
+    staff_ids_from_eval = set(eval_base_qs.filter(rlk__staff__isnull=False).values_list('rlk__staff__id', flat=True))
+    all_staff_ids = list(staff_ids_from_rlk | staff_ids_from_eval)
+
+    # Получаем данные по задачам и чатам для оптимизации
+    all_eval_ids = list(eval_base_qs.values_list('id', flat=True))
+    
+    eval_task_counts = {}
+    if all_eval_ids:
+        task_data = RegInteractivOcenkaTask.objects.filter(estimation_id__in=all_eval_ids).values('estimation_id').annotate(
+            total=Count('id'),
+            closed=Count('id', filter=Q(date_close__isnull=False))
+        )
+        for item in task_data:
+            eval_task_counts[item['estimation_id']] = {
+                'total': item['total'],
+                'closed': item['closed']
+            }
+
+    from collections import defaultdict
+    eval_chat_data = defaultdict(lambda: {'count': 0, 'first_date': None, 'last_date': None})
+    
+    rlk_ids_list = list(set(eval_base_qs.select_related('rlk').filter(rlk__isnull=False).values_list('rlk__id', flat=True)))
+    
+    if rlk_ids_list:
+        chats = Chat.objects.filter(rlk_id__in=rlk_ids_list).prefetch_related('chatmessage_set')
+        
+        for chat in chats:
+            messages_qs = chat.chatmessage_set.all()
+            msg_count = messages_qs.count()
+            if msg_count > 0:
+                first_msg = messages_qs.order_by('date').first()
+                last_msg = messages_qs.order_by('-date').first()
+                eval_chat_data[chat.rlk_id] = {
+                    'count': msg_count,
+                    'first_date': first_msg.date if first_msg else None,
+                    'last_date': last_msg.date if last_msg else None,
+                }
+
+    # Статистика по каждому оценщику
+    staff_stats = []
+    
+    for staff in RefStaff.objects.filter(id__in=all_staff_ids).order_by('name'):
+        # Рабочие листы оценщика
+        staff_rlks = rlk_base_qs.filter(staff=staff)
+        rlk_count = staff_rlks.count()
+        
+        # Интерактивные оценки оценщика
+        staff_evals = eval_base_qs.filter(rlk__staff=staff)
+        eval_ids = list(staff_evals.values_list('id', flat=True))
+        eval_count = len(eval_ids)
+        
+        # Диагностики (с заполненной секцией диагностики)
+        diagnostics_qs = staff_evals.filter(
+            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
+             ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
+            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
+        )
+        diagnostics_count = diagnostics_qs.count()
+        
+        # Приемы (статус "АМ принят")
+        accepted_count = staff_evals.filter(
+            status__name__icontains='ам принят'
+        ).count()
+        
+        # Со согласованием
+        with_soglas_count = staff_evals.filter(page_soglasovanie__isnull=False).count()
+        
+        # Среднее время оценки
+        time_diffs = []
+        for eval in staff_evals.filter(start_estimation__isnull=False, end_estimation__isnull=False)[:500]:
+            if eval.end_estimation and eval.start_estimation:
+                diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                if diff >= 0:
+                    time_diffs.append(diff)
+        avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+        
+        # Статистика по типам поступлений (из оценок через page_documents)
+        type_stats = {}
+        type_distribution = staff_evals.values('page_documents__type_reception__name').annotate(
+            count=Count('id')
+        )
+        for item in type_distribution:
+            type_name = item['page_documents__type_reception__name'] or 'Не указано'
+            type_stats[type_name] = item['count']
+        
+        # Статистика по задачам
+        task_stats = {
+            'total': 0,
+            'closed': 0,
+            'evaluations_with_tasks': 0,
+        }
+        
+        for eval_id in eval_ids:
+            task_data = eval_task_counts.get(eval_id)
+            if task_data:
+                task_stats['total'] += task_data.get('total', 0)
+                task_stats['closed'] += task_data.get('closed', 0)
+                if task_data.get('total', 0) > 0:
+                    task_stats['evaluations_with_tasks'] += 1
+        
+        # Статистика по чатам
+        chat_stats = {
+            'total_messages': 0,
+            'evaluations_with_chat': 0,
+        }
+        
+        for eval in staff_evals.select_related('rlk')[:500]:
+            if eval.rlk and eval.rlk.id:
+                chat_info = eval_chat_data.get(eval.rlk.id)
+                if chat_info and chat_info['count'] > 0:
+                    chat_stats['total_messages'] += chat_info['count']
+                    chat_stats['evaluations_with_chat'] += 1
+        
+        # Конверсии
+        rlk_to_eval_rate = round((eval_count / rlk_count * 100), 1) if rlk_count > 0 else 0
+        eval_to_diag_rate = round((diagnostics_count / eval_count * 100), 1) if eval_count > 0 else 0
+        diag_to_accepted_rate = round((accepted_count / diagnostics_count * 100), 1) if diagnostics_count > 0 else 0
+        overall_conversion = round((accepted_count / rlk_count * 100), 1) if rlk_count > 0 else 0
+        
+        if rlk_count > 0 or eval_count > 0:
+            staff_stats.append({
+                'staff': staff,
+                'rlk_count': rlk_count,
+                'eval_count': eval_count,
+                'diagnostics_count': diagnostics_count,
+                'accepted_count': accepted_count,
+                'with_soglas_count': with_soglas_count,
+                'avg_time': avg_time,
+                'type_stats': type_stats,
+                'task_stats': task_stats,
+                'chat_stats': chat_stats,
+                'rlk_to_eval_rate': rlk_to_eval_rate,
+                'eval_to_diag_rate': eval_to_diag_rate,
+                'diag_to_accepted_rate': diag_to_accepted_rate,
+                'overall_conversion': overall_conversion,
+            })
+    
+    staff_stats = sorted(staff_stats, key=lambda x: x['rlk_count'], reverse=True)
+
+    # Месячная динамика по всем оценщикам
+    monthly_data = []
+    base_month = date_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    current = base_month
+    
+    while current <= date_end:
+        month_end = (current + relativedelta(months=1)) - DT.timedelta(seconds=1)
+        if month_end > date_end:
+            month_end = date_end
+        
+        month_rlk_qs = rlk_base_qs.filter(
+            dataTime__gte=current,
+            dataTime__lte=month_end,
+        )
+        month_eval_qs = eval_base_qs.filter(
+            start_estimation__gte=current,
+            start_estimation__lte=month_end,
+        )
+        
+        month_rlk_count = month_rlk_qs.count()
+        month_eval_count = month_eval_qs.count()
+        month_diagnostics_count = month_eval_qs.filter(
+            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
+             ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
+            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
+        ).count()
+        month_accepted_count = month_eval_qs.filter(
+            status__name__icontains='ам принят'
+        ).count()
+        
+        # Среднее время за месяц
+        time_diffs = []
+        for eval in month_eval_qs.filter(start_estimation__isnull=False, end_estimation__isnull=False)[:200]:
+            if eval.end_estimation and eval.start_estimation:
+                diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                if diff >= 0:
+                    time_diffs.append(diff)
+        
+        avg_month_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+        
+        monthly_data.append({
+            'month': current.strftime('%b %Y'),
+            'rlk_count': month_rlk_count,
+            'eval_count': month_eval_count,
+            'diagnostics_count': month_diagnostics_count,
+            'accepted_count': month_accepted_count,
+            'avg_time': avg_month_time,
+        })
+        
+        current = current + relativedelta(months=1)
+
+    # Общая статистика
+    total_rlk = rlk_base_qs.count()
+    total_eval = eval_base_qs.count()
+    total_diagnostics = eval_base_qs.filter(
+        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
+         ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
+        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
+    ).count()
+    total_accepted = eval_base_qs.filter(
+        status__name__icontains='ам принят'
+    ).count()
+    
+    # Распределение по типам поступлений (общее, из оценок через page_documents)
+    overall_type_distribution = {}
+    type_dist = eval_base_qs.values('page_documents__type_reception__name').annotate(
+        count=Count('id')
+    )
+    for item in type_dist:
+        type_name = item['page_documents__type_reception__name'] or 'Не указано'
+        overall_type_distribution[type_name] = item['count']
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+    }
+
+    monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
+    overall_type_distribution_json = json.dumps(overall_type_distribution, ensure_ascii=False)
+
+    params = {
+        'type': 'staff_performance',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'total_rlk': total_rlk,
+        'total_eval': total_eval,
+        'total_diagnostics': total_diagnostics,
+        'total_accepted': total_accepted,
+        'staff_stats': staff_stats,
+        'monthly_data': monthly_data,
+        'monthly_data_json': monthly_data_json,
+        'overall_type_distribution': overall_type_distribution,
+        'overall_type_distribution_json': overall_type_distribution_json,
+        'units': units,
+        'staffs': staffs,
+    }
+
+    return render(request, 'lo/staff_performance.html', {'params': params})
+
+
 #История изменений
 def get_versions(table, id):
 	return ChangeLog.objects.filter(model = table).filter(record_id = id).order_by('changed')

@@ -1,0 +1,489 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Анализ работы оценщиков {% endblock %}
+
+{% block content %}
+<style>
+  .kors-staff-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-staff-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-staff-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-filter .form-select,
+  .kors-filter .form-control {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .kors-metric-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .kors-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 30px 55px rgba(0, 23, 61, 0.12);
+  }
+
+  .kors-metric-card h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-metric-card .metric-value {
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0.5rem 0;
+  }
+
+  .kors-metric-card .metric-label {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+  }
+
+  .kors-panel canvas {
+    max-height: 512px;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive.mobile-cards-wrapper {
+    overflow-x: visible;
+  }
+
+  .staff-stat-row {
+    transition: background-color 0.2s;
+  }
+
+  .staff-stat-row:hover {
+    background-color: #f8fafc;
+  }
+
+  .conversion-badge {
+    padding: 0.25rem 0.65rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .conversion-high {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .conversion-medium {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .conversion-low {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  @media (max-width: 768px) {
+    .kors-staff-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-metric-card .metric-value {
+      font-size: 1.8rem;
+    }
+
+    .kors-panel canvas {
+      max-height: 400px;
+      min-height: 350px;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      background: #fff;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+    }
+
+    .table-responsive.mobile-cards-wrapper thead {
+      display: none;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #6c7a92;
+      text-align: left;
+      margin-right: 1rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:first-child {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #002a5a;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+      margin-bottom: 0.5rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:first-child:before {
+      display: none;
+    }
+  }
+</style>
+
+<div class="kors-staff-page">
+  <div class="kors-staff-header">
+    <h2>Анализ работы оценщиков</h2>
+    <p>Комплексный дашборд работы оценщиков: рабочие листы, оценки, диагностики, приемы и конверсии</p>
+  </div>
+
+  <form class="kors-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" == params.filters.unit_id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Оценщик</label>
+        <select class="form-select" name="staff_id">
+          <option value="">Все</option>
+          {% for staff in params.staffs %}
+            <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Общие метрики -->
+  <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Рабочих листов</h3>
+        <div class="metric-value">{{ params.total_rlk }}</div>
+        <div class="metric-label">Всего trade-in РЛК</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Интерактивных оценок</h3>
+        <div class="metric-value">{{ params.total_eval }}</div>
+        <div class="metric-label">Создано оценок</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Диагностик</h3>
+        <div class="metric-value">{{ params.total_diagnostics }}</div>
+        <div class="metric-label">Заполненных диагностик</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Принято</h3>
+        <div class="metric-value">{{ params.total_accepted }}</div>
+        <div class="metric-label">Автомобилей принято</div>
+      </article>
+    </div>
+  </div>
+
+  <!-- Графики -->
+  <div class="row g-3 mb-3">
+    <div class="col-lg-8">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Динамика по месяцам</h3>
+          <p class="text-muted mb-0">Рабочие листы, оценки, диагностики и приемы</p>
+        </div>
+        <canvas id="monthlyChart"></canvas>
+      </article>
+    </div>
+    <div class="col-lg-4">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Распределение по типам</h3>
+          <p class="text-muted mb-0">Типы поступлений</p>
+        </div>
+        <canvas id="typeChart"></canvas>
+      </article>
+    </div>
+  </div>
+
+  <!-- Таблица статистики по оценщикам -->
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Статистика по оценщикам</h3>
+          <p class="text-muted mb-0">Детальная статистика работы каждого оценщика</p>
+        </div>
+        <div class="table-responsive mobile-cards-wrapper mt-3">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Оценщик</th>
+                <th class="text-end">РЛК</th>
+                <th class="text-end">Оценки</th>
+                <th class="text-end">Диагностики</th>
+                <th class="text-end">Принято</th>
+                <th class="text-end">Среднее время</th>
+                <th class="text-end">РЛК→Оценка</th>
+                <th class="text-end">Оценка→Диаг</th>
+                <th class="text-end">Диаг→Прием</th>
+                <th class="text-end">Общая конверсия</th>
+                <th class="text-end">Задач</th>
+                <th class="text-end">Сообщений</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stat in params.staff_stats %}
+              <tr class="staff-stat-row">
+                <td data-label="Оценщик"><strong>{{ stat.staff.name }}</strong></td>
+                <td class="text-end" data-label="РЛК">{{ stat.rlk_count }}</td>
+                <td class="text-end" data-label="Оценки">{{ stat.eval_count }}</td>
+                <td class="text-end" data-label="Диагностики">{{ stat.diagnostics_count }}</td>
+                <td class="text-end" data-label="Принято">{{ stat.accepted_count }}</td>
+                <td class="text-end" data-label="Среднее время">
+                  {% if stat.avg_time %}
+                    {{ stat.avg_time }} ч
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="РЛК→Оценка">
+                  <span class="conversion-badge {% if stat.rlk_to_eval_rate >= 80 %}conversion-high{% elif stat.rlk_to_eval_rate >= 60 %}conversion-medium{% else %}conversion-low{% endif %}">
+                    {{ stat.rlk_to_eval_rate }}%
+                  </span>
+                </td>
+                <td class="text-end" data-label="Оценка→Диаг">
+                  <span class="conversion-badge {% if stat.eval_to_diag_rate >= 80 %}conversion-high{% elif stat.eval_to_diag_rate >= 60 %}conversion-medium{% else %}conversion-low{% endif %}">
+                    {{ stat.eval_to_diag_rate }}%
+                  </span>
+                </td>
+                <td class="text-end" data-label="Диаг→Прием">
+                  <span class="conversion-badge {% if stat.diag_to_accepted_rate >= 50 %}conversion-high{% elif stat.diag_to_accepted_rate >= 30 %}conversion-medium{% else %}conversion-low{% endif %}">
+                    {{ stat.diag_to_accepted_rate }}%
+                  </span>
+                </td>
+                <td class="text-end" data-label="Общая конверсия">
+                  <span class="conversion-badge {% if stat.overall_conversion >= 40 %}conversion-high{% elif stat.overall_conversion >= 25 %}conversion-medium{% else %}conversion-low{% endif %}">
+                    {{ stat.overall_conversion }}%
+                  </span>
+                </td>
+                <td class="text-end" data-label="Задач">
+                  {% if stat.task_stats.total > 0 %}
+                    {{ stat.task_stats.total }} ({{ stat.task_stats.closed }} закрыто)
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Сообщений">
+                  {% if stat.chat_stats.total_messages > 0 %}
+                    {{ stat.chat_stats.total_messages }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="12" class="text-center text-muted">Нет данных за выбранный период</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const monthlyData = JSON.parse('{{ params.monthly_data_json|escapejs }}');
+  
+  if (monthlyData && monthlyData.length > 0) {
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+      type: 'bar',
+      data: {
+        labels: monthlyData.map(d => d.month),
+        datasets: [
+          {
+            label: 'Рабочих листов',
+            data: monthlyData.map(d => d.rlk_count),
+            backgroundColor: '#2563eb',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Интерактивных оценок',
+            data: monthlyData.map(d => d.eval_count),
+            backgroundColor: '#22c55e',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Диагностик',
+            data: monthlyData.map(d => d.diagnostics_count),
+            backgroundColor: '#f59e0b',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Принято',
+            data: monthlyData.map(d => d.accepted_count),
+            backgroundColor: '#10b981',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Среднее время (ч)',
+            data: monthlyData.map(d => d.avg_time || 0),
+            type: 'line',
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            yAxisID: 'y1',
+            tension: 0.35,
+            fill: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            beginAtZero: true,
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            beginAtZero: true,
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+        }
+      }
+    });
+  }
+
+  const typeData = JSON.parse('{{ params.overall_type_distribution_json|escapejs }}');
+  
+  if (typeData && Object.keys(typeData).length > 0) {
+    const typeCtx = document.getElementById('typeChart').getContext('2d');
+    const colors = ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
+    
+    new Chart(typeCtx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(typeData),
+        datasets: [{
+          data: Object.values(typeData),
+          backgroundColor: colors.slice(0, Object.keys(typeData).length),
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
+
