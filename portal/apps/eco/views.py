@@ -4795,90 +4795,104 @@ def eco_efficiency_analysis(request):
                     'last_date': last_msg.date if last_msg else None,
                 }
     
-    analyst_stats = []
-    analysts_qs = User.objects.filter(
+    # Предзагружаем статистику по аналитикам одним запросом
+    analyst_ids = list(User.objects.filter(
         Q(profiles__eco=True) | Q(profiles__eco_visible=True)
-    ).distinct()
+    ).distinct().values_list('id', flat=True))
     
-    for analyst in analysts_qs:
-        analyst_evaluations = base_qs.filter(staff=analyst)
-        eval_ids = list(analyst_evaluations.values_list('id', flat=True))
-        count = len(eval_ids)
+    analyst_stats_by_id = {}
+    analyst_stats_raw = base_qs.filter(staff__id__in=analyst_ids).values('staff__id').annotate(
+        total=Count('id'),
+        with_soglas=Count('id', filter=Q(page_soglasovanie__isnull=False)),
+        accepted=Count('id', filter=Q(status__name__icontains='ам принят'))
+    ).values('staff__id', 'total', 'with_soglas', 'accepted')
+    
+    for item in analyst_stats_raw:
+        analyst_stats_by_id[item['staff__id']] = {
+            'total': item['total'],
+            'with_soglas': item['with_soglas'],
+            'accepted': item['accepted'],
+        }
+    
+    # Получаем временные данные для аналитиков
+    analyst_time_data = {}
+    for eval in base_qs.filter(
+        staff__id__in=analyst_ids,
+        start_estimation__isnull=False,
+        end_estimation__isnull=False
+    ).only('id', 'start_estimation', 'end_estimation', 'staff__id')[:2000]:
+        if eval.staff_id and eval.end_estimation and eval.start_estimation:
+            if eval.staff_id not in analyst_time_data:
+                analyst_time_data[eval.staff_id] = []
+            diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+            if diff >= 0:
+                analyst_time_data[eval.staff_id].append(diff)
+    
+    # Создаем маппинг eval_id -> analyst_id
+    eval_to_analyst_map = {}
+    for eval in base_qs.filter(staff__id__in=analyst_ids).only('id', 'staff__id', 'rlk__id', 'start_estimation'):
+        if eval.staff_id:
+            eval_to_analyst_map[eval.id] = eval.staff_id
+    
+    # Группируем задачи и чаты по аналитикам
+    analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []})
+    analyst_chat_stats = defaultdict(lambda: {'total_messages': 0, 'evaluations_with_chat': set(), 'message_counts': [], 'response_times': []})
+    
+    for eval_id, task_data in eval_task_counts.items():
+        analyst_id = eval_to_analyst_map.get(eval_id)
+        if analyst_id:
+            analyst_task_stats[analyst_id]['total'] += task_data.get('total', 0)
+            analyst_task_stats[analyst_id]['closed'] += task_data.get('closed', 0)
+            if task_data.get('total', 0) > 0:
+                analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
+                analyst_task_stats[analyst_id]['task_counts'].append(task_data.get('total', 0))
+    
+    for eval in base_qs.filter(staff__id__in=analyst_ids).select_related('rlk').only('id', 'rlk__id', 'staff__id', 'start_estimation')[:2000]:
+        if eval.rlk and eval.rlk.id and eval.staff_id:
+            chat_info = eval_chat_data.get(eval.rlk.id)
+            if chat_info and chat_info['count'] > 0:
+                analyst_chat_stats[eval.staff_id]['total_messages'] += chat_info['count']
+                analyst_chat_stats[eval.staff_id]['evaluations_with_chat'].add(eval.id)
+                analyst_chat_stats[eval.staff_id]['message_counts'].append(chat_info['count'])
+                
+                if eval.start_estimation and chat_info['first_date']:
+                    time_to_first_msg = (chat_info['first_date'] - eval.start_estimation).total_seconds() / 3600
+                    if time_to_first_msg >= 0:
+                        analyst_chat_stats[eval.staff_id]['response_times'].append(time_to_first_msg)
+    
+    # Формируем финальную статистику
+    analyst_stats = []
+    for analyst in User.objects.filter(id__in=analyst_ids):
+        stats = analyst_stats_by_id.get(analyst.id, {})
+        count = stats.get('total', 0)
         
         if count > 0:
-            with_soglas = analyst_evaluations.filter(page_soglasovanie__isnull=False).count()
+            with_soglas = stats.get('with_soglas', 0)
+            accepted_count = stats.get('accepted', 0)
             
-            time_diffs = []
-            for eval in analyst_evaluations.filter(start_estimation__isnull=False, end_estimation__isnull=False)[:500]:
-                if eval.end_estimation and eval.start_estimation:
-                    diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
-                    if diff >= 0:
-                        time_diffs.append(diff)
-            
+            # Среднее время
+            time_diffs = analyst_time_data.get(analyst.id, [])
             avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
             
-            accepted_count = analyst_evaluations.filter(
-                status__name__icontains='ам принят'
-            ).count()
-            
+            # Чаты
+            chat_data = analyst_chat_stats.get(analyst.id, {})
             chat_stats = {
-                'total_messages': 0,
-                'evaluations_with_chat': 0,
-                'avg_messages_per_eval': 0,
-                'avg_response_time': None,
+                'total_messages': chat_data['total_messages'],
+                'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
+                'avg_messages_per_eval': round(sum(chat_data.get('message_counts', [])) / count, 1) if chat_data.get('message_counts') else 0,
+                'avg_response_time': round(sum(chat_data.get('response_times', [])) / len(chat_data.get('response_times', [])), 1) if chat_data.get('response_times') else None,
             }
             
-            analyst_message_counts = []
-            response_times = []
-            
-            for eval in analyst_evaluations.select_related('rlk')[:500]:
-                if eval.rlk and eval.rlk.id:
-                    chat_info = eval_chat_data.get(eval.rlk.id)
-                    if chat_info and chat_info['count'] > 0:
-                        analyst_message_counts.append(chat_info['count'])
-                        
-                        if eval.start_estimation and chat_info['first_date']:
-                            time_to_first_msg = (chat_info['first_date'] - eval.start_estimation).total_seconds() / 3600
-                            if time_to_first_msg >= 0:
-                                response_times.append(time_to_first_msg)
-            
-            if analyst_message_counts:
-                chat_stats['total_messages'] = sum(analyst_message_counts)
-                chat_stats['evaluations_with_chat'] = len(analyst_message_counts)
-                chat_stats['avg_messages_per_eval'] = round(sum(analyst_message_counts) / count, 1)
-            
-            if response_times:
-                chat_stats['avg_response_time'] = round(sum(response_times) / len(response_times), 1)
-            
+            # Задачи
+            task_data = analyst_task_stats.get(analyst.id, {})
             task_stats = {
-                'total_tasks': 0,
-                'evaluations_with_tasks': 0,
-                'avg_tasks_per_eval': 0,
-                'closed_tasks': 0,
-                'open_tasks': 0,
-                'closed_percent': 0,
+                'total_tasks': task_data['total'],
+                'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
+                'avg_tasks_per_eval': round(sum(task_data.get('task_counts', [])) / count, 1) if task_data.get('task_counts') else 0,
+                'closed_tasks': task_data['closed'],
+                'open_tasks': task_data['total'] - task_data['closed'],
+                'closed_percent': round((task_data['closed'] / task_data['total'] * 100), 1) if task_data['total'] > 0 else 0,
             }
-            
-            analyst_task_counts = []
-            evaluations_with_tasks = set()
-            
-            for eval_id in eval_ids:
-                task_data = eval_task_counts.get(eval_id)
-                if task_data:
-                    task_count = task_data.get('total', 0)
-                    closed_count = task_data.get('closed', 0)
-                    
-                    if task_count > 0:
-                        analyst_task_counts.append(task_count)
-                        evaluations_with_tasks.add(eval_id)
-                        task_stats['closed_tasks'] += closed_count
-                        task_stats['open_tasks'] += (task_count - closed_count)
-            
-            if analyst_task_counts:
-                task_stats['total_tasks'] = sum(analyst_task_counts)
-                task_stats['evaluations_with_tasks'] = len(evaluations_with_tasks)
-                task_stats['avg_tasks_per_eval'] = round(sum(analyst_task_counts) / count, 1)
-                task_stats['closed_percent'] = round((task_stats['closed_tasks'] / task_stats['total_tasks'] * 100), 1) if task_stats['total_tasks'] > 0 else 0
             
             analyst_stats.append({
                 'name': analyst.profiles.eco_name or analyst.get_full_name() or analyst.username,
@@ -4938,9 +4952,9 @@ def eco_efficiency_analysis(request):
     all_chat_messages_total = 0
     
     rlk_ids_map = {}  # Создаем маппинг rlk_id -> evaluation_id
-    for eval in base_qs.select_related('rlk'):
-        if eval.rlk and eval.rlk.id:
-            rlk_ids_map[eval.rlk.id] = eval.id
+    eval_rlk_data = base_qs.filter(rlk__isnull=False).select_related('rlk').only('id', 'rlk__id').values_list('id', 'rlk__id')
+    for eval_id, rlk_id in eval_rlk_data:
+        rlk_ids_map[rlk_id] = eval_id
     
     for rlk_id, eval_id in rlk_ids_map.items():
         chat_info = eval_chat_data.get(rlk_id)
@@ -5122,80 +5136,124 @@ def staff_performance_analysis(request):
                     'last_date': last_msg.date if last_msg else None,
                 }
 
-    # Статистика по каждому оценщику
-    staff_stats = []
+    # Предзагружаем все данные для оценщиков одним запросом
+    diagnostics_q_filter = (
+        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
+         ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
+        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
+    )
     
-    for staff in RefStaff.objects.filter(id__in=all_staff_ids).order_by('name'):
-        # Рабочие листы оценщика
-        staff_rlks = rlk_base_qs.filter(staff=staff)
-        rlk_count = staff_rlks.count()
-        
-        # Интерактивные оценки оценщика
-        staff_evals = eval_base_qs.filter(rlk__staff=staff)
-        eval_ids = list(staff_evals.values_list('id', flat=True))
-        eval_count = len(eval_ids)
-        
-        # Диагностики (с заполненной секцией диагностики)
-        diagnostics_qs = staff_evals.filter(
-            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
-             ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
-            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
+    # Агрегируем статистику по оценщикам одним запросом
+    rlk_stats_by_staff = dict(
+        rlk_base_qs.filter(staff__id__in=all_staff_ids)
+        .values('staff__id')
+        .annotate(count=Count('id'))
+        .values_list('staff__id', 'count')
+    )
+    
+    eval_stats_by_staff = {}
+    eval_stats_raw = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values('rlk__staff__id').annotate(
+        total=Count('id'),
+        diagnostics=Count('id', filter=diagnostics_q_filter),
+        accepted=Count('id', filter=Q(status__name__icontains='ам принят')),
+        with_soglas=Count('id', filter=Q(page_soglasovanie__isnull=False))
+    ).values('rlk__staff__id', 'total', 'diagnostics', 'accepted', 'with_soglas')
+    
+    for item in eval_stats_raw:
+        staff_id = item['rlk__staff__id']
+        eval_stats_by_staff[staff_id] = (
+            item['total'],
+            item['diagnostics'],
+            item['accepted'],
+            item['with_soglas']
         )
-        diagnostics_count = diagnostics_qs.count()
+    
+    # Получаем все оценки с временными метками для расчета среднего времени
+    eval_time_data = {}
+    for eval in eval_base_qs.filter(
+        rlk__staff__id__in=all_staff_ids,
+        start_estimation__isnull=False,
+        end_estimation__isnull=False
+    ).select_related('rlk__staff').only('id', 'start_estimation', 'end_estimation', 'rlk__staff__id')[:2000]:
+        if eval.rlk and eval.rlk.staff_id and eval.end_estimation and eval.start_estimation:
+            staff_id = eval.rlk.staff_id
+            if staff_id not in eval_time_data:
+                eval_time_data[staff_id] = []
+            diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+            if diff >= 0:
+                eval_time_data[staff_id].append(diff)
+    
+    # Создаем маппинг eval_id -> staff_id для быстрого поиска
+    eval_to_staff_map = {}
+    for eval in eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).select_related('rlk').only('id', 'rlk__staff__id'):
+        if eval.rlk and eval.rlk.staff_id:
+            eval_to_staff_map[eval.id] = eval.rlk.staff_id
+    
+    # Группируем задачи и чаты по оценщикам
+    staff_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
+    staff_chat_stats = defaultdict(lambda: {'total_messages': 0, 'evaluations_with_chat': set()})
+    
+    for eval_id, task_data in eval_task_counts.items():
+        staff_id = eval_to_staff_map.get(eval_id)
+        if staff_id:
+            staff_task_stats[staff_id]['total'] += task_data.get('total', 0)
+            staff_task_stats[staff_id]['closed'] += task_data.get('closed', 0)
+            if task_data.get('total', 0) > 0:
+                staff_task_stats[staff_id]['evaluations_with_tasks'].add(eval_id)
+    
+    for eval in eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).select_related('rlk').only('id', 'rlk__id', 'rlk__staff__id'):
+        if eval.rlk and eval.rlk.id and eval.rlk.staff_id:
+            chat_info = eval_chat_data.get(eval.rlk.id)
+            if chat_info and chat_info['count'] > 0:
+                staff_chat_stats[eval.rlk.staff_id]['total_messages'] += chat_info['count']
+                staff_chat_stats[eval.rlk.staff_id]['evaluations_with_chat'].add(eval.id)
+    
+    # Типы поступлений по оценщикам
+    staff_type_stats = defaultdict(lambda: defaultdict(int))
+    type_dist_by_staff = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values(
+        'rlk__staff__id', 'page_documents__type_reception__name'
+    ).annotate(count=Count('id'))
+    
+    for item in type_dist_by_staff:
+        staff_id = item['rlk__staff__id']
+        type_name = item['page_documents__type_reception__name'] or 'Не указано'
+        staff_type_stats[staff_id][type_name] = item['count']
+    
+    # Формируем финальную статистику
+    staff_stats = []
+    for staff in RefStaff.objects.filter(id__in=all_staff_ids).order_by('name'):
+        rlk_count = rlk_stats_by_staff.get(staff.id, 0)
+        eval_data = eval_stats_by_staff.get(staff.id)
         
-        # Приемы (статус "АМ принят")
-        accepted_count = staff_evals.filter(
-            status__name__icontains='ам принят'
-        ).count()
+        if not eval_data:
+            eval_count = diagnostics_count = accepted_count = with_soglas_count = 0
+        else:
+            eval_count = eval_data[0]
+            diagnostics_count = eval_data[1]
+            accepted_count = eval_data[2]
+            with_soglas_count = eval_data[3]
         
-        # Со согласованием
-        with_soglas_count = staff_evals.filter(page_soglasovanie__isnull=False).count()
-        
-        # Среднее время оценки
-        time_diffs = []
-        for eval in staff_evals.filter(start_estimation__isnull=False, end_estimation__isnull=False)[:500]:
-            if eval.end_estimation and eval.start_estimation:
-                diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
-                if diff >= 0:
-                    time_diffs.append(diff)
+        # Среднее время
+        time_diffs = eval_time_data.get(staff.id, [])
         avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
         
-        # Статистика по типам поступлений (из оценок через page_documents)
-        type_stats = {}
-        type_distribution = staff_evals.values('page_documents__type_reception__name').annotate(
-            count=Count('id')
-        )
-        for item in type_distribution:
-            type_name = item['page_documents__type_reception__name'] or 'Не указано'
-            type_stats[type_name] = item['count']
+        # Типы поступлений
+        type_stats = dict(staff_type_stats.get(staff.id, {}))
         
-        # Статистика по задачам
+        # Задачи
+        task_data = staff_task_stats.get(staff.id, {})
         task_stats = {
-            'total': 0,
-            'closed': 0,
-            'evaluations_with_tasks': 0,
+            'total': task_data['total'],
+            'closed': task_data['closed'],
+            'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
         }
         
-        for eval_id in eval_ids:
-            task_data = eval_task_counts.get(eval_id)
-            if task_data:
-                task_stats['total'] += task_data.get('total', 0)
-                task_stats['closed'] += task_data.get('closed', 0)
-                if task_data.get('total', 0) > 0:
-                    task_stats['evaluations_with_tasks'] += 1
-        
-        # Статистика по чатам
+        # Чаты
+        chat_data = staff_chat_stats.get(staff.id, {})
         chat_stats = {
-            'total_messages': 0,
-            'evaluations_with_chat': 0,
+            'total_messages': chat_data['total_messages'],
+            'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
         }
-        
-        for eval in staff_evals.select_related('rlk')[:500]:
-            if eval.rlk and eval.rlk.id:
-                chat_info = eval_chat_data.get(eval.rlk.id)
-                if chat_info and chat_info['count'] > 0:
-                    chat_stats['total_messages'] += chat_info['count']
-                    chat_stats['evaluations_with_chat'] += 1
         
         # Конверсии
         rlk_to_eval_rate = round((eval_count / rlk_count * 100), 1) if rlk_count > 0 else 0
@@ -5244,18 +5302,19 @@ def staff_performance_analysis(request):
         
         month_rlk_count = month_rlk_qs.count()
         month_eval_count = month_eval_qs.count()
-        month_diagnostics_count = month_eval_qs.filter(
-            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
-             ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
-            (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
-        ).count()
+        month_diagnostics_count = month_eval_qs.filter(diagnostics_q_filter).count()
         month_accepted_count = month_eval_qs.filter(
             status__name__icontains='ам принят'
         ).count()
         
-        # Среднее время за месяц
+        # Среднее время за месяц (оптимизированно)
+        month_time_qs = month_eval_qs.filter(
+            start_estimation__isnull=False,
+            end_estimation__isnull=False
+        ).only('start_estimation', 'end_estimation')[:100]
+        
         time_diffs = []
-        for eval in month_eval_qs.filter(start_estimation__isnull=False, end_estimation__isnull=False)[:200]:
+        for eval in month_time_qs:
             if eval.end_estimation and eval.start_estimation:
                 diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
                 if diff >= 0:
