@@ -272,11 +272,39 @@ def tradein_funnel(request):
         ],
     }
 
-    chart_payload = json.dumps({'funnel': funnel_chart, 'trend': trend_chart}, ensure_ascii=False)
-
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+
+    unit_trend_chart = None
+    if not unit_id:
+        unit_series = []
+        for unit in units:
+            series_data = []
+            has_values = False
+            for shift in range(2, -1, -1):
+                month_start = base_month - relativedelta(months=shift)
+                month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
+                counts = _get_stage_counts(month_start, month_end, unit.id, staff_id, analyst_id)
+                series_data.append(counts[1])
+                if counts[1]:
+                    has_values = True
+            if has_values:
+                unit_series.append({'label': unit.name, 'data': series_data})
+
+        if unit_series:
+            unit_trend_chart = {
+                'labels': monthly_labels,
+                'series': unit_series,
+            }
+
+    chart_payload = json.dumps({
+        'funnel': funnel_chart,
+        'trend': trend_chart,
+        'unitTrend': unit_trend_chart,
+    }, ensure_ascii=False)
+
+    unit_trend_available = bool(unit_trend_chart)
 
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
@@ -296,6 +324,7 @@ def tradein_funnel(request):
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
+        'unit_trend_available': unit_trend_available,
     }
 
     return render(request, 'lo/tradein_funnel.html', {'params': params})

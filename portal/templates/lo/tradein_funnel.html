@@ -189,6 +189,20 @@
       </article>
     </div>
   </div>
+
+  {% if params.unit_trend_available %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Подразделения (3 месяца)</h3>
+          <p class="text-muted mb-0">Количество интерактивных оценок по каждому ДЦ</p>
+        </div>
+        <canvas id="unitTrendChart" height="260"></canvas>
+      </article>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -255,6 +269,41 @@
       }
     }
   });
+
+  if (chartPayload.unitTrend && chartPayload.unitTrend.series && chartPayload.unitTrend.series.length) {
+    const palette = ['#002c63', '#00509d', '#ff8a00', '#ffd500', '#00b3a5', '#6659ff', '#ff4d6d', '#1f7a8c', '#8e6c88', '#008891'];
+    const unitCtx = document.getElementById('unitTrendChart').getContext('2d');
+    new Chart(unitCtx, {
+      type: 'line',
+      data: {
+        labels: chartPayload.unitTrend.labels,
+        datasets: chartPayload.unitTrend.series.map((serie, index) => ({
+          label: serie.label,
+          data: serie.data,
+          borderWidth: 2,
+          tension: 0.35,
+          fill: false,
+          borderColor: palette[index % palette.length],
+          backgroundColor: 'transparent',
+          pointRadius: 3,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: palette[index % palette.length],
+        }))
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
 </script>
 {% endblock %}
 
