@@ -5268,15 +5268,15 @@ def staff_performance_analysis(request):
         # Задачи
         task_data = staff_task_stats.get(staff.id, {})
         task_stats = {
-            'total': task_data['total'],
-            'closed': task_data['closed'],
+            'total': task_data.get('total', 0),
+            'closed': task_data.get('closed', 0),
             'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
         }
         
         # Чаты
         chat_data = staff_chat_stats.get(staff.id, {})
         chat_stats = {
-            'total_messages': chat_data['total_messages'],
+            'total_messages': chat_data.get('total_messages', 0),
             'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
         }
         
