@@ -9,7 +9,8 @@ from task_manager.views import send_message_socket, get_info_max, kors_estimatio
 import json
 from checklists.models import CheckListTradeIn
 from chats.models import Chat, ChatMessage
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField, FloatField
+from django.db.models.functions import Extract, TruncDate
 from django.db import models
 import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
@@ -4597,6 +4598,260 @@ class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+def eco_efficiency_analysis(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_efficiency',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+
+    base_qs = RegInteractivOcenka.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+
+    if unit_id:
+        base_qs = base_qs.filter(
+            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+        )
+
+    if staff_id:
+        base_qs = base_qs.filter(rlk__staff__id=staff_id)
+
+    if analyst_id:
+        base_qs = base_qs.filter(staff__id=analyst_id)
+
+    evaluations_with_soglasovanie = base_qs.filter(page_soglasovanie__isnull=False)
+
+    total_count = base_qs.count()
+    with_soglasovanie_count = evaluations_with_soglasovanie.count()
+    soglasovanie_percent = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
+
+    avg_time_total = None
+    if total_count > 0:
+        evaluations_with_times = base_qs.filter(
+            start_estimation__isnull=False,
+            end_estimation__isnull=False
+        ).exclude(end_estimation__lt=F('start_estimation'))
+        
+        if evaluations_with_times.count() > 0:
+            time_diffs = []
+            for eval in evaluations_with_times:
+                if eval.end_estimation and eval.start_estimation:
+                    diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                    if diff >= 0:
+                        time_diffs.append(diff)
+            
+            if time_diffs:
+                avg_time_total = round(sum(time_diffs) / len(time_diffs), 1)
+
+    avg_soglasovanie_time = None
+    if with_soglasovanie_count > 0:
+        evaluations_with_soglasovanie_times = evaluations_with_soglasovanie.filter(
+            start_estimation__isnull=False,
+            end_estimation__isnull=False
+        )
+        
+        time_diffs = []
+        for eval in evaluations_with_soglasovanie_times:
+            if eval.page_soglasovanie and eval.start_estimation and eval.end_estimation:
+                if (eval.page_soglasovanie.price_before_kd and eval.page_soglasovanie.price_before_kd > 0) or \
+                   (eval.page_soglasovanie.price_after_kd and eval.page_soglasovanie.price_after_kd > 0):
+                    diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                    if diff >= 0:
+                        time_diffs.append(diff)
+        
+        if time_diffs:
+            avg_soglasovanie_time = round(sum(time_diffs) / len(time_diffs), 1)
+
+    price_comparison = []
+    evaluations_with_prices = evaluations_with_soglasovanie.filter(
+        page_soglasovanie__price_after_kd__gt=0
+    )
+    
+    price_diffs = []
+    higher_count = 0
+    lower_count = 0
+    equal_count = 0
+    
+    for eval in evaluations_with_prices[:500]:
+        if eval.page_soglasovanie and eval.page_soglasovanie.price_after_kd:
+            soglas_price = eval.page_soglasovanie.price_after_kd
+            
+            autoraschet_price = None
+            if hasattr(eval, 'page_soglasovanie') and eval.page_soglasovanie:
+                if hasattr(eval.page_soglasovanie, 'price_auto_1') and eval.page_soglasovanie.price_auto_1:
+                    autoraschet_price = eval.page_soglasovanie.price_auto_1
+                elif hasattr(eval.page_soglasovanie, 'price_auto_2') and eval.page_soglasovanie.price_auto_2:
+                    autoraschet_price = eval.page_soglasovanie.price_auto_2
+                elif hasattr(eval.page_soglasovanie, 'price_auto_3') and eval.page_soglasovanie.price_auto_3:
+                    autoraschet_price = eval.page_soglasovanie.price_auto_3
+            
+            if autoraschet_price and autoraschet_price > 0:
+                diff = soglas_price - autoraschet_price
+                diff_percent = round((diff / autoraschet_price) * 100, 1) if autoraschet_price > 0 else 0
+                price_diffs.append(diff)
+                
+                if diff > 1000:
+                    higher_count += 1
+                elif diff < -1000:
+                    lower_count += 1
+                else:
+                    equal_count += 1
+
+    avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
+    
+    price_percent_diffs = []
+    for eval in evaluations_with_prices[:500]:
+        if eval.page_soglasovanie and eval.page_soglasovanie.price_after_kd:
+            soglas_price = eval.page_soglasovanie.price_after_kd
+            autoraschet_price = None
+            if eval.page_soglasovanie.price_auto_1:
+                autoraschet_price = eval.page_soglasovanie.price_auto_1
+            elif eval.page_soglasovanie.price_auto_2:
+                autoraschet_price = eval.page_soglasovanie.price_auto_2
+            elif eval.page_soglasovanie.price_auto_3:
+                autoraschet_price = eval.page_soglasovanie.price_auto_3
+            
+            if autoraschet_price and autoraschet_price > 0:
+                diff = soglas_price - autoraschet_price
+                diff_percent = round((diff / autoraschet_price) * 100, 1)
+                price_percent_diffs.append(diff_percent)
+    
+    avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
+
+    analyst_stats = []
+    analysts_qs = User.objects.filter(
+        Q(profiles__eco=True) | Q(profiles__eco_visible=True)
+    ).distinct()
+    
+    for analyst in analysts_qs:
+        analyst_evaluations = base_qs.filter(staff=analyst)
+        count = analyst_evaluations.count()
+        if count > 0:
+            with_soglas = analyst_evaluations.filter(page_soglasovanie__isnull=False).count()
+            
+            time_diffs = []
+            for eval in analyst_evaluations.filter(start_estimation__isnull=False, end_estimation__isnull=False):
+                if eval.end_estimation and eval.start_estimation:
+                    diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                    if diff >= 0:
+                        time_diffs.append(diff)
+            
+            avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+            
+            accepted_count = analyst_evaluations.filter(
+                status__name__icontains='ам принят'
+            ).count()
+            
+            analyst_stats.append({
+                'name': analyst.profiles.eco_name or analyst.get_full_name() or analyst.username,
+                'total': count,
+                'with_soglasovanie': with_soglas,
+                'accepted': accepted_count,
+                'avg_time': avg_time,
+                'conv_rate': round((with_soglas / count * 100), 1) if count > 0 else 0,
+                'accept_rate': round((accepted_count / count * 100), 1) if count > 0 else 0,
+            })
+    
+    analyst_stats = sorted(analyst_stats, key=lambda x: x['total'], reverse=True)
+
+    monthly_data = []
+    base_month = date_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    current = base_month
+    
+    while current <= date_end:
+        month_end = (current + relativedelta(months=1)) - DT.timedelta(seconds=1)
+        if month_end > date_end:
+            month_end = date_end
+        
+        month_qs = base_qs.filter(
+            start_estimation__gte=current,
+            start_estimation__lte=month_end,
+        )
+        
+        month_count = month_qs.count()
+        month_soglas = month_qs.filter(page_soglasovanie__isnull=False).count()
+        month_accepted = month_qs.filter(status__name__icontains='ам принят').count()
+        
+        time_diffs = []
+        for eval in month_qs.filter(start_estimation__isnull=False, end_estimation__isnull=False):
+            if eval.end_estimation and eval.start_estimation:
+                diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                if diff >= 0:
+                    time_diffs.append(diff)
+        
+        avg_month_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+        
+        monthly_data.append({
+            'month': current.strftime('%b %Y'),
+            'total': month_count,
+            'with_soglasovanie': month_soglas,
+            'accepted': month_accepted,
+            'avg_time': avg_month_time,
+        })
+        
+        current = current + relativedelta(months=1)
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+    }
+
+    monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
+
+    params = {
+        'type': 'eco_efficiency',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'total_count': total_count,
+        'with_soglasovanie_count': with_soglasovanie_count,
+        'soglasovanie_percent': soglasovanie_percent,
+        'avg_time_total': avg_time_total,
+        'avg_soglasovanie_time': avg_soglasovanie_time,
+        'price_comparison': {
+            'avg_diff': avg_price_diff,
+            'avg_diff_percent': avg_price_diff_percent,
+            'higher_count': higher_count,
+            'lower_count': lower_count,
+            'equal_count': equal_count,
+            'total_compared': len(price_diffs),
+        },
+        'analyst_stats': analyst_stats,
+        'monthly_data': monthly_data,
+        'monthly_data_json': monthly_data_json,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+    }
+
+    return render(request, 'lo/eco_efficiency.html', {'params': params})
+
 
 #История изменений
 def get_versions(table, id):
