@@ -392,45 +392,54 @@
     }
   });
 
-  if (chartPayload.unitTrend && chartPayload.unitTrend.series && chartPayload.unitTrend.series.length) {
-    const palette = ['#002c63', '#00509d', '#ff8a00', '#ffd500', '#00b3a5', '#6659ff', '#ff4d6d', '#1f7a8c', '#8e6c88', '#008891'];
-    const unitCtx = document.getElementById('unitTrendChart').getContext('2d');
+  const unitCanvas = document.getElementById('unitTrendChart');
+  if (
+    unitCanvas &&
+    chartPayload.unitTrend &&
+    chartPayload.unitTrend.units &&
+    chartPayload.unitTrend.datasets &&
+    chartPayload.unitTrend.datasets.length
+  ) {
+    const unitCtx = unitCanvas.getContext('2d');
     new Chart(unitCtx, {
-      type: 'line',
+      type: 'bar',
       data: {
-        labels: chartPayload.unitTrend.labels,
-        datasets: chartPayload.unitTrend.series.map((serie, index) => ({
-          label: serie.label,
-          data: serie.data,
-          borderWidth: 2,
-          tension: 0.35,
-          fill: false,
-          borderColor: palette[index % palette.length],
-          backgroundColor: 'transparent',
-          pointRadius: 3,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: palette[index % palette.length],
-        }))
+        labels: chartPayload.unitTrend.units,
+        datasets: chartPayload.unitTrend.datasets.map(dataset => ({
+          label: dataset.label,
+          data: dataset.data,
+          backgroundColor: dataset.color,
+          borderRadius: 8,
+          maxBarThickness: 28,
+        })),
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
-      plugins: {
-        legend: { position: 'bottom' },
-        datalabels: {
-          anchor: 'end',
-          align: 'top',
-          formatter: (value) => value || '',
-          color: '#444',
-          font: { size: 9 },
+        scales: {
+          x: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: { precision: 0 },
+          },
+          y: {
+            stacked: true,
+            ticks: {
+              autoSkip: false,
+            },
+          },
+        },
+        plugins: {
+          legend: { position: 'bottom' },
+          datalabels: {
+            anchor: 'center',
+            align: 'center',
+            formatter: (value) => (value ? value : ''),
+            color: '#fff',
+            font: { size: 10, weight: '600' },
+          },
         },
       },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { precision: 0 }
-          }
-        }
-      }
     });
   }
 
