@@ -410,7 +410,8 @@ def tradein_funnel(request):
 
     unit_trend_chart = None
     if not unit_id:
-        unit_series = []
+        unit_names = []
+        unit_values_map = {}
         for unit in units:
             series_data = []
             has_values = False
@@ -429,12 +430,21 @@ def tradein_funnel(request):
                 if counts[1]:
                     has_values = True
             if has_values:
-                unit_series.append({'label': unit.name, 'data': series_data})
+                unit_names.append(unit.name)
+                unit_values_map[unit.name] = series_data
 
-        if unit_series:
+        if unit_names:
+            unit_datasets = []
+            for idx, month_label in enumerate(monthly_labels):
+                month_values = [unit_values_map[name][idx] for name in unit_names]
+                unit_datasets.append({
+                    'label': month_label,
+                    'data': month_values,
+                    'color': color_palette[idx % len(color_palette)],
+                })
             unit_trend_chart = {
-                'labels': monthly_labels,
-                'series': unit_series,
+                'units': unit_names,
+                'datasets': unit_datasets,
             }
 
     chart_payload = json.dumps({
