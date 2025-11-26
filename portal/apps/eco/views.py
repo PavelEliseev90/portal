@@ -9,7 +9,7 @@ from task_manager.views import send_message_socket, get_info_max, kors_estimatio
 import json
 from checklists.models import CheckListTradeIn
 from chats.models import Chat, ChatMessage
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Value, IntegerField
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField
 from django.db import models
 import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
@@ -195,7 +195,7 @@ def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst
 
     stage_work_orders = tradein_rlk.count()
     stage_estimations = reg_qs.count()
-    stage_diagnostics_qs = reg_qs.filter(page_proverki__isnull=False)
+    stage_diagnostics_qs = reg_qs.filter(page_soglasovanie__isnull=False).exclude(page_soglasovanie__comment_diagnostica = '').filter(page_soglasovanie__no_diagnostica = False) | reg_qs.filter(page_soglasovanie__isnull=False).filter(page_soglasovanie__no_diagnostica = True)
     stage_diagnostics = stage_diagnostics_qs.count()
     stage_accepted = stage_diagnostics_qs.filter(status__name__icontains='ам принят').count()
 
@@ -217,6 +217,102 @@ def _get_type_distribution(date_start, date_end, unit_id=None, staff_id=None, an
         .annotate(total=Count('id'))
         .order_by('-total')
     )
+
+
+def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    tradein_rlk, reg_qs = _build_tradein_querysets(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
+    source_label = Coalesce(
+        'unit_dc__name',
+        'unit__name',
+        Value('Без подразделения', output_field=CharField()),
+    )
+    work_orders = (
+        tradein_rlk
+        .annotate(source_name=source_label)
+        .values('source_name')
+        .annotate(total=Count('id'))
+    )
+
+    reg_source_label = Coalesce(
+        'rlk__unit_dc__name',
+        'rlk__unit__name',
+        Value('Без подразделения', output_field=CharField()),
+    )
+    reg_stats = (
+        reg_qs
+        .annotate(source_name=reg_source_label)
+        .values('source_name')
+        .annotate(
+            evaluations=Count('id'),
+            diagnostics=Sum(
+                Case(
+                    When(page_proverki__isnull=False, then=1),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            accepted=Sum(
+                Case(
+                    When(
+                        page_proverki__isnull=False,
+                        status__name__icontains='ам принят',
+                        then=1,
+                    ),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+    )
+
+    stats_map = {}
+    for row in work_orders:
+        name = row['source_name'] or 'Без подразделения'
+        stats_map[name] = {
+            'source': name,
+            'work_orders': row['total'],
+            'evaluations': 0,
+            'diagnostics': 0,
+            'accepted': 0,
+        }
+
+    for row in reg_stats:
+        name = row['source_name'] or 'Без подразделения'
+        stats_map.setdefault(
+            name,
+            {
+                'source': name,
+                'work_orders': 0,
+                'evaluations': 0,
+                'diagnostics': 0,
+                'accepted': 0,
+            },
+        )
+        stats_map[name]['evaluations'] = row['evaluations']
+        stats_map[name]['diagnostics'] = row['diagnostics']
+        stats_map[name]['accepted'] = row['accepted']
+
+    stats_list = sorted(
+        stats_map.values(),
+        key=lambda item: item['work_orders'],
+        reverse=True,
+    )
+    totals = {
+        'work_orders': sum(item['work_orders'] for item in stats_list),
+        'evaluations': sum(item['evaluations'] for item in stats_list),
+        'diagnostics': sum(item['diagnostics'] for item in stats_list),
+        'accepted': sum(item['accepted'] for item in stats_list),
+    }
+
+    return stats_list, totals
 
 
 def tradein_funnel(request):
@@ -512,6 +608,15 @@ def tradein_funnel(request):
             })
         autoteka_summary['rows'] = rows
 
+    source_stats, source_totals = _get_source_stats(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
         'date_end': date_end.strftime('%Y-%m-%d'),
@@ -536,6 +641,8 @@ def tradein_funnel(request):
         'type_monthly_available': type_monthly_available,
         'type_pie_available': type_pie_available,
         'autoteka_summary': autoteka_summary,
+        'source_stats': source_stats,
+        'source_totals': source_totals,
     }
 
     return render(request, 'lo/tradein_funnel.html', {'params': params})
