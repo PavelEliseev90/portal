@@ -147,7 +147,8 @@
     }
 
     .kors-panel canvas {
-      max-height: 300px;
+      max-height: 400px;
+      min-height: 350px;
     }
 
     .row.g-3 > div {
@@ -156,11 +157,17 @@
 
     /* Таблицы в карточки на мобильных */
     .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive.mobile-cards-wrapper {
       overflow-x: visible;
     }
 
     .table-mobile-cards {
       border: none;
+      width: 100%;
     }
 
     .table-mobile-cards thead {
@@ -474,7 +481,7 @@
           <span class="collapsible-card__icon" aria-hidden="true">▼</span>
         </button>
         <div class="collapsible-card__body">
-          <div class="table-responsive mt-3">
+          <div class="table-responsive mobile-cards-wrapper mt-3">
             <table class="table table-sm align-middle table-mobile-cards">
               <thead class="table-light">
                 <tr>
@@ -483,7 +490,7 @@
                   <th class="text-end">Оценки</th>
                   <th class="text-end">Диагностика</th>
                   <th class="text-end">Принято</th>
-                  <th class="text-end">Конверсия</th>
+                  <th class="text-end">Конверсия от РЛ</th>
                 </tr>
               </thead>
               <tbody>
@@ -497,9 +504,9 @@
                   <td class="text-end" data-label="Оценки">{{ source.evaluations }}</td>
                   <td class="text-end" data-label="Диагностика">{{ source.diagnostics }}</td>
                   <td class="text-end" data-label="Принято">{{ source.accepted }}</td>
-                  <td class="text-end" data-label="Конверсия в принятые">
-                    {% if source.diagnostics > 0 %}
-                      <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.conv_to_accepted }}%</strong>
+                  <td class="text-end" data-label="Конверсия от РЛ">
+                    {% if source.work_orders > 0 %}
+                      <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.overall_conv }}%</strong>
                     {% else %}
                       —
                     {% endif %}
@@ -514,8 +521,8 @@
                   <th class="text-end" data-label="Оценки">{{ params.source_totals.evaluations }}</th>
                   <th class="text-end" data-label="Диагностика">{{ params.source_totals.diagnostics }}</th>
                   <th class="text-end" data-label="Принято">{{ params.source_totals.accepted }}</th>
-                  <th class="text-end" data-label="Конверсия в принятые">
-                    {% if params.source_totals.conv_to_accepted %}
+                  <th class="text-end" data-label="Конверсия от РЛ">
+                    {% if params.source_totals.work_orders > 0 %}
                       <strong>{{ params.source_totals.conv_to_accepted }}%</strong>
                     {% else %}
                       —
@@ -549,7 +556,7 @@
           <span class="collapsible-card__icon" aria-hidden="true">▼</span>
         </button>
         <div class="collapsible-card__body">
-          <div class="table-responsive mt-3">
+          <div class="table-responsive mobile-cards-wrapper mt-3">
             <table class="table table-sm align-middle table-mobile-cards">
               <thead class="table-light">
                 <tr>
