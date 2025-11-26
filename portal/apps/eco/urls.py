@@ -7,6 +7,7 @@ app_name = 'eco'
 urlpatterns = [
 
     path('',                                    views.list_eco_online),
+    path('funnel/',                             views.tradein_funnel, name='tradein_funnel'),
     path('js/get_chats_list/',                  views.get_chats_list),
     path('js/post_chats_list/',                 views.post_chats_list),
     path('js/get_chats_list_online/',           views.get_chats_list_online),

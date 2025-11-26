@@ -121,6 +121,186 @@ def get_path_in_dict(dict_filtr):
     return path
 
 
+def _parse_date(value, default, is_end=False):
+    if not value:
+        return default
+    try:
+        year, month, day = [int(part) for part in value.split('-')]
+        parsed = default.replace(year=year, month=month, day=day)
+        if is_end:
+            parsed = parsed.replace(hour=23, minute=59, second=59, microsecond=0)
+        else:
+            parsed = parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+        return parsed
+    except Exception:
+        return default
+
+
+def _get_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None):
+    tradein_rlk = DocRLK.objects.filter(dataTime__gte=date_start).filter(dataTime__lte=date_end).filter(type__id=7).filter(eco=True).filter(tradeInModel__isnull=False).exclude(tradeInModel='')
+
+    if unit_id:
+        tradein_rlk = tradein_rlk.filter(Q(unit__id=unit_id) | Q(unit_dc__id=unit_id))
+
+    if staff_id:
+        tradein_rlk = tradein_rlk.filter(staff__id=staff_id)
+
+    if analyst_id:
+        tradein_rlk = tradein_rlk.filter(
+            Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
+            Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+        )
+
+    reg_qs = RegInteractivOcenka.objects.filter(rlk__in=tradein_rlk.values('pk'))
+
+    if analyst_id:
+        reg_qs = reg_qs.filter(
+            Q(staff_eco_1__id=analyst_id) |
+            Q(staff_eco_2__id=analyst_id)
+        )
+
+    stage_work_orders = tradein_rlk.count()
+    stage_estimations = reg_qs.count()
+    stage_diagnostics_qs = reg_qs.filter(page_proverki__isnull=False)
+    stage_diagnostics = stage_diagnostics_qs.count()
+    stage_accepted = stage_diagnostics_qs.filter(status__name__icontains='ам принят').count()
+
+    return stage_work_orders, stage_estimations, stage_diagnostics, stage_accepted
+
+
+def tradein_funnel(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+
+    stage_counts = _get_stage_counts(date_start, date_end, unit_id, staff_id, analyst_id)
+    stage_labels = [
+        'Рабочие листы TRADE-IN',
+        'Интерактивные оценки',
+        'Диагностика заполнена',
+        'АМ принят (из диагностики)',
+    ]
+
+    def _conversion(current, previous):
+        if not previous:
+            return 0
+        return round(current / previous * 100, 1)
+
+    stages = [
+        {
+            'title': stage_labels[0],
+            'count': stage_counts[0],
+            'description': 'DocRLK с признаком TRADE-IN',
+            'conversion': 100 if stage_counts[0] else 0,
+        },
+        {
+            'title': stage_labels[1],
+            'count': stage_counts[1],
+            'description': 'Созданные интерактивные оценки',
+            'conversion': _conversion(stage_counts[1], stage_counts[0]),
+        },
+        {
+            'title': stage_labels[2],
+            'count': stage_counts[2],
+            'description': 'Есть заполненная секция "Диагностика"',
+            'conversion': _conversion(stage_counts[2], stage_counts[1]),
+        },
+        {
+            'title': stage_labels[3],
+            'count': stage_counts[3],
+            'description': 'Статус содержит "АМ принят"',
+            'conversion': _conversion(stage_counts[3], stage_counts[2]),
+        },
+    ]
+
+    funnel_chart = {
+        'labels': stage_labels,
+        'values': stage_counts,
+    }
+
+    monthly_labels = []
+    monthly_series = {
+        'work_orders': [],
+        'evaluations': [],
+        'diagnostics': [],
+        'accepted': [],
+    }
+
+    base_month = default_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    for shift in range(2, -1, -1):
+        month_start = base_month - relativedelta(months=shift)
+        month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
+        counts = _get_stage_counts(month_start, month_end, unit_id, staff_id, analyst_id)
+        monthly_labels.append(month_start.strftime('%b %Y'))
+        monthly_series['work_orders'].append(counts[0])
+        monthly_series['evaluations'].append(counts[1])
+        monthly_series['diagnostics'].append(counts[2])
+        monthly_series['accepted'].append(counts[3])
+
+    trend_chart = {
+        'labels': monthly_labels,
+        'series': [
+            {'label': stage_labels[0], 'data': monthly_series['work_orders']},
+            {'label': stage_labels[1], 'data': monthly_series['evaluations']},
+            {'label': stage_labels[2], 'data': monthly_series['diagnostics']},
+            {'label': stage_labels[3], 'data': monthly_series['accepted']},
+        ],
+    }
+
+    chart_payload = json.dumps({'funnel': funnel_chart, 'trend': trend_chart}, ensure_ascii=False)
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+    }
+
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'stages': stages,
+        'chart_data': chart_payload,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+    }
+
+    return render(request, 'lo/tradein_funnel.html', {'params': params})
+
+
 def eco_monitors(request):
     
     if not request.user.is_authenticated:

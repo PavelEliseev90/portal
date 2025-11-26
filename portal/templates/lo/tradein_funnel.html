@@ -1,0 +1,260 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Воронка поступлений TRADE-IN {% endblock %}
+
+{% block content %}
+<style>
+  .kors-funnel-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-funnel-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-funnel-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-filter .form-select,
+  .kors-filter .form-control {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .kors-stage-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .kors-stage-card h3 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-stage-card h2 {
+    font-size: 2.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .kors-stage-desc {
+    flex: 1;
+    color: #6c7a92;
+    font-size: 0.9rem;
+  }
+
+  .kors-stage-conv {
+    font-weight: 600;
+    color: #ff8a00;
+    font-size: 0.95rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .kors-anchor-button {
+    cursor: pointer;
+  }
+</style>
+
+<div class="kors-funnel-page">
+  <div class="kors-funnel-header">
+    <h2>Воронка поступлений TRADE-IN</h2>
+    <p>Сравниваем рабочие листы, интерактивные оценки и диагностику, чтобы увидеть, где пропадают автомобили.</p>
+  </div>
+
+  <form class="kors-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" == params.filters.unit_id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Сотрудник</label>
+        <select class="form-select" name="staff_id">
+          <option value="">Любой</option>
+          {% for staff in params.staffs %}
+            <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Аналитик</label>
+        <select class="form-select" name="analyst_id">
+          <option value="">Любой</option>
+          {% for analyst in params.analysts %}
+            <option value="{{ analyst.id }}" {% if analyst.id|stringformat:"s" == params.filters.analyst_id|stringformat:"s" %}selected{% endif %}>
+              {{ analyst.profiles.eco_name|default:analyst.get_full_name|default:analyst.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="row g-3 mb-3">
+    {% for stage in params.stages %}
+      <div class="col-xl-3 col-sm-6">
+        <article class="kors-stage-card">
+          <h3>{{ stage.title }}</h3>
+          <h2>{{ stage.count }}</h2>
+          <p class="kors-stage-desc">{{ stage.description }}</p>
+          <span class="kors-stage-conv">Конверсия: {{ stage.conversion }}%</span>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Воронка</h3>
+          <p class="text-muted mb-0">Сравнение текущего периода</p>
+        </div>
+        <canvas id="funnelChart" height="260"></canvas>
+      </article>
+    </div>
+    <div class="col-lg-7">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Динамика за 3 месяца</h3>
+          <p class="text-muted mb-0">Показываем, как меняется каждая ступень</p>
+        </div>
+        <canvas id="trendChart" height="260"></canvas>
+      </article>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const chartPayload = JSON.parse('{{ params.chart_data|escapejs }}');
+
+  const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+  new Chart(funnelCtx, {
+    type: 'bar',
+    data: {
+      labels: chartPayload.funnel.labels,
+      datasets: [{
+        label: 'Кол-во',
+        data: chartPayload.funnel.values,
+        backgroundColor: ['#002c63', '#00509d', '#ff8a00', '#ffd500'],
+        borderRadius: 12,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 12 } }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+
+  const trendCtx = document.getElementById('trendChart').getContext('2d');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: chartPayload.trend.labels,
+      datasets: chartPayload.trend.series.map((serie, index) => ({
+        label: serie.label,
+        data: serie.data,
+        borderWidth: 2,
+        tension: 0.35,
+        fill: false,
+        borderColor: ['#002c63', '#00509d', '#ff8a00', '#ffd500'][index],
+        backgroundColor: 'transparent',
+        pointRadius: 4,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: ['#002c63', '#00509d', '#ff8a00', '#ffd500'][index],
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}
+
