@@ -1575,7 +1575,7 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())    
 
         return HttpResponseRedirect(request.build_absolute_uri())  
-
+    #return render(request, 'lo/lo_v3_new.html', {'params': params})  
     if estimation.v > 1:
         return render(request, 'lo/lo_v' + str(estimation.v) + '.html', {'params': params})             
     else:
@@ -3864,6 +3864,7 @@ def estimations_price_calculation(estimation, type_calculation):
     profit              = round(price_sale - price - amount_sum, -2)
     estimation_price_do_kd  = estimation_price + amount_ss
     difference_sum          = 0     
+    
     if zna_type == "custom":
         if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
             estimation_price = estimation_price_do_kd - amount_ss 
@@ -3897,29 +3898,35 @@ def estimations_price_calculation(estimation, type_calculation):
 
     if cna_expenses < 0:
         cna_expenses = zna
-        
+    estimation_price_to_bcp = 0    
+    
     if auction:
+
+        difference_sum = 0
+        if estimation.page_soglasovanie != None:
+            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
         if difference_sum > 0:
-            estimation_price = difference_sum
+            estimation_price_to_bcp = estimation_price + difference_sum
                  
         matrix_auction = 0
-        if estimation_price < 200000:
+        if estimation_price_to_bcp < 200000:
             matrix_auction  = settings_matrix.charge_bcp_200
-        elif estimation_price < 400000:
+        elif estimation_price_to_bcp < 400000:
             matrix_auction  = settings_matrix.charge_bcp_400
-        elif estimation_price < 700000:
+        elif estimation_price_to_bcp < 700000:
             matrix_auction  = settings_matrix.charge_bcp_700
-        elif estimation_price < 1200000:
+        elif estimation_price_to_bcp < 1200000:
             matrix_auction  = settings_matrix.charge_bcp_1200
-        elif estimation_price < 2000000:
+        elif estimation_price_to_bcp < 2000000:
             matrix_auction  = settings_matrix.charge_bcp_2000
-        elif estimation_price < 3000000:
+        elif estimation_price_to_bcp < 3000000:
             matrix_auction  = settings_matrix.charge_bcp_3000
-        elif estimation_price < 5000000:
+        elif estiestimation_price_to_bcpmation_price < 5000000:
             matrix_auction  = settings_matrix.charge_bcp_5000
         else:
             matrix_auction  = settings_matrix.charge_bcp_5001        
-        cna_expenses = estimation_price + matrix_auction
+        cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
 
     price = {
         'kors_price_reception'          : kors_price_reception,
