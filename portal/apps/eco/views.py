@@ -341,13 +341,12 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         'accepted': sum(item['accepted'] for item in stats_list),
     }
     
-    avg_conv_to_accepted = round((totals['accepted'] / totals['diagnostics'] * 100) if totals['diagnostics'] > 0 else 0, 1)
     avg_overall_conv = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
     
     for item in stats_list:
         is_good = False
         if item['work_orders'] >= 5:
-            if item['conv_to_accepted'] >= max(avg_conv_to_accepted, 50) or item['overall_conv'] >= max(avg_overall_conv, 30):
+            if item['overall_conv'] >= max(avg_overall_conv, 30):
                 is_good = True
         item['is_good'] = is_good
 
@@ -657,7 +656,7 @@ def tradein_funnel(request):
     )
     
     source_totals['conv_to_accepted'] = round(
-        (source_totals['accepted'] / source_totals['diagnostics'] * 100) if source_totals['diagnostics'] > 0 else 0,
+        (source_totals['accepted'] / source_totals['work_orders'] * 100) if source_totals['work_orders'] > 0 else 0,
         1
     )
 
