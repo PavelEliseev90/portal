@@ -7,37 +7,197 @@
 {% block title_navbar %} - {{params.object.name}}  {% endblock %}
     
 {% block content %}
+<style>
+  .portal-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .portal-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-<div style="padding-bottom: 5rem;">
+  .portal-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .portal-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .portal-panel .form-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .portal-panel .form-select,
+  .portal-panel .form-control {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .breadcrumb-nav {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 0;
+  }
+
+  .breadcrumb-nav a {
+    color: #6c7a92;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumb-nav a:hover {
+    color: #002a5a;
+  }
+
+  .breadcrumb-nav .separator {
+    color: #8ea1ba;
+    margin: 0 0.5rem;
+  }
+
+  .car-spec-card {
+    background: #f8f9fc;
+    border-radius: 0.85rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    transition: all 0.2s;
+    height: 100%;
+  }
+
+  .car-spec-card:hover {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.08);
+  }
+
+  .car-spec-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .car-spec-value {
+    font-size: 0.95rem;
+    color: #002a5a;
+    font-weight: 500;
+  }
+
+  .car-price-block {
+    background: linear-gradient(135deg, #002a5a 0%, #004080 100%);
+    color: #fff;
+    border-radius: 1.2rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .car-price-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .dealer-info-card {
+    background: #002a5a;
+    color: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .dealer-info-card h5 {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .dealer-action-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    border-radius: 0.85rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+  }
+
+  .dealer-action-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .related-car-card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .related-car-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .related-car-card .item-img_up {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  @media (max-width: 992px) {
+    .portal-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+  }
+</style>
+
+<div class="portal-page">
 	{% if request.user.is_authenticated %}
-		<div class="row g-1">
-			<div class="col-auto">
-			<a href="/cars/" class="text-dark"> <span class="icon-mbri-minus"> </span> На главную </a>
+		<div class="breadcrumb-nav">
+			<div class="d-flex flex-wrap align-items-center">
+				<a href="/cars/">На главную</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/">{{params.object.modification_autoru.model.mark.name|lower|capfirst}}</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}">{{params.object.modification_autoru.model.nameHuman|capfirst}}</a>
+				<span class="separator">/</span>
+				<span class="text-dark fw-bold">{{params.object.name}}</span>
 			</div>
-			<div class="col-auto">
-			<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.mark.name|lower|capfirst}} </a>
-			</div>
-			<div class="col-auto">
-				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.nameHuman|capfirst}} </a>
-			</div>
-			<div class="col-auto">
-			<span class="icon-mbri-minus fw-bold"> </span> {{params.object.name}}
-			</div>
-		
-	  </div>
-	  <hr>	
+		</div>
 	{% endif %}
 	
 	
 
-	<div class="row g-1 justify-content-center">
-	
-		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
+	<div class="row g-3">
+		<div class="col-sm-12 col-md-7 col-lg-7">
 			{% with photos=params.object.get_files %}
 			{% with total=photos|length %}
 			{% if total > 0 %}
-				<div class="modern-gallery-layout">
+				<div class="portal-panel">
+					<div class="modern-gallery-layout">
 					<div class="modern-gallery-wrapper">
 						<div class="modern-gallery-container" id="modernGalleryContainer">
 							{% for files in photos %}
@@ -99,6 +259,7 @@
 							{% endfor %}
 						</div>
 					{% endif %}
+					</div>
 				</div>
 
 				<div class="modern-gallery-fullscreen" id="modernGalleryFullscreen">
@@ -153,10 +314,10 @@
 					</div>
 				</div>
 			{% else %}
-				<div class="car-gallery-placeholder">
-					<div class="car-gallery-placeholder-body">
-						<span class="icon-mbri-photo car-gallery-placeholder-icon"></span>
-						<p class="car-gallery-placeholder-text">Фотографии скоро появятся</p>
+				<div class="portal-panel">
+					<div class="text-center py-5">
+						<span class="icon-mbri-photo" style="font-size: 3rem; color: #8ea1ba;"></span>
+						<p class="mt-3 text-muted">Фотографии скоро появятся</p>
 					</div>
 				</div>
 			{% endif %}
@@ -167,353 +328,193 @@
 
 		{% if request.user_agent.is_pc %}
 			{% if params.object.dop_cars|length > 0 %}
-				
-				<hr style="width: 75%;">
-				<label class="fs-5" style="font-weight: bold;">Может заинтересовать</label>
-
-				<div class="row g-3">
-					{% if params.object.dop_cars %}
-						{% for car in params.object.dop_cars %}
-								
-							<div class="col-12 col-sm-6">
-								<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}/'; return false" > 
-									<div class="card-body" style="padding: 0rem;">
-				
-										<div class="row" style="padding: 0rem;">
-											
-											<div class="col-12 col-sm-12">
-													
-												<img src="{{car.get_photo}}" class="item-img_up" >									
-													
+				<div class="portal-panel mt-3">
+					<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">Может заинтересовать</h3>
+					<div class="row g-3">
+						{% if params.object.dop_cars %}
+							{% for car in params.object.dop_cars %}
+								<div class="col-12 col-sm-6">
+									<div class="related-car-card" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+										<img src="{{car.get_photo}}" class="item-img_up">
+										<div class="p-3">
+											<h5 class="mb-2" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+												{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
+											</h5>
+											<p class="text-muted small mb-2">{{car.year}} г. / {{car.run|floatformat:"0g"|default_if_none:"---"}} км</p>
+											<p class="text-muted small mb-2">
+												{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
+												{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
+											</p>
+											<div class="d-flex justify-content-between align-items-center mt-3">
+												<span class="text-muted small">{{car.unit.name_web}}</span>
+												<span class="fw-bold" style="color: #e74c3c; font-size: 1.2rem;">{{car.price|floatformat:"2g"}} ₽</span>
 											</div>
-				
-											<div class="col-12 col-sm-12">
-												<div class="row "  style="padding: 0.2rem;">
-													<div class="col-sm-12 text-truncate" >
-														<label class="fs-5 text-truncate">{{car.modification_autoru.model.mark.name}}</label>
-														<br>
-														<label class="fs-5 text-truncate" style="padding-right: 0.5rem;">{{car.modification_autoru.model.name}}</label>
-														<br>
-														<label class="fs-6 text-truncate">{{car.year}}</label>
-														
-														<br>
-														<label class="fs-6">{{car.modification_autoru.engine_volume}} л. /
-														{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-														{{car.modification_autoru.typeEngine.name}}
-														<br>
-														{{car.modification_autoru.typeGear.name}}
-														<br>
-														{{car.modification_autoru.typeBody.name}}</label>
-													</div>
-													
-													
-	
-													<div class="col-sm-12">
-														<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
-													</div>
-							
-													<div class="col-sm-12 text-end">
-														<label class="fs-5">{{car.unit.name_web}}</label>	
-													</div>
-							
-													<div class="col-sm-12 text-end">
-														<label class="fs-4 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
-													</div>
-												</div>
-											</div>
-																	
 										</div>
-				
 									</div>
 								</div>
-							</div>
-				
-						{% endfor %} 
-					{% endif %}
-					
+							{% endfor %} 
+						{% endif %}
+					</div>
 				</div>
-
 			{% endif %}
 		{% endif %}
 
 
 		</div>
 		
-		<div class="col-sm-12 col-md-5 col-lg-5 content-head" >
-				
-			<div class="card" style="background-color: rgba(255,255,255,0.5);">
-				
-				<div class="card-body text-dark">
-					<div class="row" >
-						<div class="col-auto">
-							<img class="item-img-mini"  src="{{params.object.logo}}"> 
+		<div class="col-sm-12 col-md-5 col-lg-5">
+			<div class="portal-panel">
+				<div class="d-flex align-items-center mb-3">
+					<img class="item-img-mini" src="{{params.object.logo}}" style="height: 50px; width: auto; margin-right: 1rem;">
+					<h2 style="font-size: 1.4rem; font-weight: 600; color: #002a5a; margin: 0;">
+						{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
+					</h2>
+				</div>
+
+				<div class="row g-2">
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-mbri-engine"></span> Двигатель</div>
+							<div class="car-spec-value">
+								{{params.object.modification_autoru.engine_volume}} л. / {{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{params.object.modification_autoru.typeEngine.name}}
+							</div>
 						</div>
-						<div class="col-auto align-self-center" >
-							<label class="fs-3 text-start fw-normal">
-								{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
-							</label>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-mbri-transmission1"></span> Коробка передач</div>
+							<div class="car-spec-value">{{params.object.modification_autoru.typeGear.name}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-mbri-drive"></span> Привод</div>
+							<div class="car-spec-value">{{params.object.type_drive.name}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-calendar"></span> Год выпуска</div>
+							<div class="car-spec-value">{{params.object.year}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-truck"></span> Кузов</div>
+							<div class="car-spec-value">{{params.object.modification_autoru.typeBody.name}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-cd"></span> Пробег</div>
+							<div class="car-spec-value">{{params.object.run|floatformat:"0g"|default_if_none:"---"}} км</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-pencil"></span> Цвет</div>
+							<div class="car-spec-value text-capitalize">{{params.object.color|capfirst}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-user"></span> Владельцев</div>
+							<div class="car-spec-value">{{params.object.owners}}</div>
 						</div>
 					</div>
 					
-					
-
-					<div class="start_block"> </div>
-
-					<div class="row g-1">
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-								<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-									<label class="fs-6 text-secondary"> <span class="icon-mbri-engine fs-5"></span> Двигатель </label>
-									<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-									<span class="icon-mbri-minus text-dark  fs-5">
-										{{params.object.modification_autoru.engine_volume}} л. /
-										{{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-										{{params.object.modification_autoru.typeEngine.name}}</span>	
-								</div>
-							</a>
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-megaphone"></span> Состояние</div>
+							<div class="car-spec-value">{% if params.object.is_new %}Новый{% else %}С пробегом{% endif %}</div>
 						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-transmission1 fs-5"></span> Коробка передач </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									  {{params.object.modification_autoru.typeGear.name}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-drive fs-5"></span> Привод </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.type_drive.name}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-calendar fs-5"></span> Год выпуска </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.year}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-truck fs-5"></span> Кузов </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.modification_autoru.typeBody.name}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-cd fs-5"></span> Пробег </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.run|floatformat:"0g"|default_if_none:"---"}} км.
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-pencil fs-5"></span> Цвет </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark fs-5 text-capitalize">
-									 {{params.object.color|capfirst}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-user fs-5"></span> Владельцев </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.owners}}
-								</span>	
-							</div>
-							</a>
-						</div>
-						
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-megaphone fs-5"></span> Состояние </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {% if params.object.is_new %} Новый {% else %} С пробегом {% endif %}								
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start">
-							<a href="specifications/" class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-setting3 fs-5"></span>  Характеристики </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									Детально								
-								</span>	
-							</div>
-							</a>
-						</div>
-
 					</div>
-					
-					
-					
-					{% if params.object.quantity > 0 and params.object.price > 0 %}
-						<br>
-						<div class="col text-end align-items-end start_block">
-							
-							<div class="row">
-								
-								<div class="col">
-									
-									<button type="submit" class="btn btn-dark display-7  bg-opacity-10">
-										<h3> 
-											{% if params.object.reserve == 0 %}
-												{{params.object.price|floatformat:"2g"}} &#8381;
-											{% else %}	
-												В резерве
-											{% endif %}
-										</h3>
-									</button>
 
-								</div>
-								
+					<div class="col-12 col-sm-6">
+						<a href="specifications/" class="text-decoration-none">
+							<div class="car-spec-card" style="border: 2px solid rgba(0, 42, 90, 0.2);">
+								<div class="car-spec-label"><span class="icon-mbri-setting3"></span> Характеристики</div>
+								<div class="car-spec-value">Детально →</div>
 							</div>
+						</a>
+					</div>
 
-							<div class="row justify-content-end">
-								
-								<div class="col-auto">
-									<span class="fs-6 icon-mbri-preview btn-outline-secondary"></span>
-									<label class="fs-6 text-end">{{params.object.view_card_cars}}</label>
-								</div>
+				</div>
 
-								<div class="col-auto">
-									<span class="fs-6 icon-mbri-update btn-outline-secondary"></span>
-									<label class="fs-6 text-end"> {{params.object.date_refresh}}</label>
-								</div>
-								
-							</div>
-
-						
-						</div> 
-					{% endif %}
-
-				</div>	
+				{% if params.object.quantity > 0 and params.object.price > 0 %}
+					<div class="car-price-block mt-3">
+						<div class="car-price-value">
+							{% if params.object.reserve == 0 %}
+								{{params.object.price|floatformat:"2g"}} ₽
+							{% else %}	
+								В резерве
+							{% endif %}
+						</div>
+						<div class="d-flex justify-content-center gap-3" style="font-size: 0.85rem; opacity: 0.9;">
+							<span><span class="icon-mbri-preview"></span> {{params.object.view_card_cars}}</span>
+							<span><span class="icon-mbri-update"></span> {{params.object.date_refresh}}</span>
+						</div>
+					</div>
+				{% endif %}
 			</div>
 				
 
-				{% if params.object.quantity > 0 and params.object.price > 0 %}
-					<br>
-					<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-						<div class="modal-dialog modal-fullscreen">
-							<div class="modal-content">
+			{% if params.object.quantity > 0 and params.object.price > 0 %}
+				<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-fullscreen">
+						<div class="modal-content">
 							<div class="modal-header">
-								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.unit.name}} </h5>
+								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.unit.name}}</h5>
 								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 							</div>
-							
-								<div class="modal-body">
-									
-									
-									<iframe src="{{params.object.store.link_site_map}}" frameborder="0" style="width: 100%; height: 100%;"></iframe>
-									
-					
-								</div>
-					
+							<div class="modal-body p-0">
+								<iframe src="{{params.object.store.link_site_map}}" frameborder="0" style="width: 100%; height: 100%;"></iframe>
 							</div>
 						</div>
-					</div>	
+					</div>
+				</div>
 
-					<div class="start_block" >
-						<div class="card" style="background-color: rgba(255,255,255,0.5);">
-							<div class="card-body">
-							
-								<div class="row g-1 bg-dark text-white" style="border-radius: 0.5rem; padding: 0.2rem;" >
-									<div class="col-12 text-center">
-										<label class="fs-4"> <span class="fs-4 icon-mbri-home"> </span> {{params.object.unit.name}}</label>
-									</div>
-									<div class="col-12 text-end">
-										<a href="\cars\?store={{params.object.store.id}}" class="text-white">
-											<label class="fs-5"> <span class="fs-5 icon-mbri-delivery"> </span> {{params.object.store.cars_count}} автомобилей</label>
-										</a>
-									</div>
-								</div>
-								
-								<div class="row g-1 start_block justify-content-center">
-									
-									<div class="col align-self-center align-items-center text-center">
-										
-										<a  id="button_map" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children"   data-bs-toggle="modal" data-bs-target="#exampleModal">
-											
-												<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-pin"> </span></label>
-												<label class="fs-6 text-dark"> Показать</label>
-											
-										</a>
-		
-									</div>
-		
-									<div class="col align-self-center align-items-center text-center">
-										<a id="phone" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
-											
-											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-touch"> </span></label>
-											<label class="fs-6 text-dark"> Позвонить</label>
-										</a>
-									</div>
-		
-									<div class="col align-self-center align-items-center text-center">
-										<a href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
-											
-											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-chat"> </span></label>
-											<label class="fs-6 text-dark"> Написать</label>
-										</a>
-									</div>
-		
-								</div>
-							</div>
-
-							
-
+				<div class="dealer-info-card">
+					<h5><span class="icon-mbri-home"></span> {{params.object.unit.name}}</h5>
+					<div class="mb-3">
+						<a href="/cars/?store={{params.object.store.id}}" class="text-white text-decoration-none">
+							<span class="icon-mbri-delivery"></span> {{params.object.store.cars_count}} автомобилей
+						</a>
+					</div>
+					<div class="row g-2">
+						<div class="col-4">
+							<a id="button_map" href="tel:{{params.object.store.phone_normalize}}" class="dealer-action-btn" data-bs-toggle="modal" data-bs-target="#exampleModal">
+								<span class="icon-mbri-pin d-block mb-1" style="font-size: 1.5rem;"></span>
+								<span style="font-size: 0.85rem;">Показать</span>
+							</a>
 						</div>
-					</div>	
-				
-				{% endif %}
+						<div class="col-4">
+							<a id="phone" href="tel:{{params.object.store.phone_normalize}}" class="dealer-action-btn">
+								<span class="icon-mbri-touch d-block mb-1" style="font-size: 1.5rem;"></span>
+								<span style="font-size: 0.85rem;">Позвонить</span>
+							</a>
+						</div>
+						<div class="col-4">
+							<a href="tel:{{params.object.store.phone_normalize}}" class="dealer-action-btn">
+								<span class="icon-mbri-chat d-block mb-1" style="font-size: 1.5rem;"></span>
+								<span style="font-size: 0.85rem;">Написать</span>
+							</a>
+						</div>
+					</div>
+				</div>
+			{% endif %}
 
 
-				{% if request.user.is_authenticated %}
-
-					<div class="start_block"> </div>
-					
-					<div class="card start_block" style="background-color: rgba(255,255,255,0.1);">
-							
-						<div class="card-body text-dark">
+			{% if request.user.is_authenticated %}
+				<div class="portal-panel">
 							
 							<div class="row g-2">
 								
@@ -620,11 +621,7 @@
 
 					</div>
 
-					<div class="start_block"> </div>
-					
-					<div class="card start_block" style="background-color: rgba(255,255,255,0.1);">
-					
-						<div class="card-body text-dark">
+				<div class="portal-panel">
 							
 							<div class="row g-2">
 								
@@ -713,93 +710,45 @@
 							
 							{% endif %}
 
-						</div>	
-
 					</div>
+				</div>
+			{% endif %}
 
-				{% endif %}
-
-				{% if request.user_agent.is_mobile %}
-					{% if params.object.dop_cars|length > 0 %}
-						
-						<hr style="width: 75%;">
-						<label class="fs-5" style="font-weight: bold;">Может заинтересовать</label>
-
+			{% if request.user_agent.is_mobile %}
+				{% if params.object.dop_cars|length > 0 %}
+					<div class="portal-panel mt-3">
+						<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">Может заинтересовать</h3>
 						<div class="row g-3">
 							{% if params.object.dop_cars %}
 								{% for car in params.object.dop_cars %}
-										
 									<div class="col-12 col-sm-6">
-										<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}/'; return false" > 
-											<div class="card-body" style="padding: 0rem;">
-						
-												<div class="row" style="padding: 0rem;">
-													
-													<div class="col-12 col-sm-12">
-															
-														<img src="{{car.get_photo}}" class="item-img_up" >									
-															
-													</div>
-						
-													<div class="col-12 col-sm-12">
-														<div class="row text-truncate" style="padding: 0.2rem;">
-															
-															<div class="col-sm-12 text-truncate">
-																<label class="fs-5">{{car.modification_autoru.model.mark.name}}</label>
-																<br>
-																<label class="fs-5 text-truncate">{{car.modification_autoru.model.name}} </label>
-																<br>
-																<label class="fs-6 text-truncate">{{car.year}}</label>
-																<br>
-																<label class="fs-6">{{car.modification_autoru.engine_volume}} л. /
-																{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-																{{car.modification_autoru.typeEngine.name}}
-																<br>
-																{{car.modification_autoru.typeGear.name}}
-																<br>
-																{{car.modification_autoru.typeBody.name}}</label>
-															</div>
-															
-															<div class="col-sm-12">
-																<label> {{car.type_drive}} </label>
-																
-															</div>
-									
-															<div class="col-sm-12">
-																<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
-															</div>
-									
-															<div class="col-sm-12 text-end">
-																<label class="fs-5">{{car.unit.name_web}}</label>	
-															</div>
-									
-															<div class="col-sm-12 text-end">
-																<label class="fs-4 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
-															</div>
-														</div>
-													</div>
-																			
+										<div class="related-car-card" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+											<img src="{{car.get_photo}}" class="item-img_up">
+											<div class="p-3">
+												<h5 class="mb-2" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+													{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
+												</h5>
+												<p class="text-muted small mb-2">{{car.year}} г. / {{car.run|floatformat:"0g"|default_if_none:"---"}} км</p>
+												<p class="text-muted small mb-2">
+													{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
+													{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
+												</p>
+												<div class="d-flex justify-content-between align-items-center mt-3">
+													<span class="text-muted small">{{car.unit.name_web}}</span>
+													<span class="fw-bold" style="color: #e74c3c; font-size: 1.2rem;">{{car.price|floatformat:"2g"}} ₽</span>
 												</div>
-						
 											</div>
 										</div>
 									</div>
-						
 								{% endfor %} 
 							{% endif %}
-							
 						</div>
-
-					{% endif %}
+					</div>
 				{% endif %}
+			{% endif %}
 
 		</div>
-			
 	</div>
-
-</div>
-
-
 </div>
 
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
