@@ -9,6 +9,298 @@
 {% block title_navbar %} - склад автомобилей {{params.object.name}}  {% endblock %}
     
 {% block content %}
+<style>
+  .cars-portal-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .cars-portal-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .cars-portal-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .cars-filter-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .cars-filter-panel .form-label,
+  .cars-filter-panel .pc-filter-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+    font-weight: 600;
+  }
+
+  .cars-filter-panel .form-select,
+  .cars-filter-panel .form-control,
+  .cars-filter-panel .pc-filter-input {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .cars-list-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .car-card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .car-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .car-card .item-img_up {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 1rem 1rem 0 0;
+  }
+
+  .car-card .card-body {
+    padding: 1rem;
+  }
+
+  .car-price {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #e74c3c;
+  }
+
+  .car-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+  }
+
+  .car-details {
+    color: #6c7a92;
+    font-size: 0.9rem;
+  }
+
+  .mobile-filters-button-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+
+  .btn-filters-mobile {
+    background: #002a5a;
+    color: #fff;
+    border-radius: 2rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 42, 90, 0.3);
+    border: none;
+    font-weight: 600;
+  }
+
+  .filters-count {
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+  }
+
+  .pc-filters-container {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .pc-filters-header {
+    margin-bottom: 1rem;
+  }
+
+  .pc-filters-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .pc-filter-group {
+    margin-bottom: 1rem;
+  }
+
+  .pc-filter-dropdown {
+    position: relative;
+  }
+
+  .pc-filter-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    border-radius: 0.85rem;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);
+    margin-top: 0.25rem;
+  }
+
+  .pc-filter-option {
+    display: block;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .pc-filter-option:hover {
+    background: #f4f7fb;
+  }
+
+  .pc-filter-option input[type="checkbox"] {
+    margin-right: 0.5rem;
+  }
+
+  .pagination {
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .page-num .btn {
+    border-radius: 0.5rem;
+    margin: 0 0.25rem;
+  }
+
+  .page-link {
+    border-radius: 0.5rem;
+    margin: 0 0.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    color: #002a5a;
+  }
+
+  .page-item.active .page-link {
+    background: #002a5a;
+    border-color: #002a5a;
+  }
+
+  .page-link:hover {
+    background: #f4f7fb;
+    border-color: rgba(0, 42, 90, 0.3);
+    color: #002a5a;
+  }
+
+  .modal-content {
+    border-radius: 1.2rem;
+    border: none;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.15);
+  }
+
+  .modal-header {
+    background: #f4f7fb;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 1.2rem 1.2rem 0 0;
+  }
+
+  .modal-title {
+    color: #002a5a;
+    font-weight: 600;
+  }
+
+  .filter-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .filter-section:last-child {
+    border-bottom: none;
+  }
+
+  .filter-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .filter-options {
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+  }
+
+  .filter-option {
+    padding: 0.5rem 0;
+    cursor: pointer;
+  }
+
+  .filter-option:hover {
+    background: #f4f7fb;
+    border-radius: 0.5rem;
+    padding-left: 0.5rem;
+  }
+
+  .filter-range {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .filter-range input {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+  }
+
+  @media (max-width: 992px) {
+    .cars-portal-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .car-card .item-img_up {
+      height: 180px;
+    }
+  }
+</style>
+
+<div class="cars-portal-page">
+  <div class="cars-portal-header">
+    <h2>Склад автомобилей</h2>
+    <p>Поиск и фильтрация автомобилей на складе</p>
+  </div>
 
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
@@ -316,8 +608,8 @@
 					{% endif %}
 				</form>
 			</div>
-			<div class="modal-footer bg-light">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
 				<button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
 					<span class="icon-mbri-search me-2"></span>Применить фильтры
 				</button>
@@ -427,7 +719,7 @@
 </div>
 
 <form method="get" id="filtersForm">
-	<div class="pc-filters-container d-none d-md-block">
+	<div class="cars-filter-panel d-none d-md-block">
 		<div class="pc-filters-header">
 			<div class="d-flex justify-content-between align-items-center">
 				<h5 class="pc-filters-title">
@@ -668,13 +960,13 @@
 			{% endif %}
 		</div>
 
-		<div class="pc-filters-footer">
-			<div class="pc-filters-actions">
+		<div class="pc-filters-footer mt-3">
+			<div class="d-flex justify-content-between">
 				<a href="catalog/" class="btn btn-outline-secondary">
 					<span class="icon-mbri-home me-2"></span>Каталог
 				</a>
 				<button type="submit" class="btn btn-primary">
-					<span class="icon-mbri-search me-2"></span>Показать
+					<span class="icon-mbri-search me-2"></span>Применить фильтры
 				</button>
 			</div>
 		</div>
@@ -682,113 +974,79 @@
 </form>
 
 
-    <div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-    
     {% if params.paginator.object_list %}
-    	<div class="row g-3">
-    		{% for car in params.paginator.object_list %}
-    			<div class="col-12 col-md-6 col-lg-4 col-xl-3">
-    				<div class="card bg-white bg-opacity-50" onclick="window.location.href='{{car.slug}}'; return false" > 
+    	<div class="cars-list-panel">
+    		<div class="row g-3">
+    			{% for car in params.paginator.object_list %}
+    				<div class="col-12 col-md-6 col-lg-4 col-xl-3">
+    					<div class="car-card" onclick="window.location.href='{{car.slug}}'; return false"> 
     					
-    					<div class="card-body" style="padding: 0rem; padding-top: 0rem;">
-
     						<div>
     							<img class="item-img_up" src="{{car.get_photo}}">
     						</div>
 
-    						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-    						
-    							<div class="col-3" style="height: 60px;">
-    								<img class="item-img-mini"  src="{{car.logo}}" > <br>
+    						<div class="card-body">
+    							<div class="d-flex justify-content-between align-items-center mb-2">
+    								<div class="d-flex align-items-center">
+    									<img class="item-img-mini" src="{{car.logo}}" style="height: 40px; width: auto; margin-right: 0.5rem;">
+    									<span class="car-title">{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}</span>
+    								</div>
     							</div>
-    			
-    							<div class="col text-end align-self-center">
-    								<span class="fs-6  icon-mbri-pin"> {{car.unit.name}}</span>
-    							</div>
-    						</div>
-    			
-    						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-    							
-    							<div class="col text-truncate">
-    								
-    								<span class="fs-5"> {{car.modification_autoru.model.mark.name}} 
-    									<br> 
-    									{{car.modification_autoru.model.name}}
-    								</span>
 
+    							<div class="d-flex justify-content-between align-items-center mb-2">
+    								<span class="car-price">{{car.price|floatformat:"2g"}} ₽</span>
+    								<span class="car-details"><span class="icon-mbri-pin"></span> {{car.unit.name}}</span>
     							</div>
-    			
-    							<div class="col text-end align-self-center">
-    								<span class="fs-4 fw-bold" style="color: #e74c3c;"> {{car.price|floatformat:"2g"}} </span> &#8381;
-    							</div>
-    						</div>
-    			
-    						<div class="row g-1 text-secondary align-self-center align-items-center" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-    							<div class="col-8 text-truncate">
-    								<span class="fs-6 text-secondary" >
-    									{{car.modification_autoru.engine_volume}} л. /
-    									{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-    									{{car.modification_autoru.typeEngine.name}}
-    									<br>
-    									{{car.modification_autoru.typeGear.name}}
-    									<br>
-    									{{car.modification_autoru.typeBody.name}}</span>
-    							</div>
-    							<div class="col text-end align-self-center align-items-center">
-    								<span class="fs-6"> {{car.year}}</span>
-    									<br>
-    								<span class="fs-6"> {{car.run|floatformat:"0g"|default_if_none:"---"}} км. </span>
-    							</div>
-    						</div>
-    			
-    						
 
+    							<div class="car-details">
+    								<div class="mb-1">
+    									{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}
+    								</div>
+    								<div class="mb-1">
+    									{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
+    								</div>
+    								<div class="d-flex justify-content-between">
+    									<span>{{car.year}} г.</span>
+    									<span>{{car.run|floatformat:"0g"|default_if_none:"---"}} км</span>
+    								</div>
+    							</div>
+    						</div>
     					</div>
     				</div>
-    			</div>
-    		{% endfor %} 
+    			{% endfor %} 
+    		</div>
     	</div>
     {% endif %}
 
-<br>
-<div class="row align-self-center align-items-center justify-content-center" style="width: 100%;">
-	
-
-	<div class="col-auto align-items-center align-self-center justify-content-center">
-		<nav aria-label="Page navigation example">
-			<ul class="pagination justify-content-center">
-			
+	{% if params.paginator.paginator.num_pages > 1 %}
+		<nav aria-label="Page navigation">
+			<ul class="pagination">
 				{% if params.paginator.has_previous %}
-					<li class="page-num mbr-section-btn">
-						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+					<li class="page-item">
+						<a class="page-link" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
 					</li>
 				{% endif %}
 		
 				{% for p in params.paginator.paginator.page_range %}
 					{% if params.paginator.number == p %}
-						<li class="page-num mbr-section-btn disabled">
-							<a class="btn btn-secondary display-7">
-								<b>{{p}}</b>
-							</a>
+						<li class="page-item active">
+							<span class="page-link">{{p}}</span>
 						</li>
 					{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+						<li class="page-item">
+							<a class="page-link" href="?{% url_replace page=p %}">{{ p }}</a>
 						</li>
 					{% endif %}
 				{% endfor %}
 					
 				{% if params.paginator.has_next %}
-					<li class="page-num mbr-section-btn">
-						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+					<li class="page-item">
+						<a class="page-link" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
 					</li>
 				{% endif %}
-	
 			</ul>
 		</nav>
-	</div>
-
-
+	{% endif %}
 </div>
 
 <script>
