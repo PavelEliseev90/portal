@@ -634,7 +634,7 @@ def tradein_funnel(request):
         for item in unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values(
             'vin',
             'pk',
-            'rlk__id',
+            'rlk_id',
             'page_soglasovanie__price_reception',
         ):
             vin_map.setdefault(item['vin'], item)
@@ -658,7 +658,7 @@ def tradein_funnel(request):
                 'city_name': row.city_name,
                 'date': row.date,
                 'url': row.url,
-                'rlk_id': info['rlk__id'] if info else None,
+                'rlk_id': info['rlk_id'] if info else None,
                 'estimation_id': info['pk'] if info else None,
                 'price_reception': info['page_soglasovanie__price_reception'] if info else None,
             })
@@ -784,7 +784,7 @@ def eco_monitors(request):
     docs        = docs.annotate(
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         unit_name_dc               = Subquery(subquery.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
+        status_estimation       = Subquery(subquery.values('status_name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
@@ -943,14 +943,14 @@ def get_chats_list_online_info(request, id):
         car_run                 = Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1])).annotate(    
         unit_name               = Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1])).annotate(
         unit_name_dc            = Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
+        status_estimation       = Subquery(subqyery_reg_interactiv.values('status_name')[:1])).annotate(
         status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
         staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
         staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
         soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
+        car_price_before_kd = Subquery(subqyery_reg_interactiv.values('price_before_kd')[:1])).annotate(                       
         car_price_after_kd  = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
         car_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
         car_price_sale      = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1])).annotate(                       
@@ -1011,14 +1011,14 @@ def get_chats_list_online(request):
         car_run                 = Coalesce(Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__run')[:1]))).annotate(    
         unit_name               = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__unit__name')[:1]))).annotate(
         unit_name_dc            = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__unit__id')[:1]))).annotate(
-        status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
+        status_estimation       = Subquery(subqyery_reg_interactiv.values('status_name')[:1])).annotate(
         status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
         staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
         staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
         soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
+        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('price_before_kd')[:1])).annotate(                       
         car_price_after_kd          = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
         car_price_reception         = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__price_reception')[:1]))).annotate(                       
         car_price_sale              = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__price_sale')[:1]))).annotate(                       
@@ -1162,7 +1162,7 @@ def list_eco(request):
     docs        = docs.annotate(
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         unit_name_dc               = Subquery(subquery.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
+        status_estimation       = Subquery(subquery.values('status_name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
@@ -2566,7 +2566,7 @@ def estimation_lo_history(estimation, count = False):
     if estimation.vin != '':
         if count:
             lo = DocLO.objects.filter(vin = estimation.vin)
-            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk__id')[:1], output_field = models.IntegerField())
+            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk_id')).values('rlk_id')[:1], output_field = models.IntegerField())
             lo = lo.annotate(interactiv = Count(subqyery_interactiv))
             lo = lo.filter(interactiv = 0).count()
             interatciv = RegInteractivOcenka.objects.filter(vin = estimation.vin).count()
@@ -2574,7 +2574,7 @@ def estimation_lo_history(estimation, count = False):
         else:
             list_info = list()
             interatcivs = RegInteractivOcenka.objects.filter(vin = estimation.vin).order_by('-start_estimation')
-            sub_lo = DocLO.objects.filter(rlk__id = OuterRef(name='rlk__id'))
+            sub_lo = DocLO.objects.filter(rlk__id = OuterRef(name='rlk_id'))
             interatcivs = interatcivs.annotate(
                 lo_number   = Subquery(sub_lo.values('nomer')[:1])).annotate(
                 interactiv  = Value(True))
@@ -2582,7 +2582,7 @@ def estimation_lo_history(estimation, count = False):
             for interatciv in interatcivs:
                 list_info.append(interatciv)
             lo = DocLO.objects.filter(vin = estimation.vin).order_by('-dataTime')
-            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk__id')[:1], output_field = models.IntegerField())
+            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk_id')).values('rlk_id')[:1], output_field = models.IntegerField())
             lo = lo.annotate(interactiv = Count(subqyery_interactiv))
             lo = lo.filter(interactiv = 0)
             for lo_info in lo:
@@ -4667,7 +4667,7 @@ def eco_efficiency_analysis(request):
     avg_soglasovanie_time = (
         pricing_qs.filter(has_soglasovanie=True).aggregate(avg=Avg('duration_sogl_after_sec'))['avg']
     )
-    avg_soglasovanie_time = round(avg_soglasovanie_time / 3600, 1) if avg_soglasование_time else None
+    avg_soglasovanie_time = round(avg_soglasovanie_time / 3600, 1) if avg_soglasovanie_time else None
 
     price_diffs = []
     price_percent_diffs = []
@@ -4785,6 +4785,8 @@ def eco_efficiency_analysis(request):
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
 
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
@@ -4860,113 +4862,63 @@ def staff_performance_analysis(request):
 
     unit_id = _get_int(request.GET.get('unit_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
 
-    # Базовый запрос для рабочих листов (RLK) - только trade-in
-    rlk_base_qs = DocRLK.objects.filter(
-        tradeInModel__isnull=False
-    ).filter(
-        dataTime__gte=date_start,
-        dataTime__lte=date_end,
-    ).select_related('staff', 'unit')
+    # Базовый запрос для рабочих листов (RLK) - только trade-in через витрину
+    rlk_base_qs = TradeInFunnelSnapshot.objects.filter(
+        date_work_order__gte=date_start,
+        date_work_order__lte=date_end,
+    )
 
-    # Базовый запрос для интерактивных оценок
-    eval_base_qs = RegInteractivOcenka.objects.filter(
+    # Базовый запрос для интерактивных оценок через витрину
+    eval_base_qs = AppraiserPerformanceSnapshot.objects.filter(
         start_estimation__gte=date_start,
         start_estimation__lte=date_end,
-    ).select_related('staff', 'rlk', 'rlk__staff', 'status', 'page_soglasovanie')
+    )
 
     if unit_id:
-        rlk_base_qs = rlk_base_qs.filter(
-            Q(unit__id=unit_id) | Q(unit_dc__id=unit_id)
-        )
-        eval_base_qs = eval_base_qs.filter(
-            Q(page_documents__unit__id=unit_id)
-            | Q(rlk__unit__id=unit_id)
-            | Q(rlk__unit_dc__id=unit_id)
-        )
+        rlk_base_qs = rlk_base_qs.filter(unit_id=unit_id)
+        eval_base_qs = eval_base_qs.filter(unit_id=unit_id)
+
     if type_id:
-        eval_base_qs = eval_base_qs.filter(page_documents__type_reception__id=type_id)
+        # type_reception_id может быть в extra_payload или нужно использовать другую витрину
+        # Пока используем фильтр через extra_payload, если там хранится type_reception_id
+        eval_base_qs = eval_base_qs.filter(extra_payload__type_reception_id=type_id)
+
     if status_id:
-        eval_base_qs = eval_base_qs.filter(status__id=status_id)
+        eval_base_qs = eval_base_qs.filter(status_id=status_id)
 
     if staff_id:
-        try:
-            RefStaff.objects.get(id=staff_id)
-            rlk_base_qs = rlk_base_qs.filter(staff__id=staff_id)
-            eval_base_qs = eval_base_qs.filter(rlk__staff__id=staff_id)
-        except RefStaff.DoesNotExist:
-            pass
+        rlk_base_qs = rlk_base_qs.filter(staff_id=staff_id)
+        eval_base_qs = eval_base_qs.filter(staff_id=staff_id)
 
     # Получаем список всех оценщиков, которые работали в период
-    staff_ids_from_rlk = set(rlk_base_qs.filter(staff__isnull=False).values_list('staff__id', flat=True))
-    staff_ids_from_eval = set(eval_base_qs.filter(rlk__staff__isnull=False).values_list('rlk__staff__id', flat=True))
+    staff_ids_from_rlk = set(rlk_base_qs.filter(staff_id__isnull=False).values_list('staff_id', flat=True))
+    staff_ids_from_eval = set(eval_base_qs.filter(staff_id__isnull=False).values_list('staff_id', flat=True))
     all_staff_ids = list(staff_ids_from_rlk | staff_ids_from_eval)
 
-    # Получаем данные по задачам и чатам для оптимизации
-    all_eval_ids = list(eval_base_qs.values_list('id', flat=True))
-    
-    eval_task_counts = {}
-    if all_eval_ids:
-        task_data = RegInteractivOcenkaTask.objects.filter(estimation_id__in=all_eval_ids).values('estimation_id').annotate(
-            total=Count('id'),
-            closed=Count('id', filter=Q(date_close__isnull=False))
-        )
-        for item in task_data:
-            eval_task_counts[item['estimation_id']] = {
-                'total': item['total'],
-                'closed': item['closed']
-            }
-
-    # Предзагружаем все данные для оценщиков одним запросом
-    diagnostics_q_filter = (
-        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
-         ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
-        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
-    )
-    
-    # Агрегируем статистику по оценщикам одним запросом
+    # Агрегируем статистику по оценщикам через витрины
     rlk_stats_by_staff = dict(
-        rlk_base_qs.filter(staff__id__in=all_staff_ids)
-        .values('staff__id')
-        .annotate(count=Count('id'))
-        .values_list('staff__id', 'count')
+        rlk_base_qs.filter(staff_id__in=all_staff_ids)
+        .values('staff_id')
+        .annotate(count=Count('rlk_id'))
+        .values_list('staff_id', 'count')
     )
+    
+    # Статистика по интерактивным оценкам через витрину
+    eval_stats_qs = eval_base_qs.filter(staff_id__in=all_staff_ids)
+    
+    eval_stats_raw = eval_stats_qs.values('staff_id').annotate(
+        total=Count('estimation_id'),
+        diagnostics=Count('estimation_id', filter=Q(has_diagnostics=True)),
+        accepted=Count('estimation_id', filter=Q(accepted=True)),
+        with_soglas=Count('estimation_id', filter=Q(has_soglasovanie=True))
+    ).values('staff_id', 'total', 'diagnostics', 'accepted', 'with_soglas')
     
     eval_stats_by_staff = {}
-    # Создаем новый queryset без select_related для агрегации, чтобы избежать рекурсии
-    eval_stats_qs = RegInteractivOcenka.objects.filter(
-        start_estimation__gte=date_start,
-        start_estimation__lte=date_end,
-        rlk__staff__id__in=all_staff_ids
-    )
-    
-    # Применяем те же фильтры, что и к eval_base_qs
-    if unit_id:
-        eval_stats_qs = eval_stats_qs.filter(
-            Q(page_documents__unit__id=unit_id)
-            | Q(rlk__unit__id=unit_id)
-            | Q(rlk__unit_dc__id=unit_id)
-        )
-    if type_id:
-        eval_stats_qs = eval_stats_qs.filter(page_documents__type_reception__id=type_id)
-    if status_id:
-        eval_stats_qs = eval_stats_qs.filter(status__id=status_id)
-    if staff_id:
-        try:
-            RefStaff.objects.get(id=staff_id)
-            eval_stats_qs = eval_stats_qs.filter(rlk__staff__id=staff_id)
-        except RefStaff.DoesNotExist:
-            pass
-    
-    eval_stats_raw = eval_stats_qs.values('rlk__staff__id').annotate(
-        total=Count('id'),
-        diagnostics=Count('id', filter=diagnostics_q_filter),
-        accepted=Count('id', filter=Q(status__name__icontains='ам принят')),
-        with_soglas=Count('id', filter=Q(page_soglasovanie__isnull=False))
-    ).values('rlk__staff__id', 'total', 'diagnostics', 'accepted', 'with_soglas')
-    
     for item in eval_stats_raw:
-        staff_id = item['rlk__staff__id']
+        staff_id = item['staff_id']
         eval_stats_by_staff[staff_id] = (
             item['total'],
             item['diagnostics'],
@@ -4975,36 +4927,12 @@ def staff_performance_analysis(request):
         )
     
     # Получаем все оценки с временными метками для расчета среднего времени
-    # Используем values_list для избежания конфликта select_related/only
     eval_time_data = {}
-    eval_time_qs = RegInteractivOcenka.objects.filter(
-        start_estimation__gte=date_start,
-        start_estimation__lte=date_end,
-        rlk__staff__id__in=all_staff_ids,
+    eval_time_list = eval_base_qs.filter(
+        staff_id__in=all_staff_ids,
         start_estimation__isnull=False,
         end_estimation__isnull=False
-    )
-    
-    if unit_id:
-        eval_time_qs = eval_time_qs.filter(
-            Q(page_documents__unit__id=unit_id)
-            | Q(rlk__unit__id=unit_id)
-            | Q(rlk__unit_dc__id=unit_id)
-        )
-    if type_id:
-        eval_time_qs = eval_time_qs.filter(page_documents__type_reception__id=type_id)
-    if status_id:
-        eval_time_qs = eval_time_qs.filter(status__id=status_id)
-    
-    if staff_id:
-        try:
-            RefStaff.objects.get(id=staff_id)
-            eval_time_qs = eval_time_qs.filter(rlk__staff__id=staff_id)
-        except RefStaff.DoesNotExist:
-            pass
-    
-    # Используем values_list для получения данных без загрузки объектов
-    eval_time_list = eval_time_qs.values_list('rlk__staff__id', 'start_estimation', 'end_estimation')[:2000]
+    ).values_list('staff_id', 'start_estimation', 'end_estimation')[:2000]
     
     for staff_id, start_time, end_time in eval_time_list:
         if staff_id and start_time and end_time:
@@ -5016,32 +4944,68 @@ def staff_performance_analysis(request):
     
     # Создаем маппинг eval_id -> staff_id для быстрого поиска
     eval_to_staff_map = {}
-    eval_staff_list = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values_list('id', 'rlk__staff__id')
+    eval_staff_list = eval_base_qs.filter(staff_id__in=all_staff_ids).values_list('estimation_id', 'staff_id')
     for eval_id, staff_id in eval_staff_list:
         if staff_id:
             eval_to_staff_map[eval_id] = staff_id
     
-    # Группируем задачи по оценщикам
+    # Получаем данные по задачам из витрины
+    all_eval_ids = list(eval_base_qs.values_list('estimation_id', flat=True))
+    
+    # Группируем задачи по оценщикам из витрины
     staff_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
     
-    for eval_id, task_data in eval_task_counts.items():
-        staff_id = eval_to_staff_map.get(eval_id)
+    task_data_from_snapshot = eval_base_qs.filter(
+        staff_id__in=all_staff_ids
+    ).values('staff_id', 'estimation_id', 'tasks_total', 'tasks_closed')
+    
+    for item in task_data_from_snapshot:
+        staff_id = item['staff_id']
+        eval_id = item['estimation_id']
+        tasks_total = item['tasks_total'] or 0
+        tasks_closed = item['tasks_closed'] or 0
+        
         if staff_id:
-            staff_task_stats[staff_id]['total'] += task_data.get('total', 0)
-            staff_task_stats[staff_id]['closed'] += task_data.get('closed', 0)
-            if task_data.get('total', 0) > 0:
+            staff_task_stats[staff_id]['total'] += tasks_total
+            staff_task_stats[staff_id]['closed'] += tasks_closed
+            if tasks_total > 0:
                 staff_task_stats[staff_id]['evaluations_with_tasks'].add(eval_id)
     
-    # Типы поступлений по оценщикам
+    # Типы поступлений по оценщикам из витрины
+    # Используем InteractivePricingSnapshot для получения type_reception_id
     staff_type_stats = defaultdict(lambda: defaultdict(int))
-    type_dist_by_staff = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values(
-        'rlk__staff__id', 'page_documents__type_reception__name'
-    ).annotate(count=Count('id'))
+    pricing_snapshot_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+        estimation_id__in=eval_base_qs.values_list('estimation_id', flat=True)
+    )
     
-    for item in type_dist_by_staff:
-        staff_id = item['rlk__staff__id']
-        type_name = item['page_documents__type_reception__name'] or 'Не указано'
-        staff_type_stats[staff_id][type_name] = item['count']
+    if unit_id:
+        pricing_snapshot_qs = pricing_snapshot_qs.filter(unit_id=unit_id)
+    if staff_id:
+        pricing_snapshot_qs = pricing_snapshot_qs.filter(staff_id=staff_id)
+    if type_id:
+        pricing_snapshot_qs = pricing_snapshot_qs.filter(type_reception_id=type_id)
+    
+    # Получаем type_reception_id из InteractivePricingSnapshot и маппим на staff_id
+    type_data = pricing_snapshot_qs.values('estimation_id', 'type_reception_id')
+    eval_to_type_map = {item['estimation_id']: item['type_reception_id'] for item in type_data}
+    
+    # Получаем названия типов приема
+    type_names = {}
+    if eval_to_type_map:
+        type_ids = set(eval_to_type_map.values())
+        if type_ids:
+            from register.models import RefTypeReceptionCarsOrganization
+            type_names = dict(RefTypeReceptionCarsOrganization.objects.filter(
+                id__in=type_ids
+            ).values_list('id', 'name'))
+    
+    # Группируем по оценщикам
+    for eval_id, staff_id in eval_to_staff_map.items():
+        type_reception_id = eval_to_type_map.get(eval_id)
+        type_name = type_names.get(type_reception_id, 'Не указано') if type_reception_id else 'Не указано'
+        staff_type_stats[staff_id][type_name] = staff_type_stats[staff_id].get(type_name, 0) + 1
     
     # Формируем финальную статистику
     staff_stats = []
@@ -5128,18 +5092,26 @@ def staff_performance_analysis(request):
             base_analyst_filter &= Q(status__id=status_id)
         
         # Статистика по staff_eco_1 - создаем отдельный queryset
-        analyst_qs_1 = RegInteractivOcenka.objects.filter(
-            base_analyst_filter,
-            staff_eco_1__id__in=analyst_ids
+        # Базовый queryset для аналитиков через витрину
+        analyst_base_qs = EcoAnalystSnapshot.objects.filter(
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end,
+            analyst_id__in=analyst_ids
         )
         
-        # Получаем статистику через values_list для избежания рекурсии
-        analyst_data_1 = analyst_qs_1.values_list(
-            'staff_eco_1__id', 'id', 'start_estimation', 'end_estimation',
-            'page_soglasovanie_id', 'page_soglasovanie__comment_diagnostica',
-            'page_sогласование__no_diagnostica', 'status__name', 'rlk__id',
-            'page_soglasovanie__price_before_kd', 'page_soglasование__price_auto_1',
-            'page_soglasovanie__price_auto_2', 'page_sогласование__price_auto_3'
+        if unit_id:
+            analyst_base_qs = analyst_base_qs.filter(unit_id=unit_id)
+        if type_id:
+            analyst_base_qs = analyst_base_qs.filter(type_reception_id=type_id)
+        if status_id:
+            analyst_base_qs = analyst_base_qs.filter(status_id=status_id)
+        
+        # Получаем данные по аналитикам из витрины (before)
+        analyst_data_1 = analyst_base_qs.filter(role='before').values_list(
+            'analyst_id', 'estimation_id', 'start_estimation', 'end_estimation',
+            'has_soglasovanie', 'has_diagnostics',
+            'accepted', 'status_name', 'rlk_id',
+            'price_before_kd', 'price_auto_selected'
         )
         
         for (
@@ -5147,15 +5119,13 @@ def staff_performance_analysis(request):
             eval_id,
             start_time,
             end_time,
-            soglas_id,
-            diag_comment,
-            no_diag,
+            has_soglas,
+            has_diag,
+            accepted,
             status_name,
             rlk_id,
             price_before_kd,
-            auto_price_1,
-            auto_price_2,
-            auto_price_3,
+            auto_price,
         ) in analyst_data_1:
             if not analyst_id:
                 continue
@@ -5190,16 +5160,15 @@ def staff_performance_analysis(request):
             analyst_stats_by_id[analyst_id]['total'] += 1
             
             # Диагностика
-            if soglas_id:  # Если есть связанный объект согласования
-                if (diag_comment and diag_comment.strip()) or no_diag:
-                    analyst_stats_by_id[analyst_id]['diagnostics'] += 1
+            if has_diag:
+                analyst_stats_by_id[analyst_id]['diagnostics'] += 1
             
             # Принято
-            if status_name and 'ам принят' in status_name:
+            if accepted:
                 analyst_stats_by_id[analyst_id]['accepted'] += 1
             
             # С согласованием
-            if soglas_id:  # Если есть связанный объект согласования
+            if has_soglas:
                 analyst_stats_by_id[analyst_id]['with_soglas'] += 1
             
             # Время
@@ -5215,14 +5184,10 @@ def staff_performance_analysis(request):
             if price_before_kd:
                 role_stats['count'] += 1
                 role_stats['price_sum'] += float(price_before_kd)
-                auto_price = next(
-                    (float(p) for p in [auto_price_1, auto_price_2, auto_price_3] if p and float(p) > 0),
-                    0,
-                )
-                if auto_price:
+                if auto_price and float(auto_price) > 0:
                     role_stats['auto_count'] += 1
-                    role_stats['auto_sum'] += auto_price
-                    diff_val = float(price_before_kd) - auto_price
+                    role_stats['auto_sum'] += float(auto_price)
+                    diff_val = float(price_before_kd) - float(auto_price)
                     role_stats['diff_sum'] += diff_val
                     if diff_val >= 0:
                         role_stats['above_count'] += 1
@@ -5230,18 +5195,11 @@ def staff_performance_analysis(request):
             # Маппинг для задач
             eval_to_analyst_map[eval_id] = analyst_id
         
-        # Статистика по staff_eco_2 - создаем отдельный queryset
-        analyst_qs_2 = RegInteractivOcenka.objects.filter(
-            base_analyst_filter,
-            staff_eco_2__id__in=analyst_ids
-        )
-        
-        analyst_data_2 = analyst_qs_2.values_list(
-            'staff_eco_2__id', 'id', 'start_estimation', 'end_estimation',
-            'page_soglasovanie_id', 'page_soglasovanie__comment_diagnostica',
-            'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id',
-            'page_soglasovanie__price_after_kd', 'page_soglasovanie__price_auto_1',
-            'page_soglasovanie__price_auto_2', 'page_soglasovanie__price_auto_3'
+        # Статистика по staff_eco_2 (after) - через витрину
+        analyst_data_2 = analyst_base_qs.filter(role='after').values_list(
+            'analyst_id', 'estimation_id', 'start_estimation', 'end_estimation',
+            'has_soglasovanie', 'has_diagnostics', 'accepted', 'status_name', 'rlk_id',
+            'price_after_kd', 'price_auto_selected'
         )
         
         for (
@@ -5249,15 +5207,13 @@ def staff_performance_analysis(request):
             eval_id,
             start_time,
             end_time,
-            soglas_id,
-            diag_comment,
-            no_diag,
+            has_soglas,
+            has_diag,
+            accepted,
             status_name,
             rlk_id,
             price_after_kd,
-            auto_price_1,
-            auto_price_2,
-            auto_price_3,
+            auto_price,
         ) in analyst_data_2:
             if not analyst_id:
                 continue
@@ -5292,16 +5248,15 @@ def staff_performance_analysis(request):
             analyst_stats_by_id[analyst_id]['total'] += 1
             
             # Диагностика
-            if soglas_id:  # Если есть связанный объект согласования
-                if (diag_comment and diag_comment.strip()) or no_diag:
-                    analyst_stats_by_id[analyst_id]['diagnostics'] += 1
+            if has_diag:
+                analyst_stats_by_id[analyst_id]['diagnostics'] += 1
             
             # Принято
-            if status_name and 'ам принят' in status_name:
+            if accepted:
                 analyst_stats_by_id[analyst_id]['accepted'] += 1
             
             # С согласованием
-            if soglas_id:  # Если есть связанный объект согласования
+            if has_soglas:
                 analyst_stats_by_id[analyst_id]['with_soglas'] += 1
             
             # Время
@@ -5317,14 +5272,10 @@ def staff_performance_analysis(request):
             if price_after_kd:
                 role_stats['count'] += 1
                 role_stats['price_sum'] += float(price_after_kd)
-                auto_price = next(
-                    (float(p) for p in [auto_price_1, auto_price_2, auto_price_3] if p and float(p) > 0),
-                    0,
-                )
-                if auto_price:
+                if auto_price and float(auto_price) > 0:
                     role_stats['auto_count'] += 1
-                    role_stats['auto_sum'] += auto_price
-                    diff_val = float(price_after_kd) - auto_price
+                    role_stats['auto_sum'] += float(auto_price)
+                    diff_val = float(price_after_kd) - float(auto_price)
                     role_stats['diff_sum'] += diff_val
                     if diff_val >= 0:
                         role_stats['above_count'] += 1
@@ -5332,15 +5283,20 @@ def staff_performance_analysis(request):
             # Маппинг для задач
             eval_to_analyst_map[eval_id] = analyst_id
         
-        # Задачи по аналитикам
-        for eval_id, task_data in eval_task_counts.items():
-            analyst_id = eval_to_analyst_map.get(eval_id)
+        # Задачи по аналитикам из витрины
+        analyst_task_data = analyst_base_qs.values('analyst_id', 'estimation_id', 'tasks_total', 'tasks_closed')
+        for item in analyst_task_data:
+            analyst_id = item['analyst_id']
+            eval_id = item['estimation_id']
+            tasks_total = item['tasks_total'] or 0
+            tasks_closed = item['tasks_closed'] or 0
+            
             if analyst_id:
-                analyst_task_stats[analyst_id]['total'] += task_data.get('total', 0)
-                analyst_task_stats[analyst_id]['closed'] += task_data.get('closed', 0)
-                if task_data.get('total', 0) > 0:
+                analyst_task_stats[analyst_id]['total'] += tasks_total
+                analyst_task_stats[analyst_id]['closed'] += tasks_closed
+                if tasks_total > 0:
                     analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
-                    analyst_task_stats[analyst_id]['task_counts'].append(task_data.get('total', 0))
+                    analyst_task_stats[analyst_id]['task_counts'].append(tasks_total)
     
     # Формируем финальную статистику по аналитикам
     analyst_stats = []
@@ -5400,8 +5356,8 @@ def staff_performance_analysis(request):
             month_end = date_end
         
         month_rlk_qs = rlk_base_qs.filter(
-            dataTime__gte=current,
-            dataTime__lte=month_end,
+            date_work_order__gte=current,
+            date_work_order__lte=month_end,
         )
         month_eval_qs = eval_base_qs.filter(
             start_estimation__gte=current,
@@ -5410,33 +5366,16 @@ def staff_performance_analysis(request):
         
         month_rlk_count = month_rlk_qs.count()
         month_eval_count = month_eval_qs.count()
-        month_diagnostics_count = month_eval_qs.filter(diagnostics_q_filter).count()
-        month_accepted_count = month_eval_qs.filter(
-            status__name__icontains='ам принят'
-        ).count()
+        month_diagnostics_count = month_eval_qs.filter(has_diagnostics=True).count()
+        month_accepted_count = month_eval_qs.filter(accepted=True).count()
         
-        # Среднее время за месяц (оптимизированно)
-        # Создаем новый queryset без select_related для избежания конфликта с only()
-        month_time_qs = RegInteractivOcenka.objects.filter(
+        # Среднее время за месяц через витрину
+        month_time_qs = eval_base_qs.filter(
             start_estimation__gte=current,
             start_estimation__lte=month_end,
             start_estimation__isnull=False,
             end_estimation__isnull=False
         )
-        
-        # Применяем те же фильтры, что и к eval_base_qs
-        if unit_id:
-            month_time_qs = month_time_qs.filter(
-                Q(page_documents__unit__id=unit_id)
-                | Q(rlk__unit__id=unit_id)
-                | Q(rlk__unit_dc__id=unit_id)
-            )
-        if staff_id:
-            try:
-                RefStaff.objects.get(id=staff_id)
-                month_time_qs = month_time_qs.filter(rlk__staff__id=staff_id)
-            except RefStaff.DoesNotExist:
-                pass
         
         # Используем only() после всех фильтров, чтобы избежать конфликта
         month_time_qs = month_time_qs.only('start_estimation', 'end_estimation')[:100]
@@ -5464,11 +5403,7 @@ def staff_performance_analysis(request):
     # Общая статистика
     total_rlk = rlk_base_qs.count()
     total_eval = eval_base_qs.count()
-    total_diagnostics = eval_base_qs.filter(
-        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__comment_diagnostica__isnull=False) & 
-         ~Q(page_soglasovanie__comment_diagnostica='') & Q(page_soglasovanie__no_diagnostica=False)) |
-        (Q(page_soglasovanie__isnull=False) & Q(page_soglasovanie__no_diagnostica=True))
-    ).count()
+    total_diagnostics = eval_base_qs.filter(has_diagnostics=True).count()
     total_accepted = eval_base_qs.filter(
         status__name__icontains='ам принят'
     ).count()
@@ -5680,6 +5615,8 @@ def interactive_pricing_report(request):
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
 
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
@@ -5757,55 +5694,37 @@ def interactive_evaluations_report(request):
     analyst_id  = _get_int(request.GET.get('analyst_id'))
     type_id     = _get_int(request.GET.get('type_id'))
 
-    base_qs = (
-        RegInteractivOcenka.objects.filter(
-            start_estimation__isnull=False,
-            start_estimation__gte=date_start,
-            start_estimation__lte=date_end,
-        )
-        .select_related(
-            'rlk',
-            'rlk__staff',
-            'rlk__unit',
-            'rlk__unit_dc',
-            'page_soglasovanie',
-            'page_documents',
-            'page_documents__type_reception',
-            'page_documents__unit',
-            'staff_eco_1',
-            'staff_eco_2',
-            'status',
-        )
-        .order_by('-start_estimation')
-    )
+    base_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    ).order_by('-start_estimation')
 
     if unit_id:
-        base_qs = base_qs.filter(
-            Q(page_documents__unit__id=unit_id)
-            | Q(rlk__unit__id=unit_id)
-            | Q(rlk__unit_dc__id=unit_id)
-        )
+        base_qs = base_qs.filter(unit_id=unit_id)
 
     if staff_id:
-        base_qs = base_qs.filter(rlk__staff__id=staff_id)
+        base_qs = base_qs.filter(staff_id=staff_id)
 
     if analyst_id:
-        base_qs = base_qs.filter(Q(staff_eco_1__id=analyst_id) | Q(staff_eco_2__id=analyst_id))
+        base_qs = base_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
+
+    if type_id:
+        base_qs = base_qs.filter(type_reception_id=type_id)
 
     total_count = base_qs.count()
-    total_price_estimation_ocenshik     = base_qs.aggregate(Sum('page_soglasovanie__price_reception'))['page_soglasovanie__price_reception__sum']
-    total_price_estimation_ocenshik_avg = base_qs.aggregate(Avg('page_soglasovanie__price_reception'))['page_soglasovanie__price_reception__avg']
+    total_price_estimation_ocenshik     = base_qs.aggregate(Sum('price_reception'))['price_reception__sum'] or 0
+    total_price_estimation_ocenshik_avg = base_qs.aggregate(Avg('price_reception'))['price_reception__avg'] or 0
     
-    total_price_do_kd_count = base_qs.filter(page_soglasovanie__price_before_kd__gte = 0).count()
-    total_price_do_kd       = base_qs.aggregate(Sum('page_soglasovanie__price_before_kd'))['page_soglasovanie__price_before_kd__sum']
-    total_price_do_kd_avg   = base_qs.aggregate(Avg('page_soglasovanie__price_before_kd'))['page_soglasovanie__price_before_kd__avg']
+    total_price_do_kd_count = base_qs.filter(price_before_kd__gte=0).count()
+    total_price_do_kd       = base_qs.aggregate(Sum('price_before_kd'))['price_before_kd__sum'] or 0
+    total_price_do_kd_avg   = base_qs.aggregate(Avg('price_before_kd'))['price_before_kd__avg'] or 0
     
-    diff_do_kd_avg = total_price_do_kd_avg - total_price_estimation_ocenshik_avg
+    diff_do_kd_avg = total_price_do_kd_avg - total_price_estimation_ocenshik_avg if total_price_do_kd_avg and total_price_estimation_ocenshik_avg else 0
 
-    total_price_after_kd_count = base_qs.filter(page_soglasovanie__price_after_kd__gte = 0).count()
-    total_price_after_kd       = base_qs.aggregate(Sum('page_soglasovanie__price_after_kd'))['page_soglasovanie__price_after_kd__sum']
-    total_price_after_kd_avg   = base_qs.aggregate(Avg('page_soglasovanie__price_after_kd'))['page_soglasovanie__price_after_kd__avg']
-    diff_affter_kd_avg         = total_price_after_kd_avg - total_price_do_kd_avg
+    total_price_after_kd_count = base_qs.filter(price_after_kd__gte=0).count()
+    total_price_after_kd       = base_qs.aggregate(Sum('price_after_kd'))['price_after_kd__sum'] or 0
+    total_price_after_kd_avg   = base_qs.aggregate(Avg('price_after_kd'))['price_after_kd__avg'] or 0
+    diff_affter_kd_avg         = total_price_after_kd_avg - total_price_do_kd_avg if total_price_after_kd_avg and total_price_do_kd_avg else 0
 
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),

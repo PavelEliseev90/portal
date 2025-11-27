@@ -108,11 +108,11 @@
     <div class="row g-3 align-items-end">
       <div class="col-sm-3">
         <label class="form-label">Месяц</label>
-          <input type="month" class="form-control" name="plan_month" value="{{ params.plan_month_value }}">
-        </div>
-        <div class="col-sm">
-          <label class="form-label text-muted">Подразделения</label>
-          <select class="form-select" name="unit[]" multiple size="6">
+        <input type="month" class="form-control" name="plan_month" value="{{ params.plan_month_value }}">
+      </div>
+      <div class="col-sm">
+        <label class="form-label">Подразделения</label>
+        <select class="form-select" name="unit[]" multiple size="6">
             {% for unit in params.select_units %}
               <option value="{{ unit.pk }}" {% if unit.pk in params.plan_filter_ids %}selected{% endif %}>{{ unit.name }}</option>
             {% endfor %}
