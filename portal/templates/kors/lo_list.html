@@ -7,33 +7,76 @@
 {% block mestoName %}  {% endblock %}
 
 {% block content %}
+<style>
+  .lo-list-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .lo-list-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-<div class="row g-1 align-self-center">
-  
-  <div class="col-sm">
-                
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="">
-      <label for="floatingInput">VIN</label>
+  .lo-list-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .lo-filter {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .lo-filter .form-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .lo-filter .form-control {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  @media (max-width: 768px) {
+    .lo-list-page {
+      padding: 1rem;
+    }
+  }
+</style>
+
+<section class="lo-list-page">
+  <div class="lo-list-header">
+    <h2>Оценки автомобилей</h2>
+    <p>Список интерактивных оценок с возможностью поиска и фильтрации.</p>
+  </div>
+
+  <div class="lo-filter">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label">VIN</label>
+        <input class="form-control" type="text" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="">
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Марка, Модель, Модификация</label>
+        <input class="form-control" type="text" id="search" name="search" value="{{params.filtr.search}}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" id="btn_start_search">
+          <span class="icon-mbri-play"></span> Поиск
+        </button>
+      </div>
     </div>
-
   </div>
-  
-  <div class="col">
-    
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="text" id="search" name="search" value="{{params.filtr.search}}">
-      <label for="floatingInput">Марка, Модель, Модификация</label>
-    </div>
-
-  </div>
-  
-  <div class="col-auto align-items-center ">
-    <button class="btn btn-outline-dark justify-content-center" id="btn_start_search"><span class="icon-mbri-play" > </span></button>
-  </div>
-
-</div>
 
 <div class="hidemobile" style="position: fixed;
 bottom: 0px;
@@ -796,5 +839,6 @@ z-index: 1044;">
 
 
 </script>
-             
+
+</section>
 {% endblock %}

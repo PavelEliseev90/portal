@@ -7,108 +7,159 @@
 {% block title_navbar %} - KPI ЕЦО {% endblock %}
 
 {% block content %}
+<style>
+  .kpi-eco-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<form method="get" class="">
-  <div class="card">
+  .kpi-eco-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-    <div class="card-body">
-      
-      <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
+  .kpi-eco-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
 
-      <div class="collapse" id="filtr">
-        <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
-    
-        <div class="row">
-    
-    
-          <div class="col-sm">
-    
-            <div class="row">
-              <div class="col">
-                <div class="form-floating mb-3">
-                  <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-                  <label for="floatingInput">C</label>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-floating mb-3">
-                  <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-                  <label for="floatingInput">По</label>
-                </div>
-              </div>
-            </div>
-    
-          </div>
+  .kpi-filter {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-          <div class="col-sm">
-            <div class="form-floating mb-3">							
-              <select class="form-select" id="type_reception_id" name="type_reception_id" placeholder="">
-                <option></option>
-                {% for type_reception in params.selected.type_receptions %}
-                  <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
-                {% endfor %}
-              </select>
-              <label for="floatingInput">Тип приема</label>
-            </div>
-          </div>
+  .kpi-filter .form-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
 
-          <div class="col-sm">
-    
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="vin" name="vin" placeholder="" value="{{params.filtr.vin}}" autocomplete="off">
-              <label for="floatingInput">VIN</label>
-            </div>
-    
-          </div>
-          <div class="col-sm">
-    
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="name_unit" name="name_unit" placeholder="" value="{{params.filtr.name_unit}}" autocomplete="off">
-              <label for="floatingInput">Наименование ДЦ</label>
-            </div>
-    
-          </div>
-    
-          <div class="col-sm-auto align-self-center">
-            <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
-          </div>
-    
-        </div>
-      </div>
+  .kpi-filter .form-select,
+  .kpi-filter .form-control {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
 
-    </div>
+  .kpi-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
 
+  .kpi-panel h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+  }
+
+  .status-card {
+    background: #002a5a;
+    border-radius: 1rem;
+    padding: 1rem;
+    color: #fff;
+    text-align: center;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 8px 20px rgba(0, 23, 61, 0.1);
+  }
+
+  .status-card label:first-child {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .status-card label:last-child {
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .kpi-eco-page {
+      padding: 1rem;
+    }
+  }
+</style>
+
+<section class="kpi-eco-page">
+  <div class="kpi-eco-header">
+    <h2>KPI ЕЦО</h2>
+    <p>Анализ эффективности работы центра оценки автомобилей.</p>
   </div>
 
-</form>
+  <form method="get">
+    <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
+    
+    <div class="kpi-filter">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Период с</label>
+          <input class="form-control" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Период по</label>
+          <input class="form-control" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Тип приема</label>
+          <select class="form-select" id="type_reception_id" name="type_reception_id">
+            <option value="">Все</option>
+            {% for type_reception in params.selected.type_receptions %}
+              <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}>{{type_reception.name}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">VIN</label>
+          <input type="text" class="form-control" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Наименование ДЦ</label>
+          <input type="text" class="form-control" id="name_unit" name="name_unit" value="{{params.filtr.name_unit}}" autocomplete="off">
+        </div>
+        <div class="col-md-12">
+          <button class="btn btn-primary" type="submit">
+            <span class="icon-mbri-play"></span> Применить
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 
-<br>
-<div class="card bg-white bg-opacity-25">
-  <div class="card-body">
-    <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_statuses" aria-expanded="false" aria-controls="collapse_statuses">Оценки по статусам</label>
-    <hr style="width: 75%">
-    <div class="collapse" id="collapse_statuses">   
-      <div class="row g-1">
-        <div class="col-12 col-sm-6">
-          <div class="container-fluid">
-            <div class="row g-1 row-cols-1 row-cols-sm-3">
-              {% for status in params.statuses %}
-                {% if status.interactiv_status != None %}
-                  <div class="col">
-                    <div class="card text-white bg-dark bg-gradient bg-opacity-75">
-                      <div class="card-body text-center" >
-                        <label class="fs-6 text-truncate"> {{status.interactiv_status}}</label>
-                        <br>
-                        <label class="fs-5"> {{status.count}}</label> 
-                      </div>
-                    </div>
+  <div class="kpi-panel">
+    <h3 data-bs-toggle="collapse" data-bs-target="#collapse_statuses" aria-expanded="false" aria-controls="collapse_statuses" style="cursor: pointer;">
+      Оценки по статусам
+    </h3>
+    <div class="collapse show" id="collapse_statuses">   
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <div class="row g-2">
+            {% for status in params.statuses %}
+              {% if status.interactiv_status != None %}
+                <div class="col-6 col-sm-4">
+                  <div class="status-card">
+                    <label>{{status.interactiv_status}}</label>
+                    <label>{{status.count}}</label> 
                   </div>
-                {% endif %}
-              {% endfor %}
-            </div>
+                </div>
+              {% endif %}
+            {% endfor %}
           </div>
         </div>
-        <div class="col-12 col-sm-6">
+        <div class="col-12 col-md-6">
           <figure class="highcharts-figure">
             <div id="container_status_estimation"></div>
           </figure>
@@ -116,18 +167,8 @@
       </div>
     </div>
   </div>
-</div>
 
-<br>
-
-{% for data in params.data %}
-{{data.nomer}} - {{data.interactiv_status}} - {{ data.staff_name}}
-{{data.rlk.pk}}  -  
-{{data.staff_eco}}
-<br>
-{% endfor %}
-
-<hr>
+</section>
 
   <script src="/static/js/highcharts/highcharts.js"></script>  
   <script src="/static/js/highcharts/highcharts-3d.js"></script>
