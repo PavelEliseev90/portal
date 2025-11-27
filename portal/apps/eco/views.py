@@ -5120,24 +5120,8 @@ def staff_performance_analysis(request):
             }
 
     from collections import defaultdict
+    # Временное отключение анализа чатов: тяжелые выборки приводили к рекурсии и долгой загрузке.
     eval_chat_data = defaultdict(lambda: {'count': 0, 'first_date': None, 'last_date': None})
-    
-    rlk_ids_list = list(set(eval_base_qs.filter(rlk__isnull=False).values_list('rlk__id', flat=True)))
-    
-    if rlk_ids_list:
-        chats = Chat.objects.filter(rlk_id__in=rlk_ids_list).prefetch_related('chatmessage_set')
-        
-        for chat in chats:
-            messages_qs = chat.chatmessage_set.all()
-            msg_count = messages_qs.count()
-            if msg_count > 0:
-                first_msg = messages_qs.order_by('date').first()
-                last_msg = messages_qs.order_by('-date').first()
-                eval_chat_data[chat.rlk_id] = {
-                    'count': msg_count,
-                    'first_date': first_msg.date if first_msg else None,
-                    'last_date': last_msg.date if last_msg else None,
-                }
 
     # Предзагружаем все данные для оценщиков одним запросом
     diagnostics_q_filter = (
