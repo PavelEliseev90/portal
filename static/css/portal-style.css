@@ -1301,6 +1301,91 @@
   }
 }
 
+/* ============================================
+   Стили для настроек диагностики
+   ============================================ */
+.settings-diagnostic-panel h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.settings-diagnostic-panel h3:hover {
+  color: #004080;
+}
+
+.settings-diagnostic-panel h3 .icon-mbri-down {
+  transition: transform 0.3s ease;
+  color: #8ea1ba;
+  font-size: 0.9rem;
+}
+
+.settings-diagnostic-panel h3[aria-expanded="true"] .icon-mbri-down {
+  transform: rotate(180deg);
+}
+
+.settings-diagnostic-panel .table thead th {
+  background: #f8f9fc;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c7a92;
+  border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  padding: 0.75rem;
+}
+
+.settings-diagnostic-panel .table tbody td {
+  vertical-align: middle;
+  padding: 0.75rem;
+}
+
+.settings-diagnostic-panel .form-floating {
+  margin-bottom: 0;
+}
+
+.settings-diagnostic-panel .form-floating .form-control {
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.settings-diagnostic-panel .form-floating label {
+  font-size: 0.8rem;
+  color: #8ea1ba;
+}
+
+@media (max-width: 768px) {
+  .settings-diagnostic-panel .table thead {
+    display: none;
+  }
+
+  .settings-diagnostic-panel .table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .settings-diagnostic-panel .table tbody td {
+    display: block;
+    padding: 0.5rem 0;
+    border: none;
+    text-align: left;
+  }
+
+  .settings-diagnostic-panel .table tbody td:first-child {
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+  }
+}
+
 /* Стили для изображений в карточках автомобилей */
 .car-card-image {
   width: 100%;
