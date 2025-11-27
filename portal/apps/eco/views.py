@@ -4631,7 +4631,9 @@ def eco_efficiency_analysis(request):
 
     if unit_id:
         base_qs = base_qs.filter(
-            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+            Q(page_documents__unit__id=unit_id)
+            | Q(rlk__unit__id=unit_id)
+            | Q(rlk__unit_dc__id=unit_id)
         )
 
     if staff_id:
@@ -5016,7 +5018,9 @@ def staff_performance_analysis(request):
             Q(unit__id=unit_id) | Q(unit_dc__id=unit_id)
         )
         eval_base_qs = eval_base_qs.filter(
-            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+            Q(page_documents__unit__id=unit_id)
+            | Q(rlk__unit__id=unit_id)
+            | Q(rlk__unit_dc__id=unit_id)
         )
 
     if staff_id:
@@ -5077,7 +5081,9 @@ def staff_performance_analysis(request):
     # Применяем те же фильтры, что и к eval_base_qs
     if unit_id:
         eval_stats_qs = eval_stats_qs.filter(
-            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+            Q(page_documents__unit__id=unit_id)
+            | Q(rlk__unit__id=unit_id)
+            | Q(rlk__unit_dc__id=unit_id)
         )
     if staff_id:
         try:
@@ -5115,7 +5121,9 @@ def staff_performance_analysis(request):
     
     if unit_id:
         eval_time_qs = eval_time_qs.filter(
-            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+            Q(page_documents__unit__id=unit_id)
+            | Q(rlk__unit__id=unit_id)
+            | Q(rlk__unit_dc__id=unit_id)
         )
     
     if staff_id:
@@ -5257,7 +5265,9 @@ def staff_performance_analysis(request):
         
         if unit_id:
             base_analyst_filter &= (
-                Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+                Q(page_documents__unit__id=unit_id)
+                | Q(rlk__unit__id=unit_id)
+                | Q(rlk__unit_dc__id=unit_id)
             )
         
         # Статистика по staff_eco_1 - создаем отдельный queryset
@@ -5479,7 +5489,9 @@ def staff_performance_analysis(request):
         # Применяем те же фильтры, что и к eval_base_qs
         if unit_id:
             month_time_qs = month_time_qs.filter(
-                Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+                Q(page_documents__unit__id=unit_id)
+                | Q(rlk__unit__id=unit_id)
+                | Q(rlk__unit_dc__id=unit_id)
             )
         if staff_id:
             try:
@@ -5604,7 +5616,6 @@ def interactive_pricing_report(request):
             'rlk__unit_dc',
             'page_documents',
             'page_documents__unit',
-            'page_documents__unit_dc',
             'staff',
             'staff_eco_1',
             'staff_eco_2',
@@ -5615,7 +5626,6 @@ def interactive_pricing_report(request):
     if unit_id:
         base_qs = base_qs.filter(
             Q(page_documents__unit__id=unit_id)
-            | Q(page_documents__unit_dc__id=unit_id)
             | Q(rlk__unit__id=unit_id)
             | Q(rlk__unit_dc__id=unit_id)
         )
