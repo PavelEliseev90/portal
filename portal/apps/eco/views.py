@@ -5155,7 +5155,26 @@ def staff_performance_analysis(request):
     )
     
     eval_stats_by_staff = {}
-    eval_stats_raw = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values('rlk__staff__id').annotate(
+    # Создаем новый queryset без select_related для агрегации, чтобы избежать рекурсии
+    eval_stats_qs = RegInteractivOcenka.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+        rlk__staff__id__in=all_staff_ids
+    )
+    
+    # Применяем те же фильтры, что и к eval_base_qs
+    if unit_id:
+        eval_stats_qs = eval_stats_qs.filter(
+            Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+        )
+    if staff_id:
+        try:
+            RefStaff.objects.get(id=staff_id)
+            eval_stats_qs = eval_stats_qs.filter(rlk__staff__id=staff_id)
+        except RefStaff.DoesNotExist:
+            pass
+    
+    eval_stats_raw = eval_stats_qs.values('rlk__staff__id').annotate(
         total=Count('id'),
         diagnostics=Count('id', filter=diagnostics_q_filter),
         accepted=Count('id', filter=Q(status__name__icontains='ам принят')),
@@ -5306,6 +5325,210 @@ def staff_performance_analysis(request):
     
     staff_stats = sorted(staff_stats, key=lambda x: x['rlk_count'], reverse=True)
 
+    # Статистика по аналитикам
+    analyst_ids = list(User.objects.filter(
+        Q(profiles__eco=True) | Q(profiles__eco_visible=True)
+    ).distinct().values_list('id', flat=True))
+    
+    analyst_stats_by_id = {}
+    analyst_time_data = {}
+    eval_to_analyst_map = {}
+    analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
+    analyst_chat_stats = defaultdict(lambda: {'total_messages': 0, 'evaluations_with_chat': set()})
+    
+    if analyst_ids:
+        # Базовый фильтр для аналитиков
+        base_analyst_filter = Q(
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end,
+        )
+        
+        if unit_id:
+            base_analyst_filter &= (
+                Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+            )
+        
+        # Статистика по staff_eco_1 - создаем отдельный queryset
+        analyst_qs_1 = RegInteractivOcenka.objects.filter(
+            base_analyst_filter,
+            staff_eco_1__id__in=analyst_ids
+        )
+        
+        # Получаем статистику через values_list для избежания рекурсии
+        analyst_data_1 = analyst_qs_1.values_list(
+            'staff_eco_1__id', 'id', 'start_estimation', 'end_estimation',
+            'page_soglasovanie__isnull', 'page_soglasovanie__comment_diagnostica',
+            'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id'
+        )
+        
+        for analyst_id, eval_id, start_time, end_time, soglas_null, diag_comment, no_diag, status_name, rlk_id in analyst_data_1:
+            if not analyst_id:
+                continue
+                
+            # Инициализация
+            if analyst_id not in analyst_stats_by_id:
+                analyst_stats_by_id[analyst_id] = {
+                    'total': 0,
+                    'diagnostics': 0,
+                    'accepted': 0,
+                    'with_soglas': 0,
+                }
+            
+            analyst_stats_by_id[analyst_id]['total'] += 1
+            
+            # Диагностика
+            if not soglas_null:
+                if (diag_comment and diag_comment.strip()) or no_diag:
+                    analyst_stats_by_id[analyst_id]['diagnostics'] += 1
+            
+            # Принято
+            if status_name and 'ам принят' in status_name:
+                analyst_stats_by_id[analyst_id]['accepted'] += 1
+            
+            # С согласованием
+            if not soglas_null:
+                analyst_stats_by_id[analyst_id]['with_soglas'] += 1
+            
+            # Время
+            if start_time and end_time:
+                if analyst_id not in analyst_time_data:
+                    analyst_time_data[analyst_id] = []
+                diff = (end_time - start_time).total_seconds() / 3600
+                if diff >= 0:
+                    analyst_time_data[analyst_id].append(diff)
+            
+            # Маппинг для задач и чатов
+            eval_to_analyst_map[eval_id] = analyst_id
+            
+            # Чаты
+            if rlk_id:
+                chat_info = eval_chat_data.get(rlk_id)
+                if chat_info and chat_info['count'] > 0:
+                    analyst_chat_stats[analyst_id]['total_messages'] += chat_info['count']
+                    analyst_chat_stats[analyst_id]['evaluations_with_chat'].add(eval_id)
+        
+        # Статистика по staff_eco_2 - создаем отдельный queryset
+        analyst_qs_2 = RegInteractivOcenka.objects.filter(
+            base_analyst_filter,
+            staff_eco_2__id__in=analyst_ids
+        )
+        
+        analyst_data_2 = analyst_qs_2.values_list(
+            'staff_eco_2__id', 'id', 'start_estimation', 'end_estimation',
+            'page_soglasovanie__isnull', 'page_soglasovanie__comment_diagnostica',
+            'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id'
+        )
+        
+        for analyst_id, eval_id, start_time, end_time, soglas_null, diag_comment, no_diag, status_name, rlk_id in analyst_data_2:
+            if not analyst_id:
+                continue
+                
+            # Инициализация
+            if analyst_id not in analyst_stats_by_id:
+                analyst_stats_by_id[analyst_id] = {
+                    'total': 0,
+                    'diagnostics': 0,
+                    'accepted': 0,
+                    'with_soglas': 0,
+                }
+            
+            analyst_stats_by_id[analyst_id]['total'] += 1
+            
+            # Диагностика
+            if not soglas_null:
+                if (diag_comment and diag_comment.strip()) or no_diag:
+                    analyst_stats_by_id[analyst_id]['diagnostics'] += 1
+            
+            # Принято
+            if status_name and 'ам принят' in status_name:
+                analyst_stats_by_id[analyst_id]['accepted'] += 1
+            
+            # С согласованием
+            if not soglas_null:
+                analyst_stats_by_id[analyst_id]['with_soglas'] += 1
+            
+            # Время
+            if start_time and end_time:
+                if analyst_id not in analyst_time_data:
+                    analyst_time_data[analyst_id] = []
+                diff = (end_time - start_time).total_seconds() / 3600
+                if diff >= 0:
+                    analyst_time_data[analyst_id].append(diff)
+            
+            # Маппинг для задач и чатов
+            eval_to_analyst_map[eval_id] = analyst_id
+            
+            # Чаты
+            if rlk_id:
+                chat_info = eval_chat_data.get(rlk_id)
+                if chat_info and chat_info['count'] > 0:
+                    analyst_chat_stats[analyst_id]['total_messages'] += chat_info['count']
+                    analyst_chat_stats[analyst_id]['evaluations_with_chat'].add(eval_id)
+        
+        # Задачи по аналитикам
+        for eval_id, task_data in eval_task_counts.items():
+            analyst_id = eval_to_analyst_map.get(eval_id)
+            if analyst_id:
+                analyst_task_stats[analyst_id]['total'] += task_data.get('total', 0)
+                analyst_task_stats[analyst_id]['closed'] += task_data.get('closed', 0)
+                if task_data.get('total', 0) > 0:
+                    analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
+    
+    # Формируем финальную статистику по аналитикам
+    analyst_stats = []
+    if analyst_ids:
+        for analyst in User.objects.filter(id__in=analyst_ids).select_related('profiles'):
+            stats = analyst_stats_by_id.get(analyst.id, {})
+            total = stats.get('total', 0)
+            
+            if total > 0:
+                diagnostics_count = stats.get('diagnostics', 0)
+                accepted_count = stats.get('accepted', 0)
+                with_soglas_count = stats.get('with_soglas', 0)
+                
+                # Среднее время
+                time_diffs = analyst_time_data.get(analyst.id, [])
+                avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+                
+                # Задачи
+                task_data = analyst_task_stats.get(analyst.id, {})
+                task_stats = {
+                    'total': task_data.get('total', 0),
+                    'closed': task_data.get('closed', 0),
+                    'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
+                }
+                
+                # Чаты
+                chat_data = analyst_chat_stats.get(analyst.id, {})
+                chat_stats = {
+                    'total_messages': chat_data.get('total_messages', 0),
+                    'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
+                }
+                
+                # Конверсии
+                eval_to_diag_rate = round((diagnostics_count / total * 100), 1) if total > 0 else 0
+                diag_to_accepted_rate = round((accepted_count / diagnostics_count * 100), 1) if diagnostics_count > 0 else 0
+                conv_rate = round((with_soglas_count / total * 100), 1) if total > 0 else 0
+                accept_rate = round((accepted_count / total * 100), 1) if total > 0 else 0
+                
+                analyst_stats.append({
+                    'name': analyst.profiles.eco_name or analyst.get_full_name() or analyst.username,
+                    'total': total,
+                    'diagnostics_count': diagnostics_count,
+                    'accepted_count': accepted_count,
+                    'with_soglas_count': with_soglas_count,
+                    'avg_time': avg_time,
+                    'task_stats': task_stats,
+                    'chat_stats': chat_stats,
+                    'eval_to_diag_rate': eval_to_diag_rate,
+                    'diag_to_accepted_rate': diag_to_accepted_rate,
+                    'conv_rate': conv_rate,
+                    'accept_rate': accept_rate,
+                })
+    
+    # Сортируем по имени, затем по количеству
+    analyst_stats = sorted(analyst_stats, key=lambda x: (x['name'], -x['total']))
+
     # Месячная динамика по всем оценщикам
     monthly_data = []
     base_month = date_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -5333,10 +5556,28 @@ def staff_performance_analysis(request):
         ).count()
         
         # Среднее время за месяц (оптимизированно)
-        month_time_qs = month_eval_qs.filter(
+        # Создаем новый queryset без select_related для избежания конфликта с only()
+        month_time_qs = RegInteractivOcenka.objects.filter(
+            start_estimation__gte=current,
+            start_estimation__lte=month_end,
             start_estimation__isnull=False,
             end_estimation__isnull=False
-        ).only('start_estimation', 'end_estimation')[:100]
+        )
+        
+        # Применяем те же фильтры, что и к eval_base_qs
+        if unit_id:
+            month_time_qs = month_time_qs.filter(
+                Q(page_documents__unit__id=unit_id) | Q(page_documents__unit_dc__id=unit_id)
+            )
+        if staff_id:
+            try:
+                RefStaff.objects.get(id=staff_id)
+                month_time_qs = month_time_qs.filter(rlk__staff__id=staff_id)
+            except RefStaff.DoesNotExist:
+                pass
+        
+        # Используем only() после всех фильтров, чтобы избежать конфликта
+        month_time_qs = month_time_qs.only('start_estimation', 'end_estimation')[:100]
         
         time_diffs = []
         for eval in month_time_qs:
@@ -5402,6 +5643,7 @@ def staff_performance_analysis(request):
         'total_diagnostics': total_diagnostics,
         'total_accepted': total_accepted,
         'staff_stats': staff_stats,
+        'analyst_stats': analyst_stats,
         'monthly_data': monthly_data,
         'monthly_data_json': monthly_data_json,
         'overall_type_distribution': overall_type_distribution,
