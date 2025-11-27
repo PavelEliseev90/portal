@@ -5701,15 +5701,15 @@ def interactive_pricing_report(request):
     total_count = base_qs.count()
 
     aggregates = base_qs.aggregate(
-        total_price_before=Coalesce(Sum('price_before_kd'), 0.0),
-        total_price_after=Coalesce(Sum('price_after_kd'), 0.0),
-        total_price_auto_1=Coalesce(Sum('price_auto_1'), 0.0),
-        total_price_auto_2=Coalesce(Sum('price_auto_2'), 0.0),
-        total_price_auto_3=Coalesce(Sum('price_auto_3'), 0.0),
-        total_price_auto_bcp=Coalesce(Sum('price_auto_bcp'), 0.0),
-        total_price_bcp=Coalesce(Sum('price_bcp'), 0.0),
-        total_price_reception=Coalesce(Sum('price_reception'), 0.0),
-        total_price_sale=Coalesce(Sum('price_sale'), 0.0),
+        total_price_before=Coalesce(Sum('page_soglasovanie__price_before_kd'), 0.0),
+        total_price_after=Coalesce(Sum('page_soglasovanie__price_after_kd'), 0.0),
+        total_price_auto_1=Coalesce(Sum('page_soglasovanie__price_auto_1'), 0.0),
+        total_price_auto_2=Coalesce(Sum('page_soglasovanie__price_auto_2'), 0.0),
+        total_price_auto_3=Coalesce(Sum('page_soglasovanie__price_auto_3'), 0.0),
+        total_price_auto_bcp=Coalesce(Sum('page_soglasovanie__price_auto_bcp'), 0.0),
+        total_price_bcp=Coalesce(Sum('page_soglasovanie__price_bcp'), 0.0),
+        total_price_reception=Coalesce(Sum('page_soglasovanie__price_reception'), 0.0),
+        total_price_sale=Coalesce(Sum('page_soglasovanie__price_sale'), 0.0),
         total_amount_podgotovka=Coalesce(Sum('amount_podgotovka'), 0.0),
         total_amount_ss=Coalesce(Sum('amount_ss'), 0.0),
         total_amount_mcu=Coalesce(Sum('amount_mcu'), 0.0),
@@ -5783,13 +5783,29 @@ def interactive_pricing_report(request):
             elif rlk.unit_dc and rlk.unit_dc.name:
                 unit_name = rlk.unit_dc.name
 
-        auto_candidates = [estimation.price_auto_1, estimation.price_auto_2, estimation.price_auto_3]
+        soglas = estimation.page_soglasovanie
+
+        auto_candidates = []
+        if soglas:
+            auto_candidates = [
+                soglas.price_auto_1,
+                soglas.price_auto_2,
+                soglas.price_auto_3,
+            ]
+        else:
+            auto_candidates = [0, 0, 0]
+
         auto_reference = next((price for price in auto_candidates if price not in (None, 0)), 0)
 
-        price_before = estimation.price_before_kd or 0
-        price_after = estimation.price_after_kd or 0
+        price_before = soglas.price_before_kd if soglas and soglas.price_before_kd else 0
+        price_after = soglas.price_after_kd if soglas and soglas.price_after_kd else 0
         diff_before = price_before - auto_reference if auto_reference else 0
         diff_after = price_after - auto_reference if auto_reference else 0
+
+        price_auto_bcp = soglas.price_auto_bcp if soglas and soglas.price_auto_bcp else 0
+        price_bcp = soglas.price_bcp if soglas and soglas.price_bcp else 0
+        price_reception = soglas.price_reception if soglas and soglas.price_reception else 0
+        price_sale = soglas.price_sale if soglas and soglas.price_sale else 0
 
         cost_fields = {
             'podgotovka': estimation.amount_podgotovka or 0,
@@ -5812,14 +5828,14 @@ def interactive_pricing_report(request):
                 'analyst_after': _format_user_name(estimation.staff_eco_2),
                 'price_before_kd': price_before,
                 'price_after_kd': price_after,
-                'price_auto_1': estimation.price_auto_1 or 0,
-                'price_auto_2': estimation.price_auto_2 or 0,
-                'price_auto_3': estimation.price_auto_3 or 0,
+                'price_auto_1': auto_candidates[0] or 0,
+                'price_auto_2': auto_candidates[1] or 0,
+                'price_auto_3': auto_candidates[2] or 0,
                 'price_auto_reference': auto_reference,
-                'price_auto_bcp': estimation.price_auto_bcp or 0,
-                'price_bcp': estimation.price_bcp or 0,
-                'price_reception': estimation.price_reception or 0,
-                'price_sale': estimation.price_sale or 0,
+                'price_auto_bcp': price_auto_bcp,
+                'price_bcp': price_bcp,
+                'price_reception': price_reception,
+                'price_sale': price_sale,
                 'diff_before': diff_before,
                 'diff_after': diff_after,
                 'costs': cost_fields,
