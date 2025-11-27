@@ -9,182 +9,128 @@
 {% block title_navbar %} - автомобили {{params.name}} {{params.object.name}}  {% endblock %}
     
 {% block content %}
-
-{% if params.glav %}
-	
-	<div class="row justify-content-center">
-		{% for mark_info in params.catalog %}
-			<div class="col-6 col-sm-6 col-md-4 col-xl-3 col-xxl-2">
-				<a class="text-dark animate__animated animate__delay-1s animate__fadeIn" href="{{mark_info.nameEn}}/">
-					<div class="row align-items-center">
-					<div class="col-2" style="height: 76px; width: 76px;">
-						<img src="{{mark_info.logo}}" style="object-fit: contain; height: 76px; width: 76px;">
-					</div>
-					<div class="col">
-						{{mark_info.name}} - 
-						<span class="">{{mark_info.cars_count}} </span>
-					</div>
-					</div>
-				</a>
-			</div>				
-		{% endfor %}
-	</div>
-
-{% endif %}
-
-{% if not params.glav %}
-
-	<hr>
-
-	<div class="row g-1 justify-content-center">
-		<div class="col-auto">
-			<div class="card1">
-				<div class="card-body1" style="padding: 0.2rem;">
-					<a class="fs-6 text-dark" href="/cars/">На главную - <label class="fw-6 text-secondary"></label></a>
-				</div>
-			</div>                       
-		</div>
-		<div class="col-auto">
-			<div class="card1">
-				<div class="card-body1" style="padding: 0.2rem;">
-					<a class="fs-6 text-dark" href="/cars/catalog/">Каталог - <label class="fw-6 text-secondary"></label></a>
-				</div>
-			</div>                       
-		</div>
-		<div class="col-auto">
-			<div class="card1">
-				<div class="card-body1" style="padding: 0.2rem;">
-					<a class="fs-6 text-dark" href="/cars/catalog/{{params.mark_name_en}}/">{{params.mark_name_en|lower|capfirst}} - <label class="fw-6 text-secondary">{{mark_info.sum}}</label></a>
-				</div>
-			</div>                       
+<div class="portal-page">
+	{% if params.glav %}
+		<div class="portal-header">
+			<h2>Каталог автомобилей</h2>
+			<p>Выберите марку автомобиля для просмотра доступных моделей</p>
 		</div>
 
-		{% for mark_info in params.catalog %}
-			
-			<div class="col-auto">
-				<div class="card1">
-					<div class="card-body1" style="padding: 0.2rem;">
-						<a class="fs-6 text-dark" href="/cars/catalog/{{params.mark_name_en}}/{{mark_info.nameEn}}/">{{mark_info.nameHuman}} - <label class="fw-6 text-secondary">{{mark_info.sum}}</label></a>
+		<div class="portal-panel">
+			<div class="row g-3">
+				{% for mark_info in params.catalog %}
+					<div class="col-6 col-sm-6 col-md-4 col-xl-3 col-xxl-2">
+						<a href="{{mark_info.nameEn}}/" class="mark-card">
+							<img src="{{mark_info.logo}}" alt="{{mark_info.name}}" class="mark-card-logo">
+							<div class="mark-card-info">
+								<div class="mark-card-name">{{mark_info.name}}</div>
+								<div class="mark-card-count">{{mark_info.cars_count}} автомобилей</div>
+							</div>
+						</a>
 					</div>
-				</div>                       
+				{% endfor %}
 			</div>
-		
-		{% endfor %}
+		</div>
+	{% endif %}
 
-	</div>
-	<hr>
+	{% if not params.glav %}
+		<div class="portal-header">
+			<h2>Каталог автомобилей</h2>
+			<p>Список доступных автомобилей</p>
+		</div>
 
+		<div class="breadcrumb-nav">
+			<div class="d-flex flex-wrap align-items-center">
+				<a href="/cars/">На главную</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/">Каталог</a>
+				{% if params.mark_name_en %}
+					<span class="separator">/</span>
+					<a href="/cars/catalog/{{params.mark_name_en}}/">{{params.mark_name_en|lower|capfirst}}</a>
+				{% endif %}
+				{% for mark_info in params.catalog %}
+					<span class="separator">/</span>
+					<a href="/cars/catalog/{{params.mark_name_en}}/{{mark_info.nameEn}}/">{{mark_info.nameHuman}}</a>
+				{% endfor %}
+			</div>
+		</div>
 
-	<div class="row g-4 align-self-center align-items-center cars_list">
-			
 		{% if params.paginator.object_list %}
-			
-			{% for car in params.paginator.object_list %}
-
-				<div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-3" >	
-									<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}'; return false" > 
-					<div class="card-body" style="padding: 0rem; ">
-
-						<div>
-							<img class="item-img_up" src="{{car.get_photo}}">
-						</div>
-
-							<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-							
-								<div class="col-3" style="height: 60px;">
-									<img class="item-img-mini"  src="{{car.logo}}" > <br>
+			<div class="row g-3">
+				{% for car in params.paginator.object_list %}
+					<div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-3">
+						<div class="car-card" onclick="window.location.href='/cars/{{car.slug}}'; return false">
+							<img src="{{car.get_photo}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="car-card-image">
+							<div class="car-card-body">
+								<div class="car-card-header">
+									<img src="{{car.logo}}" alt="{{car.modification_autoru.model.mark.name}}" class="car-card-logo">
+									<div class="car-card-location">
+										<span class="icon-mbri-pin"></span>
+										{{car.unit.name}}
+									</div>
 								</div>
-		
-								<div class="col text-end align-self-center">
-									<span class="fs-6  icon-mbri-pin"> {{car.unit.name}}</span>
-								</div>
-							</div>
-				
-							<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-								
-								<div class="col text-truncate">
-									
-									<span class="fs-5"> {{car.modification_autoru.model.mark.name}} 
-										<br> 
+
+								<div class="d-flex justify-content-between align-items-start mb-2">
+									<div class="car-card-title">
+										{{car.modification_autoru.model.mark.name}}<br>
 										{{car.modification_autoru.model.name}}
-									</span>
-
-								</div>
-		
-								<div class="col text-end align-self-center">
-									<span class="fs-4 fw-bold"> {{car.price|floatformat:"2g"}} </span> &#8381;
+									</div>
+									<div class="car-card-price">
+										{{car.price|floatformat:"2g"}} ₽
+									</div>
 								</div>
 
-							</div>
-		
-							<div class="row g-1 text-secondary align-self-center align-items-center" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-								<div class="col-8 text-truncate">
-									<span class="fs-6 text-secondary" >
-										{{car.modification_autoru.engine_volume}} л. /
-										{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-										{{car.modification_autoru.typeEngine.name}}
-										<br>
-										{{car.modification_autoru.typeGear.name}}
-										<br>
-										{{car.modification_autoru.typeBody.name}}</span>
+								<div class="car-card-specs">
+									{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
+									{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
 								</div>
-								<div class="col text-end align-self-center align-items-center">
-									<span class="fs-6"> {{car.year}}</span>
-										<br>
-									<span class="fs-6"> {{car.run|floatformat:"0g"|default_if_none:"---"}} км. </span>
+
+								<div class="car-card-meta">
+									<span>{{car.year}} г.</span>
+									<span>{{car.run|floatformat:"0g"|default_if_none:"---"}} км</span>
 								</div>
 							</div>
-		
 						</div>
 					</div>
-				</div>	
-				
-			{% endfor %} 
+				{% endfor %}
+			</div>
 
-		{% endif %}
-		
-	</div>
-
-
-	<div class="row align-self-center align-items-center justify-content-center" style="width: 100%;">
-		
-		<div class="col-auto align-items-center align-self-center justify-content-center">
-			<nav aria-label="Page navigation example">
-				<ul class="pagination justify-content-center">
-				
-					{% if params.paginator.has_previous %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-						</li>
-					{% endif %}
-			
-					{% for p in params.paginator.paginator.page_range %}
-						{% if params.paginator.number == p %}
-							<li class="page-num mbr-section-btn disabled">
-								<a class="btn btn-secondary display-7">
-									<b>{{p}}</b>
-								</a>
-							</li>
-						{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-							<li class="page-num mbr-section-btn">
-								<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+			{% if params.paginator.paginator.num_pages > 1 %}
+				<nav aria-label="Навигация по страницам">
+					<ul class="pagination">
+						{% if params.paginator.has_previous %}
+							<li class="page-item">
+								<a class="page-link" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
 							</li>
 						{% endif %}
-					{% endfor %}
-						
-					{% if params.paginator.has_next %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-						</li>
-					{% endif %}
-		
-				</ul>
-			</nav>
-		</div>
 
+						{% for p in params.paginator.paginator.page_range %}
+							{% if params.paginator.number == p %}
+								<li class="page-item active">
+									<span class="page-link">{{p}}</span>
+								</li>
+							{% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+								<li class="page-item">
+									<a class="page-link" href="?{% url_replace page=p %}">{{p}}</a>
+								</li>
+							{% endif %}
+						{% endfor %}
 
-	</div>
-
-{% endif%}
-
+						{% if params.paginator.has_next %}
+							<li class="page-item">
+								<a class="page-link" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+							</li>
+						{% endif %}
+					</ul>
+				</nav>
+			{% endif %}
+		{% else %}
+			<div class="portal-panel">
+				<div class="text-center py-5">
+					<p class="text-muted">Автомобили не найдены</p>
+				</div>
+			</div>
+		{% endif %}
+	{% endif %}
+</div>
 {% endblock %}
