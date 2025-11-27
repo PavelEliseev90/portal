@@ -48,9 +48,44 @@
     text-align: right;
   }
 
+  @media (max-width: 992px) {
+    .matrix-page {
+      padding: 1rem 1.25rem 2rem;
+    }
+
+    .matrix-panel {
+      padding: 1rem;
+    }
+  }
+
   @media (max-width: 768px) {
     .matrix-page {
-      padding: 1rem;
+      padding: 0.75rem 1rem 1.5rem;
+    }
+
+    .matrix-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .matrix-header p {
+      font-size: 0.9rem;
+    }
+
+    .matrix-panel {
+      padding: 0.75rem;
+      border-radius: 1rem;
+    }
+
+    .matrix-panel h3 {
+      font-size: 0.95rem;
+    }
+
+    .matrix-actions {
+      text-align: center;
+    }
+
+    .matrix-actions .btn {
+      width: 100%;
     }
   }
 </style>
