@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'eco.apps.EcoConfig',
     'chats.apps.ChatsConfig',
     'estimations.apps.EstimationsConfig',
+    'analytics.apps.AnalyticsConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',
