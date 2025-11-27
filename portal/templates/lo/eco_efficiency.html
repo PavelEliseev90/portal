@@ -238,6 +238,24 @@
           {% endfor %}
         </select>
       </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Тип приема</label>
+        <select class="form-select" name="type_id">
+          <option value="">Любой</option>
+          {% for type in params.types %}
+            <option value="{{ type.id }}" {% if type.id|stringformat:"s" == params.filters.type_id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Статус оценки</label>
+        <select class="form-select" name="status_id">
+          <option value="">Любой</option>
+          {% for status in params.statuses %}
+            <option value="{{ status.id }}" {% if status.id|stringformat:"s" == params.filters.status_id|stringformat:"s" %}selected{% endif %}>{{ status.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="col-12 text-end">
         <button class="btn btn-primary px-4" type="submit">Применить</button>
       </div>
