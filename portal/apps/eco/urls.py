@@ -10,6 +10,7 @@ urlpatterns = [
     path('funnel/',                             views.tradein_funnel, name='tradein_funnel'),
     path('efficiency/',                         views.eco_efficiency_analysis, name='eco_efficiency'),
     path('staff-performance/',                  views.staff_performance_analysis, name='staff_performance'),
+    path('pricing-report/',                     views.interactive_pricing_report, name='interactive_pricing_report'),
     path('js/get_chats_list/',                  views.get_chats_list),
     path('js/post_chats_list/',                 views.post_chats_list),
     path('js/get_chats_list_online/',           views.get_chats_list_online),

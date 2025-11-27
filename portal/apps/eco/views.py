@@ -5655,6 +5655,228 @@ def staff_performance_analysis(request):
     return render(request, 'lo/staff_performance.html', {'params': params})
 
 
+def interactive_pricing_report(request):
+    """Визуальный отчет по согласованию цен интерактивных оценок"""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'interactive_pricing_report',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+
+    base_qs = (
+        RegInteractivOcenka.objects.filter(
+            start_estimation__isnull=False,
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end,
+        )
+        .select_related(
+            'rlk',
+            'rlk__staff',
+            'rlk__unit',
+            'rlk__unit_dc',
+            'page_documents',
+            'page_documents__unit',
+            'page_documents__unit_dc',
+            'staff',
+            'staff_eco_1',
+            'staff_eco_2',
+            'status',
+        )
+    )
+
+    if unit_id:
+        base_qs = base_qs.filter(
+            Q(page_documents__unit__id=unit_id)
+            | Q(page_documents__unit_dc__id=unit_id)
+            | Q(rlk__unit__id=unit_id)
+            | Q(rlk__unit_dc__id=unit_id)
+        )
+
+    if staff_id:
+        base_qs = base_qs.filter(rlk__staff__id=staff_id)
+
+    if analyst_id:
+        base_qs = base_qs.filter(Q(staff_eco_1__id=analyst_id) | Q(staff_eco_2__id=analyst_id))
+
+    total_count = base_qs.count()
+
+    aggregates = base_qs.aggregate(
+        total_price_before=Coalesce(Sum('price_before_kd'), 0.0),
+        total_price_after=Coalesce(Sum('price_after_kd'), 0.0),
+        total_price_auto_1=Coalesce(Sum('price_auto_1'), 0.0),
+        total_price_auto_2=Coalesce(Sum('price_auto_2'), 0.0),
+        total_price_auto_3=Coalesce(Sum('price_auto_3'), 0.0),
+        total_price_auto_bcp=Coalesce(Sum('price_auto_bcp'), 0.0),
+        total_price_bcp=Coalesce(Sum('price_bcp'), 0.0),
+        total_price_reception=Coalesce(Sum('price_reception'), 0.0),
+        total_price_sale=Coalesce(Sum('price_sale'), 0.0),
+        total_amount_podgotovka=Coalesce(Sum('amount_podgotovka'), 0.0),
+        total_amount_ss=Coalesce(Sum('amount_ss'), 0.0),
+        total_amount_mcu=Coalesce(Sum('amount_mcu'), 0.0),
+        total_amount_recovery=Coalesce(Sum('amount_recovery'), 0.0),
+        total_zashita=Coalesce(Sum('zachita_ot_ubitka'), 0.0),
+        total_finance=Coalesce(Sum('finance_price'), 0.0),
+    )
+
+    def _avg(value):
+        return round(value / total_count, 1) if total_count else 0
+
+    avg_auto_price = _avg(aggregates['total_price_auto_1'])
+    avg_price_before = _avg(aggregates['total_price_before'])
+    avg_price_after = _avg(aggregates['total_price_after'])
+    avg_cost = _avg(
+        aggregates['total_amount_podgotovka']
+        + aggregates['total_amount_ss']
+        + aggregates['total_amount_mcu']
+        + aggregates['total_amount_recovery']
+        + aggregates['total_zashita']
+        + aggregates['total_finance']
+    )
+
+    summary = {
+        'total_evaluations': total_count,
+        'avg_price_before': avg_price_before,
+        'avg_price_after': avg_price_after,
+        'avg_auto_price': avg_auto_price,
+        'avg_diff_before': round(avg_price_before - avg_auto_price, 1),
+        'avg_diff_after': round(avg_price_after - avg_auto_price, 1),
+        'avg_cost': avg_cost,
+        'avg_price_reception': _avg(aggregates['total_price_reception']),
+        'avg_price_sale': _avg(aggregates['total_price_sale']),
+    }
+
+    cost_breakdown = [
+        {'label': 'Подготовка', 'value': aggregates['total_amount_podgotovka']},
+        {'label': 'Слесарный ремонт', 'value': aggregates['total_amount_ss']},
+        {'label': 'Кузовной ремонт', 'value': aggregates['total_amount_mcu']},
+        {'label': 'Восстановление', 'value': aggregates['total_amount_recovery']},
+        {'label': 'Защита от убытка', 'value': aggregates['total_zashita']},
+        {'label': 'Финансирование', 'value': aggregates['total_finance']},
+    ]
+
+    total_cost_value = sum(item['value'] for item in cost_breakdown)
+    for item in cost_breakdown:
+        item['share'] = round((item['value'] / total_cost_value * 100), 1) if total_cost_value else 0
+
+    table_limit = 500
+    table_qs = base_qs.order_by('-start_estimation')[:table_limit]
+
+    def _format_user_name(user):
+        if not user:
+            return ''
+        profile_name = getattr(getattr(user, 'profiles', None), 'eco_name', '')
+        full_name = user.get_full_name().strip()
+        return profile_name or full_name or user.username
+
+    def _format_staff_name(staff_obj):
+        if not staff_obj:
+            return ''
+        return staff_obj.name
+
+    table_data = []
+    for estimation in table_qs:
+        rlk = estimation.rlk
+        unit_name = ''
+        if rlk:
+            if rlk.unit and rlk.unit.name:
+                unit_name = rlk.unit.name
+            elif rlk.unit_dc and rlk.unit_dc.name:
+                unit_name = rlk.unit_dc.name
+
+        auto_candidates = [estimation.price_auto_1, estimation.price_auto_2, estimation.price_auto_3]
+        auto_reference = next((price for price in auto_candidates if price not in (None, 0)), 0)
+
+        price_before = estimation.price_before_kd or 0
+        price_after = estimation.price_after_kd or 0
+        diff_before = price_before - auto_reference if auto_reference else 0
+        diff_after = price_after - auto_reference if auto_reference else 0
+
+        cost_fields = {
+            'podgotovka': estimation.amount_podgotovka or 0,
+            'ss': estimation.amount_ss or 0,
+            'mcu': estimation.amount_mcu or 0,
+            'recovery': estimation.amount_recovery or 0,
+            'zub': estimation.zachita_ot_ubitka or 0,
+            'finance': estimation.finance_price or 0,
+        }
+        cost_total = round(sum(cost_fields.values()), 1)
+
+        table_data.append(
+            {
+                'id': estimation.id,
+                'start_estimation': estimation.start_estimation,
+                'unit': unit_name,
+                'model': rlk.tradeInModel if rlk and rlk.tradeInModel else estimation.vin,
+                'staff': _format_staff_name(rlk.staff if rlk else None),
+                'analyst_before': _format_user_name(estimation.staff_eco_1),
+                'analyst_after': _format_user_name(estimation.staff_eco_2),
+                'price_before_kd': price_before,
+                'price_after_kd': price_after,
+                'price_auto_1': estimation.price_auto_1 or 0,
+                'price_auto_2': estimation.price_auto_2 or 0,
+                'price_auto_3': estimation.price_auto_3 or 0,
+                'price_auto_reference': auto_reference,
+                'price_auto_bcp': estimation.price_auto_bcp or 0,
+                'price_bcp': estimation.price_bcp or 0,
+                'price_reception': estimation.price_reception or 0,
+                'price_sale': estimation.price_sale or 0,
+                'diff_before': diff_before,
+                'diff_after': diff_after,
+                'costs': cost_fields,
+                'cost_total': cost_total,
+                'status': estimation.status.name if estimation.status else '',
+            }
+        )
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+    }
+
+    params = {
+        'type': 'interactive_pricing_report',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'summary': summary,
+        'cost_breakdown': cost_breakdown,
+        'table_data': table_data,
+        'total_count': total_count,
+        'table_limit': table_limit,
+        'limit_reached': total_count > table_limit,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+        'aggregates': aggregates,
+        'total_cost_value': total_cost_value,
+    }
+
+    return render(request, 'lo/interactive_pricing_report.html', {'params': params})
+
+
 #История изменений
 def get_versions(table, id):
 	return ChangeLog.objects.filter(model = table).filter(record_id = id).order_by('changed')
