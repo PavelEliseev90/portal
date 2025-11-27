@@ -5769,6 +5769,7 @@ def interactive_pricing_report(request):
 
 def interactive_evaluations_report(request):
     """Расширенный отчет по интерактивным оценкам и согласованию цен"""
+    
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
@@ -5780,17 +5781,17 @@ def interactive_evaluations_report(request):
         }
         return render(request, 'errors/403.html', {'params': params})
 
-    now = DT.datetime.now()
-    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    now             = (DT.datetime.now() + relativedelta(months=1)).replace(day=1) - DT.timedelta(days=1)
+    default_end     = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start   = DT.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
 
-    unit_id = _get_int(request.GET.get('unit_id'))
-    staff_id = _get_int(request.GET.get('staff_id'))
-    analyst_id = _get_int(request.GET.get('analyst_id'))
-    type_id = _get_int(request.GET.get('type_id'))
+    unit_id     = _get_int(request.GET.get('unit_id'))
+    staff_id    = _get_int(request.GET.get('staff_id'))
+    analyst_id  = _get_int(request.GET.get('analyst_id'))
+    type_id     = _get_int(request.GET.get('type_id'))
 
     base_qs = (
         RegInteractivOcenka.objects.filter(
@@ -5821,231 +5822,26 @@ def interactive_evaluations_report(request):
             | Q(rlk__unit_dc__id=unit_id)
         )
 
-    if type_id:
-        base_qs = base_qs.filter(page_documents__type_reception__id=type_id)
-
     if staff_id:
-        try:
-            RefStaff.objects.get(id=staff_id)
-            base_qs = base_qs.filter(rlk__staff__id=staff_id)
-        except RefStaff.DoesNotExist:
-            pass
+        base_qs = base_qs.filter(rlk__staff__id=staff_id)
 
     if analyst_id:
         base_qs = base_qs.filter(Q(staff_eco_1__id=analyst_id) | Q(staff_eco_2__id=analyst_id))
 
     total_count = base_qs.count()
-    soglas_qs = base_qs.filter(page_soglasovanie__isnull=False)
+    total_price_estimation_ocenshik     = base_qs.aggregate(Sum('page_soglasovanie__price_reception'))['page_soglasovanie__price_reception__sum']
+    total_price_estimation_ocenshik_avg = base_qs.aggregate(Avg('page_soglasovanie__price_reception'))['page_soglasovanie__price_reception__avg']
+    
+    total_price_do_kd_count = base_qs.filter(page_soglasovanie__price_before_kd__gte = 0).count()
+    total_price_do_kd       = base_qs.aggregate(Sum('page_soglasovanie__price_before_kd'))['page_soglasovanie__price_before_kd__sum']
+    total_price_do_kd_avg   = base_qs.aggregate(Avg('page_soglasovanie__price_before_kd'))['page_soglasovanie__price_before_kd__avg']
+    
+    diff_do_kd_avg = total_price_do_kd_avg - total_price_estimation_ocenshik_avg
 
-    total_price_before = total_price_after = total_price_proposed = 0.0
-    total_auto_ref = 0.0
-    total_cost = total_podgotovka = total_ss = total_mcu = 0.0
-    count_before = count_after = count_auto = count_cost = 0
-    before_ge_auto = after_ge_auto = 0
-    diff_before_sum = diff_after_sum = 0.0
-    auction_true = 0
-
-    soglas_fields = [
-        'page_soglasovanie__price_before_kd',
-        'page_soglasovanie__price_after_kd',
-        'page_soglasovanie__price_reception',
-        'page_soglasovanie__price_auto_1',
-        'page_soglasovanie__price_auto_2',
-        'page_soglasovanie__price_auto_3',
-        'page_soglasovanie__amount_podgotovka',
-        'page_soglasovanie__amount_ss',
-        'page_soglasovanie__amount_mcu',
-        'page_soglasovanie__amount_recovery',
-        'page_soglasovanie__price_auto_auction',
-    ]
-
-    for (
-        price_before,
-        price_after,
-        price_proposed,
-        auto1,
-        auto2,
-        auto3,
-        podgotovka,
-        ss_cost,
-        mcu_cost,
-        recovery_cost,
-        auto_auction,
-    ) in soglas_qs.values_list(*soglas_fields).iterator(chunk_size=2000):
-        pb = float(price_before or 0)
-        pa = float(price_after or 0)
-        pr = float(price_proposed or 0)
-        auto = next((float(x) for x in (auto1, auto2, auto3) if x and float(x) > 0), 0.0)
-        pod = float(podgotovka or 0)
-        ss = float(ss_cost or 0)
-        mcu = float(mcu_cost or 0)
-        total_price_before += pb
-        total_price_after += pa
-        total_price_proposed += pr
-
-        if pb > 0:
-            count_before += 1
-        if pa > 0:
-            count_after += 1
-
-        if auto > 0:
-            total_auto_ref += auto
-            count_auto += 1
-            if pb > 0:
-                diff_before_sum += pb - auto
-                if pb >= auto:
-                    before_ge_auto += 1
-            if pa > 0:
-                diff_after_sum += pa - auto
-                if pa >= auto:
-                    after_ge_auto += 1
-
-        cost_total = float(recovery_cost) if recovery_cost is not None else (pod + ss + mcu)
-        total_cost += cost_total
-        total_podgotovka += pod
-        total_ss += ss
-        total_mcu += mcu
-        if cost_total > 0:
-            count_cost += 1
-
-        if auto_auction:
-            auction_true += 1
-
-    avg_price_before = round(total_price_before / count_before, 1) if count_before else 0
-    avg_price_after = round(total_price_after / count_after, 1) if count_after else 0
-    avg_auto_price = round(total_auto_ref / count_auto, 1) if count_auto else 0
-    avg_price_proposed = round(total_price_proposed / count_before, 1) if count_before else 0
-    avg_diff_before = round(diff_before_sum / before_ge_auto, 1) if before_ge_auto else 0
-    avg_diff_after = round(diff_after_sum / after_ge_auto, 1) if after_ge_auto else 0
-    conversion_before = round((before_ge_auto / count_auto) * 100, 1) if count_auto else 0
-    conversion_after = round((after_ge_auto / count_auto) * 100, 1) if count_auto else 0
-    avg_cost = round(total_cost / count_cost, 1) if count_cost else 0
-    auction_share = round((auction_true / count_auto) * 100, 1) if count_auto else 0
-
-    type_breakdown = []
-    for item in (
-        base_qs.values('page_documents__type_reception__name')
-        .annotate(total=Count('id'))
-        .order_by('-total')
-    ):
-        type_breakdown.append(
-            {
-                'label': item['page_documents__type_reception__name'] or 'Не указано',
-                'value': item['total'],
-            }
-        )
-
-    status_breakdown = []
-    for item in base_qs.values('status__name').annotate(total=Count('id')).order_by('-total'):
-        status_breakdown.append(
-            {
-                'label': item['status__name'] or 'Без статуса',
-                'value': item['total'],
-            }
-        )
-
-    def _format_staff_name(staff_obj):
-        if not staff_obj:
-            return ''
-        return staff_obj.name
-
-    def _format_user_name(user):
-        if not user:
-            return ''
-        profile_name = getattr(getattr(user, 'profiles', None), 'eco_name', '')
-        full_name = user.get_full_name().strip()
-        return profile_name or full_name or user.username
-
-    table_limit = 500
-    table_data = []
-    for estimation in base_qs[:table_limit]:
-        rlk = estimation.rlk
-        unit_name = ''
-        if rlk:
-            if getattr(rlk, 'unit_dc', None) and rlk.unit_dc:
-                unit_name = rlk.unit_dc.name or ''
-            elif getattr(rlk, 'unit', None) and rlk.unit:
-                unit_name = rlk.unit.name or ''
-        if not unit_name and estimation.page_documents and estimation.page_documents.unit:
-            unit_name = estimation.page_documents.unit.name or ''
-
-        type_name = ''
-        if estimation.page_documents and estimation.page_documents.type_reception:
-            type_name = estimation.page_documents.type_reception.name
-
-        soglas = estimation.page_soglasovanie
-        price_before = float(soglas.price_before_kd) if soglas and soglas.price_before_kd else 0
-        price_after = float(soglas.price_after_kd) if soglas and soglas.price_after_kd else 0
-        price_proposed = float(soglas.price_reception) if soglas and soglas.price_reception else 0
-        auto_candidates = (
-            soglas.price_auto_1 if soglas else 0,
-            soglas.price_auto_2 if soglas else 0,
-            soglas.price_auto_3 if soglas else 0,
-        )
-        auto_ref = next((float(x) for x in auto_candidates if x and float(x) > 0), 0.0)
-        diff_before = price_before - auto_ref if auto_ref else 0
-        diff_after = price_after - auto_ref if auto_ref else 0
-
-        pod = float(soglas.amount_podgotovka) if soglas and soglas.amount_podgotovka else 0
-        ss_val = float(soglas.amount_ss) if soglas and soglas.amount_ss else 0
-        mcu_val = float(soglas.amount_mcu) if soglas and soglas.amount_mcu else 0
-        total_cost_row = (
-            float(soglas.amount_recovery)
-            if soglas and soglas.amount_recovery is not None
-            else (pod + ss_val + mcu_val)
-        )
-
-        table_data.append(
-            {
-                'id': estimation.id,
-                'start_estimation': estimation.start_estimation,
-                'unit': unit_name or '—',
-                'type_reception': type_name or '—',
-                'status': estimation.status.name if estimation.status else '—',
-                'vin': estimation.vin or '',
-                'staff': _format_staff_name(rlk.staff if rlk else None) or (estimation.staff.name if estimation.staff else ''),
-                'analyst_before': _format_user_name(estimation.staff_eco_1),
-                'analyst_after': _format_user_name(estimation.staff_eco_2),
-                'price_proposed': price_proposed,
-                'price_before_kd': price_before,
-                'price_after_kd': price_after,
-                'price_auto_ref': auto_ref,
-                'price_auto_auction': bool(soglas.price_auto_auction) if soglas else False,
-                'diff_before': diff_before,
-                'diff_after': diff_after,
-                'costs': {
-                    'podgotovka': pod,
-                    'ss': ss_val,
-                    'mcu': mcu_val,
-                },
-                'cost_total': total_cost_row,
-            }
-        )
-
-    summary = {
-        'total_evaluations': total_count,
-        'with_soglas_before': count_before,
-        'with_soglas_after': count_after,
-        'avg_auto_price': avg_auto_price,
-        'avg_price_before': avg_price_before,
-        'avg_price_after': avg_price_after,
-        'avg_price_proposed': avg_price_proposed,
-        'avg_diff_before': avg_diff_before,
-        'avg_diff_after': avg_diff_after,
-        'conversion_before': conversion_before,
-        'conversion_after': conversion_after,
-        'total_cost': total_cost,
-        'avg_cost': avg_cost,
-        'auction_share': auction_share,
-        'total_podgotovka': total_podgotovka,
-        'total_ss': total_ss,
-        'total_mcu': total_mcu,
-    }
-
-    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
-    staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
-    type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
+    total_price_after_kd_count = base_qs.filter(page_soglasovanie__price_after_kd__gte = 0).count()
+    total_price_after_kd       = base_qs.aggregate(Sum('page_soglasovanie__price_after_kd'))['page_soglasovanie__price_after_kd__sum']
+    total_price_after_kd_avg   = base_qs.aggregate(Avg('page_soglasovanie__price_after_kd'))['page_soglasovanie__price_after_kd__avg']
+    diff_affter_kd_avg         = total_price_after_kd_avg - total_price_do_kd_avg
 
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d'),
@@ -6055,23 +5851,27 @@ def interactive_evaluations_report(request):
         'analyst_id': analyst_id or '',
         'type_id': type_id or '',
     }
+    countList   = 50
+    paginator   = Paginator(base_qs, countList)	
+    page_number = request.GET.get('page', 1)
+    page_obj    = paginator.get_page(page_number)
 
     params = {
-        'type': 'interactive_evaluations_report',
-        'nav_selected': 4,
-        'request': request,
-        'filters': filters,
-        'summary': summary,
-        'type_breakdown': type_breakdown,
-        'status_breakdown': status_breakdown,
-        'table_data': table_data,
-        'table_limit': table_limit,
-        'total_count': total_count,
-        'limit_reached': total_count > table_limit,
-        'units': units,
-        'staffs': staffs,
-        'analysts': analysts,
-        'type_receptions': type_receptions,
+        'type'          : 'interactive_evaluations_report',
+        'nav_selected'  : 4,
+        'request'       : request,
+        'filters'       : filters,
+        'total_count'   : total_count,
+        'total_price_estimation_ocenshik'       : total_price_estimation_ocenshik,
+        'total_price_estimation_ocenshik_avg'   : total_price_estimation_ocenshik_avg,
+        'total_price_do_kd' : total_price_do_kd,
+        'total_price_do_kd_avg': total_price_do_kd_avg,
+        'total_price_after_kd' : total_price_after_kd,
+        'total_price_after_kd_avg': total_price_after_kd_avg,
+        'diff_do_kd_avg'        : diff_do_kd_avg,
+        'diff_affter_kd_avg'    : diff_affter_kd_avg,
+        'page_obj'              : page_obj
+
     }
 
     return render(request, 'lo/interactive_evaluations_report.html', {'params': params})

@@ -975,6 +975,17 @@
                             </li>
                         
                         {% endif %}
+
+                        {% if request.user.is_superuser or request.user.profiles.korsavto_settings %}
+                        
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="/helpdesk/">
+                                    <span class="sidebar-icon bi bi-shield-lock"></span>
+                                    Helpdesk                            
+                                </a>
+                            </li>
+                        
+                        {% endif %}
                         
                         {% if request.user.profiles.korsavto_settings %}
                             <li class="nav-item">
@@ -999,7 +1010,7 @@
                                 </a>
                             </li>
                             
-                            <div class="collapse {% if params.type == 'eco' or params.type == 'sales_funnel' or params.type == 'eco_monitors' or params.type == 'korsavto_settings' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
+                            <div class="collapse {% if params.type == 'eco' or params.type == 'interactive_evaluations_report' or params.type == 'sales_funnel'  or params.type == 'eco_efficiency' or params.type == 'eco_funnel' or params.type == 'korsavto_settings' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'eco' %}secondary active {% else %}white {% endif %}" href="/eco/">
                                         <span class="sidebar-icon bi bi-journal-check"></span>
@@ -1012,14 +1023,30 @@
                                         Выкуп
                                     </a>
                                 </li>
-                                <!--
-                                <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'eco_monitors' %}secondary active {% else %}white {% endif %}" href="/eco/monitors/">
-                                        <span class="sidebar-icon bi bi-display"></span>
-                                        Монитор
-                                    </a>
-                                </li>
-                                -->
+
+                                {% if request.user.profiles.korsavto_settings %}
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'eco_funnel' %}secondary active {% else %}white {% endif %}" href="/eco/funnel/">
+                                            <span class="sidebar-icon bi bi-display"></span>
+                                            Воронка приема
+                                        </a>
+                                    </li>
+                                    
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'eco_funnel' %}secondary active {% else %}white {% endif %}" href="/eco/efficiency/">
+                                            <span class="sidebar-icon bi bi-display"></span>
+                                            Аналитика ЕЦО
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'eco_funnel' %}secondary active {% else %}white {% endif %}" href="/eco/interactive-evaluations/">
+                                            <span class="sidebar-icon bi bi-display"></span>
+                                            Отчет по интерактивным оценкам
+                                        </a>
+                                    </li>
+                                {% endif %}
+
                                 {% if request.user.profiles.korsavto_settings %}
                                     <li class="nav-item">
                                         <a class="nav-link text-{% if params.type == 'korsavto_settings' %}secondary active {% else %}white {% endif %}" href="/korsavto/settings/">

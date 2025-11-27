@@ -152,9 +152,7 @@
         <label class="form-label">Оценщик</label>
         <select class="form-select" name="staff_id">
           <option value="">Все</option>
-          {% for staff in params.staffs %}
-            <option value="{{ staff.id }}" {% if params.filters.staff_id == staff.id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
-          {% endfor %}
+          
         </select>
       </div>
       <div class="col-md-3">
@@ -193,36 +191,42 @@
     <div class="col-md-3 col-6">
       <div class="metric-card">
         <h4>Всего оценок</h4>
-        <div class="value">{{ params.summary.total_evaluations }}</div>
+        <div class="value">{{ params.total_count|floatformat:"0g" }}</div>
         <div class="sub">За выбранный период</div>
       </div>
     </div>
     <div class="col-md-3 col-6">
       <div class="metric-card">
         <h4>Цена оценщика</h4>
-        <div class="value">{{ params.summary.avg_price_proposed|floatformat:0 }} ₽</div>
-        <div class="sub">Средняя заявка</div>
+        <div class="value">{{ params.total_price_estimation_ocenshik|floatformat:"0g"}} ₽</div>
+        <div class="sub">ср. {{ params.total_price_estimation_ocenshik_avg|floatformat:"0g" }} ₽</div>
       </div>
     </div>
-    <div class="col-md-3 col-6">
-      <div class="metric-card">
-        <h4>Авторасчет</h4>
-        <div class="value">{{ params.summary.avg_auto_price|floatformat:0 }} ₽</div>
-        <div class="sub">Среднее значение auto</div>
-      </div>
-    </div>
+
     <div class="col-md-3 col-6">
       <div class="metric-card">
         <h4>Согласовано до КД</h4>
-        <div class="value">{{ params.summary.avg_price_before|floatformat:0 }} ₽</div>
-        <div class="sub">Δ {{ params.summary.avg_diff_before|floatformat:0 }} ₽</div>
+        <div class="value">{{ params.total_price_do_kd|floatformat:"0g" }} ₽</div>
+        <div class="sub">Δ {{ params.total_price_do_kd_avg|floatformat:"0g" }} ₽ 
+          {% if params.diff_do_kd_avg < 0 %} 
+            <label class="text-danger">{{params.diff_do_kd_avg|floatformat:"0g" }} ₽</label>  
+          {% else %} 
+            <label class="text-success">{{params.diff_do_kd_avg|floatformat:"0g" }} ₽</label> 
+          {% endif %}
+        </div>
       </div>
     </div>
     <div class="col-md-3 col-6">
       <div class="metric-card">
         <h4>Согласовано после КД</h4>
-        <div class="value">{{ params.summary.avg_price_after|floatformat:0 }} ₽</div>
-        <div class="sub">Δ {{ params.summary.avg_diff_after|floatformat:0 }} ₽</div>
+        <div class="value">{{ params.total_price_after_kd|floatformat:"0g" }} ₽</div>
+        <div class="sub">Δ {{ params.total_price_after_kd_avg|floatformat:"0g" }} ₽
+          {% if params.diff_affter_kd_avg < 0 %} 
+            <label class="text-danger">{{params.diff_affter_kd_avg|floatformat:"0g" }} ₽</label>  
+          {% else %} 
+            <label class="text-success">{{params.diff_affter_kd_avg|floatformat:"0g" }} ₽</label> 
+          {% endif %}
+        </div>
       </div>
     </div>
     <div class="col-md-3 col-6">
@@ -312,11 +316,15 @@
     <table class="table table-hover table-sm align-middle">
       <thead>
         <tr>
+          <th></th>
           <th>Дата</th>
           <th>Подразделение</th>
           <th>Тип приема</th>
           <th>Статус</th>
-          <th>ВИН / ID</th>
+          <th>Автомобиль</th>
+          <th>Год</th>
+          <th>Пробег</th>
+          <th>ВИН</th>
           <th>Оценщик</th>
           <th>Аналитик до</th>
           <th>Аналитик после</th>
@@ -331,20 +339,28 @@
         </tr>
       </thead>
       <tbody>
-        {% for row in params.table_data %}
+        {% for row in params.page_obj %}
           <tr>
+            <td><a href="/eco/{{ row.rlk.id}}/" target="_blank"><span class="icon-doc"></span> </a> </td>
             <td>{{ row.start_estimation|date:"d.m.Y H:i" }}</td>
-            <td>{{ row.unit }}</td>
-            <td>{{ row.type_reception }}</td>
+            {% if row.rlk.unit_dc == None %}
+              <td>{{ row.rlk.unit.name }}</td>
+            {% else %}
+              <td>{{ row.rlk.unit_dc.name }}</td>
+            {% endif %}
+            <td>{{ row.page_documents.type_reception.name }}</td>
             <td>{{ row.status }}</td>
-            <td>{{ row.vin|default:"ID:"|add:row.id }}</td>
+            <td>{{ row.modification.model.mark.name }} {{ row.modification.model.name }} {{ row.modification.name }}</td>
+            <td class="text-end">{{ row.year }} </td>
+            <td lass="text-end">{{ row.page_salon.run|floatformat:"0g" }} </td>
+            <td>{{ row.vin }}</td>
             <td>{{ row.staff|default:"—" }}</td>
-            <td>{{ row.analyst_before|default:"—" }}</td>
-            <td>{{ row.analyst_after|default:"—" }}</td>
-            <td>{{ row.price_proposed|floatformat:0 }}</td>
-            <td>{{ row.price_before_kd|floatformat:0 }}</td>
-            <td>{{ row.price_after_kd|floatformat:0 }}</td>
-            <td>{{ row.price_auto_ref|floatformat:0 }}</td>
+            <td>{{ row.staff_eco_1.profiles.eco_name|default:"—" }}</td>
+            <td>{{ row.staff_eco_2.profiles.eco_name|default:"—" }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_reception|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_before_kd|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_after_kd|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_auto_2|floatformat:0 }}</td>
             <td class="{% if row.diff_before >= 0 %}diff-positive{% else %}diff-negative{% endif %}">
               {{ row.diff_before|floatformat:0 }}
             </td>
