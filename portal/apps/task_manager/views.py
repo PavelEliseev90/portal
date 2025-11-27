@@ -37,7 +37,7 @@ from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer
 from datetime import datetime, date
 import base64
 from django.db.models import Min, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
-
+from chats.models import ChatMessage, Chat, ChatSuccesDate
 
 import asyncio
 import websockets
@@ -3676,164 +3676,219 @@ def refresh_queue_recognition():
     for record_query in records_query:
         get_record_info(record_query, 1)
 
-    '''
-        if len(date) == 0:
-            date_period = DT.datetime.now()
-            date_start 	= date_period.replace(day = 1, hour = 0, minute=0, second=0, microsecond=0)
-            if date_period.month > 11:
-                month_end	= 1
-                year_end 	= date_period.year + 1
-            else:
-                month_end	= date_period.month + 1
-                year_end 	= date_period.year
-            date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)
-        else:
-            dates = date.split('-')
-            if len(dates) == 2:
-                year 	        = int(dates[0])
-                month 	        = int(dates[1])
-                date_period     = DT.datetime.now()
-                date_start 	    = date_period.replace(year = year, month = month, day = 1, hour = 0, minute=0, second=0, microsecond=0)
-                if month > 11:
-                    month_end 	= 1
-                    year_end 	= year + 1
-                else:
-                    month_end 	= month + 1 
-                    year_end 	= year
-                date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)			
-        records = list()
-        
-        if "send_record" in request.GET:
-            id_record   = request.GET['send_record']
-            send_record(id_record)
-            url         = request.build_absolute_uri()
-            url_new     = url.replace('&send_record=' + id_record, '')
-            return HttpResponseRedirect(url_new)
-
-        if len(unit_id) > 0:
-            staffs = DocRLK.objects.filter(unit__id = unit_id).filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(Q(contacType__id= 7) | Q(contacType__id = 42)).values_list('staff__domain_login').distinct()
-            records_query = Records_voice_recorder.objects.filter(date__gte = date_start).filter(date__lt = date_end).filter(user__username__in = staffs).order_by('date')
-            for record_query in records_query:
-                records.append(get_record_info(record_query))
-
-        filtr = {
-            'date' 			: date_start,
-            'city_id'		: city_id,
-            'direction_id'	: direction_id,
-            'unit_id'	    : unit_id,
-        }
-
-        selected = {
-            'citys'			: citys,
-            'directions' 	: directions,
-            'units' 	    : units,
-        }
-
-        params = {
-                'filtr'			: filtr,
-                'selected'		: selected,
-                'records'       : records,
-                'url'           : request.build_absolute_uri()
-        }
-    return render(request, 'test/test.html', {'params': params}) 
-
-def send_record(send_record):
-    record_query    = Records_voice_recorder.objects.get(pk = send_record)
-    info            = get_record_info(record_query)
-    url             = 'https://int-kors.audio-control.by/api/add-files' 
-    params = {
-        "master_key"        : "Ga8FQ0dgmALiA1bFr7k7tqIym84rnLM0",
-        "category"          : "recorder",
-        "date_call"         : record_query.date.strftime('%Y-%m-%dT%H:%M:%S%z'),
-        "json_fragments"    : str(info['fragments']).replace("'", '"'),
-        
-    }
+####
+####Обновление аналитик интерактивной оценки
+def refresh_chat_data():
+    date_start = DT.datetime.now().replace(month=1)
     
-    with open(record_query.audio.path, 'rb') as f:
-        response = requests.post(url, data = params, files = {"files": (record_query.name, f)})
-
-    records = Records_voice_recorder_cvc.objects.filter(records = record_query)
-    if len(records) > 0:
-        record = records[0]
+    info_date   = ChatSuccesDate.objects.all().last()
+    if info_date != None:
+        date_start  = info_date.date
     else:
-        record = Records_voice_recorder_cvc()
-    record.date         = DT.datetime.now()
-    record.comment      = str(response.status_code)
-    record.data_json    = str(response.text)
-    record.records      = record_query
-    record.save()
+        info_date = ChatSuccesDate()
+        info_date.date = date_start
+        info_date.save()
 
-def get_record_info(record_query):
-    date_record_start   = record_query.date.replace(hour=1)
-    date_record_end     = record_query.date.replace(hour=23) 
-    user_record         = record_query.user
-    id                  = record_query.id
-    record              = record_query
-    send                = get_send_info(record_query)
-    
-    date_event_start    = record_query.date
-    date_event_end      = date_event_start + DT.timedelta(seconds = record_query.time) 
+    chats = ChatMessage.objects.filter(date__gte = date_start).order_by('date')[:20]
+    for chat in chats:
+        refresh_estimation_analitik(chat.chat.rlk_id)
 
-    docs_rlk            = DocRLK.objects.filter(staff__domain_login = str(user_record)).filter(dataTime__gte = date_record_start).filter(dataTime__lte = date_record_end).filter(Q(contacType__id= 7) | Q(contacType__id = 42))  
+    info_date.date = date_start
+    info_date.save()   
 
-    fragments   = list() 
-    for doc_rlk in docs_rlk:
-        rlk_events = DocRLKEvents.objects.filter(rlk = doc_rlk).order_by('dataTime')[0]
+
+
+def refresh_estimation_analitik(estimation_rlk_id):
+      
+    hour_start_day  = 9
+    hour_end_day    = 20
+
+    estimations = RegInteractivOcenka.objects.filter(rlk__pk = estimation_rlk_id).order_by('start_estimation')
+    for estimation in estimations:
+        slug_chat       = 'rlk_' + str(estimation.rlk.id)
+        end_estimation  = estimation.end_estimation
         
-        if rlk_events.dataTime > date_event_start and doc_rlk.dataEnd < date_event_end:
-            date_start_rlk  = rlk_events.dataTime
-            hour_new        = int(date_start_rlk.strftime('%H'))
-            minute_new      = int(date_start_rlk.strftime('%M'))
+        #Если нет окончания оценки проставим ее
+        if end_estimation == DT.datetime(1,1,1):
+            chats_messages_ = ChatMessage.objects.filter(chat__slug = slug_chat).filter(content = 'Оценка отправлена на согласование').order_by('date')
+            for chats_message_ in chats_messages_:
+                if end_estimation == DT.datetime(1,1,1):
+                    end_estimation = chats_message_.date
+            if end_estimation != DT.datetime(1,1,1):
+                estimation.end_estimation = end_estimation 
+                estimation.save(update_fields=['end_estimation'])
 
-            if minute_new < 10:
-                minute_new  = minute_new + 60 - 10
-                hour_new    = hour_new - 1
+        #Если не указан аналитик до диагностики то пробуем его поставить
+        if estimation.staff_eco_1 == None:
+            staff_eco_1 = None
+            chats_messages_ = ChatMessage.objects.filter(chat__slug = slug_chat).filter(content__startswith = 'Согласована цена до диагностики -').order_by('date')
+            for chats_message_ in chats_messages_:
+                if staff_eco_1 == None:
+                    staff_eco_1 = chats_message_.user
+            if staff_eco_1 != None:
+                estimation.staff_eco_1 = staff_eco_1 
+                estimation.save(update_fields=['staff_eco_1'])  
+
+        #Если не указан аналитик после диагностки то пробуем его поставить
+        if estimation.staff_eco_2 == None:
+            staff_eco_2 = None
+            chats_messages_ = ChatMessage.objects.filter(chat__slug = slug_chat).filter(content__startswith = 'Согласована цена после диагностики -').order_by('date')
+            for chats_message_ in chats_messages_:
+                if staff_eco_2 == None:
+                    staff_eco_2 = chats_message_.user
+            if staff_eco_2 != None:
+                estimation.staff_eco_2 = staff_eco_2 
+                estimation.save(update_fields=['staff_eco_2'])  
+
+        #А тут соберем данные по пользователям согласования, вдруг просили подтверждение Серебрянникова или директора ДЦ
+        messages_user = ChatMessage.objects.filter(chat__slug = slug_chat).values('user', 'user__profiles__eco', 'user__username').distinct()
+        dop_soglasovanie    = 0
+        users_eco           = 0
+        users_no_eco        = 0           
+        
+        for message_user in messages_user:
+            if message_user['user__profiles__eco']:
+                users_eco = users_eco + 1
             else:
-                minute_new  = minute_new - 10
+                users_no_eco = users_no_eco + 1
+                if estimation.staff.domain_login != message_user['user__username']:
+                    dop_soglasovanie = dop_soglasovanie + 1
+        
+        #Посчитаем среднее время приема
+        #Не считаем время при переходе на следующий день, т.е. не считаем время от последнего до первого сообщения следующего дня.
+        #Для принятых последнее сообщение и дату листа оценки.
+        messages_date   = ChatMessage.objects.filter(chat__slug = slug_chat).values('date').order_by('date')
+        mes_start       = ''
+        seconds         = 0 
+        for message_date in messages_date:
+            if mes_start == '':
+                mes_start = message_date['date']
+            else:
+                if mes_start.day == message_date['date'].day:
+                    seconds = seconds + (message_date['date'] - mes_start).total_seconds()
+                else:
+                   day_end      = mes_start.replace(hour = hour_end_day, minute = 0, second = 0)
+                   day_start    = message_date['date'].replace(hour = hour_start_day, minute = 0, second = 0)
+                   sec_1        = (day_end - mes_start).total_seconds()
+                   sec_2        = (message_date['date'] - day_start).total_seconds()
+                   seconds = seconds + sec_1 + sec_2
+                mes_start = message_date['date']
+        s = 1
+        
+        #Проставим отметки этапов
+        date_s_do_diag  = DT.datetime(1,1,1)
+        date_diagnostic = DT.datetime(1,1,1)
+        date_s_diag     = DT.datetime(1,1,1)
+        messages_list = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
+        
+        status_ocenka                   = 0
+        status_soglasovanie_do_diag     = 0
+        status_diagnostika              = 0
+        status_soglasovanie_posle_kd    = 0
+        
+        status          = 0
+        mes_start       = ''
+        sec             = 0
+        seconds_status  = 0
+        prev_user       = True
+        seconds_answer  = 0
+        answer_count    = 0
+        for message in messages_list:
+            
+            if message.content.startswith('Согласована цена до диагностики -'):
+               status = 1
+               date_s_do_diag = message.date
+            if message.content.startswith('Согласована цена после диагностики -'):
+               status = 3
+               date_s_diag = message.date
+            if message.content.startswith('Пройдена диагностика -'):
+               status = 2
+               date_diagnostic = message.date 
+            
+            if mes_start == '':
+                mes_start = message.date
+            else:
+                if mes_start.day == message.date.day:
+                    seconds_status = seconds_status + (message.date - mes_start).total_seconds()
+                    sec = (message.date - mes_start).total_seconds()
+                else:
+                   day_end      = mes_start.replace(hour = hour_end_day, minute = 0, second = 0)
+                   day_start    = message.date.replace(hour = hour_start_day, minute = 0, second = 0)
+                   sec_1        = (day_end - mes_start).total_seconds()
+                   sec_2        = (message.date - day_start).total_seconds()
+                   sec          = sec_1 + sec_2
+                   seconds_status = seconds_status + sec_1 + sec_2
+                
+                if status == 1:
+                    status_soglasovanie_do_diag = status_soglasovanie_do_diag + seconds_status
+                    seconds_status = 0
+                    status = 0
+                elif status == 2:
+                    status_diagnostika = status_diagnostika + seconds_status
+                    seconds_status = 0
+                    status = 0
+                elif status == 3:
+                    status_soglasovanie_posle_kd = status_soglasovanie_posle_kd + seconds_status        
+                    seconds_status = 0
+                    status = 0
 
-            date_start_rlk = date_start_rlk.replace(hour=hour_new, minute=minute_new)
+            if message.user.profiles.eco and prev_user:
+                seconds_answer = seconds_answer + sec                
+                answer_count = answer_count + 1
+            prev_user = not message.user.profiles.eco
+            mes_start = message.date        
 
-            params_doc = {
-                "event_id"              : doc_rlk.id,
-                "manager"               : doc_rlk.staff.name,
-                "fragment_time_start"   : int(date_start_rlk.strftime('%Y%m%d%H%M%S')),
-                "fragment_time_end"     : int(doc_rlk.dataEnd.strftime('%Y%m%d%H%M%S'))
-            }
-            fragments.append(params_doc) 
-    
-    info = {
-        'id'            : id,
-        'time'          : record.time_human,
-        'date'          : record.date,
-        'name'          : record.name,
-        'user'          : user_record,
-        'fragments'     : fragments,
-        'send'          : send,
-        'docs_count'    : len(fragments)
-    }
-    return info
-''' 
+        #Пробуем посчитать время в статусах
+        status_ocenka                   = (estimation.end_estimation - estimation.start_estimation).total_seconds()
+        #status_soglasovanie_do_diag     = (date_s_do_diag - estimation.end_estimation).total_seconds()
+        #status_diagnostika              = (date_diagnostic - date_s_do_diag).total_seconds()
+        #status_soglasovanie_posle_kd    = (date_s_diag - date_diagnostic).total_seconds() 
+        
+        estimation.date_s_do_diag   = date_s_do_diag
+        estimation.date_diagnostic  = date_diagnostic
+        estimation.date_s_diag      = date_s_diag
 
+        estimation.status_ocenka                    = status_ocenka
+        estimation.status_soglasovanie_do_diag      = status_soglasovanie_do_diag
+        estimation.status_diagnostika               = status_diagnostika
+        estimation.status_soglasovanie_posle_kd     = status_soglasovanie_posle_kd
+        estimation.seconds_estimation               = seconds
+        estimation.count_answer     = answer_count
+        estimation.seconds_answer   = seconds_answer
+        estimation.users_eco        = users_eco
+        estimation.users_no_eco     = users_no_eco
+        estimation.users_dop        = dop_soglasovanie
+        
+        tasks = estimation.tasks()
+        estimation.count_task   = len(tasks)
+        second_task             = 0
+        for task in tasks:
+            if task.date_open.day == task.date_close.day:
+                second_task = second_task + (task.date_close - task.date_open).total_seconds()
+            else:
+                day_end      = task.date_open.replace(hour = hour_end_day, minute = 0, second = 0)
+                day_start    = task.date_close.replace(hour = hour_start_day, minute = 0, second = 0)
+                sec_1        = (day_end - mes_start).total_seconds()
+                sec_2        = (task.date - day_start).total_seconds()
+                sec          = sec_1 + sec_2
+                second_task = second_task + sec_1 + sec_2    
+        estimation.seconds_task = second_task
 
-''' 
-def get_send_info(record):
-    infos   = Records_voice_recorder_cvc.objects.filter(records = record)
-    send    = False
-    date    = ''
-    comment = ''
-    data    = ''
-    if len(infos) > 0:
-        info    = infos[0]
-        send    = True
-        date    = info.date
-        comment = comment
-        data    = info.data_json
+        estimation.save(update_fields=['count_task',
+                                       'seconds_task',
+                                       'count_answer',
+                                       'seconds_answer',
+                                       'users_dop',
+                                       'users_no_eco',
+                                        'users_eco',
+                                       'date_s_do_diag',
+                                       'date_diagnostic',
+                                       'date_s_diag',
+                                       'status_ocenka',
+                                       'seconds_estimation',
+                                       'status_soglasovanie_do_diag',
+                                       'status_diagnostika',
+                                       'status_soglasovanie_posle_kd'
+            ]) 
+        #
 
-    json_info = {
-        'send'      : send,
-        'date'      : date,
-        'comment'   : comment,
-        'data'      : data
-    }
-    return json_info
-'''  

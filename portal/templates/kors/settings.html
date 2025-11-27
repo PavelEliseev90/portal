@@ -7,141 +7,127 @@
 {% block title_navbar %} - Настройки {% endblock %}
 
 {% block content %}
+<style>
+  .settings-page {
+    background: #f4f7fb;
+    padding: 1.5rem 1.75rem 3rem;
+    min-height: 100vh;
+  }
 
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    
-    <label class="fs-6">Интерактивная оценка</label>
-    
-    
-    <div class="row g-1">
-      
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Общие настройки </label>
-          </div>
-        </div>
-      </div>
+  .settings-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
 
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Внутренний осмотр </label>
-          </div>
-        </div>
-      </div>
+  .settings-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
 
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <a class="text-dark" href="settings_vnesh/"> <label class="fs-7"> Внешний осмотр </label></a>
-          </div>
-        </div>
-      </div>
+  .settings-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
 
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <a class="text-dark" href="settings_diagnostic/"> <label class="fs-7"> Диагностика </label></a>
-          </div>
-        </div>
-      </div>
+  .settings-panel h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+  }
 
-    </div>
-    
+  .settings-panel p {
+    color: #6c7a92;
+    margin-bottom: 1.25rem;
+  }
+
+  .settings-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 23, 61, 0.12);
+    background: #fff;
+    color: #002a5a;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .settings-chip:hover {
+    background: #002a5a;
+    color: #fff;
+    border-color: transparent;
+  }
+
+  @media (max-width: 768px) {
+    .settings-page {
+      padding: 1rem;
+    }
+
+    .settings-chip {
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+  }
+</style>
+
+<section class="settings-page">
+  <div class="settings-header">
+    <h2>Центр настроек</h2>
+    <p>Быстрый доступ к ключевым модулям настройки процессов оценки, подготовки и продажи.</p>
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-6">Подготовка</label>
-    
-
-    <div class="row g-1">
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Работы </label>
-          </div>
-        </div>
-      </div>
+  <div class="settings-panel">
+    <h3>Интерактивная оценка</h3>
+    <p>Настройте карточки оценок, этапы осмотра и диагностики.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Общие настройки</span>
+      <span class="settings-chip">Внутренний осмотр</span>
+      <a class="settings-chip" href="settings_vnesh/">Внешний осмотр</a>
+      <a class="settings-chip" href="settings_diagnostic/">Диагностика</a>
     </div>
-    
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-5">Продажи</label>
-    
-    <div class="row g-1">
-      
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Настройки автоматической переоценки новых АМ </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Настройки автоматической переоценки КорсАвто </label>
-          </div>
-        </div>
-      </div>
-      
+  <div class="settings-panel">
+    <h3>Подготовка</h3>
+    <p>Управление работами и нормативами подготовки автомобиля.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Работы</span>
     </div>
-    
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-6">Аукцион</label>
-    
-
-    <div class="row g-1">
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <a class="text-dark" href="settings_matrix_auction/"> <label class="fs-7"> Матрица расчета БЦП </label></a>
-          </div>
-        </div>
-      </div>
+  <div class="settings-panel">
+    <h3>Продажи</h3>
+    <p>Переоценка новых автомобилей и КорсАвто.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Автопереоценка новых АМ</span>
+      <span class="settings-chip">Автопереоценка КорсАвто</span>
     </div>
-    
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-6">Настройки доступа</label>
-    
-
-    <div class="row g-1">
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Пользователи </label>
-          </div>
-        </div>
-      </div>
+  <div class="settings-panel">
+    <h3>Аукцион</h3>
+    <p>Управление матрицами расчёта БЦП.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="settings-chip" href="settings_matrix_auction/">Матрица расчёта БЦП</a>
     </div>
-    
   </div>
-</div>
 
-
-
+  <div class="settings-panel">
+    <h3>Доступы</h3>
+    <p>Настройка пользователей и прав доступа.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Пользователи</span>
+    </div>
+  </div>
+</section>
 {% endblock %}

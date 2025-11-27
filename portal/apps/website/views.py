@@ -7821,11 +7821,14 @@ def customer_est(request, slug):
 
 def test(request):
     
-    from background_task.models import Task
-    task = Task.objects.all()
-    for ts in task:
-        ts.locked_by = ''
-        ts.save()
+    from task_manager.views import refresh_chat_data
+    refresh_chat_data()
+    
+    # from background_task.models import Task
+    # task = Task.objects.all()
+    # for ts in task:
+    #     ts.locked_by = ''
+    #     ts.save()
 
     #refresh_avtoteka_vin()
 
