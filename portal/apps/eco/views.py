@@ -5377,7 +5377,7 @@ def staff_performance_analysis(request):
             analyst_stats_by_id[analyst_id]['total'] += 1
             
             # Диагностика
-            if not soglas_null:
+            if soglas_id:  # Если есть связанный объект согласования
                 if (diag_comment and diag_comment.strip()) or no_diag:
                     analyst_stats_by_id[analyst_id]['diagnostics'] += 1
             
@@ -5386,7 +5386,7 @@ def staff_performance_analysis(request):
                 analyst_stats_by_id[analyst_id]['accepted'] += 1
             
             # С согласованием
-            if not soglas_null:
+            if soglas_id:  # Если есть связанный объект согласования
                 analyst_stats_by_id[analyst_id]['with_soglas'] += 1
             
             # Время
