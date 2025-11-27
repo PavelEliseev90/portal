@@ -5357,11 +5357,11 @@ def staff_performance_analysis(request):
         # Получаем статистику через values_list для избежания рекурсии
         analyst_data_1 = analyst_qs_1.values_list(
             'staff_eco_1__id', 'id', 'start_estimation', 'end_estimation',
-            'page_soglasovanie__isnull', 'page_soglasovanie__comment_diagnostica',
+            'page_soglasovanie_id', 'page_soglasovanie__comment_diagnostica',
             'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id'
         )
         
-        for analyst_id, eval_id, start_time, end_time, soglas_null, diag_comment, no_diag, status_name, rlk_id in analyst_data_1:
+        for analyst_id, eval_id, start_time, end_time, soglas_id, diag_comment, no_diag, status_name, rlk_id in analyst_data_1:
             if not analyst_id:
                 continue
                 
@@ -5415,11 +5415,11 @@ def staff_performance_analysis(request):
         
         analyst_data_2 = analyst_qs_2.values_list(
             'staff_eco_2__id', 'id', 'start_estimation', 'end_estimation',
-            'page_soglasovanie__isnull', 'page_soglasovanie__comment_diagnostica',
+            'page_soglasovanie_id', 'page_soglasovanie__comment_diagnostica',
             'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id'
         )
         
-        for analyst_id, eval_id, start_time, end_time, soglas_null, diag_comment, no_diag, status_name, rlk_id in analyst_data_2:
+        for analyst_id, eval_id, start_time, end_time, soglas_id, diag_comment, no_diag, status_name, rlk_id in analyst_data_2:
             if not analyst_id:
                 continue
                 
@@ -5435,7 +5435,7 @@ def staff_performance_analysis(request):
             analyst_stats_by_id[analyst_id]['total'] += 1
             
             # Диагностика
-            if not soglas_null:
+            if soglas_id:  # Если есть связанный объект согласования
                 if (diag_comment and diag_comment.strip()) or no_diag:
                     analyst_stats_by_id[analyst_id]['diagnostics'] += 1
             
@@ -5444,7 +5444,7 @@ def staff_performance_analysis(request):
                 analyst_stats_by_id[analyst_id]['accepted'] += 1
             
             # С согласованием
-            if not soglas_null:
+            if soglas_id:  # Если есть связанный объект согласования
                 analyst_stats_by_id[analyst_id]['with_soglas'] += 1
             
             # Время
