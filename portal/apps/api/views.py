@@ -55,6 +55,34 @@ from django.apps import apps
 import re
 from django.views.decorators.csrf import csrf_exempt
 
+
+@api_view(['GET'])
+def get_info_estimation_vin(request):
+    
+    vin         = request.GET.get('vin', '')
+    list_info   = list()
+
+    if vin != '':
+        date_start = DT.datetime.now() - DT.timedelta(days=14)
+        infos = RegInteractivOcenka.objects.filter(vin = vin, 
+                                       start_estimation__gte =  date_start)
+        if infos.count() > 0:
+            for info in infos:
+                to_json = {
+                    'vin'                   : info.vin,
+                    'status'                : info.status.name,
+                    'staff'                 : info.staff.profiles.name,
+                    'mark'                  : info.modification.model.mark.name + ' ' + info.modification.model.name + ' ' + info.modification.name,
+                    'year'                  : info.year
+                }
+                list_info.append(to_json)
+
+    json_info = {
+        'list_estimation' : list_info
+    }
+    return JsonResponse(json_info, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 def post_info(request):
     
