@@ -5710,12 +5710,10 @@ def interactive_pricing_report(request):
         total_price_bcp=Coalesce(Sum('page_soglasovanie__price_bcp'), 0.0),
         total_price_reception=Coalesce(Sum('page_soglasovanie__price_reception'), 0.0),
         total_price_sale=Coalesce(Sum('page_soglasovanie__price_sale'), 0.0),
-        total_amount_podgotovka=Coalesce(Sum('amount_podgotovka'), 0.0),
-        total_amount_ss=Coalesce(Sum('amount_ss'), 0.0),
-        total_amount_mcu=Coalesce(Sum('amount_mcu'), 0.0),
-        total_amount_recovery=Coalesce(Sum('amount_recovery'), 0.0),
-        total_zashita=Coalesce(Sum('zachita_ot_ubitka'), 0.0),
-        total_finance=Coalesce(Sum('finance_price'), 0.0),
+        total_amount_podgotovka=Coalesce(Sum('page_soglasovanie__amount_podgotovka'), 0.0),
+        total_amount_ss=Coalesce(Sum('page_soglasovanie__amount_ss'), 0.0),
+        total_amount_mcu=Coalesce(Sum('page_soglasovanie__amount_mcu'), 0.0),
+        total_amount_recovery=Coalesce(Sum('page_soglasovanie__amount_recovery'), 0.0),
     )
 
     def _avg(value):
@@ -5724,14 +5722,7 @@ def interactive_pricing_report(request):
     avg_auto_price = _avg(aggregates['total_price_auto_1'])
     avg_price_before = _avg(aggregates['total_price_before'])
     avg_price_after = _avg(aggregates['total_price_after'])
-    avg_cost = _avg(
-        aggregates['total_amount_podgotovka']
-        + aggregates['total_amount_ss']
-        + aggregates['total_amount_mcu']
-        + aggregates['total_amount_recovery']
-        + aggregates['total_zashita']
-        + aggregates['total_finance']
-    )
+    avg_cost = _avg(aggregates['total_amount_recovery'])
 
     summary = {
         'total_evaluations': total_count,
@@ -5747,14 +5738,12 @@ def interactive_pricing_report(request):
 
     cost_breakdown = [
         {'label': 'Подготовка', 'value': aggregates['total_amount_podgotovka']},
-        {'label': 'Слесарный ремонт', 'value': aggregates['total_amount_ss']},
-        {'label': 'Кузовной ремонт', 'value': aggregates['total_amount_mcu']},
-        {'label': 'Восстановление', 'value': aggregates['total_amount_recovery']},
-        {'label': 'Защита от убытка', 'value': aggregates['total_zashita']},
-        {'label': 'Финансирование', 'value': aggregates['total_finance']},
+        {'label': 'Слесарный участок', 'value': aggregates['total_amount_ss']},
+        {'label': 'Кузовной участок', 'value': aggregates['total_amount_mcu']},
+        {'label': 'Восстановительный ремонт', 'value': aggregates['total_amount_recovery']},
     ]
 
-    total_cost_value = sum(item['value'] for item in cost_breakdown)
+    total_cost_value = aggregates['total_amount_recovery']
     for item in cost_breakdown:
         item['share'] = round((item['value'] / total_cost_value * 100), 1) if total_cost_value else 0
 
@@ -5808,14 +5797,12 @@ def interactive_pricing_report(request):
         price_sale = soglas.price_sale if soglas and soglas.price_sale else 0
 
         cost_fields = {
-            'podgotovka': estimation.amount_podgotovka or 0,
-            'ss': estimation.amount_ss or 0,
-            'mcu': estimation.amount_mcu or 0,
-            'recovery': estimation.amount_recovery or 0,
-            'zub': estimation.zachita_ot_ubitka or 0,
-            'finance': estimation.finance_price or 0,
+            'podgotovka': soglas.amount_podgotovka if soglas and soglas.amount_podgotovka else 0,
+            'ss': soglas.amount_ss if soglas and soglas.amount_ss else 0,
+            'mcu': soglas.amount_mcu if soglas and soglas.amount_mcu else 0,
+            'recovery': soglas.amount_recovery if soglas and soglas.amount_recovery else 0,
         }
-        cost_total = round(sum(cost_fields.values()), 1)
+        cost_total = round(cost_fields['recovery'] or (cost_fields['podgotovka'] + cost_fields['ss'] + cost_fields['mcu']), 1)
 
         table_data.append(
             {
