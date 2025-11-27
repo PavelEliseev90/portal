@@ -225,7 +225,7 @@
       <div class="metric-card">
         <h4>Средние затраты</h4>
         <div class="value">{{ params.summary.avg_cost|floatformat:0|intcomma }} ₽</div>
-        <div class="sub">На один автомобиль</div>
+        <div class="sub">Сумма участков на один автомобиль</div>
       </div>
     </div>
     <div class="col-md-3 col-6">
@@ -251,7 +251,7 @@
         <table class="table table-sm cost-table mb-0">
           <thead>
             <tr>
-              <th>Статья</th>
+              <th>Участок</th>
               <th class="text-end">Сумма, ₽</th>
               <th class="text-end">Доля</th>
             </tr>
@@ -262,6 +262,10 @@
                 <td>{{ item.label }}</td>
                 <td class="text-end">{{ item.value|floatformat:0|intcomma }}</td>
                 <td class="text-end">{{ item.share }}%</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">Нет данных</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -277,7 +281,7 @@
         <h3>Пояснения</h3>
         <ul class="mb-0">
           <li>Δ до/после КД — отклонение согласованной цены от auto 1.</li>
-          <li>Затраты суммируют подготовку, ремонт, защиту от убытка и финансирование.</li>
+          <li>Затраты формируются из полей согласования (подготовка, СТО, кузов, восстановление).</li>
           <li>Если оценок больше {{ params.table_limit }}, показаны последние {{ params.table_limit }} записей.</li>
         </ul>
       </div>
