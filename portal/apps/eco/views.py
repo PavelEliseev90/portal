@@ -5643,8 +5643,11 @@ def interactive_pricing_report(request):
     for item in cost_breakdown:
         item['share'] = round((item['value'] / total_cost_value * 100), 1) if total_cost_value else 0
 
-    table_limit = 500
-    table_qs = base_qs.order_by('-start_estimation')[:table_limit]
+    per_page = 200
+    page_number = _get_int(request.GET.get('page')) or 1
+    paginator = Paginator(base_qs, per_page)
+    page_obj = paginator.get_page(page_number)
+    table_qs = page_obj.object_list
 
     def _format_user_name(user):
         if not user:
@@ -5739,6 +5742,11 @@ def interactive_pricing_report(request):
         'analyst_id': analyst_id or '',
     }
 
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        query_params.pop('page')
+    base_query_string = query_params.urlencode()
+
     params = {
         'type': 'interactive_pricing_report',
         'nav_selected': 4,
@@ -5748,13 +5756,12 @@ def interactive_pricing_report(request):
         'cost_breakdown': cost_breakdown,
         'table_data': table_data,
         'total_count': total_count,
-        'table_limit': table_limit,
-        'limit_reached': total_count > table_limit,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'base_query': base_query_string,
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
-        'aggregates': aggregates,
-        'total_cost_value': total_cost_value,
     }
 
     return render(request, 'lo/interactive_pricing_report.html', {'params': params})

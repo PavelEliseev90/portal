@@ -271,7 +271,7 @@
         </table>
         <div class="d-flex justify-content-between border-top pt-2 mt-3">
           <strong>Итого</strong>
-          <strong>{{ params.total_cost_value|floatformat:0 }} ₽</strong>
+          <strong>{{ params.summary.total_cost|floatformat:0 }} ₽</strong>
         </div>
       </div>
     </div>
@@ -281,17 +281,11 @@
         <ul class="mb-0">
           <li>Δ до/после КД — отклонение согласованной цены от auto 1.</li>
           <li>Затраты формируются из полей согласования (подготовка, СТО, кузов, восстановление).</li>
-          <li>Если оценок больше {{ params.table_limit }}, показаны последние {{ params.table_limit }} записей.</li>
+          <li>Используйте фильтры и навигацию ниже для постраничного просмотра.</li>
         </ul>
       </div>
     </div>
   </div>
-
-  {% if params.limit_reached %}
-    <div class="alert alert-warning">
-      Найдено {{ params.total_count }} оценок. Для ускорения отображены последние {{ params.table_limit }} записей.
-    </div>
-  {% endif %}
 
   <div class="panel table-responsive table-sticky">
     <h3>Таблица согласований</h3>
@@ -363,6 +357,33 @@
       </tbody>
     </table>
   </div>
+
+  {% if params.paginator.num_pages > 1 %}
+  <nav class="mt-3">
+    <ul class="pagination justify-content-center">
+      <li class="page-item {% if not params.page_obj.has_previous %}disabled{% endif %}">
+        <a class="page-link" href="{% if params.page_obj.has_previous %}?page={{ params.page_obj.previous_page_number }}{% if params.base_query %}&{{ params.base_query }}{% endif %}{% else %}#{% endif %}">
+          Назад
+        </a>
+      </li>
+      {% for num in params.paginator.page_range %}
+        {% if num >= params.page_obj.number|add:'-2' and num <= params.page_obj.number|add:'2' %}
+          <li class="page-item {% if num == params.page_obj.number %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}{% if params.base_query %}&{{ params.base_query }}{% endif %}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not params.page_obj.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{% if params.page_obj.has_next %}?page={{ params.page_obj.next_page_number }}{% if params.base_query %}&{{ params.base_query }}{% endif %}{% else %}#{% endif %}">
+          Вперед
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <p class="text-center text-muted">
+    Показано {{ params.page_obj.start_index }}–{{ params.page_obj.end_index }} из {{ params.total_count }}
+  </p>
+  {% endif %}
 </div>
 {% endblock %}
 
