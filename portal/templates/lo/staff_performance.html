@@ -320,7 +320,6 @@
                 <th class="text-end">Диаг→Прием</th>
                 <th class="text-end">Общая конверсия</th>
                 <th class="text-end">Задач</th>
-                <th class="text-end">Сообщений</th>
               </tr>
             </thead>
             <tbody>
@@ -365,17 +364,10 @@
                     —
                   {% endif %}
                 </td>
-                <td class="text-end" data-label="Сообщений">
-                  {% if stat.chat_stats.total_messages > 0 %}
-                    {{ stat.chat_stats.total_messages }}
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="12" class="text-center text-muted">Нет данных за выбранный период</td>
+                <td colspan="11" class="text-center text-muted">Нет данных за выбранный период</td>
               </tr>
               {% endfor %}
             </tbody>

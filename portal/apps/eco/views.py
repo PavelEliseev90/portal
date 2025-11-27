@@ -5053,7 +5053,6 @@ def staff_performance_analysis(request):
 
     from collections import defaultdict
     # Временное отключение анализа чатов: тяжелые выборки приводили к рекурсии и долгой загрузке.
-    eval_chat_data = defaultdict(lambda: {'count': 0, 'first_date': None, 'last_date': None})
 
     # Предзагружаем все данные для оценщиков одним запросом
     diagnostics_q_filter = (
@@ -5151,9 +5150,8 @@ def staff_performance_analysis(request):
         if staff_id:
             eval_to_staff_map[eval_id] = staff_id
     
-    # Группируем задачи и чаты по оценщикам
+    # Группируем задачи по оценщикам
     staff_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
-    staff_chat_stats = defaultdict(lambda: {'total_messages': 0, 'evaluations_with_chat': set()})
     
     for eval_id, task_data in eval_task_counts.items():
         staff_id = eval_to_staff_map.get(eval_id)
@@ -5162,15 +5160,6 @@ def staff_performance_analysis(request):
             staff_task_stats[staff_id]['closed'] += task_data.get('closed', 0)
             if task_data.get('total', 0) > 0:
                 staff_task_stats[staff_id]['evaluations_with_tasks'].add(eval_id)
-    
-    # Используем values_list для избежания конфликта
-    eval_chat_list = eval_base_qs.filter(rlk__staff__id__in=all_staff_ids).values_list('id', 'rlk__id', 'rlk__staff__id')
-    for eval_id, rlk_id, staff_id in eval_chat_list:
-        if rlk_id and staff_id:
-            chat_info = eval_chat_data.get(rlk_id)
-            if chat_info and chat_info['count'] > 0:
-                staff_chat_stats[staff_id]['total_messages'] += chat_info['count']
-                staff_chat_stats[staff_id]['evaluations_with_chat'].add(eval_id)
     
     # Типы поступлений по оценщикам
     staff_type_stats = defaultdict(lambda: defaultdict(int))
@@ -5212,13 +5201,6 @@ def staff_performance_analysis(request):
             'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
         }
         
-        # Чаты
-        chat_data = staff_chat_stats.get(staff.id, {})
-        chat_stats = {
-            'total_messages': chat_data.get('total_messages', 0),
-            'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
-        }
-        
         # Конверсии
         rlk_to_eval_rate = round((eval_count / rlk_count * 100), 1) if rlk_count > 0 else 0
         eval_to_diag_rate = round((diagnostics_count / eval_count * 100), 1) if eval_count > 0 else 0
@@ -5236,7 +5218,6 @@ def staff_performance_analysis(request):
                 'avg_time': avg_time,
                 'type_stats': type_stats,
                 'task_stats': task_stats,
-                'chat_stats': chat_stats,
                 'rlk_to_eval_rate': rlk_to_eval_rate,
                 'eval_to_diag_rate': eval_to_diag_rate,
                 'diag_to_accepted_rate': diag_to_accepted_rate,
@@ -5254,7 +5235,6 @@ def staff_performance_analysis(request):
     analyst_time_data = {}
     eval_to_analyst_map = {}
     analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
-    analyst_chat_stats = defaultdict(lambda: {'total_messages': 0, 'evaluations_with_chat': set()})
     
     if analyst_ids:
         # Базовый фильтр для аналитиков
@@ -5319,15 +5299,8 @@ def staff_performance_analysis(request):
                 if diff >= 0:
                     analyst_time_data[analyst_id].append(diff)
             
-            # Маппинг для задач и чатов
+            # Маппинг для задач
             eval_to_analyst_map[eval_id] = analyst_id
-            
-            # Чаты
-            if rlk_id:
-                chat_info = eval_chat_data.get(rlk_id)
-                if chat_info and chat_info['count'] > 0:
-                    analyst_chat_stats[analyst_id]['total_messages'] += chat_info['count']
-                    analyst_chat_stats[analyst_id]['evaluations_with_chat'].add(eval_id)
         
         # Статистика по staff_eco_2 - создаем отдельный queryset
         analyst_qs_2 = RegInteractivOcenka.objects.filter(
@@ -5377,15 +5350,8 @@ def staff_performance_analysis(request):
                 if diff >= 0:
                     analyst_time_data[analyst_id].append(diff)
             
-            # Маппинг для задач и чатов
+            # Маппинг для задач
             eval_to_analyst_map[eval_id] = analyst_id
-            
-            # Чаты
-            if rlk_id:
-                chat_info = eval_chat_data.get(rlk_id)
-                if chat_info and chat_info['count'] > 0:
-                    analyst_chat_stats[analyst_id]['total_messages'] += chat_info['count']
-                    analyst_chat_stats[analyst_id]['evaluations_with_chat'].add(eval_id)
         
         # Задачи по аналитикам
         for eval_id, task_data in eval_task_counts.items():
@@ -5420,13 +5386,6 @@ def staff_performance_analysis(request):
                     'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
                 }
                 
-                # Чаты
-                chat_data = analyst_chat_stats.get(analyst.id, {})
-                chat_stats = {
-                    'total_messages': chat_data.get('total_messages', 0),
-                    'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
-                }
-                
                 # Конверсии
                 eval_to_diag_rate = round((diagnostics_count / total * 100), 1) if total > 0 else 0
                 diag_to_accepted_rate = round((accepted_count / diagnostics_count * 100), 1) if diagnostics_count > 0 else 0
@@ -5441,7 +5400,6 @@ def staff_performance_analysis(request):
                     'with_soglas_count': with_soglas_count,
                     'avg_time': avg_time,
                     'task_stats': task_stats,
-                    'chat_stats': chat_stats,
                     'eval_to_diag_rate': eval_to_diag_rate,
                     'diag_to_accepted_rate': diag_to_accepted_rate,
                     'conv_rate': conv_rate,
