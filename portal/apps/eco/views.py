@@ -4753,7 +4753,7 @@ def eco_efficiency_analysis(request):
     # Используем iterator() для больших наборов данных, чтобы не загружать все в память
     all_eval_ids = list(base_qs.values_list('id', flat=True)[:10000])  # Ограничиваем на случай огромных выборок
     
-    # Агрегируем данные по задачам и чатам сразу для всех оценок
+    # Агрегируем данные по задачам сразу для всех оценок
     eval_task_counts = {}
     if all_eval_ids:
         task_data = RegInteractivOcenkaTask.objects.filter(estimation_id__in=all_eval_ids).values('estimation_id').annotate(
@@ -4764,28 +4764,6 @@ def eco_efficiency_analysis(request):
             eval_task_counts[item['estimation_id']] = {
                 'total': item['total'],
                 'closed': item['closed']
-            }
-    
-    # Получаем данные по чатам через агрегацию
-    from collections import defaultdict
-    eval_chat_data = defaultdict(lambda: {'count': 0, 'first_date': None, 'last_date': None})
-    
-    # Получаем все rlk_id из оценок - используем distinct для оптимизации
-    rlk_ids_list = list(base_qs.filter(rlk__isnull=False).values_list('rlk__id', flat=True).distinct())
-    
-    if rlk_ids_list:
-        # Используем агрегацию для получения количества сообщений и дат - намного быстрее
-        chat_agg = Chat.objects.filter(rlk_id__in=rlk_ids_list).values('rlk_id').annotate(
-            msg_count=Count('chatmessage'),
-            first_msg_date=Min('chatmessage__date'),
-            last_msg_date=Max('chatmessage__date')
-        ).filter(msg_count__gt=0)
-        
-        for chat_stat in chat_agg:
-            eval_chat_data[chat_stat['rlk_id']] = {
-                'count': chat_stat['msg_count'],
-                'first_date': chat_stat['first_msg_date'],
-                'last_date': chat_stat['last_msg_date'],
             }
     
     # Предзагружаем статистику по аналитикам одним запросом
@@ -4823,6 +4801,8 @@ def eco_efficiency_analysis(request):
             if diff >= 0:
                 analyst_time_data[analyst_id].append(diff)
     
+    from collections import defaultdict
+
     # Создаем маппинг eval_id -> analyst_id (ограничиваем для больших выборок)
     eval_to_analyst_map = {}
     eval_analyst_list = base_qs.filter(staff__id__in=analyst_ids).values_list('id', 'staff__id')[:5000]
@@ -4830,9 +4810,8 @@ def eco_efficiency_analysis(request):
         if analyst_id:
             eval_to_analyst_map[eval_id] = analyst_id
     
-    # Группируем задачи и чаты по аналитикам
+    # Группируем задачи по аналитикам
     analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []})
-    analyst_chat_stats = defaultdict(lambda: {'total_messages': 0, 'evaluations_with_chat': set(), 'message_counts': [], 'response_times': []})
     
     for eval_id, task_data in eval_task_counts.items():
         analyst_id = eval_to_analyst_map.get(eval_id)
@@ -4842,21 +4821,6 @@ def eco_efficiency_analysis(request):
             if task_data.get('total', 0) > 0:
                 analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
                 analyst_task_stats[analyst_id]['task_counts'].append(task_data.get('total', 0))
-    
-    # Используем values_list для избежания конфликта (ограничиваем для оптимизации)
-    eval_chat_analyst_list = base_qs.filter(staff__id__in=analyst_ids).values_list('id', 'rlk__id', 'staff__id', 'start_estimation')[:1000]
-    for eval_id, rlk_id, analyst_id, start_estimation in eval_chat_analyst_list:
-        if rlk_id and analyst_id:
-            chat_info = eval_chat_data.get(rlk_id)
-            if chat_info and chat_info['count'] > 0:
-                analyst_chat_stats[analyst_id]['total_messages'] += chat_info['count']
-                analyst_chat_stats[analyst_id]['evaluations_with_chat'].add(eval_id)
-                analyst_chat_stats[analyst_id]['message_counts'].append(chat_info['count'])
-                
-                if start_estimation and chat_info['first_date']:
-                    time_to_first_msg = (chat_info['first_date'] - start_estimation).total_seconds() / 3600
-                    if time_to_first_msg >= 0:
-                        analyst_chat_stats[analyst_id]['response_times'].append(time_to_first_msg)
     
     # Формируем финальную статистику
     analyst_stats = []
@@ -4871,15 +4835,6 @@ def eco_efficiency_analysis(request):
             # Среднее время
             time_diffs = analyst_time_data.get(analyst.id, [])
             avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
-            
-            # Чаты
-            chat_data = analyst_chat_stats.get(analyst.id, {})
-            chat_stats = {
-                'total_messages': chat_data['total_messages'],
-                'evaluations_with_chat': len(chat_data.get('evaluations_with_chat', set())),
-                'avg_messages_per_eval': round(sum(chat_data.get('message_counts', [])) / count, 1) if chat_data.get('message_counts') else 0,
-                'avg_response_time': round(sum(chat_data.get('response_times', [])) / len(chat_data.get('response_times', [])), 1) if chat_data.get('response_times') else None,
-            }
             
             # Задачи
             task_data = analyst_task_stats.get(analyst.id, {})
@@ -4900,7 +4855,6 @@ def eco_efficiency_analysis(request):
                 'avg_time': avg_time,
                 'conv_rate': round((with_soglas / count * 100), 1) if count > 0 else 0,
                 'accept_rate': round((accepted_count / count * 100), 1) if count > 0 else 0,
-                'chat_stats': chat_stats,
                 'task_stats': task_stats,
             })
     
@@ -4948,26 +4902,6 @@ def eco_efficiency_analysis(request):
         })
         
         current = current + relativedelta(months=1)
-
-    # Используем уже загруженные данные из eval_chat_data
-    all_evaluations_with_chat = set()
-    all_chat_messages_total = 0
-    
-    rlk_ids_map = {}  # Создаем маппинг rlk_id -> evaluation_id
-    eval_rlk_data = base_qs.filter(rlk__isnull=False).values_list('id', 'rlk__id')
-    for eval_id, rlk_id in eval_rlk_data:
-        if rlk_id:
-            rlk_ids_map[rlk_id] = eval_id
-    
-    for rlk_id, eval_id in rlk_ids_map.items():
-        chat_info = eval_chat_data.get(rlk_id)
-        if chat_info and chat_info['count'] > 0:
-            all_evaluations_with_chat.add(eval_id)
-            all_chat_messages_total += chat_info['count']
-    
-    evaluations_with_chat_count = len(all_evaluations_with_chat)
-    avg_messages_per_eval = round(all_chat_messages_total / total_count, 1) if total_count > 0 and all_chat_messages_total > 0 else 0
-    evaluations_with_chat_percent = round((evaluations_with_chat_count / total_count * 100), 1) if total_count > 0 else 0
 
     # Используем уже загруженные данные из eval_task_counts
     all_evaluations_with_tasks = set()
@@ -5019,12 +4953,6 @@ def eco_efficiency_analysis(request):
             'lower_count': lower_count,
             'equal_count': equal_count,
             'total_compared': len(price_diffs),
-        },
-        'chat_stats': {
-            'total_messages': all_chat_messages_total,
-            'evaluations_with_chat': evaluations_with_chat_count,
-            'avg_messages_per_eval': avg_messages_per_eval,
-            'evaluations_with_chat_percent': evaluations_with_chat_percent,
         },
         'task_stats': {
             'total_tasks': all_tasks_total,
@@ -5701,19 +5629,19 @@ def interactive_pricing_report(request):
     total_count = base_qs.count()
 
     aggregates = base_qs.aggregate(
-        total_price_before=Coalesce(Sum('page_soglasovanie__price_before_kd'), 0.0),
-        total_price_after=Coalesce(Sum('page_soglasovanie__price_after_kd'), 0.0),
-        total_price_auto_1=Coalesce(Sum('page_soglasovanie__price_auto_1'), 0.0),
-        total_price_auto_2=Coalesce(Sum('page_soglasovanie__price_auto_2'), 0.0),
-        total_price_auto_3=Coalesce(Sum('page_soglasovanie__price_auto_3'), 0.0),
-        total_price_auto_bcp=Coalesce(Sum('page_soglasovanie__price_auto_bcp'), 0.0),
-        total_price_bcp=Coalesce(Sum('page_soglasovanie__price_bcp'), 0.0),
-        total_price_reception=Coalesce(Sum('page_soglasovanie__price_reception'), 0.0),
-        total_price_sale=Coalesce(Sum('page_soglasovanie__price_sale'), 0.0),
-        total_amount_podgotovka=Coalesce(Sum('page_soglasovanie__amount_podgotovka'), 0.0),
-        total_amount_ss=Coalesce(Sum('page_soglasovanie__amount_ss'), 0.0),
-        total_amount_mcu=Coalesce(Sum('page_soglasovanie__amount_mcu'), 0.0),
-        total_amount_recovery=Coalesce(Sum('page_soglasovanie__amount_recovery'), 0.0),
+        total_price_before=Coalesce(Sum('page_soglasovanie__price_before_kd', output_field=FloatField()), 0.0),
+        total_price_after=Coalesce(Sum('page_soglasovanie__price_after_kd', output_field=FloatField()), 0.0),
+        total_price_auto_1=Coalesce(Sum('page_soglasovanie__price_auto_1', output_field=FloatField()), 0.0),
+        total_price_auto_2=Coalesce(Sum('page_soglasovanie__price_auto_2', output_field=FloatField()), 0.0),
+        total_price_auto_3=Coalesce(Sum('page_soglasovanie__price_auto_3', output_field=FloatField()), 0.0),
+        total_price_auto_bcp=Coalesce(Sum('page_soglasovanie__price_auto_bcp', output_field=FloatField()), 0.0),
+        total_price_bcp=Coalesce(Sum('page_soglasovanie__price_bcp', output_field=FloatField()), 0.0),
+        total_price_reception=Coalesce(Sum('page_soglasovanie__price_reception', output_field=FloatField()), 0.0),
+        total_price_sale=Coalesce(Sum('page_soglasovanie__price_sale', output_field=FloatField()), 0.0),
+        total_amount_podgotovka=Coalesce(Sum('page_soglasovanie__amount_podgotovka', output_field=FloatField()), 0.0),
+        total_amount_ss=Coalesce(Sum('page_soglasovanie__amount_ss', output_field=FloatField()), 0.0),
+        total_amount_mcu=Coalesce(Sum('page_soglasovanie__amount_mcu', output_field=FloatField()), 0.0),
+        total_amount_recovery=Coalesce(Sum('page_soglasovanie__amount_recovery', output_field=FloatField()), 0.0),
     )
 
     def _avg(value):
