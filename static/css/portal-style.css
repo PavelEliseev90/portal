@@ -1394,3 +1394,61 @@
   border-radius: 1rem 1rem 0 0;
   background: #f8f9fc;
 }
+
+/* ============================================
+   Стили для страницы интерактивной оценки (lo_v3)
+   ============================================ */
+.lo-v3-page {
+  padding: 1.25rem 1.5rem 3rem;
+  background: #f4f7fb;
+  min-height: 100vh;
+}
+
+.portal-sidebar {
+  background: #fff;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.portal-sidebar .btn {
+  border-radius: 0.85rem;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.portal-sidebar .btn:hover {
+  background-color: #f4f7fb;
+  transform: translateX(4px);
+}
+
+.portal-sidebar .btn.active {
+  background-color: #002a5a;
+  color: #fff;
+  opacity: 1 !important;
+}
+
+@media (max-width: 992px) {
+  .lo-v3-page {
+    padding: 1rem 1.25rem 2rem;
+  }
+
+  .portal-sidebar {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .lo-v3-page {
+    padding: 0.75rem 1rem 1.5rem;
+  }
+
+  .portal-sidebar {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
+}
