@@ -32,6 +32,7 @@ from asgiref.sync import async_to_sync
 
 from django.views.decorators.csrf import csrf_exempt
 from changelog.models import ChangeLog
+from collections import defaultdict
 
 
 def add_swap(estimation):
@@ -376,6 +377,8 @@ def tradein_funnel(request):
     unit_id = _get_int(request.GET.get('unit_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
 
     type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
@@ -542,6 +545,8 @@ def tradein_funnel(request):
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
 
     unit_trend_chart = None
     if not unit_id:
@@ -4768,61 +4773,28 @@ def eco_efficiency_analysis(request):
                 'closed': item['closed']
             }
     
-    # Предзагружаем статистику по аналитикам одним запросом
-    analyst_ids = list(User.objects.filter(
-        Q(profiles__eco=True) | Q(profiles__eco_visible=True)
-    ).distinct().values_list('id', flat=True))
+    # Предзагружаем статистику по аналитикам
+    analyst_ids_qs = (
+        User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True))
+        .distinct()
+        .values_list('id', flat=True)
+    )
+    analyst_ids_from_data = set(
+        base_qs.filter(staff_eco_1__isnull=False).values_list('staff_eco_1__id', flat=True)
+    ) | set(
+        base_qs.filter(staff_eco_2__isnull=False).values_list('staff_eco_2__id', flat=True)
+    )
+    if analyst_id:
+        analyst_ids = [analyst_id] if analyst_id in analyst_ids_from_data else []
+    else:
+        analyst_ids = [pk for pk in analyst_ids_qs if pk in analyst_ids_from_data]
     
     analyst_stats_by_id = {}
-    analyst_stats_raw = base_qs.filter(staff__id__in=analyst_ids).values('staff__id').annotate(
-        total=Count('id'),
-        with_soglas=Count('id', filter=Q(page_soglasovanie__isnull=False)),
-        accepted=Count('id', filter=Q(status__name__icontains='ам принят'))
-    ).values('staff__id', 'total', 'with_soglas', 'accepted')
-    
-    for item in analyst_stats_raw:
-        analyst_stats_by_id[item['staff__id']] = {
-            'total': item['total'],
-            'with_soglas': item['with_soglas'],
-            'accepted': item['accepted'],
-        }
-    
-    # Получаем временные данные для аналитиков
     analyst_time_data = {}
-    analyst_time_list = base_qs.filter(
-        staff__id__in=analyst_ids,
-        start_estimation__isnull=False,
-        end_estimation__isnull=False
-    ).values_list('staff__id', 'start_estimation', 'end_estimation')[:2000]
-    
-    for analyst_id, start_time, end_time in analyst_time_list:
-        if analyst_id and start_time and end_time:
-            if analyst_id not in analyst_time_data:
-                analyst_time_data[analyst_id] = []
-            diff = (end_time - start_time).total_seconds() / 3600
-            if diff >= 0:
-                analyst_time_data[analyst_id].append(diff)
-    
-    from collections import defaultdict
-
-    # Создаем маппинг eval_id -> analyst_id (ограничиваем для больших выборок)
     eval_to_analyst_map = {}
-    eval_analyst_list = base_qs.filter(staff__id__in=analyst_ids).values_list('id', 'staff__id')[:5000]
-    for eval_id, analyst_id in eval_analyst_list:
-        if analyst_id:
-            eval_to_analyst_map[eval_id] = analyst_id
-    
-    # Группируем задачи по аналитикам
-    analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []})
-    
-    for eval_id, task_data in eval_task_counts.items():
-        analyst_id = eval_to_analyst_map.get(eval_id)
-        if analyst_id:
-            analyst_task_stats[analyst_id]['total'] += task_data.get('total', 0)
-            analyst_task_stats[analyst_id]['closed'] += task_data.get('closed', 0)
-            if task_data.get('total', 0) > 0:
-                analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
-                analyst_task_stats[analyst_id]['task_counts'].append(task_data.get('total', 0))
+    analyst_task_stats = defaultdict(
+        lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []}
+    )
     
     # Формируем финальную статистику
     analyst_stats = []
@@ -4934,6 +4906,8 @@ def eco_efficiency_analysis(request):
         'unit_id': unit_id or '',
         'staff_id': staff_id or '',
         'analyst_id': analyst_id or '',
+        'type_id': type_id or '',
+        'status_id': status_id or '',
     }
 
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
@@ -4971,6 +4945,8 @@ def eco_efficiency_analysis(request):
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
+        'types': types,
+        'statuses': statuses,
     }
 
     return render(request, 'lo/eco_efficiency.html', {'params': params})
@@ -5022,6 +4998,10 @@ def staff_performance_analysis(request):
             | Q(rlk__unit__id=unit_id)
             | Q(rlk__unit_dc__id=unit_id)
         )
+    if type_id:
+        eval_base_qs = eval_base_qs.filter(page_documents__type_reception__id=type_id)
+    if status_id:
+        eval_base_qs = eval_base_qs.filter(status__id=status_id)
 
     if staff_id:
         try:
@@ -5050,9 +5030,6 @@ def staff_performance_analysis(request):
                 'total': item['total'],
                 'closed': item['closed']
             }
-
-    from collections import defaultdict
-    # Временное отключение анализа чатов: тяжелые выборки приводили к рекурсии и долгой загрузке.
 
     # Предзагружаем все данные для оценщиков одним запросом
     diagnostics_q_filter = (
@@ -5084,6 +5061,10 @@ def staff_performance_analysis(request):
             | Q(rlk__unit__id=unit_id)
             | Q(rlk__unit_dc__id=unit_id)
         )
+    if type_id:
+        eval_stats_qs = eval_stats_qs.filter(page_documents__type_reception__id=type_id)
+    if status_id:
+        eval_stats_qs = eval_stats_qs.filter(status__id=status_id)
     if staff_id:
         try:
             RefStaff.objects.get(id=staff_id)
@@ -5124,6 +5105,10 @@ def staff_performance_analysis(request):
             | Q(rlk__unit__id=unit_id)
             | Q(rlk__unit_dc__id=unit_id)
         )
+    if type_id:
+        eval_time_qs = eval_time_qs.filter(page_documents__type_reception__id=type_id)
+    if status_id:
+        eval_time_qs = eval_time_qs.filter(status__id=status_id)
     
     if staff_id:
         try:
@@ -5234,7 +5219,9 @@ def staff_performance_analysis(request):
     analyst_stats_by_id = {}
     analyst_time_data = {}
     eval_to_analyst_map = {}
-    analyst_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
+    analyst_task_stats = defaultdict(
+        lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []}
+    )
     
     if analyst_ids:
         # Базовый фильтр для аналитиков
@@ -5249,6 +5236,10 @@ def staff_performance_analysis(request):
                 | Q(rlk__unit__id=unit_id)
                 | Q(rlk__unit_dc__id=unit_id)
             )
+        if type_id:
+            base_analyst_filter &= Q(page_documents__type_reception__id=type_id)
+        if status_id:
+            base_analyst_filter &= Q(status__id=status_id)
         
         # Статистика по staff_eco_1 - создаем отдельный queryset
         analyst_qs_1 = RegInteractivOcenka.objects.filter(
@@ -5260,10 +5251,26 @@ def staff_performance_analysis(request):
         analyst_data_1 = analyst_qs_1.values_list(
             'staff_eco_1__id', 'id', 'start_estimation', 'end_estimation',
             'page_soglasovanie_id', 'page_soglasovanie__comment_diagnostica',
-            'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id'
+            'page_sогласование__no_diagnostica', 'status__name', 'rlk__id',
+            'page_soglasovanie__price_before_kd', 'page_soglasование__price_auto_1',
+            'page_soglasovanie__price_auto_2', 'page_sогласование__price_auto_3'
         )
         
-        for analyst_id, eval_id, start_time, end_time, soglas_id, diag_comment, no_diag, status_name, rlk_id in analyst_data_1:
+        for (
+            analyst_id,
+            eval_id,
+            start_time,
+            end_time,
+            soglas_id,
+            diag_comment,
+            no_diag,
+            status_name,
+            rlk_id,
+            price_before_kd,
+            auto_price_1,
+            auto_price_2,
+            auto_price_3,
+        ) in analyst_data_1:
             if not analyst_id:
                 continue
                 
@@ -5274,6 +5281,24 @@ def staff_performance_analysis(request):
                     'diagnostics': 0,
                     'accepted': 0,
                     'with_soglas': 0,
+                    'roles': {
+                        'before': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                        'after': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                    },
                 }
             
             analyst_stats_by_id[analyst_id]['total'] += 1
@@ -5298,6 +5323,23 @@ def staff_performance_analysis(request):
                 diff = (end_time - start_time).total_seconds() / 3600
                 if diff >= 0:
                     analyst_time_data[analyst_id].append(diff)
+
+            # Ценовые показатели (до КД)
+            role_stats = analyst_stats_by_id[analyst_id]['roles']['before']
+            if price_before_kd:
+                role_stats['count'] += 1
+                role_stats['price_sum'] += float(price_before_kd)
+                auto_price = next(
+                    (float(p) for p in [auto_price_1, auto_price_2, auto_price_3] if p and float(p) > 0),
+                    0,
+                )
+                if auto_price:
+                    role_stats['auto_count'] += 1
+                    role_stats['auto_sum'] += auto_price
+                    diff_val = float(price_before_kd) - auto_price
+                    role_stats['diff_sum'] += diff_val
+                    if diff_val >= 0:
+                        role_stats['above_count'] += 1
             
             # Маппинг для задач
             eval_to_analyst_map[eval_id] = analyst_id
@@ -5311,10 +5353,26 @@ def staff_performance_analysis(request):
         analyst_data_2 = analyst_qs_2.values_list(
             'staff_eco_2__id', 'id', 'start_estimation', 'end_estimation',
             'page_soglasovanie_id', 'page_soglasovanie__comment_diagnostica',
-            'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id'
+            'page_soglasovanie__no_diagnostica', 'status__name', 'rlk__id',
+            'page_soglasovanie__price_after_kd', 'page_soglasovanie__price_auto_1',
+            'page_soglasovanie__price_auto_2', 'page_soglasovanie__price_auto_3'
         )
         
-        for analyst_id, eval_id, start_time, end_time, soglas_id, diag_comment, no_diag, status_name, rlk_id in analyst_data_2:
+        for (
+            analyst_id,
+            eval_id,
+            start_time,
+            end_time,
+            soglas_id,
+            diag_comment,
+            no_diag,
+            status_name,
+            rlk_id,
+            price_after_kd,
+            auto_price_1,
+            auto_price_2,
+            auto_price_3,
+        ) in analyst_data_2:
             if not analyst_id:
                 continue
                 
@@ -5325,6 +5383,24 @@ def staff_performance_analysis(request):
                     'diagnostics': 0,
                     'accepted': 0,
                     'with_soglas': 0,
+                    'roles': {
+                        'before': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                        'after': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                    },
                 }
             
             analyst_stats_by_id[analyst_id]['total'] += 1
@@ -5349,6 +5425,23 @@ def staff_performance_analysis(request):
                 diff = (end_time - start_time).total_seconds() / 3600
                 if diff >= 0:
                     analyst_time_data[analyst_id].append(diff)
+
+            # Ценовые показатели (после КД)
+            role_stats = analyst_stats_by_id[analyst_id]['roles']['after']
+            if price_after_kd:
+                role_stats['count'] += 1
+                role_stats['price_sum'] += float(price_after_kd)
+                auto_price = next(
+                    (float(p) for p in [auto_price_1, auto_price_2, auto_price_3] if p and float(p) > 0),
+                    0,
+                )
+                if auto_price:
+                    role_stats['auto_count'] += 1
+                    role_stats['auto_sum'] += auto_price
+                    diff_val = float(price_after_kd) - auto_price
+                    role_stats['diff_sum'] += diff_val
+                    if diff_val >= 0:
+                        role_stats['above_count'] += 1
             
             # Маппинг для задач
             eval_to_analyst_map[eval_id] = analyst_id
@@ -5361,6 +5454,7 @@ def staff_performance_analysis(request):
                 analyst_task_stats[analyst_id]['closed'] += task_data.get('closed', 0)
                 if task_data.get('total', 0) > 0:
                     analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
+                    analyst_task_stats[analyst_id]['task_counts'].append(task_data.get('total', 0))
     
     # Формируем финальную статистику по аналитикам
     analyst_stats = []
