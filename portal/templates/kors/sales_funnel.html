@@ -108,7 +108,64 @@
 
   @media (max-width: 992px) {
     .sales-funnel-page {
-      padding: 0.8rem 1rem 2rem;
+      padding: 0.75rem 1rem 2rem;
+    }
+    .metric-card {
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .sales-filter {
+      padding: 1rem;
+    }
+    .sales-filter .row > div {
+      margin-bottom: 0.75rem;
+    }
+    .panel {
+      padding: 1rem;
+    }
+    .table-mobile-cards {
+      border: none;
+    }
+    .table-mobile-cards thead {
+      display: none;
+    }
+    .table-mobile-cards tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      background: #fff;
+      border: 1px solid rgba(0, 42, 90, 0.08);
+      border-radius: 1rem;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 15px 32px rgba(0, 23, 61, 0.08);
+    }
+    .table-mobile-cards tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0;
+      border: none;
+    }
+    .table-mobile-cards tbody td:first-child {
+      display: block;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+    }
+    .table-mobile-cards tbody td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #6c7a92;
+      margin-right: 0.75rem;
+      text-align: left;
+    }
+    .table-mobile-cards tbody td:first-child:before {
+      content: '';
+    }
+    .badge-cost {
+      width: 100%;
+      justify-content: center;
     }
   }
 </style>
@@ -174,7 +231,7 @@
 
   <div class="panel table-responsive table-sticky">
     <h3>Список автомобилей</h3>
-    <table class="table table-hover table-sm align-middle">
+    <table class="table table-hover table-sm align-middle table-mobile-cards">
       <thead>
         <tr>
           <th>Подразделение</th>
@@ -200,26 +257,26 @@
         {% else %}
           {% for object in params.objects %}
             <tr>
-              <td>{{ object.unit.name }}</td>
-              <td>
+              <td data-label="Подразделение">{{ object.unit.name }}</td>
+              <td data-label="Автомобиль">
                 <div class="fw-semibold">{{ object.name|default:"—" }}</div>
                 <div class="text-muted small">
                   VIN: {{ object.vin|default:"—" }}<br>
                   Факт пробега: {{ object.agreement_cm|floatformat:"0g"|default:"—" }} км
                 </div>
               </td>
-              <td>{{ object.year|default:"—" }}</td>
-              <td>{{ object.run|floatformat:"0g"|default:"—" }} км</td>
-              <td>{{ object.days_in_stok|default:"—" }}</td>
-              <td>{{ object.group_price.name|default:"—" }}</td>
-              <td>{{ object.agreement_amount|floatformat:"0g"|default:"—" }} ₽</td>
-              <td>{{ object.agreement_cost_price|floatformat:"0g"|default:"—" }} ₽</td>
-              <td>
+              <td data-label="Год">{{ object.year|default:"—" }}</td>
+              <td data-label="Пробег">{{ object.run|floatformat:"0g"|default:"—" }} км</td>
+              <td data-label="Дни на складе">{{ object.days_in_stok|default:"—" }}</td>
+              <td data-label="Ценовая группа">{{ object.group_price.name|default:"—" }}</td>
+              <td data-label="Цена продажи">{{ object.agreement_amount|floatformat:"0g"|default:"—" }} ₽</td>
+              <td data-label="Себестоимость">{{ object.agreement_cost_price|floatformat:"0g"|default:"—" }} ₽</td>
+              <td data-label="Затраты">
                 <div class="badge-cost">{{ object.outlay|floatformat:"0g"|default:"—" }} ₽</div>
                 <div class="text-muted small">Колеса: {{ object.agreement_bu_wheels_actual|floatformat:"0g"|default:"—" }} ₽</div>
               </td>
-              <td>{{ object.agreement_kso_actual|floatformat:"0g"|default:"—" }} ₽</td>
-              <td>
+              <td data-label="КСО">{{ object.agreement_kso_actual|floatformat:"0g"|default:"—" }} ₽</td>
+              <td data-label="Предложения">
                 <div>Компания: {{ object.car_modification_store|default:"—" }}</div>
                 <div class="text-muted small">ДЦ: {{ object.car_modification_dc|default:"—" }}</div>
               </td>
