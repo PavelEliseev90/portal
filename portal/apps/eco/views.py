@@ -379,6 +379,8 @@ def tradein_funnel(request):
     analyst_id = _get_int(request.GET.get('analyst_id'))
     type_id = _get_int(request.GET.get('type_id'))
     status_id = _get_int(request.GET.get('status_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
 
     type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
@@ -545,6 +547,8 @@ def tradein_funnel(request):
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
 
@@ -4640,6 +4644,12 @@ def eco_efficiency_analysis(request):
             | Q(rlk__unit__id=unit_id)
             | Q(rlk__unit_dc__id=unit_id)
         )
+
+    if type_id:
+        base_qs = base_qs.filter(page_documents__type_reception__id=type_id)
+
+    if status_id:
+        base_qs = base_qs.filter(status__id=status_id)
 
     if staff_id:
         # Проверяем, что staff_id - это ID RefStaff, а не User
