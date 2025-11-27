@@ -10,7 +10,7 @@ import json
 from checklists.models import CheckListTradeIn
 from chats.models import Chat, ChatMessage
 from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField, FloatField
-from django.db.models.functions import Extract, TruncDate
+from django.db.models.functions import Extract, TruncDate, TruncMonth
 from django.db import models
 import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
@@ -33,6 +33,12 @@ from asgiref.sync import async_to_sync
 from django.views.decorators.csrf import csrf_exempt
 from changelog.models import ChangeLog
 from collections import defaultdict
+from analytics.models import (
+    InteractivePricingSnapshot,
+    EcoAnalystSnapshot,
+    AppraiserPerformanceSnapshot,
+    TradeInFunnelSnapshot,
+)
 
 
 def add_swap(estimation):
@@ -547,6 +553,8 @@ def tradein_funnel(request):
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
@@ -4630,132 +4638,46 @@ def eco_efficiency_analysis(request):
     unit_id = _get_int(request.GET.get('unit_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
 
-    base_qs = RegInteractivOcenka.objects.filter(
+    pricing_qs = InteractivePricingSnapshot.objects.filter(
         start_estimation__gte=date_start,
         start_estimation__lte=date_end,
-    ).select_related('staff', 'rlk', 'status', 'page_soglasovanie').prefetch_related(
-        'rlk__staff'
     )
 
     if unit_id:
-        base_qs = base_qs.filter(
-            Q(page_documents__unit__id=unit_id)
-            | Q(rlk__unit__id=unit_id)
-            | Q(rlk__unit_dc__id=unit_id)
-        )
-
-    if type_id:
-        base_qs = base_qs.filter(page_documents__type_reception__id=type_id)
-
-    if status_id:
-        base_qs = base_qs.filter(status__id=status_id)
-
+        pricing_qs = pricing_qs.filter(unit_id=unit_id)
     if staff_id:
-        # Проверяем, что staff_id - это ID RefStaff, а не User
-        try:
-            RefStaff.objects.get(id=staff_id)
-            base_qs = base_qs.filter(rlk__staff__id=staff_id)
-        except RefStaff.DoesNotExist:
-            pass
-
+        pricing_qs = pricing_qs.filter(staff_id=staff_id)
     if analyst_id:
-        base_qs = base_qs.filter(staff__id=analyst_id)
+        pricing_qs = pricing_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
+    if type_id:
+        pricing_qs = pricing_qs.filter(type_reception_id=type_id)
+    if status_id:
+        pricing_qs = pricing_qs.filter(status_id=status_id)
 
-    evaluations_with_soglasovanie = base_qs.filter(page_soglasovanie__isnull=False)
-
-    total_count = base_qs.count()
-    with_soglasovanie_count = evaluations_with_soglasovanie.count()
+    total_count = pricing_qs.count()
+    with_soglasovanie_count = pricing_qs.filter(has_soglasovanie=True).count()
     soglasovanie_percent = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
 
-    avg_time_total = None
-    if total_count > 0:
-        # Используем агрегацию для расчета среднего времени
-        from django.db.models import ExpressionWrapper, DurationField
-        time_diff_expr = ExpressionWrapper(
-            F('end_estimation') - F('start_estimation'),
-            output_field=DurationField()
-        )
-        
-        evaluations_with_times = base_qs.filter(
-            start_estimation__isnull=False,
-            end_estimation__isnull=False
-        ).exclude(end_estimation__lt=F('start_estimation')).annotate(
-            time_diff=time_diff_expr
-        )
-        
-        count_with_times = evaluations_with_times.count()
-        if count_with_times > 0:
-            # Берем выборку для расчета среднего
-            time_diffs = []
-            for eval in evaluations_with_times[:1000]:  # Ограничиваем выборку для производительности
-                if eval.end_estimation and eval.start_estimation:
-                    diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
-                    if diff >= 0:
-                        time_diffs.append(diff)
-            
-            if time_diffs:
-                avg_time_total = round(sum(time_diffs) / len(time_diffs), 1)
+    avg_time_total = pricing_qs.aggregate(avg=Avg('duration_estimation_sec'))['avg']
+    avg_time_total = round(avg_time_total / 3600, 1) if avg_time_total else None
 
-    avg_soglasovanie_time = None
-    if with_soglasovanie_count > 0:
-        evaluations_with_soglasovanie_times = evaluations_with_soglasovanie.filter(
-            start_estimation__isnull=False,
-            end_estimation__isnull=False
-        )
-        
-        # Ограничиваем выборку для расчета времени
-        time_diffs = []
-        for eval in evaluations_with_soglasovanie_times[:500]:
-            if eval.page_soglasovanie and eval.start_estimation and eval.end_estimation:
-                if (eval.page_soglasovanie.price_before_kd and eval.page_soglasovanie.price_before_kd > 0) or \
-                   (eval.page_soglasovanie.price_after_kd and eval.page_soglasovanie.price_after_kd > 0):
-                    diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
-                    if diff >= 0:
-                        time_diffs.append(diff)
-        
-        if time_diffs:
-            avg_soglasovanie_time = round(sum(time_diffs) / len(time_diffs), 1)
-
-    price_comparison = []
-    evaluations_with_prices = evaluations_with_soglasovanie.filter(
-        page_soglasovanie__price_after_kd__gt=0
+    avg_soglasovanie_time = (
+        pricing_qs.filter(has_soglasovanie=True).aggregate(avg=Avg('duration_sogl_after_sec'))['avg']
     )
-    
-    # Объединяем оба цикла по ценам в один для оптимизации
+    avg_soglasovanie_time = round(avg_soglasovanie_time / 3600, 1) if avg_soglasование_time else None
+
     price_diffs = []
     price_percent_diffs = []
-    higher_count = 0
-    lower_count = 0
-    equal_count = 0
-    
-    # Используем values для оптимизации - загружаем только нужные поля
-    price_data = evaluations_with_prices.values(
-        'page_soglasovanie__price_after_kd',
-        'page_soglasovanie__price_auto_1',
-        'page_soglasovanie__price_auto_2',
-        'page_soglasovanie__price_auto_3'
-    )[:500]
-    
-    for price_item in price_data:
-        soglas_price = price_item.get('page_soglasovanie__price_after_kd')
-        if not soglas_price or soglas_price <= 0:
-            continue
-            
-        autoraschet_price = (
-            price_item.get('page_soglasovanie__price_auto_1') or
-            price_item.get('page_soglasovanie__price_auto_2') or
-            price_item.get('page_soglasovanie__price_auto_3') or
-            None
-        )
-        
-        if autoraschet_price and autoraschet_price > 0:
-            diff = soglas_price - autoraschet_price
-            diff_percent = round((diff / autoraschet_price) * 100, 1) if autoraschet_price > 0 else 0
-            
+    higher_count = lower_count = equal_count = 0
+    for price_after, auto_price in pricing_qs.values_list('price_after_kd', 'price_auto_selected')[:2000]:
+        if price_after and auto_price:
+            diff = float(price_after) - float(auto_price)
             price_diffs.append(diff)
+            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
             price_percent_diffs.append(diff_percent)
-            
             if diff > 1000:
                 higher_count += 1
             elif diff < -1000:
@@ -4766,145 +4688,99 @@ def eco_efficiency_analysis(request):
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
 
-    # Получаем все оценки один раз с prefetch для оптимизации
-    # Используем iterator() для больших наборов данных, чтобы не загружать все в память
-    all_eval_ids = list(base_qs.values_list('id', flat=True)[:10000])  # Ограничиваем на случай огромных выборок
-    
-    # Агрегируем данные по задачам сразу для всех оценок
-    eval_task_counts = {}
-    if all_eval_ids:
-        task_data = RegInteractivOcenkaTask.objects.filter(estimation_id__in=all_eval_ids).values('estimation_id').annotate(
-            total=Count('id'),
-            closed=Count('id', filter=Q(date_close__isnull=False))
-        )
-        for item in task_data:
-            eval_task_counts[item['estimation_id']] = {
-                'total': item['total'],
-                'closed': item['closed']
-            }
-    
-    # Предзагружаем статистику по аналитикам
-    analyst_ids_qs = (
-        User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True))
-        .distinct()
-        .values_list('id', flat=True)
+    task_aggregate = pricing_qs.aggregate(
+        total_tasks=Coalesce(Sum('tasks_total'), 0),
+        closed_tasks=Coalesce(Sum('tasks_closed'), 0),
+        evaluations_with_tasks=Count('estimation_id', filter=Q(tasks_total__gt=0)),
     )
-    analyst_ids_from_data = set(
-        base_qs.filter(staff_eco_1__isnull=False).values_list('staff_eco_1__id', flat=True)
-    ) | set(
-        base_qs.filter(staff_eco_2__isnull=False).values_list('staff_eco_2__id', flat=True)
+    all_tasks_total = task_aggregate['total_tasks'] or 0
+    all_tasks_closed = task_aggregate['closed_tasks'] or 0
+    evaluations_with_tasks_count = task_aggregate['evaluations_with_tasks'] or 0
+    all_tasks_open = all_tasks_total - all_tasks_closed
+    avg_tasks_per_eval = round(all_tasks_total / total_count, 1) if total_count and all_tasks_total else 0
+    evaluations_with_tasks_percent = (
+        round((evaluations_with_tasks_count / total_count * 100), 1) if total_count else 0
     )
+
+    analyst_qs = EcoAnalystSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+    if unit_id:
+        analyst_qs = analyst_qs.filter(unit_id=unit_id)
+    if staff_id:
+        analyst_qs = analyst_qs.filter(staff_id=staff_id)
     if analyst_id:
-        analyst_ids = [analyst_id] if analyst_id in analyst_ids_from_data else []
-    else:
-        analyst_ids = [pk for pk in analyst_ids_qs if pk in analyst_ids_from_data]
-    
-    analyst_stats_by_id = {}
-    analyst_time_data = {}
-    eval_to_analyst_map = {}
-    analyst_task_stats = defaultdict(
-        lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []}
+        analyst_qs = analyst_qs.filter(analyst_id=analyst_id)
+    if type_id:
+        analyst_qs = analyst_qs.filter(type_reception_id=type_id)
+    if status_id:
+        analyst_qs = analyst_qs.filter(status_id=status_id)
+
+    analyst_stats_raw = analyst_qs.exclude(analyst_id__isnull=True).values('analyst_id', 'analyst_name').annotate(
+        total=Count('id'),
+        with_soglas=Count('id', filter=Q(has_soglasovanie=True)),
+        accepted=Count('id', filter=Q(accepted=True)),
+        avg_duration=Avg('duration_estimation_sec'),
+        tasks_total=Coalesce(Sum('tasks_total'), 0),
+        tasks_closed=Coalesce(Sum('tasks_closed'), 0),
+        evaluations_with_tasks=Count('id', filter=Q(tasks_total__gt=0)),
     )
-    
-    # Формируем финальную статистику
+
     analyst_stats = []
-    for analyst in User.objects.filter(id__in=analyst_ids):
-        stats = analyst_stats_by_id.get(analyst.id, {})
-        count = stats.get('total', 0)
-        
-        if count > 0:
-            with_soglas = stats.get('with_soglas', 0)
-            accepted_count = stats.get('accepted', 0)
-            
-            # Среднее время
-            time_diffs = analyst_time_data.get(analyst.id, [])
-            avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
-            
-            # Задачи
-            task_data = analyst_task_stats.get(analyst.id, {})
-            task_stats = {
-                'total_tasks': task_data['total'],
-                'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
-                'avg_tasks_per_eval': round(sum(task_data.get('task_counts', [])) / count, 1) if task_data.get('task_counts') else 0,
-                'closed_tasks': task_data['closed'],
-                'open_tasks': task_data['total'] - task_data['closed'],
-                'closed_percent': round((task_data['closed'] / task_data['total'] * 100), 1) if task_data['total'] > 0 else 0,
-            }
-            
-            analyst_stats.append({
-                'name': analyst.profiles.eco_name or analyst.get_full_name() or analyst.username,
+    for row in analyst_stats_raw:
+        count = row['total']
+        if count == 0:
+            continue
+        avg_time = round((row['avg_duration'] or 0) / 3600, 1) if row['avg_duration'] else None
+        total_tasks = row['tasks_total'] or 0
+        closed_tasks = row['tasks_closed'] or 0
+        task_stats = {
+            'total_tasks': total_tasks,
+            'evaluations_with_tasks': row['evaluations_with_tasks'] or 0,
+            'avg_tasks_per_eval': round(total_tasks / count, 1) if total_tasks else 0,
+            'closed_tasks': closed_tasks,
+            'open_tasks': total_tasks - closed_tasks,
+            'closed_percent': round((closed_tasks / total_tasks * 100), 1) if total_tasks else 0,
+        }
+        analyst_stats.append(
+            {
+                'name': row['analyst_name'] or '—',
                 'total': count,
-                'with_soglasovanie': with_soglas,
-                'accepted': accepted_count,
+                'with_soglasovanie': row['with_soglas'],
+                'accepted': row['accepted'],
                 'avg_time': avg_time,
-                'conv_rate': round((with_soglas / count * 100), 1) if count > 0 else 0,
-                'accept_rate': round((accepted_count / count * 100), 1) if count > 0 else 0,
+                'conv_rate': round((row['with_soglas'] / count * 100), 1) if count else 0,
+                'accept_rate': round((row['accepted'] / count * 100), 1) if count else 0,
                 'task_stats': task_stats,
-            })
-    
+            }
+        )
+
     analyst_stats = sorted(analyst_stats, key=lambda x: x['total'], reverse=True)
 
     monthly_data = []
-    base_month = date_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    current = base_month
-    
-    while current <= date_end:
-        month_end = (current + relativedelta(months=1)) - DT.timedelta(seconds=1)
-        if month_end > date_end:
-            month_end = date_end
-        
-        month_qs = base_qs.filter(
-            start_estimation__gte=current,
-            start_estimation__lte=month_end,
+    monthly_agg = (
+        pricing_qs.annotate(month=TruncMonth('start_estimation'))
+        .values('month')
+        .order_by('month')
+        .annotate(
+            total=Count('estimation_id'),
+            with_soglas=Count('estimation_id', filter=Q(has_soglasovanie=True)),
+            accepted=Count('estimation_id', filter=Q(accepted=True)),
+            avg_duration=Avg('duration_estimation_sec'),
         )
-        
-        month_count = month_qs.count()
-        month_soglas = month_qs.filter(page_soglasovanie__isnull=False).count()
-        month_accepted = month_qs.filter(status__name__icontains='ам принят').count()
-        
-        # Оптимизируем расчет среднего времени - используем values_list
-        time_diffs = []
-        month_time_list = month_qs.filter(
-            start_estimation__isnull=False,
-            end_estimation__isnull=False
-        ).values_list('start_estimation', 'end_estimation')[:200]
-        
-        for start_time, end_time in month_time_list:
-            if start_time and end_time:
-                diff = (end_time - start_time).total_seconds() / 3600
-                if diff >= 0:
-                    time_diffs.append(diff)
-        
-        avg_month_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
-        
-        monthly_data.append({
-            'month': current.strftime('%b %Y'),
-            'total': month_count,
-            'with_soglasovanie': month_soglas,
-            'accepted': month_accepted,
-            'avg_time': avg_month_time,
-        })
-        
-        current = current + relativedelta(months=1)
-
-    # Используем уже загруженные данные из eval_task_counts
-    all_evaluations_with_tasks = set()
-    all_tasks_total = 0
-    all_tasks_closed = 0
-    all_tasks_open = 0
-    
-    for eval_id, task_data in eval_task_counts.items():
-        task_count = task_data.get('total', 0)
-        if task_count > 0:
-            all_evaluations_with_tasks.add(eval_id)
-            all_tasks_total += task_count
-            closed_count = task_data.get('closed', 0)
-            all_tasks_closed += closed_count
-            all_tasks_open += (task_count - closed_count)
-    
-    evaluations_with_tasks_count = len(all_evaluations_with_tasks)
-    avg_tasks_per_eval = round(all_tasks_total / total_count, 1) if total_count > 0 and all_tasks_total > 0 else 0
-    evaluations_with_tasks_percent = round((evaluations_with_tasks_count / total_count * 100), 1) if total_count > 0 else 0
+    )
+    for item in monthly_agg:
+        month_dt = item['month']
+        monthly_data.append(
+            {
+                'month': month_dt.strftime('%b %Y') if month_dt else '',
+                'total': item['total'],
+                'with_soglasovanie': item['with_soglas'],
+                'accepted': item['accepted'],
+                'avg_time': round((item['avg_duration'] or 0) / 3600, 1) if item['avg_duration'] else None,
+            }
+        )
 
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
@@ -5665,55 +5541,37 @@ def interactive_pricing_report(request):
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
 
-    base_qs = (
-        RegInteractivOcenka.objects.filter(
-            start_estimation__isnull=False,
-            start_estimation__gte=date_start,
-            start_estimation__lte=date_end,
-        )
-        .select_related(
-            'rlk',
-            'rlk__staff',
-            'rlk__unit',
-            'rlk__unit_dc',
-            'page_documents',
-            'page_documents__unit',
-            'staff',
-            'staff_eco_1',
-            'staff_eco_2',
-            'status',
-        )
+    base_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
     )
 
     if unit_id:
-        base_qs = base_qs.filter(
-            Q(page_documents__unit__id=unit_id)
-            | Q(rlk__unit__id=unit_id)
-            | Q(rlk__unit_dc__id=unit_id)
-        )
+        base_qs = base_qs.filter(unit_id=unit_id)
 
     if staff_id:
-        base_qs = base_qs.filter(rlk__staff__id=staff_id)
+        base_qs = base_qs.filter(staff_id=staff_id)
 
     if analyst_id:
-        base_qs = base_qs.filter(Q(staff_eco_1__id=analyst_id) | Q(staff_eco_2__id=analyst_id))
+        base_qs = base_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
 
     total_count = base_qs.count()
 
     aggregates = base_qs.aggregate(
-        total_price_before=Coalesce(Sum('page_soglasovanie__price_before_kd', output_field=FloatField()), 0.0),
-        total_price_after=Coalesce(Sum('page_soglasovanie__price_after_kd', output_field=FloatField()), 0.0),
-        total_price_auto_1=Coalesce(Sum('page_soglasovanie__price_auto_1', output_field=FloatField()), 0.0),
-        total_price_auto_2=Coalesce(Sum('page_soglasovanie__price_auto_2', output_field=FloatField()), 0.0),
-        total_price_auto_3=Coalesce(Sum('page_soglasovanie__price_auto_3', output_field=FloatField()), 0.0),
-        total_price_auto_bcp=Coalesce(Sum('page_soglasovanie__price_auto_bcp', output_field=FloatField()), 0.0),
-        total_price_bcp=Coalesce(Sum('page_soglasovanie__price_bcp', output_field=FloatField()), 0.0),
-        total_price_reception=Coalesce(Sum('page_soglasovanie__price_reception', output_field=FloatField()), 0.0),
-        total_price_sale=Coalesce(Sum('page_soglasovanie__price_sale', output_field=FloatField()), 0.0),
-        total_amount_podgotovka=Coalesce(Sum('page_soglasovanie__amount_podgotovka', output_field=FloatField()), 0.0),
-        total_amount_ss=Coalesce(Sum('page_soglasovanie__amount_ss', output_field=FloatField()), 0.0),
-        total_amount_mcu=Coalesce(Sum('page_soglasovanie__amount_mcu', output_field=FloatField()), 0.0),
-        total_amount_recovery=Coalesce(Sum('page_soglasovanie__amount_recovery', output_field=FloatField()), 0.0),
+        total_price_before=Coalesce(Sum('price_before_kd', output_field=FloatField()), 0.0),
+        total_price_after=Coalesce(Sum('price_after_kd', output_field=FloatField()), 0.0),
+        total_price_auto_1=Coalesce(Sum('price_auto_1', output_field=FloatField()), 0.0),
+        total_price_auto_2=Coalesce(Sum('price_auto_2', output_field=FloatField()), 0.0),
+        total_price_auto_3=Coalesce(Sum('price_auto_3', output_field=FloatField()), 0.0),
+        total_price_auto_bcp=Coalesce(Sum('price_auto_bcp', output_field=FloatField()), 0.0),
+        total_price_bcp=Coalesce(Sum('price_bcp', output_field=FloatField()), 0.0),
+        total_price_reception=Coalesce(Sum('price_reception', output_field=FloatField()), 0.0),
+        total_price_sale=Coalesce(Sum('price_sale', output_field=FloatField()), 0.0),
+        total_amount_podgotovka=Coalesce(Sum('cost_podgotovka', output_field=FloatField()), 0.0),
+        total_amount_ss=Coalesce(Sum('cost_ss', output_field=FloatField()), 0.0),
+        total_amount_mcu=Coalesce(Sum('cost_mcu', output_field=FloatField()), 0.0),
+        total_amount_recovery=Coalesce(Sum('cost_recovery', output_field=FloatField()), 0.0),
+        total_amount_cost=Coalesce(Sum('cost_total', output_field=FloatField()), 0.0),
     )
 
     def _avg(value):
@@ -5722,7 +5580,7 @@ def interactive_pricing_report(request):
     avg_auto_price = _avg(aggregates['total_price_auto_1'])
     avg_price_before = _avg(aggregates['total_price_before'])
     avg_price_after = _avg(aggregates['total_price_after'])
-    avg_cost = _avg(aggregates['total_amount_recovery'])
+    avg_cost = _avg(aggregates['total_amount_cost'])
 
     summary = {
         'total_evaluations': total_count,
@@ -5743,96 +5601,81 @@ def interactive_pricing_report(request):
         {'label': 'Восстановительный ремонт', 'value': aggregates['total_amount_recovery']},
     ]
 
-    total_cost_value = aggregates['total_amount_recovery']
+    total_cost_value = aggregates['total_amount_cost']
     for item in cost_breakdown:
         item['share'] = round((item['value'] / total_cost_value * 100), 1) if total_cost_value else 0
 
     per_page = 200
     page_number = _get_int(request.GET.get('page')) or 1
-    paginator = Paginator(base_qs, per_page)
+    paginator = Paginator(base_qs.order_by('-start_estimation'), per_page)
     page_obj = paginator.get_page(page_number)
     table_qs = page_obj.object_list
 
-    def _format_user_name(user):
-        if not user:
-            return ''
-        profile_name = getattr(getattr(user, 'profiles', None), 'eco_name', '')
-        full_name = user.get_full_name().strip()
-        return profile_name or full_name or user.username
-
-    def _format_staff_name(staff_obj):
-        if not staff_obj:
-            return ''
-        return staff_obj.name
-
     table_data = []
-    for estimation in table_qs:
-        rlk = estimation.rlk
-        unit_name = ''
-        if rlk:
-            if rlk.unit and rlk.unit.name:
-                unit_name = rlk.unit.name
-            elif rlk.unit_dc and rlk.unit_dc.name:
-                unit_name = rlk.unit_dc.name
-
-        soglas = estimation.page_soglasovanie
-
-        auto_candidates = []
-        if soglas:
-            auto_candidates = [
-                soglas.price_auto_1,
-                soglas.price_auto_2,
-                soglas.price_auto_3,
-            ]
-        else:
-            auto_candidates = [0, 0, 0]
-
-        auto_reference = next((price for price in auto_candidates if price not in (None, 0)), 0)
-
-        price_before = soglas.price_before_kd if soglas and soglas.price_before_kd else 0
-        price_after = soglas.price_after_kd if soglas and soglas.price_after_kd else 0
-        diff_before = price_before - auto_reference if auto_reference else 0
-        diff_after = price_after - auto_reference if auto_reference else 0
-
-        price_auto_bcp = soglas.price_auto_bcp if soglas and soglas.price_auto_bcp else 0
-        price_bcp = soglas.price_bcp if soglas and soglas.price_bcp else 0
-        price_reception = soglas.price_reception if soglas and soglas.price_reception else 0
-        price_sale = soglas.price_sale if soglas and soglas.price_sale else 0
-
+    for snapshot in table_qs:
         cost_fields = {
-            'podgotovka': soglas.amount_podgotovka if soglas and soglas.amount_podgotovka else 0,
-            'ss': soglas.amount_ss if soglas and soglas.amount_ss else 0,
-            'mcu': soglas.amount_mcu if soglas and soglas.amount_mcu else 0,
-            'recovery': soglas.amount_recovery if soglas and soglas.amount_recovery else 0,
+            'podgotovka': snapshot.cost_podgotovka or 0,
+            'ss': snapshot.cost_ss or 0,
+            'mcu': snapshot.cost_mcu or 0,
+            'recovery': snapshot.cost_recovery or 0,
         }
-        cost_total = round(cost_fields['recovery'] or (cost_fields['podgotovka'] + cost_fields['ss'] + cost_fields['mcu']), 1)
-
         table_data.append(
             {
-                'id': estimation.id,
-                'start_estimation': estimation.start_estimation,
-                'unit': unit_name,
-                'model': rlk.tradeInModel if rlk and rlk.tradeInModel else estimation.vin,
-                'staff': _format_staff_name(rlk.staff if rlk else None),
-                'analyst_before': _format_user_name(estimation.staff_eco_1),
-                'analyst_after': _format_user_name(estimation.staff_eco_2),
-                'price_before_kd': price_before,
-                'price_after_kd': price_after,
-                'price_auto_1': auto_candidates[0] or 0,
-                'price_auto_2': auto_candidates[1] or 0,
-                'price_auto_3': auto_candidates[2] or 0,
-                'price_auto_reference': auto_reference,
-                'price_auto_bcp': price_auto_bcp,
-                'price_bcp': price_bcp,
-                'price_reception': price_reception,
-                'price_sale': price_sale,
-                'diff_before': diff_before,
-                'diff_after': diff_after,
+                'id': snapshot.estimation_id,
+                'start_estimation': snapshot.start_estimation,
+                'unit': snapshot.unit_name or '—',
+                'model': snapshot.model_name or snapshot.vin,
+                'staff': snapshot.staff_name or '—',
+                'analyst_before': snapshot.analyst_before_name or '—',
+                'analyst_after': snapshot.analyst_after_name or '—',
+                'price_before_kd': snapshot.price_before_kd or 0,
+                'price_after_kd': snapshot.price_after_kd or 0,
+                'price_auto_1': snapshot.price_auto_1 or 0,
+                'price_auto_2': snapshot.price_auto_2 or 0,
+                'price_auto_3': snapshot.price_auto_3 or 0,
+                'price_auto_reference': snapshot.price_auto_selected or 0,
+                'price_auto_bcp': snapshot.price_auto_bcp or 0,
+                'price_bcp': snapshot.price_bcp or 0,
+                'price_reception': snapshot.price_reception or 0,
+                'price_sale': snapshot.price_sale or 0,
+                'diff_before': snapshot.diff_before or 0,
+                'diff_after': snapshot.diff_after or 0,
                 'costs': cost_fields,
-                'cost_total': cost_total,
-                'status': estimation.status.name if estimation.status else '',
+                'cost_total': snapshot.cost_total or 0,
+                'status': snapshot.status_name or '',
             }
         )
+
+    price_diffs = []
+    price_percent_diffs = []
+    higher_count = lower_count = equal_count = 0
+    for price_before, auto_price in base_qs.values_list('price_before_kd', 'price_auto_selected'):
+        if price_before and auto_price:
+            diff = float(price_before) - float(auto_price)
+            price_diffs.append(diff)
+            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+            price_percent_diffs.append(diff_percent)
+            if diff > 1000:
+                higher_count += 1
+            elif diff < -1000:
+                lower_count += 1
+            else:
+                equal_count += 1
+
+    task_aggregate = base_qs.aggregate(
+        total_tasks=Coalesce(Sum('tasks_total'), 0),
+        closed_tasks=Coalesce(Sum('tasks_closed'), 0),
+        evaluations_with_tasks=Count('estimation_id', filter=Q(tasks_total__gt=0)),
+    )
+    all_tasks_total = task_aggregate['total_tasks'] or 0
+    all_tasks_closed = task_aggregate['closed_tasks'] or 0
+    evaluations_with_tasks_count = task_aggregate['evaluations_with_tasks'] or 0
+    evaluations_with_tasks_percent = (
+        round((evaluations_with_tasks_count / total_count * 100), 1) if total_count else 0
+    )
+    avg_tasks_per_eval = (
+        round(all_tasks_total / total_count, 1) if total_count and all_tasks_total else 0
+    )
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
@@ -5860,6 +5703,23 @@ def interactive_pricing_report(request):
         'cost_breakdown': cost_breakdown,
         'table_data': table_data,
         'total_count': total_count,
+        'price_comparison': {
+            'avg_diff': round(sum(price_diffs) / len(price_diffs), 1) if price_diffs else 0,
+            'avg_diff_percent': round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0,
+            'higher_count': higher_count,
+            'lower_count': lower_count,
+            'equal_count': equal_count,
+            'total_compared': len(price_diffs),
+        },
+        'task_stats': {
+            'total_tasks': all_tasks_total,
+            'evaluations_with_tasks': evaluations_with_tasks_count,
+            'avg_tasks_per_eval': avg_tasks_per_eval,
+            'evaluations_with_tasks_percent': evaluations_with_tasks_percent,
+            'closed_tasks': all_tasks_closed,
+            'open_tasks': all_tasks_total - all_tasks_closed,
+            'closed_percent': round((all_tasks_closed / all_tasks_total * 100), 1) if all_tasks_total else 0,
+        },
         'page_obj': page_obj,
         'paginator': paginator,
         'base_query': base_query_string,

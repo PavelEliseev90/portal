@@ -2,7 +2,12 @@ from typing import Dict
 
 from django.db import transaction
 
-from analytics.models import EcoAnalystSnapshot, InteractivePricingSnapshot
+from analytics.models import (
+    AppraiserPerformanceSnapshot,
+    EcoAnalystSnapshot,
+    InteractivePricingSnapshot,
+    TradeInFunnelSnapshot,
+)
 
 
 def _filter_payload(model, payload: Dict):
@@ -41,6 +46,32 @@ def upsert_eco_analyst_snapshot(estimation_id: int, role: str, payload: Dict) ->
         snapshot, _ = EcoAnalystSnapshot.objects.update_or_create(
             estimation_id=estimation_id,
             role=role,
+            defaults=filtered,
+        )
+    return snapshot
+
+
+def upsert_appraiser_snapshot(estimation_id: int, payload: Dict) -> AppraiserPerformanceSnapshot:
+    filtered = _filter_payload(AppraiserPerformanceSnapshot, payload)
+    if not filtered:
+        raise ValueError('Передан пустой payload для AppraiserPerformanceSnapshot')
+
+    with transaction.atomic():
+        snapshot, _ = AppraiserPerformanceSnapshot.objects.update_or_create(
+            estimation_id=estimation_id,
+            defaults=filtered,
+        )
+    return snapshot
+
+
+def upsert_tradein_snapshot(rlk_id: int, payload: Dict) -> TradeInFunnelSnapshot:
+    filtered = _filter_payload(TradeInFunnelSnapshot, payload)
+    if not filtered:
+        raise ValueError('Передан пустой payload для TradeInFunnelSnapshot')
+
+    with transaction.atomic():
+        snapshot, _ = TradeInFunnelSnapshot.objects.update_or_create(
+            rlk_id=rlk_id,
             defaults=filtered,
         )
     return snapshot
