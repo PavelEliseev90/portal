@@ -7,7 +7,6 @@
 {% block title_navbar %} Характеристики - {{params.object.name}}  {% endblock %}
     
 {% block content %}
-<style>
   .portal-page {
     padding: 1.25rem 1.5rem 3rem;
     background: #f4f7fb;
@@ -208,9 +207,6 @@
     .complectation-item {
       font-size: 0.8rem;
     }
-  }
-</style>
-
 <div class="portal-page">
 	{% if request.user.is_authenticated %}
 		<div class="breadcrumb-nav">
