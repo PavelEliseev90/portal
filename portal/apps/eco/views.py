@@ -5122,7 +5122,7 @@ def staff_performance_analysis(request):
     from collections import defaultdict
     eval_chat_data = defaultdict(lambda: {'count': 0, 'first_date': None, 'last_date': None})
     
-    rlk_ids_list = list(set(eval_base_qs.select_related('rlk').filter(rlk__isnull=False).values_list('rlk__id', flat=True)))
+    rlk_ids_list = list(set(eval_base_qs.filter(rlk__isnull=False).values_list('rlk__id', flat=True)))
     
     if rlk_ids_list:
         chats = Chat.objects.filter(rlk_id__in=rlk_ids_list).prefetch_related('chatmessage_set')
