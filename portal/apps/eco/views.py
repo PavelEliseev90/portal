@@ -5404,17 +5404,36 @@ def staff_performance_analysis(request):
     total_rlk = rlk_base_qs.count()
     total_eval = eval_base_qs.count()
     total_diagnostics = eval_base_qs.filter(has_diagnostics=True).count()
-    total_accepted = eval_base_qs.filter(
-        status__name__icontains='ам принят'
-    ).count()
+    total_accepted = eval_base_qs.filter(accepted=True).count()
     
-    # Распределение по типам поступлений (общее, из оценок через page_documents)
+    # Распределение по типам поступлений через InteractivePricingSnapshot
     overall_type_distribution = {}
-    type_dist = eval_base_qs.values('page_documents__type_reception__name').annotate(
-        count=Count('id')
+    pricing_snapshot_for_types = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+        estimation_id__in=eval_base_qs.values_list('estimation_id', flat=True)
     )
+    if unit_id:
+        pricing_snapshot_for_types = pricing_snapshot_for_types.filter(unit_id=unit_id)
+    if staff_id:
+        pricing_snapshot_for_types = pricing_snapshot_for_types.filter(staff_id=staff_id)
+    
+    type_dist = pricing_snapshot_for_types.values('type_reception_id').annotate(
+        count=Count('estimation_id')
+    )
+    
+    # Получаем названия типов
+    type_ids = set(item['type_reception_id'] for item in type_dist if item['type_reception_id'])
+    type_names_map = {}
+    if type_ids:
+        from register.models import RefTypeReceptionCarsOrganization
+        type_names_map = dict(RefTypeReceptionCarsOrganization.objects.filter(
+            id__in=type_ids
+        ).values_list('id', 'name'))
+    
     for item in type_dist:
-        type_name = item['page_documents__type_reception__name'] or 'Не указано'
+        type_reception_id = item['type_reception_id']
+        type_name = type_names_map.get(type_reception_id, 'Не указано') if type_reception_id else 'Не указано'
         overall_type_distribution[type_name] = item['count']
 
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
