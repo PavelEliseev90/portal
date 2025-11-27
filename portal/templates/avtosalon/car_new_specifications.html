@@ -7,340 +7,357 @@
 {% block title_navbar %} Характеристики - {{params.object.name}}  {% endblock %}
     
 {% block content %}
+<style>
+  .portal-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .portal-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-<div style="padding-bottom: 5rem;">
+  .portal-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .portal-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .breadcrumb-nav {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 0;
+  }
+
+  .breadcrumb-nav a {
+    color: #6c7a92;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .breadcrumb-nav a:hover {
+    color: #002a5a;
+  }
+
+  .breadcrumb-nav .separator {
+    color: #8ea1ba;
+    margin: 0 0.5rem;
+  }
+
+  .spec-group-card {
+    background: #f8f9fc;
+    border-radius: 0.85rem;
+    padding: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+  }
+
+  .spec-group-card:hover {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.08);
+  }
+
+  .spec-group-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  .spec-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
+
+  .spec-item:last-child {
+    border-bottom: none;
+  }
+
+  .spec-item-label {
+    font-size: 0.85rem;
+    color: #6c7a92;
+    font-weight: 500;
+  }
+
+  .spec-item-value {
+    font-size: 0.85rem;
+    color: #002a5a;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .complectation-card {
+    background: #f8f9fc;
+    border-radius: 0.85rem;
+    padding: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .complectation-item {
+    font-size: 0.95rem;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+  }
+
+  .complectation-item:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 992px) {
+    .portal-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .portal-panel {
+      padding: 1rem;
+    }
+
+    .spec-group-card {
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .spec-group-label {
+      font-size: 0.7rem;
+    }
+
+    .spec-item-label,
+    .spec-item-value {
+      font-size: 0.8rem;
+    }
+
+    .complectation-card {
+      padding: 0.75rem;
+    }
+
+    .complectation-item {
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .portal-page {
+      padding: 0.5rem 0.75rem 1.5rem;
+    }
+
+    .portal-panel {
+      padding: 0.75rem;
+      border-radius: 1rem;
+    }
+
+    .breadcrumb-nav {
+      font-size: 0.75rem;
+      padding: 0.5rem 0;
+    }
+
+    .breadcrumb-nav .d-flex {
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .portal-header h2 {
+      font-size: 1.1rem;
+    }
+
+    .spec-group-card {
+      padding: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .spec-group-label {
+      font-size: 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .spec-item {
+      padding: 0.4rem 0;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .spec-item-label,
+    .spec-item-value {
+      font-size: 0.75rem;
+    }
+
+    .spec-item-value {
+      text-align: left;
+    }
+
+    .complectation-card {
+      padding: 0.6rem;
+    }
+
+    .complectation-item {
+      font-size: 0.8rem;
+    }
+  }
+</style>
+
+<div class="portal-page">
 	{% if request.user.is_authenticated %}
-	<div class="row g-1">
-		<div class="col-auto">
-		  <a href="/cars/" class="text-dark"> <span class="icon-mbri-minus"> </span> На главную </a>
-		</div>
-		<div class="col-auto">
-		  <a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.mark.name|lower|capfirst}} </a>
-		</div>
-		<div class="col-auto">
-			<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.nameHuman|capfirst}} </a>
-		</div>
-		<div class="col-auto">
-			<a href="/cars/{{params.object.slug}}" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.name}} </a>
-		</div>
-		
-	  </div>
-	  <hr>	
-	{% endif %}
-	
-	
-
-	<div class="row g-1 justify-content-center">
-	
-		<div class="col-sm-12 col-md-3 col-lg-3 content-head" >
-			<div class="gallery-container {% if request.user_agent.is_pc %}gallery-pc-slider{% else %}gallery-mobile-slider{% endif %}">
-				{% for files in params.object.get_files %}
-					{% if forloop.first %}
-						<div class="gallery-item" id='foto_1' data-index="1">
-							{% if files.file_mini %}
-								<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">								
-							{% else %}
-								<img src={{files}} alt="{{files}}" src1="{{files}}">
-							{% endif %}						
-						</div>
-					{% endif %}
-				{% endfor %}
+		<div class="breadcrumb-nav">
+			<div class="d-flex flex-wrap align-items-center">
+				<a href="/cars/">На главную</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/">{{params.object.modification_autoru.model.mark.name|lower|capfirst}}</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}">{{params.object.modification_autoru.model.nameHuman|capfirst}}</a>
+				<span class="separator">/</span>
+				<a href="/cars/{{params.object.slug}}">{{params.object.name}}</a>
 			</div>
-			{% if not request.user_agent.is_pc %}
-    			<!-- <button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">‹</button>
-    			<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">›</button> -->
-			{% endif %}
-			<br>
-			
-			<div class="card" style="background-color: rgba(255,255,255,0.5);">
-				
-				<div class="card-body text-dark">
-					<label class="fs-6 text-start text-secondary fw-normal">
-						<label class="fs-6 text-secondary"> <span class="icon-doc fs-5"></span> Комплектации </label>
-					</label>
-					<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
+		</div>
+	{% endif %}
+
+	<div class="row g-3">
+		<div class="col-sm-12 col-md-3 col-lg-3">
+			<div class="portal-panel">
+				{% with photos=params.object.get_files %}
+					{% if photos|length > 0 %}
+						{% with first_photo=photos|first %}
+							<img src="{% if first_photo.file_mini %}{{ first_photo.file.url }}{% else %}{{ first_photo }}{% endif %}" alt="{{params.object.name}}" style="width: 100%; border-radius: 0.85rem; margin-bottom: 1rem;">
+						{% endwith %}
+					{% endif %}
+				{% endwith %}
+
+				<div class="complectation-card">
+					<div class="spec-group-label"><span class="icon-doc"></span> Комплектации</div>
 					{% for complectation in params.complectations %}
-						<label class="fs-5 text-start fw-normal">
-							<span class="icon-mbri-minus text-dark  fs-5">
-								{{complectation}}   
-							</span>
-						</label><br>					
+						<div class="complectation-item">{{complectation}}</div>
 					{% endfor %}
 				</div>
 			</div>
-			
-
 		</div>
 
-		<div class="col-sm-12 col-md-9 col-lg-9 content-head" >
-				
-			<div class="card" style="background-color: rgba(255,255,255,0.5);">
-				
-				<div class="card-body text-dark">
-					<div class="row" >
-						
-						<div class="col-auto">
-							<img class="item-img-mini"  src="{{params.object.logo}}"> 
+		<div class="col-sm-12 col-md-9 col-lg-9">
+			<div class="portal-panel">
+				<div class="d-flex align-items-center mb-3">
+					<img class="item-img-mini" src="{{params.object.logo}}" style="height: 50px; width: auto; margin-right: 1rem;">
+					<div>
+						<h2 style="font-size: 1.4rem; font-weight: 600; color: #002a5a; margin: 0;">
+							{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
+						</h2>
+						<div class="mt-2">
+							<span class="text-muted small">Модификация:</span>
+							<span class="fw-bold">{{params.object.modification_autoru}}</span>
 						</div>
-						<div class="col-auto align-self-center" >
-							<label class="fs-3 text-start fw-normal">
-								{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
-							</label>
+						<div class="mt-1">
+							<span class="text-muted small">Годы выпуска:</span>
+							<span class="fw-bold">{{params.object.modification_autoru.ProductionStartYear}} - {% if params.object.modification_autoru.ProductionEndYear == 2050 %}н.в.{% else %}{{params.object.modification_autoru.ProductionEndYear}}{% endif %}</span>
 						</div>
-
 					</div>
-					<br>
-					<label class="fs-6 text-start text-secondary fw-normal">
-						Модификация
-					</label>
-					<br>
-					<label class="fs-5 text-start fw-normal">
-						<span class="icon-mbri-minus text-dark  fs-5"></span>{{params.object.modification_autoru}}
-					</label>
-					
-					<br>
-					<label class="fs-6 text-start text-secondary fw-normal">
-						Годы выпуска
-					</label>
-					<br>
-					<label class="fs-5 text-start fw-normal">
-						<span class="icon-mbri-minus text-dark  fs-5"></span>{{params.object.modification_autoru.ProductionStartYear}} - {% if params.object.modification_autoru.ProductionEndYear == 2050 %} н.в. {% else %}{{params.object.modification_autoru.ProductionEndYear}}{% endif %}
-					</label>
+				</div>
 
-					<hr>
-					
-					<div class="row g-1">
-						
-						<div class="col-12 col-sm-6">
-							
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-doc fs-5"></span> Общая информация </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-								
-									{% if specification_info.specification.group == "Общая информация" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>
+				<hr class="my-4">
 
-							<br>
-							
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-drag-n-drop fs-5"></span> Размеры </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-								
-									{% if specification_info.specification.group == "Размеры" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>	
-
-							<br>
-							
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-truck fs-5"></span> Объём и масса </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-								
-									{% if specification_info.specification.group == "Объём и масса" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>	
-
-							<br>
-
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-transmission1 fs-5"></span> Трансмиссия </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-									{% if specification_info.specification.group == "Трансмиссия" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>	
-
-							<br>
-
-							
-
+				<div class="row g-3">
+					<div class="col-12 col-sm-6">
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-doc"></span> Общая информация</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Общая информация" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
 						</div>
 
-
-						
-						<div class="col-12 col-sm-6">						
-							
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-note fs-5"></span> Эксплуатационные показатели </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-								
-									{% if specification_info.specification.group == "Эксплуатационные показатели" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>
-							<br>
-
-
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-cd fs-5"></span> Подвеска и тормоза </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-								
-									{% if specification_info.specification.group == "Подвеска и тормоза" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>
-							<br>
-
-							
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-engine fs-5"></span> Двигатель </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								{% for specification_info in params.specifications %}
-								
-									{% if specification_info.specification.group == "Двигатель" %}
-										<label class="fs-6 text-secondary"> {{specification_info.specification.name}}</label>
-										
-										<span class="icon-mbri-minus text-dark  fs-5">
-											{{specification_info.value}}    
-										</span>
-									{% endif %}
-								{% endfor %}								
-							</div>
-
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-mbri-drag-n-drop"></span> Размеры</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Размеры" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
 						</div>
 
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-truck"></span> Объём и масса</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Объём и масса" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
+						</div>
+
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-mbri-transmission1"></span> Трансмиссия</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Трансмиссия" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
+						</div>
 					</div>
-				
-				</div>	
+
+					<div class="col-12 col-sm-6">
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-note"></span> Эксплуатационные показатели</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Эксплуатационные показатели" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
+						</div>
+
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-cd"></span> Подвеска и тормоза</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Подвеска и тормоза" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
+						</div>
+
+						<div class="spec-group-card">
+							<div class="spec-group-label"><span class="icon-mbri-engine"></span> Двигатель</div>
+							{% for specification_info in params.specifications %}
+								{% if specification_info.specification.group == "Двигатель" %}
+									<div class="spec-item">
+										<span class="spec-item-label">{{specification_info.specification.name}}</span>
+										<span class="spec-item-value">{{specification_info.value}}</span>
+									</div>
+								{% endif %}
+							{% endfor %}
+						</div>
+					</div>
+				</div>
 			</div>
-				
-
 		</div>
-			
 	</div>
-
 </div>
-
-
-</div>
-
-<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-    <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasRightLabel">Чат</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
-</div>
-
-<div class="offcanvas-body">
-    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
-        <div class="container">
-        
-            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
-                
-                {% if params.messages|length > 0 %}
-                    
-                    {% for message in params.messages %}
-                    
-                        <div class="item-chat-message{% if message.user == params.user %}-owner text-end{% endif %} col-12">
-                            <div class="item-chat-body{% if message.user == params.user %}-owner text-end{% endif %} " >
-                                <div class="item-content-chat">
-                                    <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
-                                        {{message.content}}
-                                    </h6>
-                                </div>
-
-                                <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} ">{{message.user.last_name}} {{message.user.first_name}} / {{message.date}}</p>
-                                
-                            </div>
-                        </div>
-                    {% endfor %}
-
-                {% else %}
-
-                    <div class="item features-image col-12" id="no-message">
-                        <div class="item-wrapper-chat">
-                            <div class="item-content-chat">
-                                <h6 class="item-title mbr-fonts-style display-9 text-count">
-                                    
-                                </h6>
-                                <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
-                                    В чате пока нет сообщений. Напишите мы обязательно ответим.
-                                </h6>
-                            </div>
-                            
-                            
-                        </div>
-                    </div>
-                {% endif %}
-               
-            </div>
-        </div>
-    </section>
-
-    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  style="position:absolute;
-    bottom:0.25rem; padding: 0rem; width: -webkit-fill-available; margin-left: 0.25rem; margin-right: 0.25rem;">
-       
-       <form id="post-form">
-        
-        {% csrf_token %}
-                
-            <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
-            <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
-               
-            <div class="input-group  form-control bg-primary" style="padding: 0rem;">
-                <input type="text" class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off">
-                <button class="btn btn-dark text-secondary" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
-                
-            </div>
-   
-        </form>
-
-    </section>
-
-
-	<script>
-
-		$('#button_map').click(
-			function(){
-				$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=2', function (json){});
-			
-				$('#exampleModal').show();
-			})
-		
-		$('#phone').click(
-		function(){
-			$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=3', function (json){});
-		
-		})
-	</script>
 {% endblock %}
