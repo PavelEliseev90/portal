@@ -60,6 +60,7 @@ server_im      = 'http://k01srv1c10/ralfa01/hs/mb/'
 time_out_im    = 25
 
 
+
 def send_web_socket_message(group, chat, user, text):
     
     message_json = {
