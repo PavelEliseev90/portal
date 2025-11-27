@@ -1,350 +1,85 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-
 {% block title %} - Настройки - Матрица расчета БЦП {% endblock %}
 
 {% block title_navbar %} - Настройки - Матрица расчета БЦП {% endblock %}
 
 {% block content %}
+<style>
+  .matrix-page {
+    background: #f4f7fb;
+    min-height: 100vh;
+    padding: 1.25rem 1.5rem 3rem;
+  }
 
+  .matrix-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #002a5a;
+  }
 
-    
-    <a href="/settings/" class="fs-5">Назад </a> - <label class="fs-5">Матрица расчета БЦП</label>
-    
-    <hr style="width: 75%;">
+  .matrix-header p {
+    color: #6c7a92;
+    margin-bottom: 1.25rem;
+  }
 
-    <form method="post">
-    
-    
+  .matrix-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+  }
+
+  .matrix-panel h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.2rem;
+  }
+
+  .matrix-panel small {
+    color: #6c7a92;
+  }
+
+  .matrix-actions {
+    text-align: right;
+  }
+
+  @media (max-width: 768px) {
+    .matrix-page {
+      padding: 1rem;
+    }
+  }
+</style>
+
+<section class="matrix-page">
+  <div class="matrix-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Матрица расчёта БЦП</h2>
+      <p>Настройте базовые наценки и корректировки пробега для каждого ценового диапазона.</p>
+    </div>
+    <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+  </div>
+
+  <form method="post" class="d-flex flex-column gap-3">
     {% csrf_token %}
 
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">200</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_200" name="charge_bcp_200" placeholder="" value="{{params.settings.charge_bcp_200}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_200" name="min_km_200" placeholder="" value="{{params.settings.min_km_200}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_200" name="charge_km_stage_1_200" placeholder="" value="{{params.settings.charge_km_stage_1_200}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_200" name="charge_km_stage_2_200" placeholder="" value="{{params.settings.charge_km_stage_2_200}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_200" name="charge_km_stage_3_200" placeholder="" value="{{params.settings.charge_km_stage_3_200}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
+    {% include 'kors/settings_matrix_block.html' with label='200' prefix='200' charge=params.settings.charge_bcp_200 min=params.settings.min_km_200 stage1=params.settings.charge_km_stage_1_200 stage2=params.settings.charge_km_stage_2_200 stage3=params.settings.charge_km_stage_3_200 %}
+    {% include 'kors/settings_matrix_block.html' with label='400' prefix='400' charge=params.settings.charge_bcp_400 min=params.settings.min_km_400 stage1=params.settings.charge_km_stage_1_400 stage2=params.settings.charge_km_stage_2_400 stage3=params.settings.charge_km_stage_3_400 %}
+    {% include 'kors/settings_matrix_block.html' with label='700' prefix='700' charge=params.settings.charge_bcp_700 min=params.settings.min_km_700 stage1=params.settings.charge_km_stage_1_700 stage2=params.settings.charge_km_stage_2_700 stage3=params.settings.charge_km_stage_3_700 %}
+    {% include 'kors/settings_matrix_block.html' with label='1 200' prefix='1200' charge=params.settings.charge_bcp_1200 min=params.settings.min_km_1200 stage1=params.settings.charge_km_stage_1_1200 stage2=params.settings.charge_km_stage_2_1200 stage3=params.settings.charge_km_stage_3_1200 %}
+    {% include 'kors/settings_matrix_block.html' with label='2 000' prefix='2000' charge=params.settings.charge_bcp_2000 min=params.settings.min_km_2000 stage1=params.settings.charge_km_stage_1_2000 stage2=params.settings.charge_km_stage_2_2000 stage3=params.settings.charge_km_stage_3_2000 %}
+    {% include 'kors/settings_matrix_block.html' with label='3 000' prefix='3000' charge=params.settings.charge_bcp_3000 min=params.settings.min_km_3000 stage1=params.settings.charge_km_stage_1_3000 stage2=params.settings.charge_km_stage_2_3000 stage3=params.settings.charge_km_stage_3_3000 %}
+    {% include 'kors/settings_matrix_block.html' with label='5 000' prefix='5000' charge=params.settings.charge_bcp_5000 min=params.settings.min_km_5000 stage1=params.settings.charge_km_stage_1_5000 stage2=params.settings.charge_km_stage_2_5000 stage3=params.settings.charge_km_stage_3_5000 %}
+    {% include 'kors/settings_matrix_block.html' with label='5 000+' prefix='5001' charge=params.settings.charge_bcp_5001 min=params.settings.min_km_5001 stage1=params.settings.charge_km_stage_1_5001 stage2=params.settings.charge_km_stage_2_5001 stage3=params.settings.charge_km_stage_3_5001 %}
+
+    <div class="matrix-panel matrix-actions">
+      <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
     </div>
-
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">400</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_400" name="charge_bcp_400" placeholder="" value="{{params.settings.charge_bcp_400}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_400" name="min_km_400" placeholder="" value="{{params.settings.min_km_400}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_400" name="charge_km_stage_1_400" placeholder="" value="{{params.settings.charge_km_stage_1_400}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_400" name="charge_km_stage_2_400" placeholder="" value="{{params.settings.charge_km_stage_2_400}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_400" name="charge_km_stage_3_400" placeholder="" value="{{params.settings.charge_km_stage_3_400}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">700</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_700" name="charge_bcp_700" placeholder="" value="{{params.settings.charge_bcp_700}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_700" name="min_km_700" placeholder="" value="{{params.settings.min_km_700}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_700" name="charge_km_stage_1_700" placeholder="" value="{{params.settings.charge_km_stage_1_700}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_700" name="charge_km_stage_2_700" placeholder="" value="{{params.settings.charge_km_stage_2_700}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_700" name="charge_km_stage_3_700" placeholder="" value="{{params.settings.charge_km_stage_3_700}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">1 200</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_1200" name="charge_bcp_1200" placeholder="" value="{{params.settings.charge_bcp_1200}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_1200" name="min_km_1200" placeholder="" value="{{params.settings.min_km_1200}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_1200" name="charge_km_stage_1_1200" placeholder="" value="{{params.settings.charge_km_stage_1_1200}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_1200" name="charge_km_stage_2_1200" placeholder="" value="{{params.settings.charge_km_stage_2_1200}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_1200" name="charge_km_stage_3_1200" placeholder="" value="{{params.settings.charge_km_stage_3_1200}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">2 000</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_2000" name="charge_bcp_2000" placeholder="" value="{{params.settings.charge_bcp_2000}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_2000" name="min_km_2000" placeholder="" value="{{params.settings.min_km_2000}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_2000" name="charge_km_stage_1_2000" placeholder="" value="{{params.settings.charge_km_stage_1_2000}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_2000" name="charge_km_stage_2_2000" placeholder="" value="{{params.settings.charge_km_stage_2_2000}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_2000" name="charge_km_stage_3_2000" placeholder="" value="{{params.settings.charge_km_stage_3_2000}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">3 000</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_3000" name="charge_bcp_3000" placeholder="" value="{{params.settings.charge_bcp_3000}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_3000" name="min_km_3000" placeholder="" value="{{params.settings.min_km_3000}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_3000" name="charge_km_stage_1_3000" placeholder="" value="{{params.settings.charge_km_stage_1_3000}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_3000" name="charge_km_stage_2_3000" placeholder="" value="{{params.settings.charge_km_stage_2_3000}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_3000" name="charge_km_stage_3_3000" placeholder="" value="{{params.settings.charge_km_stage_3_3000}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">5 000</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_5000" name="charge_bcp_5000" placeholder="" value="{{params.settings.charge_bcp_5000}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_5000" name="min_km_5000" placeholder="" value="{{params.settings.min_km_5000}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_5000" name="charge_km_stage_1_5000" placeholder="" value="{{params.settings.charge_km_stage_1_5000}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_5000" name="charge_km_stage_2_5000" placeholder="" value="{{params.settings.charge_km_stage_2_5000}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_5000" name="charge_km_stage_3_5000" placeholder="" value="{{params.settings.charge_km_stage_3_5000}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <br>
-    <div class="card bg-white bg-opacity-75 bg-gradient">
-      <div class="card-body">
-        <label class="fs-5">5 000 +</label>
-       
-        <div class="row g-1">
-          <div class="col-12 col-sm-4">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_bcp_5001" name="charge_bcp_5001" placeholder="" value="{{params.settings.charge_bcp_5001}}" autocomplete="off">
-              <label for="floatingInput">Базовая наценка для определения БЦП</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="min_km_5001" name="min_km_5001" placeholder="" value="{{params.settings.min_km_5001}}" autocomplete="off">
-              <label for="floatingInput">МКМ</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_1_5001" name="charge_km_stage_1_5001" placeholder="" value="{{params.settings.charge_km_stage_1_5001}}" autocomplete="off">
-              <label for="floatingInput">Умеренное снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_2_5001" name="charge_km_stage_2_5001" placeholder="" value="{{params.settings.charge_km_stage_2_5001}}" autocomplete="off">
-              <label for="floatingInput">Среднее снижение</label>
-            </div>
-          </div>
-          <div class="col-12 col-sm-2">
-            <div class="form-floating mb-3"> 
-              <input type="number" class="form-control" step="0" id="charge_km_stage_3_5001" name="charge_km_stage_3_5001" placeholder="" value="{{params.settings.charge_km_stage_3_5001}}" autocomplete="off">
-              <label for="floatingInput">Значительное снижение</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <hr style="width: 75%;">
-
-    <button type="submit" class="btn btn-outline-success">Сохранить</button>
-
-    </form>
-    
-    <br>
-    <br>
-
+  </form>
+</section>
 {% endblock %}
+
