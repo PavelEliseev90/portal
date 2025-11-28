@@ -13,31 +13,29 @@
 
 {% include 'chats/chat.html' %}
 
-  
-  <div class="loads bg-secondary bg-gradient bg-opacity-75 d-none" id="loads" >
-    
-    <div class="loads_parr ">
-      <div class="modal-content">
+<div class="loads bg-secondary bg-gradient bg-opacity-75 d-none" id="loads">
+  <div class="loads_parr">
+    <div class="modal-content">
       <div class="modal-body">
         <div class="container-fluid bg-white align-items-center align-self-center" style="border-radius: 0.5rem;">          
           <div class="row justify-content-center">
-            <div class="spinner-border m-5 " role="status">
+            <div class="spinner-border m-5" role="status">
               <span class="visually-hidden">Загрузка...</span> 
             </div> 
-            <span class="fw-bold text-center" id="sss" >Загрузка данных...</span>             
+            <span class="fw-bold text-center" id="sss">Загрузка данных...</span>             
           </div>      
           <br>  
         </div>
       </div>
-      </div>
     </div>
-
   </div>
+</div>
 
+<div class="portal-page lo-v3-page">
   <div class="row g-1">
 
     <div class="col-2 text-center hidemobile">
-      <div class="sticky-top bg-white bg-opacity-10" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
+      <div class="sticky-top portal-sidebar" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
 
         <div class="col-sm">
           
@@ -307,13 +305,13 @@
 
           <div class="hidemobile">
             <h5>Главная</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
-          <div class="card">
-            <div class="card-body">
-              <h6><span class="icon-mbri-info"></span> Рабочий лист</h6>
-              <hr style="width: 75%;">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-info"></span> Рабочий лист
+            </h6>
 
               <div class="row g-1">
 
@@ -391,19 +389,18 @@
                 
               </div>
               
-              <hr style="width: 75%;">
-
-              <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk"> <span class="icon-mbri-file"></span> Подробнее</button>	
-
-            </div>
+            <hr class="my-3">
+            <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk">
+              <span class="icon-mbri-file"></span> Подробнее
+            </button>
           </div>
 
           <br>
           
-          <div class="card">
-            <div class="card-body">
-              <h6><span class="icon-mbri-info"></span> Основные даные оценки</h6>
-              <hr style="width: 75%;">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-info"></span> Основные данные оценки
+            </h6>
 
               <div class="row g-1">
                   
@@ -617,11 +614,10 @@
 
           <br>
 
-          <div class="card">
-            <div class="card-body">
-              
-              <h6><span class="icon-mbri-protect"></span> Обратить внимание</h6>
-              <hr style="width: 75%;">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-protect"></span> Обратить внимание
+            </h6>
 
               <div class="table-responsive table-responsive-sm">
                 <table class="table-sm table-fit">
@@ -716,7 +712,7 @@
       
           <div class="hidemobile">
             <h5>Документы</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
           
           {% if params.tabindex == 1 %}
@@ -725,10 +721,10 @@
               <div class="row g-1">
 
                 <div class="col-xl">
-                  <div class="card">
-                    <div class="card-body">
-                      <h6><span class="icon-mbri-user"></span> Клиент</h6>
-                      <hr style="width: 75%;">
+                  <div class="portal-panel">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                      <span class="icon-mbri-user"></span> Клиент
+                    </h6>
 
                       <div class="row">
 
@@ -750,16 +746,14 @@
 
                       </div>
 
-                    </div>
                   </div>
                 </div>
 
                 <div class="col-xl-7">
-                  <div class="card">
-                    <div class="card-body">
-                      
-                      <h6><span class="icon-mbri-user"></span> Автомобиль</h6>
-                      <hr style="width: 75%;">
+                  <div class="portal-panel">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                      <span class="icon-mbri-user"></span> Автомобиль
+                    </h6>
                     
                       <div class="row g-1">
 
@@ -830,10 +824,10 @@
 
               <br>
 
-              <div class="card">
-                <div class="card-body">
-                  <h6><span class="icon-mbri-credit-card"></span> СТС</h6>
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-credit-card"></span> СТС
+                </h6>
 
                   <div class="row g-1">
 
@@ -917,10 +911,10 @@
 
               <br>
 
-              <div class="card">
-                <div class="card-body">
-                  <h6><span class="icon-mbri-credit-card"></span> ПТС</h6>
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-credit-card"></span> ПТС
+                </h6>
 
                   <div class="row">
 
@@ -1012,10 +1006,8 @@
               
             {% else %}
               
-              <div class="card text-danger"> 
-                <div class="card-body">
-                  Нет данных по документам
-                </div>
+              <div class="portal-panel text-danger">
+                <p class="mb-0">Нет данных по документам</p>
               </div>
 
             {% endif %}
@@ -1030,19 +1022,17 @@
           
           <div class="hidemobile">
             <h5>Салон</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
           <div class="row g-1 ">
 
             <div class="col-sm">
 
-              <div class="card">
-                <div class="card-body">
-                
-                  <h6><span class="icon-mbri-info"></span> Данные по пробегу </h6>
-
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-info"></span> Данные по пробегу
+                </h6>
                   
 
                   <div class="col-sm-auto"> 
@@ -1089,7 +1079,7 @@
 
                   <h6><span class="icon-mbri-info"></span> Ошибки на приборной панели</h6>
 
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
                   
                   {% if params.estimation.page_salon.dashboard_error.all|length > 0 %}
                   
@@ -1155,7 +1145,7 @@
                 <div class="card-body">
                   <h6><span class="icon-mbri-image-slider"></span> Фотографии</h6>
 
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
 
                   {% if params.estimation.fotos_salon|length %}
 
@@ -1229,11 +1219,10 @@
 
             <div class="col-sm">
 
-              <div class="card">
-                <div class="card-body">
-
-                  <h6><span class="icon-mbri-info"></span> Замечания по салону автомобиля</h6>
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-info"></span> Замечания по салону автомобиля
+                </h6>
                   
                   <div class="row">
 
@@ -1361,7 +1350,7 @@
                 <div class="card-body">
 
                   <h6><span class="icon-mbri-info"></span> Работоспособность элементов</h6>
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
               
                   <div class="">
                     <div class="card-bodys">
@@ -1482,8 +1471,6 @@
                       </div>
                     </div>
                   </div>
-
-                </div>
               </div>
 
               
@@ -1503,16 +1490,15 @@
           
           <div class="hidemobile">
             <h5>Внешний осмотр</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
           <div class="row g-1">
             
-            <div class="card">
-              <div class="card-body">
-                
-                <h6><span class="icon-mbri-credit-card"></span> Общие данные осмотра</h6>
-                <hr style="width: 75%;">
+            <div class="portal-panel">
+              <h6 class="d-flex align-items-center gap-2 mb-3">
+                <span class="icon-mbri-credit-card"></span> Общие данные осмотра
+              </h6>
 
                 <div class="row g-1">
 
@@ -1672,7 +1658,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-image-slider"></span> Осмотр ЛКП и повреждений автомобиля</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1">
             
@@ -1727,7 +1713,7 @@
             
                 </div>
                   
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1">
             
@@ -1783,7 +1769,7 @@
             
                 </div>
                   
-                <hr style="width: 75%;">
+                <hr class="my-3">
       
                 <div class="row g-1">
                   
@@ -1841,7 +1827,7 @@
             
                 </div>
                 
-                <hr style="width: 75%;">
+                <hr class="my-3">
       
                 <div class="row g-1">
                   
@@ -1896,7 +1882,7 @@
                   </div>              
                 </div>
             
-                <hr style="width: 75%;">
+                <hr class="my-3">
       
                 <div class="row g-1">
                   
@@ -1970,15 +1956,11 @@
             
             <div class="hidemobile">
               <h5>Комплектность</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
-            <div class="card">
-              <div class="card-body">
-
-                <div class="">
-                  <div class="card-body">
-    
+            <div class="portal-panel">
+              <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Прикуриватель </label>
@@ -1999,8 +1981,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Огнетушитель </label>
@@ -2021,8 +2002,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Коврики </label>
@@ -2043,8 +2023,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Трос </label>
@@ -2065,8 +2044,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Домкрат </label>
@@ -2086,8 +2064,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Знак аварийной остановки</label>
@@ -2107,8 +2084,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Баллоный ключ </label>
@@ -2128,8 +2104,7 @@
                 <hr>
     
                 <div class=" ">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Запасное колесо / докатка </label>
@@ -2149,8 +2124,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Аптечка </label>
@@ -2182,14 +2156,14 @@
             
             <div class="hidemobile">
               <h5>Колеса</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-image-slider"></span> На автомобиле</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1">
                   
@@ -2412,7 +2386,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-image-slider"></span> Второй комплект</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <h6> Есть второй комплект
                   <div class="form-check">
@@ -2652,14 +2626,14 @@
             
             <div class="hidemobile">
               <h5>Заключение специалиста отдела оценки на основании осмотра автомобиля, проведенной тестовой поездки, результата КД. Обязательно для заполнения.  </h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card border-dark">
               <div class="card-body">
 
                 <h6><span class="icon-mbri-image-slider"></span> Тест - драйв не производился</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row align-items-center align-self-center">
                   <div class="col-sm-auto">
@@ -2686,7 +2660,7 @@
               <div class="card-body">
 
                 <h6><span class="icon-mbri-credit-card"></span> Двигатель</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row">
 
@@ -2726,7 +2700,7 @@
               <div class="card-body">
 
                 <h6><span class="icon-mbri-credit-card"></span> Система выпуска ОГ</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row">
                   
@@ -2766,7 +2740,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-credit-card"></span> Коробка передач</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row">
                   
@@ -2808,7 +2782,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-credit-card"></span> Подвеска</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
                   
                 <div class="row align-items-center align-self-center">
                   
@@ -2855,13 +2829,13 @@
             
             <div class="hidemobile">
               <h5>Проверки по автомобилю</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
                 <h6><span class="icon-mbri-info"></span> ГИБДД</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
                 <div class="row g-1">
                   
                   <div class="col-sm-6">
@@ -2935,7 +2909,7 @@
               <div class="card-body">
 
                 <h6><span class="icon-mbri-info"></span> Реестр залогов</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
                 
                 <div class="row g-1">
                   
@@ -3079,7 +3053,7 @@
             
               <div class="hidemobile">
                 <h5>История оценок - {{params.tab_estimations_count}}</h5>
-                <hr style="width: 75%;">
+                <hr class="my-3">
               </div>
 
               {% if params.estimations_info %}
@@ -3154,7 +3128,7 @@
           
                             </div>
           
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% if params.estimation.page_remote == None or params.estimation.page_remote.end_estimation != None %}
                               {{doc.page_soglasovanie.comment}}
@@ -3162,7 +3136,7 @@
                               {{doc.page_remote.comment}}
                             {% endif %}
                             
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
 
                           </div>
 
@@ -3252,11 +3226,11 @@
           
                             </div>
           
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
           
                             {{doc.description_podgotovka|default_if_none:"-"}}
           
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
           
                             {{doc.description_op|default_if_none:"-"}}
                           </div>
@@ -3291,7 +3265,7 @@
             
             <div class="hidemobile">
               <h5>История ремонтов - {{params.tab_repairs_count}}</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
             
             {% if params.repairs_info %}
@@ -3321,11 +3295,11 @@
                       </div>
                     </div>
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     {{doc.customerWords}}
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     Рекомендации -  {{doc.recomendationsZN_count}} <br>
                     
@@ -3337,7 +3311,7 @@
                       </div><br>
                     {% endfor %}
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row">
                       <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
@@ -3501,7 +3475,7 @@
             
             <div class="hidemobile">
               <h5>Автотека</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
             
 
@@ -3521,7 +3495,7 @@
                           <div class="card-body">
                             
                             <h6><span class="icon-mbri-info"></span> Данные автотека - {{params.json_autoteka.head.createdAt |fromunix }}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                               <label class="fs-6">{{params.json_autoteka.head.brand|title}} {{params.json_autoteka.head.model|title}} {{params.json_autoteka.head.year}} г.в.</label>
                               
@@ -3580,7 +3554,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Ссылки для просмотра на сайте Автотека</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
         
                             <div class="row g-1">
                         
@@ -3606,7 +3580,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> ДТП - {{params.json_autoteka.accidents.crashesHistory|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for accidents in params.json_autoteka.accidents.crashesHistory %}
 
@@ -3640,7 +3614,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Такси - {{params.json_autoteka.taxiData.events|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for event in params.json_autoteka.taxiData.events %}
                             
@@ -3669,7 +3643,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Каршеринг - {{params.json_autoteka.carsharingData.events|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for event in params.json_autoteka.carsharingData.events %}
                             
@@ -3698,7 +3672,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Записи в истории эксплуатации - {{params.json_autoteka.eventsOthersHistory|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for accidents in params.json_autoteka.eventsOthersHistory %}
 
@@ -3739,7 +3713,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Оценка автомобиля от Авито</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                               <div class="row g-1">
                                 <div class="col-sm">
@@ -3761,7 +3735,7 @@
                                 </div>
                               </div>
                               
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                               <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                               
                               <div class="row g-1">
@@ -3779,7 +3753,7 @@
                                 </div>
                               </div>
 
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                               <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                               
                               <div class="row g-1">
@@ -3806,7 +3780,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Объявления - {{params.json_autoteka.avitoItems|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
 
                             {% for avitoItem in params.json_autoteka.avitoItems %}
 
@@ -3874,7 +3848,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Расчет ремонта - {{params.json_autoteka.accidents.crashesHistory|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for events in params.json_autoteka.eventsOthersHistory %}
                               {% if events.type == 'repairCalculation' %}
@@ -3908,7 +3882,7 @@
                     <div class="card">
                       <div class="card-body">
                         <h6><span class="icon-mbri-info"></span> Данные Автотека</h6>
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
     
                         <div class="row g-1">
                     
@@ -3945,7 +3919,7 @@
           
           <div class="hidemobile">
             <h5>Согласование</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
             <div class="my_pages_info_doc_eco">
@@ -3972,7 +3946,7 @@
                     <div class="card-body">
                       
                       <h6><span class="icon-mbri-protect"></span> Обратить внимание</h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
         
                       {% if params.estimation.page_vnesh.check_vin_int == 0 %}
                               
@@ -4151,11 +4125,11 @@
                         
                           <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
                         
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
                         {% else %}
                           <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
                         {% endif %}
     
                       {% endif %}
@@ -4169,7 +4143,7 @@
                     <div class="card">
                       <div class="card-body">
                         <h6><span class="icon-mbri-info"></span> Данные оценщика</h6>
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
     
                         <div class="row g-1">
                     
@@ -4193,7 +4167,7 @@
             
                             
                               <h6><span class="icon-mbri-delivery"></span> Приобретаемый автомобиль</h6>
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
     
                               <div class="form-floating">
                                 <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_soglasovanie.car_sale_info}}" readonly>
@@ -4224,7 +4198,7 @@
                     <div class="card">
                       <div class="card-body">
                         <h6><span class="icon-mbri-info"></span> Данные оценщика (Дистанционная оценка)</h6>
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
     
                         <div class="row g-1">
                     
@@ -4243,7 +4217,7 @@
             
                             
                               <h6><span class="icon-mbri-delivery"></span> Приобретаемый автомобиль</h6>
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
     
                               <div class="form-floating">
                                 <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_remote.car_sale_info}}" readonly>
@@ -4281,7 +4255,7 @@
                           <span class="icon-mbri-edit2" ></span> 
                         </button>
                       </h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
                     
                       {% for access_user in params.estimation.access_user.all %}
                         <button style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
@@ -4415,7 +4389,7 @@
                           <span class="icon-mbri-plus" ></span> 
                         </button>
                       </h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
     
                       <div class="table-responsive-sm">
                         <table class="table table-sm table-striped table-hover">
@@ -4475,7 +4449,7 @@
                                   <label for="floatingInput">Задание</label>
                                 </div>
                                 
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
     
                                 <div class="form-floating">
                                   <input class="form-control form-control-sm" type="text" id="" name="" value="{{task.date_close|default_if_none:"-"}}" readonly>
@@ -4495,7 +4469,7 @@
     
                                   <input type="file" class="form-control" id="images_task" name="images_task" accept="image/*;capture=camera" multiple/>
                           
-                                  <hr style="width: 75%;">
+                                  <hr class="my-3">
     
                                   <div class="row g-3">
                                     
@@ -4511,7 +4485,7 @@
     
                                 {% else %}
     
-                                  <hr style="width: 75%;">
+                                  <hr class="my-3">
     
                                   {% if task.files_all|length %}
                       
@@ -4558,7 +4532,7 @@
                                   <label for="floatingInput">Задание</label>
                                 </div>
               
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
                                 
                                 <button type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Сохранить</button>
                                 
@@ -4586,7 +4560,7 @@
                         <div class="card-body">
                           <h6><span class="icon-mbri-bulleted-list"></span> Заключение специалиста отдела оценки на основании осмотра автомобиля, проведенной тестовой поездки, результата КД.</h6>
                           <h6 class="text-danger">Обязательно для заполнения.</h6>
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
           
                             <div class="card bg-opacity-50 bg-light">
                       
@@ -4603,7 +4577,7 @@
                                   </div>
                                   
                                 </div>
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
             
                                   <div class="row align-items-center align-self-center">
                                   
@@ -4732,7 +4706,7 @@
     
                             <br>
                             <h6><span class="icon-mbri-bulleted-list"></span> Диагностика</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                             <div class="row g-1">
                               
@@ -4741,7 +4715,7 @@
                         
                                   <div class="card-body">
                                     <h6><span class="icon-mbri-info"></span> Двигатель</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">
                                                                 
@@ -4782,7 +4756,7 @@
                         
                                   <div class="card-body">
                                     <h6><span class="icon-mbri-info"></span> Система выпуска ОГ</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">
                                               
@@ -4830,7 +4804,7 @@
                                   <div class="card-body">
                                     
                                     <h6><span class="icon-mbri-info"></span> Подвеска</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row align-items-center align-self-center">
                                     
@@ -4873,7 +4847,7 @@
                                   <div class="card-body">
                                     
                                     <h6><span class="icon-mbri-info"></span> Коробка передач</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">                         
                                     
@@ -4921,7 +4895,7 @@
                                   <div class="card-body">
                                     
                                     <h6><span class="icon-mbri-info"></span> Подушки безопасности</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">                         
                                     
@@ -5070,7 +5044,7 @@
                             <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                             <br>
                             {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                               {% if params.list_work_podgotovka|length > 0 %}
     
@@ -5127,7 +5101,7 @@
                             <br>
                             {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                             
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                               {% if params.list_work_ss|length > 0 %}
     
@@ -5185,7 +5159,7 @@
                             <br>
                             {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                             
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                               {% if params.list_work_mcu|length > 0 %}
     
@@ -5754,7 +5728,7 @@
           
             <div class="hidemobile">
               <h5>Дистанционная оценка</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
@@ -5762,7 +5736,7 @@
                 
                 <h6><span class="icon-mbri-delivery"></span> Данные автомобиля</h6>
 
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1" style="padding: 0.2rem;">
                   
@@ -5869,7 +5843,7 @@
                 
                 <h6><span class="icon-mbri-credit-card"></span> Данные оценки</h6>
 
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
 
                 <div class="row g-1" style="padding: 0.2rem;">
@@ -5921,7 +5895,7 @@
                 
                 <h6><span class="icon-mbri-credit-card"></span> Фотографии автомобиля</h6>
 
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 
                   {% if params.estimation.fotos_remote_alls|length %}
@@ -5980,7 +5954,7 @@
                     <div class="col-sm">
                       <h6><span class="icon-mbri-users"></span> Участники</h6>
 
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
 
                       {% for access_user in params.estimation.access_user.all %}
                         
@@ -6008,7 +5982,7 @@
                     <div class="col-sm-6 g-1">
                       <h6><span class="icon-mbri-credit-card"></span> Цены</h6>
 
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" id="price_reception" name="price_reception" value="{{params.estimation.page_remote.price_reception}}" readonly>
                         <label class="fs-6" for="floatingInput">Цена приема &#8381;</label>
@@ -6023,7 +5997,7 @@
                       <br>
                       
                       <h6><span class="icon-mbri-delivery"></span> Приобретаемый автомобиль</h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
 
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_remote.car_sale_info}}" readonly>
@@ -6072,7 +6046,7 @@
             
             <div class="hidemobile">
               <h5>Ценообразование админ</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <main>
@@ -7102,11 +7076,11 @@
                               
                                 <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
                               
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
                               {% else %}
                                 <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
                                 
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
                               {% endif %}
           
                             {% endif %}
@@ -7354,7 +7328,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_podgotovka|length > 0 %}
 
@@ -7418,7 +7392,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_service|length > 0 %}
 
@@ -7476,7 +7450,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_mcu|length > 0 %}
 
@@ -7692,7 +7666,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_podgotovka|length > 0 %}
 
@@ -7756,7 +7730,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_service|length > 0 %}
 
@@ -7814,7 +7788,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_mcu|length > 0 %}
 
@@ -7871,7 +7845,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           
                         <ul class="list-unstyled mt-3 mb-4">
@@ -8221,7 +8195,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_podgotovka|length > 0 %}
 
@@ -8285,7 +8259,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_service|length > 0 %}
 
@@ -8343,7 +8317,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_mcu|length > 0 %}
 
@@ -8400,7 +8374,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                         <div class="row g-1">
                           <div class="col-sm">
@@ -8422,7 +8396,7 @@
                           </div>
                         </div>
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                         
                         <div class="row g-1">
@@ -8440,7 +8414,7 @@
                           </div>
                         </div>
 
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                         
                         <div class="row g-1">
@@ -8629,7 +8603,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_podgotovka|length > 0 %}
 
@@ -8693,7 +8667,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_service|length > 0 %}
 
@@ -8751,7 +8725,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_mcu|length > 0 %}
 
@@ -9748,7 +9722,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
   
                           <div class="row g-2 align-self-center align-items-center cars_list">
                               <br>
@@ -10347,7 +10321,7 @@
             
             <div class="hidemobile">
               <h5>Ценообразование автоматическое</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <main>
@@ -10774,11 +10748,11 @@
                             
                               <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
                             
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                             {% else %}
                               <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
                               
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                             {% endif %}
         
                           {% endif %}
@@ -10999,7 +10973,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_podgotovka|length > 0 %}
 
@@ -11063,7 +11037,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_service|length > 0 %}
 
@@ -11121,7 +11095,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_mcu|length > 0 %}
 
@@ -11337,7 +11311,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_podgotovka|length > 0 %}
 
@@ -11401,7 +11375,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_service|length > 0 %}
 
@@ -11459,7 +11433,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_mcu|length > 0 %}
 
@@ -11516,7 +11490,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           
                         <ul class="list-unstyled mt-3 mb-4">
@@ -11866,7 +11840,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_podgotovka|length > 0 %}
 
@@ -11930,7 +11904,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_service|length > 0 %}
 
@@ -11988,7 +11962,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_mcu|length > 0 %}
 
@@ -12045,7 +12019,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                         <div class="row g-1">
                           <div class="col-sm">
@@ -12067,7 +12041,7 @@
                           </div>
                         </div>
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                         
                         <div class="row g-1">
@@ -12085,7 +12059,7 @@
                           </div>
                         </div>
 
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                         
                         <div class="row g-1">
@@ -12274,7 +12248,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_podgotovka|length > 0 %}
 
@@ -12338,7 +12312,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_service|length > 0 %}
 
@@ -12396,7 +12370,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_mcu|length > 0 %}
 
@@ -13394,7 +13368,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
   
                           <div class="row g-2 align-self-center align-items-center cars_list">
                               <br>
@@ -13992,14 +13966,14 @@
             
             <div class="hidemobile">
               <h5>Все фотографии осмотра автомобиля</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
 
                 <h6><span class="icon-mbri-image-slider"></span> Фотографии интерактивной оценки</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="modern-gallery-layout">
                   <div class="modern-gallery-wrapper">
@@ -14127,13 +14101,13 @@
           
             <div class="hidemobile">
               <h5>История просмотров</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
                 <h6><span class="icon-mbri-preview"></span> Просмотры</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="table-responsive-sm">
                   <table class="table table-sm table-striped table-hover">
@@ -14173,7 +14147,7 @@
           
             <div class="hidemobile">
               <h5>История изменений</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="table-responsive-sm">
@@ -14223,7 +14197,7 @@
           
             <div class="hidemobile">
               <h5>Ценообразование</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
               
             </div>
 
@@ -14310,7 +14284,7 @@
               <div class="card">
                 <div class="card-body">
                   <h6><span class="icon-mbri-alert"></span> Цена до диагностики</h6>
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
                   
                   <div class="row g-1">
               
@@ -14361,7 +14335,7 @@
               <div class="card">
                 <div class="card-body">
                   <h6><span class="icon-mbri-sale"></span> Согласованная цена приема</h6>
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
 
                     <div class="row g-1 ">
                       
@@ -14456,7 +14430,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                       
                     <ul class="list-unstyled mt-3 mb-4">
@@ -14651,7 +14625,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row g-1">
                       <div class="col-sm">
@@ -14673,7 +14647,7 @@
                       </div>
                     </div>
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                     
                     <div class="row g-1">
@@ -14691,7 +14665,7 @@
                       </div>
                     </div>
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                     
                     <div class="row g-1">
@@ -14728,7 +14702,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row g-1">
                       <div class="col-sm">
@@ -14750,7 +14724,7 @@
                       </div>
                     </div>
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                     
                     <div class="row g-1">
@@ -14768,7 +14742,7 @@
                       </div>
                     </div>
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                     
                     <div class="row g-1">
@@ -15325,7 +15299,7 @@
                           <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_kors.list_work_podgotovka|length > 0 %}
 
@@ -15389,7 +15363,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_kors.list_work_service|length > 0 %}
 
@@ -15447,7 +15421,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_kors.list_work_mcu|length > 0 %}
 
@@ -15616,7 +15590,7 @@
                           <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_autohub.list_work_podgotovka|length > 0 %}
 
@@ -15680,7 +15654,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_autohub.list_work_service|length > 0 %}
 
@@ -15738,7 +15712,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_autohub.list_work_mcu|length > 0 %}
 
@@ -15956,7 +15930,7 @@
                           <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price.list_work_podgotovka|length > 0 %}
 
@@ -16020,7 +15994,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price.list_work_service|length > 0 %}
 
@@ -16078,7 +16052,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price.list_work_mcu|length > 0 %}
 
@@ -16233,7 +16207,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_podgotovka|length > 0 %}
 
@@ -16297,7 +16271,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_service|length > 0 %}
 
@@ -16355,7 +16329,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_mcu|length > 0 %}
 
@@ -17001,8 +16975,10 @@
               </script>
 
     </main>
-     
-    <br>
+  </div>
+</div>
+
+<br>
 
     <div class="modal fade" id="robot_price_korsavto" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
           <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
@@ -17019,7 +16995,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row g-2 align-self-center align-items-center cars_list">
                         <br>

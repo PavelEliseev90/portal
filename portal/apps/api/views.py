@@ -71,7 +71,7 @@ def get_info_estimation_vin(request):
                 to_json = {
                     'vin'                   : info.vin,
                     'status'                : info.status.name,
-                    'staff'                 : info.staff.profiles.name,
+                    'staff'                 : info.staff.name,
                     'mark'                  : info.modification.model.mark.name + ' ' + info.modification.model.name + ' ' + info.modification.name,
                     'year'                  : info.year
                 }

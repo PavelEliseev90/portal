@@ -784,7 +784,7 @@ def eco_monitors(request):
     docs        = docs.annotate(
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         unit_name_dc               = Subquery(subquery.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subquery.values('status_name')[:1])).annotate(
+        status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
@@ -943,14 +943,14 @@ def get_chats_list_online_info(request, id):
         car_run                 = Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1])).annotate(    
         unit_name               = Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1])).annotate(
         unit_name_dc            = Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subqyery_reg_interactiv.values('status_name')[:1])).annotate(
+        status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
         staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
         staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
         soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd = Subquery(subqyery_reg_interactiv.values('price_before_kd')[:1])).annotate(                       
+        car_price_before_kd = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
         car_price_after_kd  = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
         car_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
         car_price_sale      = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1])).annotate(                       
@@ -1011,14 +1011,14 @@ def get_chats_list_online(request):
         car_run                 = Coalesce(Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__run')[:1]))).annotate(    
         unit_name               = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__unit__name')[:1]))).annotate(
         unit_name_dc            = Coalesce(Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__unit__id')[:1]))).annotate(
-        status_estimation       = Subquery(subqyery_reg_interactiv.values('status_name')[:1])).annotate(
+        status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
         staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
         staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
         soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('price_before_kd')[:1])).annotate(                       
+        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
         car_price_after_kd          = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
         car_price_reception         = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__price_reception')[:1]))).annotate(                       
         car_price_sale              = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]), Subquery(subqyery_reg_interactiv.values('page_remote__price_sale')[:1]))).annotate(                       
@@ -1162,7 +1162,7 @@ def list_eco(request):
     docs        = docs.annotate(
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         unit_name_dc               = Subquery(subquery.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subquery.values('status_name')[:1])).annotate(
+        status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
         start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
         end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
@@ -2163,7 +2163,7 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())    
 
         return HttpResponseRedirect(request.build_absolute_uri())  
-    #return render(request, 'lo/lo_v3_new.html', {'params': params})  
+    return render(request, 'lo/lo_v3.html', {'params': params})  
     if estimation.v > 1:
         return render(request, 'lo/lo_v' + str(estimation.v) + '.html', {'params': params})             
     else:
@@ -2566,7 +2566,7 @@ def estimation_lo_history(estimation, count = False):
     if estimation.vin != '':
         if count:
             lo = DocLO.objects.filter(vin = estimation.vin)
-            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk_id')).values('rlk_id')[:1], output_field = models.IntegerField())
+            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk_id')[:1], output_field = models.IntegerField())
             lo = lo.annotate(interactiv = Count(subqyery_interactiv))
             lo = lo.filter(interactiv = 0).count()
             interatciv = RegInteractivOcenka.objects.filter(vin = estimation.vin).count()
@@ -2574,7 +2574,7 @@ def estimation_lo_history(estimation, count = False):
         else:
             list_info = list()
             interatcivs = RegInteractivOcenka.objects.filter(vin = estimation.vin).order_by('-start_estimation')
-            sub_lo = DocLO.objects.filter(rlk__id = OuterRef(name='rlk_id'))
+            sub_lo = DocLO.objects.filter(rlk__id = OuterRef(name='rlk__id'))
             interatcivs = interatcivs.annotate(
                 lo_number   = Subquery(sub_lo.values('nomer')[:1])).annotate(
                 interactiv  = Value(True))
@@ -2582,7 +2582,7 @@ def estimation_lo_history(estimation, count = False):
             for interatciv in interatcivs:
                 list_info.append(interatciv)
             lo = DocLO.objects.filter(vin = estimation.vin).order_by('-dataTime')
-            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk_id')).values('rlk_id')[:1], output_field = models.IntegerField())
+            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk_id')[:1], output_field = models.IntegerField())
             lo = lo.annotate(interactiv = Count(subqyery_interactiv))
             lo = lo.filter(interactiv = 0)
             for lo_info in lo:
