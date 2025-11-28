@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan
 
 
 @admin.register(RegInfoRefreshEstimationCarsExpress)
@@ -168,4 +168,11 @@ class RegViewsCarsOrganizationAdmin(admin.ModelAdmin):
 @admin.register(RegPodgotovkaWork)
 class RegPodgotovkaWorkAdmin(admin.ModelAdmin):
     list_display    = ('name_group', 'name', 'price_podrad', 'price_podrad',  'price_kors', 'normo',)
+
+
+@admin.register(RegUnitMonthlyPlan)
+class RegUnitMonthlyPlanAdmin(admin.ModelAdmin):
+    list_display = ('unit', 'year', 'month', 'intake_plan', 'sale_plan')
+    list_filter = ('year', 'month', 'unit')
+    search_fields = ('unit__name',)
     

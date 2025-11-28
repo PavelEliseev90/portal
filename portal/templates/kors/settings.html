@@ -7,141 +7,54 @@
 {% block title_navbar %} - Настройки {% endblock %}
 
 {% block content %}
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    
-    <label class="fs-6">Интерактивная оценка</label>
-    
-    
-    <div class="row g-1">
-      
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Общие настройки </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Внутренний осмотр </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <a class="text-dark" href="settings_vnesh/"> <label class="fs-7"> Внешний осмотр </label></a>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <a class="text-dark" href="settings_diagnostic/"> <label class="fs-7"> Диагностика </label></a>
-          </div>
-        </div>
-      </div>
-
-    </div>
-    
+<section class="settings-page">
+  <div class="settings-header">
+    <h2>Центр настроек</h2>
+    <p>Быстрый доступ к ключевым модулям настройки процессов оценки, подготовки и продажи.</p>
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-6">Подготовка</label>
-    
-
-    <div class="row g-1">
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Работы </label>
-          </div>
-        </div>
-      </div>
+  <div class="settings-panel">
+    <h3>Интерактивная оценка</h3>
+    <p>Настройте карточки оценок, этапы осмотра и диагностики.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Общие настройки</span>
+      <span class="settings-chip">Внутренний осмотр</span>
+      <a class="settings-chip" href="settings_vnesh/">Внешний осмотр</a>
+      <a class="settings-chip" href="settings_diagnostic/">Диагностика</a>
     </div>
-    
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-5">Продажи</label>
-    
-    <div class="row g-1">
-      
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Настройки автоматической переоценки новых АМ </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Настройки автоматической переоценки КорсАвто </label>
-          </div>
-        </div>
-      </div>
-      
+  <div class="settings-panel">
+    <h3>Подготовка</h3>
+    <p>Управление работами и нормативами подготовки автомобиля.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Работы</span>
     </div>
-    
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-6">Аукцион</label>
-    
-
-    <div class="row g-1">
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <a class="text-dark" href="settings_matrix_auction/"> <label class="fs-7"> Матрица расчета БЦП </label></a>
-          </div>
-        </div>
-      </div>
+  <div class="settings-panel">
+    <h3>Продажи</h3>
+    <p>Переоценка новых автомобилей и КорсАвто.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Автопереоценка новых АМ</span>
+      <span class="settings-chip">Автопереоценка КорсАвто</span>
     </div>
-    
   </div>
-</div>
 
-<br>
-
-<div class="card bg-white bg-opacity-75 bg-gradient">
-  <div class="card-body">
-    <label class="fs-6">Настройки доступа</label>
-    
-
-    <div class="row g-1">
-      <div class="col-sm-auto">
-        <div class="card">
-          <div class="card-body">
-            <label class="fs-7"> Пользователи </label>
-          </div>
-        </div>
-      </div>
+  <div class="settings-panel">
+    <h3>Аукцион</h3>
+    <p>Управление матрицами расчёта БЦП.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="settings-chip" href="settings_matrix_auction/">Матрица расчёта БЦП</a>
     </div>
-    
   </div>
-</div>
 
-
-
+  <div class="settings-panel">
+    <h3>Доступы</h3>
+    <p>Настройка пользователей и прав доступа.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="settings-chip">Пользователи</span>
+    </div>
+  </div>
+</section>
 {% endblock %}

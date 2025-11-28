@@ -2,242 +2,1016 @@
 
 {% block url %} {% endblock %} 
 
-{% block title %} - список задач {% endblock %}
+{% block title %} - HelpDesk - Список задач {% endblock %}
 
-{% block title_navbar %} - список задач {% endblock %}
+{% block title_navbar %} - HelpDesk - Список задач {% endblock %}
     
 {% block content %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .table-wrapper-scroll-y {
+            display: none;
+        }
+        .mobile-task-card {
+            border-left: 4px solid var(--bs-secondary);
+        }
+        .mobile-task-card .card-body {
+            padding: 1rem 1.25rem;
+        }
+        .mobile-task-card .task-meta span {
+            margin-right: .65rem;
+        }
+        .filters-card .card-body {
+            padding: 1rem;
+        }
+        .filters-card .form-floating {
+            margin-bottom: .75rem;
+        }
+    }
 
+    @media (min-width: 768px) {
+        .mobile-task-list {
+            display: none;
+        }
+    }
+
+    .btn-sort {
+        border: none;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        font-weight: 600;
+        color: inherit;
+    }
+    .btn-sort:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    .sort-indicator {
+        font-size: .75rem;
+        margin-left: .25rem;
+    }
+    
+    #searchSuggestions {
+        margin-top: 0.25rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+    }
+    #searchSuggestions .list-group-item {
+        cursor: pointer;
+        border-left: 3px solid transparent;
+    }
+    #searchSuggestions .list-group-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #0d6efd;
+    }
+    #searchSuggestions .task-id {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    #searchSuggestions .task-meta {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+
+<div class="row mb-3">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2 align-items-center">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Создать задачу
+        </a>
+        <a href="{% url 'helpdesk:calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar"></i> Календарь
+        </a>
+        <a href="{% url 'helpdesk:chart' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-bar-chart"></i> График
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-download"></i> Экспорт
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'helpdesk:export_tasks' %}?{{ request.GET.urlencode }}&format=xlsx">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Excel (XLSX)
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'helpdesk:export_tasks' %}?{{ request.GET.urlencode }}&format=csv">
+                    <i class="bi bi-filetype-csv"></i> CSV
+                </a></li>
+            </ul>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-bookmark"></i> Сохраненные фильтры
+                {% if params.saved_filters %}
+                    <span class="badge bg-info ms-1">{{ params.saved_filters|length }}</span>
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu">
+                {% if params.saved_filters %}
+                    {% for saved_filter in params.saved_filters %}
+                        <li>
+                            <div class="dropdown-item d-flex justify-content-between align-items-center" style="padding: 0.5rem 1rem;">
+                                <a href="{% url 'helpdesk:task_list' %}?saved_filter={{ saved_filter.id }}" class="text-decoration-none flex-grow-1" style="color: inherit;">
+                                    <i class="bi bi-filter"></i> {{ saved_filter.name }}
+                                    {% if saved_filter.is_shared %}
+                                        <span class="badge bg-secondary ms-1">Общий</span>
+                                    {% endif %}
+                                </a>
+                                {% if saved_filter.user == user or user.is_superuser %}
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2 delete-filter-btn" 
+                                            data-filter-id="{{ saved_filter.id }}" 
+                                            data-filter-name="{{ saved_filter.name }}"
+                                            onclick="event.stopPropagation();"
+                                            title="Удалить фильтр">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                    <li><hr class="dropdown-divider"></li>
+                {% endif %}
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#saveFilterModal">
+                        <i class="bi bi-plus-circle"></i> Сохранить текущий фильтр
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
 
 <form method="GET" id="form" name="form">
 	
 	<div class="row">
-
 		<div class="col-sm">
-			
-				<div class="card border-secondary">
-					
-					<div class="card-header bg-secondary text-white">
-						<span class="icon-mbri-arrow-down"  id="collapse_filtr_" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры</span>  
-					</div>
-					
-					<div class="collapse {% if params.filtr_count > 0 %} show {% endif %}" id="collapse_filtr" style="transition: 0.25s;">
-						<div class="card-body">
-							{% csrf_token %}
-							<div class="row g-2">
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control" name="nomer" {% if params.filtr.nomer %} value = {{params.filtr.nomer}} {% endif %} onchange="this.form.submit()" autocomplete="off">
-										<label for="floatingInput">Номер</label>
-									</div>
-								</div>
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<select class="form-select" name = "status" id = "unit" onchange="this.form.submit()" onChange="change_link()">
-											<option></option>
-											<option id="ВРаботе" value="ВРаботе" {% if params.filtr.status == "ВРаботе" %} selected {% endif %}>В работе</option>
-											<option id="Выполнено" value="Выполнено" {% if params.filtr.status == "Выполнено" %} selected {% endif %}>Выполнено</option>
-											<option id="Оценка" value="Оценка" {% if params.filtr.status == "Оценка" %} selected {% endif %}>Требуется оценить</option>
-										</select>
-										<label for="floatingInput">Статус</label>
-									</div>
-								</div>
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										{% if params.filtr.dateStart %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date" value="{{params.filtr.dateStart}}">
-										{% else %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date">
-										{% endif%}
-										<label for="floatingInput">Дата от</label>
-									</div>
-								</div>
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										{% if params.filtr.dateEnd %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end" value="{{params.filtr.dateEnd}}">
-										{% else %}
-											<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end">
-										{% endif%}
-										<label for="floatingInput">Дата по</label>
-									</div>
+			<div class="card border-secondary filters-card">
+				<div class="card-header bg-secondary text-white">
+					<i class="bi bi-chevron-down" id="collapse_filtr_icon" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры</i>  
+				</div>
+				<div class="collapse {% if params.filtr_count > 0 %} show {% endif %}" id="collapse_filtr" style="transition: 0.25s;">
+					<div class="card-body">
+						{% csrf_token %}
+						<div class="row g-2">
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" name="nomer" {% if params.filtr.nomer %} value="{{ params.filtr.nomer }}" {% endif %} onchange="this.form.submit()" autocomplete="off">
+									<label>Номер</label>
 								</div>
 							</div>
-
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<select class="form-select" name="status" id="status" onchange="this.form.submit()">
+										<option value="">Все статусы</option>
+										{% for status in params.statuses %}
+											<option value="{{ status.id }}" {% if params.filtr.status == status.id|stringformat:"s" %} selected {% endif %}>
+												{{ status.name }}
+											</option>
+										{% endfor %}
+									</select>
+									<label>Статус</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<select class="form-select" name="priority" id="priority" onchange="this.form.submit()">
+										<option value="">Все приоритеты</option>
+										{% for priority in params.priorities %}
+											<option value="{{ priority.id }}" {% if params.filtr.priority == priority.id|stringformat:"s" %} selected {% endif %}>
+												{{ priority.name }}
+											</option>
+										{% endfor %}
+									</select>
+									<label>Приоритет</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<select class="form-select" name="project" id="project" onchange="this.form.submit()">
+										<option value="">Все проекты</option>
+										{% for project in params.projects %}
+											<option value="{{ project.id }}" {% if params.filtr.project == project.id|stringformat:"s" %} selected {% endif %}>
+												{{ project.name }}
+											</option>
+										{% endfor %}
+									</select>
+									<label>Проект</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									{% if params.filtr.dateStart %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date" value="{{ params.filtr.dateStart }}">
+									{% else %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date">
+									{% endif %}
+									<label>Дата от</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									{% if params.filtr.dateEnd %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end" value="{{ params.filtr.dateEnd }}">
+									{% else %}
+										<input onchange="this.form.submit()" class="form-control form-control-sm" type="date" name="date_end">
+									{% endif %}
+									<label>Дата по</label>
+								</div>
+							</div>
+							<div class="col-sm">
+								<div class="form-floating mb-3">
+									<input type="text" class="form-control" name="search" id="taskSearch" 
+										{% if params.search %} value="{{ params.search }}" {% endif %} 
+										placeholder="Поиск..." autocomplete="off">
+									<label for="taskSearch">
+										<i class="bi bi-search"></i> Поиск
+									</label>
+									<div id="searchSuggestions" class="list-group position-absolute w-100 d-none" style="z-index: 1000; max-height: 300px; overflow-y: auto;"></div>
+								</div>
+							</div>
+						</div>
+					<div class="row">
+						<div class="col-sm d-flex gap-2 flex-wrap">
+							<button type="submit" class="btn btn-primary">
+								<i class="bi bi-funnel"></i> Применить
+							</button>
+							<a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+								<i class="bi bi-x-circle"></i> Сбросить
+							</a>
+							{% if params.filtr_count > 0 %}
+								<button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#saveFilterModal">
+									<i class="bi bi-bookmark-plus"></i> Сохранить фильтр
+								</button>
+							{% endif %}
 						</div>
 					</div>
-
+					</div>
 				</div>
+			</div>
 		</div>
 	</div>
-	<hr>	
+	
+	<hr>
+	
 	<div class="row">
-		
 		<div class="col-sm">
-			
 			<div class="table-wrapper-scroll-y my-custom-scrollbar">
 				<div class="table-responsive-sm">
 					<table class="table table-sm table-striped table-hover">
-					<thead style="position: sticky;top: 0;">
-						<tr>
-							<th class='header_table bg-light' scope="col"></th>
-							<th class='header_table bg-light' scope="col">Дата</th>
-							<th class='header_table bg-light' scope="col">Номер</th>
-							<th class='header_table bg-light' scope="col">Тема</th>
-							<th class='header_table bg-light' scope="col">Инициатор</th>
-							<th class='header_table bg-light' scope="col">Исполнитель</th>
-							<th class='header_table bg-light' scope="col">Статус</th>
-							<th class='header_table bg-light' scope="col">Процесс</th>
-						</tr>
-					</thead>
-					<tbody>
-					
-						{% if params.answer %}
-							{% for task in params.answer.tasks %}
-								<tr onclick="window.location.href='task/{{task.Номер}}/'; return false">
+						<thead style="position: sticky;top: 0;">
+							<tr>
+								<th class='header_table bg-light' scope="col"></th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('date_created')">
+                                        Дата
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'date_created' %}&uarr;{% elif params.order_by == '-date_created' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('id')">
+                                        Номер
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'id' %}&uarr;{% elif params.order_by == '-id' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('title')">
+                                        Тема
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'title' %}&uarr;{% elif params.order_by == '-title' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('author__username')">
+                                    Автор
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'author__username' %}&uarr;{% elif params.order_by == '-author__username' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('assignee__username')">
+                                    Исполнитель
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'assignee__username' %}&uarr;{% elif params.order_by == '-assignee__username' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                                <th class='header_table bg-light' scope="col">
+                                    <button type="button" class="btn-sort" onclick="setOrder('status__order')">
+                                        Статус
+                                        <span class="sort-indicator">
+                                            {% if params.order_by == 'status__order' %}&uarr;{% elif params.order_by == '-status__order' %}&darr;{% endif %}
+                                        </span>
+                                    </button>
+                                </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('priority__level')">
+                                    Приоритет
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'priority__level' %}&uarr;{% elif params.order_by == '-priority__level' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('comments_count')">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'comments_count' %}&uarr;{% elif params.order_by == '-comments_count' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('observers_count')">
+                                    <i class="bi bi-people"></i>
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'observers_count' %}&uarr;{% elif params.order_by == '-observers_count' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('attachments_count')">
+                                    <i class="bi bi-paperclip"></i>
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'attachments_count' %}&uarr;{% elif params.order_by == '-attachments_count' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+							<th class='header_table bg-light' scope="col">Проекты</th>
+                            <th class='header_table bg-light' scope="col">
+                                <button type="button" class="btn-sort" onclick="setOrder('date_deadline')">
+                                    Срок
+                                    <span class="sort-indicator">
+                                        {% if params.order_by == 'date_deadline' %}&uarr;{% elif params.order_by == '-date_deadline' %}&darr;{% endif %}
+                                    </span>
+                                </button>
+                            </th>
+							<th class='header_table bg-light' scope="col">Действия</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for task in params.page_obj %}
+								<tr onclick="window.location.href='{% url 'helpdesk:task_detail' task.pk %}'; return false" style="cursor: pointer;">
 									<td>
-										{% if task.ТекущийЭтап == "Регистрация" %}
-											<span class="icon-mbri-idea"></span>
-										{% elif task.ТекущийЭтап == "Выполнено" %}
-											<span class="icon-mbri-success"></span>
-										{% elif task.ТекущийЭтап == "Отменено" %}
-											<span class="icon-mbri-close"></span>
-										{% elif task.ТекущийЭтап == "Новый" %}
-											<span class="icon-mbri-briefcase"></span>
-										{% elif task.ТекущийЭтап == "Выполнение" %}
-											<span class="icon-mbri-play"></span>
+										{% if task.status %}
+											<span style="background-color: {{ task.status.color }}; color: white; padding: 3px 8px; border-radius: 3px;">●</span>
+										{% else %}
+											<span class="text-muted">○</span>
 										{% endif %}
 									</td>
-									<td>{{task.Дата}}</td>
-									<td>{{task.Номер}}</td>
-									<td><label>{{task.Тема|truncatechars:100}}</label></td>
-									<td><label>{{task.Инициатор}}</label></td>
-									<td><label>{{task.ТекущийИсполнитель}}</label></td>
-									<td><label>{{task.ТекущийЭтап}}</label></td>
-									<td><label>{{task.Процесс}}</label></td>
+									<td>{{ task.date_created|date:"d.m.Y H:i" }}</td>
+									<td>#{{ task.id }}</td>
+									<td>
+										{{ task.title|truncatechars:100 }}
+										{% if task.is_overdue %}
+											<span class="badge bg-danger">Просрочено</span>
+										{% endif %}
+									</td>
+									<td>{{ task.author.get_full_name|default:task.author.username }}</td>
+									<td>
+										{% if task.assignee %}
+											{{ task.assignee.get_full_name|default:task.assignee.username }}
+										{% else %}
+											<span class="text-warning">Не назначен</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.status %}
+											<span class="badge" style="background-color: {{ task.status.color }}; color: white;">
+												{{ task.status.name }}
+											</span>
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.priority %}
+											<span class="badge" style="background-color: {{ task.priority.color }}; color: white;">
+												{{ task.priority.name }}
+											</span>
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td>
+										<span class="badge bg-light text-dark">{{ task.comments_count|default:0 }}</span>
+									</td>
+									<td>
+										<span class="badge bg-light text-dark">{{ task.observers_count|default:0 }}</span>
+									</td>
+									<td>
+										<span class="badge bg-light text-dark">{{ task.attachments_count|default:0 }}</span>
+									</td>
+									<td>
+										{% if task.projects.all %}
+											{% for project in task.projects.all %}
+												<span class="badge" style="background-color: {{ project.color }}; color: white;">
+													{{ project.name }}
+												</span>
+											{% endfor %}
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td>
+										{% if task.date_deadline %}
+											{% if task.is_overdue %}
+												<span class="text-danger">{{ task.date_deadline|date:"d.m.Y H:i" }}</span>
+											{% else %}
+												{{ task.date_deadline|date:"d.m.Y H:i" }}
+											{% endif %}
+										{% else %}
+											<span class="text-muted">-</span>
+										{% endif %}
+									</td>
+									<td onclick="event.stopPropagation();">
+										{% if user.is_superuser or task.author == user or task.assignee == user %}
+											<div class="d-flex gap-1">
+												{% if params.in_progress_status and task.status.id != params.in_progress_status.id and not task.status.is_closed %}
+													<button type="button" class="btn btn-sm btn-success quick-action-btn-list" 
+															data-task-id="{{ task.pk }}" 
+															data-status-id="{{ params.in_progress_status.id }}"
+															data-status-name="{{ params.in_progress_status.name }}"
+															title="Взять в работу">
+														<i class="bi bi-play-circle"></i>
+													</button>
+												{% endif %}
+												{% if params.closed_status and not task.status.is_closed %}
+													<button type="button" class="btn btn-sm btn-danger quick-action-btn-list" 
+															data-task-id="{{ task.pk }}" 
+															data-status-id="{{ params.closed_status.id }}"
+															data-status-name="{{ params.closed_status.name }}"
+															title="Закрыть">
+														<i class="bi bi-check-circle"></i>
+													</button>
+												{% endif %}
+											</div>
+										{% endif %}
+									</td>
 								</tr>
-							{% endfor %} 
-						{% endif %}
-					</tbody>
+							{% empty %}
+								<tr>
+									<td colspan="14" class="text-center">Задач не найдено</td>
+								</tr>
+							{% endfor %}
+						</tbody>
 					</table>
 				</div>
 			</div>
 
+            <div class="mobile-task-list">
+                <div class="mb-3 d-md-none">
+                    <label class="form-label small text-uppercase text-muted">Сортировать</label>
+                    <select class="form-select" id="mobileSort">
+                        <option value="date_created" {% if params.order_by == 'date_created' %}selected{% endif %}>Дата ↑</option>
+                        <option value="-date_created" {% if params.order_by == '-date_created' %}selected{% endif %}>Дата ↓</option>
+                        <option value="date_deadline" {% if params.order_by == 'date_deadline' %}selected{% endif %}>Срок ↑</option>
+                        <option value="-date_deadline" {% if params.order_by == '-date_deadline' %}selected{% endif %}>Срок ↓</option>
+                        <option value="priority__level" {% if params.order_by == 'priority__level' %}selected{% endif %}>Приоритет ↑</option>
+                        <option value="-priority__level" {% if params.order_by == '-priority__level' %}selected{% endif %}>Приоритет ↓</option>
+                        <option value="comments_count" {% if params.order_by == 'comments_count' %}selected{% endif %}>Комментарии ↑</option>
+                        <option value="-comments_count" {% if params.order_by == '-comments_count' %}selected{% endif %}>Комментарии ↓</option>
+                    </select>
+                </div>
+
+                {% for task in params.page_obj %}
+                    <div class="card mobile-task-card mb-3" onclick="window.location.href='{% url 'helpdesk:task_detail' task.pk %}'" style="cursor:pointer;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="fw-semibold">#{{ task.id }}</span>
+                                    <small class="text-muted ms-2">{{ task.date_created|date:"d.m.Y H:i" }}</small>
+                                </div>
+                                {% if task.status %}
+                                    <span class="badge" style="background-color: {{ task.status.color }}; color: white;">{{ task.status.name }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="fw-semibold mb-2">{{ task.title|truncatechars:80 }}</p>
+                            <div class="task-meta text-muted small mb-2">
+                                <span><i class="bi bi-person"></i> {{ task.author.get_full_name|default:task.author.username }}</span>
+                                {% if task.assignee %}
+                                    <span><i class="bi bi-person-check"></i> {{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+                                {% else %}
+                                    <span class="text-warning"><i class="bi bi-person-x"></i> Нет исполнителя</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span class="badge bg-light text-dark"><i class="bi bi-chat-left-text me-1"></i>{{ task.comments_count|default:0 }}</span>
+                                <span class="badge bg-light text-dark"><i class="bi bi-people me-1"></i>{{ task.observers_count|default:0 }}</span>
+                                <span class="badge bg-light text-dark"><i class="bi bi-paperclip me-1"></i>{{ task.attachments_count|default:0 }}</span>
+                                {% if task.priority %}
+                                    <span class="badge" style="background-color: {{ task.priority.color }}; color: white;">{{ task.priority.name }}</span>
+                                {% endif %}
+                                {% if task.is_overdue %}
+                                    <span class="badge bg-danger">Просрочено</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                {% for project in task.projects.all %}
+                                    <span class="badge" style="background-color: {{ project.color }}; color: white;">{{ project.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted small">Проект не указан</span>
+                                {% endfor %}
+                            </div>
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-calendar2-week"></i>
+                                {% if task.date_deadline %}
+                                    <span class="{% if task.is_overdue %}text-danger{% endif %}">{{ task.date_deadline|date:"d.m.Y H:i" }}</span>
+                                {% else %}
+                                    <span>-</span>
+                                {% endif %}
+                            </div>
+                            {% if user.is_superuser or task.author == user or task.assignee == user %}
+                                <div class="d-flex gap-2 mt-2" onclick="event.stopPropagation();">
+                                    {% if params.in_progress_status and task.status.id != params.in_progress_status.id and not task.status.is_closed %}
+                                        <button type="button" class="btn btn-sm btn-success flex-fill quick-action-btn-list" 
+                                                data-task-id="{{ task.pk }}" 
+                                                data-status-id="{{ params.in_progress_status.id }}"
+                                                data-status-name="{{ params.in_progress_status.name }}">
+                                            <i class="bi bi-play-circle"></i> Взять в работу
+                                        </button>
+                                    {% endif %}
+                                    {% if params.closed_status and not task.status.is_closed %}
+                                        <button type="button" class="btn btn-sm btn-danger flex-fill quick-action-btn-list" 
+                                                data-task-id="{{ task.pk }}" 
+                                                data-status-id="{{ params.closed_status.id }}"
+                                                data-status-name="{{ params.closed_status.name }}">
+                                            <i class="bi bi-check-circle"></i> Закрыть
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
 			<hr>
 
 			<div class="row g-1">
-				
 				<div class="col-sm justify-content-center">
 					<div class="form-floating mb-3">
-						<select class="form-select" name = "count" onchange="this.form.submit()">
-							<option {% if params.filtr.rcount == '25' %} selected {% endif %}>25</option>
-							<option {% if params.filtr.count == '50' %} selected {% endif %}>50</option>
-							<option {% if params.filtr.count == '100' %} selected {% endif %}>100</option>
-							<option {% if params.filtr.count == '200' %} selected {% endif %}> 200</option>
+						<select class="form-select" name="count" onchange="this.form.submit()">
+							<option value="25" {% if not request.GET.count or request.GET.count == '25' %} selected {% endif %}>25</option>
+							<option value="50" {% if request.GET.count == '50' %} selected {% endif %}>50</option>
+							<option value="100" {% if request.GET.count == '100' %} selected {% endif %}>100</option>
+							<option value="200" {% if request.GET.count == '200' %} selected {% endif %}>200</option>
 						</select>
-						<label for="floatingInput">Выводить</label>
+						<label>Выводить</label>
 					</div>
 				</div>
 				
 				<div class="col-sm justify-content-center">
-					
 					<nav aria-label="Page navigation example">
 						<ul class="pagination justify-content-center">
+							{% if params.page_obj.has_previous %}
+								<li class="page-item">
+									<a class="page-link text-secondary" onclick="a({{ params.page_obj.previous_page_number }})">&lt;</a>
+								</li>
+							{% endif %}
 							
-							{% if params.filtr.page or params.filtr.page == 1 %}
-								
-								{% if params.filtr.page|add:-1  > 0 %}
+							{% for p in params.paginator.page_range %}
+								{% if params.page_obj.number == p %}
+									<li class="page-item active">
+										<span class="page-link bg-secondary text-white">{{ p }}</span>
+									</li>
+								{% elif p >= params.page_obj.number|add:-2 and p <= params.page_obj.number|add:2 %}
 									<li class="page-item">
-										<a class="page-link text-secondary" OnClick="a( {{params.filtr.page|add:-1}}  )"; name="page" value = "{{params.filtr.page|add:-1}}"> {{params.filtr.page|add:-1}} </a>
+										<a class="page-link text-secondary" onclick="a({{ p }})">{{ p }}</a>
 									</li>
-								{% endif %}
-
-								<li class="page-item">
-									<a class="page-link bg-secondary text-white disabled" OnClick="a( {{params.filtr.page}})"; name="page" value = "{{params.filtr.page}}"> {{params.filtr.page}} </a>
-								</li>
-								
-								{% if params.answer.pages_count > params.filtr.page %}
-								
-									<li class="page-num">
-										<a class="page-link text-secondary" OnClick="a( {{ params.filtr.page|add:1}})"; name="page" value = "{{params.filtr.page|add:1}}">&gt;</a>
-									</li>
-
-								{% endif %}
-								
-							{% else %}
-								<li class="page-item">
-									<a class="page-link bg-secondary text-white disabled" OnClick="a( {{1}})"; name="page" value = "1"> 1 </a>
-								</li>
-								{% if params.answer.pages_count > 1 %}
-									<li class="page-num">
-										<a class="page-link text-secondary" OnClick="a( {{ 2 }})"; name="page" value = "2">&gt;</a>
-									</li>
-								{% endif %}
-							{% endif %}
-
-							
-
-							{% if  params.page_obj.has_previous %}
-								<li class="page-num">
-									<a class="page-link text-secondary"  OnClick="a( {{ params.page_obj.previous_page_number }})"; name="page" value = " {{ params.page_obj.previous_page_number }} ">&lt;</a>
-								</li>
-							{% endif %}
-					
-							{% for p in params.answer.paginator.page_range %}
-								{% if  params.page_obj.number == p %}
-								<li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
-										{% elif p >=  params.page_obj.number|add:-2 and p <=  params.page_obj.number|add:2  %}
-								<li class="page-item">
-									<a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
-								</li>
 								{% endif %}
 							{% endfor %}
-								
+							
 							{% if params.page_obj.has_next %}
-								<li class="page-num">
-									<a class="page-link text-secondary" OnClick="a( {{ params.page_obj.next_page_number }})"; name="page" value = " {{ params.page_obj.next_page_number }} ">&gt;</a>
+								<li class="page-item">
+									<a class="page-link text-secondary" onclick="a({{ params.page_obj.next_page_number }})">&gt;</a>
 								</li>
 							{% endif %}
-					
 						</ul>
 					</nav>
 				</div>
 				
-				<div class="col-sm justify-content-center" >
-					Выведено : {{params.answer.tasks|length}} из {{params.answer.tasks_count}}
+				<div class="col-sm justify-content-center text-center">
+					Выведено: {{ params.page_obj|length }} из {{ params.paginator.count }}
 				</div>
-
 			</div>
-		
 		</div>
-
 	</div>
-	
 </form>
 
 <script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
+	function a(page) {
+		var url = new URL(document.location.href);
+		url.searchParams.set('page', page);
+		document.location.href = url.href;
 	}
-	
+
+	function setOrder(field) {
+		var url = new URL(document.location.href);
+		var current = url.searchParams.get('order_by');
+		if (current === field) {
+			url.searchParams.set('order_by', '-' + field);
+		} else if (current === '-' + field) {
+			url.searchParams.set('order_by', field);
+		} else {
+			url.searchParams.set('order_by', field);
+		}
+		url.searchParams.set('page', 1);
+		document.location.href = url.href;
+	}
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var mobileSelect = document.getElementById('mobileSort');
+        if (mobileSelect) {
+            mobileSelect.addEventListener('change', function() {
+                var value = this.value;
+                var url = new URL(document.location.href);
+                url.searchParams.set('order_by', value);
+                url.searchParams.set('page', 1);
+                document.location.href = url.href;
+            });
+        }
+    });
 </script>
 
 <script language="JavaScript">
 	$(document).ready(function() {
-		$("#collapse_filtr_").click(function(){
-			var class_filtr = $("#collapse_filtr_").attr('class');
-			if (class_filtr == 'icon-mbri-arrow-down'){
-				$('#collapse_filtr_').attr('class', 'icon-mbri-arrow-up');
-			}
-			else{
-				$('#collapse_filtr_').attr('class', 'icon-mbri-arrow-down');	
-			}
+		$("#collapse_filtr").on('show.bs.collapse', function() {
+			$("#collapse_filtr_icon").removeClass('bi-chevron-up').addClass('bi-chevron-down');
+		});
+		$("#collapse_filtr").on('hide.bs.collapse', function() {
+			$("#collapse_filtr_icon").removeClass('bi-chevron-down').addClass('bi-chevron-up');
 		});
 	});
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка быстрых действий в списке задач
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn-list');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const taskId = this.dataset.taskId;
+            const statusId = this.dataset.statusId;
+            const statusName = this.dataset.statusName;
+            const originalHTML = this.innerHTML;
+            
+            // Отключаем кнопку и показываем загрузку
+            this.disabled = true;
+            if (this.innerHTML.includes('Взять в работу')) {
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+            } else if (this.innerHTML.includes('Закрыть')) {
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+            } else {
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            }
+            
+            // Получаем CSRF токен из cookies или мета-тега
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            let csrftoken = getCookie('csrftoken');
+            // Если токен не найден в cookies, пытаемся получить из мета-тега
+            if (!csrftoken) {
+                const metaTag = document.querySelector('meta[name=csrf-token]');
+                if (metaTag) {
+                    csrftoken = metaTag.getAttribute('content');
+                }
+            }
+            if (!csrftoken) {
+                alert('Ошибка: CSRF токен не найден. Пожалуйста, обновите страницу.');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+                return;
+            }
+            
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            formData.append('csrfmiddlewaretoken', csrftoken); // Добавляем токен в FormData
+            
+            fetch(`/help_desk/task/${taskId}/quick-status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken // Также отправляем в заголовке
+                },
+                credentials: 'same-origin' // Важно для отправки cookies
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Если ответ не JSON (например, HTML страница входа), это ошибка
+                    throw new Error('Сервер вернул неверный формат ответа. Возможно, требуется повторная авторизация.');
+                }
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Ошибка сервера');
+                    }).catch(err => {
+                        if (err.message) {
+                            throw err;
+                        }
+                        throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось изменить статус'));
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении статуса: ' + error.message);
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
+    
+    // Поиск по Enter в поле поиска
+    if (taskSearchInput) {
+        taskSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('form').submit();
+            }
+        });
+    }
+});
+</script>
+
+<!-- Модальное окно сохранения фильтра -->
+<div class="modal fade" id="saveFilterModal" tabindex="-1" aria-labelledby="saveFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="saveFilterModalLabel">
+                    <i class="bi bi-bookmark-plus"></i> Сохранить фильтр
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="saveFilterForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="filterName" class="form-label">Название фильтра *</label>
+                        <input type="text" class="form-control" id="filterName" name="name" required placeholder="Например: Мои просроченные задачи">
+                        <div class="form-text">Введите название для сохранения текущих параметров фильтрации</div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="filterShared" name="is_shared">
+                        <label class="form-check-label" for="filterShared">
+                            Сделать фильтр общим (доступен всем пользователям)
+                        </label>
+                    </div>
+                    <div id="saveFilterError" class="alert alert-danger d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-check-circle"></i> Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Сохранение фильтра
+    const saveFilterForm = document.getElementById('saveFilterForm');
+    if (saveFilterForm) {
+        saveFilterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('saveFilterError');
+            errorDiv.classList.add('d-none');
+            
+            const filterName = document.getElementById('filterName').value.trim();
+            if (!filterName) {
+                errorDiv.textContent = 'Введите название фильтра';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Сохранение...';
+            
+            // Собираем данные текущего фильтра из формы
+            const formData = new FormData();
+            formData.append('name', filterName);
+            
+            // Проверяем чекбокс общего доступа
+            const isShared = document.getElementById('filterShared').checked;
+            if (isShared) {
+                formData.append('is_shared', '1');
+            }
+            
+            // Собираем параметры фильтра из текущей формы фильтров
+            const filterForm = document.getElementById('form');
+            if (filterForm) {
+                const filterParams = ['nomer', 'status', 'priority', 'project', 'author', 'assignee', 
+                                      'date', 'date_end', 'search', 'order_by', 'my', 'overdue', 'closed_today'];
+                filterParams.forEach(param => {
+                    const input = filterForm.querySelector(`[name="${param}"]`);
+                    if (input && input.value) {
+                        formData.append(param, input.value);
+                    }
+                });
+            }
+            
+            // Получаем CSRF токен
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            // Отправляем запрос
+            fetch('{% url "helpdesk:save_filter" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Закрываем модальное окно
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('saveFilterModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Очищаем форму
+                    saveFilterForm.reset();
+                    
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Произошла ошибка при сохранении фильтра';
+                    errorDiv.classList.remove('d-none');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = 'Произошла ошибка при сохранении фильтра';
+                errorDiv.classList.remove('d-none');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            });
+        });
+    }
+});
+
+// Обработка удаления сохраненных фильтров
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteFilterBtns = document.querySelectorAll('.delete-filter-btn');
+    
+    deleteFilterBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const filterId = this.dataset.filterId;
+            const filterName = this.dataset.filterName;
+            
+            // Подтверждение удаления
+            if (!confirm(`Вы уверены, что хотите удалить фильтр "${filterName}"?`)) {
+                return;
+            }
+            
+            // Получаем CSRF токен
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            // Отключаем кнопку
+            this.disabled = true;
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            // Отправляем запрос на удаление
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', csrftoken);
+            
+            // Формируем URL для удаления фильтра
+            const deleteUrl = `/helpdesk/filter/${filterId}/delete/`;
+            
+            fetch(deleteUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    throw new Error('Сервер вернул неверный формат ответа');
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    // Удаляем элемент из списка
+                    const listItem = this.closest('li');
+                    if (listItem) {
+                        listItem.style.transition = 'opacity 0.3s';
+                        listItem.style.opacity = '0';
+                        setTimeout(() => {
+                            listItem.remove();
+                            
+                            // Если это был последний фильтр, обновляем страницу
+                            const remainingFilters = document.querySelectorAll('.delete-filter-btn');
+                            if (remainingFilters.length === 0) {
+                                window.location.reload();
+                            }
+                        }, 300);
+                    } else {
+                        // Если не удалось найти элемент, просто перезагружаем страницу
+                        window.location.reload();
+                    }
+                } else {
+                    alert(data.error || 'Произошла ошибка при удалении фильтра');
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при удалении фильтра. Попробуйте обновить страницу.');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
+});
+</script>
+
+{% include 'help_desk/quick_create_widget.html' %}
 
 {% endblock %}

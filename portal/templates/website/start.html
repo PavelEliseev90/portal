@@ -9,6 +9,7 @@
 {% block content %}
 
 	{% if request.user.is_superuser %}
+		
 		<form method="GET" id="form" name="form">
 			<select class="form-select" aria-label="Пример выбора по умолчанию" name="user_id" onchange="submit()">
 				<option selected>Выберите пользователя</option>
@@ -17,6 +18,19 @@
 				{% endfor %}
 			</select>
 		</form>
+
+	{% endif %}
+
+	{% if request.user.profiles.korsavto_settings_dc %}
+		<div class="card">
+			<div class="card-body">
+				<div class="row">
+					<div class="col-auto">
+						 
+					</div>
+				</div>
+			</div>
+		</div>
 	{% endif %}
 
 	{% if params.info.updates_count > 0 %}
@@ -75,7 +89,6 @@
 
 	{% endif %}
 	
-
 
 	{% if params.rab_stol.rlks_estimation_sogrlasovanie|length > 0 %}
 		

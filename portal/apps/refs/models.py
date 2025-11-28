@@ -539,7 +539,48 @@ class RefStatusEstimation(models.Model):
         verbose_name = "Статус оценки"
         verbose_name_plural = "Статусы оценки"
 
+# Тип документа поступления 
+class RefTypeDocService(models.Model):
+    name    = models.CharField("Наименование", max_length=150, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
 
+    class Meta:
+        db_table = 'refTypeDocService'
+        verbose_name = "Тип документа поступления"
+        verbose_name_plural = "Типы документов поступления"
+
+# Тип документа поступления 
+class RefTypeItemServiceRepair(models.Model):
+    name    = models.CharField("Наименование ", max_length=150, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refTypeItemServiceRepair'
+        verbose_name = "Тип затраты поля поступления"
+        verbose_name_plural = "Типы затраты поля поступления"
+
+# Услуги
+class RefService(models.Model):
+    uin             = models.CharField("uin", max_length=200, default='')
+    name            = models.CharField("Наименование", max_length=300, default='')
+    article         = models.CharField("Артикул", max_length=150, default='')
+   
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['uin'])
+        ]
+        db_table = 'refService'
+        verbose_name = "Услуга"
+        verbose_name_plural = "Услуги"
+        
+        
 # Товары
 class RefProduct(models.Model):
     uin             = models.CharField("uin", max_length=200, default='')
@@ -1999,7 +2040,8 @@ class Auction(models.Model):
     winner_phone        = models.TextField('Победитель телефон', blank=True, null=True, max_length=1000, default='')
     winner_email        = models.TextField('Победитель email', blank=True, null=True, max_length=1000, default='')
     winner_price        = models.IntegerField("Выигрышная цена", default=0, blank=True)
-    
+    pk_auction          = models.CharField('№ лота', default='', null=True, max_length=12, blank=False)
+
     def count_cars(self):
         return AuctionStructure.objects.filter(auction = self).count()
     
@@ -2031,7 +2073,50 @@ class AuctionStructure(models.Model):
     op              = models.CharField('Комментарий для ОП', default='', null=True, max_length=12500, blank=False)
     podgotovka      = models.CharField('Комментарий для подготовки', default='', null=True, max_length=12500, blank=False)
     autoteka_prev   = models.BooleanField('Показывать автотеку', default = False)
-    success         = models.BooleanField('Проверено', default = False)
+    success         = models.BooleanField('Проверено',  default = False)
+    
+    files_glav      = models.CharField('Главная',       default='', null=True, max_length=1000,     blank=False)
+    files_car       = models.CharField('Внешний вид',   default='', null=True, max_length=12500,    blank=False)
+    files_salon     = models.CharField('Салон',         default='', null=True, max_length=12500,    blank=False)
+    files_shema     = models.CharField('Схема',         default='', null=True, max_length=12500,    blank=False)
+    files_damages   = models.CharField('Повреждения',   default='', null=True, max_length=12500,    blank=False)
+    files_kolesa    = models.CharField('Колеса',        default='', null=True, max_length=12500,    blank=False)
+    files_diagnostic= models.CharField('Диагностика',   default='', null=True, max_length=12500,    blank=False)
+
+    def info_car_vnesh(self):
+        list_links = list()
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(auction_structure = self).filter(type_file = 'vnesh')
+        for list_qyery in list_qyeryset:
+            list_links.append(list_qyery.file.url)
+        return list_links
+    
+    def info_car_salon(self):
+        list_links = list()
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'salon')
+        for list_qyery in list_qyeryset:
+            list_links.append(list_qyery.file.url)
+        return list_links
+    
+    def info_car_shema(self):
+        list_links = list()
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'shema')
+        for list_qyery in list_qyeryset:
+            list_links.append(list_qyery.file.url)
+        return list_links
+    
+    def info_car_wheels(self):
+        list_links = list()
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'kolesa')
+        for list_qyery in list_qyeryset:
+            list_links.append(list_qyery.file.url)
+        return list_links
+    
+    def info_car_damages(self):
+        list_links = list()
+        list_qyeryset = AuctionStructureFiles.objects.filter(auction_structure = self).filter(type_file = 'damage')
+        for list_qyery in list_qyeryset:
+            list_links.append(list_qyery.file.url)
+        return list_links
 
     def info_car_auction_data(self):
         from task_manager.views import info_car_auction
@@ -2063,8 +2148,8 @@ class AuctionStructureFiles(models.Model):
     url_mini    = models.CharField("УРЛ мини", max_length=512, default='', blank=True)
     name        = models.CharField("Наименование", max_length=512, default='', blank=True)
     car         = models.BooleanField('Автомобиль', default=False) 
-    type_file   = models.BooleanField('Тип файла', default=False) 
-
+    type_file   = models.CharField("тип файла", max_length=512, default='', blank=True)
+    
     def is_video(self):
         list_world_name = self.file.name.lower().split('.')
         format = list_world_name[-1]

@@ -1,0 +1,225 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - {% if params.task %}Редактирование{% else %}Создание{% endif %} задачи {% endblock %}
+
+{% block title_navbar %} - HelpDesk - {% if params.task %}Редактирование{% else %}Создание{% endif %} задачи {% endblock %}
+    
+{% block content %}
+
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .form-floating > label {
+            font-size: .9rem;
+        }
+        .form-floating .form-control,
+        .form-floating .form-select {
+            min-height: 3.1rem;
+        }
+        .mobile-section-title {
+            font-size: .95rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-top: 1.5rem;
+        }
+    }
+</style>
+
+<div class="row mb-3">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+    </div>
+</div>
+
+<div class="col-12 col-xl-10 mx-auto">
+	<div class="card">
+		<div class="card-header bg-primary text-white">
+			<h5 class="mb-0">
+				<i class="bi bi-{% if params.task %}pencil{% else %}plus-circle{% endif %}"></i> 
+				{% if params.task %}Редактирование задачи #{{ params.task.id }}{% else %}Создание новой задачи{% endif %}
+			</h5>
+		</div>
+		<div class="card-body">
+			<form method="POST" enctype="multipart/form-data">
+				{% csrf_token %}
+				
+				<div class="row g-2">
+					<div class="col-12">
+						<div class="form-floating mb-3">
+							<input type="text" class="form-control" id="title" name="title" 
+								value="{% if params.task %}{{ params.task.title }}{% endif %}" required>
+							<label for="title">Тема задачи *</label>
+						</div>
+					</div>
+				</div>
+				
+                <h6 class="mobile-section-title d-md-none">Основные параметры</h6>
+
+				<div class="row g-2">
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<select class="form-select" id="status" name="status" required>
+								<option value="">Выберите статус</option>
+								{% for status in params.statuses %}
+									<option value="{{ status.id }}" 
+										{% if params.task and params.task.status.id == status.id %}selected{% endif %}>
+										{{ status.name }}
+									</option>
+								{% endfor %}
+							</select>
+							<label for="status">Статус *</label>
+						</div>
+					</div>
+					
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<select class="form-select" id="priority" name="priority">
+								<option value="">Выберите приоритет</option>
+								{% for priority in params.priorities %}
+									<option value="{{ priority.id }}" 
+										{% if params.task and params.task.priority and params.task.priority.id == priority.id %}selected{% endif %}>
+										{{ priority.name }}
+									</option>
+								{% endfor %}
+							</select>
+							<label for="priority">Приоритет</label>
+						</div>
+					</div>
+				</div>
+				
+                <h6 class="mobile-section-title d-md-none">Участники</h6>
+
+				<div class="row g-2">
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<select class="form-select" id="assignee" name="assignee">
+								<option value="">Не назначен</option>
+								{% for user in params.users %}
+									<option value="{{ user.id }}" 
+										{% if params.task and params.task.assignee and params.task.assignee.id == user.id %}selected{% endif %}>
+										{{ user.get_full_name|default:user.username }}
+									</option>
+								{% endfor %}
+							</select>
+							<label for="assignee">Исполнитель</label>
+						</div>
+					</div>
+					
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<select class="form-select" id="observers" name="observers" multiple>
+								{% for user in params.users %}
+									<option value="{{ user.id }}" 
+										{% if params.task and params.task.observers.all and user in params.task.observers.all %}selected{% endif %}>
+										{{ user.get_full_name|default:user.username }} ({{user.username}})
+									</option>
+								{% endfor %}
+							</select>
+							<label for="observers">Наблюдатели</label>
+						</div>
+						<small class="text-muted">На ПК удерживайте Ctrl для множественного выбора</small>
+					</div>
+				</div>
+				
+                <h6 class="mobile-section-title d-md-none">Сроки</h6>
+
+				<div class="row g-2">
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<input type="datetime-local" class="form-control" id="date_start" name="date_start"
+								value="{% if params.task and params.task.date_start %}{{ params.task.date_start|date:'Y-m-d\TH:i' }}{% endif %}">
+							<label for="date_start">Дата начала выполнения</label>
+						</div>
+					</div>
+					
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<input type="datetime-local" class="form-control" id="date_deadline" name="date_deadline"
+								value="{% if params.task and params.task.date_deadline %}{{ params.task.date_deadline|date:'Y-m-d\TH:i' }}{% endif %}">
+							<label for="date_deadline">Срок выполнения</label>
+						</div>
+					</div>
+				</div>
+				
+                <h6 class="mobile-section-title d-md-none">Проекты и теги</h6>
+
+				<div class="row g-2">
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<select class="form-select" id="projects" name="projects" multiple>
+								{% for project in params.projects %}
+									<option value="{{ project.id }}" 
+										{% if params.task and params.task.projects.all and project in params.task.projects.all %}selected{% endif %}>
+										{{ project.name }}
+									</option>
+								{% endfor %}
+							</select>
+							<label for="projects">Проекты</label>
+						</div>
+						<small class="text-muted">На ПК удерживайте Ctrl для множественного выбора</small>
+					</div>
+					
+					<div class="col-12 col-md-6">
+						<div class="form-floating mb-3">
+							<input type="text" class="form-control" id="tags" name="tags"
+								value="{% if params.task %}{{ params.task.tags }}{% endif %}"
+								placeholder="Тег1, Тег2, Тег3">
+							<label for="tags">Дополнительные теги (через запятую)</label>
+						</div>
+					</div>
+				</div>
+				
+				<div class="mb-3">
+					<label for="description" class="form-label">Описание</label>
+					<textarea class="form-control" id="description" name="description" rows="10">{% if params.task %}{{ params.task.description|safe }}{% endif %}</textarea>
+				</div>
+				
+				<div class="row">
+					<div class="col-sm d-flex flex-wrap gap-2">
+						<button type="submit" class="btn btn-success">
+							<i class="bi bi-check-circle"></i> Сохранить
+						</button>
+						{% if params.task %}
+							<a href="{% url 'helpdesk:task_detail' params.task.pk %}" class="btn btn-outline-secondary">
+								<i class="bi bi-x-circle"></i> Отмена
+							</a>
+						{% else %}
+							<a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+								<i class="bi bi-x-circle"></i> Отмена
+							</a>
+						{% endif %}
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+	$(document).ready(function() {
+		$('#observers').select2({
+			placeholder: 'Выберите наблюдателей',
+			allowClear: true,
+            width: '100%'
+		});
+		$('#projects').select2({
+			placeholder: 'Выберите проекты',
+			allowClear: true,
+            width: '100%'
+		});
+	});
+</script>
+
+{% endblock %}
+

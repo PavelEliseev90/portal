@@ -7,419 +7,347 @@
 {% block title_navbar %} - {{params.object.name}}  {% endblock %}
     
 {% block content %}
-
-
-<div style="padding-bottom: 5rem;">
+<div class="portal-page">
 	{% if request.user.is_authenticated %}
-		<div class="row g-1">
-			<div class="col-auto">
-			<a href="/cars/" class="text-dark"> <span class="icon-mbri-minus"> </span> На главную </a>
+		<div class="breadcrumb-nav">
+			<div class="d-flex flex-wrap align-items-center">
+				<a href="/cars/">На главную</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/">{{params.object.modification_autoru.model.mark.name|lower|capfirst}}</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}">{{params.object.modification_autoru.model.nameHuman|capfirst}}</a>
+				<span class="separator">/</span>
+				<span class="text-dark fw-bold">{{params.object.name}}</span>
 			</div>
-			<div class="col-auto">
-			<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.mark.name|lower|capfirst}} </a>
-			</div>
-			<div class="col-auto">
-				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}" class="text-dark"> <span class="icon-mbri-minus"> </span> {{params.object.modification_autoru.model.nameHuman|capfirst}} </a>
-			</div>
-			<div class="col-auto">
-			<span class="icon-mbri-minus fw-bold"> </span> {{params.object.name}}
-			</div>
-		
-	  </div>
-	  <hr>	
+		</div>
 	{% endif %}
 	
 	
 
-	<div class="row g-1 justify-content-center">
-	
-		<div class="col-sm-12 col-md-7 col-lg-7 content-head" >
-			<div class="gallery-container {% if request.user_agent.is_pc %}gallery-pc-slider{% else %}gallery-mobile-slider{% endif %}">
-			
-				{% for files in params.object.get_files %}
-										
-					<div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
-						{% if files.file_mini %}
-							<img src={{files.file.url}} alt="{{files.name}}" src1="{{files.file.url}}">
-						{% else %}
-							<img src={{files}} alt="{{files}}" src1="{{files}}">
-						{% endif %}
-						
-						<!-- Кнопки навигации слайдера (только для ПК и только для первой картинки) -->
-						{% if request.user_agent.is_pc and forloop.first %}
-							<button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
-								<span class="gallery-slider-arrow">‹</span>
-							</button>
-							<button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
-								<span class="gallery-slider-arrow">›</span>
-							</button>
-						{% endif %}
+	<div class="row g-3">
+		<div class="col-sm-12 col-md-7 col-lg-7">
+			{% with photos=params.object.get_files %}
+			{% with total=photos|length %}
+			{% if total > 0 %}
+				<div class="portal-panel">
+					<div class="modern-gallery-layout">
+					<div class="modern-gallery-wrapper">
+						<div class="modern-gallery-container" id="modernGalleryContainer">
+							{% for files in photos %}
+								<div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" data-alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}">
+									<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-image" loading="lazy">
+								</div>
+							{% endfor %}
+							
+							{% if total > 1 %}
+								<button class="modern-gallery-nav modern-gallery-prev" id="modernGalleryPrev" aria-label="Предыдущее изображение">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M15 18l-6-6 6-6"/>
+									</svg>
+								</button>
+								<button class="modern-gallery-nav modern-gallery-next" id="modernGalleryNext" aria-label="Следующее изображение">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M9 18l6-6-6-6"/>
+									</svg>
+								</button>
+							{% endif %}
+							
+							<div class="modern-gallery-controls">
+								<button class="modern-gallery-control-btn" id="modernGalleryRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+									</svg>
+								</button>
+								<button class="modern-gallery-control-btn" id="modernGalleryZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<circle cx="11" cy="11" r="8"/>
+										<path d="m21 21-4.35-4.35"/>
+										<line x1="11" y1="8" x2="11" y2="14"/>
+										<line x1="8" y1="11" x2="14" y2="11"/>
+									</svg>
+								</button>
+								<button class="modern-gallery-control-btn" id="modernGalleryZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<circle cx="11" cy="11" r="8"/>
+										<path d="m21 21-4.35-4.35"/>
+										<line x1="8" y1="11" x2="14" y2="11"/>
+									</svg>
+								</button>
+							</div>
+							
+							<div class="modern-gallery-counter" id="modernGalleryCounter">
+								<span class="modern-gallery-current" id="modernGalleryCurrent">1</span>
+								<span class="modern-gallery-separator">из</span>
+								<span class="modern-gallery-total" id="modernGalleryTotal">{{ total }}</span>
+							</div>
+						</div>
 					</div>
 					
-				{% endfor %}
-				
-				<!-- Мобильные кнопки навигации (только для мобильных устройств) -->
-				{% if not request.user_agent.is_pc %}
-					<button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">
-						‹
+					{% if total > 1 %}
+						<div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
+							{% for files in photos %}
+								<div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}">
+									<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-thumbnail-img" loading="lazy">
+								</div>
+							{% endfor %}
+						</div>
+					{% endif %}
+					</div>
+				</div>
+
+				<div class="modern-gallery-fullscreen" id="modernGalleryFullscreen">
+					<div class="modern-gallery-fullscreen-overlay"></div>
+					<button class="modern-gallery-close" id="modernGalleryClose" aria-label="Закрыть">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
 					</button>
-					<button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">
-						›
-					</button>
-				{% endif %}
-			</div>
+					<div class="modern-gallery-fullscreen-controls">
+						<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+							</svg>
+						</button>
+						<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/>
+								<path d="m21 21-4.35-4.35"/>
+								<line x1="11" y1="8" x2="11" y2="14"/>
+								<line x1="8" y1="11" x2="14" y2="11"/>
+							</svg>
+						</button>
+						<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/>
+								<path d="m21 21-4.35-4.35"/>
+								<line x1="8" y1="11" x2="14" y2="11"/>
+							</svg>
+						</button>
+					</div>
+					<div class="modern-gallery-fullscreen-content">
+						<img src="" alt="" id="modernGalleryFullscreenImage" class="modern-gallery-fullscreen-img">
+						{% if total > 1 %}
+							<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-prev" id="modernGalleryFullscreenPrev" aria-label="Предыдущее изображение">
+								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<path d="M15 18l-6-6 6-6"/>
+								</svg>
+							</button>
+							<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-next" id="modernGalleryFullscreenNext" aria-label="Следующее изображение">
+								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<path d="M9 18l6-6-6-6"/>
+								</svg>
+							</button>
+						{% endif %}
+						<div class="modern-gallery-fullscreen-counter" id="modernGalleryFullscreenCounter">
+							<span class="modern-gallery-fullscreen-current" id="modernGalleryFullscreenCurrent">1</span>
+							<span class="modern-gallery-separator">из</span>
+							<span class="modern-gallery-fullscreen-total" id="modernGalleryFullscreenTotal">{{ total }}</span>
+						</div>
+					</div>
+				</div>
+			{% else %}
+				<div class="portal-panel">
+					<div class="text-center py-5">
+						<span class="icon-mbri-photo" style="font-size: 3rem; color: #8ea1ba;"></span>
+						<p class="mt-3 text-muted">Фотографии скоро появятся</p>
+					</div>
+				</div>
+			{% endif %}
+			{% endwith %}
+			{% endwith %}
 	
 			
 
 		{% if request.user_agent.is_pc %}
 			{% if params.object.dop_cars|length > 0 %}
-				
-				<hr style="width: 75%;">
-				<label class="fs-5" style="font-weight: bold;">Может заинтересовать</label>
-
-				<div class="row g-3">
-					{% if params.object.dop_cars %}
-						{% for car in params.object.dop_cars %}
-								
-							<div class="col-12 col-sm-6">
-								<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}/'; return false" > 
-									<div class="card-body" style="padding: 0rem;">
-				
-										<div class="row" style="padding: 0rem;">
-											
-											<div class="col-12 col-sm-12">
-													
-												<img src="{{car.get_photo}}" class="item-img_up" >									
-													
+				<div class="portal-panel mt-3">
+					<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">Может заинтересовать</h3>
+					<div class="row g-3">
+						{% if params.object.dop_cars %}
+							{% for car in params.object.dop_cars %}
+								<div class="col-12 col-sm-6">
+									<div class="related-car-card" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+										<img src="{{car.get_photo}}" class="item-img_up">
+										<div class="p-3">
+											<h5 class="mb-2" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+												{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
+											</h5>
+											<p class="text-muted small mb-2">{{car.year}} г. / {{car.run|floatformat:"0g"|default_if_none:"---"}} км</p>
+											<p class="text-muted small mb-2">
+												{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
+												{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
+											</p>
+											<div class="d-flex justify-content-between align-items-center mt-3">
+												<span class="text-muted small">{{car.unit.name_web}}</span>
+												<span class="fw-bold" style="color: #e74c3c; font-size: 1.2rem;">{{car.price|floatformat:"2g"}} ₽</span>
 											</div>
-				
-											<div class="col-12 col-sm-12">
-												<div class="row "  style="padding: 0.2rem;">
-													<div class="col-sm-12 text-truncate" >
-														<label class="fs-5 text-truncate">{{car.modification_autoru.model.mark.name}}</label>
-														<br>
-														<label class="fs-5 text-truncate" style="padding-right: 0.5rem;">{{car.modification_autoru.model.name}}</label>
-														<br>
-														<label class="fs-6 text-truncate">{{car.year}}</label>
-														
-														<br>
-														<label class="fs-6">{{car.modification_autoru.engine_volume}} л. /
-														{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-														{{car.modification_autoru.typeEngine.name}}
-														<br>
-														{{car.modification_autoru.typeGear.name}}
-														<br>
-														{{car.modification_autoru.typeBody.name}}</label>
-													</div>
-													
-													
-	
-													<div class="col-sm-12">
-														<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
-													</div>
-							
-													<div class="col-sm-12 text-end">
-														<label class="fs-5">{{car.unit.name_web}}</label>	
-													</div>
-							
-													<div class="col-sm-12 text-end">
-														<label class="fs-4 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
-													</div>
-												</div>
-											</div>
-																	
 										</div>
-				
 									</div>
 								</div>
-							</div>
-				
-						{% endfor %} 
-					{% endif %}
-					
+							{% endfor %} 
+						{% endif %}
+					</div>
 				</div>
-
 			{% endif %}
 		{% endif %}
 
 
 		</div>
 		
-		<div class="col-sm-12 col-md-5 col-lg-5 content-head" >
-				
-			<div class="card" style="background-color: rgba(255,255,255,0.5);">
-				
-				<div class="card-body text-dark">
-					<div class="row" >
-						<div class="col-auto">
-							<img class="item-img-mini"  src="{{params.object.logo}}"> 
+		<div class="col-sm-12 col-md-5 col-lg-5">
+			<div class="portal-panel">
+				<div class="d-flex align-items-center mb-3">
+					<img class="item-img-mini" src="{{params.object.logo}}" style="height: 50px; width: auto; margin-right: 1rem;">
+					<h2 style="font-size: 1.4rem; font-weight: 600; color: #002a5a; margin: 0;">
+						{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
+					</h2>
+				</div>
+
+				<div class="row g-2">
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-mbri-engine"></span> Двигатель</div>
+							<div class="car-spec-value">
+								{{params.object.modification_autoru.engine_volume}} л. / {{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{params.object.modification_autoru.typeEngine.name}}
+							</div>
 						</div>
-						<div class="col-auto align-self-center" >
-							<label class="fs-3 text-start fw-normal">
-								{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
-							</label>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-mbri-transmission1"></span> Коробка передач</div>
+							<div class="car-spec-value">{{params.object.modification_autoru.typeGear.name}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-mbri-drive"></span> Привод</div>
+							<div class="car-spec-value">{{params.object.type_drive.name}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-calendar"></span> Год выпуска</div>
+							<div class="car-spec-value">{{params.object.year}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-truck"></span> Кузов</div>
+							<div class="car-spec-value">{{params.object.modification_autoru.typeBody.name}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-cd"></span> Пробег</div>
+							<div class="car-spec-value">{{params.object.run|floatformat:"0g"|default_if_none:"---"}} км</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-pencil"></span> Цвет</div>
+							<div class="car-spec-value text-capitalize">{{params.object.color|capfirst}}</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-user"></span> Владельцев</div>
+							<div class="car-spec-value">{{params.object.owners}}</div>
 						</div>
 					</div>
 					
-					
-
-					<div class="start_block"> </div>
-
-					<div class="row g-1">
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-								<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-									<label class="fs-6 text-secondary"> <span class="icon-mbri-engine fs-5"></span> Двигатель </label>
-									<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-									<span class="icon-mbri-minus text-dark  fs-5">
-										{{params.object.modification_autoru.engine_volume}} л. /
-										{{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-										{{params.object.modification_autoru.typeEngine.name}}</span>	
-								</div>
-							</a>
+					<div class="col-12 col-sm-6">
+						<div class="car-spec-card">
+							<div class="car-spec-label"><span class="icon-megaphone"></span> Состояние</div>
+							<div class="car-spec-value">{% if params.object.is_new %}Новый{% else %}С пробегом{% endif %}</div>
 						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-transmission1 fs-5"></span> Коробка передач </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									  {{params.object.modification_autoru.typeGear.name}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-drive fs-5"></span> Привод </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.type_drive.name}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-calendar fs-5"></span> Год выпуска </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.year}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-truck fs-5"></span> Кузов </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.modification_autoru.typeBody.name}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-cd fs-5"></span> Пробег </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.run|floatformat:"0g"|default_if_none:"---"}} км.
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-pencil fs-5"></span> Цвет </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark fs-5 text-capitalize">
-									 {{params.object.color|capfirst}}
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-user fs-5"></span> Владельцев </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {{params.object.owners}}
-								</span>	
-							</div>
-							</a>
-						</div>
-						
-						<div class="col-12 col-sm-6 text-start" >
-							<a  class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-megaphone fs-5"></span> Состояние </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									 {% if params.object.is_new %} Новый {% else %} С пробегом {% endif %}								
-								</span>	
-							</div>
-							</a>
-						</div>
-
-						<div class="col-12 col-sm-6 text-start">
-							<a href="specifications/" class="text-dark">
-							<div class="card mb-1 rounded-3 shadow-sm bg-white bg-opacity-25" style="padding: 0.4rem; height: 100%;">
-								<label class="fs-6 text-secondary"> <span class="icon-mbri-setting3 fs-5"></span>  Характеристики </label>
-								<div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-								<span class="icon-mbri-minus text-dark  fs-5">
-									Детально								
-								</span>	
-							</div>
-							</a>
-						</div>
-
 					</div>
-					
-					
-					
-					{% if params.object.quantity > 0 and params.object.price > 0 %}
-						<br>
-						<div class="col text-end align-items-end start_block">
-							
-							<div class="row">
-								
-								<div class="col">
-									
-									<button type="submit" class="btn btn-dark display-7  bg-opacity-10">
-										<h3> 
-											{% if params.object.reserve == 0 %}
-												{{params.object.price|floatformat:"2g"}} &#8381;
-											{% else %}	
-												В резерве
-											{% endif %}
-										</h3>
-									</button>
 
-								</div>
-								
+					<div class="col-12 col-sm-6">
+						<a href="specifications/" class="text-decoration-none">
+							<div class="car-spec-card" style="border: 2px solid rgba(0, 42, 90, 0.2);">
+								<div class="car-spec-label"><span class="icon-mbri-setting3"></span> Характеристики</div>
+								<div class="car-spec-value">Детально →</div>
 							</div>
+						</a>
+					</div>
 
-							<div class="row justify-content-end">
-								
-								<div class="col-auto">
-									<span class="fs-6 icon-mbri-preview btn-outline-secondary"></span>
-									<label class="fs-6 text-end">{{params.object.view_card_cars}}</label>
-								</div>
+				</div>
 
-								<div class="col-auto">
-									<span class="fs-6 icon-mbri-update btn-outline-secondary"></span>
-									<label class="fs-6 text-end"> {{params.object.date_refresh}}</label>
-								</div>
-								
-							</div>
-
-						
-						</div> 
-					{% endif %}
-
-				</div>	
+				{% if params.object.quantity > 0 and params.object.price > 0 %}
+					<div class="car-price-block mt-3">
+						<div class="car-price-value">
+							{% if params.object.reserve == 0 %}
+								{{params.object.price|floatformat:"2g"}} ₽
+							{% else %}	
+								В резерве
+							{% endif %}
+						</div>
+						<div class="d-flex justify-content-center gap-3" style="font-size: 0.85rem; opacity: 0.9;">
+							<span><span class="icon-mbri-preview"></span> {{params.object.view_card_cars}}</span>
+							<span><span class="icon-mbri-update"></span> {{params.object.date_refresh}}</span>
+						</div>
+					</div>
+				{% endif %}
 			</div>
 				
 
-				{% if params.object.quantity > 0 and params.object.price > 0 %}
-					<br>
-					<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-						<div class="modal-dialog modal-fullscreen">
-							<div class="modal-content">
+			{% if params.object.quantity > 0 and params.object.price > 0 %}
+				<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-fullscreen">
+						<div class="modal-content">
 							<div class="modal-header">
-								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.unit.name}} </h5>
+								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.unit.name}}</h5>
 								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 							</div>
-							
-								<div class="modal-body">
-									
-									
-									<iframe src="{{params.object.store.link_site_map}}" frameborder="0" style="width: 100%; height: 100%;"></iframe>
-									
-					
-								</div>
-					
+							<div class="modal-body p-0">
+								<iframe src="{{params.object.store.link_site_map}}" frameborder="0" style="width: 100%; height: 100%;"></iframe>
 							</div>
 						</div>
-					</div>	
+					</div>
+				</div>
 
-					<div class="start_block" >
-						<div class="card" style="background-color: rgba(255,255,255,0.5);">
-							<div class="card-body">
-							
-								<div class="row g-1 bg-dark text-white" style="border-radius: 0.5rem; padding: 0.2rem;" >
-									<div class="col-12 text-center">
-										<label class="fs-4"> <span class="fs-4 icon-mbri-home"> </span> {{params.object.unit.name}}</label>
-									</div>
-									<div class="col-12 text-end">
-										<a href="\cars\?store={{params.object.store.id}}" class="text-white">
-											<label class="fs-5"> <span class="fs-5 icon-mbri-delivery"> </span> {{params.object.store.cars_count}} автомобилей</label>
-										</a>
-									</div>
-								</div>
-								
-								<div class="row g-1 start_block justify-content-center">
-									
-									<div class="col align-self-center align-items-center text-center">
-										
-										<a  id="button_map" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children"   data-bs-toggle="modal" data-bs-target="#exampleModal">
-											
-												<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-pin"> </span></label>
-												<label class="fs-6 text-dark"> Показать</label>
-											
-										</a>
-		
-									</div>
-		
-									<div class="col align-self-center align-items-center text-center">
-										<a id="phone" href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
-											
-											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-touch"> </span></label>
-											<label class="fs-6 text-dark"> Позвонить</label>
-										</a>
-									</div>
-		
-									<div class="col align-self-center align-items-center text-center">
-										<a href="tel:{{params.object.store.phone_normalize}}"  class="btn display-7 bg_gradient_block_children" >
-											
-											<label class="fs-6 text-dark"> <span class="fs-4 icon-mbri-chat"> </span></label>
-											<label class="fs-6 text-dark"> Написать</label>
-										</a>
-									</div>
-		
-								</div>
-							</div>
-
-							
-
+				<div class="dealer-info-card">
+					<h5><span class="icon-mbri-home"></span> {{params.object.unit.name}}</h5>
+					<div class="mb-3">
+						<a href="/cars/?store={{params.object.store.id}}" class="text-white text-decoration-none">
+							<span class="icon-mbri-delivery"></span> {{params.object.store.cars_count}} автомобилей
+						</a>
+					</div>
+					<div class="row g-2">
+						<div class="col-4">
+							<a id="button_map" href="tel:{{params.object.store.phone_normalize}}" class="dealer-action-btn" data-bs-toggle="modal" data-bs-target="#exampleModal">
+								<span class="icon-mbri-pin d-block mb-1" style="font-size: 1.5rem;"></span>
+								<span style="font-size: 0.85rem;">Показать</span>
+							</a>
 						</div>
-					</div>	
-				
-				{% endif %}
+						<div class="col-4">
+							<a id="phone" href="tel:{{params.object.store.phone_normalize}}" class="dealer-action-btn">
+								<span class="icon-mbri-touch d-block mb-1" style="font-size: 1.5rem;"></span>
+								<span style="font-size: 0.85rem;">Позвонить</span>
+							</a>
+						</div>
+						<div class="col-4">
+							<a href="tel:{{params.object.store.phone_normalize}}" class="dealer-action-btn">
+								<span class="icon-mbri-chat d-block mb-1" style="font-size: 1.5rem;"></span>
+								<span style="font-size: 0.85rem;">Написать</span>
+							</a>
+						</div>
+					</div>
+				</div>
+			{% endif %}
 
 
-				{% if request.user.is_authenticated %}
-
-					<div class="start_block"> </div>
-					
-					<div class="card start_block" style="background-color: rgba(255,255,255,0.1);">
-							
-						<div class="card-body text-dark">
+			{% if request.user.is_authenticated %}
+				<div class="portal-panel">
 							
 							<div class="row g-2">
 								
@@ -526,11 +454,7 @@
 
 					</div>
 
-					<div class="start_block"> </div>
-					
-					<div class="card start_block" style="background-color: rgba(255,255,255,0.1);">
-					
-						<div class="card-body text-dark">
+				<div class="portal-panel">
 							
 							<div class="row g-2">
 								
@@ -619,93 +543,45 @@
 							
 							{% endif %}
 
-						</div>	
-
 					</div>
+				</div>
+			{% endif %}
 
-				{% endif %}
-
-				{% if request.user_agent.is_mobile %}
-					{% if params.object.dop_cars|length > 0 %}
-						
-						<hr style="width: 75%;">
-						<label class="fs-5" style="font-weight: bold;">Может заинтересовать</label>
-
+			{% if request.user_agent.is_mobile %}
+				{% if params.object.dop_cars|length > 0 %}
+					<div class="portal-panel mt-3">
+						<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">Может заинтересовать</h3>
 						<div class="row g-3">
 							{% if params.object.dop_cars %}
 								{% for car in params.object.dop_cars %}
-										
 									<div class="col-12 col-sm-6">
-										<div class="card bg-white bg-opacity-50" onclick="window.location.href='/cars/{{car.slug}}/'; return false" > 
-											<div class="card-body" style="padding: 0rem;">
-						
-												<div class="row" style="padding: 0rem;">
-													
-													<div class="col-12 col-sm-12">
-															
-														<img src="{{car.get_photo}}" class="item-img_up" >									
-															
-													</div>
-						
-													<div class="col-12 col-sm-12">
-														<div class="row text-truncate" style="padding: 0.2rem;">
-															
-															<div class="col-sm-12 text-truncate">
-																<label class="fs-5">{{car.modification_autoru.model.mark.name}}</label>
-																<br>
-																<label class="fs-5 text-truncate">{{car.modification_autoru.model.name}} </label>
-																<br>
-																<label class="fs-6 text-truncate">{{car.year}}</label>
-																<br>
-																<label class="fs-6">{{car.modification_autoru.engine_volume}} л. /
-																{{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / 
-																{{car.modification_autoru.typeEngine.name}}
-																<br>
-																{{car.modification_autoru.typeGear.name}}
-																<br>
-																{{car.modification_autoru.typeBody.name}}</label>
-															</div>
-															
-															<div class="col-sm-12">
-																<label> {{car.type_drive}} </label>
-																
-															</div>
-									
-															<div class="col-sm-12">
-																<label class="fs-6">{{car.run|floatformat:"0g"|default_if_none:"---"}} км.</label>
-															</div>
-									
-															<div class="col-sm-12 text-end">
-																<label class="fs-5">{{car.unit.name_web}}</label>	
-															</div>
-									
-															<div class="col-sm-12 text-end">
-																<label class="fs-4 fw-bold">{{car.price|floatformat:"2g"}} &#8381;</label>
-															</div>
-														</div>
-													</div>
-																			
+										<div class="related-car-card" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+											<img src="{{car.get_photo}}" class="item-img_up">
+											<div class="p-3">
+												<h5 class="mb-2" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+													{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
+												</h5>
+												<p class="text-muted small mb-2">{{car.year}} г. / {{car.run|floatformat:"0g"|default_if_none:"---"}} км</p>
+												<p class="text-muted small mb-2">
+													{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
+													{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
+												</p>
+												<div class="d-flex justify-content-between align-items-center mt-3">
+													<span class="text-muted small">{{car.unit.name_web}}</span>
+													<span class="fw-bold" style="color: #e74c3c; font-size: 1.2rem;">{{car.price|floatformat:"2g"}} ₽</span>
 												</div>
-						
 											</div>
 										</div>
 									</div>
-						
 								{% endfor %} 
 							{% endif %}
-							
 						</div>
-
-					{% endif %}
+					</div>
 				{% endif %}
+			{% endif %}
 
 		</div>
-			
 	</div>
-
-</div>
-
-
 </div>
 
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
@@ -783,6 +659,159 @@
 
 	<script>
 
+		document.addEventListener('DOMContentLoaded', function () {
+			const galleries = document.querySelectorAll('[data-gallery]');
+
+			galleries.forEach(function (gallery) {
+				const slides = Array.from(gallery.querySelectorAll('.car-gallery-slide'));
+				if (!slides.length) {
+					return;
+				}
+
+				const mainArea = gallery.querySelector('.car-gallery-main');
+				const prevBtn = gallery.querySelector('.car-gallery-nav-prev');
+				const nextBtn = gallery.querySelector('.car-gallery-nav-next');
+				const thumbs = Array.from(gallery.querySelectorAll('.car-gallery-thumb'));
+
+				let activeIndex = slides.findIndex(function (slide) {
+					return slide.classList.contains('is-active');
+				});
+
+				if (activeIndex < 0) {
+					activeIndex = 0;
+				}
+
+				function updateSlides(nextIndex) {
+					const total = slides.length;
+					const counterCurrent = gallery.querySelector('[data-gallery-current]');
+					const counterTotal = gallery.querySelector('[data-gallery-total]');
+					const progressBar = gallery.querySelector('[data-gallery-progress]');
+					const badge = gallery.querySelector('.car-gallery-badge');
+
+					gallery.dataset.galleryTotal = String(total);
+
+					if (!total) {
+						if (counterCurrent) {
+							counterCurrent.textContent = '00';
+						}
+						if (counterTotal) {
+							counterTotal.textContent = '00';
+						}
+						if (progressBar) {
+							progressBar.style.width = '0%';
+						}
+						if (badge) {
+							badge.style.display = 'none';
+						}
+						if (prevBtn && nextBtn) {
+							prevBtn.style.display = 'none';
+							nextBtn.style.display = 'none';
+							prevBtn.disabled = true;
+							nextBtn.disabled = true;
+						}
+						gallery.classList.add('car-gallery--empty', 'car-gallery--single');
+						gallery.removeAttribute('data-active-index');
+						return;
+					}
+
+					const safeIndex = (nextIndex + total) % total;
+					activeIndex = safeIndex;
+
+					slides.forEach(function (slide, index) {
+						const isActive = index === activeIndex;
+						slide.classList.toggle('is-active', isActive);
+						slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+					});
+
+					thumbs.forEach(function (thumb, index) {
+						const isActive = index === activeIndex;
+						thumb.classList.toggle('is-active', isActive);
+						thumb.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+					});
+
+					if (prevBtn && nextBtn) {
+						const hideControls = total <= 1;
+						prevBtn.style.display = hideControls ? 'none' : 'flex';
+						nextBtn.style.display = hideControls ? 'none' : 'flex';
+						prevBtn.disabled = hideControls;
+						nextBtn.disabled = hideControls;
+					}
+
+					const formattedCurrent = activeIndex + 1 < 10 ? '0' + (activeIndex + 1) : String(activeIndex + 1);
+					const formattedTotal = total < 10 ? '0' + total : String(total);
+
+					if (counterCurrent) {
+						counterCurrent.textContent = formattedCurrent;
+					}
+					if (counterTotal) {
+						counterTotal.textContent = formattedTotal;
+					}
+					if (progressBar) {
+						const percent = total <= 1 ? 100 : ((activeIndex + 1) / total) * 100;
+						progressBar.style.width = percent + '%';
+					}
+					if (badge) {
+						badge.style.display = total <= 1 ? 'none' : '';
+					}
+
+					gallery.classList.toggle('car-gallery--single', total <= 1);
+					gallery.classList.remove('car-gallery--empty');
+					gallery.setAttribute('data-active-index', activeIndex);
+				}
+
+				if (prevBtn) {
+					prevBtn.addEventListener('click', function (event) {
+						event.preventDefault();
+						updateSlides(activeIndex - 1);
+					});
+				}
+
+				if (nextBtn) {
+					nextBtn.addEventListener('click', function (event) {
+						event.preventDefault();
+						updateSlides(activeIndex + 1);
+					});
+				}
+
+				thumbs.forEach(function (thumb, index) {
+					thumb.addEventListener('click', function (event) {
+						event.preventDefault();
+						updateSlides(index);
+					});
+				});
+
+				if (mainArea) {
+					let touchStartX = 0;
+					let touchStartY = 0;
+
+					mainArea.addEventListener('touchstart', function (event) {
+						if (event.touches.length !== 1) {
+							return;
+						}
+						touchStartX = event.touches[0].clientX;
+						touchStartY = event.touches[0].clientY;
+					}, { passive: true });
+
+					mainArea.addEventListener('touchend', function (event) {
+						if (!event.changedTouches.length) {
+							return;
+						}
+
+						const touchEndX = event.changedTouches[0].clientX;
+						const touchEndY = event.changedTouches[0].clientY;
+						const deltaX = touchEndX - touchStartX;
+						const deltaY = touchEndY - touchStartY;
+
+						if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+							updateSlides(deltaX > 0 ? activeIndex - 1 : activeIndex + 1);
+						}
+					}, { passive: true });
+				}
+
+				updateSlides(activeIndex);
+			});
+		});
+
 		$('#button_map').click(
 			function(){
 				$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=2', function (json){});
@@ -796,4 +825,882 @@
 		
 		})
 	</script>
+
+<style>
+.modern-gallery-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modern-gallery-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.modern-gallery-thumbnail {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.3s ease;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modern-gallery-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 123, 255, 0.5);
+}
+
+.modern-gallery-thumbnail.active {
+  border-color: #007bff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.modern-gallery-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.modern-gallery-thumbnail:hover .modern-gallery-thumbnail-img {
+  transform: scale(1.05);
+}
+
+.modern-gallery-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.modern-gallery-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+}
+
+.modern-gallery-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.modern-gallery-slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  z-index: 1;
+}
+
+.modern-gallery-slide.prev {
+  transform: translateX(-100%);
+}
+
+.modern-gallery-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.5s ease;
+  user-select: none;
+  transform-origin: center center;
+}
+
+.modern-gallery-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.modern-gallery-control-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #333;
+}
+
+.modern-gallery-control-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: scale(1.1);
+}
+
+.modern-gallery-control-btn:active {
+  transform: scale(0.95);
+}
+
+.modern-gallery-control-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.modern-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modern-gallery-nav:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.modern-gallery-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.modern-gallery-prev {
+  left: 16px;
+}
+
+.modern-gallery-next {
+  right: 16px;
+}
+
+.modern-gallery-nav svg {
+  color: #333;
+  width: 20px;
+  height: 20px;
+}
+
+.modern-gallery-counter {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-gallery-current,
+.modern-gallery-total {
+  font-weight: 600;
+}
+
+.modern-gallery-separator {
+  opacity: 0.8;
+}
+
+.modern-gallery-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-gallery-fullscreen.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modern-gallery-fullscreen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(5px);
+}
+
+.modern-gallery-fullscreen-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 80px;
+}
+
+.modern-gallery-fullscreen-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  animation: zoomIn 0.3s ease;
+  transition: transform 0.5s ease;
+  transform-origin: center center;
+}
+
+.modern-gallery-fullscreen-controls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10000;
+  display: flex;
+  gap: 12px;
+}
+
+.modern-gallery-fullscreen-control-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-fullscreen-control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.modern-gallery-fullscreen-control-btn:active {
+  transform: scale(0.95);
+}
+
+.modern-gallery-fullscreen-control-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modern-gallery-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.modern-gallery-fullscreen-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-fullscreen-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.modern-gallery-fullscreen-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.modern-gallery-fullscreen-prev {
+  left: 20px;
+}
+
+.modern-gallery-fullscreen-next {
+  right: 20px;
+}
+
+.modern-gallery-fullscreen-nav svg {
+  width: 28px;
+  height: 28px;
+}
+
+.modern-gallery-fullscreen-counter {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-gallery-fullscreen-current,
+.modern-gallery-fullscreen-total {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .modern-gallery-layout {
+    gap: 12px;
+  }
+  
+  .modern-gallery-thumbnails {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+  
+  .modern-gallery-container {
+    height: 350px;
+  }
+  
+  .modern-gallery-nav {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-nav svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .modern-gallery-prev {
+    left: 8px;
+  }
+  
+  .modern-gallery-next {
+    right: 8px;
+  }
+  
+  .modern-gallery-counter {
+    font-size: 12px;
+    padding: 6px 12px;
+    bottom: 12px;
+  }
+  
+  .modern-gallery-controls {
+    top: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+  
+  .modern-gallery-control-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .modern-gallery-control-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .modern-gallery-fullscreen-content {
+    padding: 40px 20px;
+  }
+  
+  .modern-gallery-fullscreen-nav {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .modern-gallery-fullscreen-nav svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .modern-gallery-fullscreen-prev {
+    left: 10px;
+  }
+  
+  .modern-gallery-fullscreen-next {
+    right: 10px;
+  }
+  
+  .modern-gallery-close {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-fullscreen-controls {
+    top: 10px;
+    left: 10px;
+    gap: 8px;
+  }
+  
+  .modern-gallery-fullscreen-control-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-fullscreen-control-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .modern-gallery-fullscreen-counter {
+    font-size: 14px;
+    padding: 8px 16px;
+    bottom: 20px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  'use strict';
+  
+  const container = document.getElementById('modernGalleryContainer');
+  if (!container) return;
+  
+  const slides = container.querySelectorAll('.modern-gallery-slide');
+  const totalSlides = slides.length;
+  let currentIndex = 0;
+  
+  const fullscreen = document.getElementById('modernGalleryFullscreen');
+  const fullscreenImage = document.getElementById('modernGalleryFullscreenImage');
+  const fullscreenCurrent = document.getElementById('modernGalleryFullscreenCurrent');
+  const fullscreenTotal = document.getElementById('modernGalleryFullscreenTotal');
+  const currentCounter = document.getElementById('modernGalleryCurrent');
+  const totalCounter = document.getElementById('modernGalleryTotal');
+  
+  const prevBtn = document.getElementById('modernGalleryPrev');
+  const nextBtn = document.getElementById('modernGalleryNext');
+  const closeBtn = document.getElementById('modernGalleryClose');
+  const fullscreenPrevBtn = document.getElementById('modernGalleryFullscreenPrev');
+  const fullscreenNextBtn = document.getElementById('modernGalleryFullscreenNext');
+  const rotateBtn = document.getElementById('modernGalleryRotate');
+  const zoomInBtn = document.getElementById('modernGalleryZoomIn');
+  const zoomOutBtn = document.getElementById('modernGalleryZoomOut');
+  const fullscreenRotateBtn = document.getElementById('modernGalleryFullscreenRotate');
+  const fullscreenZoomInBtn = document.getElementById('modernGalleryFullscreenZoomIn');
+  const fullscreenZoomOutBtn = document.getElementById('modernGalleryFullscreenZoomOut');
+  
+  const thumbnailsContainer = document.getElementById('modernGalleryThumbnails');
+  const thumbnails = thumbnailsContainer ? thumbnailsContainer.querySelectorAll('.modern-gallery-thumbnail') : [];
+  
+  const imageStates = {};
+  
+  function getImageState(index) {
+    if (!imageStates[index]) {
+      imageStates[index] = {
+        rotate: 0,
+        zoom: 1
+      };
+    }
+    return imageStates[index];
+  }
+  
+  function applyImageTransform(image, state) {
+    const transforms = [];
+    
+    if (state.rotate !== 0) {
+      transforms.push(`rotate(${state.rotate}deg)`);
+    }
+    
+    if (state.zoom !== 1) {
+      transforms.push(`scale(${state.zoom})`);
+    }
+    
+    image.style.transform = transforms.length > 0 ? transforms.join(' ') : 'none';
+  }
+  
+  function applyFullscreenTransform(state) {
+    if (!fullscreenImage) return;
+    applyImageTransform(fullscreenImage, state);
+  }
+  
+  function getCurrentImage() {
+    const activeSlide = slides[currentIndex];
+    if (!activeSlide) return null;
+    return activeSlide.querySelector('.modern-gallery-image');
+  }
+  
+  if (totalCounter) {
+    totalCounter.textContent = totalSlides;
+  }
+  if (fullscreenTotal) {
+    fullscreenTotal.textContent = totalSlides;
+  }
+  
+  function updateSlider() {
+    slides.forEach((slide, index) => {
+      slide.classList.remove('active', 'prev');
+      if (index === currentIndex) {
+        slide.classList.add('active');
+        const image = slide.querySelector('.modern-gallery-image');
+        if (image) {
+          const state = getImageState(index);
+          applyImageTransform(image, state);
+        }
+      } else if (index < currentIndex) {
+        slide.classList.add('prev');
+      }
+    });
+    
+    thumbnails.forEach((thumbnail, index) => {
+      thumbnail.classList.remove('active');
+      if (index === currentIndex) {
+        thumbnail.classList.add('active');
+      }
+    });
+    
+    if (currentCounter) {
+      currentCounter.textContent = currentIndex + 1;
+    }
+  }
+  
+  function rotateImage() {
+    const image = getCurrentImage();
+    if (!image) return;
+    
+    const state = getImageState(currentIndex);
+    state.rotate = (state.rotate + 90) % 360;
+    applyImageTransform(image, state);
+  }
+  
+  function zoomInImage() {
+    const image = getCurrentImage();
+    if (!image) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom + 0.2;
+    if (newZoom <= 3) {
+      state.zoom = newZoom;
+      applyImageTransform(image, state);
+    }
+  }
+  
+  function zoomOutImage() {
+    const image = getCurrentImage();
+    if (!image) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom - 0.2;
+    if (newZoom >= 0.2) {
+      state.zoom = newZoom;
+      applyImageTransform(image, state);
+    }
+  }
+  
+  if (rotateBtn) {
+    rotateBtn.addEventListener('click', rotateImage);
+  }
+  
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener('click', zoomInImage);
+  }
+  
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener('click', zoomOutImage);
+  }
+  
+  function goToSlide(index) {
+    if (index >= 0 && index < totalSlides) {
+      currentIndex = index;
+      updateSlider();
+    }
+  }
+  
+  function showFullscreen(index) {
+    if (!fullscreen || !fullscreenImage) return;
+    
+    const slide = slides[index];
+    if (!slide) return;
+    
+    const imageSrc = slide.dataset.src;
+    const imageAlt = slide.dataset.alt || '';
+    
+    fullscreenImage.src = imageSrc;
+    fullscreenImage.alt = imageAlt;
+    
+    if (fullscreenCurrent) {
+      fullscreenCurrent.textContent = index + 1;
+    }
+    
+    fullscreen.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    currentIndex = index;
+    updateSlider();
+    
+    const state = getImageState(index);
+    applyFullscreenTransform(state);
+  }
+  
+  function rotateFullscreenImage() {
+    if (!fullscreenImage) return;
+    
+    const state = getImageState(currentIndex);
+    state.rotate = (state.rotate + 90) % 360;
+    applyFullscreenTransform(state);
+    updateSlider();
+  }
+  
+  function zoomInFullscreenImage() {
+    if (!fullscreenImage) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom + 0.2;
+    if (newZoom <= 3) {
+      state.zoom = newZoom;
+      applyFullscreenTransform(state);
+      updateSlider();
+    }
+  }
+  
+  function zoomOutFullscreenImage() {
+    if (!fullscreenImage) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom - 0.2;
+    if (newZoom >= 0.2) {
+      state.zoom = newZoom;
+      applyFullscreenTransform(state);
+      updateSlider();
+    }
+  }
+  
+  function hideFullscreen() {
+    if (!fullscreen) return;
+    
+    fullscreen.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  function nextSlide() {
+    currentIndex = (currentIndex + 1) % totalSlides;
+    updateSlider();
+  }
+  
+  function prevSlide() {
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    updateSlider();
+  }
+  
+  function nextFullscreen() {
+    currentIndex = (currentIndex + 1) % totalSlides;
+    showFullscreen(currentIndex);
+  }
+  
+  function prevFullscreen() {
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    showFullscreen(currentIndex);
+  }
+  
+  if (prevBtn) {
+    prevBtn.addEventListener('click', prevSlide);
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', nextSlide);
+  }
+  
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideFullscreen);
+  }
+  
+  if (fullscreenPrevBtn) {
+    fullscreenPrevBtn.addEventListener('click', prevFullscreen);
+  }
+  
+  if (fullscreenNextBtn) {
+    fullscreenNextBtn.addEventListener('click', nextFullscreen);
+  }
+  
+  if (fullscreenRotateBtn) {
+    fullscreenRotateBtn.addEventListener('click', rotateFullscreenImage);
+  }
+  
+  if (fullscreenZoomInBtn) {
+    fullscreenZoomInBtn.addEventListener('click', zoomInFullscreenImage);
+  }
+  
+  if (fullscreenZoomOutBtn) {
+    fullscreenZoomOutBtn.addEventListener('click', zoomOutFullscreenImage);
+  }
+  
+  slides.forEach((slide, index) => {
+    const image = slide.querySelector('.modern-gallery-image');
+    if (image) {
+      image.addEventListener('click', () => {
+        showFullscreen(index);
+      });
+    }
+  });
+  
+  thumbnails.forEach((thumbnail, index) => {
+    thumbnail.addEventListener('click', () => {
+      goToSlide(index);
+    });
+  });
+  
+  if (fullscreen) {
+    fullscreen.addEventListener('click', (e) => {
+      if (e.target === fullscreen || e.target.classList.contains('modern-gallery-fullscreen-overlay')) {
+        hideFullscreen();
+      }
+    });
+  }
+  
+  document.addEventListener('keydown', (e) => {
+    if (!fullscreen || !fullscreen.classList.contains('active')) return;
+    
+    if (e.key === 'Escape') {
+      hideFullscreen();
+    } else if (e.key === 'ArrowLeft') {
+      prevFullscreen();
+    } else if (e.key === 'ArrowRight') {
+      nextFullscreen();
+    }
+  });
+  
+  let touchStartX = 0;
+  let touchEndX = 0;
+  
+  container.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  
+  container.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+  
+  function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+  }
+  
+  if (fullscreen) {
+    let fullscreenTouchStartX = 0;
+    let fullscreenTouchEndX = 0;
+    
+    fullscreen.addEventListener('touchstart', (e) => {
+      fullscreenTouchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    fullscreen.addEventListener('touchend', (e) => {
+      fullscreenTouchEndX = e.changedTouches[0].screenX;
+      handleFullscreenSwipe();
+    }, { passive: true });
+    
+    function handleFullscreenSwipe() {
+      const swipeThreshold = 50;
+      const diff = fullscreenTouchStartX - fullscreenTouchEndX;
+      
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          nextFullscreen();
+        } else {
+          prevFullscreen();
+        }
+      }
+    }
+  }
+  
+  updateSlider();
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,988 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - Задача #{{ params.task.id }} {% endblock %}
+
+{% block title_navbar %} - HelpDesk - Задача #{{ params.task.id }} {% endblock %}
+    
+{% block content %}
+
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .task-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+        }
+        .task-tabs .nav-link {
+            min-width: 180px;
+        }
+        .quick-action-btn {
+            width: 100%;
+        }
+    }
+    .task-info .form-floating {
+        margin-bottom: 1rem;
+    }
+    .quick-action-btn {
+        transition: all 0.3s ease;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Timeline Styles */
+    .timeline-container {
+        position: relative;
+        padding: 1rem 0;
+    }
+    
+    .timeline-line {
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #dee2e6, #6c757d, #dee2e6);
+        z-index: 0;
+    }
+    
+    .timeline-items {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .timeline-date-separator {
+        margin: 1.5rem 0 1rem 0;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .timeline-date-separator .badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .timeline-item {
+        display: flex;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-marker {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: 1rem;
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .timeline-marker i {
+        font-size: 1.2rem;
+    }
+    
+    .timeline-item[data-type="created"] .timeline-marker {
+        border-color: #198754;
+        background: #f8fff9;
+    }
+    
+    .timeline-item[data-type="comment"] .timeline-marker {
+        border-color: #0dcaf0;
+        background: #f0f9ff;
+    }
+    
+    .timeline-item[data-type="attachment"] .timeline-marker {
+        border-color: #0d6efd;
+        background: #f0f4ff;
+    }
+    
+    .timeline-content {
+        flex: 1;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-content:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateX(4px);
+    }
+    
+    .timeline-header {
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .timeline-header h6 {
+        margin: 0;
+        color: #212529;
+        font-weight: 600;
+    }
+    
+    .timeline-date {
+        white-space: nowrap;
+    }
+    
+    .timeline-body {
+        color: #495057;
+    }
+    
+    @media (max-width: 767.98px) {
+        .timeline-line {
+            left: 15px;
+            width: 2px;
+        }
+        
+        .timeline-marker {
+            width: 30px;
+            height: 30px;
+            margin-right: 0.75rem;
+        }
+        
+        .timeline-marker i {
+            font-size: 1rem;
+        }
+        
+        .timeline-content {
+            padding: 0.75rem;
+        }
+        
+        .timeline-date {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+        
+        .timeline-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+    }
+</style>
+
+<div class="row mb-3">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+        {% if user.is_superuser or params.task.author == user or params.task.assignee == user %}
+            <a href="{% url 'helpdesk:task_edit' params.task.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+        {% endif %}
+        {% if params.in_progress_status and params.task.status.id != params.in_progress_status.id and not params.task.status.is_closed %}
+            <button type="button" class="btn btn-success quick-action-btn" 
+                    data-task-id="{{ params.task.pk }}" 
+                    data-status-id="{{ params.in_progress_status.id }}"
+                    data-status-name="{{ params.in_progress_status.name }}">
+                <i class="bi bi-play-circle"></i> Взять в работу
+            </button>
+        {% endif %}
+        {% if params.closed_status and not params.task.status.is_closed %}
+            <button type="button" class="btn btn-danger quick-action-btn" 
+                    data-task-id="{{ params.task.pk }}" 
+                    data-status-id="{{ params.closed_status.id }}"
+                    data-status-name="{{ params.closed_status.name }}">
+                <i class="bi bi-check-circle"></i> Закрыть
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="col-12">
+	<div class="card">
+		<div class="card-header" style="{% if params.task.status %}background-color: {{ params.task.status.color }}; color: white;{% else %}background-color: #6c757d; color: white;{% endif %}">
+			<h5 class="mb-0">
+				<i class="bi bi-ticket"></i> Задача #{{ params.task.id }} - {{ params.task.title }}
+				{% if params.task.is_overdue %}
+					<span class="badge bg-danger">Просрочена</span>
+				{% endif %}
+			</h5>
+		</div>
+	
+		<ul class="nav nav-tabs task-tabs" id="myTab" role="tablist">
+			<li class="nav-item" role="presentation">
+				<button class="nav-link active text-secondary" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">
+					<i class="bi bi-info-circle"></i> Основное
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link text-secondary" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">
+					<i class="bi bi-chat-left-text"></i> Комментарии ({{ params.comments|length }})
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link text-secondary" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false">
+					<i class="bi bi-paperclip"></i> Вложения ({{ params.attachments|length }})
+				</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link text-secondary" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">
+					<i class="bi bi-clock-history"></i> Timeline ({% if params.timeline %}{{ params.timeline|length }}{% else %}0{% endif %})
+				</button>
+			</li>
+		</ul>
+		  
+		<div class="tab-content" id="myTabContent">
+			<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+				<div class="card-body">
+					<div class="row g-1 task-info">
+						<div class="col-12">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" value="{{ params.task.title }}" readonly>
+								<label>Тема</label>
+							</div>
+						</div>
+					</div>
+					
+					<div class="row g-2 task-info">
+						<div class="col-12 col-md-6">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" value="{{ params.task.author.get_full_name|default:params.task.author.username }}" readonly>
+								<label>Автор</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.assignee %}{{ params.task.assignee.get_full_name|default:params.task.assignee.username }}{% else %}Не назначен{% endif %}" readonly>
+								<label>Исполнитель</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.status %}{{ params.task.status.name }}{% else %}-{% endif %}" readonly>
+								<label>Статус</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.priority %}{{ params.task.priority.name }}{% else %}-{% endif %}" readonly>
+								<label>Приоритет</label>
+							</div>
+						</div>
+						
+						<div class="col-12 col-md-6">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" value="{{ params.task.date_created|date:'d.m.Y H:i' }}" readonly>
+								<label>Дата создания</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.date_start %}{{ params.task.date_start|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+								<label>Дата начала</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<div class="input-group">
+									<input type="text" class="form-control form-control-sm {% if params.task.is_overdue %}text-danger{% endif %}" 
+										value="{% if params.task.date_deadline %}{{ params.task.date_deadline|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+									{% if params.task.date_deadline %}
+										<button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#reminderModal" title="Настроить напоминания">
+											<i class="bi bi-bell"></i>
+										</button>
+									{% endif %}
+								</div>
+								<label>Срок выполнения</label>
+							</div>
+							
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control form-control-sm" 
+									value="{% if params.task.date_closed %}{{ params.task.date_closed|date:'d.m.Y H:i' }}{% else %}-{% endif %}" readonly>
+								<label>Дата закрытия</label>
+							</div>
+						</div>
+					</div>
+					
+					{% if params.task.projects.all %}
+						<div class="mb-3">
+							<label class="form-label">Проекты:</label>
+							{% for project in params.task.projects.all %}
+								<span class="badge" style="background-color: {{ project.color }}; color: white;">
+									{{ project.name }}
+								</span>
+							{% endfor %}
+						</div>
+					{% endif %}
+					
+					{% if params.task.tags %}
+						<div class="mb-3">
+							<label class="form-label">Дополнительные теги:</label>
+							<span class="badge bg-secondary">{{ params.task.tags }}</span>
+						</div>
+					{% endif %}
+					
+					{% if params.task.observers.all %}
+						<div class="mb-3">
+							<label class="form-label">Наблюдатели:</label>
+							{% for observer in params.task.observers.all %}
+								<span class="badge bg-info">{{ observer.get_full_name|default:observer.username }} {{observer.username}}</span>
+							{% endfor %}
+						</div>
+					{% endif %}
+					
+					<div class="card">
+						<div class="card-body">
+							<h6>Описание:</h6>
+							<div class="mb-3">
+								{{ params.task.description|safe }}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+				<div class="card-body">
+					{% if params.comments %}
+						{% for comment in params.comments %}
+							<div class="card mb-3 {% if comment.is_internal %}border-warning{% endif %}">
+								<div class="card-header">
+									<strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+									{% if comment.is_internal %}
+										<span class="badge bg-warning text-dark">Внутренний</span>
+									{% endif %}
+									<small class="text-muted float-end">{{ comment.date_created|date:"d.m.Y H:i" }}</small>
+								</div>
+								<div class="card-body">
+									{{ comment.text|safe }}
+								</div>
+							</div>
+						{% endfor %}
+					{% else %}
+						<div class="alert alert-info">
+							Нет комментариев по задаче
+						</div>
+					{% endif %}
+					
+					<hr>
+					
+					<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#commentModal">
+						<i class="bi bi-plus-circle"></i> Добавить комментарий
+					</button>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="files" role="tabpanel" aria-labelledby="files-tab">
+				<div class="card-body">
+					{% if params.attachments %}
+						<div class="list-group mb-3">
+							{% for attachment in params.attachments %}
+								<div class="list-group-item d-flex flex-column flex-md-row align-items-md-center">
+									<div class="flex-grow-1">
+										<h6 class="mb-1">
+											<a href="{{ attachment.file.url }}" target="_blank">
+												<i class="bi bi-file-earmark"></i> {{ attachment.original_filename }}
+											</a>
+										</h6>
+										<p class="mb-1 small text-muted">
+											Загрузил: {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}
+											{% if attachment.file_size %}
+												| Размер: {{ attachment.file_size|filesizeformat }}
+											{% endif %}
+											| {{ attachment.date_uploaded|date:"d.m.Y H:i" }}
+										</p>
+										{% if attachment.description %}
+											<p class="mb-0">{{ attachment.description }}</p>
+										{% endif %}
+									</div>
+									<div class="ms-md-3 mt-2 mt-md-0">
+										<a class="btn btn-outline-secondary btn-sm" href="{{ attachment.file.url }}" target="_blank">
+											<i class="bi bi-box-arrow-up-right"></i> Открыть
+										</a>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="alert alert-info">
+							Нет вложенных файлов
+						</div>
+					{% endif %}
+
+					<form method="POST" action="{% url 'helpdesk:task_add_attachment' params.task.pk %}" enctype="multipart/form-data" class="card mt-3">
+						<div class="card-body">
+							{% csrf_token %}
+							<div class="mb-3">
+								<label class="form-label">Выберите файлы</label>
+								<input type="file" name="files" class="form-control" multiple required>
+								<div class="form-text">Можно выбрать несколько файлов одновременно</div>
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Описание (необязательно)</label>
+								<input type="text" name="description" class="form-control" placeholder="Например: ТЗ, скриншоты">
+							</div>
+							<button type="submit" class="btn btn-outline-primary">
+								<i class="bi bi-cloud-upload"></i> Загрузить
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+			
+			<div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+				<div class="card-body">
+					{% if params.timeline_grouped %}
+						<div class="timeline-container">
+							<div class="timeline-line"></div>
+							<div class="timeline-items">
+								{% for date_key, date_items in params.timeline_grouped %}
+									<div class="timeline-date-separator">
+										<span class="badge bg-light text-dark border">
+											<i class="bi bi-calendar3 me-1"></i>{{ date_key }}
+										</span>
+									</div>
+									{% for item in date_items %}
+									<div class="timeline-item" data-type="{{ item.type }}">
+										<div class="timeline-marker">
+											{% if item.type == 'created' %}
+												<i class="bi bi-plus-circle-fill text-success"></i>
+											{% elif item.type == 'history' %}
+												{% if 'статус' in item.action|lower %}
+													<i class="bi bi-arrow-repeat text-primary"></i>
+												{% elif 'приоритет' in item.action|lower %}
+													<i class="bi bi-flag-fill text-warning"></i>
+												{% elif 'исполнитель' in item.action|lower %}
+													<i class="bi bi-person-check text-info"></i>
+												{% elif 'быстрое изменение' in item.action|lower %}
+													<i class="bi bi-lightning-charge text-primary"></i>
+												{% else %}
+													<i class="bi bi-pencil-square text-secondary"></i>
+												{% endif %}
+											{% elif item.type == 'comment' %}
+												<i class="bi bi-chat-left-text-fill text-info"></i>
+											{% elif item.type == 'attachment' %}
+												<i class="bi bi-paperclip text-primary"></i>
+											{% endif %}
+										</div>
+										<div class="timeline-content">
+											<div class="timeline-header">
+												<div class="d-flex justify-content-between align-items-center flex-wrap">
+													<div>
+														<h6 class="mb-1">
+															{% if item.type == 'created' %}
+																<i class="bi bi-plus-circle me-1"></i>
+															{% elif item.type == 'comment' %}
+																<i class="bi bi-chat-left-text me-1"></i>
+															{% elif item.type == 'attachment' %}
+																<i class="bi bi-paperclip me-1"></i>
+															{% endif %}
+															{{ item.action }}
+														</h6>
+														{% if item.user %}
+															<small class="text-muted">
+																<i class="bi bi-person me-1"></i>
+																{{ item.user.get_full_name|default:item.user.username }}
+															</small>
+														{% endif %}
+													</div>
+													<small class="text-muted timeline-date">
+														<i class="bi bi-clock me-1"></i>
+														{{ item.date|date:"d.m.Y H:i" }}
+													</small>
+												</div>
+											</div>
+											<div class="timeline-body">
+												{% if item.type == 'created' %}
+													<p class="mb-0">
+														<strong>Задача:</strong> {{ item.data.title }}
+													</p>
+												{% elif item.type == 'history' %}
+													{% if item.field_name %}
+														<div class="mb-2">
+															<strong>{{ item.field_name }}:</strong>
+															{% if item.old_value %}
+																<span class="badge bg-secondary me-1">
+																	<del>{{ item.old_value|truncatechars:50 }}</del>
+																</span>
+															{% endif %}
+															{% if item.new_value %}
+																<span class="badge bg-success">
+																	→ {{ item.new_value|truncatechars:50 }}
+																</span>
+															{% endif %}
+														</div>
+													{% endif %}
+													{% if item.comment %}
+														<div class="alert alert-light py-2 px-3 mb-0">
+															<small>{{ item.comment }}</small>
+														</div>
+													{% endif %}
+												{% elif item.type == 'comment' %}
+													<div class="card {% if item.is_internal %}border-warning{% else %}border-light{% endif %} mb-0">
+														<div class="card-body p-2">
+															{% if item.is_internal %}
+																<span class="badge bg-warning text-dark mb-2">
+																	<i class="bi bi-lock"></i> Внутренний комментарий
+																</span>
+															{% endif %}
+															<div class="comment-preview">{{ item.text|safe|truncatewords:30 }}</div>
+															{% if item.text|length > 200 %}
+																<a href="#comment-{{ item.date|date:'YmdHis' }}" class="small text-primary mt-2 d-inline-block" data-bs-toggle="modal" data-bs-target="#commentModal{{ item.date|date:'YmdHis' }}">
+																	Читать полностью...
+																</a>
+															{% endif %}
+														</div>
+													</div>
+												{% elif item.type == 'attachment' %}
+													<div class="d-flex align-items-center gap-2">
+														<i class="bi bi-file-earmark text-primary fs-5"></i>
+														<div class="flex-grow-1">
+															<a href="{{ item.file_url }}" target="_blank" class="text-decoration-none">
+																{{ item.filename }}
+															</a>
+															{% if item.description %}
+																<div class="small text-muted">{{ item.description }}</div>
+															{% endif %}
+														</div>
+													</div>
+												{% endif %}
+											</div>
+										</div>
+									</div>
+									{% endfor %}
+								{% endfor %}
+							</div>
+						</div>
+					{% elif params.timeline %}
+						{# Fallback для старого формата без группировки #}
+						<div class="timeline-container">
+							<div class="timeline-line"></div>
+							<div class="timeline-items">
+								{% for item in params.timeline %}
+									<div class="timeline-item" data-type="{{ item.type }}">
+										<div class="timeline-marker">
+											{% if item.type == 'created' %}
+												<i class="bi bi-plus-circle-fill text-success"></i>
+											{% elif item.type == 'history' %}
+												<i class="bi bi-pencil-square text-secondary"></i>
+											{% elif item.type == 'comment' %}
+												<i class="bi bi-chat-left-text-fill text-info"></i>
+											{% elif item.type == 'attachment' %}
+												<i class="bi bi-paperclip text-primary"></i>
+											{% endif %}
+										</div>
+										<div class="timeline-content">
+											<div class="timeline-header">
+												<div class="d-flex justify-content-between align-items-center flex-wrap">
+													<div>
+														<h6 class="mb-1">{{ item.action }}</h6>
+														{% if item.user %}
+															<small class="text-muted">
+																<i class="bi bi-person me-1"></i>
+																{{ item.user.get_full_name|default:item.user.username }}
+															</small>
+														{% endif %}
+													</div>
+													<small class="text-muted timeline-date">
+														<i class="bi bi-clock me-1"></i>
+														{{ item.date|date:"d.m.Y H:i" }}
+													</small>
+												</div>
+											</div>
+										</div>
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					{% else %}
+						<div class="alert alert-info">
+							История изменений пуста
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal для комментария -->
+<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="commentModalLabel">
+					<i class="bi bi-chat-left-text"></i> Новый комментарий
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form method="POST" action="{% url 'helpdesk:task_add_comment' params.task.pk %}">
+				{% csrf_token %}
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="commentText" class="form-label">Комментарий</label>
+						<textarea class="form-control" id="commentText" name="text" rows="10" required></textarea>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" id="isInternal" name="is_internal">
+						<label class="form-check-label" for="isInternal">
+							Внутренний комментарий (виден только исполнителям)
+						</label>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+					<button type="submit" class="btn btn-success">
+						<i class="bi bi-check-circle"></i> Сохранить
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка быстрых действий
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const taskId = this.dataset.taskId;
+            const statusId = this.dataset.statusId;
+            const statusName = this.dataset.statusName;
+            const originalText = this.innerHTML;
+            
+            // Отключаем кнопку и показываем загрузку
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+            
+            // Получаем CSRF токен из cookies или мета-тега
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            let csrftoken = getCookie('csrftoken');
+            // Если токен не найден в cookies, пытаемся получить из мета-тега
+            if (!csrftoken) {
+                const metaTag = document.querySelector('meta[name=csrf-token]');
+                if (metaTag) {
+                    csrftoken = metaTag.getAttribute('content');
+                }
+            }
+            if (!csrftoken) {
+                alert('Ошибка: CSRF токен не найден. Пожалуйста, обновите страницу.');
+                this.disabled = false;
+                this.innerHTML = originalText;
+                return;
+            }
+            
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            formData.append('csrfmiddlewaretoken', csrftoken); // Добавляем токен в FormData
+            
+            fetch(`/helpdesk/task/${taskId}/quick-status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken // Также отправляем в заголовке
+                },
+                credentials: 'same-origin' // Важно для отправки cookies
+            })
+            .then(response => {
+                console.log(response.text);
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Если ответ не JSON (например, HTML страница входа), это ошибка
+                    throw new Error('Сервер вернул неверный формат ответа. Возможно, требуется повторная авторизация.');
+                }
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Ошибка сервера');
+                    }).catch(err => {
+                        if (err.message) {
+                            throw err;
+                        }
+                        throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Обновляем статус на странице
+                    const statusInput = document.querySelector('input[label="Статус"]');
+                    if (statusInput) {
+                        statusInput.value = data.status;
+                    }
+                    
+                    // Обновляем цвет заголовка карточки
+                    const cardHeader = document.querySelector('.card-header[style*="background-color"]');
+                    if (cardHeader && data.status_color) {
+                        cardHeader.style.backgroundColor = data.status_color;
+                    }
+                    
+                    // Показываем сообщение об успехе
+                    alert('Статус успешно изменен на: ' + data.status);
+                    
+                    // Перезагружаем страницу через небольшую задержку
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось изменить статус'));
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении статуса: ' + error.message);
+                this.disabled = false;
+                this.innerHTML = originalText;
+            });
+        });
+    });
+});
+</script>
+
+<!-- Модальное окно управления напоминаниями -->
+<div class="modal fade" id="reminderModal" tabindex="-1" aria-labelledby="reminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="reminderModalLabel">
+                    <i class="bi bi-bell"></i> Напоминания о дедлайне
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if params.task.date_deadline %}
+                    <div class="mb-3">
+                        <p class="mb-2">
+                            <strong>Дедлайн:</strong> {{ params.task.date_deadline|date:"d.m.Y H:i" }}
+                        </p>
+                        <small class="text-muted">Напоминания будут отправлены на вашу почту за указанное количество дней до дедлайна</small>
+                    </div>
+                    
+                    <div id="remindersList" class="mb-3">
+                        {% if params.deadline_reminders %}
+                            {% for reminder in params.deadline_reminders %}
+                                <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2" data-reminder-id="{{ reminder.id }}">
+                                    <div>
+                                        <i class="bi bi-bell-fill text-warning"></i>
+                                        <strong>За {{ reminder.days_before }} {{ reminder.days_before|pluralize:"день,дня,дней" }}</strong>
+                                        {% if reminder.is_sent %}
+                                            <span class="badge bg-success ms-2">Отправлено</span>
+                                            {% if reminder.date_sent %}
+                                                <small class="text-muted ms-2">{{ reminder.date_sent|date:"d.m.Y H:i" }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary ms-2">Ожидает отправки</span>
+                                        {% endif %}
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-reminder-btn" data-reminder-id="{{ reminder.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info">Нет настроенных напоминаний</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Добавить напоминание</h6>
+                            <div class="input-group mb-2">
+                                <input type="number" class="form-control" id="reminderDays" min="1" value="1" placeholder="Количество дней">
+                                <span class="input-group-text">дней до дедлайна</span>
+                                <button type="button" class="btn btn-primary" id="addReminderBtn">
+                                    <i class="bi bi-plus-circle"></i> Добавить
+                                </button>
+                            </div>
+                            <small class="text-muted">Например: 3 дня до дедлайна = напоминание будет отправлено за 3 дня до {{ params.task.date_deadline|date:"d.m.Y" }}</small>
+                        </div>
+                    </div>
+                    
+                    <div id="reminderError" class="alert alert-danger d-none mt-3" role="alert"></div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Для настройки напоминаний необходимо установить дедлайн задачи
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление напоминания
+    const addReminderBtn = document.getElementById('addReminderBtn');
+    if (addReminderBtn) {
+        addReminderBtn.addEventListener('click', function() {
+            const daysBefore = parseInt(document.getElementById('reminderDays').value);
+            const errorDiv = document.getElementById('reminderError');
+            errorDiv.classList.add('d-none');
+            
+            if (!daysBefore || daysBefore < 1) {
+                errorDiv.textContent = 'Введите количество дней (минимум 1)';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            
+            const originalHTML = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Добавление...';
+            
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            const formData = new FormData();
+            formData.append('days_before', daysBefore);
+            
+            fetch(`/helpdesk/task/{{ params.task.pk }}/reminder/add/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Произошла ошибка при добавлении напоминания';
+                    errorDiv.classList.remove('d-none');
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = 'Произошла ошибка при добавлении напоминания';
+                errorDiv.classList.remove('d-none');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    }
+    
+    // Удаление напоминания
+    const deleteReminderBtns = document.querySelectorAll('.delete-reminder-btn');
+    deleteReminderBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('Удалить это напоминание?')) {
+                return;
+            }
+            
+            const reminderId = this.dataset.reminderId;
+            const reminderItem = document.querySelector(`[data-reminder-id="${reminderId}"]`);
+            const originalHTML = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+            
+            fetch(`/helpdesk/task/{{ params.task.pk }}/reminder/${reminderId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем элемент из списка
+                    if (reminderItem) {
+                        reminderItem.remove();
+                    }
+                    
+                    // Если список пуст, показываем сообщение
+                    const remindersList = document.getElementById('remindersList');
+                    if (remindersList && remindersList.querySelectorAll('[data-reminder-id]').length === 0) {
+                        remindersList.innerHTML = '<div class="alert alert-info">Нет настроенных напоминаний</div>';
+                    }
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось удалить напоминание'));
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при удалении напоминания');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
+});
+</script>
+
+{% include 'help_desk/quick_create_widget.html' %}
+
+{% endblock %}
+

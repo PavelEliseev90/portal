@@ -1,0 +1,419 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - Дашборд {% endblock %}
+
+{% block title_navbar %} - HelpDesk - Дашборд {% endblock %}
+    
+{% block content %}
+
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .status-columns .card-body {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        
+        .status-columns .card .card-body .card {
+            margin-bottom: .75rem;
+        }
+        .status-columns .card .card-body .card-body.p-2 {
+            padding: .75rem !important;
+        }
+        .status-columns .card .card-body .card-title {
+            font-size: .95rem;
+            margin-bottom: .35rem;
+        }
+        .status-columns .card .card-body .small {
+            font-size: .8rem;
+            line-height: 1.2;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .status-columns {
+            gap: 1rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: .5rem;
+        }
+        .status-columns > div {
+            min-width: 280px;
+            flex: 0 0 auto;
+        }
+    }
+</style>
+
+<div class="row mb-3">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2 align-items-center">
+        <div class="flex-grow-1">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="dashboardSearch" placeholder="Быстрый поиск задач..." autocomplete="off">
+                <div id="dashboardSearchSuggestions" class="list-group position-absolute w-100 d-none" style="z-index: 1000; max-height: 300px; overflow-y: auto; margin-top: 38px;"></div>
+            </div>
+        </div>
+        <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Создать задачу
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+        <a href="{% url 'helpdesk:calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar"></i> Календарь
+        </a>
+        <a href="{% url 'helpdesk:chart' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-bar-chart"></i> График
+        </a>
+    </div>
+</div>
+
+<style>
+    #dashboardSearchSuggestions {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+    }
+    #dashboardSearchSuggestions .list-group-item {
+        cursor: pointer;
+        border-left: 3px solid transparent;
+    }
+    #dashboardSearchSuggestions .list-group-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #0d6efd;
+    }
+    #dashboardSearchSuggestions .task-id {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    #dashboardSearchSuggestions .task-meta {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+
+<!-- Статистика -->
+<div class="row mb-4 gy-3">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'helpdesk:task_list' %}" class="text-decoration-none d-block">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Всего задач</h5>
+                    <h2>{{ params.total_tasks }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'helpdesk:task_list' %}?overdue=1&order_by=-date_deadline" class="text-decoration-none d-block">
+            <div class="card text-white bg-danger h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Просрочено</h5>
+                    <h2>{{ params.overdue_tasks }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'helpdesk:task_list' %}?my=1" class="text-decoration-none d-block">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Мои задачи</h5>
+                    <h2>{{ params.my_tasks }}</h2>
+                    {% if params.my_overdue > 0 %}
+                        <small>Просрочено: {{ params.my_overdue }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'helpdesk:task_list' %}?closed_today=1&order_by=-date_closed" class="text-decoration-none d-block">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Закрыто сегодня</h5>
+                    <h2>{{ params.today_closed }}</h2>
+                    <small>Создано: {{ params.today_created }}</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Задачи по статусам -->
+<div class="row status-columns">
+    {% for item in params.tasks_by_status %}
+        <div class="col-12 col-md-6 col-xl-3 mb-4">
+            <div class="card">
+                <div class="card-header" style="background-color: {{ item.status.color }}; color: white;">
+                    <h5 class="mb-0">
+                        {{ item.status.name }}
+                        <span class="badge bg-light text-dark float-end">
+                            {{ item.tasks|length }}
+                        </span>
+                    </h5>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                    {% for task in item.tasks|slice:":20" %}
+                        <div class="card mb-2 {% if task.is_overdue %}border-danger{% endif %}">
+                            <div class="card-body p-2">
+                                <h6 class="card-title">
+                                    <a href="{% url 'helpdesk:task_detail' task.pk %}" class="text-decoration-none">
+                                        #{{ task.id }} - {{ task.title|truncatechars:50 }}
+                                    </a>
+                                </h6>
+                                <div class="small text-muted">
+                                    {% if task.assignee %}
+                                        <i class="bi bi-person"></i> {{ task.assignee.get_full_name|default:task.assignee.username }}
+                                    {% else %}
+                                        <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Исполнитель не назначен</span>
+                                    {% endif %}
+                                    <br>
+                                    {% if task.date_deadline %}
+                                        <i class="bi bi-calendar"></i> 
+                                        {% if task.is_overdue %}
+                                            <span class="text-danger">Просрочено: {{ task.date_deadline|date:"d.m.Y H:i" }}</span>
+                                        {% else %}
+                                            До {{ task.date_deadline|date:"d.m.Y H:i" }}
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if task.priority %}
+                                        <br>
+                                        <span class="badge" style="background-color: {{ task.priority.color }}; color: white;">
+                                            {{ task.priority.name }}
+                                        </span>
+                                    {% endif %}
+                                    {% if task.projects.all %}
+                                        <br>
+                                        {% for project in task.projects.all %}
+                                            <span class="badge" style="background-color: {{ project.color }}; color: white;">
+                                                {{ project.name }}
+                                            </span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                {% if user.is_superuser or task.author == user or task.assignee == user %}
+                                    <div class="mt-2 d-flex gap-1 flex-wrap">
+                                        {% if params.in_progress_status and task.status.id != params.in_progress_status.id and not task.status.is_closed %}
+                                            <button type="button" class="btn btn-sm btn-success quick-action-btn-dashboard" 
+                                                    data-task-id="{{ task.pk }}" 
+                                                    data-status-id="{{ params.in_progress_status.id }}"
+                                                    data-status-name="{{ params.in_progress_status.name }}"
+                                                    title="Взять в работу">
+                                                <i class="bi bi-play-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% if params.closed_status and not task.status.is_closed %}
+                                            <button type="button" class="btn btn-sm btn-danger quick-action-btn-dashboard" 
+                                                    data-task-id="{{ task.pk }}" 
+                                                    data-status-id="{{ params.closed_status.id }}"
+                                                    data-status-name="{{ params.closed_status.name }}"
+                                                    title="Закрыть">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center">Нет задач</p>
+                    {% endfor %}
+                    {% if item.tasks|length > 20 %}
+                        <div class="text-center mt-2">
+                            <a href="{% url 'helpdesk:task_list' %}?status={{ item.status.id }}" class="btn btn-sm btn-outline-secondary">
+                                Показать все ({{ item.tasks|length }})
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка быстрых действий на дашборде
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn-dashboard');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const taskId = this.dataset.taskId;
+            const statusId = this.dataset.statusId;
+            const statusName = this.dataset.statusName;
+            const originalHTML = this.innerHTML;
+            
+            // Отключаем кнопку и показываем загрузку
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            
+            // Получаем CSRF токен из cookies или мета-тега
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            let csrftoken = getCookie('csrftoken');
+            // Если токен не найден в cookies, пытаемся получить из мета-тега
+            if (!csrftoken) {
+                const metaTag = document.querySelector('meta[name=csrf-token]');
+                if (metaTag) {
+                    csrftoken = metaTag.getAttribute('content');
+                }
+            }
+            if (!csrftoken) {
+                alert('Ошибка: CSRF токен не найден. Пожалуйста, обновите страницу.');
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+                return;
+            }
+            
+            // Отправляем запрос
+            const formData = new FormData();
+            formData.append('status_id', statusId);
+            formData.append('csrfmiddlewaretoken', csrftoken); // Добавляем токен в FormData
+            
+            fetch(`/help_desk/task/${taskId}/quick-status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken // Также отправляем в заголовке
+                },
+                credentials: 'same-origin' // Важно для отправки cookies
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Если ответ не JSON (например, HTML страница входа), это ошибка
+                    throw new Error('Сервер вернул неверный формат ответа. Возможно, требуется повторная авторизация.');
+                }
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Ошибка сервера');
+                    }).catch(err => {
+                        if (err.message) {
+                            throw err;
+                        }
+                        throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Перезагружаем страницу
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось изменить статус'));
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении статуса: ' + error.message);
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            });
+        });
+    });
+    
+    // Поиск с автодополнением на дашборде
+    const dashboardSearchInput = document.getElementById('dashboardSearch');
+    const dashboardSearchSuggestions = document.getElementById('dashboardSearchSuggestions');
+    let dashboardSearchTimeout = null;
+    
+    if (dashboardSearchInput && dashboardSearchSuggestions) {
+        dashboardSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (dashboardSearchTimeout) {
+                clearTimeout(dashboardSearchTimeout);
+            }
+            
+            if (query.length < 2) {
+                dashboardSearchSuggestions.classList.add('d-none');
+                dashboardSearchSuggestions.innerHTML = '';
+                return;
+            }
+            
+            dashboardSearchTimeout = setTimeout(() => {
+                fetch(`{% url 'helpdesk:task_autocomplete' %}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.results && data.results.length > 0) {
+                            let html = '';
+                            data.results.forEach(task => {
+                                html += `
+                                    <a href="${task.url}" class="list-group-item list-group-item-action">
+                                        <div>
+                                            <span class="task-id">#${task.id}</span>
+                                            <strong>${task.title}</strong>
+                                        </div>
+                                        <div class="task-meta">
+                                            Автор: ${task.author} | Исполнитель: ${task.assignee} | Статус: ${task.status}
+                                        </div>
+                                    </a>
+                                `;
+                            });
+                            dashboardSearchSuggestions.innerHTML = html;
+                            dashboardSearchSuggestions.classList.remove('d-none');
+                        } else {
+                            dashboardSearchSuggestions.innerHTML = '<div class="list-group-item">Задачи не найдены</div>';
+                            dashboardSearchSuggestions.classList.remove('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        dashboardSearchSuggestions.classList.add('d-none');
+                    });
+            }, 300);
+        });
+        
+        dashboardSearchInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                dashboardSearchSuggestions.classList.add('d-none');
+            }, 200);
+        });
+        
+        dashboardSearchInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2) {
+                const event = new Event('input');
+                this.dispatchEvent(event);
+            }
+        });
+        
+        // Поиск по Enter
+        dashboardSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = this.value.trim();
+                if (query.length >= 2) {
+                    window.location.href = `{% url 'helpdesk:task_list' %}?search=${encodeURIComponent(query)}`;
+                }
+            }
+        });
+    }
+});
+</script>
+
+{% include 'help_desk/quick_create_widget.html' %}
+
+{% endblock %}
+

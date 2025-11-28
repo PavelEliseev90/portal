@@ -1,111 +1,1100 @@
 {% extends 'base_web.html' %}
 
 {% load custom_template_tags %}
+{% load static %}
 
 {% block url %} {% endblock %} 
 
 {% block title %} Аукционы автомобилей {% endblock %}
 
 {% block title_navbar %} - Аукционы автомобилей {{params.object.name}}  {% endblock %}
+
+{% block head %}
+    {{ block.super }}
+    <style>
+        :root {
+            --auction-accent: #F58220;
+            --auction-dark: #000000;
+            --auction-light: #F4F4F4;
+        }
+
+        .auction-page {
+            background-color: var(--auction-light);
+            padding: 2rem 1.5rem 3rem;
+            color: var(--auction-dark);
+        }
+
+        @media (max-width: 767.98px) {
+            .auction-page {
+                padding: 1.25rem 1rem 2rem;
+            }
+        }
+
+        .auction-page .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--auction-dark);
+            margin-bottom: 1rem;
+        }
+
+        .auction-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .auction-header p {
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 0.95rem;
+        }
+
+        .auction-header .section-title {
+            flex-grow: 1;
+            margin-bottom: 0.35rem;
+        }
+
+        .auction-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .auction-toolbar .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .auction-toolbar .btn-auction-primary {
+            background: var(--auction-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.85rem 1.6rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auction-toolbar .btn-auction-primary:hover,
+        .auction-toolbar .btn-auction-primary:focus {
+            background: #d66a14;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .auction-toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .auction-help-button {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: #ffffff;
+            color: var(--auction-accent);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: visible;
+        }
+
+        .auction-help-button:hover,
+        .auction-help-button:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
+            color: var(--auction-accent);
+            background: #ffffff;
+        }
+
+        .auction-help-button:active {
+            transform: translateY(0);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .auction-help-button::after {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 130, 32, 0.4);
+            animation: auctionHelpPulse 2.2s ease-out infinite;
+            pointer-events: none;
+        }
+
+        .auction-help-button:hover::after,
+        .auction-help-button:focus::after {
+            animation-play-state: paused;
+            opacity: 0;
+        }
+
+        @keyframes auctionHelpPulse {
+            0% {
+                transform: scale(0.85);
+                opacity: 0.6;
+            }
+            60% {
+                transform: scale(1.45);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1.45);
+                opacity: 0;
+            }
+        }
+
+        .auction-help-modal .modal-content,
+        #auctionHelpDetailModal .modal-content {
+            border-radius: 1.15rem;
+            border: 1px solid rgba(245, 130, 32, 0.35);
+            background: #ffffff;
+        }
+
+        .auction-help-modal .modal-header,
+        #auctionHelpDetailModal .modal-header {
+            background: linear-gradient(135deg, rgba(245, 130, 32, 0.9) 0%, #f89a48 100%);
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+            border-top-left-radius: 1.15rem;
+            border-top-right-radius: 1.15rem;
+            padding: 1.35rem 1.5rem;
+        }
+
+        .auction-help-modal .modal-title,
+        #auctionHelpDetailModal .modal-title {
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .auction-help-modal .modal-body,
+        #auctionHelpDetailModal .modal-body {
+            padding: 1.75rem;
+            background: linear-gradient(180deg, rgba(245, 130, 32, 0.05) 0%, rgba(255, 255, 255, 0) 60%);
+        }
+
+        .auction-help-modal .modal-footer,
+        #auctionHelpDetailModal .modal-footer {
+            border-top: 1px solid rgba(245, 130, 32, 0.2);
+            padding: 1.1rem 1.5rem 1.5rem;
+            background: #ffffff;
+            border-bottom-left-radius: 1.15rem;
+            border-bottom-right-radius: 1.15rem;
+        }
+
+        .auction-help-modal .modal-body {
+            padding: 0;
+            background: none;
+        }
+
+        .auction-help-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .auction-help-hero {
+            position: relative;
+            padding: 2.4rem 2.6rem;
+            color: #ffffff;
+            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.28) 0%, rgba(245, 130, 32, 0.95) 42%), radial-gradient(circle at 80% 80%, rgba(248, 154, 72, 0.95) 0%, rgba(245, 130, 32, 0.88) 55%);
+            overflow: hidden;
+            border-top-left-radius: 1.15rem;
+            border-top-right-radius: 1.15rem;
+        }
+
+        .auction-help-hero::after {
+            content: "";
+            position: absolute;
+            inset: 15% -30% -45% auto;
+            width: 460px;
+            height: 460px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
+            border-radius: 50%;
+            opacity: 0.32;
+            transform: rotate(28deg);
+        }
+
+        .auction-help-hero-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-width: 640px;
+        }
+
+        .auction-help-close {
+            position: absolute;
+            top: 1.4rem;
+            right: 1.6rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 197, 149, 0.95) 44%, rgba(245, 130, 32, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .auction-help-close:hover {
+            transform: translateY(-2px);
+            background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 1) 0%, rgba(255, 204, 158, 0.96) 40%, rgba(245, 130, 32, 1) 100%);
+            box-shadow: 0 18px 36px rgba(245, 130, 32, 0.25);
+        }
+
+        .auction-help-close:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+        }
+
+        .auction-help-close .btn-close {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            padding: 0;
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auction-help-close .btn-close::before,
+        .auction-help-close .btn-close::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 14px;
+            height: 2px;
+            border-radius: 999px;
+            background: rgba(59, 30, 0, 0.75);
+            transform-origin: center;
+        }
+
+        .auction-help-close .btn-close::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .auction-help-close .btn-close::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .auction-help-close:hover .btn-close::before,
+        .auction-help-close:hover .btn-close::after {
+            background: rgba(40, 20, 0, 0.85);
+        }
+
+        .auction-help-close:active .btn-close::before,
+        .auction-help-close:active .btn-close::after {
+            background: rgba(40, 20, 0, 0.95);
+        }
+
+        .auction-help-close .btn-close:hover {
+            border-radius: 50%;
+        }
+
+        .auction-help-close .btn-close:focus {
+            box-shadow: none;
+        }
+
+        .auction-help-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1.2rem;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.28);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .auction-help-hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin: 0;
+        }
+
+        .auction-help-hero-subtitle {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .auction-help-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+        }
+
+        .auction-help-hero-meta .meta-card {
+            min-width: 150px;
+            padding: 0.85rem 1rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.22);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .auction-help-hero-meta .meta-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .auction-help-hero-meta .meta-label {
+            font-size: 0.82rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .auction-help-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .auction-help-hero-actions .btn {
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.75rem 1.6rem;
+            box-shadow: 0 22px 42px rgba(0, 0, 0, 0.24);
+        }
+
+        .auction-help-content {
+            background: #ffffff;
+            padding: 2.4rem 2.6rem 2rem;
+            border-bottom-left-radius: 1.15rem;
+            border-bottom-right-radius: 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .auction-help-section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .auction-help-section-heading h4 {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--auction-dark);
+        }
+
+        .auction-help-section-heading span {
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            color: rgba(0, 0, 0, 0.55);
+        }
+
+        .auction-help-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.6rem;
+        }
+
+        .auction-help-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.6rem;
+            border-radius: 1rem;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 18px 32px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .auction-help-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 30px 48px rgba(245, 130, 32, 0.12);
+            border-color: rgba(245, 130, 32, 0.35);
+        }
+
+        .help-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: rgba(245, 130, 32, 0.12);
+            color: var(--auction-accent);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+
+        .help-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .help-card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--auction-dark);
+        }
+
+        .help-card-description {
+            margin: 0;
+            color: rgba(0, 0, 0, 0.72);
+            line-height: 1.55;
+        }
+
+        .help-card-actions {
+            margin-top: auto;
+        }
+
+        .help-card-actions .btn {
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.7rem 1.35rem;
+            box-shadow: 0 16px 32px rgba(245, 130, 32, 0.18);
+        }
+
+        @media (max-width: 767.98px) {
+            .auction-help-hero {
+                padding: 2rem 1.6rem;
+            }
+
+            .auction-help-content {
+                padding: 2rem 1.6rem 1.8rem;
+            }
+
+            .auction-help-hero-title {
+                font-size: 1.7rem;
+            }
+
+            .auction-help-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        .auction-help-detail-body p {
+            margin-bottom: 1rem;
+        }
+
+        .auction-help-detail-video-wrapper {
+            margin-top: 1rem;
+            border-radius: 1rem;
+            background: #101010;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(245, 130, 32, 0.35);
+            position: relative;
+        }
+
+        .auction-help-detail-video-frame {
+            position: relative;
+        }
+
+        .auction-help-detail-video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        .auction-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .auction-stat {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            min-width: 190px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .auction-divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.12);
+            margin: 1.5rem 0 2rem;
+        }
+
+        .auction-stat .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: rgba(0, 0, 0, 0.55);
+            letter-spacing: 0.05em;
+        }
+
+        .auction-stat .stat-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--auction-dark);
+        }
+
+        .auction-lots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .auction-lot-card {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .auction-lot-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.08);
+        }
+
+        .auction-lot-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .auction-lot-title {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .auction-lot-title h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--auction-dark);
+        }
+
+        .auction-meta-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 0.65rem 1.25rem;
+        }
+
+        .auction-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: rgba(0, 0, 0, 0.75);
+        }
+
+        .auction-meta-item .icon-wrapper {
+            width: 36px;
+            height: 36px;
+            border-radius: 0.75rem;
+            background: rgba(0, 0, 0, 0.05);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--auction-dark);
+        }
+
+        .auction-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.08);
+            color: var(--auction-dark);
+        }
+
+        .auction-status.accent {
+            background: var(--auction-accent);
+            color: #ffffff;
+        }
+
+        .auction-lot-footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            padding-top: 1rem;
+        }
+
+        .auction-owner {
+            font-size: 0.95rem;
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        .auction-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-weight: 600;
+            color: var(--auction-accent);
+            text-decoration: none;
+        }
+
+        .auction-link:hover {
+            color: #d66a14;
+        }
+
+        .auction-page .pagination .btn {
+            border-radius: 0.75rem;
+            border-color: rgba(0, 0, 0, 0.15);
+            color: var(--auction-dark);
+        }
+
+        .auction-page .pagination .btn:hover {
+            border-color: var(--auction-accent);
+            color: var(--auction-accent);
+        }
+
+        .auction-page .pagination .btn.btn-secondary {
+            background: var(--auction-accent);
+            border-color: var(--auction-accent);
+        }
+
+        .auction-page .modal-content {
+            border-radius: 1rem;
+            border: none;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+        }
+
+        .auction-page .modal-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--auction-light);
+        }
+
+        .auction-page .modal-title {
+            font-weight: 600;
+            color: var(--auction-dark);
+        }
+
+        .auction-page .modal-footer {
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .auction-page .form-select,
+        .auction-page .form-control {
+            border-radius: 0.75rem;
+            border-color: rgba(0, 0, 0, 0.12);
+            box-shadow: none;
+        }
+
+        .auction-page .form-select:focus,
+        .auction-page .form-control:focus {
+            border-color: var(--auction-accent);
+            box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.15);
+        }
+
+        .auction-empty-state {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            border: 1px dashed rgba(0, 0, 0, 0.2);
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 1.05rem;
+        }
+
+        .auction-filters-button-container {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .auction-filters-button-container .btn-filters-mobile {
+            background: #ffffff;
+            color: var(--auction-dark);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            padding: 0.65rem 1rem;
+            font-weight: 600;
+        }
+
+        .auction-filters-button-container .btn-filters-mobile .filters-count {
+            background: var(--auction-accent);
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 0.1rem 0.55rem;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+
+        .auction-page .modal-body hr {
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .auction-page .table > :not(caption) > * > * {
+            padding: 0.75rem 1rem;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .auction-page .btn-auction-secondary {
+            background: linear-gradient(135deg, rgba(255, 214, 174, 1) 0%, rgba(245, 130, 32, 1) 60%, rgba(188, 90, 13, 1) 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            box-shadow: 0 14px 28px rgba(245, 130, 32, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .auction-page .btn-auction-secondary:hover,
+        .auction-page .btn-auction-secondary:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 32px rgba(245, 130, 32, 0.32);
+            color: #ffffff;
+        }
+
+        .auction-page .btn-auction-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 20px rgba(245, 130, 32, 0.22);
+        }
+        
+        /* Стили для формы фильтров */
+        .auction-toolbar .form-floating {
+            margin-bottom: 0;
+        }
+        
+        .auction-toolbar .form-floating .form-control,
+        .auction-toolbar .form-floating .form-select {
+            height: 38px;
+            padding-top: 1.625rem;
+            padding-bottom: 0.625rem;
+        }
+        
+        .auction-toolbar .form-floating > label {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 991.98px) {
+            .auction-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .auction-toolbar .toolbar-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .auction-toolbar .toolbar-actions form {
+                width: 100%;
+            }
+            
+            .auction-toolbar .form-floating {
+                width: 100%;
+                min-width: 100% !important;
+            }
+            
+            .auction-toolbar .toolbar-right {
+                width: 100%;
+                margin-top: 1rem;
+            }
+            
+            .auction-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+        
+        @media (max-width: 575.98px) {
+            .auction-stats {
+                flex-direction: column;
+            }
+            
+            .auction-stat {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
     
 {% block content %}
 
+<div class="auction-page">
+
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-		<div class="modal-header">
-			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-		</div>
-		
-			<div class="modal-body">
-				<form action="GET">
-					<div class="form-floating mb-3">							
-						<select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
-							<option></option>
-							{% for store in params.selected.stores %}
-								<option value="{{store.id}}" {% if params.filtr.store_id == store.id %} selected {% endif %}> {{store.name}} </option>
-							{% endfor %}
-						</select>
-						<label for="floatingInput">Дилерский центр</label>
-					</div>
-					
-					<div class="row">
-						<div class="col">
-							<button class="btn btn_block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>	
-						</div>
-					</div>
-				</form>
-			</div>
+        <div class="modal-content">
+        <div class="modal-header">
+                <h1 class="modal-title fs-5">Выбор дилерского центра</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-		</div>
-	</div>
+        <div class="modal-body">
+            <form method="get" action="" id="storeFilterForm">
+                    <div class="form-floating mb-3">
+                            <select class="form-select" id="store_id" name="store_id" placeholder="">
+                                    <option value="">Все стоянки</option>
+                                    {% for store in params.selected.stores %}
+                                            <option value="{{store.id}}" {% if params.filtr.store_id == store.id|stringformat:"s" %} selected {% endif %}> {{store.name}} </option>
+                                    {% endfor %}
+                            </select>
+                            <label for="store_id">Дилерский центр</label>
+                    </div>
+                    
+                    <!-- Сохраняем другие параметры фильтров -->
+                    {% if params.filtr.status %}
+                        <input type="hidden" name="status" value="{{params.filtr.status}}">
+                    {% endif %}
+                    {% if params.filtr.vin %}
+                        <input type="hidden" name="vin" value="{{params.filtr.vin}}">
+                    {% endif %}
+                    {% if params.filtr.date_from %}
+                        <input type="hidden" name="date_from" value="{{params.filtr.date_from}}">
+                    {% endif %}
+                    {% if params.filtr.date_to %}
+                        <input type="hidden" name="date_to" value="{{params.filtr.date_to}}">
+                    {% endif %}
+
+                    <div class="d-grid">
+                            <button class="btn btn-auction-primary" type="submit"><span class="icon-mbri-success"></span> Применить</button>
+                    </div>
+            </form>
+    </div>
+
+</div>
+</div>
 </div>
 
 <div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
 	<div class="modal-dialog modal-dialog-centered">
-	  <div class="modal-content">
-		<div class="modal-header">
-		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
-		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-		</div>
-		<div class="modal-body">
-			<div class="form-floating mb-3">
-				<input type="text" class="form-control " id="new_filtr" name="new_filtr" placeholder="" required>
-				<label for="floatingInput">Наименование</label>
-			</div>
-		</div>
-		<div class="modal-footer">
-		  <button class="btn btn-success" type="button" onclick="change_link()" >Сохранить</button>
-		</div>
-	  </div>
-	</div>
+        <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+              </div>
+              <div class="modal-body">
+                      <div class="form-floating mb-3">
+                              <input type="text" class="form-control " id="new_filtr" name="new_filtr" placeholder="" required>
+                              <label for="new_filtr">Наименование</label>
+                      </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-auction-primary" type="button" onclick="change_link()" >Сохранить</button>
+              </div>
+        </div>
+      </div>
 </div>
 
 <div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
 	<div class="modal-dialog modal-dialog-centered">
-	  <div class="modal-content">
-		<div class="modal-header">
-		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
-		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-		</div>
-		<div class="modal-body">
-			{% if params.filters_user|length > 0 %}
-					<hr>
-					<div class="table-responsive">
-						<table class="table">
-						  <tbody>
-								
-							{% for filter in params.filters_user %}
-							<tr>
-								<td>
-									{{filter.name}}
-								</td>
-								<td>
-									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn  btn-outline-danger"><span class="icon-mbri-close"></span></a>
-								</td>
-							</tr>
-							{% endfor %}
-								
-						  </tbody>
-						</table>
-					  </div>
-				{% endif %}
-		</div>
-		
-	  </div>
-	</div>
+        <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+              </div>
+              <div class="modal-body">
+                      {% if params.filters_user|length > 0 %}
+                                      <div class="table-responsive">
+                                              <table class="table align-middle">
+                                                <tbody>
+
+                                                      {% for filter in params.filters_user %}
+                                                      <tr>
+                                                              <td class="fw-semibold">
+                                                                      {{filter.name}}
+                                                              </td>
+                                                              <td class="text-end">
+                                                                      <a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn btn-outline-danger rounded-pill"><span class="icon-mbri-close"></span></a>
+                                                              </td>
+                                                      </tr>
+                                                      {% endfor %}
+
+                                                </tbody>
+                                              </table>
+                                        </div>
+                              {% else %}
+                                      <div class="auction-empty-state">Сохранённые фильтры отсутствуют</div>
+                              {% endif %}
+              </div>
+
+        </div>
+      </div>
 </div>
 
 
+<div class="modal fade auction-help-modal" id="auctionHelpModal" tabindex="-1" aria-labelledby="auctionHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="auction-help-layout">
+                    <div class="auction-help-hero">
+                        <div class="auction-help-close">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                        </div>
+                        <div class="auction-help-hero-content">
+                            <div class="auction-help-hero-badge">
+                                <span class="icon-mbri-help"></span>
+                                КорсАвто Аукцион
+                            </div>
+                            <h2 class="auction-help-hero-title">Справка по управлению аукционом</h2>
+                            <p class="auction-help-hero-subtitle">Быстро разберитесь с основными сценариями: создавайте лоты, контролируйте метрики, настраивайте фильтры и изучайте карточку каждого аукциона.</p>
+                            <div class="auction-help-hero-meta">
+                                <div class="meta-card">
+                                    <span class="meta-value">{{params.count}}</span>
+                                    <span class="meta-label">Активных лотов</span>
+                                </div>
+                                <div class="meta-card">
+                                    <span class="meta-value">{{params.amount|floatformat:"2g"}} ₽</span>
+                                    <span class="meta-label">Сумма каталога</span>
+                                </div>
+                                <div class="meta-card">
+                                    <span class="meta-value">{{params.count_cars}}</span>
+                                    <span class="meta-label">Автомобилей</span>
+                                </div>
+                            </div>
+                            <div class="auction-help-hero-actions">
+                                <button type="button" class="btn btn-light help-detail-trigger" data-section-id="createLot">
+                                    <span class="icon-mbri-play me-2"></span>Быстрый старт
+                                </button>
+                                {% comment %} <button type="button" class="btn btn-outline-light help-detail-trigger" data-section-id="monitorStats">
+                                    <span class="icon-mbri-video me-2"></span>Смотреть инструкции
+                                </button> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="auction-help-content">
+                        <div class="auction-help-section-heading">
+                            <h4>Обучающие разделы</h4>
+                            <span>Видео и текстовые инструкции</span>
+                        </div>
+                        <div class="auction-help-grid">
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-plus"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Создание нового лота</h5>
+                                    <p class="help-card-description">Откройте `new_lots/`, по шагам заполните сведения об автомобиле, проверьте рассчитанную стоимость, приложите необходимые документы и подготовьте лот к публикации.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="createLot">Подробнее</button>
+                                </div>
+                            </div>
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-growing-chart"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Мониторинг ключевых показателей</h5>
+                                    <p class="help-card-description">Сводные карточки показывают количество лотов, суммарную стоимость и объём авто, помогая анализировать эффективность продаж.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="monitorStats">Подробнее</button>
+                                </div>
+                            </div>
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-setting"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Управление фильтрами</h5>
+                                    <p class="help-card-description">Используйте сохранённые наборы, модальные окна выбора дилера и гибкие фильтры, чтобы быстро находить нужные аукционы.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="filterManagement">Подробнее</button>
+                                </div>
+                            </div>
+                            <div class="auction-help-card">
+                                <div class="help-card-icon">
+                                    <span class="icon-mbri-preview"></span>
+                                </div>
+                                <div class="help-card-body">
+                                    <h5 class="help-card-title">Работа с карточкой лота</h5>
+                                    <p class="help-card-description">Следите за статусом, датами, стоимостью и составом лота, а также переходите на страницу аукциона для детальной работы.</p>
+                                </div>
+                                <div class="help-card-actions">
+                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="lotCard">Подробнее</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-auction-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="auctionHelpDetailModal" tabindex="-1" aria-labelledby="auctionHelpDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="auctionHelpDetailModalLabel">Подробное описание</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div class="auction-help-detail-body"></div>
+                <div class="auction-help-detail-video-wrapper d-none">
+                    <div class="auction-help-detail-video-frame">
+                        <div class="ratio ratio-16x9">
+                            <video class="auction-help-detail-video" title="Видеоинструкция" playsinline muted controls></video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-auction-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Мобильная кнопка фильтров -->
-<div class="d-block d-md-none">
-	<div class="mobile-filters-button-container">
-		<button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
-			<span class="icon-mbri-setting me-2"></span>
-			<span class="filters-text">Фильтры</span>
-			<span class="filters-count" id="activeFiltersCount">0</span>
-		</button>
-	</div>
+<div class="d-block d-md-none mb-3">
+    <div class="auction-filters-button-container">
+            <button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
+                    <span class="icon-mbri-setting me-2"></span>
+                    <span class="filters-text">Фильтры</span>
+                    <span class="filters-count" id="activeFiltersCount">0</span>
+            </button>
+    </div>
 </div>
 <!--
 
@@ -365,135 +1354,186 @@
 </form>
 -->
 
-<div class="row">
-	<div class="col-auto">
-		<a href="new_lots/" class="btn btn-secondary bg-gradient">
-			<span class="icon-mbri-play me-2"></span>Новый лот аукциона
-		</a>
-	</div>
+<div class="auction-header">
+    <h1 class="section-title">Аукционы автомобилей</h1>
+    <button type="button" class="auction-help-button" data-bs-toggle="modal" data-bs-target="#auctionHelpModal" aria-label="Справка">
+        ?
+    </button>
+    {% comment %} <p class="text-muted mb-0">Управляйте лотами, отслеживайте статус аукционов и контролируйте ключевые показатели.</p> {% endcomment %}
 </div>
 
 	
-	<br>
+<div class="auction-toolbar">
+    <div class="toolbar-actions d-flex align-items-center gap-2 flex-wrap">
+            <a href="new_lots/" class="btn btn-auction-primary">
+                    <span class="icon-mbri-play"></span>
+                    Новый лот аукциона
+            </a>
+            
+            <!-- Форма фильтров -->
+            <form method="get" action="" class="d-flex align-items-center gap-2 flex-wrap" id="auctionFiltersForm">
+                <!-- Фильтр по статусу -->
+                <div class="form-floating" style="min-width: 200px;">
+                    <select class="form-select form-select-sm" id="status" name="status" onchange="this.form.submit()">
+                        <option value="">Все статусы</option>
+                        {% for status in params.select.statuses %}
+                            <option value="{{status.id}}" {% if params.filtr.status == status.id|stringformat:"s" %}selected{% endif %}>
+                                {{status.name}}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <label for="status">Статус</label>
+                </div>
+                
+                <!-- Поиск по VIN -->
+                <div class="form-floating" style="min-width: 200px;">
+                    <input type="text" class="form-control form-control-sm" id="vin" name="vin" 
+                           placeholder="VIN номер" value="{{params.filtr.vin}}"
+                           onkeypress="if(event.key === 'Enter') { event.preventDefault(); this.form.submit(); }">
+                    <label for="vin">VIN номер</label>
+                </div>
+                
+                <!-- Дата от -->
+                <div class="form-floating" style="min-width: 160px;">
+                    <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" 
+                           value="{{params.filtr.date_from}}" onchange="this.form.submit()">
+                    <label for="date_from">Дата от</label>
+                </div>
+                
+                <!-- Дата до -->
+                <div class="form-floating" style="min-width: 160px;">
+                    <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" 
+                           value="{{params.filtr.date_to}}" onchange="this.form.submit()">
+                    <label for="date_to">Дата до</label>
+                </div>
+                
+                <!-- Кнопка поиска по VIN -->
+                <button type="submit" class="btn btn-sm btn-outline-secondary" style="height: 38px;">
+                    <span class="icon-mbri-search"></span> Найти
+                </button>
+                
+                <!-- Кнопка сброса фильтров -->
+                {% if params.filtr.status or params.filtr.vin or params.filtr.date_from or params.filtr.date_to %}
+                    <a href="?" class="btn btn-sm btn-outline-secondary" style="height: 38px;">
+                        <span class="icon-mbri-close"></span> Сбросить
+                    </a>
+                {% endif %}
+            </form>
+    </div>
+    <div class="toolbar-right">
+            <div class="auction-stats">
+                    <div class="auction-stat">
+                            <span class="stat-label"><span class="icon-tag me-2"></span>Лотов</span>
+                            <span class="stat-value">{{params.count}}</span>
+                    </div>
+                    <div class="auction-stat">
+                            <span class="stat-label"><span class="icon-mbri-credit-card me-2"></span>Сумма лотов</span>
+                            <span class="stat-value">{{params.amount|floatformat:"2g"}}</span>
+                    </div>
+                    <div class="auction-stat">
+                            <span class="stat-label"><span class="icon-truck me-2"></span>Автомобилей</span>
+                            <span class="stat-value">{{params.count_cars}}</span>
+                    </div>
+            </div>
+    </div>
+</div>
 
-	<div class="row">
-		<div class="col-auto">
-			<label class="fs-4"><span class="badge text-white bg-success bg-gradient bg-opacity-75" id="car_profit_auction"> <span class="icon-tag"></span> Лотов: {{params.count}} </span></label>
-		</div>
-		<div class="col-auto">
-			<label class="fs-4"><span class="badge text-white bg-success bg-gradient bg-opacity-75" id="car_profit_auction"> <span class="icon-mbri-credit-card"></span> Сумма лотов: {{params.amount|floatformat:"2g"}} </span></label>
-		</div>
-		<div class="col-auto">
-			<label class="fs-4"><span class="badge text-white bg-success bg-gradient bg-opacity-75" id="car_profit_auction"> <span class="icon-truck"></span> Автомобилей: {{params.count_cars}} </span></label>
-		</div>
-	</div>
+<div class="auction-divider"></div>
 
-    <div class="hr_kors_dark btn_block" style="height: 0.1rem;"> </div> 
-    
-    {% if params.paginator.object_list %}
-		
-		<div class="row g-3">
-    		{% for object in params.paginator.object_list %}
-    			<div class="col-12 col-md-12 col-lg-12 col-xl-12 text-white">
-    				<div class="bg-kors-card"> 
-    					
-    					<div class="bg-kors-card-body" style="padding: 0rem; padding-top: 0rem;">
-							
-							<div style="padding-left: 0.8rem; padding-right: 0.8rem;">
-								{% if object.status == None %} <label class="fs-5"><span class="badge text-white bg-warning bg-gradient"> <span class="fs-6 icon-tag"></span> подгатавливается </span></label> {% else %} <label class="fs-5"><span class="badge text-white bg-secondary bg-gradient"> <span class="fs-6 icon-tag"></span> {{object.status}} </span></label> {% endif %}
-							</div>
-							
-							<br>
+{% if params.paginator.object_list %}
+        <div class="auction-lots">
+                {% for object in params.paginator.object_list %}
+                        <div class="auction-lot-card">
+                                <div class="auction-lot-header">
+                                        <div class="auction-lot-title">
+                                                <span class="text-uppercase text-muted small">Лот № {{object.pk_auction|default:object.pk}}</span>
+                                                <h3>{{object.name|default:"Аукционный лот"}}</h3>
+                                        </div>
+                                        {% if object.status == None %}
+                                                <span class="auction-status accent"><span class="icon-tag"></span> подготавливается</span>
+                                        {% else %}
+                                                <span class="auction-status"><span class="icon-tag"></span> {{object.status}}</span>
+                                        {% endif %}
+                                </div>
+                                <div class="auction-meta-list">
+                                        <div class="auction-meta-item">
+                                                <span class="icon-wrapper"><span class="icon-mbri-plus"></span></span>
+                                                {{object.dataTime}}
+                                        </div>
+                                        <div class="auction-meta-item">
+                                                <span class="icon-wrapper"><span class="icon-mbri-play"></span></span>
+                                                {{object.dateStart}}
+                                        </div>
+                                        
+                                        <div class="auction-meta-item">
+                                                <span class="icon-wrapper"><span class="icon-mbri-pin"></span></span>
+                                                {{object.store.name}}
+                                        </div>
+                                        <div class="auction-meta-item">
+                                                <span class="icon-wrapper"><span class="icon-truck"></span></span>
+                                                {{object.count_cars}}
+                                        </div>
+                                        <div class="auction-meta-item">
+                                                <span class="icon-wrapper"><span class="icon-mbri-credit-card"></span></span>
+                                                {{object.start_price|floatformat:"2g"}} ₽
+                                        </div>
+                                </div>
+                                <div class="auction-lot-footer">
+                                        <div class="auction-owner">
+                                                <span class="icon-mbri-user me-2"></span>{{object.user.last_name}} {{object.user.first_name}}
+                                        </div>
+                                        <a class="auction-link" href="{{object.uid}}/">
+                                                <span class="icon-mbri-preview"></span>
+                                                Посмотреть
+                                        </a>
+                                </div>
+                        </div>
+                {% endfor %}
+        </div>
+{% else %}
+        <div class="auction-empty-state">
+                По заданным параметрам аукционы не найдены. Измените фильтры или создайте новый лот.
+        </div>
+{% endif %}
 
-    						<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-    						
-    							<div class="col-12 col-sm-2">
-    								<span class="fs-6  icon-mbri-plus"> {{object.dataTime}}</span>
-    							</div>
+<div class="auction-divider"></div>
 
-								<div class="col-12 col-sm-2">
-    								<span class="fs-6  icon-mbri-play"> {{object.dateStart}} </span>
-    							</div>
-
-								<div class="col-12 col-sm-2">
-    								<span class="fs-6  icon-mbri-flag"> {% if object.dateEnd == None %} Не закончен {% else %} {{object.dateEnd}} {% endif %}</span>
-    							</div>
-
-    							<div class="col-12 col-sm-2">
-    								<span class="fs-6  icon-mbri-pin"> {{object.store.name}}</span>
-    							</div>
-								
-								<div class="col-12 col-sm-1">
-									<span class="fs-6  icon-truck"> {{object.count_cars}}</span>
-								</div>
-
-								<div class="col-12 col-sm-2">
-    								<span class="fs-6  icon-mbri-credit-card"> {{object.start_price|floatformat:"2g"}} &#8381;</span>
-    							</div>
-								
-    						</div>
-
-							<br>
-
-							<div class="row g-1 text-dark" style="padding-left: 0.8rem; padding-right: 0.8rem;">
-								
-								<div class="col-6">
-									<span class="fs-6  icon-mbri-user">{{object.user.last_name}} {{object.user.first_name}}</span>
-								</div>
-								<div class="col-6 text-end">
-									
-								</div>
-							</div>
-							
-							<br>
-							
-							<a href="{{object.uid}}/"> <span class="fs-6  icon-mbri-preview"> Посмотреть</span></a>
-							
-    					</div>
-    				</div>
-    			</div>
-    		{% endfor %} 
-    	</div>
-
-    {% endif %}
-
-<br>
-<div class="row align-self-center align-items-center justify-content-center" style="width: 100%;">
+<div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
 	
-
 	<div class="col-auto align-items-center align-self-center justify-content-center">
-		<nav aria-label="Page navigation example">
-			<ul class="pagination justify-content-center">
-			
-				{% if params.paginator.has_previous %}
-					<li class="page-num mbr-section-btn">
-						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-					</li>
-				{% endif %}
-		
-				{% for p in params.paginator.paginator.page_range %}
-					{% if params.paginator.number == p %}
-						<li class="page-num mbr-section-btn disabled">
-							<a class="btn btn-secondary display-7">
-								<b>{{p}}</b>
-							</a>
-						</li>
-					{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
-						</li>
-					{% endif %}
-				{% endfor %}
-					
-				{% if params.paginator.has_next %}
-					<li class="page-num mbr-section-btn">
-						<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-					</li>
-				{% endif %}
-	
-			</ul>
-		</nav>
-	</div>
+        <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+
+                        {% if params.paginator.has_previous %}
+                                <li class="page-num mbr-section-btn">
+                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+                                </li>
+                        {% endif %}
+
+                        {% for p in params.paginator.paginator.page_range %}
+                                {% if params.paginator.number == p %}
+                                        <li class="page-num mbr-section-btn disabled">
+                                                <a class="btn btn-secondary display-7">
+                                                        <b>{{p}}</b>
+                                                </a>
+                                        </li>
+                                {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+                                        <li class="page-num mbr-section-btn">
+                                                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+                                        </li>
+                                {% endif %}
+                        {% endfor %}
+
+                        {% if params.paginator.has_next %}
+                                <li class="page-num mbr-section-btn">
+                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+                                </li>
+                        {% endif %}
+
+                </ul>
+        </nav>
+</div>
+</div>
 
 
 </div>
@@ -1034,6 +2074,120 @@ function applyMobileFilters() {
         mainForm.submit();
     }
 }
+
+const auctionHelpSections = {
+    createLot: {
+        title: "Создание нового лота",
+        paragraphs: [
+            "При переходе на форму создания нового лота создаётся черновик аукциона: выберите дилерский центр, задайте стартовую цену и дату старта торгов, заполните текстовое описание лота.",
+            "Добавьте автомобили из каталога организации: для каждого заполняйте результаты диагностики, план работ, комментарии по подготовке, прикрепляйте фотографии по категориям (диагностика, колёса, повреждения, схема, салон и внешний вид).",
+            "Каждая загрузка сохраняется в карточке: можно отметить наличие отчёта «Автотека», статус «Проверено», добавить ссылки на мультимедиа и пересчитать стоимость при изменении данных.",
+            "Используйте черновое сохранение, обновление (кнопка «Обновить») и окончательную отправку: после проверки всех автомобилей отправьте лот на торги, чтобы его увидели дилеры и партнёры."
+        ],
+        video: "{% static 'razdell1.mp4' %}"
+    },
+    monitorStats: {
+        title: "Мониторинг ключевых показателей",
+        paragraphs: [
+            "Верхние карточки отображают текущее количество активных аукционов, суммарную стартовую стоимость и число автомобилей — данные подтягиваются из базы и обновляются после каждого сохранения лота.",
+            "При редактировании лота выполняется пересчёт (функция обновления), который учитывает изменения стоимости, статуса автомобильных карточек и наличие фото/отчётов, поэтому статистика на главной странице всегда актуальна.",
+            "Используйте показатели, чтобы отслеживать динамику: фильтруйте аукционы, сравнивайте суммы и оперативно реагируйте на отклонения (например, отсутствие готовых автомобилей или падение суммарной стоимости)."
+        ],
+        video: "{% static 'razdel2.mp4' %}"
+    },
+    filterManagement: {
+        title: "Управление фильтрами и сохраненными наборами",
+        paragraphs: [
+            "Модальное окно «Выбор дилерского центра» подставляет доступные площадки из личного кабинета пользователя, что позволяет моментально переключать контекст аукционов.",
+            "Сохранённые наборы фильтров доступны в отдельном модальном окне: создавайте свои пресеты, удаляйте устаревшие, переключайтесь между ними — они синхронизированы с поисковой формой и мобильной версией.",
+            "При очистке или применении фильтров система обновляет список аукционов и статистику; поддерживается подсчёт выбранных фильтров и визуальное отображение активных условий."
+        ],
+        video: "{% static 'razdel3.mp4' %}"
+    },
+    lotCard: {
+        title: "Работа с карточкой лота",
+        paragraphs: [
+            "Карточка лота показывает номер, статус, даты подготовки и запуска, ответственного менеджера и дилерский центр, а также быстрые ссылки на действия.",
+            "Внутренние блоки содержат сведения по каждому автомобилю: диагностика, план работ, подготовка, фотографии, данные по отчёту «Автотека» и отметка «Проверено».",
+            "Кнопка «Посмотреть» переносит на страницу редактирования, где можно актуализировать карточку, обновить фотографии, скорректировать цену и отправить лот на аукцион."
+        ],
+        video: "{% static 'razdel4.mp4' %}"
+    }
+};
+
+function initializeAuctionHelp() {
+    const helpModal = document.getElementById("auctionHelpModal");
+    const detailModal = document.getElementById("auctionHelpDetailModal");
+    if (!helpModal || !detailModal) {
+        return;
+    }
+    const detailTitle = detailModal.querySelector(".modal-title");
+    const detailBody = detailModal.querySelector(".auction-help-detail-body");
+    const detailVideoWrapper = detailModal.querySelector(".auction-help-detail-video-wrapper");
+    const detailVideoFrame = detailModal.querySelector(".auction-help-detail-video");
+    const triggers = helpModal.querySelectorAll(".help-detail-trigger");
+    triggers.forEach(function(trigger) {
+        trigger.addEventListener("click", function() {
+            const sectionId = this.getAttribute("data-section-id");
+            const section = auctionHelpSections[sectionId];
+            if (!section) {
+                return;
+            }
+            if (detailTitle) {
+                detailTitle.textContent = section.title;
+            }
+            if (detailBody) {
+                detailBody.innerHTML = section.paragraphs.map(function(paragraph) {
+                    return "<p>" + paragraph + "</p>";
+                }).join("");
+            }
+            if (detailVideoWrapper && detailVideoFrame) {
+                if (section.video) {
+                    detailVideoFrame.src = section.video;
+                    detailVideoFrame.muted = true;
+                    detailVideoFrame.volume = 0;
+                    detailVideoFrame.currentTime = 0;
+                    detailVideoFrame.controls = true;
+                    detailVideoWrapper.classList.remove("d-none");
+                } else {
+                    detailVideoFrame.pause();
+                    detailVideoFrame.removeAttribute("src");
+                    detailVideoWrapper.classList.add("d-none");
+                }
+            }
+            const helpInstance = bootstrap.Modal.getInstance(helpModal);
+            if (helpInstance) {
+                helpInstance.hide();
+            }
+            const detailInstance = bootstrap.Modal.getOrCreateInstance(detailModal);
+            detailInstance.show();
+        });
+    });
+    detailModal.addEventListener("hidden.bs.modal", function() {
+        if (detailVideoFrame) {
+            detailVideoFrame.pause();
+            detailVideoFrame.removeAttribute("src");
+            detailVideoFrame.currentTime = 0;
+        }
+        if (detailVideoWrapper) {
+            detailVideoWrapper.classList.add("d-none");
+        }
+        const helpInstance = bootstrap.Modal.getOrCreateInstance(helpModal);
+        helpInstance.show();
+    });
+
+    detailModal.addEventListener("hidden.bs.modal", function() {
+        if (document.fullscreenElement && (detailModal.contains(document.fullscreenElement))) {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initializeAuctionHelp);
 
 // Обработчики событий для модального окна
 document.getElementById('mobileFiltersModal').addEventListener('show.bs.modal', function() {

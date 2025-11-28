@@ -460,9 +460,9 @@
     <div class="col-auto">
       <p class="fw-normal">Всего записей: {{params.objects.paginator.count}} / Выведено: {{params.objects|length}}</p>
     </div>
-
+  
     <div class="col-auto">
-      <button id="save" class="btn btn-outline-secondary"> <span class="icon-mbri-download"> Сохранить</span> </button>
+      <a href="{{ request.get_full_path}}export/" class="btn btn-outline-secondary"> <span class="icon-mbri-download"> Сохранить</span> </a>
     </div>
 
     <div class="col-auto align-items-center align-self-center justify-content-center">

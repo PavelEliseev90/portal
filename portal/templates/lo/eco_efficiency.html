@@ -1,0 +1,569 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Анализ эффективности ЕЦО {% endblock %}
+
+{% block content %}
+<style>
+  .kors-efficiency-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-efficiency-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-efficiency-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-filter .form-select,
+  .kors-filter .form-control {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .kors-metric-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .kors-metric-card h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-metric-card .metric-value {
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0.5rem 0;
+  }
+
+  .kors-metric-card .metric-label {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+  }
+
+  .kors-panel canvas {
+    max-height: 512px;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive.mobile-cards-wrapper {
+    overflow-x: visible;
+  }
+
+  .badge-success {
+    background: #22c55e;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-warning {
+    background: #f59e0b;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-danger {
+    background: #ef4444;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .kors-efficiency-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-metric-card .metric-value {
+      font-size: 1.8rem;
+    }
+
+    .kors-panel canvas {
+      max-height: 400px;
+      min-height: 350px;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      background: #fff;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+    }
+
+    .table-responsive.mobile-cards-wrapper thead {
+      display: none;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #6c7a92;
+      text-align: left;
+      margin-right: 1rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:first-child {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #002a5a;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+      margin-bottom: 0.5rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:first-child:before {
+      display: none;
+    }
+  }
+</style>
+
+<div class="kors-efficiency-page">
+  <div class="kors-efficiency-header">
+    <h2>Анализ эффективности единого центра оценки</h2>
+    <p>Комплексный анализ работы ЕЦО: время согласования, сравнение цен, статистика по аналитикам</p>
+  </div>
+
+  <form class="kors-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" == params.filters.unit_id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Сотрудник</label>
+        <select class="form-select" name="staff_id">
+          <option value="">Любой</option>
+          {% for staff in params.staffs %}
+            <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Аналитик</label>
+        <select class="form-select" name="analyst_id">
+          <option value="">Любой</option>
+          {% for analyst in params.analysts %}
+            <option value="{{ analyst.id }}" {% if analyst.id|stringformat:"s" == params.filters.analyst_id|stringformat:"s" %}selected{% endif %}>
+              {{ analyst.profiles.eco_name|default:analyst.get_full_name|default:analyst.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Тип приема</label>
+        <select class="form-select" name="type_id">
+          <option value="">Любой</option>
+          {% for type in params.types %}
+            <option value="{{ type.id }}" {% if type.id|stringformat:"s" == params.filters.type_id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Статус оценки</label>
+        <select class="form-select" name="status_id">
+          <option value="">Любой</option>
+          {% for status in params.statuses %}
+            <option value="{{ status.id }}" {% if status.id|stringformat:"s" == params.filters.status_id|stringformat:"s" %}selected{% endif %}>{{ status.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Всего оценок</h3>
+        <div class="metric-value">{{ params.total_count }}</div>
+        <div class="metric-label">Интерактивные оценки за период</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Со согласованием</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Среднее время оценки</h3>
+        <div class="metric-value">
+          {% if params.avg_time_total %}
+            {{ params.avg_time_total }} ч
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="metric-label">От начала до завершения оценки</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Время согласования</h3>
+        <div class="metric-value">
+          {% if params.avg_soglasovanie_time %}
+            {{ params.avg_soglasovanie_time }} ч
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="metric-label">Среднее время до согласования</div>
+      </article>
+    </div>
+  </div>
+
+  <!-- Блок метрик по чатам временно отключён -->
+
+
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Всего задач</h3>
+        <div class="metric-value">{{ params.task_stats.total_tasks }}</div>
+        <div class="metric-label">Созданных по оценкам</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Оценок с задачами</h3>
+        <div class="metric-value">{{ params.task_stats.evaluations_with_tasks }}</div>
+        <div class="metric-label">{{ params.task_stats.evaluations_with_tasks_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Среднее задач</h3>
+        <div class="metric-value">
+          {% if params.task_stats.avg_tasks_per_eval > 0 %}
+            {{ params.task_stats.avg_tasks_per_eval }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="metric-label">Задач на оценку</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Закрыто задач</h3>
+        <div class="metric-value">{{ params.task_stats.closed_tasks }}</div>
+        <div class="metric-label">{{ params.task_stats.closed_percent }}% от общего числа</div>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Сравнение цен</h3>
+          <p class="text-muted mb-0">Согласованная цена vs авторасчет</p>
+        </div>
+        <div class="mt-3">
+          {% if params.price_comparison.total_compared > 0 %}
+            <div class="row g-3 mb-3">
+              <div class="col-4">
+                <div class="text-center">
+                  <div class="h4 mb-1 text-success">{{ params.price_comparison.higher_count }}</div>
+                  <div class="text-muted small">Выше авторасчета</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="text-center">
+                  <div class="h4 mb-1 text-warning">{{ params.price_comparison.equal_count }}</div>
+                  <div class="text-muted small">Примерно равно</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="text-center">
+                  <div class="h4 mb-1 text-danger">{{ params.price_comparison.lower_count }}</div>
+                  <div class="text-muted small">Ниже авторасчета</div>
+                </div>
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-6">
+                <strong>Средняя разница:</strong>
+                <div class="h5 mt-1">
+                  {% if params.price_comparison.avg_diff > 0 %}
+                    <span class="text-success">+{{ params.price_comparison.avg_diff|floatformat:0 }} ₽</span>
+                  {% elif params.price_comparison.avg_diff < 0 %}
+                    <span class="text-danger">{{ params.price_comparison.avg_diff|floatformat:0 }} ₽</span>
+                  {% else %}
+                    <span>0 ₽</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-6">
+                <strong>В процентах:</strong>
+                <div class="h5 mt-1">
+                  {% if params.price_comparison.avg_diff_percent > 0 %}
+                    <span class="text-success">+{{ params.price_comparison.avg_diff_percent }}%</span>
+                  {% elif params.price_comparison.avg_diff_percent < 0 %}
+                    <span class="text-danger">{{ params.price_comparison.avg_diff_percent }}%</span>
+                  {% else %}
+                    <span>0%</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 text-muted small">
+              Всего сравнений: {{ params.price_comparison.total_compared }}
+            </div>
+          {% else %}
+            <p class="text-muted">Нет данных для сравнения</p>
+          {% endif %}
+        </div>
+      </article>
+    </div>
+    <div class="col-lg-6">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Динамика по месяцам</h3>
+          <p class="text-muted mb-0">Количество оценок и среднее время</p>
+        </div>
+        <canvas id="monthlyChart"></canvas>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Статистика по аналитикам</h3>
+          <p class="text-muted mb-0">Эффективность работы каждого аналитика</p>
+        </div>
+        <div class="table-responsive mobile-cards-wrapper mt-3">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Аналитик</th>
+                <th class="text-end">Всего оценок</th>
+                <th class="text-end">Со согласованием</th>
+                <th class="text-end">Принято</th>
+                <th class="text-end">Среднее время</th>
+                <th class="text-end">Конверсия согласования</th>
+                <th class="text-end">Конверсия приема</th>
+                <th class="text-end">Задач</th>
+                <th class="text-end">Ср. задач/оценку</th>
+                <th class="text-end">Закрыто</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for analyst in params.analyst_stats %}
+              <tr>
+                <td data-label="Аналитик"><strong>{{ analyst.name }}</strong></td>
+                <td class="text-end" data-label="Всего оценок">{{ analyst.total }}</td>
+                <td class="text-end" data-label="Со согласованием">{{ analyst.with_soglasovanie }}</td>
+                <td class="text-end" data-label="Принято">{{ analyst.accepted }}</td>
+                <td class="text-end" data-label="Среднее время">
+                  {% if analyst.avg_time %}
+                    {{ analyst.avg_time }} ч
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Конверсия согласования">
+                  <span class="{% if analyst.conv_rate >= 70 %}text-success{% elif analyst.conv_rate >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ analyst.conv_rate }}%
+                  </span>
+                </td>
+                <td class="text-end" data-label="Конверсия приема">
+                  <span class="{% if analyst.accept_rate >= 30 %}text-success{% elif analyst.accept_rate >= 20 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ analyst.accept_rate }}%
+                  </span>
+                </td>
+                <td class="text-end" data-label="Задач">
+                  {% if analyst.task_stats.total_tasks > 0 %}
+                    {{ analyst.task_stats.total_tasks }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Ср. задач/оценку">
+                  {% if analyst.task_stats.avg_tasks_per_eval > 0 %}
+                    <span class="{% if analyst.task_stats.avg_tasks_per_eval >= 2 %}text-warning{% else %}text-muted{% endif %}">
+                      {{ analyst.task_stats.avg_tasks_per_eval }}
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Закрыто">
+                  {% if analyst.task_stats.total_tasks > 0 %}
+                    <span class="{% if analyst.task_stats.closed_percent >= 80 %}text-success{% elif analyst.task_stats.closed_percent >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                      {{ analyst.task_stats.closed_tasks }} / {{ analyst.task_stats.total_tasks }} ({{ analyst.task_stats.closed_percent }}%)
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const monthlyData = JSON.parse('{{ params.monthly_data_json|escapejs }}');
+  
+  if (monthlyData && monthlyData.length > 0) {
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+      type: 'bar',
+      data: {
+        labels: monthlyData.map(d => d.month),
+        datasets: [
+          {
+            label: 'Всего оценок',
+            data: monthlyData.map(d => d.total),
+            backgroundColor: '#2563eb',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Принято',
+            data: monthlyData.map(d => d.accepted),
+            backgroundColor: '#22c55e',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Среднее время (ч)',
+            data: monthlyData.map(d => d.avg_time || 0),
+            type: 'line',
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            yAxisID: 'y1',
+            tension: 0.35,
+            fill: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            beginAtZero: true,
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            beginAtZero: true,
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
+

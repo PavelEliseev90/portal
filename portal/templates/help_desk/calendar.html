@@ -1,0 +1,141 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} - HelpDesk - Календарь {% endblock %}
+
+{% block title_navbar %} - HelpDesk - Календарь {% endblock %}
+    
+{% block content %}
+
+<style>
+    @media (max-width: 767.98px) {
+        .helpdesk-nav-btns .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .calendar-header .btn {
+            width: 100%;
+            margin-bottom: .5rem;
+        }
+        .calendar-table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .calendar-table table {
+            min-width: 640px;
+        }
+        .calendar-table td {
+            height: 100px;
+        }
+    }
+</style>
+
+<div class="row mb-3">
+    <div class="col-sm helpdesk-nav-btns d-flex flex-wrap gap-2">
+        <a href="{% url 'helpdesk:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i> Дашборд
+        </a>
+        <a href="{% url 'helpdesk:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Список задач
+        </a>
+        <a href="{% url 'helpdesk:task_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Создать задачу
+        </a>
+        <a href="{% url 'helpdesk:chart' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-bar-chart"></i> График
+        </a>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center calendar-header">
+                    <div class="col">
+                        <a href="?year={{ params.prev_year }}&month={{ params.prev_month }}" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </div>
+                    <div class="col text-center">
+                        <h5 class="mb-0">
+                            {% for i in params.month_names %}
+                                {% if forloop.counter == params.month %}{{ i }}{% endif %}
+                            {% endfor %} {{ params.year }}
+                        </h5>
+                    </div>
+                    <div class="col text-end">
+                        <a href="?year={{ params.next_year }}&month={{ params.next_month }}" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0 calendar-table">
+                <table class="table table-bordered mb-0" style="table-layout: fixed;">
+                    <thead>
+                        <tr class="bg-light">
+                            <th class="text-center" style="width: 14.28%;">Пн</th>
+                            <th class="text-center" style="width: 14.28%;">Вт</th>
+                            <th class="text-center" style="width: 14.28%;">Ср</th>
+                            <th class="text-center" style="width: 14.28%;">Чт</th>
+                            <th class="text-center" style="width: 14.28%;">Пт</th>
+                            <th class="text-center" style="width: 14.28%;">Сб</th>
+                            <th class="text-center" style="width: 14.28%;">Вс</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in params.calendar_data %}
+                            <tr style="height: 120px;">
+                                {% for day in week %}
+                                    <td class="{% if day.is_today %}table-warning{% endif %} align-top" style="vertical-align: top;">
+                                        {% if day.date %}
+                                            <div class="p-1">
+                                                <strong class="{% if day.is_today %}text-danger{% endif %}">
+                                                    {{ day.date|date:"d" }}
+                                                </strong>
+                                                <div style="max-height: 90px; overflow-y: auto;">
+                                                    {% for task in day.tasks %}
+                                                        <div class="mb-1">
+                                                            <a href="{% url 'helpdesk:task_detail' task.pk %}" 
+                                                               class="btn btn-sm btn-block text-truncate d-block"
+                                                               style="background-color: {% if task.status %}{{ task.status.color }}{% else %}#6c757d{% endif %}; color: white; font-size: 0.7rem; padding: 2px 5px;"
+                                                               title="{{ task.title }}">
+                                                                #{{ task.id }}: {{ task.title|truncatechars:15 }}
+                                                                {% if task.is_overdue %}
+                                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                                {% endif %}
+                                                            </a>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Легенда</h6>
+            </div>
+            <div class="card-body">
+                <p><span class="badge bg-warning">Сегодня</span> - выделен текущий день</p>
+                <p><i class="bi bi-exclamation-triangle text-danger"></i> - просроченные задачи</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

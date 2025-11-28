@@ -82,7 +82,7 @@ class Profiles_save_search(models.Model):
 def create_user_profiles(sender, instance, created, **kwargs):
     if created:
         try:
-            if user.profiles == Null:
+            if instance.profiles == None:
             	Profiles.objects.create(user=instance)
         except:
             s = 13

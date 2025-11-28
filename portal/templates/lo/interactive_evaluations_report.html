@@ -1,0 +1,400 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Отчет по интерактивным оценкам {% endblock %}
+
+{% block content %}
+<style>
+  .report-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .report-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .report-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .report-filter {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .report-filter .form-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .report-filter .form-select,
+  .report-filter .form-control {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .metric-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    height: 100%;
+  }
+
+  .metric-card h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #8ea1ba;
+    margin-bottom: 0.35rem;
+  }
+
+  .metric-card .value {
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.1rem;
+  }
+
+  .metric-card .sub {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  .panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+  }
+
+  .panel h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+  }
+
+  .table-sticky thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fc;
+    z-index: 1;
+  }
+
+  .diff-positive {
+    color: #0f9d58;
+    font-weight: 600;
+  }
+
+  .diff-negative {
+    color: #d93025;
+    font-weight: 600;
+  }
+
+  .cost-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: #f3f4f6;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 992px) {
+    .report-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+  }
+</style>
+
+<div class="report-page">
+  <div class="report-header">
+    <h2>Отчет по интерактивным оценкам</h2>
+    <p>Сравнение цен оценщика, согласований ЕЦО и автоматических расчетов</p>
+  </div>
+
+  <div class="report-filter">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if params.filters.unit_id == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Оценщик</label>
+        <select class="form-select" name="staff_id">
+          <option value="">Все</option>
+          
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Аналитик</label>
+        <select class="form-select" name="analyst_id">
+          <option value="">Все</option>
+          {% for analyst in params.analysts %}
+            {% with profile=analyst.profiles %}
+              {% if profile.eco_name %}
+                <option value="{{ analyst.id }}" {% if params.filters.analyst_id == analyst.id|stringformat:"s" %}selected{% endif %}>{{ profile.eco_name }}</option>
+              {% else %}
+                {% with name=analyst.get_full_name %}
+                  <option value="{{ analyst.id }}" {% if params.filters.analyst_id == analyst.id|stringformat:"s" %}selected{% endif %}>{{ name|default:analyst.username }}</option>
+                {% endwith %}
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Тип приема</label>
+        <select class="form-select" name="type_id">
+          <option value="">Все</option>
+          {% for type in params.type_receptions %}
+            <option value="{{ type.id }}" {% if params.filters.type_id == type.id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-12 text-end">
+        <button type="submit" class="btn btn-primary px-4">Применить</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Всего оценок</h4>
+        <div class="value">{{ params.total_count|floatformat:"0g" }}</div>
+        <div class="sub">За выбранный период</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Цена оценщика</h4>
+        <div class="value">{{ params.total_price_estimation_ocenshik|floatformat:"0g"}} ₽</div>
+        <div class="sub">ср. {{ params.total_price_estimation_ocenshik_avg|floatformat:"0g" }} ₽</div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Согласовано до КД</h4>
+        <div class="value">{{ params.total_price_do_kd|floatformat:"0g" }} ₽</div>
+        <div class="sub">Δ {{ params.total_price_do_kd_avg|floatformat:"0g" }} ₽ 
+          {% if params.diff_do_kd_avg < 0 %} 
+            <label class="text-danger">{{params.diff_do_kd_avg|floatformat:"0g" }} ₽</label>  
+          {% else %} 
+            <label class="text-success">{{params.diff_do_kd_avg|floatformat:"0g" }} ₽</label> 
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Согласовано после КД</h4>
+        <div class="value">{{ params.total_price_after_kd|floatformat:"0g" }} ₽</div>
+        <div class="sub">Δ {{ params.total_price_after_kd_avg|floatformat:"0g" }} ₽
+          {% if params.diff_affter_kd_avg < 0 %} 
+            <label class="text-danger">{{params.diff_affter_kd_avg|floatformat:"0g" }} ₽</label>  
+          {% else %} 
+            <label class="text-success">{{params.diff_affter_kd_avg|floatformat:"0g" }} ₽</label> 
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Конверсия после КД</h4>
+        <div class="value">{{ params.summary.conversion_after }}%</div>
+        <div class="sub">Сравнение с auto</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Средние затраты</h4>
+        <div class="value">{{ params.summary.avg_cost|floatformat:0 }} ₽</div>
+        <div class="sub">На один автомобиль</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Автоаукцион</h4>
+        <div class="value">{{ params.summary.auction_share }}%</div>
+        <div class="sub">Доля auto auction</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="panel">
+        <h3>Структура затрат</h3>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Статья</th>
+              <th class="text-end">Сумма, ₽</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Подготовка</td>
+              <td class="text-end">{{ params.summary.total_podgotovka|floatformat:0 }}</td>
+            </tr>
+            <tr>
+              <td>Слесарный участок</td>
+              <td class="text-end">{{ params.summary.total_ss|floatformat:0 }}</td>
+            </tr>
+            <tr>
+              <td>Кузовной участок</td>
+              <td class="text-end">{{ params.summary.total_mcu|floatformat:0 }}</td>
+            </tr>
+            <tr class="table-light">
+              <td><strong>Всего</strong></td>
+              <td class="text-end"><strong>{{ params.summary.total_cost|floatformat:0 }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="panel">
+        <h3>Типы приемов</h3>
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Тип</th>
+              <th class="text-end">Количество</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in params.type_breakdown %}
+              <tr>
+                <td>{{ item.label }}</td>
+                <td class="text-end">{{ item.value }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">Нет данных</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel table-responsive table-sticky">
+    <h3>Таблица согласований</h3>
+    <table class="table table-hover table-sm align-middle">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Дата</th>
+          <th>Подразделение</th>
+          <th>Тип приема</th>
+          <th>Статус</th>
+          <th>Автомобиль</th>
+          <th>Год</th>
+          <th>Пробег</th>
+          <th>ВИН</th>
+          <th>Оценщик</th>
+          <th>Аналитик до</th>
+          <th>Аналитик после</th>
+          <th>Цена оценщика</th>
+          <th>Согласовано до КД</th>
+          <th>Согласовано после КД</th>
+          <th>Авторасчет</th>
+          <th>Δ до</th>
+          <th>Δ после</th>
+          <th>Auto auction</th>
+          <th>Затраты</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in params.page_obj %}
+          <tr>
+            <td><a href="/eco/{{ row.rlk.id}}/" target="_blank"><span class="icon-doc"></span> </a> </td>
+            <td>{{ row.start_estimation|date:"d.m.Y H:i" }}</td>
+            {% if row.rlk.unit_dc == None %}
+              <td>{{ row.rlk.unit.name }}</td>
+            {% else %}
+              <td>{{ row.rlk.unit_dc.name }}</td>
+            {% endif %}
+            <td>{{ row.page_documents.type_reception.name }}</td>
+            <td>{{ row.status }}</td>
+            <td>{{ row.modification.model.mark.name }} {{ row.modification.model.name }} {{ row.modification.name }}</td>
+            <td class="text-end">{{ row.year }} </td>
+            <td lass="text-end">{{ row.page_salon.run|floatformat:"0g" }} </td>
+            <td>{{ row.vin }}</td>
+            <td>{{ row.staff|default:"—" }}</td>
+            <td>{{ row.staff_eco_1.profiles.eco_name|default:"—" }}</td>
+            <td>{{ row.staff_eco_2.profiles.eco_name|default:"—" }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_reception|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_before_kd|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_after_kd|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.page_soglasovanie.price_auto_2|floatformat:0 }}</td>
+            <td class="{% if row.diff_before >= 0 %}diff-positive{% else %}diff-negative{% endif %}">
+              {{ row.diff_before|floatformat:0 }}
+            </td>
+            <td class="{% if row.diff_after >= 0 %}diff-positive{% else %}diff-negative{% endif %}">
+              {{ row.diff_after|floatformat:0 }}
+            </td>
+            <td>
+              {% if row.price_auto_auction %}
+                <span class="badge bg-success">Да</span>
+              {% else %}
+                <span class="badge bg-secondary">Нет</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="cost-badge">
+                {{ row.cost_total|floatformat:0 }} ₽
+              </div>
+              <div class="text-muted small">
+                П: {{ row.costs.podgotovka|floatformat:0 }},
+                С: {{ row.costs.ss|floatformat:0 }},
+                К: {{ row.costs.mcu|floatformat:0 }}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="16" class="text-center py-5 text-muted">
+              Нет данных для отображения. Попробуйте изменить фильтры.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

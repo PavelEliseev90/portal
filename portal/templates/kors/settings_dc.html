@@ -7,6 +7,665 @@
 {% block title_navbar %} - КорсАвто подразделения {% endblock %}
 
 {% block content %}
+  .settings-dc-page {
+    padding: 1.25rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .settings-dc-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #002a5a;
+  }
+
+  .settings-dc-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .settings-dc-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .settings-dc-panel h3,
+  .settings-dc-panel h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+  }
+
+  .settings-dc-filter {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .settings-dc-filter .form-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .metric-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    height: 100%;
+  }
+
+  .metric-card h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #8ea1ba;
+    margin-bottom: 0.4rem;
+  }
+
+  .metric-card .value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+
+  .metric-card .sub {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 992px) {
+    .settings-dc-page {
+      padding: 1rem 1.25rem 2rem;
+    }
+
+    .settings-dc-panel {
+      padding: 1rem;
+    }
+
+    .settings-dc-filter {
+      padding: 1rem;
+    }
+
+    .metric-card {
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .settings-dc-page {
+      padding: 0.75rem 1rem 1.5rem;
+    }
+
+    .settings-dc-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .settings-dc-header p {
+      font-size: 0.9rem;
+    }
+
+    .settings-dc-panel {
+      padding: 0.75rem;
+      border-radius: 1rem;
+    }
+
+    .settings-dc-panel h3,
+    .settings-dc-panel h5 {
+      font-size: 0.95rem;
+    }
+
+    .settings-dc-filter {
+      padding: 0.75rem;
+      border-radius: 1rem;
+    }
+
+    .settings-dc-filter .row > div {
+      margin-bottom: 0.75rem;
+    }
+
+    .metric-card {
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .metric-card h4 {
+      font-size: 0.8rem;
+    }
+
+    .metric-card .value {
+      font-size: 1.5rem;
+    }
+
+    .table-responsive {
+      font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+      padding: 0.5rem 0.4rem;
+    }
+{% if params.page == 'plans' %}
+<section class="settings-dc-page" id="plans-dashboard">
+  <div class="settings-dc-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Планы по приему и продажам</h2>
+      <p>Введите месячные планы для каждого подразделения и отслеживайте выполнение на дашборде.</p>
+    </div>
+    <a class="btn btn-link text-decoration-none" href="{{ request.path }}">&larr; Назад к дашборду</a>
+  </div>
+
+  <form method="get" class="settings-dc-filter">
+    <div class="row g-3 align-items-end">
+      <div class="col-sm-3">
+        <label class="form-label">Месяц</label>
+        <input type="month" class="form-control" name="plan_month" value="{{ params.plan_month_value }}">
+      </div>
+      <div class="col-sm">
+        <label class="form-label">Подразделения</label>
+        <select class="form-select" name="unit[]" multiple size="6">
+            {% for unit in params.select_units %}
+              <option value="{{ unit.pk }}" {% if unit.pk in params.plan_filter_ids %}selected{% endif %}>{{ unit.name }}</option>
+            {% endfor %}
+          </select>
+        <small class="text-muted">Оставьте поле пустым, чтобы показать все подразделения.</small>
+      </div>
+      <div class="col-sm-auto d-flex gap-2">
+        <input type="hidden" name="page" value="plans">
+        <button type="submit" class="btn btn-primary align-self-end"><span class="icon-mbri-play"></span> Применить</button>
+      </div>
+    </div>
+  </form>
+
+  <form method="post" action="{{ request.path }}?page=plans{% if params.plan_month_value %}&plan_month={{ params.plan_month_value }}{% endif %}{% for unit_id in params.plan_filter_ids %}&unit[]={{ unit_id }}{% endfor %}" class="settings-dc-panel">
+    {% csrf_token %}
+    <input type="hidden" name="plan_month" value="{{ params.plan_month_value }}">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h5>Планы на {{ params.plan_month_value }}</h5>
+        <small class="text-muted">Значения указываются в количестве автомобилей.</small>
+      </div>
+      <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
+        <span class="icon-mbri-save"></span> Сохранить планы
+      </button>
+    </div>
+    <div class="p-0">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Подразделение</th>
+              <th class="text-end" style="width: 160px;">Прием, шт.</th>
+              <th class="text-end" style="width: 160px;">Продажи, шт.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if params.plan_rows %}
+              {% for row in params.plan_rows %}
+                <tr>
+                  <td class="fw-semibold">{{ row.unit.name }}</td>
+                  <td>
+                    <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_intake_{{ row.unit.id }}" value="{{ row.plan_intake }}">
+                  </td>
+                  <td>
+                    <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_sale_{{ row.unit.id }}" value="{{ row.plan_sale }}">
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">Нет выбранных подразделений для отображения.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="text-end mt-3">
+      <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
+        <span class="icon-mbri-save"></span> Сохранить планы
+      </button>
+    </div>
+  </form>
+</section>
+{% else %}
+<section class="settings-dc-page">
+{% include 'kors/partials/dashboard_overview.html' %}
+</section>
+{% endif %}
+{% comment %}
+
+<div class="container-fluid py-3" id="dc-dashboard">
+
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="mb-1">Дашборд КорсАвто</h2>
+      {% with start=params.filtr.date_start end=params.filtr.date_end %}
+        <p class="text-muted mb-0">
+          {% if start %}
+            Период: {{ start|date:"d.m.Y" }}
+          {% else %}
+            Период: текущий месяц
+          {% endif %}
+          {% if end %}
+            — {{ end|date:"d.m.Y" }}
+          {% endif %}
+        </p>
+      {% endwith %}
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{{ request.path }}">Сбросить фильтры</a>
+    </div>
+  </div>
+
+  <form method="get" class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-3">
+          <label class="form-label text-muted">Дата начала</label>
+          <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start|date:'Y-m-d' }}">
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label text-muted">Дата окончания</label>
+          <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}">
+        </div>
+        <div class="col-sm">
+          <label class="form-label text-muted">Подразделения</label>
+          <select class="form-select" name="unit[]" multiple size="6">
+            {% for unit in params.select_units %}
+              <option value="{{ unit.pk }}" {% if unit.pk in params.filtr.filter_unit %}selected{% endif %}>{{ unit.name }}</option>
+            {% endfor %}
+          </select>
+          <small class="text-muted">Выберите несколько ДЦ, удерживая Ctrl или Cmd.</small>
+        </div>
+        <div class="col-sm-auto d-flex gap-2">
+          <button type="submit" class="btn btn-success align-self-end"><span class="icon-mbri-play"></span> Применить</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <span class="text-uppercase text-muted small">Активный склад</span>
+          <div class="d-flex align-items-baseline justify-content-between mt-1">
+            <span class="display-6 fw-semibold">{{ params.dash.count_cars__sum|default:0 }}</span>
+            <span class="text-muted">шт.</span>
+          </div>
+          <span class="text-muted small">Стоимость: {{ params.dash.count_cars_s__sum|default:0|floatformat:"2g" }} ₽</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <span class="text-uppercase text-muted small">Продажи за период</span>
+          <div class="d-flex align-items-baseline justify-content-between mt-1">
+            <span class="display-6 fw-semibold">{{ params.dash.count_sale__sum|default:0 }}</span>
+            <span class="text-muted">шт.</span>
+          </div>
+          <span class="text-muted small">Выручка: {{ params.dash.count_sale_s__sum|default:0|floatformat:"2g" }} ₽</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <span class="text-uppercase text-muted small">Проведено оценок</span>
+          <div class="d-flex align-items-baseline justify-content-between mt-1">
+            <span class="display-6 fw-semibold">{{ params.estimations.count_kd|default:0 }}</span>
+            <span class="text-muted">шт.</span>
+          </div>
+          {% with kd=params.estimations.count_kd|default:0 success=params.estimations.count_success|default:0 %}
+            {% if kd %}
+              <span class="text-muted small">Успех: {{ success|widthratio:kd:100 }}% ({{ success }})</span>
+            {% else %}
+              <span class="text-muted small">Успешные: 0</span>
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <span class="text-uppercase text-muted small">NPS клиентов</span>
+          <div class="d-flex align-items-baseline justify-content-between mt-1">
+            <span class="display-6 fw-semibold">{{ params.rating|default:"—" }}</span>
+          </div>
+          <span class="text-muted small">По анкетам продаж за выбранный период</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0">Структура склада по статусам УС</h5>
+    </div>
+    <div class="card-body">
+      {% with total=params.dash.count_cars__sum|default:0 %}
+      <div class="row g-3">
+        <div class="col-6 col-xl-3">
+          <div class="p-3 border rounded bg-primary bg-opacity-10 h-100">
+            <span class="text-muted small">Тест-прайс</span>
+            <h4 class="fw-semibold mb-1">{{ params.dash.count_test__sum|default:0 }}</h4>
+            <span class="text-muted small">
+              {% if total %}
+                {{ params.dash.count_test__sum|default:0|widthratio:total:100 }}%
+              {% else %}0%{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="p-3 border rounded bg-warning bg-opacity-25 h-100">
+            <span class="text-muted small">РДО</span>
+            <h4 class="fw-semibold mb-1">{{ params.dash.count_rdo__sum|default:0 }}</h4>
+            <span class="text-muted small">
+              {% if total %}
+                {{ params.dash.count_rdo__sum|default:0|widthratio:total:100 }}%
+              {% else %}0%{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="p-3 border rounded bg-info bg-opacity-25 h-100">
+            <span class="text-muted small">Коррекция</span>
+            <h4 class="fw-semibold mb-1">{{ params.dash.count_kor__sum|default:0 }}</h4>
+            <span class="text-muted small">
+              {% if total %}
+                {{ params.dash.count_kor__sum|default:0|widthratio:total:100 }}%
+              {% else %}0%{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="p-3 border rounded bg-danger bg-opacity-25 h-100">
+            <span class="text-muted small">TXT</span>
+            <h4 class="fw-semibold mb-1">{{ params.dash.count_txt__sum|default:0 }}</h4>
+            <span class="text-muted small">
+              {% if total %}
+                {{ params.dash.count_txt__sum|default:0|widthratio:total:100 }}%
+              {% else %}0%{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endwith %}
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0">Структура склада по ценовым сегментам</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Сегмент</th>
+              <th class="text-end">Авто, шт.</th>
+              <th class="text-end">Стоимость, ₽</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>до 200 тыс.</td>
+              <td class="text-end">{{ params.dash.count_200__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_200_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>до 400 тыс.</td>
+              <td class="text-end">{{ params.dash.count_400__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_400_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>до 700 тыс.</td>
+              <td class="text-end">{{ params.dash.count_700__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_700_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>до 1,2 млн</td>
+              <td class="text-end">{{ params.dash.count_1200__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_1200_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>до 2,0 млн</td>
+              <td class="text-end">{{ params.dash.count_2000__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_2000_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>до 3,0 млн</td>
+              <td class="text-end">{{ params.dash.count_3000__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_3000_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>до 5,0 млн</td>
+              <td class="text-end">{{ params.dash.count_5000__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_5000_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>5,0 млн и выше</td>
+              <td class="text-end">{{ params.dash.count_5001__sum|default:0 }}</td>
+              <td class="text-end">{{ params.dash.count_5001_s__sum|default:0|floatformat:"2g" }} ₽</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0">Варианты управления ценой</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Источник</th>
+                  <th class="text-end">Авто, шт.</th>
+                  <th class="text-end">Стоимость, ₽</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Экспресс</td>
+                  <td class="text-end">{{ params.dash.count_eval_express__sum|default:0 }}</td>
+                  <td class="text-end">{{ params.dash.count_eval_express_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                </tr>
+                <tr>
+                  <td>Автохаб</td>
+                  <td class="text-end">{{ params.dash.count_eval_avtohab__sum|default:0 }}</td>
+                  <td class="text-end">{{ params.dash.count_eval_avtohab_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                </tr>
+                <tr>
+                  <td>1С</td>
+                  <td class="text-end">{{ params.dash.count_eval_1c__sum|default:0 }}</td>
+                  <td class="text-end">{{ params.dash.count_eval_1c_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                </tr>
+                <tr>
+                  <td>УК</td>
+                  <td class="text-end">{{ params.dash.count_eval_uk__sum|default:0 }}</td>
+                  <td class="text-end">{{ params.dash.count_eval_uk_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                </tr>
+                <tr>
+                  <td>Ручная</td>
+                  <td class="text-end">{{ params.dash.count_eval_man__sum|default:0 }}</td>
+                  <td class="text-end">{{ params.dash.count_eval_man_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                </tr>
+                <tr>
+                  <td>СЭД</td>
+                  <td class="text-end">{{ params.dash.count_eval_sed__sum|default:0 }}</td>
+                  <td class="text-end">{{ params.dash.count_eval_sed_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0">Воронка оценок</h5>
+        </div>
+        <div class="card-body">
+          <div class="row row-cols-2 g-3 mb-3">
+            <div class="col">
+              <div class="border rounded p-3 bg-light">
+                <span class="text-muted small">Всего заявок</span>
+                <h4 class="fw-semibold mb-0">{{ params.estimations.count_rlk_all|default:0 }}</h4>
+              </div>
+            </div>
+            <div class="col">
+              <div class="border rounded p-3 bg-light">
+                <span class="text-muted small">В работе (КД)</span>
+                <h4 class="fw-semibold mb-0">{{ params.estimations.count_kd|default:0 }}</h4>
+              </div>
+            </div>
+            <div class="col">
+              <div class="border rounded p-3 bg-light">
+                <span class="text-muted small">После КД</span>
+                <h4 class="fw-semibold mb-0">{{ params.estimations.count_affter_kd|default:0 }}</h4>
+                <span class="text-muted small">Доля: {{ params.estimations.count_after_kd_percent|default:"0" }}%</span>
+              </div>
+            </div>
+            <div class="col">
+              <div class="border rounded p-3 bg-light">
+                <span class="text-muted small">Успешные</span>
+                <h4 class="fw-semibold mb-0">{{ params.estimations.count_success|default:0 }}</h4>
+                <span class="text-muted small">Доля: {{ params.estimations.count_success_kd_percent|default:"0" }}%</span>
+              </div>
+            </div>
+          </div>
+          {% if params.estimations.data %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Тип приема</th>
+                    <th class="text-end">Количество</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in params.estimations.data %}
+                    <tr>
+                      <td>{{ item.type_estimation_ocenka|default:"—" }}</td>
+                      <td class="text-end">{{ item.count_data__sum|default:0 }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted mb-0">За выбранный период нет оценок.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Подразделения</h5>
+      <span class="text-muted small">Всего: {{ params.dash.count_cars__sum|default:0 }} авто</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Дилерский центр</th>
+              <th class="text-end">Склад, шт.</th>
+              <th class="text-end">Склад, ₽</th>
+              <th class="text-end">Тест-прайс</th>
+              <th class="text-end">РДО</th>
+              <th class="text-end">Коррекция</th>
+              <th class="text-end">TXT</th>
+              <th class="text-end">Продано, шт.</th>
+              <th class="text-end">Продано, ₽</th>
+              <th class="text-end">Автохаб</th>
+              <th class="text-end">1С</th>
+              <th class="text-end">УК</th>
+              <th class="text-end">Экспресс</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if params.list_dc %}
+              {% for unit in params.list_dc %}
+                <tr>
+                  <td class="fw-semibold">{{ unit.name }}</td>
+                  <td class="text-end">{{ unit.count_cars|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_cars_s|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">{{ unit.count_test|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_rdo|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_kor|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_txt|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_sale|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_sale_s|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">{{ unit.count_eval_avtohab|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_eval_1c|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_eval_uk|default:0 }}</td>
+                  <td class="text-end">{{ unit.count_eval_express|default:0 }}</td>
+                  <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" href="{{ request.path }}?dc={{ unit.id }}&page=cars">
+                      Подробнее
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="14" class="text-center py-4 text-muted">Нет данных для отображения. Измените период или выберите другие подразделения.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0">Быстрые действия</h5>
+    </div>
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{{ request.path }}?page=cars" class="btn btn-outline-primary"><span class="icon-mbri-home"></span> Склад автомобилей</a>
+        <a href="{{ request.path }}?page=rlk_trade_in" class="btn btn-outline-primary"><span class="icon-mbri-database"></span> Рабочие листы Trade-In</a>
+        <a href="{{ request.path }}?page=sale" class="btn btn-outline-primary"><span class="icon-mbri-cart-full"></span> Продажи</a>
+        <a href="{{ request.path }}?page=balance_units" class="btn btn-outline-primary"><span class="icon-mbri-credit-card"></span> Резервы</a>
+        {% if request.user.profiles.korsavto_settings %}
+          <a href="{{ request.path }}?page=settings" class="btn btn-outline-primary"><span class="icon-mbri-setting3"></span> Настройки</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% else %}
 
 {% if params.dcd == '' %}
 
@@ -114,7 +773,7 @@
 
   </div>
 
-{% endif %}
+{% endcomment %}
 
 
 
@@ -2254,7 +2913,7 @@
                       <td>
                         <div class="form-floating mb-3">
                           <input type="number" class="form-control" id="auction_kf_200" name="auction_kf_200" placeholder="" value="{{params.settings.settings_estimation.auction_kf_200|formatted_float}}" autocomplete="off">
-                          <label for="floatingInput">Аукцион %</label>
+                          <label for="floatingInput">+Аукцион %</label>
                         </div>
                       </td>
                     </tr>
@@ -6853,252 +7512,10 @@
 
         <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
           <br>
-          <div class="row g-1">
-            
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">200</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_200" name="izp_200" placeholder="" value="{{params.settings.settings_estimation.izp_200|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 200" id="izp_200_v" name="izp_200_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_200_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_200_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_200_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_200" name="auction_kf_200" placeholder="" value="{{params.settings.settings_estimation.auction_kf_200|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_200" name="windshield_200" placeholder="" value="{{params.settings.settings_estimation.windshield_200}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_200" name="windshield_heat_200" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_200}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">400</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_400" name="izp_400" placeholder="" value="{{params.settings.settings_estimation.izp_400|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 400" id="izp_400_v" name="izp_400_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_400_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_400_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_400_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_400" name="auction_kf_400" placeholder="" value="{{params.settings.settings_estimation.auction_kf_400|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_400" name="windshield_400" placeholder="" value="{{params.settings.settings_estimation.windshield_400}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_400" name="windshield_heat_400" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_400}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">700</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_700" name="izp_700" placeholder="" value="{{params.settings.settings_estimation.izp_700|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 700" id="izp_700_v" name="izp_700_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_700_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_700_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_700_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_700" name="auction_kf_700" placeholder="" value="{{params.settings.settings_estimation.auction_kf_700|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_700" name="windshield_700" placeholder="" value="{{params.settings.settings_estimation.windshield_700}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_700" name="windshield_heat_700" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_700}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">1 200</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_1200" name="izp_1200" placeholder="" value="{{params.settings.settings_estimation.izp_1200|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 1200" id="izp_1200_v" name="izp_1200_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_1200_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_1200_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_1200_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_1200" name="auction_kf_1200" placeholder="" value="{{params.settings.settings_estimation.auction_kf_1200|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_1200" name="windshield_1200" placeholder="" value="{{params.settings.settings_estimation.windshield_1200}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_1200" name="windshield_heat_1200" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_1200}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">2 000</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_2000" name="izp_2000" placeholder="" value="{{params.settings.settings_estimation.izp_2000|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 2000" id="izp_2000_v" name="izp_2000_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_2000_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_2000_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_2000_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_2000" name="auction_kf_2000" placeholder="" value="{{params.settings.settings_estimation.auction_kf_2000|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_2000" name="windshield_2000" placeholder="" value="{{params.settings.settings_estimation.windshield_2000}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_2000" name="windshield_heat_2000" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_2000}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">3 000</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_3000" name="izp_3000" placeholder="" value="{{params.settings.settings_estimation.izp_3000|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 3000" id="izp_3000_v" name="izp_3000_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_3000_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_3000_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_3000_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_3000" name="auction_kf_3000" placeholder="" value="{{params.settings.settings_estimation.auction_kf_3000|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_3000" name="windshield_3000" placeholder="" value="{{params.settings.settings_estimation.windshield_3000}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_3000" name="windshield_heat_3000" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_3000}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">3 000+</label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="izp_3001" name="izp_3001" placeholder="" value="{{params.settings.settings_estimation.izp_3001|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">- Коррекция ЦНА %</label>
-                  </div>
-                  <select class="form-select" aria-label="ЦГ 3001" id="izp_3001_v" name="izp_3001_v">
-                    <option value="0" {% if params.settings.settings_estimation.izp_3001_v == 0 %} selected {% endif %} >Не использовать</option>
-                    <option value="1" {% if params.settings.settings_estimation.izp_3001_v == 1 %} selected {% endif %} >Использовать (если нет КорсАвто)</option>
-                    <option value="2" {% if params.settings.settings_estimation.izp_3001_v == 2 %} selected {% endif %} >Использовать всегда</option>
-                  </select>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="auction_kf_3001" name="auction_kf_3001" placeholder="" value="{{params.settings.settings_estimation.auction_kf_3001|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">Аукцион %</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_3001" name="windshield_3001" placeholder="" value="{{params.settings.settings_estimation.windshield_3001}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло без подогрева</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="windshield_heat_3001" name="windshield_heat_3001" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_3001}}" autocomplete="off">
-                    <label for="floatingInput">Лобовое стекло с подогревом</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-          </div>
+          
         
           <br>
 
-          <div class="row g-1">
-            
-            <div class="col-sm-auto">
-              <div class="card">
-                <div class="card-body">
-                  <label class="fw-bold">Максимальный % разницы коэфицента износа </label>
-                  <br>
-                  <div class="form-floating mb-3">
-                    <input type="number" class="form-control" id="max_kf_iznos" name="max_kf_iznos" placeholder="" value="{{params.settings.settings_estimation.max_kf_iznos|formatted_float}}" autocomplete="off">
-                    <label for="floatingInput">%</label>
-                  </div>
-                  
-                </div>
-              </div>
-            </div>
-
-
-
-          </div>
-          
 
         </div>
 
@@ -7994,8 +8411,7 @@
     </div>
   -->
 
-{% endif %}
-
+{% else %}
 
 {% if params.page == 'rlk_trade_in' %}
 
@@ -8820,6 +9236,10 @@
   </div>
 
 {% endif %}
+
+{% endif %}
+
+
 
 
 {% endblock %}

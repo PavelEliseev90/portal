@@ -1,15 +1,16 @@
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
-from register.models import RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
-from documents.models import DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
+from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
 import json
 from checklists.models import CheckListTradeIn
 from chats.models import Chat, ChatMessage
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Value, IntegerField
+from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField, FloatField
+from django.db.models.functions import Extract, TruncDate, TruncMonth
 from django.db import models
 import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
@@ -31,6 +32,13 @@ from asgiref.sync import async_to_sync
 
 from django.views.decorators.csrf import csrf_exempt
 from changelog.models import ChangeLog
+from collections import defaultdict
+from analytics.models import (
+    InteractivePricingSnapshot,
+    EcoAnalystSnapshot,
+    AppraiserPerformanceSnapshot,
+    TradeInFunnelSnapshot,
+)
 
 
 def add_swap(estimation):
@@ -119,6 +127,586 @@ def get_path_in_dict(dict_filtr):
         else:
             path = path + '&' + str(key) + '=' + dict_filtr[key]
     return path
+
+
+def _parse_date(value, default, is_end=False):
+    if not value:
+        return default
+    try:
+        year, month, day = [int(part) for part in value.split('-')]
+        parsed = default.replace(year=year, month=month, day=day)
+        if is_end:
+            parsed = parsed.replace(hour=23, minute=59, second=59, microsecond=0)
+        else:
+            parsed = parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+        return parsed
+    except Exception:
+        return default
+
+
+def _get_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_tradein_querysets(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    tradein_rlk = (
+        DocRLK.objects.filter(dataTime__gte=date_start)
+        .filter(dataTime__lte=date_end)
+        .filter(type__id=7)
+        .filter(eco=True)
+        .filter(tradeInModel__isnull=False)
+    )
+
+    if unit_id:
+        tradein_rlk = tradein_rlk.filter(Q(unit__id=unit_id) | Q(unit_dc__id=unit_id))
+
+    if staff_id:
+        tradein_rlk = tradein_rlk.filter(staff__id=staff_id)
+
+    if analyst_id:
+        tradein_rlk = tradein_rlk.filter(
+            Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
+            Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+        )
+
+    if type_reception_id:
+        tradein_rlk = tradein_rlk.filter(
+            reginteractivocenka__page_documents__type_reception__id=type_reception_id
+        )
+
+    reg_qs = RegInteractivOcenka.objects.filter(rlk__in=tradein_rlk.values('pk'))
+
+    if analyst_id:
+        reg_qs = reg_qs.filter(
+            Q(staff_eco_1__id=analyst_id) |
+            Q(staff_eco_2__id=analyst_id)
+        )
+
+    if type_reception_id:
+        reg_qs = reg_qs.filter(page_documents__type_reception__id=type_reception_id)
+
+    return tradein_rlk, reg_qs
+
+
+def _get_stage_counts(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    tradein_rlk, reg_qs = _build_tradein_querysets(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
+    stage_work_orders = tradein_rlk.count()
+    stage_estimations = reg_qs.count()
+    stage_diagnostics_qs = reg_qs.filter(page_soglasovanie__isnull=False).exclude(page_soglasovanie__comment_diagnostica = '').filter(page_soglasovanie__no_diagnostica = False) | reg_qs.filter(page_soglasovanie__isnull=False).filter(page_soglasovanie__no_diagnostica = True)
+    stage_diagnostics = stage_diagnostics_qs.count()
+    stage_accepted = stage_diagnostics_qs.filter(status__name__icontains='ам принят').count()
+
+    return stage_work_orders, stage_estimations, stage_diagnostics, stage_accepted, stage_diagnostics_qs
+
+
+def _get_type_distribution(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    _, reg_qs = _build_tradein_querysets(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
+    return (
+        reg_qs.values(name=F('page_documents__type_reception__name'))
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+
+
+def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
+    tradein_rlk, reg_qs = _build_tradein_querysets(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+
+    source_label = Coalesce(
+        'unit_dc__name',
+        'unit__name',
+        Value('Без подразделения', output_field=CharField()),
+    )
+    work_orders = (
+        tradein_rlk
+        .annotate(source_name=source_label)
+        .values('source_name')
+        .annotate(total=Count('id'))
+    )
+
+    reg_source_label = Coalesce(
+        'rlk__unit_dc__name',
+        'rlk__unit__name',
+        Value('Без подразделения', output_field=CharField()),
+    )
+    
+    diagnostics_qs = (
+        reg_qs.filter(page_soglasovanie__isnull=False)
+        .exclude(page_soglasovanie__comment_diagnostica='')
+        .filter(page_soglasovanie__no_diagnostica=False)
+    ) | (
+        reg_qs.filter(page_soglasovanie__isnull=False)
+        .filter(page_soglasovanie__no_diagnostica=True)
+    )
+    
+    reg_stats = (
+        reg_qs
+        .annotate(source_name=reg_source_label)
+        .values('source_name')
+        .annotate(
+            evaluations=Count('id'),
+        )
+    )
+    
+    diagnostics_stats = (
+        diagnostics_qs
+        .annotate(source_name=reg_source_label)
+        .values('source_name')
+        .annotate(
+            diagnostics=Count('id'),
+            accepted=Count('id', filter=Q(status__name__icontains='ам принят')),
+        )
+    )
+
+    stats_map = {}
+    for row in work_orders:
+        name = row['source_name'] or 'Без подразделения'
+        stats_map[name] = {
+            'source': name,
+            'work_orders': row['total'],
+            'evaluations': 0,
+            'diagnostics': 0,
+            'accepted': 0,
+        }
+
+    for row in reg_stats:
+        name = row['source_name'] or 'Без подразделения'
+        stats_map.setdefault(
+            name,
+            {
+                'source': name,
+                'work_orders': 0,
+                'evaluations': 0,
+                'diagnostics': 0,
+                'accepted': 0,
+            },
+        )
+        stats_map[name]['evaluations'] = row['evaluations']
+    
+    for row in diagnostics_stats:
+        name = row['source_name'] or 'Без подразделения'
+        stats_map.setdefault(
+            name,
+            {
+                'source': name,
+                'work_orders': 0,
+                'evaluations': 0,
+                'diagnostics': 0,
+                'accepted': 0,
+            },
+        )
+        stats_map[name]['diagnostics'] = row['diagnostics']
+        stats_map[name]['accepted'] = row['accepted']
+
+    stats_list = []
+    for item in stats_map.values():
+        conv_to_eval = round((item['evaluations'] / item['work_orders'] * 100) if item['work_orders'] > 0 else 0, 1)
+        conv_to_diag = round((item['diagnostics'] / item['evaluations'] * 100) if item['evaluations'] > 0 else 0, 1)
+        conv_to_accepted = round((item['accepted'] / item['diagnostics'] * 100) if item['diagnostics'] > 0 else 0, 1)
+        overall_conv = round((item['accepted'] / item['work_orders'] * 100) if item['work_orders'] > 0 else 0, 1)
+        
+        item['conv_to_eval'] = conv_to_eval
+        item['conv_to_diag'] = conv_to_diag
+        item['conv_to_accepted'] = conv_to_accepted
+        item['overall_conv'] = overall_conv
+        stats_list.append(item)
+    
+    stats_list = sorted(
+        stats_list,
+        key=lambda item: item['work_orders'],
+        reverse=True,
+    )
+    
+    totals = {
+        'work_orders': sum(item['work_orders'] for item in stats_list),
+        'evaluations': sum(item['evaluations'] for item in stats_list),
+        'diagnostics': sum(item['diagnostics'] for item in stats_list),
+        'accepted': sum(item['accepted'] for item in stats_list),
+    }
+    
+    avg_overall_conv = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
+    
+    for item in stats_list:
+        is_good = False
+        if item['work_orders'] >= 5:
+            if item['overall_conv'] >= max(avg_overall_conv, 30):
+                is_good = True
+        item['is_good'] = is_good
+
+    return stats_list, totals
+
+
+def tradein_funnel(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+
+    type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
+    color_palette = ['#2563eb', '#f97316', '#22c55e', '#a855f7', '#f43f5e', '#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#d946ef']
+
+    stage_counts_raw = _get_stage_counts(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+    stage_counts = stage_counts_raw[:4]
+    stage_diagnostics_qs = stage_counts_raw[4]
+    stage_labels = [
+        'Рабочие листы TRADE-IN',
+        'Интерактивные оценки',
+        'Диагностика заполнена',
+        'АМ принят (из диагностики)',
+    ]
+
+    def _conversion(current, previous):
+        if not previous:
+            return 0
+        return round(current / previous * 100, 1)
+
+    stages = [
+        {
+            'title': stage_labels[0],
+            'count': stage_counts[0],
+            'description': 'DocRLK с признаком TRADE-IN',
+            'conversion': 100 if stage_counts[0] else 0,
+        },
+        {
+            'title': stage_labels[1],
+            'count': stage_counts[1],
+            'description': 'Созданные интерактивные оценки',
+            'conversion': _conversion(stage_counts[1], stage_counts[0]),
+        },
+        {
+            'title': stage_labels[2],
+            'count': stage_counts[2],
+            'description': 'Есть заполненная секция "Диагностика"',
+            'conversion': _conversion(stage_counts[2], stage_counts[1]),
+        },
+        {
+            'title': stage_labels[3],
+            'count': stage_counts[3],
+            'description': 'Статус содержит "АМ принят"',
+            'conversion': _conversion(stage_counts[3], stage_counts[2]),
+        },
+    ]
+
+    type_distribution_total = list(
+        _get_type_distribution(
+            date_start,
+            date_end,
+            unit_id=unit_id,
+            staff_id=staff_id,
+            analyst_id=analyst_id,
+            type_reception_id=type_reception_id,
+        )
+    )
+    type_pie_chart = None
+    type_name_order = []
+    if type_distribution_total:
+        pie_labels = []
+        pie_values = []
+        pie_colors = []
+        for idx, item in enumerate(type_distribution_total):
+            name = item['name'] or 'Не указано'
+            pie_labels.append(name)
+            pie_values.append(item['total'])
+            pie_colors.append(color_palette[idx % len(color_palette)])
+            if name not in type_name_order:
+                type_name_order.append(name)
+        type_pie_chart = {
+            'labels': pie_labels,
+            'values': pie_values,
+            'colors': pie_colors,
+        }
+
+    funnel_chart = {
+        'labels': stage_labels,
+        'values': stage_counts,
+    }
+
+    monthly_labels = []
+    monthly_series = {
+        'work_orders': [],
+        'evaluations': [],
+        'diagnostics': [],
+        'accepted': [],
+    }
+    monthly_type_data = []
+
+    base_month = default_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    for shift in range(2, -1, -1):
+        month_start = base_month - relativedelta(months=shift)
+        month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
+        month_label = month_start.strftime('%b %Y')
+        month_counts = _get_stage_counts(
+            month_start,
+            month_end,
+            unit_id=unit_id,
+            staff_id=staff_id,
+            analyst_id=analyst_id,
+            type_reception_id=type_reception_id,
+        )
+        counts = month_counts[:4]
+        monthly_labels.append(month_label)
+        monthly_series['work_orders'].append(counts[0])
+        monthly_series['evaluations'].append(counts[1])
+        monthly_series['diagnostics'].append(counts[2])
+        monthly_series['accepted'].append(counts[3])
+
+        month_type_counts = list(
+            _get_type_distribution(
+                month_start,
+                month_end,
+                unit_id=unit_id,
+                staff_id=staff_id,
+                analyst_id=analyst_id,
+                type_reception_id=type_reception_id,
+            )
+        )
+        month_type_map = {}
+        for item in month_type_counts:
+            name = item['name'] or 'Не указано'
+            month_type_map[name] = item['total']
+            if name not in type_name_order:
+                type_name_order.append(name)
+        monthly_type_data.append(month_type_map)
+
+    type_monthly_chart = None
+    if monthly_labels and type_name_order:
+        type_datasets = []
+        for idx, type_name in enumerate(type_name_order):
+            series = [entry.get(type_name, 0) for entry in monthly_type_data]
+            if not any(series):
+                continue
+            type_datasets.append({
+                'label': type_name,
+                'data': series,
+                'color': color_palette[idx % len(color_palette)],
+            })
+        if type_datasets:
+            type_monthly_chart = {
+                'labels': monthly_labels,
+                'datasets': type_datasets,
+            }
+
+    trend_chart = {
+        'labels': monthly_labels,
+        'series': [
+            {'label': stage_labels[0], 'data': monthly_series['work_orders']},
+            {'label': stage_labels[1], 'data': monthly_series['evaluations']},
+            {'label': stage_labels[2], 'data': monthly_series['diagnostics']},
+            {'label': stage_labels[3], 'data': monthly_series['accepted']},
+        ],
+    }
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+
+    unit_trend_chart = None
+    if not unit_id:
+        unit_names = []
+        unit_values_map = {}
+        for unit in units:
+            series_data = []
+            has_values = False
+            for shift in range(2, -1, -1):
+                month_start = base_month - relativedelta(months=shift)
+                month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
+                counts = _get_stage_counts(
+                    month_start,
+                    month_end,
+                    unit.id,
+                    staff_id,
+                    analyst_id,
+                    type_reception_id,
+                )
+                series_data.append(counts[1])
+                if counts[1]:
+                    has_values = True
+            if has_values:
+                unit_names.append(unit.name)
+                unit_values_map[unit.name] = series_data
+
+        if unit_names:
+            unit_datasets = []
+            for idx, month_label in enumerate(monthly_labels):
+                month_values = [unit_values_map[name][idx] for name in unit_names]
+                unit_datasets.append({
+                    'label': month_label,
+                    'data': month_values,
+                    'color': color_palette[idx % len(color_palette)],
+                })
+            unit_trend_chart = {
+                'units': unit_names,
+                'datasets': unit_datasets,
+            }
+
+    chart_payload = json.dumps({
+        'funnel': funnel_chart,
+        'trend': trend_chart,
+        'unitTrend': unit_trend_chart,
+        'typeMonthly': type_monthly_chart,
+        'typePie': type_pie_chart,
+    }, ensure_ascii=False)
+
+    unit_trend_available = bool(unit_trend_chart)
+    type_monthly_available = bool(type_monthly_chart and type_monthly_chart.get('datasets'))
+    type_pie_available = bool(type_pie_chart and type_pie_chart.get('labels'))
+
+    unresolved_qs = stage_diagnostics_qs.exclude(status__name__icontains='ам принят')
+    unresolved_vins = list(
+        unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True)
+    )
+    query_without_flag = request.GET.copy()
+    if 'show_autoteka' in query_without_flag:
+        query_without_flag.pop('show_autoteka')
+    query_show_all = query_without_flag.copy()
+    query_show_all['show_autoteka'] = '1'
+
+    autoteka_summary = {
+        'total': 0,
+        'unique': 0,
+        'rows': [],
+        'show_all': request.GET.get('show_autoteka') == '1',
+        'query_base': query_without_flag.urlencode(),
+        'query_show_all': query_show_all.urlencode(),
+    }
+    if unresolved_vins:
+        vin_map = {}
+        for item in unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values(
+            'vin',
+            'pk',
+            'rlk_id',
+            'page_soglasovanie__price_reception',
+        ):
+            vin_map.setdefault(item['vin'], item)
+
+        leads_qs = Autoteka_signal.objects.filter(vin__in=unresolved_vins)
+        leads_qs = leads_qs.filter(date__gte=date_start).filter(date__lte=date_end)
+        autoteka_summary['total'] = leads_qs.count()
+        autoteka_summary['unique'] = leads_qs.values('vin').distinct().count()
+        leads_qs = leads_qs.order_by('-date')
+        if not autoteka_summary['show_all']:
+            leads_qs = leads_qs[:10]
+
+        rows = []
+        for row in leads_qs:
+            info = vin_map.get(row.vin)
+            rows.append({
+                'vin': row.vin,
+                'brand': row.brand,
+                'model': row.model,
+                'price': row.price,
+                'city_name': row.city_name,
+                'date': row.date,
+                'url': row.url,
+                'rlk_id': info['rlk_id'] if info else None,
+                'estimation_id': info['pk'] if info else None,
+                'price_reception': info['page_soglasovanie__price_reception'] if info else None,
+            })
+        autoteka_summary['rows'] = rows
+
+    source_stats, source_totals = _get_source_stats(
+        date_start,
+        date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_reception_id=type_reception_id,
+    )
+    
+    source_totals['conv_to_accepted'] = round(
+        (source_totals['accepted'] / source_totals['work_orders'] * 100) if source_totals['work_orders'] > 0 else 0,
+        1
+    )
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+        'type_reception_id': type_reception_id or '',
+    }
+
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'stages': stages,
+        'chart_data': chart_payload,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+        'type_receptions': type_receptions,
+        'unit_trend_available': unit_trend_available,
+        'type_monthly_available': type_monthly_available,
+        'type_pie_available': type_pie_available,
+        'autoteka_summary': autoteka_summary,
+        'source_stats': source_stats,
+        'source_totals': source_totals,
+    }
+
+    return render(request, 'lo/tradein_funnel.html', {'params': params})
 
 
 def eco_monitors(request):
@@ -725,8 +1313,9 @@ def doc(request, id):
     agreement_car           = None
     balance                 = None
     balance_unit            = None
+    expenses                = list()
 
-    car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True)
+    car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True).filter(dataTime__lte = estimation.start_estimation)
     for car_sale in car_sales:
         if car_sale.dataTime > estimation.start_estimation - DT.timedelta(days = 30):
             info_warning = {
@@ -816,7 +1405,9 @@ def doc(request, id):
             elif page == 21:
                 if not request.user.profiles.eco and not request.user.profiles.eco_page_price_info:
                     return HttpResponseRedirect(request.build_absolute_uri().replace('page=21', 'page=9'))
-
+            
+            expenses = list_expenses(estimation)
+            
             signal  = Autoteka_signal.objects.filter(vin = estimation.vin)
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
@@ -1055,13 +1646,29 @@ def doc(request, id):
                 'balance_date_end'      : balance_date_end,
                 'balance_unit'          : balance_unit,
                 'signal'                : signal,
-                'warning_list'          : warning_list
+                'warning_list'          : warning_list,
+                'expenses'              : expenses
             }
     
     elif request.method == "POST":
         
         reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
         
+        if 'cancel_auction' in request.POST:
+            comment_cancel_auction = request.POST.get('auction_cancel', '')
+            if comment_cancel_auction != '':
+                reg_interactiv_ocenka.auction_auto_no_user = True
+            else:
+                reg_interactiv_ocenka.auction_auto_no_user = False
+            reg_interactiv_ocenka.auction_auto_comment = comment_cancel_auction
+            reg_interactiv_ocenka.save()
+            if comment_cancel_auction != '':
+                send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Автоматический аукцион не подтвержден - ' + comment_cancel_auction, estimation_id= reg_interactiv_ocenka.id)
+            else:
+                send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Автоматический аукцион подтвержден - ' + comment_cancel_auction, estimation_id= reg_interactiv_ocenka.id)
+            
+            return HttpResponseRedirect(request.build_absolute_uri())
+
         add_swap(reg_interactiv_ocenka)
 
         if 'custom_zna' in request.POST:
@@ -1228,6 +1835,7 @@ def doc(request, id):
                 if auction == 'Аукцион':
                     reg_interactiv_ocenka.auction = True
                     reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
+                    reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
                     reg_interactiv_ocenka.save()  
                     text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                 else:
@@ -1251,23 +1859,23 @@ def doc(request, id):
             ''' 
             price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
             if price_autohub != None:
-                if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                    reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                    reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-                    reg_interactiv_ocenka_soglasovanie.save()
+                #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                reg_interactiv_ocenka_soglasovanie.save()
             else:
                 price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
                 if price_avito != None:
-                    if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                        reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
-                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
-                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
-                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
-                        reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
-                        reg_interactiv_ocenka_soglasovanie.save()
+                    #if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                    reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                    reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
+                    reg_interactiv_ocenka_soglasovanie.save()
             
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.save()
@@ -1355,6 +1963,7 @@ def doc(request, id):
                     if auction == 'Аукцион':
                         reg_interactiv_ocenka.auction = True
                         reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
+                        reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
                         reg_interactiv_ocenka.save()  
                         text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                     else:
@@ -1384,23 +1993,23 @@ def doc(request, id):
                     '''
                     price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
                     if price_autohub != None:
-                        if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                            reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                            reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-                            reg_interactiv_ocenka_soglasovanie.save()
+                        #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                        reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                        reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                        reg_interactiv_ocenka_soglasovanie.save()
                     else:
                         price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
                         if price_avito != None:
-                            if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                                reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
-                                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
-                                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
-                                reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
-                                reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
-                                reg_interactiv_ocenka_soglasovanie.save()
+                            #if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                            reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                            reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
+                            reg_interactiv_ocenka_soglasovanie.save()
 
                     reg_interactiv_ocenka.staff_eco_2 = request.user
                     reg_interactiv_ocenka.save()
@@ -1498,6 +2107,7 @@ def doc(request, id):
                     if auction == 'Аукцион':
                         reg_interactiv_ocenka.auction = True
                         reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
+                        reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
                         reg_interactiv_ocenka.save()  
                         text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                     else:
@@ -1525,21 +2135,21 @@ def doc(request, id):
                     '''
                     price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
                     if price_autohub != None:
-                        if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                            reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                            reg_interactiv_ocenka_soglasovanie.save()
+                        #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                        reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                        reg_interactiv_ocenka_soglasovanie.save()
                     else:
                         price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
                         if price_avito != None:
-                            if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                                reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
-                                reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
-                                reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
-                                reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
-                                reg_interactiv_ocenka_soglasovanie.save()
+                            #if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                            reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
+                            reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
+                            reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
+                            reg_interactiv_ocenka_soglasovanie.save()
 
                     reg_interactiv_ocenka.staff_eco_2 = request.user
                     reg_interactiv_ocenka.save()
@@ -1553,12 +2163,71 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())    
 
         return HttpResponseRedirect(request.build_absolute_uri())  
-
+    return render(request, 'lo/lo_v3.html', {'params': params})  
     if estimation.v > 1:
         return render(request, 'lo/lo_v' + str(estimation.v) + '.html', {'params': params})             
     else:
         return render(request, 'lo/lo.html', {'params': params}) 
 
+
+def list_expenses(estimation):
+    list_info = list()
+    #DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem
+    if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
+        lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]
+        list_works                  = DocZNWorkKA.objects.filter(zn__lo = lo)
+        for list_work in list_works:
+            item = {
+                'type'          : list_work.zn.typeRemont,
+                'date'          : list_work.zn.dataTime,
+                'document'      : list_work.zn.nomer,
+                'name'          : list_work.work.name,
+                'qyantity'      : list_work.quantity,
+                'price'         : list_work.price,
+                'amount'        : list_work.amount,
+                'description'   : '',
+            }
+            list_info.append(item)
+        list_products               = DocZNProductKA.objects.filter(zn__lo = lo)
+        for list_product in list_products:
+            item = {
+                'type'          : list_product.zn.typeRemont,
+                'date'          : list_product.zn.dataTime,
+                'document'      : list_product.zn.nomer,
+                'name'          : list_product.product.name,
+                'qyantity'      : list_product.quantity,
+                'price'         : list_product.price,
+                'amount'        : list_product.amount,
+                'description'   : '',
+            }
+            list_info.append(item)
+        list_services               = DocZNServicesKA.objects.filter(zn__lo = lo)
+        for list_service in list_services:
+            item = {
+                'type'          : list_service.zn.typeRemont,
+                'date'          : list_service.zn.dataTime,
+                'document'      : list_service.zn.nomer,
+                'name'          : list_service.service.name,
+                'qyantity'      : list_service.quantity,
+                'price'         : list_service.price,
+                'amount'        : list_service.amount,
+                'description'   : '',
+            }
+            list_info.append(item)
+        list_services_podgotovka    = DocServiceItem.objects.filter(doc_service__lo = lo)
+        for list_service_podgotovka in list_services_podgotovka:
+            item = {
+                'type'          : list_service_podgotovka.type_service.name,
+                'date'          : list_service_podgotovka.doc_service.date_time,
+                'document'      : list_service_podgotovka.doc_service.nomer,
+                'name'          : list_service_podgotovka.service.name,
+                'qyantity'      : list_service_podgotovka.quantity,
+                'price'         : list_service_podgotovka.price,
+                'amount'        : list_service_podgotovka.amount,
+                'description'   : list_service_podgotovka.description,
+            }
+            list_info.append(item)
+    return list_info
 
 def body_estimation(estimation):
     
@@ -1646,9 +2315,12 @@ def body_estimation(estimation):
                         name = '' + body.body_elem_name + ' - окрашено'
                     else:
                         name = ''
-                if name != '':
+                if elem_name != '':
                     try:
-                        index = array_body.index(name)
+                        index = array_body.index(elem_name)
+                        for elem_data in array_info:
+                            if elem_data['name'] == elem_name:
+                                dict_elem = elem_data
                     except ValueError:
                         for elem_data in array_info:
                             if elem_data['name'] == elem_name:
@@ -1680,71 +2352,71 @@ def body_estimation(estimation):
                             dict_elem['kors']               = 0
                             
 
-                        if file.type_point == 'толщиномер':
-                            if file.kraska > 300:
-                                dict_elem['perecras'] = dict_elem['perecras'] + 1
-                                perecras = perecras + 1
-                            if file.kraska > 900:
-                                dict_elem['perecras_strong'] = dict_elem['perecras_strong'] + 1
-                                perecras_strong = perecras_strong + 1
-                        if file.type_point == 'ржавчина':
-                            dict_elem['rzav']           = dict_elem['rzav']  + 1
-                            rzav = rzav + 1
-                            all = all + 1
-                        elif file.type_point == 'ржавчина сквозная':
-                            dict_elem['rzav_strong']    =  dict_elem['rzav_strong']  + 1
-                            rzav_strong = rzav_strong + 1
-                            all = all + 1
-                        elif file.type_point == 'царапина':
-                            dict_elem['carap']          =  dict_elem['carap']  + 1
-                            carap = carap + 1
-                            all = all + 1
-                        elif file.type_point == 'царапина сильная':
-                            dict_elem['carap_strong']    =  dict_elem['carap_strong']  + 1
-                            carap_strong = carap_strong + 1
-                            all = all + 1
-                        elif file.type_point == 'вмятина':
-                            dict_elem['vmyat']          =  dict_elem['vmyat']  + 1
-                            vmyat = vmyat + 1
-                            all = all + 1
-                        elif file.type_point == 'вмятина сильная':
-                            dict_elem['vmyat_strong']    =  dict_elem['vmyat_strong']  + 1
-                            vmyat_strong = vmyat_strong + 1
-                            all = all + 1
-                        elif file.type_point == 'скол':
-                            dict_elem['skol']               =  dict_elem['skol']  + 1
-                            skol = skol + 1
-                            all = all + 1
-                        elif file.type_point == 'трещина':
-                            dict_elem['tr']               =  dict_elem['tr']  + 1
-                            tr = tr + 1
-                            all = all + 1
-                        elif file.type_point == 'заменить':
-                            dict_elem['replace_add'] = dict_elem['replace_add']  + 1
-                            replace_add = replace_add + 1
-                            all = all + 1
-                        elif file.type_point == 'заменен':
-                            dict_elem['replace'] = dict_elem['replace']  + 1
-                            replace = replace + 1
-                            all = all + 1
-                        elif file.type_point == 'наклейка':
-                            dict_elem['stiker'] = dict_elem['stiker']  + 1
-                            stiker = stiker + 1
-                            all = all + 1
-                        elif file.type_point == 'тонировка':
-                            dict_elem['toner'] = dict_elem['toner']  + 1
-                            toner = toner + 1
-                            all = all + 1
-                        elif file.type_point == 'полировка':
-                            dict_elem['poly'] = dict_elem['poly']  + 1
-                            poly = poly + 1
-                            all = all + 1
-                        dict_elem['all'] = all
-                        for elem_data in array_info:
-                            if elem_data['name'] == elem_name:
-                                elem_data = dict_elem
-                        
-                        array_body.append(name)
+                    if file.type_point == 'толщиномер':
+                        if file.kraska > 300:
+                            dict_elem['perecras'] = dict_elem['perecras'] + 1
+                            perecras = perecras + 1
+                        if file.kraska > 900:
+                            dict_elem['perecras_strong'] = dict_elem['perecras_strong'] + 1
+                            perecras_strong = perecras_strong + 1
+                    if file.type_point == 'ржавчина':
+                        dict_elem['rzav']           = dict_elem['rzav']  + 1
+                        rzav = rzav + 1
+                        all = all + 1
+                    elif file.type_point == 'ржавчина сквозная':
+                        dict_elem['rzav_strong']    =  dict_elem['rzav_strong']  + 1
+                        rzav_strong = rzav_strong + 1
+                        all = all + 1
+                    elif file.type_point == 'царапина':
+                        dict_elem['carap']          =  dict_elem['carap']  + 1
+                        carap = carap + 1
+                        all = all + 1
+                    elif file.type_point == 'царапина сильная':
+                        dict_elem['carap_strong']    =  dict_elem['carap_strong']  + 1
+                        carap_strong = carap_strong + 1
+                        all = all + 1
+                    elif file.type_point == 'вмятина':
+                        dict_elem['vmyat']          =  dict_elem['vmyat']  + 1
+                        vmyat = vmyat + 1
+                        all = all + 1
+                    elif file.type_point == 'вмятина сильная':
+                        dict_elem['vmyat_strong']    =  dict_elem['vmyat_strong']  + 1
+                        vmyat_strong = vmyat_strong + 1
+                        all = all + 1
+                    elif file.type_point == 'скол':
+                        dict_elem['skol']               =  dict_elem['skol']  + 1
+                        skol = skol + 1
+                        all = all + 1
+                    elif file.type_point == 'трещина':
+                        dict_elem['tr']               =  dict_elem['tr']  + 1
+                        tr = tr + 1
+                        all = all + 1
+                    elif file.type_point == 'заменить':
+                        dict_elem['replace_add'] = dict_elem['replace_add']  + 1
+                        replace_add = replace_add + 1
+                        all = all + 1
+                    elif file.type_point == 'заменен':
+                        dict_elem['replace'] = dict_elem['replace']  + 1
+                        replace = replace + 1
+                        all = all + 1
+                    elif file.type_point == 'наклейка':
+                        dict_elem['stiker'] = dict_elem['stiker']  + 1
+                        stiker = stiker + 1
+                        all = all + 1
+                    elif file.type_point == 'тонировка':
+                        dict_elem['toner'] = dict_elem['toner']  + 1
+                        toner = toner + 1
+                        all = all + 1
+                    elif file.type_point == 'полировка':
+                        dict_elem['poly'] = dict_elem['poly']  + 1
+                        poly = poly + 1
+                        all = all + 1
+                    dict_elem['all'] = all
+                    for elem_data in array_info:
+                        if elem_data['name'] == elem_name:
+                            elem_data = dict_elem
+                    
+                    array_body.append(elem_name)
 
     body = {
         'array'             : array_info,
@@ -1894,7 +2566,7 @@ def estimation_lo_history(estimation, count = False):
     if estimation.vin != '':
         if count:
             lo = DocLO.objects.filter(vin = estimation.vin)
-            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk__id')[:1], output_field = models.IntegerField())
+            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk_id')[:1], output_field = models.IntegerField())
             lo = lo.annotate(interactiv = Count(subqyery_interactiv))
             lo = lo.filter(interactiv = 0).count()
             interatciv = RegInteractivOcenka.objects.filter(vin = estimation.vin).count()
@@ -1910,7 +2582,7 @@ def estimation_lo_history(estimation, count = False):
             for interatciv in interatcivs:
                 list_info.append(interatciv)
             lo = DocLO.objects.filter(vin = estimation.vin).order_by('-dataTime')
-            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk__id')[:1], output_field = models.IntegerField())
+            subqyery_interactiv = Subquery(RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='rlk__id')).values('rlk_id')[:1], output_field = models.IntegerField())
             lo = lo.annotate(interactiv = Count(subqyery_interactiv))
             lo = lo.filter(interactiv = 0)
             for lo_info in lo:
@@ -1923,7 +2595,7 @@ def estimation_lo_history(estimation, count = False):
 def estimations_price_calculation(estimation, type_calculation):
 
 
-    estimation_settings     = RegEstimationsSettings.objects.get(pk = 1)
+    estimation_settings     = RegEstimationsSettings.objects.all().last()
     if estimation.page_soglasovanie != None:
         if estimation.page_soglasovanie.settings != None:
             estimation_settings = estimation.page_soglasovanie.settings 
@@ -1994,9 +2666,13 @@ def estimations_price_calculation(estimation, type_calculation):
     percent_sale_1C     = 100
     percent_sale        = 100
     battery             = 0
-
+    matrix_auction      = 0
+    
+    settings_matrix = SettingsMatrixAuction.objects.get(pk = 1)
+    
     if zna < 200000:
         zg              = '200'
+        matrix_auction  = settings_matrix.charge_bcp_200
         kf              = dc.ratio_avtohub_txt_200
         percent_ss      = dc.percent_txt_200
         percent_torg    = dc.percent_torg_txt_200
@@ -2051,6 +2727,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
     elif zna < 400000:
         zg              = '400'
+        matrix_auction  = settings_matrix.charge_bcp_400
         fin_zg          = estimation_settings.percent_financity_400
         day_sale_zg     = estimation_settings.days_stok_financity_400
         kf              = dc.ratio_avtohub_txt_400
@@ -2104,6 +2781,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_400
     elif zna < 700000:
         zg              = '700'
+        matrix_auction  = settings_matrix.charge_bcp_700
         fin_zg          = estimation_settings.percent_financity_700
         day_sale_zg     = estimation_settings.days_stok_financity_700
         kf              = dc.ratio_avtohub_txt_700
@@ -2157,6 +2835,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_700
     elif zna < 1200000:
         zg              = '1 200'
+        matrix_auction  = settings_matrix.charge_bcp_1200
         fin_zg          = estimation_settings.percent_financity_1200
         day_sale_zg     = estimation_settings.days_stok_financity_1200
         kf              = dc.ratio_avtohub_txt_1200
@@ -2210,6 +2889,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_1200
     elif zna < 2000000:
         zg              = '2 000'
+        matrix_auction  = settings_matrix.charge_bcp_2000
         fin_zg          = estimation_settings.percent_financity_2000
         day_sale_zg     = estimation_settings.days_stok_financity_2000
         kf              = dc.ratio_avtohub_txt_2000
@@ -2263,6 +2943,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_2000
     elif zna < 3000000:
         zg              = '3 000'
+        matrix_auction  = settings_matrix.charge_bcp_3000
         fin_zg          = estimation_settings.percent_financity_3000
         day_sale_zg     = estimation_settings.days_stok_financity_3000
         kf              = dc.ratio_avtohub_txt_3000
@@ -2316,6 +2997,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_3000
     elif zna < 5000000:
         zg              = '5 000'
+        matrix_auction  = settings_matrix.charge_bcp_5000
         fin_zg          = estimation_settings.percent_financity_5000
         day_sale_zg     = estimation_settings.days_stok_financity_5000
         kf              = dc.ratio_avtohub_txt_5000
@@ -2369,6 +3051,7 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5000
     else:
         zg              = '5 000+'
+        matrix_auction  = settings_matrix.charge_bcp_5001
         fin_zg          = estimation_settings.percent_financity_5001
         day_sale_zg     = estimation_settings.days_stok_financity_5001
         kf              = dc.ratio_avtohub_txt_5001
@@ -2440,9 +3123,10 @@ def estimations_price_calculation(estimation, type_calculation):
             'name'      : "износ"
         }
         list_info_price.append(inf_price)
-        auction = True
-        auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
-        auction_success = True
+        if estimation.auction_auto_no_user != True:
+            auction = True
+            auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
+            auction_success = True
     elif estimation.iznos:
         price_new  = price - (price * 10 / 100)
         diff       = price - price_new
@@ -3030,19 +3714,20 @@ def estimations_price_calculation(estimation, type_calculation):
                         if run_other - run > 1000:
                             run_ok = False
                             run_sum = run_sum + (run_other - run)
-                            auction = True
+                            if estimation.auction_auto_no_user != True:
+                                auction = True
                             
                     run_other = run
         if run_sum > 0:
             real_runs = run_estimation + run_sum 
             auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.). Реальный пробег примерно: ' + '{0:,}'.format(real_runs).replace(',', ' ')  + ' км.'
 
-    ###Проверяем требуется ли замена аккамулятора
+    ###Проверяем требуется ли замена аккумулятора
     if battery > 0:
         try:
             if estimation.start_estimation.year - estimation.year > 4:
                 diff_sum    = 0
-                work        = 'Замена аккамулятора'
+                work        = 'Замена аккумулятора'
                 diff_sum    = battery
                 dop = {
                     'name'      : work,
@@ -3277,7 +3962,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 14)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3289,7 +3974,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 43) 
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3301,7 +3986,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'задний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 9)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3313,7 +3998,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 59)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3325,7 +4010,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 46)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3337,7 +4022,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крыша':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 51)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3349,7 +4034,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'крышка багажника':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 4)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3361,7 +4046,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 24)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3373,7 +4058,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 28)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3385,7 +4070,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 elif info['name'] ==  'капот':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 38)
-                    diff_sum    = work.price_podrad
+                    diff_sum    = work.price_podrad * 2
                     dop = {
                         'name'      : work.name_group + ' / ' +  work.name  + ' / замена',
                         'quantity'  : work.normo * 2,
@@ -3394,7 +4079,7 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_mcu.append(dop)
                     amount_mcu = amount_mcu + diff_sum
-            if (info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
+            if (info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['tr'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 14)
@@ -3515,7 +4200,7 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_mcu.append(dop)
                     amount_mcu = amount_mcu + diff_sum
-            elif info['vmyat'] > 0 or info['carap'] > 0:
+            elif info['carap'] > 0:
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 16)
@@ -3636,6 +4321,18 @@ def estimations_price_calculation(estimation, type_calculation):
                     }
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum
+            elif info['vmyat'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 131)
+                diff_sum    = work.price_kors * info['vmyat']
+                dop = {
+                    'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
+                    'quantity'  : work.normo * info['vmyat'],
+                    'amount_pod': work.price_podrad * info['vmyat'], 
+                    'amount'    : work.price_kors * info['vmyat']
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum                 
  
             if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
             
@@ -3651,7 +4348,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 list_work_podgotovka.append(dop)
                 amount_podgotovka = amount_podgotovka + diff_sum 
 
-    if elem_rzav > 3:
+    if elem_rzav > 3 and estimation.auction_auto_no_user != True:
         auction = True
         auction_comment = auction_comment + " " + "3 более элемента с сквозной корозией (" +  elem_rzav_data +  "). "
 
@@ -3688,16 +4385,17 @@ def estimations_price_calculation(estimation, type_calculation):
         }
         list_info_price.append(inf_price)
     
-    if auction_success == False and auction:
-        price_new  = price - (price * (100 - kf_auction) / 100)
-        diff       = price - price_new
-        price = price_new
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'  : "Цена скоректирована c учетом продажи АМ на АУКЦИОНЕ " + str(kf_auction) + "%"  
-        }
-        list_info_price.append(inf_price)
+    if estimation.auction_auto_no_user != True:
+        if auction_success == False and auction:
+            price_new  = price - (price * (100 - kf_auction) / 100)
+            diff       = price - price_new
+            price = price_new
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'  : "Цена скоректирована c учетом продажи АМ на АУКЦИОНЕ " + str(kf_auction) + "%"  
+            }
+            list_info_price.append(inf_price)
 
     #Финансирование
     if zna_type != '1C':
@@ -3744,28 +4442,80 @@ def estimations_price_calculation(estimation, type_calculation):
             }
             '''
             list_info_price.append(inf_price)
-    
+    if estimation.auction_auto_no_user == True:
+        auction = False
+        auction_comment = ''
+
     #ИТОГ
     estimation_price    = round(price, -2)
     amount_sum          = amount_mcu + amount_podgotovka + amount_ss
     profit              = round(price_sale - price - amount_sum, -2)
+    estimation_price_do_kd  = estimation_price + amount_ss
+    difference_sum          = 0     
     
-    estimation_price_do_kd = estimation_price + amount_ss
+    if zna_type == "custom":
+        if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
+            estimation_price = estimation_price_do_kd - amount_ss 
+            if estimation_price < 1000:
+                estimation_price = 1000
+        else:
+            estimation_price = 0
+
+        if estimation_price_do_kd < 1000:
+            estimation_price_do_kd = 1000 
+        
+        difference_sum = 0
+        if estimation.page_soglasovanie != None:
+            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+        
+        estimation_price = estimation_price + difference_sum
+
+    cna_expenses = zna - amount_sum 
+    
+    if estimation_price < 1000:
+        estimation_price = 1000
+    
     if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
         estimation_price = estimation_price_do_kd - amount_ss 
         if estimation_price < 1000:
             estimation_price = 1000
-    else:
-        estimation_price = 0
 
     if estimation_price_do_kd < 1000:
         estimation_price_do_kd = 1000 
-    
-    cna_expenses = zna - amount_sum 
-    
+
     if cna_expenses < 0:
         cna_expenses = zna
-        
+    estimation_price_to_bcp = 0    
+    
+    if auction:
+
+        difference_sum = 0
+        if estimation.page_soglasovanie != None:
+            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+        if difference_sum > 0:
+            estimation_price_to_bcp = estimation_price + difference_sum
+                 
+        matrix_auction = 0
+        if estimation_price_to_bcp < 200000:
+            matrix_auction  = settings_matrix.charge_bcp_200
+        elif estimation_price_to_bcp < 400000:
+            matrix_auction  = settings_matrix.charge_bcp_400
+        elif estimation_price_to_bcp < 700000:
+            matrix_auction  = settings_matrix.charge_bcp_700
+        elif estimation_price_to_bcp < 1200000:
+            matrix_auction  = settings_matrix.charge_bcp_1200
+        elif estimation_price_to_bcp < 2000000:
+            matrix_auction  = settings_matrix.charge_bcp_2000
+        elif estimation_price_to_bcp < 3000000:
+            matrix_auction  = settings_matrix.charge_bcp_3000
+        elif estimation_price_to_bcp < 5000000:
+            matrix_auction  = settings_matrix.charge_bcp_5000
+        else:
+            matrix_auction  = settings_matrix.charge_bcp_5001        
+        cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
+
     price = {
         'kors_price_reception'          : kors_price_reception,
         'profit'                        : profit,
@@ -3797,7 +4547,8 @@ def estimations_price_calculation(estimation, type_calculation):
         'zachita_ot_ubitka'             : zachita_ot_ubitka,
         'finance_price'                 : finance_price,
         'run_sum'                       : run_sum,
-        'iznos_price'                   : iznos_price
+        'iznos_price'                   : iznos_price,
+        'estimation_settings'           : estimation_settings
     }
 
     return price
@@ -3864,6 +4615,1169 @@ class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+def eco_efficiency_analysis(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_efficiency',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+
+    pricing_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+
+    if unit_id:
+        pricing_qs = pricing_qs.filter(unit_id=unit_id)
+    if staff_id:
+        pricing_qs = pricing_qs.filter(staff_id=staff_id)
+    if analyst_id:
+        pricing_qs = pricing_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
+    if type_id:
+        pricing_qs = pricing_qs.filter(type_reception_id=type_id)
+    if status_id:
+        pricing_qs = pricing_qs.filter(status_id=status_id)
+
+    total_count = pricing_qs.count()
+    with_soglasovanie_count = pricing_qs.filter(has_soglasovanie=True).count()
+    soglasovanie_percent = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
+
+    avg_time_total = pricing_qs.aggregate(avg=Avg('duration_estimation_sec'))['avg']
+    avg_time_total = round(avg_time_total / 3600, 1) if avg_time_total else None
+
+    avg_soglasovanie_time = (
+        pricing_qs.filter(has_soglasovanie=True).aggregate(avg=Avg('duration_sogl_after_sec'))['avg']
+    )
+    avg_soglasovanie_time = round(avg_soglasovanie_time / 3600, 1) if avg_soglasovanie_time else None
+
+    price_diffs = []
+    price_percent_diffs = []
+    higher_count = lower_count = equal_count = 0
+    for price_after, auto_price in pricing_qs.values_list('price_after_kd', 'price_auto_selected')[:2000]:
+        if price_after and auto_price:
+            diff = float(price_after) - float(auto_price)
+            price_diffs.append(diff)
+            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+            price_percent_diffs.append(diff_percent)
+            if diff > 1000:
+                higher_count += 1
+            elif diff < -1000:
+                lower_count += 1
+            else:
+                equal_count += 1
+
+    avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
+    avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
+
+    task_aggregate = pricing_qs.aggregate(
+        total_tasks=Coalesce(Sum('tasks_total'), 0),
+        closed_tasks=Coalesce(Sum('tasks_closed'), 0),
+        evaluations_with_tasks=Count('estimation_id', filter=Q(tasks_total__gt=0)),
+    )
+    all_tasks_total = task_aggregate['total_tasks'] or 0
+    all_tasks_closed = task_aggregate['closed_tasks'] or 0
+    evaluations_with_tasks_count = task_aggregate['evaluations_with_tasks'] or 0
+    all_tasks_open = all_tasks_total - all_tasks_closed
+    avg_tasks_per_eval = round(all_tasks_total / total_count, 1) if total_count and all_tasks_total else 0
+    evaluations_with_tasks_percent = (
+        round((evaluations_with_tasks_count / total_count * 100), 1) if total_count else 0
+    )
+
+    analyst_qs = EcoAnalystSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+    if unit_id:
+        analyst_qs = analyst_qs.filter(unit_id=unit_id)
+    if staff_id:
+        analyst_qs = analyst_qs.filter(staff_id=staff_id)
+    if analyst_id:
+        analyst_qs = analyst_qs.filter(analyst_id=analyst_id)
+    if type_id:
+        analyst_qs = analyst_qs.filter(type_reception_id=type_id)
+    if status_id:
+        analyst_qs = analyst_qs.filter(status_id=status_id)
+
+    analyst_stats_raw = analyst_qs.exclude(analyst_id__isnull=True).values('analyst_id', 'analyst_name').annotate(
+        total=Count('id'),
+        with_soglas=Count('id', filter=Q(has_soglasovanie=True)),
+        accepted=Count('id', filter=Q(accepted=True)),
+        avg_duration=Avg('duration_estimation_sec'),
+        tasks_total=Coalesce(Sum('tasks_total'), 0),
+        tasks_closed=Coalesce(Sum('tasks_closed'), 0),
+        evaluations_with_tasks=Count('id', filter=Q(tasks_total__gt=0)),
+    )
+
+    analyst_stats = []
+    for row in analyst_stats_raw:
+        count = row['total']
+        if count == 0:
+            continue
+        avg_time = round((row['avg_duration'] or 0) / 3600, 1) if row['avg_duration'] else None
+        total_tasks = row['tasks_total'] or 0
+        closed_tasks = row['tasks_closed'] or 0
+        task_stats = {
+            'total_tasks': total_tasks,
+            'evaluations_with_tasks': row['evaluations_with_tasks'] or 0,
+            'avg_tasks_per_eval': round(total_tasks / count, 1) if total_tasks else 0,
+            'closed_tasks': closed_tasks,
+            'open_tasks': total_tasks - closed_tasks,
+            'closed_percent': round((closed_tasks / total_tasks * 100), 1) if total_tasks else 0,
+        }
+        analyst_stats.append(
+            {
+                'name': row['analyst_name'] or '—',
+                'total': count,
+                'with_soglasovanie': row['with_soglas'],
+                'accepted': row['accepted'],
+                'avg_time': avg_time,
+                'conv_rate': round((row['with_soglas'] / count * 100), 1) if count else 0,
+                'accept_rate': round((row['accepted'] / count * 100), 1) if count else 0,
+                'task_stats': task_stats,
+            }
+        )
+
+    analyst_stats = sorted(analyst_stats, key=lambda x: x['total'], reverse=True)
+
+    monthly_data = []
+    monthly_agg = (
+        pricing_qs.annotate(month=TruncMonth('start_estimation'))
+        .values('month')
+        .order_by('month')
+        .annotate(
+            total=Count('estimation_id'),
+            with_soglas=Count('estimation_id', filter=Q(has_soglasovanie=True)),
+            accepted=Count('estimation_id', filter=Q(accepted=True)),
+            avg_duration=Avg('duration_estimation_sec'),
+        )
+    )
+    for item in monthly_agg:
+        month_dt = item['month']
+        monthly_data.append(
+            {
+                'month': month_dt.strftime('%b %Y') if month_dt else '',
+                'total': item['total'],
+                'with_soglasovanie': item['with_soglas'],
+                'accepted': item['accepted'],
+                'avg_time': round((item['avg_duration'] or 0) / 3600, 1) if item['avg_duration'] else None,
+            }
+        )
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+        'type_id': type_id or '',
+        'status_id': status_id or '',
+    }
+
+    monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
+
+    params = {
+        'type': 'eco_efficiency',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'total_count': total_count,
+        'with_soglasovanie_count': with_soglasovanie_count,
+        'soglasovanie_percent': soglasovanie_percent,
+        'avg_time_total': avg_time_total,
+        'avg_soglasovanie_time': avg_soglasovanie_time,
+        'price_comparison': {
+            'avg_diff': avg_price_diff,
+            'avg_diff_percent': avg_price_diff_percent,
+            'higher_count': higher_count,
+            'lower_count': lower_count,
+            'equal_count': equal_count,
+            'total_compared': len(price_diffs),
+        },
+        'task_stats': {
+            'total_tasks': all_tasks_total,
+            'evaluations_with_tasks': evaluations_with_tasks_count,
+            'avg_tasks_per_eval': avg_tasks_per_eval,
+            'evaluations_with_tasks_percent': evaluations_with_tasks_percent,
+            'closed_tasks': all_tasks_closed,
+            'open_tasks': all_tasks_open,
+            'closed_percent': round((all_tasks_closed / all_tasks_total * 100), 1) if all_tasks_total > 0 else 0,
+        },
+        'analyst_stats': analyst_stats,
+        'monthly_data': monthly_data,
+        'monthly_data_json': monthly_data_json,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+        'types': types,
+        'statuses': statuses,
+    }
+
+    return render(request, 'lo/eco_efficiency.html', {'params': params})
+
+
+def staff_performance_analysis(request):
+    """Дашборд анализа работы оценщиков"""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'staff_performance',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+
+    # Базовый запрос для рабочих листов (RLK) - только trade-in через витрину
+    rlk_base_qs = TradeInFunnelSnapshot.objects.filter(
+        date_work_order__gte=date_start,
+        date_work_order__lte=date_end,
+    )
+
+    # Базовый запрос для интерактивных оценок через витрину
+    eval_base_qs = AppraiserPerformanceSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+
+    if unit_id:
+        rlk_base_qs = rlk_base_qs.filter(unit_id=unit_id)
+        eval_base_qs = eval_base_qs.filter(unit_id=unit_id)
+
+    if type_id:
+        # type_reception_id может быть в extra_payload или нужно использовать другую витрину
+        # Пока используем фильтр через extra_payload, если там хранится type_reception_id
+        eval_base_qs = eval_base_qs.filter(extra_payload__type_reception_id=type_id)
+
+    if status_id:
+        eval_base_qs = eval_base_qs.filter(status_id=status_id)
+
+    if staff_id:
+        rlk_base_qs = rlk_base_qs.filter(staff_id=staff_id)
+        eval_base_qs = eval_base_qs.filter(staff_id=staff_id)
+
+    # Получаем список всех оценщиков, которые работали в период
+    staff_ids_from_rlk = set(rlk_base_qs.filter(staff_id__isnull=False).values_list('staff_id', flat=True))
+    staff_ids_from_eval = set(eval_base_qs.filter(staff_id__isnull=False).values_list('staff_id', flat=True))
+    all_staff_ids = list(staff_ids_from_rlk | staff_ids_from_eval)
+
+    # Агрегируем статистику по оценщикам через витрины
+    rlk_stats_by_staff = dict(
+        rlk_base_qs.filter(staff_id__in=all_staff_ids)
+        .values('staff_id')
+        .annotate(count=Count('rlk_id'))
+        .values_list('staff_id', 'count')
+    )
+    
+    # Статистика по интерактивным оценкам через витрину
+    eval_stats_qs = eval_base_qs.filter(staff_id__in=all_staff_ids)
+    
+    eval_stats_raw = eval_stats_qs.values('staff_id').annotate(
+        total=Count('estimation_id'),
+        diagnostics=Count('estimation_id', filter=Q(has_diagnostics=True)),
+        accepted=Count('estimation_id', filter=Q(accepted=True)),
+        with_soglas=Count('estimation_id', filter=Q(has_soglasovanie=True))
+    ).values('staff_id', 'total', 'diagnostics', 'accepted', 'with_soglas')
+    
+    eval_stats_by_staff = {}
+    for item in eval_stats_raw:
+        staff_id = item['staff_id']
+        eval_stats_by_staff[staff_id] = (
+            item['total'],
+            item['diagnostics'],
+            item['accepted'],
+            item['with_soglas']
+        )
+    
+    # Получаем все оценки с временными метками для расчета среднего времени
+    eval_time_data = {}
+    eval_time_list = eval_base_qs.filter(
+        staff_id__in=all_staff_ids,
+        start_estimation__isnull=False,
+        end_estimation__isnull=False
+    ).values_list('staff_id', 'start_estimation', 'end_estimation')[:2000]
+    
+    for staff_id, start_time, end_time in eval_time_list:
+        if staff_id and start_time and end_time:
+            if staff_id not in eval_time_data:
+                eval_time_data[staff_id] = []
+            diff = (end_time - start_time).total_seconds() / 3600
+            if diff >= 0:
+                eval_time_data[staff_id].append(diff)
+    
+    # Создаем маппинг eval_id -> staff_id для быстрого поиска
+    eval_to_staff_map = {}
+    eval_staff_list = eval_base_qs.filter(staff_id__in=all_staff_ids).values_list('estimation_id', 'staff_id')
+    for eval_id, staff_id in eval_staff_list:
+        if staff_id:
+            eval_to_staff_map[eval_id] = staff_id
+    
+    # Получаем данные по задачам из витрины
+    all_eval_ids = list(eval_base_qs.values_list('estimation_id', flat=True))
+    
+    # Группируем задачи по оценщикам из витрины
+    staff_task_stats = defaultdict(lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set()})
+    
+    task_data_from_snapshot = eval_base_qs.filter(
+        staff_id__in=all_staff_ids
+    ).values('staff_id', 'estimation_id', 'tasks_total', 'tasks_closed')
+    
+    for item in task_data_from_snapshot:
+        staff_id = item['staff_id']
+        eval_id = item['estimation_id']
+        tasks_total = item['tasks_total'] or 0
+        tasks_closed = item['tasks_closed'] or 0
+        
+        if staff_id:
+            staff_task_stats[staff_id]['total'] += tasks_total
+            staff_task_stats[staff_id]['closed'] += tasks_closed
+            if tasks_total > 0:
+                staff_task_stats[staff_id]['evaluations_with_tasks'].add(eval_id)
+    
+    # Типы поступлений по оценщикам из витрины
+    # Используем InteractivePricingSnapshot для получения type_reception_id
+    staff_type_stats = defaultdict(lambda: defaultdict(int))
+    pricing_snapshot_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+        estimation_id__in=eval_base_qs.values_list('estimation_id', flat=True)
+    )
+    
+    if unit_id:
+        pricing_snapshot_qs = pricing_snapshot_qs.filter(unit_id=unit_id)
+    if staff_id:
+        pricing_snapshot_qs = pricing_snapshot_qs.filter(staff_id=staff_id)
+    if type_id:
+        pricing_snapshot_qs = pricing_snapshot_qs.filter(type_reception_id=type_id)
+    
+    # Получаем type_reception_id из InteractivePricingSnapshot и маппим на staff_id
+    type_data = pricing_snapshot_qs.values('estimation_id', 'type_reception_id')
+    eval_to_type_map = {item['estimation_id']: item['type_reception_id'] for item in type_data}
+    
+    # Получаем названия типов приема
+    type_names = {}
+    if eval_to_type_map:
+        type_ids = set(eval_to_type_map.values())
+        if type_ids:
+            from register.models import RefTypeReceptionCarsOrganization
+            type_names = dict(RefTypeReceptionCarsOrganization.objects.filter(
+                id__in=type_ids
+            ).values_list('id', 'name'))
+    
+    # Группируем по оценщикам
+    for eval_id, staff_id in eval_to_staff_map.items():
+        type_reception_id = eval_to_type_map.get(eval_id)
+        type_name = type_names.get(type_reception_id, 'Не указано') if type_reception_id else 'Не указано'
+        staff_type_stats[staff_id][type_name] = staff_type_stats[staff_id].get(type_name, 0) + 1
+    
+    # Формируем финальную статистику
+    staff_stats = []
+    for staff in RefStaff.objects.filter(id__in=all_staff_ids).order_by('name'):
+        rlk_count = rlk_stats_by_staff.get(staff.id, 0)
+        eval_data = eval_stats_by_staff.get(staff.id)
+        
+        if not eval_data:
+            eval_count = diagnostics_count = accepted_count = with_soglas_count = 0
+        else:
+            eval_count = eval_data[0]
+            diagnostics_count = eval_data[1]
+            accepted_count = eval_data[2]
+            with_soglas_count = eval_data[3]
+        
+        # Среднее время
+        time_diffs = eval_time_data.get(staff.id, [])
+        avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+        
+        # Типы поступлений
+        type_stats = dict(staff_type_stats.get(staff.id, {}))
+        
+        # Задачи
+        task_data = staff_task_stats.get(staff.id, {})
+        task_stats = {
+            'total': task_data.get('total', 0),
+            'closed': task_data.get('closed', 0),
+            'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
+        }
+        
+        # Конверсии
+        rlk_to_eval_rate = round((eval_count / rlk_count * 100), 1) if rlk_count > 0 else 0
+        eval_to_diag_rate = round((diagnostics_count / eval_count * 100), 1) if eval_count > 0 else 0
+        diag_to_accepted_rate = round((accepted_count / diagnostics_count * 100), 1) if diagnostics_count > 0 else 0
+        overall_conversion = round((accepted_count / rlk_count * 100), 1) if rlk_count > 0 else 0
+        
+        if rlk_count > 0 or eval_count > 0:
+            staff_stats.append({
+                'staff': staff,
+                'rlk_count': rlk_count,
+                'eval_count': eval_count,
+                'diagnostics_count': diagnostics_count,
+                'accepted_count': accepted_count,
+                'with_soglas_count': with_soglas_count,
+                'avg_time': avg_time,
+                'type_stats': type_stats,
+                'task_stats': task_stats,
+                'rlk_to_eval_rate': rlk_to_eval_rate,
+                'eval_to_diag_rate': eval_to_diag_rate,
+                'diag_to_accepted_rate': diag_to_accepted_rate,
+                'overall_conversion': overall_conversion,
+            })
+    
+    staff_stats = sorted(staff_stats, key=lambda x: x['rlk_count'], reverse=True)
+
+    # Статистика по аналитикам
+    analyst_ids = list(User.objects.filter(
+        Q(profiles__eco=True) | Q(profiles__eco_visible=True)
+    ).distinct().values_list('id', flat=True))
+    
+    analyst_stats_by_id = {}
+    analyst_time_data = {}
+    eval_to_analyst_map = {}
+    analyst_task_stats = defaultdict(
+        lambda: {'total': 0, 'closed': 0, 'evaluations_with_tasks': set(), 'task_counts': []}
+    )
+    
+    if analyst_ids:
+        # Базовый фильтр для аналитиков
+        base_analyst_filter = Q(
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end,
+        )
+        
+        if unit_id:
+            base_analyst_filter &= (
+                Q(page_documents__unit__id=unit_id)
+                | Q(rlk__unit__id=unit_id)
+                | Q(rlk__unit_dc__id=unit_id)
+            )
+        if type_id:
+            base_analyst_filter &= Q(page_documents__type_reception__id=type_id)
+        if status_id:
+            base_analyst_filter &= Q(status__id=status_id)
+        
+        # Статистика по staff_eco_1 - создаем отдельный queryset
+        # Базовый queryset для аналитиков через витрину
+        analyst_base_qs = EcoAnalystSnapshot.objects.filter(
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end,
+            analyst_id__in=analyst_ids
+        )
+        
+        if unit_id:
+            analyst_base_qs = analyst_base_qs.filter(unit_id=unit_id)
+        if type_id:
+            analyst_base_qs = analyst_base_qs.filter(type_reception_id=type_id)
+        if status_id:
+            analyst_base_qs = analyst_base_qs.filter(status_id=status_id)
+        
+        # Получаем данные по аналитикам из витрины (before)
+        analyst_data_1 = analyst_base_qs.filter(role='before').values_list(
+            'analyst_id', 'estimation_id', 'start_estimation', 'end_estimation',
+            'has_soglasovanie', 'has_diagnostics',
+            'accepted', 'status_name', 'rlk_id',
+            'price_before_kd', 'price_auto_selected'
+        )
+        
+        for (
+            analyst_id,
+            eval_id,
+            start_time,
+            end_time,
+            has_soglas,
+            has_diag,
+            accepted,
+            status_name,
+            rlk_id,
+            price_before_kd,
+            auto_price,
+        ) in analyst_data_1:
+            if not analyst_id:
+                continue
+                
+            # Инициализация
+            if analyst_id not in analyst_stats_by_id:
+                analyst_stats_by_id[analyst_id] = {
+                    'total': 0,
+                    'diagnostics': 0,
+                    'accepted': 0,
+                    'with_soglas': 0,
+                    'roles': {
+                        'before': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                        'after': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                    },
+                }
+            
+            analyst_stats_by_id[analyst_id]['total'] += 1
+            
+            # Диагностика
+            if has_diag:
+                analyst_stats_by_id[analyst_id]['diagnostics'] += 1
+            
+            # Принято
+            if accepted:
+                analyst_stats_by_id[analyst_id]['accepted'] += 1
+            
+            # С согласованием
+            if has_soglas:
+                analyst_stats_by_id[analyst_id]['with_soglas'] += 1
+            
+            # Время
+            if start_time and end_time:
+                if analyst_id not in analyst_time_data:
+                    analyst_time_data[analyst_id] = []
+                diff = (end_time - start_time).total_seconds() / 3600
+                if diff >= 0:
+                    analyst_time_data[analyst_id].append(diff)
+
+            # Ценовые показатели (до КД)
+            role_stats = analyst_stats_by_id[analyst_id]['roles']['before']
+            if price_before_kd:
+                role_stats['count'] += 1
+                role_stats['price_sum'] += float(price_before_kd)
+                if auto_price and float(auto_price) > 0:
+                    role_stats['auto_count'] += 1
+                    role_stats['auto_sum'] += float(auto_price)
+                    diff_val = float(price_before_kd) - float(auto_price)
+                    role_stats['diff_sum'] += diff_val
+                    if diff_val >= 0:
+                        role_stats['above_count'] += 1
+            
+            # Маппинг для задач
+            eval_to_analyst_map[eval_id] = analyst_id
+        
+        # Статистика по staff_eco_2 (after) - через витрину
+        analyst_data_2 = analyst_base_qs.filter(role='after').values_list(
+            'analyst_id', 'estimation_id', 'start_estimation', 'end_estimation',
+            'has_soglasovanie', 'has_diagnostics', 'accepted', 'status_name', 'rlk_id',
+            'price_after_kd', 'price_auto_selected'
+        )
+        
+        for (
+            analyst_id,
+            eval_id,
+            start_time,
+            end_time,
+            has_soglas,
+            has_diag,
+            accepted,
+            status_name,
+            rlk_id,
+            price_after_kd,
+            auto_price,
+        ) in analyst_data_2:
+            if not analyst_id:
+                continue
+                
+            # Инициализация
+            if analyst_id not in analyst_stats_by_id:
+                analyst_stats_by_id[analyst_id] = {
+                    'total': 0,
+                    'diagnostics': 0,
+                    'accepted': 0,
+                    'with_soglas': 0,
+                    'roles': {
+                        'before': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                        'after': {
+                            'count': 0,
+                            'price_sum': 0.0,
+                            'auto_sum': 0.0,
+                            'auto_count': 0,
+                            'diff_sum': 0.0,
+                            'above_count': 0,
+                        },
+                    },
+                }
+            
+            analyst_stats_by_id[analyst_id]['total'] += 1
+            
+            # Диагностика
+            if has_diag:
+                analyst_stats_by_id[analyst_id]['diagnostics'] += 1
+            
+            # Принято
+            if accepted:
+                analyst_stats_by_id[analyst_id]['accepted'] += 1
+            
+            # С согласованием
+            if has_soglas:
+                analyst_stats_by_id[analyst_id]['with_soglas'] += 1
+            
+            # Время
+            if start_time and end_time:
+                if analyst_id not in analyst_time_data:
+                    analyst_time_data[analyst_id] = []
+                diff = (end_time - start_time).total_seconds() / 3600
+                if diff >= 0:
+                    analyst_time_data[analyst_id].append(diff)
+
+            # Ценовые показатели (после КД)
+            role_stats = analyst_stats_by_id[analyst_id]['roles']['after']
+            if price_after_kd:
+                role_stats['count'] += 1
+                role_stats['price_sum'] += float(price_after_kd)
+                if auto_price and float(auto_price) > 0:
+                    role_stats['auto_count'] += 1
+                    role_stats['auto_sum'] += float(auto_price)
+                    diff_val = float(price_after_kd) - float(auto_price)
+                    role_stats['diff_sum'] += diff_val
+                    if diff_val >= 0:
+                        role_stats['above_count'] += 1
+            
+            # Маппинг для задач
+            eval_to_analyst_map[eval_id] = analyst_id
+        
+        # Задачи по аналитикам из витрины
+        analyst_task_data = analyst_base_qs.values('analyst_id', 'estimation_id', 'tasks_total', 'tasks_closed')
+        for item in analyst_task_data:
+            analyst_id = item['analyst_id']
+            eval_id = item['estimation_id']
+            tasks_total = item['tasks_total'] or 0
+            tasks_closed = item['tasks_closed'] or 0
+            
+            if analyst_id:
+                analyst_task_stats[analyst_id]['total'] += tasks_total
+                analyst_task_stats[analyst_id]['closed'] += tasks_closed
+                if tasks_total > 0:
+                    analyst_task_stats[analyst_id]['evaluations_with_tasks'].add(eval_id)
+                    analyst_task_stats[analyst_id]['task_counts'].append(tasks_total)
+    
+    # Формируем финальную статистику по аналитикам
+    analyst_stats = []
+    if analyst_ids:
+        for analyst in User.objects.filter(id__in=analyst_ids).select_related('profiles'):
+            stats = analyst_stats_by_id.get(analyst.id, {})
+            total = stats.get('total', 0)
+            
+            if total > 0:
+                diagnostics_count = stats.get('diagnostics', 0)
+                accepted_count = stats.get('accepted', 0)
+                with_soglas_count = stats.get('with_soglas', 0)
+                
+                # Среднее время
+                time_diffs = analyst_time_data.get(analyst.id, [])
+                avg_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+                
+                # Задачи
+                task_data = analyst_task_stats.get(analyst.id, {})
+                task_stats = {
+                    'total': task_data.get('total', 0),
+                    'closed': task_data.get('closed', 0),
+                    'evaluations_with_tasks': len(task_data.get('evaluations_with_tasks', set())),
+                }
+                
+                # Конверсии
+                eval_to_diag_rate = round((diagnostics_count / total * 100), 1) if total > 0 else 0
+                diag_to_accepted_rate = round((accepted_count / diagnostics_count * 100), 1) if diagnostics_count > 0 else 0
+                conv_rate = round((with_soglas_count / total * 100), 1) if total > 0 else 0
+                accept_rate = round((accepted_count / total * 100), 1) if total > 0 else 0
+                
+                analyst_stats.append({
+                    'name': analyst.profiles.eco_name or analyst.get_full_name() or analyst.username,
+                    'total': total,
+                    'diagnostics_count': diagnostics_count,
+                    'accepted_count': accepted_count,
+                    'with_soglas_count': with_soglas_count,
+                    'avg_time': avg_time,
+                    'task_stats': task_stats,
+                    'eval_to_diag_rate': eval_to_diag_rate,
+                    'diag_to_accepted_rate': diag_to_accepted_rate,
+                    'conv_rate': conv_rate,
+                    'accept_rate': accept_rate,
+                })
+    
+    # Сортируем по имени, затем по количеству
+    analyst_stats = sorted(analyst_stats, key=lambda x: (x['name'], -x['total']))
+
+    # Месячная динамика по всем оценщикам
+    monthly_data = []
+    base_month = date_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    current = base_month
+    
+    while current <= date_end:
+        month_end = (current + relativedelta(months=1)) - DT.timedelta(seconds=1)
+        if month_end > date_end:
+            month_end = date_end
+        
+        month_rlk_qs = rlk_base_qs.filter(
+            date_work_order__gte=current,
+            date_work_order__lte=month_end,
+        )
+        month_eval_qs = eval_base_qs.filter(
+            start_estimation__gte=current,
+            start_estimation__lte=month_end,
+        )
+        
+        month_rlk_count = month_rlk_qs.count()
+        month_eval_count = month_eval_qs.count()
+        month_diagnostics_count = month_eval_qs.filter(has_diagnostics=True).count()
+        month_accepted_count = month_eval_qs.filter(accepted=True).count()
+        
+        # Среднее время за месяц через витрину
+        month_time_qs = eval_base_qs.filter(
+            start_estimation__gte=current,
+            start_estimation__lte=month_end,
+            start_estimation__isnull=False,
+            end_estimation__isnull=False
+        )
+        
+        # Используем only() после всех фильтров, чтобы избежать конфликта
+        month_time_qs = month_time_qs.only('start_estimation', 'end_estimation')[:100]
+        
+        time_diffs = []
+        for eval in month_time_qs:
+            if eval.end_estimation and eval.start_estimation:
+                diff = (eval.end_estimation - eval.start_estimation).total_seconds() / 3600
+                if diff >= 0:
+                    time_diffs.append(diff)
+        
+        avg_month_time = round(sum(time_diffs) / len(time_diffs), 1) if time_diffs else None
+        
+        monthly_data.append({
+            'month': current.strftime('%b %Y'),
+            'rlk_count': month_rlk_count,
+            'eval_count': month_eval_count,
+            'diagnostics_count': month_diagnostics_count,
+            'accepted_count': month_accepted_count,
+            'avg_time': avg_month_time,
+        })
+        
+        current = current + relativedelta(months=1)
+
+    # Общая статистика
+    total_rlk = rlk_base_qs.count()
+    total_eval = eval_base_qs.count()
+    total_diagnostics = eval_base_qs.filter(has_diagnostics=True).count()
+    total_accepted = eval_base_qs.filter(accepted=True).count()
+    
+    # Распределение по типам поступлений через InteractivePricingSnapshot
+    overall_type_distribution = {}
+    pricing_snapshot_for_types = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+        estimation_id__in=eval_base_qs.values_list('estimation_id', flat=True)
+    )
+    if unit_id:
+        pricing_snapshot_for_types = pricing_snapshot_for_types.filter(unit_id=unit_id)
+    if staff_id:
+        pricing_snapshot_for_types = pricing_snapshot_for_types.filter(staff_id=staff_id)
+    
+    type_dist = pricing_snapshot_for_types.values('type_reception_id').annotate(
+        count=Count('estimation_id')
+    )
+    
+    # Получаем названия типов
+    type_ids = set(item['type_reception_id'] for item in type_dist if item['type_reception_id'])
+    type_names_map = {}
+    if type_ids:
+        from register.models import RefTypeReceptionCarsOrganization
+        type_names_map = dict(RefTypeReceptionCarsOrganization.objects.filter(
+            id__in=type_ids
+        ).values_list('id', 'name'))
+    
+    for item in type_dist:
+        type_reception_id = item['type_reception_id']
+        type_name = type_names_map.get(type_reception_id, 'Не указано') if type_reception_id else 'Не указано'
+        overall_type_distribution[type_name] = item['count']
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+    }
+
+    monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
+    overall_type_distribution_json = json.dumps(overall_type_distribution, ensure_ascii=False)
+
+    params = {
+        'type': 'staff_performance',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'total_rlk': total_rlk,
+        'total_eval': total_eval,
+        'total_diagnostics': total_diagnostics,
+        'total_accepted': total_accepted,
+        'staff_stats': staff_stats,
+        'analyst_stats': analyst_stats,
+        'monthly_data': monthly_data,
+        'monthly_data_json': monthly_data_json,
+        'overall_type_distribution': overall_type_distribution,
+        'overall_type_distribution_json': overall_type_distribution_json,
+        'units': units,
+        'staffs': staffs,
+    }
+
+    return render(request, 'lo/staff_performance.html', {'params': params})
+
+
+def interactive_pricing_report(request):
+    """Визуальный отчет по согласованию цен интерактивных оценок"""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'interactive_pricing_report',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+
+    base_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+
+    if unit_id:
+        base_qs = base_qs.filter(unit_id=unit_id)
+
+    if staff_id:
+        base_qs = base_qs.filter(staff_id=staff_id)
+
+    if analyst_id:
+        base_qs = base_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
+
+    total_count = base_qs.count()
+
+    aggregates = base_qs.aggregate(
+        total_price_before=Coalesce(Sum('price_before_kd', output_field=FloatField()), 0.0),
+        total_price_after=Coalesce(Sum('price_after_kd', output_field=FloatField()), 0.0),
+        total_price_auto_1=Coalesce(Sum('price_auto_1', output_field=FloatField()), 0.0),
+        total_price_auto_2=Coalesce(Sum('price_auto_2', output_field=FloatField()), 0.0),
+        total_price_auto_3=Coalesce(Sum('price_auto_3', output_field=FloatField()), 0.0),
+        total_price_auto_bcp=Coalesce(Sum('price_auto_bcp', output_field=FloatField()), 0.0),
+        total_price_bcp=Coalesce(Sum('price_bcp', output_field=FloatField()), 0.0),
+        total_price_reception=Coalesce(Sum('price_reception', output_field=FloatField()), 0.0),
+        total_price_sale=Coalesce(Sum('price_sale', output_field=FloatField()), 0.0),
+        total_amount_podgotovka=Coalesce(Sum('cost_podgotovka', output_field=FloatField()), 0.0),
+        total_amount_ss=Coalesce(Sum('cost_ss', output_field=FloatField()), 0.0),
+        total_amount_mcu=Coalesce(Sum('cost_mcu', output_field=FloatField()), 0.0),
+        total_amount_recovery=Coalesce(Sum('cost_recovery', output_field=FloatField()), 0.0),
+        total_amount_cost=Coalesce(Sum('cost_total', output_field=FloatField()), 0.0),
+    )
+
+    def _avg(value):
+        return round(value / total_count, 1) if total_count else 0
+
+    avg_auto_price = _avg(aggregates['total_price_auto_1'])
+    avg_price_before = _avg(aggregates['total_price_before'])
+    avg_price_after = _avg(aggregates['total_price_after'])
+    avg_cost = _avg(aggregates['total_amount_cost'])
+
+    summary = {
+        'total_evaluations': total_count,
+        'avg_price_before': avg_price_before,
+        'avg_price_after': avg_price_after,
+        'avg_auto_price': avg_auto_price,
+        'avg_diff_before': round(avg_price_before - avg_auto_price, 1),
+        'avg_diff_after': round(avg_price_after - avg_auto_price, 1),
+        'avg_cost': avg_cost,
+        'avg_price_reception': _avg(aggregates['total_price_reception']),
+        'avg_price_sale': _avg(aggregates['total_price_sale']),
+    }
+
+    cost_breakdown = [
+        {'label': 'Подготовка', 'value': aggregates['total_amount_podgotovka']},
+        {'label': 'Слесарный участок', 'value': aggregates['total_amount_ss']},
+        {'label': 'Кузовной участок', 'value': aggregates['total_amount_mcu']},
+        {'label': 'Восстановительный ремонт', 'value': aggregates['total_amount_recovery']},
+    ]
+
+    total_cost_value = aggregates['total_amount_cost']
+    for item in cost_breakdown:
+        item['share'] = round((item['value'] / total_cost_value * 100), 1) if total_cost_value else 0
+
+    per_page = 200
+    page_number = _get_int(request.GET.get('page')) or 1
+    paginator = Paginator(base_qs.order_by('-start_estimation'), per_page)
+    page_obj = paginator.get_page(page_number)
+    table_qs = page_obj.object_list
+
+    table_data = []
+    for snapshot in table_qs:
+        cost_fields = {
+            'podgotovka': snapshot.cost_podgotovka or 0,
+            'ss': snapshot.cost_ss or 0,
+            'mcu': snapshot.cost_mcu or 0,
+            'recovery': snapshot.cost_recovery or 0,
+        }
+        table_data.append(
+            {
+                'id': snapshot.estimation_id,
+                'start_estimation': snapshot.start_estimation,
+                'unit': snapshot.unit_name or '—',
+                'model': snapshot.model_name or snapshot.vin,
+                'staff': snapshot.staff_name or '—',
+                'analyst_before': snapshot.analyst_before_name or '—',
+                'analyst_after': snapshot.analyst_after_name or '—',
+                'price_before_kd': snapshot.price_before_kd or 0,
+                'price_after_kd': snapshot.price_after_kd or 0,
+                'price_auto_1': snapshot.price_auto_1 or 0,
+                'price_auto_2': snapshot.price_auto_2 or 0,
+                'price_auto_3': snapshot.price_auto_3 or 0,
+                'price_auto_reference': snapshot.price_auto_selected or 0,
+                'price_auto_bcp': snapshot.price_auto_bcp or 0,
+                'price_bcp': snapshot.price_bcp or 0,
+                'price_reception': snapshot.price_reception or 0,
+                'price_sale': snapshot.price_sale or 0,
+                'diff_before': snapshot.diff_before or 0,
+                'diff_after': snapshot.diff_after or 0,
+                'costs': cost_fields,
+                'cost_total': snapshot.cost_total or 0,
+                'status': snapshot.status_name or '',
+            }
+        )
+
+    price_diffs = []
+    price_percent_diffs = []
+    higher_count = lower_count = equal_count = 0
+    for price_before, auto_price in base_qs.values_list('price_before_kd', 'price_auto_selected'):
+        if price_before and auto_price:
+            diff = float(price_before) - float(auto_price)
+            price_diffs.append(diff)
+            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+            price_percent_diffs.append(diff_percent)
+            if diff > 1000:
+                higher_count += 1
+            elif diff < -1000:
+                lower_count += 1
+            else:
+                equal_count += 1
+
+    task_aggregate = base_qs.aggregate(
+        total_tasks=Coalesce(Sum('tasks_total'), 0),
+        closed_tasks=Coalesce(Sum('tasks_closed'), 0),
+        evaluations_with_tasks=Count('estimation_id', filter=Q(tasks_total__gt=0)),
+    )
+    all_tasks_total = task_aggregate['total_tasks'] or 0
+    all_tasks_closed = task_aggregate['closed_tasks'] or 0
+    evaluations_with_tasks_count = task_aggregate['evaluations_with_tasks'] or 0
+    evaluations_with_tasks_percent = (
+        round((evaluations_with_tasks_count / total_count * 100), 1) if total_count else 0
+    )
+    avg_tasks_per_eval = (
+        round(all_tasks_total / total_count, 1) if total_count and all_tasks_total else 0
+    )
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+    }
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        query_params.pop('page')
+    base_query_string = query_params.urlencode()
+
+    params = {
+        'type': 'interactive_pricing_report',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'summary': summary,
+        'cost_breakdown': cost_breakdown,
+        'table_data': table_data,
+        'total_count': total_count,
+        'price_comparison': {
+            'avg_diff': round(sum(price_diffs) / len(price_diffs), 1) if price_diffs else 0,
+            'avg_diff_percent': round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0,
+            'higher_count': higher_count,
+            'lower_count': lower_count,
+            'equal_count': equal_count,
+            'total_compared': len(price_diffs),
+        },
+        'task_stats': {
+            'total_tasks': all_tasks_total,
+            'evaluations_with_tasks': evaluations_with_tasks_count,
+            'avg_tasks_per_eval': avg_tasks_per_eval,
+            'evaluations_with_tasks_percent': evaluations_with_tasks_percent,
+            'closed_tasks': all_tasks_closed,
+            'open_tasks': all_tasks_total - all_tasks_closed,
+            'closed_percent': round((all_tasks_closed / all_tasks_total * 100), 1) if all_tasks_total else 0,
+        },
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'base_query': base_query_string,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+    }
+
+    return render(request, 'lo/interactive_pricing_report.html', {'params': params})
+
+
+def interactive_evaluations_report(request):
+    """Расширенный отчет по интерактивным оценкам и согласованию цен"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'interactive_evaluations_report',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now             = (DT.datetime.now() + relativedelta(months=1)).replace(day=1) - DT.timedelta(days=1)
+    default_end     = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start   = DT.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id     = _get_int(request.GET.get('unit_id'))
+    staff_id    = _get_int(request.GET.get('staff_id'))
+    analyst_id  = _get_int(request.GET.get('analyst_id'))
+    type_id     = _get_int(request.GET.get('type_id'))
+
+    base_qs = InteractivePricingSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    ).order_by('-start_estimation')
+
+    if unit_id:
+        base_qs = base_qs.filter(unit_id=unit_id)
+
+    if staff_id:
+        base_qs = base_qs.filter(staff_id=staff_id)
+
+    if analyst_id:
+        base_qs = base_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
+
+    if type_id:
+        base_qs = base_qs.filter(type_reception_id=type_id)
+
+    total_count = base_qs.count()
+    total_price_estimation_ocenshik     = base_qs.aggregate(Sum('price_reception'))['price_reception__sum'] or 0
+    total_price_estimation_ocenshik_avg = base_qs.aggregate(Avg('price_reception'))['price_reception__avg'] or 0
+    
+    total_price_do_kd_count = base_qs.filter(price_before_kd__gte=0).count()
+    total_price_do_kd       = base_qs.aggregate(Sum('price_before_kd'))['price_before_kd__sum'] or 0
+    total_price_do_kd_avg   = base_qs.aggregate(Avg('price_before_kd'))['price_before_kd__avg'] or 0
+    
+    diff_do_kd_avg = total_price_do_kd_avg - total_price_estimation_ocenshik_avg if total_price_do_kd_avg and total_price_estimation_ocenshik_avg else 0
+
+    total_price_after_kd_count = base_qs.filter(price_after_kd__gte=0).count()
+    total_price_after_kd       = base_qs.aggregate(Sum('price_after_kd'))['price_after_kd__sum'] or 0
+    total_price_after_kd_avg   = base_qs.aggregate(Avg('price_after_kd'))['price_after_kd__avg'] or 0
+    diff_affter_kd_avg         = total_price_after_kd_avg - total_price_do_kd_avg if total_price_after_kd_avg and total_price_do_kd_avg else 0
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+        'type_id': type_id or '',
+    }
+    countList   = 50
+    paginator   = Paginator(base_qs, countList)	
+    page_number = request.GET.get('page', 1)
+    page_obj    = paginator.get_page(page_number)
+
+    params = {
+        'type'          : 'interactive_evaluations_report',
+        'nav_selected'  : 4,
+        'request'       : request,
+        'filters'       : filters,
+        'total_count'   : total_count,
+        'total_price_estimation_ocenshik'       : total_price_estimation_ocenshik,
+        'total_price_estimation_ocenshik_avg'   : total_price_estimation_ocenshik_avg,
+        'total_price_do_kd' : total_price_do_kd,
+        'total_price_do_kd_avg': total_price_do_kd_avg,
+        'total_price_after_kd' : total_price_after_kd,
+        'total_price_after_kd_avg': total_price_after_kd_avg,
+        'diff_do_kd_avg'        : diff_do_kd_avg,
+        'diff_affter_kd_avg'    : diff_affter_kd_avg,
+        'page_obj'              : page_obj
+
+    }
+
+    return render(request, 'lo/interactive_evaluations_report.html', {'params': params})
+
 
 #История изменений
 def get_versions(table, id):

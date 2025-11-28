@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'mptt',
     'django_mptt_admin',
     #'mail_templated',
-    'car_preparation.apps.CarPreparationConfig',
+    #'car_preparation.apps.CarPreparationConfig',
     'api.apps.ApiConfig',
     'refs.apps.RefsConfig',
     'documents.apps.DocumentsConfig',
@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'eco.apps.EcoConfig',
     'chats.apps.ChatsConfig',
     'estimations.apps.EstimationsConfig',
+    'analytics.apps.AnalyticsConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',
@@ -164,7 +165,7 @@ DATABASES = {
     }
 }
 
-
+LOGIN_URL = '/login/'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

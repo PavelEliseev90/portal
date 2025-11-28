@@ -1,144 +1,205 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-
 {% block title %} - Воронка выкупа {% endblock %}
-
 {% block title_navbar %} - Воронка выкупа {% endblock %}
 
 {% block content %}
+<div class="sales-funnel-page">
+  <div class="sales-funnel-header">
+    <h2>Воронка выкупа</h2>
+    <p>Анализ автомобилей на складе с акцентом на конверсию, скорость продажи и экономику.</p>
+  </div>
 
+  <div class="sales-filter">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-9">
+        <label class="form-label">Марка / модель / VIN</label>
+        <input type="text" class="form-control" name="name" value="{{ params.filter.name }}" placeholder="Введите любую часть названия или VIN">
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">Показать</button>
+      </div>
+    </form>
+  </div>
 
-<div class="table-responsive-sm">
-  <table class="table">
-    {% for object in params.objects %}
-      <tr>
-        <td>
-          {{object.unit.name}}
-        </td>
-        <td>
-          {{object.name}}
-        </td>
-        <td class="text-end">
-          {{object.group_price.name}}
-        </td>
-        <td class="text-end">
-          {{object.days_in_stok}}
-        </td>
-        <td class="text-end">
-          {{object.year}}
-        </td>
-        <td class="text-end">
-          {{object.car_modification_store}}
-        </td>
-        <td class="text-end {% if object.run > 175000 %} bg-danger bg-opacity-25 {% endif %} ">
-          {{object.run|floatformat:"0g"}}
-        </td>
-        <td class="text-end">
-          {{object.agreement_cost_price|floatformat:"2g"}}
-        </td>
-        <td class="text-end">
-          {{object.agreement_kso_actual|floatformat:"2g"}}
-        </td>
-        <td class="text-end">
-          {{object.agreement_bu_wheels_actual|floatformat:"2g"}}
-        </td>
-        
-        <td class="text-end">
-          {{object.agreement_amount|floatformat:"2g"}}
-        </td>
-        <td class="text-end" title="КМ фактический">
-          {{object.agreement_cm|floatformat:"2g"}}
-        </td>
-        <td class="col-auto">
-          <a href="/cars/{{object.slug}}/" class="text-dark" target="_blank"> <span class="icon-truck" title="Карточка автомобиля"></span></a>
-        </td>
-        <td class="col-auto">
-          <a href="/docs_car_agreement/{{object.agreement_pk}}/" class="text-dark" target="_blank"><span class="icon-doc" title="Соглашение о покупке"></span></a>
-        </td>
-        <td class="col-auto">
-          <a class="text-dark" onclick="go_info('{{object.slug}}')"><span class="icon-mbri-info fw-bold" title="Информация"></span></a>
-        </td>
-      </tr>
-    {% endfor %}
+  {% if params.objects|length %}
+    {% with paginator=params.objects.paginator %}
+    <div class="row g-3 mb-3">
+      <div class="col-md-3 col-6">
+        <div class="metric-card">
+          <h4>Всего автомобилей</h4>
+          <div class="value">{{ paginator.count }}</div>
+          <div class="sub">По текущему фильтру</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="metric-card">
+          <h4>На странице</h4>
+          <div class="value">{{ params.objects|length }}</div>
+          <div class="sub">Записей в текущем списке</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="metric-card">
+          <h4>Номер страницы</h4>
+          <div class="value">{{ params.objects.number }}/{{ paginator.num_pages }}</div>
+          <div class="sub">Текущая/всего страниц</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="metric-card">
+          <h4>Фильтр</h4>
+          <div class="value">
+            {% if params.filter.name %}
+              {{ params.filter.name }}
+            {% else %}
+              Все
+            {% endif %}
+          </div>
+          <div class="sub">Марка / модель / VIN</div>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+  {% endif %}
 
-  </table>
+  <div class="panel table-responsive table-sticky">
+    <h3>Список автомобилей</h3>
+    <table class="table table-hover table-sm align-middle table-mobile-cards">
+      <thead>
+        <tr>
+          <th>Подразделение</th>
+          <th>Автомобиль</th>
+          <th>Год</th>
+          <th>Пробег</th>
+          <th>Дни на складе</th>
+          <th>Ценовая группа</th>
+          <th>Цена продажи</th>
+          <th>Себестоимость</th>
+          <th>Затраты</th>
+          <th>КСО</th>
+          <th>Предложений</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if params.objects|length == 0 %}
+          <tr>
+            <td colspan="11" class="text-center py-4 text-muted">
+              Нет данных. Измените условия фильтра.
+            </td>
+          </tr>
+        {% else %}
+          {% for object in params.objects %}
+            <tr>
+              <td data-label="Подразделение">{{ object.unit.name }}</td>
+              <td data-label="Автомобиль">
+                <div class="fw-semibold">{{ object.name|default:"—" }}</div>
+                <div class="text-muted small">
+                  VIN: {{ object.vin|default:"—" }}<br>
+                  Факт пробега: {{ object.agreement_cm|floatformat:"0g"|default:"—" }} км
+                </div>
+              </td>
+              <td data-label="Год">{{ object.year|default:"—" }}</td>
+              <td data-label="Пробег">{{ object.run|floatformat:"0g"|default:"—" }} км</td>
+              <td data-label="Дни на складе">{{ object.days_in_stok|default:"—" }}</td>
+              <td data-label="Ценовая группа">{{ object.group_price.name|default:"—" }}</td>
+              <td data-label="Цена продажи">{{ object.agreement_amount|floatformat:"0g"|default:"—" }} ₽</td>
+              <td data-label="Себестоимость">{{ object.agreement_cost_price|floatformat:"0g"|default:"—" }} ₽</td>
+              <td data-label="Затраты">
+                <div class="badge-cost">{{ object.outlay|floatformat:"0g"|default:"—" }} ₽</div>
+                <div class="text-muted small">Колеса: {{ object.agreement_bu_wheels_actual|floatformat:"0g"|default:"—" }} ₽</div>
+              </td>
+              <td data-label="КСО">{{ object.agreement_kso_actual|floatformat:"0g"|default:"—" }} ₽</td>
+              <td data-label="Предложения">
+                <div>Компания: {{ object.car_modification_store|default:"—" }}</div>
+                <div class="text-muted small">ДЦ: {{ object.car_modification_dc|default:"—" }}</div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if params.objects.paginator.num_pages > 1 %}
+  <nav class="mt-3">
+    <ul class="pagination justify-content-center">
+      <li class="page-item {% if not params.objects.has_previous %}disabled{% endif %}">
+        <a class="page-link" href="{% if params.objects.has_previous %}?{% url_replace page=params.objects.previous_page_number %}{% else %}#{% endif %}">Назад</a>
+      </li>
+      {% for p in params.objects.paginator.page_range %}
+        {% if p >= params.objects.number|add:-2 and p <= params.objects.number|add:2 %}
+          <li class="page-item {% if params.objects.number == p %}active{% endif %}">
+            <a class="page-link" href="?{% url_replace page=p %}">{{ p }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not params.objects.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{% if params.objects.has_next %}?{% url_replace page=params.objects.next_page_number %}{% else %}#{% endif %}">Вперед</a>
+      </li>
+    </ul>
+  </nav>
+  {% if params.objects.paginator %}
+    <p class="text-center text-muted">
+      Показано {{ params.objects.start_index }}–{{ params.objects.end_index }} из {{ params.objects.paginator.count }}
+    </p>
+  {% endif %}
+  {% endif %}
 </div>
-  
-
 
 <div class="modal fade" id="modal_car_info" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
   <div class="modal-dialog modal-fullscreen">
     <div class="modal-content">
-    <div class="modal-header">
-      <h1 class="modal-title fs-5" id="modal_car_info_title">Информация</h1>
-      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-    </div>
-    
-    <div class="modal-body" id="modal_body_info">
-
-          ыывафывафывафы
-    </div>
-    
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal_car_info_title">Информация</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body" id="modal_body_info"></div>
     </div>
   </div>
 </div>
 
 <script>
-
   function go_info(slug) {
-    
     $('#modal_car_info').modal('show');
+    const placeholder = '<br>Формируем отчет, складываем, делим, думаем и пересчитываем, не перезагружайте страницу...<br><img src="/static/images/loading.gif"/>';
+    document.querySelector('#modal_body_info').innerHTML = placeholder;
 
-    var modal_body_info = $('#modal_body_info');
-    var html = '<br>Формируем отчет, складываем, делим, думаем и пересчитываем, не перезагружайте страницу скоро выведем данные...<br><img src="/static/images/loading.gif"/>';
-    document.querySelector('#modal_body_info').innerHTML = html;
-    
     $.ajax({
-      url: '/cars/' + slug + '/info_js/',        
-      method: 'get',            
-      dataType: 'json',          
-      data: '',
+      url: '/cars/' + slug + '/info_js/',
+      method: 'get',
+      dataType: 'json',
       cache: false,
-      success: function(data){   
-       
-        html      = '';
-        let i     = data.car_list.length;
+      success: function (data) {
+        let html = '';
         let title = data.title;
         document.querySelector('#modal_car_info_title').innerHTML = title;
-
-        for (s = 0; s < i; s++) { 
-          let obj = data.car_list[s];
-          html += '<div class="card" style="margin-bottom: 0.2rem;">'
-            html += '<div class="card-body">'
-              html +=  '<div class="row">';
-                html +=  '<div class="col-12 col-sm-2">';
-                    html +=  '<img class="w-100" src="' + obj.photo  + '" style="border-radius: 0.3rem; max-height: 150px; object-fit:cover;">';                
-                html +=  '</div>';
-                html +=  '<div class="col-12 col-sm-2">';
-                    html +=  '<span class="fs-6">' + obj.unit_name + '</span><br>';                
-                    html +=  '<span class="fs-6">' + obj.days + '</span><br>';                
-                    html +=  '<span class="fs-6">' + obj.stage + '</span><br>';                
-                html +=  '</div>';
-                html +=  '<div class="col-12 col-sm-2 text-end">';
-                    html +=  '<span class="fs-5 fw-bold">' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.price,) + ' ₽</span><br>';                
-                    html +=  '<span class="fs-6">' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.cost_price,)  + ' ₽</span><br>';                
-                    html +=  '<span class="fs-6">' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.outlay,) + ' ₽</span><br>';                
-                html +=  '</div>';
-              html +=  '</div>';
-            html +=  '</div>';
-          html +=  '</div>';
-
-        };
-
-        document.querySelector('#modal_body_info').innerHTML = html;  
-        
+        data.car_list.forEach(function (obj) {
+          html += `
+            <div class="card mb-2">
+              <div class="card-body">
+                <div class="row g-3 align-items-center">
+                  <div class="col-sm-2 text-center">
+                    <img class="w-100" src="${obj.photo}" style="border-radius: 0.3rem; max-height: 150px; object-fit: cover;">
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="fw-semibold">${obj.unit_name}</div>
+                    <div class="text-muted small">Статус: ${obj.stage}</div>
+                    <div class="text-muted small">Дней: ${obj.days}</div>
+                  </div>
+                  <div class="col-sm-4 text-end">
+                    <div class="fw-bold fs-5">${new Intl.NumberFormat('ru-ru').format(obj.price)} ₽</div>
+                    <div>Себестоимость: ${new Intl.NumberFormat('ru-ru').format(obj.cost_price)} ₽</div>
+                    <div>Затраты: ${new Intl.NumberFormat('ru-ru').format(obj.outlay)} ₽</div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        });
+        document.querySelector('#modal_body_info').innerHTML = html || '<p class="text-muted">Нет подробной информации.</p>';
       }
     });
-
   }
-
-
 </script>
-
 {% endblock %}

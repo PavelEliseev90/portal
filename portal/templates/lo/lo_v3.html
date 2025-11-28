@@ -13,32 +13,29 @@
 
 {% include 'chats/chat.html' %}
 
-  
-
-  <div class="loads bg-secondary bg-gradient bg-opacity-75 d-none" id="loads" >
-    
-    <div class="loads_parr ">
-      <div class="modal-content">
+<div class="loads bg-secondary bg-gradient bg-opacity-75 d-none" id="loads">
+  <div class="loads_parr">
+    <div class="modal-content">
       <div class="modal-body">
         <div class="container-fluid bg-white align-items-center align-self-center" style="border-radius: 0.5rem;">          
           <div class="row justify-content-center">
-            <div class="spinner-border m-5 " role="status">
+            <div class="spinner-border m-5" role="status">
               <span class="visually-hidden">Загрузка...</span> 
             </div> 
-            <span class="fw-bold text-center" id="sss" >Загрузка данных...</span>             
+            <span class="fw-bold text-center" id="sss">Загрузка данных...</span>             
           </div>      
           <br>  
         </div>
       </div>
-      </div>
     </div>
-
   </div>
+</div>
 
+<div class="portal-page lo-v3-page">
   <div class="row g-1">
 
     <div class="col-2 text-center hidemobile">
-      <div class="sticky-top bg-white bg-opacity-10" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
+      <div class="sticky-top portal-sidebar" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
 
         <div class="col-sm">
           
@@ -308,13 +305,13 @@
 
           <div class="hidemobile">
             <h5>Главная</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
-          <div class="card">
-            <div class="card-body">
-              <h6><span class="icon-mbri-info"></span> Рабочий лист</h6>
-              <hr style="width: 75%;">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-info"></span> Рабочий лист
+            </h6>
 
               <div class="row g-1">
 
@@ -392,19 +389,18 @@
                 
               </div>
               
-              <hr style="width: 75%;">
-
-              <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk"> <span class="icon-mbri-file"></span> Подробнее</button>	
-
-            </div>
+            <hr class="my-3">
+            <button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#rlk">
+              <span class="icon-mbri-file"></span> Подробнее
+            </button>
           </div>
 
           <br>
           
-          <div class="card">
-            <div class="card-body">
-              <h6><span class="icon-mbri-info"></span> Основные даные оценки</h6>
-              <hr style="width: 75%;">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-info"></span> Основные данные оценки
+            </h6>
 
               <div class="row g-1">
                   
@@ -618,11 +614,10 @@
 
           <br>
 
-          <div class="card">
-            <div class="card-body">
-              
-              <h6><span class="icon-mbri-protect"></span> Обратить внимание</h6>
-              <hr style="width: 75%;">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-protect"></span> Обратить внимание
+            </h6>
 
               <div class="table-responsive table-responsive-sm">
                 <table class="table-sm table-fit">
@@ -717,7 +712,7 @@
       
           <div class="hidemobile">
             <h5>Документы</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
           
           {% if params.tabindex == 1 %}
@@ -726,10 +721,10 @@
               <div class="row g-1">
 
                 <div class="col-xl">
-                  <div class="card">
-                    <div class="card-body">
-                      <h6><span class="icon-mbri-user"></span> Клиент</h6>
-                      <hr style="width: 75%;">
+                  <div class="portal-panel">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                      <span class="icon-mbri-user"></span> Клиент
+                    </h6>
 
                       <div class="row">
 
@@ -751,16 +746,14 @@
 
                       </div>
 
-                    </div>
                   </div>
                 </div>
 
                 <div class="col-xl-7">
-                  <div class="card">
-                    <div class="card-body">
-                      
-                      <h6><span class="icon-mbri-user"></span> Автомобиль</h6>
-                      <hr style="width: 75%;">
+                  <div class="portal-panel">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                      <span class="icon-mbri-user"></span> Автомобиль
+                    </h6>
                     
                       <div class="row g-1">
 
@@ -831,10 +824,10 @@
 
               <br>
 
-              <div class="card">
-                <div class="card-body">
-                  <h6><span class="icon-mbri-credit-card"></span> СТС</h6>
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-credit-card"></span> СТС
+                </h6>
 
                   <div class="row g-1">
 
@@ -918,10 +911,10 @@
 
               <br>
 
-              <div class="card">
-                <div class="card-body">
-                  <h6><span class="icon-mbri-credit-card"></span> ПТС</h6>
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-credit-card"></span> ПТС
+                </h6>
 
                   <div class="row">
 
@@ -1013,10 +1006,8 @@
               
             {% else %}
               
-              <div class="card text-danger"> 
-                <div class="card-body">
-                  Нет данных по документам
-                </div>
+              <div class="portal-panel text-danger">
+                <p class="mb-0">Нет данных по документам</p>
               </div>
 
             {% endif %}
@@ -1031,19 +1022,17 @@
           
           <div class="hidemobile">
             <h5>Салон</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
           <div class="row g-1 ">
 
             <div class="col-sm">
 
-              <div class="card">
-                <div class="card-body">
-                
-                  <h6><span class="icon-mbri-info"></span> Данные по пробегу </h6>
-
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-info"></span> Данные по пробегу
+                </h6>
                   
 
                   <div class="col-sm-auto"> 
@@ -1090,7 +1079,7 @@
 
                   <h6><span class="icon-mbri-info"></span> Ошибки на приборной панели</h6>
 
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
                   
                   {% if params.estimation.page_salon.dashboard_error.all|length > 0 %}
                   
@@ -1156,7 +1145,7 @@
                 <div class="card-body">
                   <h6><span class="icon-mbri-image-slider"></span> Фотографии</h6>
 
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
 
                   {% if params.estimation.fotos_salon|length %}
 
@@ -1230,11 +1219,10 @@
 
             <div class="col-sm">
 
-              <div class="card">
-                <div class="card-body">
-
-                  <h6><span class="icon-mbri-info"></span> Замечания по салону автомобиля</h6>
-                  <hr style="width: 75%;">
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-info"></span> Замечания по салону автомобиля
+                </h6>
                   
                   <div class="row">
 
@@ -1362,7 +1350,7 @@
                 <div class="card-body">
 
                   <h6><span class="icon-mbri-info"></span> Работоспособность элементов</h6>
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
               
                   <div class="">
                     <div class="card-bodys">
@@ -1483,8 +1471,6 @@
                       </div>
                     </div>
                   </div>
-
-                </div>
               </div>
 
               
@@ -1504,16 +1490,15 @@
           
           <div class="hidemobile">
             <h5>Внешний осмотр</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
           <div class="row g-1">
             
-            <div class="card">
-              <div class="card-body">
-                
-                <h6><span class="icon-mbri-credit-card"></span> Общие данные осмотра</h6>
-                <hr style="width: 75%;">
+            <div class="portal-panel">
+              <h6 class="d-flex align-items-center gap-2 mb-3">
+                <span class="icon-mbri-credit-card"></span> Общие данные осмотра
+              </h6>
 
                 <div class="row g-1">
 
@@ -1673,7 +1658,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-image-slider"></span> Осмотр ЛКП и повреждений автомобиля</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1">
             
@@ -1728,7 +1713,7 @@
             
                 </div>
                   
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1">
             
@@ -1784,7 +1769,7 @@
             
                 </div>
                   
-                <hr style="width: 75%;">
+                <hr class="my-3">
       
                 <div class="row g-1">
                   
@@ -1842,7 +1827,7 @@
             
                 </div>
                 
-                <hr style="width: 75%;">
+                <hr class="my-3">
       
                 <div class="row g-1">
                   
@@ -1897,7 +1882,7 @@
                   </div>              
                 </div>
             
-                <hr style="width: 75%;">
+                <hr class="my-3">
       
                 <div class="row g-1">
                   
@@ -1971,15 +1956,11 @@
             
             <div class="hidemobile">
               <h5>Комплектность</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
-            <div class="card">
-              <div class="card-body">
-
-                <div class="">
-                  <div class="card-body">
-    
+            <div class="portal-panel">
+              <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Прикуриватель </label>
@@ -2000,8 +1981,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Огнетушитель </label>
@@ -2022,8 +2002,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Коврики </label>
@@ -2044,8 +2023,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Трос </label>
@@ -2066,8 +2044,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Домкрат </label>
@@ -2087,8 +2064,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Знак аварийной остановки</label>
@@ -2108,8 +2084,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Баллоный ключ </label>
@@ -2129,8 +2104,7 @@
                 <hr>
     
                 <div class=" ">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Запасное колесо / докатка </label>
@@ -2150,8 +2124,7 @@
                 <hr>
     
                 <div class="">
-                  <div class="card-body">
-    
+                  <div>
                     <div class="row g-2">
                       <div class="col-sm-2">
                         <label class="fs-6">Аптечка </label>
@@ -2183,14 +2156,14 @@
             
             <div class="hidemobile">
               <h5>Колеса</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-image-slider"></span> На автомобиле</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1">
                   
@@ -2413,7 +2386,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-image-slider"></span> Второй комплект</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <h6> Есть второй комплект
                   <div class="form-check">
@@ -2653,14 +2626,14 @@
             
             <div class="hidemobile">
               <h5>Заключение специалиста отдела оценки на основании осмотра автомобиля, проведенной тестовой поездки, результата КД. Обязательно для заполнения.  </h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card border-dark">
               <div class="card-body">
 
                 <h6><span class="icon-mbri-image-slider"></span> Тест - драйв не производился</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row align-items-center align-self-center">
                   <div class="col-sm-auto">
@@ -2687,7 +2660,7 @@
               <div class="card-body">
 
                 <h6><span class="icon-mbri-credit-card"></span> Двигатель</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row">
 
@@ -2727,7 +2700,7 @@
               <div class="card-body">
 
                 <h6><span class="icon-mbri-credit-card"></span> Система выпуска ОГ</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row">
                   
@@ -2767,7 +2740,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-credit-card"></span> Коробка передач</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row">
                   
@@ -2809,7 +2782,7 @@
               <div class="card-body">
                 
                 <h6><span class="icon-mbri-credit-card"></span> Подвеска</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
                   
                 <div class="row align-items-center align-self-center">
                   
@@ -2856,13 +2829,13 @@
             
             <div class="hidemobile">
               <h5>Проверки по автомобилю</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
                 <h6><span class="icon-mbri-info"></span> ГИБДД</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
                 <div class="row g-1">
                   
                   <div class="col-sm-6">
@@ -2936,7 +2909,7 @@
               <div class="card-body">
 
                 <h6><span class="icon-mbri-info"></span> Реестр залогов</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
                 
                 <div class="row g-1">
                   
@@ -3080,7 +3053,7 @@
             
               <div class="hidemobile">
                 <h5>История оценок - {{params.tab_estimations_count}}</h5>
-                <hr style="width: 75%;">
+                <hr class="my-3">
               </div>
 
               {% if params.estimations_info %}
@@ -3155,7 +3128,7 @@
           
                             </div>
           
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% if params.estimation.page_remote == None or params.estimation.page_remote.end_estimation != None %}
                               {{doc.page_soglasovanie.comment}}
@@ -3163,7 +3136,7 @@
                               {{doc.page_remote.comment}}
                             {% endif %}
                             
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
 
                           </div>
 
@@ -3253,11 +3226,11 @@
           
                             </div>
           
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
           
                             {{doc.description_podgotovka|default_if_none:"-"}}
           
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
           
                             {{doc.description_op|default_if_none:"-"}}
                           </div>
@@ -3292,7 +3265,7 @@
             
             <div class="hidemobile">
               <h5>История ремонтов - {{params.tab_repairs_count}}</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
             
             {% if params.repairs_info %}
@@ -3322,11 +3295,11 @@
                       </div>
                     </div>
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     {{doc.customerWords}}
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     Рекомендации -  {{doc.recomendationsZN_count}} <br>
                     
@@ -3338,7 +3311,7 @@
                       </div><br>
                     {% endfor %}
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row">
                       <div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
@@ -3502,7 +3475,7 @@
             
             <div class="hidemobile">
               <h5>Автотека</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
             
 
@@ -3522,7 +3495,7 @@
                           <div class="card-body">
                             
                             <h6><span class="icon-mbri-info"></span> Данные автотека - {{params.json_autoteka.head.createdAt |fromunix }}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                               <label class="fs-6">{{params.json_autoteka.head.brand|title}} {{params.json_autoteka.head.model|title}} {{params.json_autoteka.head.year}} г.в.</label>
                               
@@ -3581,7 +3554,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Ссылки для просмотра на сайте Автотека</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
         
                             <div class="row g-1">
                         
@@ -3607,7 +3580,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> ДТП - {{params.json_autoteka.accidents.crashesHistory|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for accidents in params.json_autoteka.accidents.crashesHistory %}
 
@@ -3641,7 +3614,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Такси - {{params.json_autoteka.taxiData.events|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for event in params.json_autoteka.taxiData.events %}
                             
@@ -3670,7 +3643,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Каршеринг - {{params.json_autoteka.carsharingData.events|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for event in params.json_autoteka.carsharingData.events %}
                             
@@ -3699,7 +3672,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Записи в истории эксплуатации - {{params.json_autoteka.eventsOthersHistory|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for accidents in params.json_autoteka.eventsOthersHistory %}
 
@@ -3740,7 +3713,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Оценка автомобиля от Авито</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                               <div class="row g-1">
                                 <div class="col-sm">
@@ -3762,7 +3735,7 @@
                                 </div>
                               </div>
                               
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                               <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                               
                               <div class="row g-1">
@@ -3780,7 +3753,7 @@
                                 </div>
                               </div>
 
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                               <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                               
                               <div class="row g-1">
@@ -3807,7 +3780,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Объявления - {{params.json_autoteka.avitoItems|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
 
                             {% for avitoItem in params.json_autoteka.avitoItems %}
 
@@ -3875,7 +3848,7 @@
                         <div class="card">
                           <div class="card-body">
                             <h6><span class="icon-mbri-info"></span> Расчет ремонта - {{params.json_autoteka.accidents.crashesHistory|length}}</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
                             
                             {% for events in params.json_autoteka.eventsOthersHistory %}
                               {% if events.type == 'repairCalculation' %}
@@ -3909,7 +3882,7 @@
                     <div class="card">
                       <div class="card-body">
                         <h6><span class="icon-mbri-info"></span> Данные Автотека</h6>
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
     
                         <div class="row g-1">
                     
@@ -3946,7 +3919,7 @@
           
           <div class="hidemobile">
             <h5>Согласование</h5>
-            <hr style="width: 75%;">
+            <hr class="my-3">
           </div>
 
             <div class="my_pages_info_doc_eco">
@@ -3973,7 +3946,7 @@
                     <div class="card-body">
                       
                       <h6><span class="icon-mbri-protect"></span> Обратить внимание</h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
         
                       {% if params.estimation.page_vnesh.check_vin_int == 0 %}
                               
@@ -4152,11 +4125,11 @@
                         
                           <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
                         
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
                         {% else %}
                           <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
                         {% endif %}
     
                       {% endif %}
@@ -4170,7 +4143,7 @@
                     <div class="card">
                       <div class="card-body">
                         <h6><span class="icon-mbri-info"></span> Данные оценщика</h6>
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
     
                         <div class="row g-1">
                     
@@ -4194,7 +4167,7 @@
             
                             
                               <h6><span class="icon-mbri-delivery"></span> Приобретаемый автомобиль</h6>
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
     
                               <div class="form-floating">
                                 <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_soglasovanie.car_sale_info}}" readonly>
@@ -4225,7 +4198,7 @@
                     <div class="card">
                       <div class="card-body">
                         <h6><span class="icon-mbri-info"></span> Данные оценщика (Дистанционная оценка)</h6>
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
     
                         <div class="row g-1">
                     
@@ -4244,7 +4217,7 @@
             
                             
                               <h6><span class="icon-mbri-delivery"></span> Приобретаемый автомобиль</h6>
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
     
                               <div class="form-floating">
                                 <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_remote.car_sale_info}}" readonly>
@@ -4282,7 +4255,7 @@
                           <span class="icon-mbri-edit2" ></span> 
                         </button>
                       </h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
                     
                       {% for access_user in params.estimation.access_user.all %}
                         <button style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
@@ -4416,7 +4389,7 @@
                           <span class="icon-mbri-plus" ></span> 
                         </button>
                       </h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
     
                       <div class="table-responsive-sm">
                         <table class="table table-sm table-striped table-hover">
@@ -4476,7 +4449,7 @@
                                   <label for="floatingInput">Задание</label>
                                 </div>
                                 
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
     
                                 <div class="form-floating">
                                   <input class="form-control form-control-sm" type="text" id="" name="" value="{{task.date_close|default_if_none:"-"}}" readonly>
@@ -4496,7 +4469,7 @@
     
                                   <input type="file" class="form-control" id="images_task" name="images_task" accept="image/*;capture=camera" multiple/>
                           
-                                  <hr style="width: 75%;">
+                                  <hr class="my-3">
     
                                   <div class="row g-3">
                                     
@@ -4512,7 +4485,7 @@
     
                                 {% else %}
     
-                                  <hr style="width: 75%;">
+                                  <hr class="my-3">
     
                                   {% if task.files_all|length %}
                       
@@ -4559,7 +4532,7 @@
                                   <label for="floatingInput">Задание</label>
                                 </div>
               
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
                                 
                                 <button type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Сохранить</button>
                                 
@@ -4587,7 +4560,7 @@
                         <div class="card-body">
                           <h6><span class="icon-mbri-bulleted-list"></span> Заключение специалиста отдела оценки на основании осмотра автомобиля, проведенной тестовой поездки, результата КД.</h6>
                           <h6 class="text-danger">Обязательно для заполнения.</h6>
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
           
                             <div class="card bg-opacity-50 bg-light">
                       
@@ -4604,7 +4577,7 @@
                                   </div>
                                   
                                 </div>
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
             
                                   <div class="row align-items-center align-self-center">
                                   
@@ -4733,7 +4706,7 @@
     
                             <br>
                             <h6><span class="icon-mbri-bulleted-list"></span> Диагностика</h6>
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                             <div class="row g-1">
                               
@@ -4742,7 +4715,7 @@
                         
                                   <div class="card-body">
                                     <h6><span class="icon-mbri-info"></span> Двигатель</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">
                                                                 
@@ -4783,7 +4756,7 @@
                         
                                   <div class="card-body">
                                     <h6><span class="icon-mbri-info"></span> Система выпуска ОГ</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">
                                               
@@ -4831,7 +4804,7 @@
                                   <div class="card-body">
                                     
                                     <h6><span class="icon-mbri-info"></span> Подвеска</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row align-items-center align-self-center">
                                     
@@ -4874,7 +4847,7 @@
                                   <div class="card-body">
                                     
                                     <h6><span class="icon-mbri-info"></span> Коробка передач</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">                         
                                     
@@ -4922,7 +4895,7 @@
                                   <div class="card-body">
                                     
                                     <h6><span class="icon-mbri-info"></span> Подушки безопасности</h6>
-                                    <hr style="width: 75%;">
+                                    <hr class="my-3">
                 
                                     <div class="row">                         
                                     
@@ -5071,7 +5044,7 @@
                             <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                             <br>
                             {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                               {% if params.list_work_podgotovka|length > 0 %}
     
@@ -5128,7 +5101,7 @@
                             <br>
                             {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                             
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                               {% if params.list_work_ss|length > 0 %}
     
@@ -5186,7 +5159,7 @@
                             <br>
                             {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                             
-                            <hr style="width: 75%;">
+                            <hr class="my-3">
     
                               {% if params.list_work_mcu|length > 0 %}
     
@@ -5316,6 +5289,7 @@
                         <textarea class="form-control" id="exampleFormControlTextarea1" rows="4" readonly>{{params.estimation.auction_comment}}</textarea>
                       </div>
                       <br>
+                      
                       {% endif %}
                     
                       БЦП
@@ -5347,6 +5321,15 @@
                             <label style="border-radius: 0.2rem; margin: 0.2rem; padding: 0.2rem;" class="bg-dark bg-opacity-50 text-white"> <span class="icon-mbri-preview fw-bold"></span> {{params.estimation.page_vnesh.color}} </label>
                             
                             <div>
+
+                              {% if params.estimation.check_run == False %}
+            
+                                <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
+                                  Есть расхождения в пробегах 
+                                </button>
+            
+                              {% endif %}
+                                
                               {% if params.estimation.page_vnesh.check_vin_int == 0 %}
                                       
                                 <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-danger text-nowrap">
@@ -5507,13 +5490,10 @@
             
                               {% endif %}
             
-                              {% if params.Krashenyj %}
-            
-                                <button style="padding: 0.2rem; margin: 0.2rem;" type="button" class="btn btn-dark text-nowrap">
-                                Есть расхождения в пробегах 
-                                </button>
-            
-                              {% endif %}
+                             
+
+                              
+
                             </div>
                             
                             <br>
@@ -5536,8 +5516,7 @@
                               
                               </div>
                               <div class="col-12 col-sm-2">
-                                <img class="d- w-20" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_up}}" src1="{{params.estimation.fotos_vnesh_up}}"> 
-                  
+                                <img class="d- w-20" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_up}}" src1="{{params.estimation.fotos_vnesh_up}}">                   
                               </div>
                               
                             </div>
@@ -5689,8 +5668,12 @@
                               </div>
 
                             </div>
-                            
-                            
+                                                       
+                            <div class="form-floating">
+                              <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.estimation.page_soglasovanie.comment_diagnostica}}</textarea>
+                              <label for="floatingInput">Диагностика</label>                              
+                            </div>
+                              
                             <hr>
 
                             <br><br>
@@ -5712,7 +5695,9 @@
                                 </div>
                               </div>
                             </div>
+
                             <br><br>
+
                             <div class="modal-footer">
                               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> <span class="icon-mbri-close"></span> Закрыть</button>
                             </div>
@@ -5743,7 +5728,7 @@
           
             <div class="hidemobile">
               <h5>Дистанционная оценка</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
@@ -5751,7 +5736,7 @@
                 
                 <h6><span class="icon-mbri-delivery"></span> Данные автомобиля</h6>
 
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="row g-1" style="padding: 0.2rem;">
                   
@@ -5858,7 +5843,7 @@
                 
                 <h6><span class="icon-mbri-credit-card"></span> Данные оценки</h6>
 
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
 
                 <div class="row g-1" style="padding: 0.2rem;">
@@ -5910,7 +5895,7 @@
                 
                 <h6><span class="icon-mbri-credit-card"></span> Фотографии автомобиля</h6>
 
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 
                   {% if params.estimation.fotos_remote_alls|length %}
@@ -5969,7 +5954,7 @@
                     <div class="col-sm">
                       <h6><span class="icon-mbri-users"></span> Участники</h6>
 
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
 
                       {% for access_user in params.estimation.access_user.all %}
                         
@@ -5997,8 +5982,7 @@
                     <div class="col-sm-6 g-1">
                       <h6><span class="icon-mbri-credit-card"></span> Цены</h6>
 
-                      <hr style="width: 75%;">
-
+                      <hr class="my-3">
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" id="price_reception" name="price_reception" value="{{params.estimation.page_remote.price_reception}}" readonly>
                         <label class="fs-6" for="floatingInput">Цена приема &#8381;</label>
@@ -6013,7 +5997,7 @@
                       <br>
                       
                       <h6><span class="icon-mbri-delivery"></span> Приобретаемый автомобиль</h6>
-                      <hr style="width: 75%;">
+                      <hr class="my-3">
 
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_remote.car_sale_info}}" readonly>
@@ -6062,7 +6046,7 @@
             
             <div class="hidemobile">
               <h5>Ценообразование админ</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <main>
@@ -6845,6 +6829,61 @@
                 </div>
 
                 <div class="row g-1">
+                  
+                  <div class="col-12 col-sm-12">
+                    
+                      <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                        <div class="card-body">
+                          <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_expenses" aria-expanded="false" aria-controls="collapse_signal"> <b> &nbsp; Затраты - план / факт</b></label>  
+                          <div class="collapse" id="collapse_expenses">
+                            <hr>
+                            <div class="card">
+                              <div class="card-body fs-7">
+                                {% for expense in params.expenses %}
+                                    
+                                  <div class="row g-1" style="border-bottom: dashed; padding-bottom: 0.1rem; border-bottom-width: 0.1rem;">
+                                    <div class="col">
+                                      <span class="badge bg-info">{{expense.type}}</span>
+                                    </div>
+                                    <div class="col-2">
+                                      <label>{{expense.date}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.document}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.name}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.qyantity}}</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.price|floatformat:"2g" }} &#8381;</label>
+                                    </div>
+                                    <div class="col">
+                                      <label>{{expense.amount|floatformat:"2g" }} &#8381;</label>
+                                    </div>
+                                    {% if expense.description != '' %}
+                                      <div class="col-12">
+                                        <br>
+                                        <label> <span class="icon-mbri-bookmark"></span> {{expense.description}}</label>
+                                      </div>
+                                    {% endif %}
+                                  </div>                                        
+                                      
+                                {% endfor %}
+                              </div>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+                   
+                  </div>
+
+                </div>
+
+                <div class="row g-1">
                   <div class="col-sm">
                     
                     <div class="card bg-secondary bg-gradient bg-opacity-10">
@@ -7037,11 +7076,11 @@
                               
                                 <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
                               
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
                               {% else %}
                                 <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
                                 
-                                <hr style="width: 75%;">
+                                <hr class="my-3">
                               {% endif %}
           
                             {% endif %}
@@ -7289,7 +7328,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_podgotovka|length > 0 %}
 
@@ -7353,7 +7392,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_service|length > 0 %}
 
@@ -7411,7 +7450,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_mcu|length > 0 %}
 
@@ -7627,7 +7666,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_podgotovka|length > 0 %}
 
@@ -7691,7 +7730,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_service|length > 0 %}
 
@@ -7749,7 +7788,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_mcu|length > 0 %}
 
@@ -7806,7 +7845,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           
                         <ul class="list-unstyled mt-3 mb-4">
@@ -8156,7 +8195,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_podgotovka|length > 0 %}
 
@@ -8220,7 +8259,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_service|length > 0 %}
 
@@ -8278,7 +8317,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_mcu|length > 0 %}
 
@@ -8335,7 +8374,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                         <div class="row g-1">
                           <div class="col-sm">
@@ -8357,7 +8396,7 @@
                           </div>
                         </div>
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                         
                         <div class="row g-1">
@@ -8375,7 +8414,7 @@
                           </div>
                         </div>
 
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                         
                         <div class="row g-1">
@@ -8564,7 +8603,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_podgotovka|length > 0 %}
 
@@ -8628,7 +8667,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_service|length > 0 %}
 
@@ -8686,7 +8725,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_mcu|length > 0 %}
 
@@ -8816,6 +8855,7 @@
                         <label for="exampleFormControlTextarea1">Комментарий аукцион</label>
                         <textarea class="form-control" id="exampleFormControlTextarea1" rows="4">{{params.estimation.auction_comment}}</textarea>
                       </div>
+                      
                       <hr style="margin: 0.2rem;">
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
@@ -9682,7 +9722,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
   
                           <div class="row g-2 align-self-center align-items-center cars_list">
                               <br>
@@ -10281,7 +10321,7 @@
             
             <div class="hidemobile">
               <h5>Ценообразование автоматическое</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <main>
@@ -10708,11 +10748,11 @@
                             
                               <label class="text-danger fw-bold "> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП сильном - уделите особое внимание геометрии и безопасности </label>
                             
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                             {% else %}
                               <label> <span class="icon-mbri-alert"></span> Автомобиль был в ДТП - уделите особое внимание безопасности </label>
                               
-                              <hr style="width: 75%;">
+                              <hr class="my-3">
                             {% endif %}
         
                           {% endif %}
@@ -10933,7 +10973,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_podgotovka|length > 0 %}
 
@@ -10997,7 +11037,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_service|length > 0 %}
 
@@ -11055,7 +11095,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_kors.list_work_mcu|length > 0 %}
 
@@ -11271,7 +11311,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_podgotovka|length > 0 %}
 
@@ -11335,7 +11375,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_service|length > 0 %}
 
@@ -11393,7 +11433,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_autohub.list_work_mcu|length > 0 %}
 
@@ -11450,7 +11490,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           
                         <ul class="list-unstyled mt-3 mb-4">
@@ -11800,7 +11840,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_podgotovka|length > 0 %}
 
@@ -11864,7 +11904,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_service|length > 0 %}
 
@@ -11922,7 +11962,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price.list_work_mcu|length > 0 %}
 
@@ -11979,7 +12019,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                         <div class="row g-1">
                           <div class="col-sm">
@@ -12001,7 +12041,7 @@
                           </div>
                         </div>
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                         
                         <div class="row g-1">
@@ -12019,7 +12059,7 @@
                           </div>
                         </div>
 
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
                         <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                         
                         <div class="row g-1">
@@ -12208,7 +12248,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_podgotovka|length > 0 %}
 
@@ -12272,7 +12312,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_service|length > 0 %}
 
@@ -12330,7 +12370,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_mcu|length > 0 %}
 
@@ -12460,6 +12500,7 @@
                         <label for="exampleFormControlTextarea1">Комментарий аукцион</label>
                         <textarea class="form-control" id="exampleFormControlTextarea1" rows="4">{{params.estimation.auction_comment}}</textarea>
                       </div>
+                      
                       <hr style="margin: 0.2rem;">
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
@@ -13327,7 +13368,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
   
                           <div class="row g-2 align-self-center align-items-center cars_list">
                               <br>
@@ -13925,62 +13966,125 @@
             
             <div class="hidemobile">
               <h5>Все фотографии осмотра автомобиля</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
 
                 <h6><span class="icon-mbri-image-slider"></span> Фотографии интерактивной оценки</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
-                <div class="justify-content-center" style="padding: 0; width: 100%;">
-                <div class="col-sm content-head" style="padding: 0;">
-                {% if request.user_agent.is_pc %}
-                  <div class="gallery-container gallery-pc-slider">
-
-                    {% for files in params.estimation.get_files_all %}               
-                      <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
-                        
-                          <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
-                          {% if forloop.first %}
-                           
-                            <button class="gallery-slider-prev" id="gallerySliderPrev" aria-label="Предыдущее изображение">
-                              <span class="gallery-slider-arrow">‹</span>
-                            </button>
-                            <button class="gallery-slider-next" id="gallerySliderNext" aria-label="Следующее изображение">
-                              <span class="gallery-slider-arrow">›</span>
-                            </button>
-                          {% endif %}
-                        
+                <div class="modern-gallery-layout">
+                  <div class="modern-gallery-wrapper">
+                    <div class="modern-gallery-container" id="modernGalleryContainer">
+                      {% for files in params.estimation.get_files_all %}
+                        <div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}" data-alt="{{files.name}}">
+                          <img src="{{files.get_absolute_url}}" alt="{{files.name}}" class="modern-gallery-image" loading="lazy">
+                        </div>
+                      {% endfor %}
+                      
+                      
+                      <button class="modern-gallery-nav modern-gallery-prev" id="modernGalleryPrev" aria-label="Предыдущее изображение">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                      </button>
+                      <button class="modern-gallery-nav modern-gallery-next" id="modernGalleryNext" aria-label="Следующее изображение">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      </button>
+                      
+                      <div class="modern-gallery-controls">
+                        <button class="modern-gallery-control-btn" id="modernGalleryRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                          </svg>
+                        </button>
+                        <button class="modern-gallery-control-btn" id="modernGalleryZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                            <line x1="11" y1="8" x2="11" y2="14"/>
+                            <line x1="8" y1="11" x2="14" y2="11"/>
+                          </svg>
+                        </button>
+                        <button class="modern-gallery-control-btn" id="modernGalleryZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                            <line x1="8" y1="11" x2="14" y2="11"/>
+                          </svg>
+                        </button>
                       </div>
                       
-                    {% endfor %}
-                    
-                  </div>
-                  {% else %}
-                  <div class="gallery-container gallery-mobile-slider">
-
-                    {% for files in params.estimation.get_files_all %}
-
-                      <div class="gallery-item" id='foto_{{forloop.counter}}' data-index="{{forloop.counter}}">
-
-                          <img src={{files.get_absolute_url}} alt="{{files.name}}" src1="{{files.get_absolute_url}}">
-                          {% if forloop.first %}
-                           
-                          {% endif %}
-
+                      <div class="modern-gallery-counter" id="modernGalleryCounter">
+                        <span class="modern-gallery-current" id="modernGalleryCurrent">1</span>
+                        <span class="modern-gallery-separator">из</span>
+                        <span class="modern-gallery-total" id="modernGalleryTotal">{{params.estimation.get_files_all|length}}</span>
                       </div>
-
-                    {% endfor %}
-
-                    <button class="mobile-slider-prev" id="mobileSliderPrev" aria-label="Предыдущее изображение">‹</button>
-                    <button class="mobile-slider-next" id="mobileSliderNext" aria-label="Следующее изображение">›</button>
+                    </div>
                   </div>
-                  {% endif %}
+                  
+                  <div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
+                    {% for files in params.estimation.get_files_all %}
+                      <div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}">
+                        <img src="{{files.get_absolute_url}}" alt="{{files.name}}" class="modern-gallery-thumbnail-img" loading="lazy">
+                      </div>
+                    {% endfor %}
+                  </div>
                 </div>
-              </div>
 
+                <div class="modern-gallery-fullscreen" id="modernGalleryFullscreen">
+                  <div class="modern-gallery-fullscreen-overlay"></div>
+                  <button class="modern-gallery-close" id="modernGalleryClose" aria-label="Закрыть">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                  <div class="modern-gallery-fullscreen-controls">
+                    <button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                      </svg>
+                    </button>
+                    <button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                        <line x1="11" y1="8" x2="11" y2="14"/>
+                        <line x1="8" y1="11" x2="14" y2="11"/>
+                      </svg>
+                    </button>
+                    <button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                        <line x1="8" y1="11" x2="14" y2="11"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="modern-gallery-fullscreen-content">
+                    <img src="" alt="" id="modernGalleryFullscreenImage" class="modern-gallery-fullscreen-img">
+                    <button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-prev" id="modernGalleryFullscreenPrev" aria-label="Предыдущее изображение">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                      </svg>
+                    </button>
+                    <button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-next" id="modernGalleryFullscreenNext" aria-label="Следующее изображение">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                    </button>
+                    <div class="modern-gallery-fullscreen-counter" id="modernGalleryFullscreenCounter">
+                      <span class="modern-gallery-fullscreen-current" id="modernGalleryFullscreenCurrent">1</span>
+                      <span class="modern-gallery-separator">из</span>
+                      <span class="modern-gallery-fullscreen-total" id="modernGalleryFullscreenTotal">{{params.estimation.get_files_all|length}}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -13997,13 +14101,13 @@
           
             <div class="hidemobile">
               <h5>История просмотров</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="card">
               <div class="card-body">
                 <h6><span class="icon-mbri-preview"></span> Просмотры</h6>
-                <hr style="width: 75%;">
+                <hr class="my-3">
 
                 <div class="table-responsive-sm">
                   <table class="table table-sm table-striped table-hover">
@@ -14043,7 +14147,7 @@
           
             <div class="hidemobile">
               <h5>История изменений</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
             </div>
 
             <div class="table-responsive-sm">
@@ -14093,7 +14197,7 @@
           
             <div class="hidemobile">
               <h5>Ценообразование</h5>
-              <hr style="width: 75%;">
+              <hr class="my-3">
               
             </div>
 
@@ -14180,7 +14284,7 @@
               <div class="card">
                 <div class="card-body">
                   <h6><span class="icon-mbri-alert"></span> Цена до диагностики</h6>
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
                   
                   <div class="row g-1">
               
@@ -14231,7 +14335,7 @@
               <div class="card">
                 <div class="card-body">
                   <h6><span class="icon-mbri-sale"></span> Согласованная цена приема</h6>
-                  <hr style="width: 75%;">
+                  <hr class="my-3">
 
                     <div class="row g-1 ">
                       
@@ -14326,7 +14430,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                       
                     <ul class="list-unstyled mt-3 mb-4">
@@ -14521,7 +14625,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row g-1">
                       <div class="col-sm">
@@ -14543,7 +14647,7 @@
                       </div>
                     </div>
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                     
                     <div class="row g-1">
@@ -14561,7 +14665,7 @@
                       </div>
                     </div>
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                     
                     <div class="row g-1">
@@ -14598,7 +14702,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row g-1">
                       <div class="col-sm">
@@ -14620,7 +14724,7 @@
                       </div>
                     </div>
                     
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Диапазон "рыночной" оценки данного автомобиля по закрытым сделкам</h6>
                     
                     <div class="row g-1">
@@ -14638,7 +14742,7 @@
                       </div>
                     </div>
 
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
                     <h6><span class="icon-mbri-info"></span>Цена похожих авто на основе объявлений</h6>
                     
                     <div class="row g-1">
@@ -15195,7 +15299,7 @@
                           <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_kors.list_work_podgotovka|length > 0 %}
 
@@ -15259,7 +15363,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_kors.list_work_service|length > 0 %}
 
@@ -15317,7 +15421,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_kors.list_work_mcu|length > 0 %}
 
@@ -15486,7 +15590,7 @@
                           <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_autohub.list_work_podgotovka|length > 0 %}
 
@@ -15550,7 +15654,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_autohub.list_work_service|length > 0 %}
 
@@ -15608,7 +15712,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price_autohub.list_work_mcu|length > 0 %}
 
@@ -15752,6 +15856,41 @@
                             <label for="floatingInput">БЦП &#8381</label>
                           </div>
                           
+                          {% if params.price_autohub.auction %} 
+                          <br>
+                          <form method="POST">
+                            <div class="modal fade" id="edit_auction_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edit_auction_modal" aria-hidden="true">
+                              <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="">
+                                    <span class="icon-mbri-close"></span> Подтверждение отмены автоматического аукциона
+                                  </h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                  
+                                  <div class="mb-3 h-100 d-flex flex-column">
+                                      <label for="exampleFormControlTextarea1" class="form-label">Описание</label>
+                                      <textarea class="form-control flex-grow-1" name="auction_cancel" id="auction_cancel" rows="8" {% if params.estimation.auction_auto_comment > 0 %} readonly {% endif %}>{{params.estimation.auction_auto_comment}}</textarea>
+                                  </div>
+                                  
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" name="cancel_auction" class="btn btn-auction-outline" data-bs-dismiss="modal">
+                                    <span class="icon-mbri-play"></span>  Сохранить
+                                    </button>
+                                </div>
+                              </div>
+                              </div>
+                            </div>
+                          </form>
+                          
+
+                          <button class="btn btn-danger bg-gradient" type="button" data-bs-target="#edit_auction_modal" data-bs-toggle="modal"> <span class="icon-mbri-edit"></span> Аукцион не подтвержден </button>
+                          
+                          {% endif %}
+
                           {% if params.price_autohub.estimation_price > 0 or params.price_autohub.estimation_price_do_kd > 0 %}
                              <!--
                             <hr style="margin: 0.2rem;">
@@ -15791,7 +15930,7 @@
                           <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price.list_work_podgotovka|length > 0 %}
 
@@ -15855,7 +15994,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price.list_work_service|length > 0 %}
 
@@ -15913,7 +16052,7 @@
                           <br>
                           {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                           
-                          <hr style="width: 75%;">
+                          <hr class="my-3">
 
                             {% if params.price.list_work_mcu|length > 0 %}
 
@@ -16068,7 +16207,7 @@
                         <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_podgotovka|length > 0 %}
 
@@ -16132,7 +16271,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_service|length > 0 %}
 
@@ -16190,7 +16329,7 @@
                         <br>
                         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                         
-                        <hr style="width: 75%;">
+                        <hr class="my-3">
 
                           {% if params.price_custom.list_work_mcu|length > 0 %}
 
@@ -16465,11 +16604,27 @@
                                 </select>
                                 <label for="floatingInput">Продажа</label>
                               </div>
-
+                              <div id="div_auction_type" class="{% if params.estimation.auction %} {% else %} d-none {% endif %}">
+                                <label for="exampleFormControlTextarea1" {% if params.estimation.auction %} {% else %} d-none {% endif %}>Причина аукциона</label> {{params.estimation.auction_data}}
+                                <select class="form-select" id="auction_type" name="auction_type" aria-label="" {% if params.estimation.auction %} {% else %} d-none {% endif %}>
+                                  <option selected></option>
+                                  <option value="Иное">Иное</option>
+                                  <option value="Наличие сквозной коррозии" {% if params.estimation.auction_data == 'Наличие сквозной коррозии' %} selected {% endif %} >Наличие сквозной коррозии</option>
+                                  <option value="Нарушение системы безопастности" {% if params.estimation.auction_data == 'Нарушение системы безопастности' %} selected {% endif %}>Нарушение системы безопастности</option>
+                                  <option value="Не работает АКПП" {% if params.estimation.auction_data == 'Не работает АКПП' %} selected {% endif %}>Не работает АКПП</option>
+                                  <option value="Не работает полный привод" {% if params.estimation.auction_data == 'Не работает полный привод' %} selected {% endif %}>Не работает полный привод</option>
+                                  <option value="Не читается / не совпадает номер ДВС" {% if params.estimation.auction_data == 'Не читается / не совпадает номер ДВС' %} selected {% endif %}>Не читается / не совпадает номер ДВС</option>
+                                  <option value="Не читается VIN номер" {% if params.estimation.auction_data == 'Не читается VIN номер' %} selected {% endif %}>Не читается VIN номер</option>
+                                  <option value="Не читается номер рамы" {% if params.estimation.auction_data == 'Не читается номер рамы' %} selected {% endif %}>Не читается номер рамы</option>
+                                  <option value="скручен пробег" {% if params.estimation.auction_data == 'скручен пробег' %} selected {% endif %} >скручен пробег</option>
+                                </select>
+                                <br>
+                              </div>
                               <div class="form-group {% if params.estimation.auction %} {% else %} d-none {% endif %}" id="div_auction_comment">
                                 <label for="exampleFormControlTextarea1">Комментарий аукцион</label>
                                 <textarea class="form-control" id="auction_comment" name="auction_comment" rows="4">{% if params.estimation.auction_comment == None %} {% else %} {{params.estimation.auction_comment}} {% endif %}</textarea>
                               </div>
+                              
                               <hr style="margin: 0.2rem;">
                               
                               <div class="row g-1">
@@ -16808,8 +16963,11 @@
                   $(this).find(":selected").each(function () {
                       var value =  $(this).val();
                       if (value == 'Аукцион'){
+                        $('#div_auction_type').removeClass('d-none');
                         $('#div_auction_comment').removeClass('d-none');
                       }else{
+                        
+                        $('#div_auction_type').addClass('d-none');
                         $('#div_auction_comment').addClass('d-none');
                       };
                     });
@@ -16817,8 +16975,10 @@
               </script>
 
     </main>
-     
-    <br>
+  </div>
+</div>
+
+<br>
 
     <div class="modal fade" id="robot_price_korsavto" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
           <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
@@ -16835,7 +16995,7 @@
                     <br>
                     {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
                     <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
-                    <hr style="width: 75%;">
+                    <hr class="my-3">
 
                     <div class="row g-2 align-self-center align-items-center cars_list">
                         <br>
@@ -17925,6 +18085,885 @@
      url.searchParams.set('page', id)
      document.location.href  = url.href;
   }
+</script>
+
+<style>
+.modern-gallery-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modern-gallery-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+
+.modern-gallery-thumbnail {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.3s ease;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modern-gallery-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 123, 255, 0.5);
+}
+
+.modern-gallery-thumbnail.active {
+  border-color: #007bff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.modern-gallery-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.modern-gallery-thumbnail:hover .modern-gallery-thumbnail-img {
+  transform: scale(1.05);
+}
+
+.modern-gallery-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.modern-gallery-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+}
+
+.modern-gallery-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.modern-gallery-slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  z-index: 1;
+}
+
+.modern-gallery-slide.prev {
+  transform: translateX(-100%);
+}
+
+.modern-gallery-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.5s ease;
+  user-select: none;
+  transform-origin: center center;
+}
+
+.modern-gallery-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.modern-gallery-control-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #333;
+}
+
+.modern-gallery-control-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: scale(1.1);
+}
+
+.modern-gallery-control-btn:active {
+  transform: scale(0.95);
+}
+
+.modern-gallery-control-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.modern-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modern-gallery-nav:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.modern-gallery-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.modern-gallery-prev {
+  left: 16px;
+}
+
+.modern-gallery-next {
+  right: 16px;
+}
+
+.modern-gallery-nav svg {
+  color: #333;
+  width: 20px;
+  height: 20px;
+}
+
+.modern-gallery-counter {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-gallery-current,
+.modern-gallery-total {
+  font-weight: 600;
+}
+
+.modern-gallery-separator {
+  opacity: 0.8;
+}
+
+.modern-gallery-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-gallery-fullscreen.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modern-gallery-fullscreen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(5px);
+}
+
+.modern-gallery-fullscreen-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 80px;
+}
+
+.modern-gallery-fullscreen-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  animation: zoomIn 0.3s ease;
+  transition: transform 0.5s ease;
+  transform-origin: center center;
+}
+
+.modern-gallery-fullscreen-controls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10000;
+  display: flex;
+  gap: 12px;
+}
+
+.modern-gallery-fullscreen-control-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-fullscreen-control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.modern-gallery-fullscreen-control-btn:active {
+  transform: scale(0.95);
+}
+
+.modern-gallery-fullscreen-control-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modern-gallery-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.modern-gallery-fullscreen-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.modern-gallery-fullscreen-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.modern-gallery-fullscreen-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.modern-gallery-fullscreen-prev {
+  left: 20px;
+}
+
+.modern-gallery-fullscreen-next {
+  right: 20px;
+}
+
+.modern-gallery-fullscreen-nav svg {
+  width: 28px;
+  height: 28px;
+}
+
+.modern-gallery-fullscreen-counter {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.modern-gallery-fullscreen-current,
+.modern-gallery-fullscreen-total {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .modern-gallery-layout {
+    gap: 12px;
+  }
+  
+  .modern-gallery-thumbnails {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+  
+  .modern-gallery-container {
+    height: 350px;
+  }
+  
+  .modern-gallery-nav {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-nav svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .modern-gallery-prev {
+    left: 8px;
+  }
+  
+  .modern-gallery-next {
+    right: 8px;
+  }
+  
+  .modern-gallery-counter {
+    font-size: 12px;
+    padding: 6px 12px;
+    bottom: 12px;
+  }
+  
+  .modern-gallery-controls {
+    top: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+  
+  .modern-gallery-control-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .modern-gallery-control-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .modern-gallery-fullscreen-content {
+    padding: 40px 20px;
+  }
+  
+  .modern-gallery-fullscreen-nav {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .modern-gallery-fullscreen-nav svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .modern-gallery-fullscreen-prev {
+    left: 10px;
+  }
+  
+  .modern-gallery-fullscreen-next {
+    right: 10px;
+  }
+  
+  .modern-gallery-close {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-fullscreen-controls {
+    top: 10px;
+    left: 10px;
+    gap: 8px;
+  }
+  
+  .modern-gallery-fullscreen-control-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .modern-gallery-fullscreen-control-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .modern-gallery-fullscreen-counter {
+    font-size: 14px;
+    padding: 8px 16px;
+    bottom: 20px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  'use strict';
+  
+  const container = document.getElementById('modernGalleryContainer');
+  if (!container) return;
+  
+  const slides = container.querySelectorAll('.modern-gallery-slide');
+  const totalSlides = slides.length;
+  let currentIndex = 0;
+  
+  const fullscreen = document.getElementById('modernGalleryFullscreen');
+  const fullscreenImage = document.getElementById('modernGalleryFullscreenImage');
+  const fullscreenCurrent = document.getElementById('modernGalleryFullscreenCurrent');
+  const fullscreenTotal = document.getElementById('modernGalleryFullscreenTotal');
+  const currentCounter = document.getElementById('modernGalleryCurrent');
+  const totalCounter = document.getElementById('modernGalleryTotal');
+  
+  const prevBtn = document.getElementById('modernGalleryPrev');
+  const nextBtn = document.getElementById('modernGalleryNext');
+  const closeBtn = document.getElementById('modernGalleryClose');
+  const fullscreenPrevBtn = document.getElementById('modernGalleryFullscreenPrev');
+  const fullscreenNextBtn = document.getElementById('modernGalleryFullscreenNext');
+  const rotateBtn = document.getElementById('modernGalleryRotate');
+  const zoomInBtn = document.getElementById('modernGalleryZoomIn');
+  const zoomOutBtn = document.getElementById('modernGalleryZoomOut');
+  const fullscreenRotateBtn = document.getElementById('modernGalleryFullscreenRotate');
+  const fullscreenZoomInBtn = document.getElementById('modernGalleryFullscreenZoomIn');
+  const fullscreenZoomOutBtn = document.getElementById('modernGalleryFullscreenZoomOut');
+  
+  const thumbnailsContainer = document.getElementById('modernGalleryThumbnails');
+  const thumbnails = thumbnailsContainer ? thumbnailsContainer.querySelectorAll('.modern-gallery-thumbnail') : [];
+  
+  const imageStates = {};
+  
+  function getImageState(index) {
+    if (!imageStates[index]) {
+      imageStates[index] = {
+        rotate: 0,
+        zoom: 1
+      };
+    }
+    return imageStates[index];
+  }
+  
+  function applyImageTransform(image, state) {
+    const transforms = [];
+    
+    if (state.rotate !== 0) {
+      transforms.push(`rotate(${state.rotate}deg)`);
+    }
+    
+    if (state.zoom !== 1) {
+      transforms.push(`scale(${state.zoom})`);
+    }
+    
+    image.style.transform = transforms.length > 0 ? transforms.join(' ') : 'none';
+  }
+  
+  function applyFullscreenTransform(state) {
+    if (!fullscreenImage) return;
+    applyImageTransform(fullscreenImage, state);
+  }
+  
+  function getCurrentImage() {
+    const activeSlide = slides[currentIndex];
+    if (!activeSlide) return null;
+    return activeSlide.querySelector('.modern-gallery-image');
+  }
+  
+  if (totalCounter) {
+    totalCounter.textContent = totalSlides;
+  }
+  if (fullscreenTotal) {
+    fullscreenTotal.textContent = totalSlides;
+  }
+  
+  function updateSlider() {
+    slides.forEach((slide, index) => {
+      slide.classList.remove('active', 'prev');
+      if (index === currentIndex) {
+        slide.classList.add('active');
+        const image = slide.querySelector('.modern-gallery-image');
+        if (image) {
+          const state = getImageState(index);
+          applyImageTransform(image, state);
+        }
+      } else if (index < currentIndex) {
+        slide.classList.add('prev');
+      }
+    });
+    
+    thumbnails.forEach((thumbnail, index) => {
+      thumbnail.classList.remove('active');
+      if (index === currentIndex) {
+        thumbnail.classList.add('active');
+      }
+    });
+    
+    if (currentCounter) {
+      currentCounter.textContent = currentIndex + 1;
+    }
+  }
+  
+  function rotateImage() {
+    const image = getCurrentImage();
+    if (!image) return;
+    
+    const state = getImageState(currentIndex);
+    state.rotate = (state.rotate + 90) % 360;
+    applyImageTransform(image, state);
+  }
+  
+  function zoomInImage() {
+    const image = getCurrentImage();
+    if (!image) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom + 0.2;
+    if (newZoom <= 3) {
+      state.zoom = newZoom;
+      applyImageTransform(image, state);
+    }
+  }
+  
+  function zoomOutImage() {
+    const image = getCurrentImage();
+    if (!image) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom - 0.2;
+    if (newZoom >= 0.2) {
+      state.zoom = newZoom;
+      applyImageTransform(image, state);
+    }
+  }
+  
+  if (rotateBtn) {
+    rotateBtn.addEventListener('click', rotateImage);
+  }
+  
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener('click', zoomInImage);
+  }
+  
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener('click', zoomOutImage);
+  }
+  
+  function goToSlide(index) {
+    if (index >= 0 && index < totalSlides) {
+      currentIndex = index;
+      updateSlider();
+    }
+  }
+  
+  function showFullscreen(index) {
+    if (!fullscreen || !fullscreenImage) return;
+    
+    const slide = slides[index];
+    if (!slide) return;
+    
+    const imageSrc = slide.dataset.src;
+    const imageAlt = slide.dataset.alt || '';
+    
+    fullscreenImage.src = imageSrc;
+    fullscreenImage.alt = imageAlt;
+    
+    if (fullscreenCurrent) {
+      fullscreenCurrent.textContent = index + 1;
+    }
+    
+    fullscreen.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    currentIndex = index;
+    updateSlider();
+    
+    const state = getImageState(index);
+    applyFullscreenTransform(state);
+  }
+  
+  function rotateFullscreenImage() {
+    if (!fullscreenImage) return;
+    
+    const state = getImageState(currentIndex);
+    state.rotate = (state.rotate + 90) % 360;
+    applyFullscreenTransform(state);
+    updateSlider();
+  }
+  
+  function zoomInFullscreenImage() {
+    if (!fullscreenImage) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom + 0.2;
+    if (newZoom <= 3) {
+      state.zoom = newZoom;
+      applyFullscreenTransform(state);
+      updateSlider();
+    }
+  }
+  
+  function zoomOutFullscreenImage() {
+    if (!fullscreenImage) return;
+    
+    const state = getImageState(currentIndex);
+    const newZoom = state.zoom - 0.2;
+    if (newZoom >= 0.2) {
+      state.zoom = newZoom;
+      applyFullscreenTransform(state);
+      updateSlider();
+    }
+  }
+  
+  function hideFullscreen() {
+    if (!fullscreen) return;
+    
+    fullscreen.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  function nextSlide() {
+    currentIndex = (currentIndex + 1) % totalSlides;
+    updateSlider();
+  }
+  
+  function prevSlide() {
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    updateSlider();
+  }
+  
+  function nextFullscreen() {
+    currentIndex = (currentIndex + 1) % totalSlides;
+    showFullscreen(currentIndex);
+  }
+  
+  function prevFullscreen() {
+    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+    showFullscreen(currentIndex);
+  }
+  
+  if (prevBtn) {
+    prevBtn.addEventListener('click', prevSlide);
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', nextSlide);
+  }
+  
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideFullscreen);
+  }
+  
+  if (fullscreenPrevBtn) {
+    fullscreenPrevBtn.addEventListener('click', prevFullscreen);
+  }
+  
+  if (fullscreenNextBtn) {
+    fullscreenNextBtn.addEventListener('click', nextFullscreen);
+  }
+  
+  if (fullscreenRotateBtn) {
+    fullscreenRotateBtn.addEventListener('click', rotateFullscreenImage);
+  }
+  
+  if (fullscreenZoomInBtn) {
+    fullscreenZoomInBtn.addEventListener('click', zoomInFullscreenImage);
+  }
+  
+  if (fullscreenZoomOutBtn) {
+    fullscreenZoomOutBtn.addEventListener('click', zoomOutFullscreenImage);
+  }
+  
+  slides.forEach((slide, index) => {
+    const image = slide.querySelector('.modern-gallery-image');
+    if (image) {
+      image.addEventListener('click', () => {
+        showFullscreen(index);
+      });
+    }
+  });
+  
+  thumbnails.forEach((thumbnail, index) => {
+    thumbnail.addEventListener('click', () => {
+      goToSlide(index);
+    });
+  });
+  
+  if (fullscreen) {
+    fullscreen.addEventListener('click', (e) => {
+      if (e.target === fullscreen || e.target.classList.contains('modern-gallery-fullscreen-overlay')) {
+        hideFullscreen();
+      }
+    });
+  }
+  
+  document.addEventListener('keydown', (e) => {
+    if (!fullscreen || !fullscreen.classList.contains('active')) return;
+    
+    if (e.key === 'Escape') {
+      hideFullscreen();
+    } else if (e.key === 'ArrowLeft') {
+      prevFullscreen();
+    } else if (e.key === 'ArrowRight') {
+      nextFullscreen();
+    }
+  });
+  
+  let touchStartX = 0;
+  let touchEndX = 0;
+  
+  container.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  
+  container.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+  
+  function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+  }
+  
+  if (fullscreen) {
+    let fullscreenTouchStartX = 0;
+    let fullscreenTouchEndX = 0;
+    
+    fullscreen.addEventListener('touchstart', (e) => {
+      fullscreenTouchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    fullscreen.addEventListener('touchend', (e) => {
+      fullscreenTouchEndX = e.changedTouches[0].screenX;
+      handleFullscreenSwipe();
+    }, { passive: true });
+    
+    function handleFullscreenSwipe() {
+      const swipeThreshold = 50;
+      const diff = fullscreenTouchStartX - fullscreenTouchEndX;
+      
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          nextFullscreen();
+        } else {
+          prevFullscreen();
+        }
+      }
+    }
+  }
+  
+  updateSlider();
+})();
 </script>
 
 {% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - КорсАвто дашборд {% endblock %}
+
+{% block title_navbar %} - Дашборд директора {% endblock %}
+
+{% block content %}
+<section class="portal-page">
+  <div class="portal-header">
+    <h2>Дашборд директора</h2>
+    <p>Сводные показатели по продажам, оценкам и подготовке автомобилей.</p>
+  </div>
+  <div class="portal-panel">
+    {% include 'kors/partials/dashboard_overview.html' %}
+  </div>
+</section>
+{% endblock %}
+

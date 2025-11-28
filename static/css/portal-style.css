@@ -1,0 +1,1481 @@
+/* ============================================
+   СТИЛЬ ПОРТАЛА - Базовые стили
+   ============================================ */
+
+/* Основная страница */
+.portal-page {
+  padding: 1.25rem 1.5rem 3rem;
+  background: #f4f7fb;
+  min-height: 100vh;
+}
+
+/* Заголовок страницы */
+.portal-header h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #002a5a;
+}
+
+.portal-header p {
+  color: #6c7a92;
+  margin-bottom: 1.5rem;
+}
+
+/* Универсальная панель */
+.portal-panel {
+  background: #fff;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.portal-panel .form-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #8ea1ba;
+}
+
+.portal-panel .form-select,
+.portal-panel .form-control {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  box-shadow: none;
+}
+
+/* Навигационные крошки */
+.breadcrumb-nav {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 0;
+}
+
+.breadcrumb-nav a {
+  color: #6c7a92;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumb-nav a:hover {
+  color: #002a5a;
+}
+
+.breadcrumb-nav .separator {
+  color: #8ea1ba;
+  margin: 0 0.5rem;
+}
+
+/* Метрические карточки */
+.metric-card {
+  background: #fff;
+  border-radius: 1.2rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  height: 100%;
+}
+
+.metric-card h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8ea1ba;
+  margin-bottom: 0.4rem;
+}
+
+.metric-card .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 0.25rem;
+}
+
+.metric-card .sub {
+  color: #6c7a92;
+  font-size: 0.85rem;
+}
+
+/* Вариант метрической карточки (для car_new_price_edit) */
+.metric-card-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.metric-card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #002a5a;
+}
+
+/* Панель */
+.panel {
+  background: #fff;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  padding: 1.25rem;
+}
+
+.panel h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 1rem;
+}
+
+/* Таблицы */
+.table-sticky thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fc;
+  z-index: 1;
+}
+
+.cost-table th, .cost-table td {
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+/* Цветовые индикаторы */
+.diff-positive {
+  color: #0f9d58;
+  font-weight: 600;
+}
+
+.diff-negative {
+  color: #d93025;
+  font-weight: 600;
+}
+
+.cost-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-size: 0.8rem;
+}
+
+.badge-cost {
+  display: inline-flex;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #002a5a;
+}
+
+/* Пагинация */
+.pagination {
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.page-link {
+  border-radius: 0.5rem;
+  margin: 0 0.25rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  color: #002a5a;
+}
+
+.page-item.active .page-link {
+  background: #002a5a;
+  border-color: #002a5a;
+  color: #fff;
+}
+
+.page-link:hover {
+  background: #f4f7fb;
+  border-color: rgba(0, 42, 90, 0.3);
+  color: #002a5a;
+}
+
+/* ============================================
+   Специфичные стили для страниц
+   ============================================ */
+
+/* Стили для страниц настроек */
+.settings-page,
+.settings-vnesh-page,
+.settings-diagnostic-page,
+.settings-dc-page,
+.matrix-page,
+.sales-funnel-page,
+.kpi-eco-page,
+.lo-list-page {
+  padding: 1.25rem 1.5rem 3rem;
+  background: #f4f7fb;
+  min-height: 100vh;
+}
+
+.settings-header h2,
+.settings-vnesh-header h2,
+.settings-diagnostic-header h2,
+.settings-dc-header h2,
+.matrix-header h2,
+.sales-funnel-header h2,
+.kpi-eco-header h2,
+.lo-list-header h2,
+.pricing-report-header h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #002a5a;
+}
+
+.settings-header p,
+.settings-vnesh-header p,
+.settings-diagnostic-header p,
+.settings-dc-header p,
+.matrix-header p,
+.sales-funnel-header p,
+.kpi-eco-header p,
+.lo-list-header p,
+.pricing-report-header p {
+  color: #6c7a92;
+  margin-bottom: 1.5rem;
+}
+
+.settings-panel,
+.settings-vnesh-panel,
+.settings-diagnostic-panel,
+.settings-dc-panel,
+.matrix-panel {
+  background: #fff;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.settings-panel h3,
+.settings-vnesh-panel h3,
+.settings-diagnostic-panel h3,
+.settings-dc-panel h3,
+.matrix-panel h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 1rem;
+}
+
+.settings-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 23, 61, 0.12);
+  background: #fff;
+  color: #002a5a;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.settings-chip:hover {
+  background: #002a5a;
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Фильтры */
+.settings-dc-filter,
+.kpi-filter,
+.lo-filter,
+.pricing-filter,
+.sales-filter {
+  background: #fff;
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.settings-dc-filter .form-label,
+.kpi-filter .form-label,
+.lo-filter .form-label,
+.pricing-filter .form-label,
+.sales-filter .form-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #8ea1ba;
+}
+
+.settings-dc-filter .form-select,
+.settings-dc-filter .form-control,
+.kpi-filter .form-select,
+.kpi-filter .form-control,
+.lo-filter .form-select,
+.lo-filter .form-control,
+.pricing-filter .form-select,
+.pricing-filter .form-control,
+.sales-filter .form-select,
+.sales-filter .form-control {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  box-shadow: none;
+}
+
+/* Статусные карточки */
+.status-card {
+  background: #002a5a;
+  border-radius: 1rem;
+  padding: 1rem;
+  color: #fff;
+  text-align: center;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 23, 61, 0.1);
+}
+
+.status-card label:first-child {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.status-card label:last-child {
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: block;
+}
+
+/* Карточки автомобилей */
+.car-spec-card {
+  background: #f8f9fc;
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  transition: all 0.2s;
+  height: 100%;
+}
+
+.car-spec-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.08);
+}
+
+.car-spec-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.car-spec-value {
+  font-size: 0.95rem;
+  color: #002a5a;
+  font-weight: 500;
+}
+
+.car-price-block {
+  background: linear-gradient(135deg, #002a5a 0%, #004080 100%);
+  color: #fff;
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.car-price-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.dealer-info-card {
+  background: #002a5a;
+  color: #fff;
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.dealer-info-card h5 {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.dealer-action-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+}
+
+.dealer-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.related-car-card {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  overflow: hidden;
+  height: 100%;
+}
+
+.related-car-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+  transform: translateY(-2px);
+}
+
+.related-car-card .item-img_up {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Карточки для каталога */
+.mark-card {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 1rem;
+  height: 100%;
+  text-decoration: none;
+  color: #002a5a;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mark-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+  transform: translateY(-2px);
+  color: #002a5a;
+  text-decoration: none;
+}
+
+.mark-card-logo {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mark-card-info {
+  flex: 1;
+}
+
+.mark-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.mark-card-count {
+  font-size: 0.85rem;
+  color: #6c7a92;
+}
+
+.car-card {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  overflow: hidden;
+  height: 100%;
+}
+
+.car-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+  transform: translateY(-2px);
+}
+
+.car-card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.car-card-body {
+  padding: 1rem;
+}
+
+.car-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.car-card-logo {
+  height: 40px;
+  width: auto;
+}
+
+.car-card-location {
+  font-size: 0.85rem;
+  color: #6c7a92;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.car-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 0.5rem;
+}
+
+.car-card-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e74c3c;
+  text-align: right;
+}
+
+.car-card-specs {
+  font-size: 0.85rem;
+  color: #6c7a92;
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
+
+.car-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #6c7a92;
+}
+
+/* Карточки для управления ценой */
+.calc-card {
+  background: #f8f9fc;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  transition: all 0.2s;
+  height: 100%;
+}
+
+.calc-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.08);
+}
+
+.calc-card-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.calc-card-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #002a5a;
+  margin-bottom: 0.25rem;
+}
+
+.calc-card-sub {
+  font-size: 0.85rem;
+  color: #6c7a92;
+}
+
+.calc-card-link {
+  font-size: 0.8rem;
+  color: #8ea1ba;
+  text-decoration: none;
+  margin-top: 0.5rem;
+  display: inline-block;
+}
+
+.calc-card-link:hover {
+  color: #002a5a;
+}
+
+.price-status-success {
+  color: #0f9d58;
+}
+
+.price-status-warning {
+  color: #f4b400;
+}
+
+.price-status-danger {
+  color: #d93025;
+}
+
+.action-btn {
+  background: #f8f9fc;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  color: #002a5a;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+  transition: all 0.2s;
+  margin-bottom: 0.5rem;
+}
+
+.action-btn:hover {
+  background: #fff;
+  border-color: rgba(0, 42, 90, 0.3);
+  color: #002a5a;
+  transform: translateX(4px);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.car-info-card {
+  background: #f8f9fc;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+}
+
+.car-info-item {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: #002a5a;
+}
+
+.car-info-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Карточки характеристик */
+.spec-group-card {
+  background: #f8f9fc;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  margin-bottom: 1rem;
+  transition: all 0.2s;
+}
+
+.spec-group-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.08);
+}
+
+.spec-group-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.spec-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+}
+
+.spec-item:last-child {
+  border-bottom: none;
+}
+
+.spec-item-label {
+  font-size: 0.85rem;
+  color: #6c7a92;
+  font-weight: 500;
+}
+
+.spec-item-value {
+  font-size: 0.85rem;
+  color: #002a5a;
+  font-weight: 600;
+  text-align: right;
+}
+
+.complectation-card {
+  background: #f8f9fc;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+}
+
+.complectation-item {
+  font-size: 0.95rem;
+  color: #002a5a;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.complectation-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Мобильные таблицы */
+.table-mobile-cards {
+  border: none;
+}
+
+.table-mobile-cards thead {
+  display: none;
+}
+
+.table-mobile-cards tbody tr {
+  display: block;
+  margin-bottom: 1rem;
+  background: #fff;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 15px 32px rgba(0, 23, 61, 0.08);
+}
+
+.table-mobile-cards tbody td {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border: none;
+}
+
+.table-mobile-cards tbody td:first-child {
+  display: block;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+}
+
+.table-mobile-cards tbody td:before {
+  content: attr(data-label);
+  font-weight: 600;
+  color: #6c7a92;
+  margin-right: 0.75rem;
+  text-align: left;
+}
+
+.table-mobile-cards tbody td:first-child:before {
+  content: '';
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 992px) {
+  .portal-page,
+  .settings-page,
+  .settings-vnesh-page,
+  .settings-diagnostic-page,
+  .settings-dc-page,
+  .matrix-page,
+  .sales-funnel-page,
+  .kpi-eco-page,
+  .lo-list-page {
+    padding: 0.75rem 1rem 2rem;
+  }
+
+  .portal-header h2,
+  .settings-header h2,
+  .settings-vnesh-header h2,
+  .settings-diagnostic-header h2,
+  .settings-dc-header h2,
+  .matrix-header h2,
+  .sales-funnel-header h2,
+  .kpi-eco-header h2,
+  .lo-list-header h2,
+  .pricing-report-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .portal-panel,
+  .settings-panel,
+  .settings-vnesh-panel,
+  .settings-diagnostic-panel,
+  .settings-dc-panel,
+  .matrix-panel,
+  .panel {
+    padding: 1rem;
+  }
+
+  .settings-dc-filter,
+  .kpi-filter,
+  .lo-filter,
+  .pricing-filter,
+  .sales-filter {
+    padding: 1rem;
+  }
+
+  .metric-card {
+    margin-bottom: 0.75rem;
+  }
+
+  .mark-card {
+    padding: 0.75rem;
+  }
+
+  .mark-card-logo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .car-price-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .portal-page,
+  .settings-page,
+  .settings-vnesh-page,
+  .settings-diagnostic-page,
+  .settings-dc-page,
+  .matrix-page,
+  .sales-funnel-page,
+  .kpi-eco-page,
+  .lo-list-page {
+    padding: 0.5rem 0.75rem 1.5rem;
+  }
+
+  .portal-header h2,
+  .settings-header h2,
+  .settings-vnesh-header h2,
+  .settings-diagnostic-header h2,
+  .settings-dc-header h2,
+  .matrix-header h2,
+  .sales-funnel-header h2,
+  .kpi-eco-header h2,
+  .lo-list-header h2,
+  .pricing-report-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .portal-header p,
+  .settings-header p,
+  .settings-vnesh-header p,
+  .settings-diagnostic-header p,
+  .settings-dc-header p,
+  .matrix-header p,
+  .sales-funnel-header p,
+  .kpi-eco-header p,
+  .lo-list-header p,
+  .pricing-report-header p {
+    font-size: 0.9rem;
+  }
+
+  .portal-panel,
+  .settings-panel,
+  .settings-vnesh-panel,
+  .settings-diagnostic-panel,
+  .settings-dc-panel,
+  .matrix-panel,
+  .panel {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .breadcrumb-nav {
+    font-size: 0.75rem;
+    padding: 0.5rem 0;
+  }
+
+  .breadcrumb-nav .d-flex {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .metric-card {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .metric-card h4 {
+    font-size: 0.8rem;
+  }
+
+  .metric-card .value {
+    font-size: 1.5rem;
+  }
+
+  .settings-dc-filter,
+  .kpi-filter,
+  .lo-filter,
+  .pricing-filter,
+  .sales-filter {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .settings-dc-filter .row > div,
+  .kpi-filter .row > div,
+  .lo-filter .row > div,
+  .pricing-filter .row > div,
+  .sales-filter .row > div {
+    margin-bottom: 0.75rem;
+  }
+
+  .settings-chip {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .status-card {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .status-card label:first-child {
+    font-size: 0.8rem;
+  }
+
+  .status-card label:last-child {
+    font-size: 1.3rem;
+  }
+
+  .car-price-block {
+    padding: 1rem;
+  }
+
+  .car-price-value {
+    font-size: 1.3rem;
+  }
+
+  .dealer-info-card {
+    padding: 1rem;
+  }
+
+  .dealer-info-card .row.g-2 {
+    gap: 0.5rem !important;
+  }
+
+  .dealer-action-btn {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .dealer-action-btn span[style*="font-size: 1.5rem"] {
+    font-size: 1.2rem !important;
+  }
+
+  .related-car-card .item-img_up {
+    height: 150px;
+  }
+
+  .mark-card {
+    padding: 0.6rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .mark-card-logo {
+    width: 50px;
+    height: 50px;
+  }
+
+  .mark-card-name {
+    font-size: 0.9rem;
+  }
+
+  .mark-card-count {
+    font-size: 0.8rem;
+  }
+
+  .car-card-image {
+    height: 180px;
+  }
+
+  .car-card-body {
+    padding: 0.75rem;
+  }
+
+  .car-card-title {
+    font-size: 1rem;
+  }
+
+  .car-card-price {
+    font-size: 1.3rem;
+  }
+
+  .car-card-specs {
+    font-size: 0.8rem;
+  }
+
+  .calc-card {
+    padding: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .calc-card-label {
+    font-size: 0.7rem;
+  }
+
+  .calc-card-value {
+    font-size: 1rem;
+  }
+
+  .calc-card-sub {
+    font-size: 0.75rem;
+  }
+
+  .action-btn {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .car-info-card {
+    padding: 0.6rem;
+  }
+
+  .car-info-item {
+    font-size: 0.85rem;
+  }
+
+  .spec-group-card {
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .spec-group-label {
+    font-size: 0.65rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .spec-item {
+    padding: 0.4rem 0;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .spec-item-label,
+  .spec-item-value {
+    font-size: 0.75rem;
+  }
+
+  .spec-item-value {
+    text-align: left;
+  }
+
+  .complectation-card {
+    padding: 0.6rem;
+  }
+
+  .complectation-item {
+    font-size: 0.8rem;
+  }
+
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.4rem;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .page-link {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .lo-filter .btn,
+  .matrix-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   Стили для фильтров автомобилей
+   ============================================ */
+.cars-filter-panel {
+  background: #fff;
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+  box-shadow: 0 18px 40px rgba(0, 23, 61, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.filter-group {
+  margin-bottom: 1.5rem;
+}
+
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-search {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.filter-search input {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.85rem;
+  font-size: 0.9rem;
+}
+
+.filter-search .search-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8ea1ba;
+  pointer-events: none;
+}
+
+.filter-options {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid rgba(0, 42, 90, 0.1);
+  border-radius: 0.85rem;
+  background: #fff;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.filter-option:hover {
+  background: #f8f9fc;
+}
+
+.filter-option input[type="checkbox"] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.filter-option .filter-text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #002a5a;
+}
+
+.filter-range {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filter-range-group {
+  flex: 1;
+  position: relative;
+}
+
+.filter-range-group input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.85rem;
+  font-size: 0.9rem;
+}
+
+.filter-range-group label {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #8ea1ba;
+  pointer-events: none;
+}
+
+.filter-input-single input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.85rem;
+  font-size: 0.9rem;
+}
+
+.mobile-filters-button {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  background: #002a5a;
+  color: #fff;
+  border: none;
+  border-radius: 2rem;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 42, 90, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.mobile-filters-button:hover {
+  background: #004080;
+  color: #fff;
+}
+
+.mobile-filters-button .filters-count {
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .cars-filter-panel {
+    padding: 1rem;
+  }
+
+  .filter-group {
+    margin-bottom: 1rem;
+  }
+
+  .filter-range {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-options {
+    position: relative;
+    display: block;
+    max-height: 150px;
+  }
+
+  .car-card-image {
+    height: 200px;
+  }
+}
+
+/* ============================================
+   Стили для настроек диагностики
+   ============================================ */
+.settings-diagnostic-panel h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.settings-diagnostic-panel h3:hover {
+  color: #004080;
+}
+
+.settings-diagnostic-panel h3 .icon-mbri-down {
+  transition: transform 0.3s ease;
+  color: #8ea1ba;
+  font-size: 0.9rem;
+}
+
+.settings-diagnostic-panel h3[aria-expanded="true"] .icon-mbri-down {
+  transform: rotate(180deg);
+}
+
+.settings-diagnostic-panel .table thead th {
+  background: #f8f9fc;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c7a92;
+  border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  padding: 0.75rem;
+}
+
+.settings-diagnostic-panel .table tbody td {
+  vertical-align: middle;
+  padding: 0.75rem;
+}
+
+.settings-diagnostic-panel .form-floating {
+  margin-bottom: 0;
+}
+
+.settings-diagnostic-panel .form-floating .form-control {
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.settings-diagnostic-panel .form-floating label {
+  font-size: 0.8rem;
+  color: #8ea1ba;
+}
+
+@media (max-width: 768px) {
+  .settings-diagnostic-panel .table thead {
+    display: none;
+  }
+
+  .settings-diagnostic-panel .table tbody tr {
+    display: block;
+    margin-bottom: 1.25rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+  }
+
+  .settings-diagnostic-panel .table tbody td {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
+    border: none;
+    text-align: left;
+  }
+
+  .settings-diagnostic-panel .table tbody td:first-child {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #002a5a;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  }
+
+  .settings-diagnostic-panel .table tbody td:not(:first-child) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .settings-diagnostic-panel .table tbody td:not(:first-child):before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    margin-bottom: 0.5rem;
+  }
+
+  .settings-diagnostic-panel .table tbody td .form-floating {
+    width: 100%;
+  }
+
+  .settings-diagnostic-panel .table tbody td .form-floating .form-control {
+    width: 100%;
+  }
+}
+
+/* Стили для изображений в карточках автомобилей */
+.car-card-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 1rem 1rem 0 0;
+  background: #f8f9fc;
+}
+
+/* ============================================
+   Стили для страницы интерактивной оценки (lo_v3)
+   ============================================ */
+.lo-v3-page {
+  padding: 1.25rem 1.5rem 3rem;
+  background: #f4f7fb;
+  min-height: 100vh;
+}
+
+.portal-sidebar {
+  background: #fff;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.portal-sidebar .btn {
+  border-radius: 0.85rem;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.portal-sidebar .btn:hover {
+  background-color: #f4f7fb;
+  transform: translateX(4px);
+}
+
+.portal-sidebar .btn.active {
+  background-color: #002a5a;
+  color: #fff;
+  opacity: 1 !important;
+}
+
+@media (max-width: 992px) {
+  .lo-v3-page {
+    padding: 1rem 1.25rem 2rem;
+  }
+
+  .portal-sidebar {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .lo-v3-page {
+    padding: 0.75rem 1rem 1.5rem;
+  }
+
+  .portal-sidebar {
+    padding: 0.75rem;
+    border-radius: 1rem;
+  }
+}

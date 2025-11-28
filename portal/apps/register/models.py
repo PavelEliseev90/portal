@@ -1893,9 +1893,13 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     
     v                       = models.IntegerField('Версия интерактивной оценки', default=3, null=True, blank=True)
     
+    auction_auto_no_user    = models.BooleanField("Аукцион не подтвержден", default = False, null=True, blank=True)
+    auction_auto_comment    = models.CharField("Аукцион не подтвержден комментарий", max_length=2500, default='', null=True, blank=True)
+    
     auction                 = models.BooleanField("Аукцион", default = False, null=True, blank=True)
     auction_comment         = models.CharField("Аукцион комментарий", max_length=2500, default='', null=True, blank=True)
-
+    auction_data            = models.CharField("Аукцион тип (причина)", max_length = 512, default='', null=True, blank=True)
+    
     type_price              = models.IntegerField('Тип формирования цены', default=0, null=True, blank=True)
     
     users_eco               = models.IntegerField('Сотрудников ецо в чате', default=0, null=True, blank=True)
@@ -2385,6 +2389,52 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
             return True
         return False
 
+    def check_run(self):
+        check = True
+        if self.avtoteka_data != None and len(self.avtoteka_data) > 100:
+            data_autoteka = json.loads(self.avtoteka_data)['result']['report']['data']
+            eventsOthersHistory = data_autoteka.get('eventsOthersHistory')
+            run_sum     = 0
+            run         = 0
+            run_other   = 0
+            
+            for event in eventsOthersHistory:
+                if event['source'] != 'Audatex':
+                    if event['mileage'] > 0:
+                        run = event['mileage']
+                        if run_other > run:
+                            if run_other - run > 1000:
+                                run_ok = False
+                                run_sum = run_sum + (run_other - run)                            
+                        run_other = run
+            if run_sum > 0:
+                check = False
+        return check
+    
+
+    def get_bcp(self):
+        bcp = 0
+        if self.page_soglasovanie != None:
+            if self.page_soglasovanie.price_auto_bcp_1 > 0:
+                bcp = self.page_soglasovanie.price_auto_bcp_1
+            elif self.page_soglasovanie.price_auto_bcp_2 > 0:
+                bcp = self.page_soglasovanie.price_auto_bcp_2
+            elif self.page_soglasovanie.price_auto_bcp_3 > 0:
+                bcp = self.page_soglasovanie.price_auto_bcp_3
+         
+        return bcp
+
+    def get_zna(self):
+        zna = 0
+        if self.page_soglasovanie != None:
+            if self.page_soglasovanie.price_zna_1 > 0:
+                zna = self.page_soglasovanie.price_zna_1
+            elif self.page_soglasovanie.price_zna_2 > 0:
+                zna = self.page_soglasovanie.price_zna_2
+            elif self.page_soglasovanie.price_zna_3 > 0:
+                zna = self.page_soglasovanie.price_zna_3
+         
+        return zna
 
     def save(self, *args, **kwargs):
         
@@ -3001,6 +3051,12 @@ class RegEstimationBalanceUnit(models.Model):
             self.date = self.estimation.start_estimation
         except:
             s=1
+
+        try:
+            if self.shipment != None:
+                self.date = self.shipment.dataTime
+        except:
+            s=1
         
         super().save(*args, **kwargs)
 
@@ -3202,3 +3258,22 @@ class RegEstimationsCalculationDetail(models.Model):
         db_table = 'regEstimationsCalculationDetail'
         verbose_name = "Суммы понижений расчетов интерктивной оценки"
         verbose_name_plural = "Суммы понижений расчетов интерктивной оценки"
+
+
+class RegUnitMonthlyPlan(models.Model):
+    unit = models.ForeignKey(RefUnit, on_delete=models.CASCADE, verbose_name="Подразделение")
+    year = models.IntegerField("Год")
+    month = models.IntegerField("Месяц")
+    intake_plan = models.PositiveIntegerField("План по приему, шт.", default=0)
+    sale_plan = models.PositiveIntegerField("План по продажам, шт.", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'regUnitMonthlyPlan'
+        verbose_name = "План подразделения на месяц"
+        verbose_name_plural = "Планы подразделений на месяц"
+        unique_together = ('unit', 'year', 'month')
+
+    def __str__(self):
+        return f"{self.unit} — {self.month:02d}.{self.year}"

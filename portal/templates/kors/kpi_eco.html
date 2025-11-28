@@ -7,108 +7,72 @@
 {% block title_navbar %} - KPI ЕЦО {% endblock %}
 
 {% block content %}
-
-<form method="get" class="">
-  <div class="card">
-
-    <div class="card-body">
-      
-      <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
-
-      <div class="collapse" id="filtr">
-        <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
-    
-        <div class="row">
-    
-    
-          <div class="col-sm">
-    
-            <div class="row">
-              <div class="col">
-                <div class="form-floating mb-3">
-                  <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-                  <label for="floatingInput">C</label>
-                </div>
-              </div>
-              <div class="col">
-                <div class="form-floating mb-3">
-                  <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-                  <label for="floatingInput">По</label>
-                </div>
-              </div>
-            </div>
-    
-          </div>
-
-          <div class="col-sm">
-            <div class="form-floating mb-3">							
-              <select class="form-select" id="type_reception_id" name="type_reception_id" placeholder="">
-                <option></option>
-                {% for type_reception in params.selected.type_receptions %}
-                  <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
-                {% endfor %}
-              </select>
-              <label for="floatingInput">Тип приема</label>
-            </div>
-          </div>
-
-          <div class="col-sm">
-    
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="vin" name="vin" placeholder="" value="{{params.filtr.vin}}" autocomplete="off">
-              <label for="floatingInput">VIN</label>
-            </div>
-    
-          </div>
-          <div class="col-sm">
-    
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="name_unit" name="name_unit" placeholder="" value="{{params.filtr.name_unit}}" autocomplete="off">
-              <label for="floatingInput">Наименование ДЦ</label>
-            </div>
-    
-          </div>
-    
-          <div class="col-sm-auto align-self-center">
-            <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
-          </div>
-    
-        </div>
-      </div>
-
-    </div>
-
+<section class="kpi-eco-page">
+  <div class="kpi-eco-header">
+    <h2>KPI ЕЦО</h2>
+    <p>Анализ эффективности работы центра оценки автомобилей.</p>
   </div>
 
-</form>
+  <form method="get">
+    <input type="text" hidden class="form-control" id="page" name="page" value="balance_units">
+    
+    <div class="kpi-filter">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Период с</label>
+          <input class="form-control" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Период по</label>
+          <input class="form-control" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Тип приема</label>
+          <select class="form-select" id="type_reception_id" name="type_reception_id">
+            <option value="">Все</option>
+            {% for type_reception in params.selected.type_receptions %}
+              <option value="{{type_reception.id}}" {% if params.filtr.type_reception_id == type_reception.id %} selected {% endif %}>{{type_reception.name}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">VIN</label>
+          <input type="text" class="form-control" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Наименование ДЦ</label>
+          <input type="text" class="form-control" id="name_unit" name="name_unit" value="{{params.filtr.name_unit}}" autocomplete="off">
+        </div>
+        <div class="col-md-12">
+          <button class="btn btn-primary" type="submit">
+            <span class="icon-mbri-play"></span> Применить
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 
-<br>
-<div class="card bg-white bg-opacity-25">
-  <div class="card-body">
-    <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#collapse_statuses" aria-expanded="false" aria-controls="collapse_statuses">Оценки по статусам</label>
-    <hr style="width: 75%">
-    <div class="collapse" id="collapse_statuses">   
-      <div class="row g-1">
-        <div class="col-12 col-sm-6">
-          <div class="container-fluid">
-            <div class="row g-1 row-cols-1 row-cols-sm-3">
-              {% for status in params.statuses %}
-                {% if status.interactiv_status != None %}
-                  <div class="col">
-                    <div class="card text-white bg-dark bg-gradient bg-opacity-75">
-                      <div class="card-body text-center" >
-                        <label class="fs-6 text-truncate"> {{status.interactiv_status}}</label>
-                        <br>
-                        <label class="fs-5"> {{status.count}}</label> 
-                      </div>
-                    </div>
+  <div class="kpi-panel">
+    <h3 data-bs-toggle="collapse" data-bs-target="#collapse_statuses" aria-expanded="false" aria-controls="collapse_statuses" style="cursor: pointer;">
+      Оценки по статусам
+    </h3>
+    <div class="collapse show" id="collapse_statuses">   
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <div class="row g-2">
+            {% for status in params.statuses %}
+              {% if status.interactiv_status != None %}
+                <div class="col-6 col-sm-4">
+                  <div class="status-card">
+                    <label>{{status.interactiv_status}}</label>
+                    <label>{{status.count}}</label> 
                   </div>
-                {% endif %}
-              {% endfor %}
-            </div>
+                </div>
+              {% endif %}
+            {% endfor %}
           </div>
         </div>
-        <div class="col-12 col-sm-6">
+        <div class="col-12 col-md-6">
           <figure class="highcharts-figure">
             <div id="container_status_estimation"></div>
           </figure>
@@ -116,18 +80,8 @@
       </div>
     </div>
   </div>
-</div>
 
-<br>
-
-{% for data in params.data %}
-{{data.nomer}} - {{data.interactiv_status}} - {{ data.staff_name}}
-{{data.rlk.pk}}  -  
-{{data.staff_eco}}
-<br>
-{% endfor %}
-
-<hr>
+</section>
 
   <script src="/static/js/highcharts/highcharts.js"></script>  
   <script src="/static/js/highcharts/highcharts-3d.js"></script>

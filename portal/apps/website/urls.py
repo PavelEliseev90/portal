@@ -12,7 +12,7 @@ urlpatterns = [
    path('login/',             views.loging),
    path('logout/',            views.logout),
    
-
+   path('est/<slug:slug>/',      views.customer_est, name='slug'),
    path('stok_im/',              views.stok_im),
    path('stok_im/product/',      views.product),
 
@@ -109,6 +109,7 @@ urlpatterns = [
    
    #КорсАвто
    path('rlks_trade_in/',              views.rlks_trade_in),
+   path('rlks_trade_in/export/',       views.rlks_trade_in_export),
    path('rlks_trade_in/<id>/',         views.rlk_trade_in, name='id'),
 
    path('docs_car_agreement/',            views.docs_car_agreement),
@@ -119,7 +120,8 @@ urlpatterns = [
    path('doc_car_shipment/<id>/',           views.doc_car_shipment, name='id'),
    path('docs_car_shipment/<id>/',           views.doc_car_shipment, name='id'),
 
-   path('korsavto/settings/',                views.korsavto_settings_dc),
+   path('korsavto/dashboard/',               views.korsavto_dashboard, name='korsavto_dashboard'),
+   path('korsavto/settings/',                views.korsavto_settings_dc, name='korsavto_settings'),
    path('korsavto/settings/<slug:slug>/',    views.korsavto_settings_dc_cars),
    path('korsavto/sales_funnel/',            views.sales_funnel),
    path('korsavto/kpi_eco/',                 views.kpi_eco),

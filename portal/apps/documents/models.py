@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from refs.models import RefReasonArchiveRLK, RefStatusRLK, RefFilial, AutoruModification, AutoruComplectation, RefTypeReceptionCarsOrganization, RefStore, RefTypeItemRepair, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefTypeCanceledSMS, RefTypeResourcePlanning, RefTypeCategoryNegative, RefTypeCategoryCustomer, RefSMSStatusBase, RefSMSStatusProvider
+from refs.models import RefTypeItemServiceRepair, RefTypeDocService, RefService, RefReasonArchiveRLK, RefStatusRLK, RefFilial, AutoruModification, AutoruComplectation, RefTypeReceptionCarsOrganization, RefStore, RefTypeItemRepair, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefTypeCanceledSMS, RefTypeResourcePlanning, RefTypeCategoryNegative, RefTypeCategoryCustomer, RefSMSStatusBase, RefSMSStatusProvider
 from django.db.models import Avg, Max, Min, Sum, F
 from datetime import datetime, timedelta
 import uuid
@@ -1276,3 +1276,228 @@ class DocSMS(models.Model):
         verbose_name = "Сообщение смс"
         verbose_name_plural = "Сообщения смс"
 
+
+class DocZNKA(models.Model):
+    uin            = models.CharField('uin', default='', null=True, max_length=64, blank=False)
+    closed         = models.BooleanField("Закрыт",  default=False)
+    active         = models.BooleanField("Проведен", default=False)
+    nomer          = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
+    dataTime       = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    nomer_dc       = models.CharField('Номер в дц', default='', null=True, max_length=25, blank=False)
+    dataTime_dc    = models.DateTimeField('Дата в дц', default=datetime.now, blank=False)
+    dateStart      = models.DateTimeField('Пришла в ремонт', null=True, blank=True)
+    dateEnd        = models.DateTimeField('Вышла из ремонта', null=True, blank=True)
+    organization   = models.ForeignKey(RefOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Организация")
+    unit           = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
+    master         = models.ForeignKey(RefStaff, related_name="mastein_ka", on_delete=models.SET_NULL, null=True, verbose_name="Мастер-консультант")
+    masterOut      = models.ForeignKey(RefStaff, related_name="masterout_ka", on_delete=models.SET_NULL, null=True, verbose_name="Выпускающий мастер-консультант")
+    carsGRZ        = models.CharField('Гос. номер', default='', null=True, max_length=25, blank=True)
+    customer       = models.ForeignKey(RefCustomer, on_delete=models.SET_NULL, null=True, verbose_name="Клиент")
+    clientName     = models.CharField('Клиент строкой', default='', null=True, max_length=250, blank=False)
+    cars           = models.ForeignKey(RefCars, on_delete=models.SET_NULL, null=True, verbose_name="Автомобиль") 
+    lo             = models.ForeignKey(DocLO, on_delete=models.SET_NULL, null=True, verbose_name="Лист оценки")
+    typeRemont     = models.ForeignKey(RefTypeRepair, on_delete=models.SET_NULL, null=True, verbose_name="Вид ремонта")
+    readyStatus    = models.ForeignKey(RefStatusDocZN, on_delete=models.SET_NULL, null=True, verbose_name="Статус") 
+    customerWords  = models.CharField('Заявка со слов клиента', default='', null=True, max_length=12500, blank=True) 
+    run            = models.IntegerField("Пробег", default=0, blank=True)
+    amount         = models.FloatField("Сумма", default=0.0, blank=True)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['uin'])
+        ]
+        db_table = 'docZNKA'
+        verbose_name = "Заказ - наряд КорсАвто"
+        verbose_name_plural = "Заказ - наряды КорсАвто"
+
+
+class DocZNWorkKA(models.Model):
+    zn                  = models.ForeignKey(DocZNKA, on_delete=models.SET_NULL, null=True, verbose_name="Заказ наряд")
+    uin                 = models.CharField('Уникальный идентификатор', default='', null=True, max_length=100, blank=False) 
+    type                = models.ForeignKey(RefTypeItemRepair, on_delete=models.SET_NULL, null=True, verbose_name="Тип в заказ наряде")
+    work                = models.ForeignKey(RefWork, on_delete=models.SET_NULL, null=True, verbose_name="Работа")
+    quantity            = models.FloatField("Количество", default=0.0, blank=True)
+    price               = models.FloatField("Цена", default=0.0, blank=True)
+    
+    discountPercentage  = models.FloatField("Процент скидки", default=0.0, blank=True)
+    discountAmount      = models.FloatField("Сумма скидки", default=0.0, blank=True)
+    
+    amount              = models.FloatField("Сумма", default=0.0, blank=True)
+    amountResult        = models.FloatField("Сумма с учетом скидки", default=0.0, blank=True)
+    
+    def get_type(self):
+        if self.type == None:
+            return '-'
+        return self.type
+
+    def save(self, *args, **kwargs):
+        try:
+            if self.discountPercentage > 0:
+                self.discountAmount     = self.price * self.quantity * self.discountPercentage / 100
+                self.amountResult       = self.price * self.quantity - self.discountAmount
+            else:
+                self.discountAmount = 0
+                self.amountResult   = self.price * self.quantity - self.discountAmount
+        except:
+            self.discountAmount = 0
+            self.amountResult   = self.price * self.quantity
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "{} / {}".format(self.zn, self.work)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
+        db_table = 'docZNWorkKA'
+        verbose_name = "Работа заказ наряда КорсАвто"
+        verbose_name_plural = "Работы заказ наряда КорсАвто"
+
+
+class DocZNProductKA(models.Model):
+    zn                  = models.ForeignKey(DocZNKA, on_delete=models.SET_NULL, null=True, verbose_name="Заказ наряд")
+    uin                 = models.CharField('Уникальный идентификатор', default='', null=True, max_length=100, blank=False) 
+    type                = models.ForeignKey(RefTypeItemRepair, on_delete=models.SET_NULL, null=True, verbose_name="Тип в заказ наряде")
+    product             = models.ForeignKey(RefProduct, on_delete=models.SET_NULL, null=True, verbose_name="Товар")
+    quantity            = models.FloatField("Количество", default=0.0, blank=True)
+    price               = models.FloatField("Цена", default=0.0, blank=True)
+    
+    discountPercentage  = models.FloatField("Процент скидки", default=0.0, blank=True)
+    discountAmount      = models.FloatField("Сумма скидки", default=0.0, blank=True)
+    
+    amount              = models.FloatField("Сумма", default=0.0, blank=True)
+    amountResult       = models.FloatField("Сумма с учетом скидки", default=0.0, blank=True)
+
+    def get_type(self):
+        if self.type == None:
+            return '-'
+        return self.type
+
+    def save(self, *args, **kwargs):
+        try:
+            if self.discountPercentage > 0:
+                self.discountAmount = self.price * self.quantity * self.discountPercentage / 100
+                self.amountResult = self.price * self.quantity - self.discountAmount
+            else:
+                self.discountAmount = 0
+                self.amountResult = self.price * self.quantity
+        except:
+            self.discountAmount = 0
+            self.amountResult   = self.price * self.quantity
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "{} / {}".format(self.zn, self.product)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
+        db_table = 'docZNProductKA'
+        verbose_name = "Товар заказ наряда КорсАвто"
+        verbose_name_plural = "Товары заказ наряда КорсАвто"
+
+
+class DocZNServicesKA(models.Model):
+    zn                  = models.ForeignKey(DocZNKA, on_delete=models.SET_NULL, null=True, verbose_name="Заказ наряд")
+    uin                 = models.CharField('Уникальный идентификатор', default='', null=True, max_length=100, blank=False) 
+    type                = models.ForeignKey(RefTypeItemRepair, on_delete=models.SET_NULL, null=True, verbose_name="Тип в заказ наряде")
+    service             = models.ForeignKey(RefService, on_delete=models.SET_NULL, null=True, verbose_name="Услуга")
+    quantity            = models.FloatField("Количество", default=0.0, blank=True)
+    price               = models.FloatField("Цена", default=0.0, blank=True)
+    
+    discountPercentage  = models.FloatField("Процент скидки", default=0.0, blank=True)
+    discountAmount      = models.FloatField("Сумма скидки", default=0.0, blank=True)
+    
+    amount              = models.FloatField("Сумма", default=0.0, blank=True)
+    amountResult       = models.FloatField("Сумма с учетом скидки", default=0.0, blank=True)
+
+    def get_type(self):
+        if self.type == None:
+            return '-'
+        return self.type
+
+    
+    def __str__(self):
+        return "{} / {}".format(self.zn, self.service)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
+        db_table = 'docZNServicesKA'
+        verbose_name = "Товар заказ наряда КорсАвто"
+        verbose_name_plural = "Товары заказ наряда КорсАвто"
+
+
+class DocZNPerformersKA(models.Model):
+    zn                  = models.ForeignKey(DocZNKA, on_delete=models.SET_NULL, null=True, verbose_name="Заказ наряд")
+    uin                 = models.CharField('Уникальный идентификатор', default='', null=True, max_length=100, blank=False) 
+    staff               = models.ForeignKey(RefStaff, on_delete=models.SET_NULL, null=True, verbose_name="Сотрудник")
+    percent             = models.FloatField("Сумма с учетом скидки", default=0.0, blank=True)
+
+    def __str__(self):
+        return "{} / {}".format(self.zn, self.staff)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['zn'])
+        ]
+        db_table = 'docZNPerformersKA'
+        verbose_name = "Исполнители заказ наряда КорсАвто"
+        verbose_name_plural = "Исполнители заказ наряда КорсАвто"
+
+
+class DocServices(models.Model):
+    uin             = models.CharField('uin', default='', null=True, max_length=64, blank=False)
+    active          = models.BooleanField("Проведен", default=False)
+    nomer           = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
+    date_time       = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    nomer_dc        = models.CharField('Номер стороней базы', default='', null=True, max_length=25, blank=False)
+    date_time_dc    = models.DateTimeField('Дата стороней базы', default=datetime.now, blank=False)
+    organization    = models.ForeignKey(RefOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Организация")
+    unit            = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
+    author          = models.ForeignKey(RefStaff, related_name="author", on_delete=models.SET_NULL, null=True, verbose_name="Автор")
+    customer        = models.ForeignKey(RefCustomer, on_delete=models.SET_NULL, null=True, verbose_name="Клиент")
+    lo              = models.ForeignKey(DocLO, on_delete=models.SET_NULL, null=True, verbose_name="Лист оценки")
+    type_cost       = models.ForeignKey(RefTypeDocService, on_delete=models.SET_NULL, null=True, verbose_name="Вид поступления")
+    amount          = models.FloatField("Сумма", default=0.0, blank=True)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['uin']),
+            models.Index(fields=['lo'])
+        ]
+        db_table = 'docServices'
+        verbose_name = "Поступление услуг КорсАвто"
+        verbose_name_plural = "Поступления услугы КорсАвто"
+
+
+class DocServiceItem(models.Model):
+    doc_service         = models.ForeignKey(DocServices, on_delete=models.SET_NULL, null=True, verbose_name="Постпление услуг")
+    type_service        = models.ForeignKey(RefTypeItemServiceRepair, on_delete=models.SET_NULL, null=True, verbose_name="Тип затраты")
+    description         = models.CharField('Описание', default='', null=True, max_length=12500, blank=True)
+    service             = models.ForeignKey(RefService, on_delete=models.SET_NULL, null=True, verbose_name="Услуга")
+    quantity            = models.FloatField("Количество", default=0.0, blank=True)
+    price               = models.FloatField("Цена", default=0.0, blank=True)
+    amount              = models.FloatField("Сумма", default=0.0, blank=True)
+    
+    def __str__(self):
+        return "{} / {}".format(self.doc_service, self.service)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['doc_service'])
+        ]
+        db_table = 'docServiceItem'
+        verbose_name = "Услуги поступления услуг КорсАвто"
+        verbose_name_plural = "Услуги поступления услуг КорсАвто"

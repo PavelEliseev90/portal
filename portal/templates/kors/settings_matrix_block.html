@@ -1,0 +1,37 @@
+<div class="matrix-panel">
+  <h3>{{ label }}</h3>
+  <small>Параметры расчёта для категории {{ label }}</small>
+  <div class="row g-3 mt-1">
+    <div class="col-12 col-md-4">
+      <div class="form-floating">
+        <input type="number" class="form-control" step="0" id="charge_bcp_{{ prefix }}" name="charge_bcp_{{ prefix }}" value="{{ charge }}" autocomplete="off">
+        <label>Базовая наценка</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-2">
+      <div class="form-floating">
+        <input type="number" class="form-control" step="0" id="min_km_{{ prefix }}" name="min_km_{{ prefix }}" value="{{ min }}" autocomplete="off">
+        <label>МКМ</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-2">
+      <div class="form-floating">
+        <input type="number" class="form-control" step="0" id="charge_km_stage_1_{{ prefix }}" name="charge_km_stage_1_{{ prefix }}" value="{{ stage1 }}" autocomplete="off">
+        <label>Умеренное снижение</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-2">
+      <div class="form-floating">
+        <input type="number" class="form-control" step="0" id="charge_km_stage_2_{{ prefix }}" name="charge_km_stage_2_{{ prefix }}" value="{{ stage2 }}" autocomplete="off">
+        <label>Среднее снижение</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-2">
+      <div class="form-floating">
+        <input type="number" class="form-control" step="0" id="charge_km_stage_3_{{ prefix }}" name="charge_km_stage_3_{{ prefix }}" value="{{ stage3 }}" autocomplete="off">
+        <label>Значительное снижение</label>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -36,7 +36,7 @@ urlpatterns = [
 
    path('post_info/',                         views.post_info),
    # API подготовки автомобилей (подключаем urls приложения)
-   path('car_preparation/', include('car_preparation.api_urls')),
+   #path('car_preparation/', include('car_preparation.api_urls')),
    
    # мобильное приложение андроид версии 1
    path('a/v1/user_desctop/',                         views_mobile_android_api_v1.user_desctop),
@@ -102,7 +102,7 @@ urlpatterns = [
    path('index/',                   views.index),
    # Временный обмен с корсавто
    path('refresh_rlk_bu/',          views.refresh_rlk_bu),
-
+   path('get_info_estimation_vin/',  views.get_info_estimation_vin),
    #Обмен с 1С по формату общего модуля ОбменДаннымиAPI в 1С
    path('exchange/',                views.exchange),
 
