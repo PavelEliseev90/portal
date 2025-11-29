@@ -109,6 +109,7 @@ urlpatterns = [
    
    #КорсАвто
    path('rlks_trade_in/',              views.rlks_trade_in),
+   path('rlks_trade_in/export/',       views.rlks_trade_in_export),
    path('rlks_trade_in/<id>/',         views.rlk_trade_in, name='id'),
 
    path('docs_car_agreement/',            views.docs_car_agreement),

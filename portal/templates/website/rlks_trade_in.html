@@ -406,8 +406,8 @@
     <div>
       <p class="mb-0">Всего записей: {{params.objects.paginator.count}} / Выведено: {{params.objects|length}}</p>
     </div>
-    <div>
-      <button id="save" class="btn btn-outline-secondary"><span class="icon-mbri-download"></span> Сохранить</button>
+    <div class="col-auto">
+      <a href="{{ request.puth}}" class="btn btn-outline-secondary"> <span class="icon-mbri-download"> Сохранить</span> </a>
     </div>
   </div>
 
