@@ -3,6 +3,14 @@ from django.conf import settings
 from datetime import datetime
 
 
+class ChatSuccesDate(models.Model):
+    date        = models.DateTimeField('Дата', default=datetime.now, blank=False)
+    class Meta:
+        db_table = 'chatSuccesDate'
+        verbose_name = "Дата обновления аналитики чата"
+        verbose_name_plural = "Даты обновления аналитики чата"
+
+
 class Chat(models.Model):
     name    = models.CharField('Наименование', max_length=200)
     slug    = models.SlugField(max_length=512, null=True, blank=True)

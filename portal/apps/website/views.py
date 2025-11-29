@@ -4651,6 +4651,31 @@ def rlks_trade_in(request):
                 docs = docs.filter(rlk__unit = RefUnit.objects.get(id = unit_id))
                 staffsSelect = list(RefStaff.objects.filter(unit = RefUnit.objects.get(id = unit_id)).order_by('name'))
 
+    if 'save' in request.GET:
+        file_name = 'rlks_trade_in' + f'{DT.datetime.now():%Y-%m-%d %H:%M:%S}' + '.xlsx'
+        headers = {
+            'file_name' : file_name
+        }
+
+        response = HttpResponse(content_type='application/ms-excel', headers = headers)
+        response['Content-Disposition'] = 'attachment; filename="' + file_name + '"'
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Прайс лист"
+
+        # Add headers
+        headers = ["Дата", "Номер", "Подразделение ДЦ", "VIN"]
+        ws.append(headers)
+
+        # Add data from the model
+        dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'vin')
+        for doc_val in dosc_val:
+            unit__name = ''
+            ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, doc_val['vin']])
+        wb.save(response)
+        return response
+
     paginator   = Paginator(docs, countList)	
     page_number = request.GET.get('page', 1)
     page_obj    = paginator.get_page(page_number)
@@ -4685,6 +4710,160 @@ def rlks_trade_in(request):
         'selected'      : selected
     }
     return render(request, 'website/rlks_trade_in.html', {'params':params}) 
+
+def rlks_trade_in_export(request):
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    filtr_unit_name     = request.GET.get('unit_name', '') 
+    new_filtr           = request.GET.get('new_filtr', '')
+    path_start          = request.path
+    delite_filter       = request.GET.get('delite_filter', '')
+    
+    if len(delite_filter) > 0:
+        if RefCustomerFiltr.objects.filter(pk = delite_filter).count() > 0:
+            RefCustomerFiltr.objects.get(pk = delite_filter).delete()
+
+    filters_user    = RefCustomerFiltr.objects.filter(user = request.user).filter(page = path_start).order_by('-date')  
+    custom          = request.GET.get('custom', '') 
+    if len(new_filtr) > 0:
+        dict_filtr = request.GET.copy()
+        dict_filtr.pop('new_filtr')
+        dict_filtr.pop('save_filtr')
+        path_filtr = get_path_in_dict(dict_filtr)
+
+        path_redirect = path_start + path_filtr 
+        new_filtr_object = RefCustomerFiltr()
+        new_filtr_object.page = path_start
+        new_filtr_object.path = path_filtr
+        new_filtr_object.user = request.user
+        new_filtr_object.name = new_filtr 
+        new_filtr_object.save()
+
+        return HttpResponseRedirect(path_redirect + '&custom='+ str(new_filtr_object.pk))
+    
+    date            = request.GET.get('date_start', '')
+
+    if len(date) == 0:
+    
+        date_period = DT.datetime.now()
+        date_start 	= date_period.replace(day = 1, hour = 0, minute=0, second=0, microsecond=0)
+        if date_period.month > 11:
+            month_end	= 1
+            year_end 	= date_period.year + 1
+        else:
+            month_end	= date_period.month + 1
+            year_end 	= date_period.year
+        date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)
+    
+    else:
+    
+        dates = date.split('-')
+        if len(dates) == 3:
+            year 	        = int(dates[0])
+            month 	        = int(dates[1])
+            day             = int(dates[2])
+            date_period     = DT.datetime.now()
+            date_start 	    = date_period.replace(year = year, month = month, day = day, hour = 0, minute=0, second=0, microsecond=0)
+            if month > 11:
+                month_end 	= 1
+                year_end 	= year + 1
+            else:
+                month_end 	= month + 1 
+                year_end 	= year
+            date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)			
+    
+    countList = 15
+
+    staffKKID   = ""
+    staffsKK    = Profiles.objects.filter(view_checklist = False).order_by('user__last_name')
+            
+    unit_id      = ""
+    units_select = RefUnit.objects.filter(buauto = True).exclude(name = '').order_by("name")
+    
+    type_receptions_id = request.GET.get('type_receptions_id', '')
+
+    staffID         = ""
+    staffsSelect    = ""
+    
+    #docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).filter(staff__domain_login = request.user.username ).order_by('-dataTime')
+    docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    docs        = docs.annotate(
+        unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
+        status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
+        status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
+        start_estimation    = Subquery(subquery.values('start_estimation')[:1])).annotate(
+        end_estimation      = Subquery(subquery.values('end_estimation')[:1])).annotate(
+        staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
+        remote_price        = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
+        mark                = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
+        model = Subquery(subquery.values('modification__model__name')[:1])).annotate(
+        modification = Subquery(subquery.values('modification__name')[:1])).annotate(
+        type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
+        year = Subquery(subquery.values('year')[:1])).annotate(
+        vin = Subquery(subquery.values('vin')[:1])).annotate(
+        lo_pk = Subquery(subquery.values('id')[:1]))
+
+    filtr_number_doc    = request.GET.get('number_doc', '')
+    filtr_vin           = request.GET.get('vin', '')
+    if filtr_number_doc != '':
+        docs = docs.filter(nomer__icontains = filtr_number_doc)    
+    if type_receptions_id != '':
+        type_receptions_id = int(type_receptions_id)
+        docs = docs.filter(type_estimation_ocenka_id = type_receptions_id)    
+    
+    if filtr_vin != '':
+        docs = docs.filter(vin__icontains = filtr_vin)  
+    
+    if filtr_unit_name != '':
+        docs = docs.filter(unit__name__icontains = filtr_unit_name) | docs.filter(unit_dc__name__icontains = filtr_unit_name)
+    
+    status_id = request.GET.get('status_id', '')
+    if status_id != '':
+        status_id = int(status_id)
+        docs = docs.filter(status_estimation_id = status_id)
+
+    if request.GET.get('unit_id', ""):
+        unit_id         = request.GET['unit_id']
+        unit_id         = int(unit_id)
+        docs = docs.filter(unit__id = unit_id) | docs.filter(unit_dc__id = unit_id)
+        staffsSelect = list(RefStaff.objects.filter(units__in = [RefUnit.objects.get(id = unit_id)]).order_by('name'))
+    else:
+        if 'unit_id' in request.COOKIES:
+            unit_id = request.COOKIES.get('unit_id')
+            if len(unit_id) > 0:
+                unit_id = int(unit_id)
+                docs = docs.filter(rlk__unit = RefUnit.objects.get(id = unit_id))
+                staffsSelect = list(RefStaff.objects.filter(unit = RefUnit.objects.get(id = unit_id)).order_by('name'))
+
+    file_name = 'rlks_trade_in' + f'{DT.datetime.now():%Y-%m-%d %H:%M:%S}' + '.xlsx'
+    headers = {
+        'file_name' : file_name
+    }
+
+    response = HttpResponse(content_type='application/ms-excel', headers = headers)
+    response['Content-Disposition'] = 'attachment; filename="' + file_name + '"'
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Прайс лист"
+
+    # Add headers
+    headers = ["Дата", "Номер", "Подразделение ДЦ", "VIN"]
+    ws.append(headers)
+
+    # Add data from the model
+    dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'vin')
+    for doc_val in dosc_val:
+        unit__name = doc_val['unit__name']
+        if unit__name == None:
+            unit__name = doc_val['unit_dc__name'] 
+        ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, doc_val['vin']])
+    wb.save(response)
+    return response
 
 
 def rlk_trade_in(request, id):
@@ -7821,11 +8000,14 @@ def customer_est(request, slug):
 
 def test(request):
     
-    from background_task.models import Task
-    task = Task.objects.all()
-    for ts in task:
-        ts.locked_by = ''
-        ts.save()
+    from task_manager.views import refresh_chat_data
+    refresh_chat_data()
+    
+    # from background_task.models import Task
+    # task = Task.objects.all()
+    # for ts in task:
+    #     ts.locked_by = ''
+    #     ts.save()
 
     #refresh_avtoteka_vin()
 
