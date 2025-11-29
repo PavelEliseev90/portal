@@ -1364,25 +1364,52 @@
 
   .settings-diagnostic-panel .table tbody tr {
     display: block;
-    margin-bottom: 1rem;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    border-radius: 0.75rem;
-    padding: 0.75rem;
+    margin-bottom: 1.25rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
   }
 
   .settings-diagnostic-panel .table tbody td {
-    display: block;
-    padding: 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
     border: none;
     text-align: left;
   }
 
   .settings-diagnostic-panel .table tbody td:first-child {
     font-weight: 600;
+    font-size: 1rem;
     color: #002a5a;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  }
+
+  .settings-diagnostic-panel .table tbody td:not(:first-child) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .settings-diagnostic-panel .table tbody td:not(:first-child):before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
     margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+  }
+
+  .settings-diagnostic-panel .table tbody td .form-floating {
+    width: 100%;
+  }
+
+  .settings-diagnostic-panel .table tbody td .form-floating .form-control {
+    width: 100%;
   }
 }
 
@@ -1450,5 +1477,218 @@
   .portal-sidebar {
     padding: 0.75rem;
     border-radius: 1rem;
+  }
+}
+
+/* Мобильная кнопка фильтров */
+.mobile-filter-button {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  padding: 1.25rem;
+  z-index: 1030;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -4px 20px rgba(0, 23, 61, 0.1);
+}
+
+.mobile-filter-button .btn {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Стили для карусели в doc_rlk_tradein */
+.carousel-item.background_images {
+  border-radius: 0.2rem;
+}
+
+.carousel-item.background_images img {
+  object-fit: contain;
+  border-radius: 0.625rem;
+  height: 320px;
+  backdrop-filter: blur(10px);
+}
+
+#carouselExampleIndicatorsMesto {
+  object-fit: cover;
+  border-radius: 0.625rem;
+  max-height: 320px;
+}
+
+/* Стили для галереи задач */
+.gallery-item-task img {
+  object-fit: cover;
+  border-radius: 0.625rem;
+  height: 300px;
+  cursor: pointer;
+}
+
+.gallery-item-task {
+  cursor: pointer;
+}
+
+/* Стили для textarea */
+.form-floating textarea.form-control {
+  min-height: 80px;
+}
+
+/* Кликабельные панели */
+.portal-panel[data-bs-toggle] {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.portal-panel[data-bs-toggle]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+}
+
+/* Стили для lo_v3.html */
+.mobile-nav-select {
+  margin-top: 3.2rem;
+  z-index: 1;
+}
+
+.mobile-nav-spacer {
+  padding-top: 3.5rem;
+}
+
+.mobile-status-field {
+  padding-bottom: 0.5rem;
+}
+
+.portal-sidebar#position-sticky {
+  padding-top: 3.5rem;
+  z-index: 10;
+}
+
+/* Мобильные карточки для таблиц */
+@media (max-width: 768px) {
+  /* Общие стили для всех таблиц в portal-panel */
+  .portal-panel .table thead {
+    display: none;
+  }
+
+  .portal-panel .table tbody tr {
+    display: block;
+    margin-bottom: 1.25rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+  }
+
+  .portal-panel .table tbody td {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
+    border: none;
+    text-align: left;
+  }
+
+  .portal-panel .table tbody td:first-child {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #002a5a;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  }
+
+  .portal-panel .table tbody td:not(:first-child):before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #6c7a92;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+  }
+
+  /* Стили для таблиц в модальных окнах */
+  .portal-modal .table thead {
+    display: none;
+  }
+
+  .portal-modal .table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 23, 61, 0.05);
+  }
+
+  .portal-modal .table tbody td {
+    display: block;
+    padding: 0.5rem 0;
+    border: none;
+    text-align: left;
+  }
+
+  /* Для двухколоночных таблиц (первая колонка - метка, вторая - значение) */
+  .portal-modal .table tbody td:first-child {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+
+  .portal-modal .table tbody td:last-child {
+    color: #4a5568;
+    padding-left: 0;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .portal-modal .table tbody tr:last-child td:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  /* Для таблиц с data-label (многоколоночные) */
+  .portal-modal .table tbody td[data-label]:not([data-label=""]):before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #6c7a92;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    display: block;
+  }
+
+  /* Стили для таблиц в accordion */
+  .accordion-body .table thead {
+    display: none;
+  }
+
+  .accordion-body .table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 23, 61, 0.05);
+  }
+
+  .accordion-body .table tbody td {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0;
+    border: none;
+    text-align: left;
+  }
+
+  .accordion-body .table tbody td:before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #6c7a92;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
   }
 }
