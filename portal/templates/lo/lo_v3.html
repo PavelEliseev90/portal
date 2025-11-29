@@ -32,10 +32,14 @@
 </div>
 
 <div class="portal-page lo-v3-page">
+  <div class="portal-header">
+    <h2>Интерактивная оценка {% if params.rlk.unit.name == '' %}{{params.rlk.unit_dc.name}}{% else %}{{params.rlk.unit.name}}{% endif %} {{params.rlk.nomer}} от {{params.rlk.dataTime}}</h2>
+  </div>
+
   <div class="row g-1">
 
     <div class="col-2 text-center hidemobile">
-      <div class="sticky-top portal-sidebar" id="position-sticky" style="padding-top: 3.5rem; z-index: 10;">
+      <div class="sticky-top portal-sidebar" id="position-sticky">
 
         <div class="col-sm">
           
@@ -133,7 +137,7 @@
 
     <main class="col">
       
-      <div class="hidesite fixed-top" style="margin-top: 3.2rem; z-index: 1;">
+      <div class="hidesite fixed-top mobile-nav-select">
         <div class="col">
           <select class="form-select" aria-label="" id="select_page">
             <option {% if params.tabindex == 0 or not params.tabindex %} selected {% endif %} value="0">Главная</option>
@@ -181,14 +185,14 @@
        
       </div>
       
-      <div class="hidesite" style="padding-top: 3.5rem;">
+      <div class="hidesite mobile-nav-spacer">
         
         
       </div>
 
       <div class="hidesite">
         
-        <div class="form-floating btn_block"  style="padding-bottom: 0.5rem;">
+        <div class="form-floating btn_block mobile-status-field">
           <input class="form-control form-control-sm  {% if params.estimation.status.id == 1 %} 
               border_gray bg-opacity-10 bg-secondary bg-gradient
             {% elif params.estimation.status.id == 2 or params.estimation.status.id == 9 %} 
@@ -222,7 +226,7 @@
           
           {% if params.tabindex == 0 %}
 
-          <div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+          <div class="modal fade portal-modal" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
@@ -283,13 +287,13 @@
                     <tbody> 
                       {% for event in params.rlk.events %}
                       <tr class="align-middle"> 
-                        <td class="align-middle">{{event.dataTime}}</td>
-                        <td class="align-middle">{{event.dataTimeEvent}}</td>
-                        <td class="align-middle">{{event.contacType}}</td>
-                        <td class="align-middle">{{event.comment}}</td>
-                        <td class="align-middle">{{event.contacType}}</td>
-                        <td class="align-middle">{{event.staff}}</td>
-                        <td class="align-middle">{{event.status}}</td>
+                        <td class="align-middle" data-label="Дата">{{event.dataTime}}</td>
+                        <td class="align-middle" data-label="Дата события">{{event.dataTimeEvent}}</td>
+                        <td class="align-middle" data-label="Тип контакта">{{event.contacType}}</td>
+                        <td class="align-middle" data-label="Комментарий">{{event.comment}}</td>
+                        <td class="align-middle" data-label="Тип">{{event.contacType}}</td>
+                        <td class="align-middle" data-label="Сотрудник">{{event.staff}}</td>
+                        <td class="align-middle" data-label="Статус">{{event.status}}</td>
                       </tr>
                       {% endfor %}
                     </tbody>
