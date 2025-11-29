@@ -1,73 +1,75 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Остатки материалов</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h1 { font-size: 22px; color: #2c3e50; }
-        .filters { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
-        .filters select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        thead { background: #34495e; color: #fff; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        .low { color: #e74c3c; font-weight: 700; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Остатки материалов</h1>
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Остатки материалов {% endblock %}
+{% block title_navbar %} - Остатки материалов {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Остатки материалов</h2>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="portal-panel portal-filter">
+    <form method="get">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="form-floating">
+            <select class="form-select" id="unit_id" name="unit_id" onchange="this.form.submit()">
+              <option value="">Все подразделения</option>
+              {% for unit in units %}
+              <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+              {% endfor %}
+            </select>
+            <label for="unit_id">Подразделение</label>
+          </div>
         </div>
-        <form method="get" class="filters">
-            <div>
-                <label style="font-size:12px; color:#666;">Подразделение</label>
-                <select name="unit_id" onchange="this.form.submit()">
-                    <option value="">Все</option>
-                    {% for unit in units %}
-                    <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label style="font-size:12px; color:#666;">Только ниже минимума</label>
-                <select name="low_stock" onchange="this.form.submit()">
-                    <option value="false" {% if not low_stock %}selected{% endif %}>Нет</option>
-                    <option value="true" {% if low_stock %}selected{% endif %}>Да</option>
-                </select>
-            </div>
-        </form>
-        <table>
-            <thead>
-                <tr>
-                    <th>Материал</th>
-                    <th>Подразделение</th>
-                    <th>Остаток</th>
-                    <th>Мин</th>
-                    <th>Макс</th>
-                    <th>Обновлено</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in stock %}
-                <tr>
-                    <td>{{ s.material.name }}</td>
-                    <td>{{ s.unit.name|default:'-' }}</td>
-                    <td class="{% if s.qty_on_hand < s.min_qty %}low{% endif %}">{{ s.qty_on_hand }}</td>
-                    <td>{{ s.min_qty }}</td>
-                    <td>{{ s.max_qty }}</td>
-                    <td>{{ s.date_updated|date:"d.m.Y H:i" }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" style="text-align:center; color:#666; padding:20px;">Нет данных</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="col-md-6">
+          <div class="form-floating">
+            <select class="form-select" id="low_stock" name="low_stock" onchange="this.form.submit()">
+              <option value="false" {% if not low_stock %}selected{% endif %}>Нет</option>
+              <option value="true" {% if low_stock %}selected{% endif %}>Да</option>
+            </select>
+            <label for="low_stock">Только ниже минимума</label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Таблица -->
+  <div class="portal-panel">
+    <div class="table-responsive table-sticky">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Материал</th>
+            <th>Подразделение</th>
+            <th>Остаток</th>
+            <th>Мин</th>
+            <th>Макс</th>
+            <th>Обновлено</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in stock %}
+          <tr>
+            <td data-label="Материал">{{ s.material.name }}</td>
+            <td data-label="Подразделение">{{ s.unit.name|default:'-' }}</td>
+            <td data-label="Остаток" class="{% if s.qty_on_hand < s.min_qty %}text-danger fw-bold{% endif %}">{{ s.qty_on_hand }}</td>
+            <td data-label="Мин">{{ s.min_qty }}</td>
+            <td data-label="Макс">{{ s.max_qty }}</td>
+            <td data-label="Обновлено">{{ s.date_updated|date:"d.m.Y H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">Нет данных</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-</body>
-</html>
-
-
+  </div>
+</div>
+{% endblock %}

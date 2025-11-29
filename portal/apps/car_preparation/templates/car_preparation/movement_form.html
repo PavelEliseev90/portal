@@ -1,67 +1,79 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}        
-        h1 { font-size: 22px; color: #2c3e50; margin-bottom: 15px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        label { font-size: 12px; color: #666; }
-        input[type="text"], input[type="number"], input[type="datetime-local"], select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; }
-        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .btn-primary { background: #27ae60; color: #fff; }
-        .btn-secondary { background: #95a5a6; color: #fff; }
-        .error { color: #c0392b; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{{ title }}</h1>
-        {% if error %}<div class="error">{{ error }}</div>{% endif %}
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Дата</label>
-                    {{ form.date }}
-                </div>
-                <div class="form-group">
-                    <label>Подразделение</label>
-                    {{ form.unit }}
-                </div>
-                <div class="form-group">
-                    <label>Материал</label>
-                    {{ form.material }}
-                </div>
-                <div class="form-group">
-                    <label>Количество</label>
-                    {{ form.qty }}
-                </div>
-                <div class="form-group">
-                    <label>Тип движения</label>
-                    {{ form.movement_type }}
-                </div>
-                <div class="form-group">
-                    <label>Работа</label>
-                    {{ form.work_item }}
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Комментарий</label>
-                    {{ form.comment }}
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-                <a href="{% url 'car_preparation:movements_list' %}" class="btn btn-secondary">Отмена</a>
-            </div>
-        </form>
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {{ title }} {% endblock %}
+{% block title_navbar %} - {{ title }} {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>{{ title }}</h2>
+  </div>
+
+  <div class="portal-panel">
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
     </div>
-</body>
-</html>
+    {% endif %}
 
-
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="form-floating">
+            {{ form.date }}
+            <label>Дата</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-floating">
+            {{ form.unit }}
+            <label>Подразделение</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-floating">
+            {{ form.material }}
+            <label>Материал</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-floating">
+            {{ form.qty }}
+            <label>Количество</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-floating">
+            {{ form.movement_type }}
+            <label>Тип движения</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-floating">
+            {{ form.work_item }}
+            <label>Работа</label>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="form-floating">
+            {{ form.comment }}
+            <label>Комментарий</label>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-outline-success">
+              <span class="icon-mbri-save"></span> Сохранить
+            </button>
+            <a href="{% url 'car_preparation:movements_list' %}" class="btn btn-outline-secondary">
+              <span class="icon-mbri-left"></span> Отмена
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
