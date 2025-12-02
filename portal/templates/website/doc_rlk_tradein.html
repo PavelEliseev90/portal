@@ -38,22 +38,17 @@
 
 <div class="portal-page">
   <div class="portal-header">
-    <h2>Рабочий лист № {{params.object.nomer}} от {{params.object.dataTime}}</h2>
+    <h2>Рабочий лист </h2>
+	<p>№ {{params.object.nomer}} от {{params.object.dataTime}}</p>
   </div>
 
 <div class="row">
 
 	<div class="col-sm-6">
+		
 		<div class="portal-panel">
-			<h5 class="mb-3"><span class="icon-mbri-edit2"></span> Рабочий лист</h5>
 			
-			<div class="row g-3">
-				<div class="col-12">
-					<div class="form-floating">
-						<input type="text" class="form-control" value="{{params.object.nomer}} от {{params.object.dataTime}}" readonly>
-						<label>Номер дата</label>
-					</div>
-				</div>
+			<div class="row g-1">
 				
 				<div class="col-12">
 					<div class="form-floating">
@@ -97,8 +92,183 @@
 					</div>
 				</div>
 			</div>
+
 		</div>
 		
+		<div class="portal-panel">
+				<div class="accordion accordion-flush" id="accordionFlushExample">
+		
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="flush-headingOne">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+							События  - {{params.object.events|length}}
+						</button>
+						</h2>
+						<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+							<div class="accordion-body">
+								<div class="table-responsive-sm">
+									<table class="table table-sm table-striped table-hover">
+										<tbody> 
+											{% for event in params.object.events %}
+												<tr class="align-middle"> 
+													<td class="align-middle" data-label="Дата">{{event.dataTime}}</td>
+													<td class="align-middle" data-label="Дата события">{{event.dataTimeEvent}}</td>
+													<td class="align-middle" data-label="Тип контакта">{{event.contacType}}</td>
+													<td class="align-middle" data-label="Комментарий">{{event.comment}}</td>
+													<td class="align-middle" data-label="Тип">{{event.contacType}}</td>
+													<td class="align-middle" data-label="Сотрудник">{{event.staff}}</td>
+													<td class="align-middle" data-label="Статус">{{event.status}}</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+			
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="flush-headingTwo">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+							Контроль качества
+						</button>
+						</h2>
+						<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+						<div class="accordion-body">
+							<div class="row g-1">
+								
+								
+								{% if params.object.get_check != None %}
+									<div class="col-md-6">
+										<div class="portal-panel text-center">
+											<figure class="highcharts-figure">
+												<div id="container-check" class="chart-container"></div>
+											</figure>
+											<div class="mt-3">
+												{% if params.object.unit.buauto %}						
+													<a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.object.id}}" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
+												{% else %}
+													<a href="/checklists/glav/op/doc/?checkid={{params.object.id}}" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
+												{% endif %}
+											</div>
+										</div>
+										
+										<script>
+			
+											var gaugeOptions = {
+											chart: {
+												type: 'solidgauge'
+											},
+											
+											title: null,
+											
+											pane: {
+												center: ['50%', '85%'],
+												size: '140%',
+												startAngle: -90,
+												endAngle: 90,
+												background: {
+													backgroundColor:
+														Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+													innerRadius: '60%',
+													outerRadius: '100%',
+													shape: 'arc'
+												}
+											},
+											
+											exporting: {
+												enabled: false
+											},
+											
+											tooltip: {
+												enabled: false
+											},
+											
+											// the value axis
+											yAxis: {
+												stops: [
+													[0.3, '#DF5353'], // green
+													[0.5, '#DDDF0D'], // yellow
+													[0.7, '#55BF3B'] // red
+												],
+												lineWidth: 0,
+												tickWidth: 0,
+												minorTickInterval: null,
+												tickAmount: 2,
+												title: {
+													y: -70
+												},
+												labels: {
+													y: 16
+												}
+											},
+											
+											plotOptions: {
+												solidgauge: {
+													dataLabels: {
+														y: 5,
+														borderWidth: 0,
+														useHTML: true
+													}
+												}
+											}
+											};
+											
+											// The speed gauge
+											var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
+											yAxis: {
+												min: 0,
+												max: 100,
+												title: {
+													text: 'Выполнение чек листа'
+												}
+											},
+											
+											credits: {
+												enabled: false
+											},
+											
+											series: [{
+												name: 'CVC',
+												data: [{{params.object.get_check.result}}],
+												dataLabels: {
+													format:
+														'<div style="text-align:center">' +
+														'<span style="font-size:25px">{y}</span><br/>' +
+														'<span style="font-size:12px;opacity:0.4">%</span>' +
+														'</div>'
+												}
+											}]
+											
+											}));
+											
+											
+										</script>
+			
+									</div>
+								{% endif %}
+			
+								{% if params.object.get_opros != None %}
+									<div class="col-md-6">
+										<div class="portal-panel text-center">
+											<figure class="highcharts-figure">
+												<div id="container-sms" class="chart-container"></div>
+											</figure>
+											<div class="mt-3">
+												<a href="/sms_opros_op/{{params.object.get_opros.id}}/" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
+											</div>
+										</div>
+									</div>
+								{% endif %}
+			
+							</div>
+						</div>
+						</div>
+					</div>
+					</div>
+		</div>
+
 		{% if request.user.profiles.eco or request.user.profiles.korsavto_settings %}
 			{% if params.object.signal_seller != None %}
 			<div class="portal-panel mt-3">
@@ -396,177 +566,7 @@
 
   <div class="col-12 mt-3">
 	<div class="portal-panel">
-		<div class="accordion accordion-flush" id="accordionFlushExample">
-	
-		<div class="accordion-item">
-			<h2 class="accordion-header" id="flush-headingOne">
-			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
-				События  - {{params.object.events|length}}
-			</button>
-			</h2>
-			<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-				<div class="accordion-body">
-					<div class="table-responsive-sm">
-						<table class="table table-sm table-striped table-hover">
-							<tbody> 
-								{% for event in params.object.events %}
-									<tr class="align-middle"> 
-										<td class="align-middle" data-label="Дата">{{event.dataTime}}</td>
-										<td class="align-middle" data-label="Дата события">{{event.dataTimeEvent}}</td>
-										<td class="align-middle" data-label="Тип контакта">{{event.contacType}}</td>
-										<td class="align-middle" data-label="Комментарий">{{event.comment}}</td>
-										<td class="align-middle" data-label="Тип">{{event.contacType}}</td>
-										<td class="align-middle" data-label="Сотрудник">{{event.staff}}</td>
-										<td class="align-middle" data-label="Статус">{{event.status}}</td>
-									</tr>
-								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
 		
-
-		<div class="accordion-item">
-			<h2 class="accordion-header" id="flush-headingTwo">
-			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
-				Контроль качества
-			</button>
-			</h2>
-			<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
-			<div class="accordion-body">
-				<div class="row g-1">
-					
-					
-					{% if params.object.get_check != None %}
-						<div class="col-md-6">
-							<div class="portal-panel text-center">
-								<figure class="highcharts-figure">
-									<div id="container-check" class="chart-container"></div>
-								</figure>
-								<div class="mt-3">
-									{% if params.object.unit.buauto %}						
-										<a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.object.id}}" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
-									{% else %}
-										<a href="/checklists/glav/op/doc/?checkid={{params.object.id}}" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
-									{% endif %}
-								</div>
-							</div>
-							
-							<script>
-
-								var gaugeOptions = {
-								chart: {
-									type: 'solidgauge'
-								},
-								
-								title: null,
-								
-								pane: {
-									center: ['50%', '85%'],
-									size: '140%',
-									startAngle: -90,
-									endAngle: 90,
-									background: {
-										backgroundColor:
-											Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-										innerRadius: '60%',
-										outerRadius: '100%',
-										shape: 'arc'
-									}
-								},
-								
-								exporting: {
-									enabled: false
-								},
-								
-								tooltip: {
-									enabled: false
-								},
-								
-								// the value axis
-								yAxis: {
-									stops: [
-										[0.3, '#DF5353'], // green
-										[0.5, '#DDDF0D'], // yellow
-										[0.7, '#55BF3B'] // red
-									],
-									lineWidth: 0,
-									tickWidth: 0,
-									minorTickInterval: null,
-									tickAmount: 2,
-									title: {
-										y: -70
-									},
-									labels: {
-										y: 16
-									}
-								},
-								
-								plotOptions: {
-									solidgauge: {
-										dataLabels: {
-											y: 5,
-											borderWidth: 0,
-											useHTML: true
-										}
-									}
-								}
-								};
-								
-								// The speed gauge
-								var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
-								yAxis: {
-									min: 0,
-									max: 100,
-									title: {
-										text: 'Выполнение чек листа'
-									}
-								},
-								
-								credits: {
-									enabled: false
-								},
-								
-								series: [{
-									name: 'CVC',
-									data: [{{params.object.get_check.result}}],
-									dataLabels: {
-										format:
-											'<div style="text-align:center">' +
-											'<span style="font-size:25px">{y}</span><br/>' +
-											'<span style="font-size:12px;opacity:0.4">%</span>' +
-											'</div>'
-									}
-								}]
-								
-								}));
-								
-								
-							</script>
-
-						</div>
-					{% endif %}
-
-					{% if params.object.get_opros != None %}
-						<div class="col-md-6">
-							<div class="portal-panel text-center">
-								<figure class="highcharts-figure">
-									<div id="container-sms" class="chart-container"></div>
-								</figure>
-								<div class="mt-3">
-									<a href="/sms_opros_op/{{params.object.get_opros.id}}/" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
-								</div>
-							</div>
-						</div>
-					{% endif %}
-
-				</div>
-			</div>
-			</div>
-		</div>
-		</div>
 	</div>
 </div>
 </div>

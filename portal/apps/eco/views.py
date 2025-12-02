@@ -1314,8 +1314,12 @@ def doc(request, id):
     balance                 = None
     balance_unit            = None
     expenses                = list()
-
+    
+    body            = body_estimation(estimation=estimation)
+    salon           = salon_estimation(estimation=estimation)
+    
     car_sales = DocCarShipment.objects.filter(cars__vin = estimation.vin).filter(active = True).filter(dataTime__lte = estimation.start_estimation)
+    
     for car_sale in car_sales:
         if car_sale.dataTime > estimation.start_estimation - DT.timedelta(days = 30):
             info_warning = {
@@ -1464,8 +1468,6 @@ def doc(request, id):
             price           = estimations_price_calculation(estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
             price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
-            body            = body_estimation(estimation=estimation)
-            salon           = salon_estimation(estimation=estimation)
             
             if page == 20:
                 
@@ -1567,7 +1569,7 @@ def doc(request, id):
                             'estimations_info'      : estimation_history,
                             'user'                  : user,
                         }
-            return render(request, 'lo/lo.html', {'params': params})  
+             
         if page == 8:
             estimation_history = estimation_lo_history(estimation) 
         if page == 14:
@@ -1606,9 +1608,9 @@ def doc(request, id):
                 estimation.staff_eco_2 = request.user
                 estimation.save()   
 
-            list_work_podgotovka    = RegEstimationPodgotovka.objects.filter(estimation = estimation)
-            list_work_ss            = RegEstimationSS.objects.filter(estimation = estimation)
-            list_work_mcu           = RegEstimationMCU.objects.filter(estimation = estimation)
+        list_work_podgotovka    = RegEstimationPodgotovka.objects.filter(estimation = estimation)
+        list_work_ss            = RegEstimationSS.objects.filter(estimation = estimation)
+        list_work_mcu           = RegEstimationMCU.objects.filter(estimation = estimation)
 
         params = {
                 
@@ -2228,6 +2230,7 @@ def list_expenses(estimation):
             }
             list_info.append(item)
     return list_info
+
 
 def body_estimation(estimation):
     
