@@ -137,6 +137,36 @@
   z-index: 1;
 }
 
+/* Стили для таблиц на ПК */
+.panel .table,
+.portal-panel .table {
+  margin-bottom: 0;
+}
+
+.panel .table thead th,
+.portal-panel .table thead th {
+  background-color: #f8f9fc;
+  color: #002a5a;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  padding: 0.75rem 1rem;
+}
+
+.panel .table tbody td,
+.portal-panel .table tbody td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+}
+
+.panel .table tbody tr:hover,
+.portal-panel .table tbody tr:hover {
+  background-color: #f8f9fc;
+}
+
 .cost-table th, .cost-table td {
   font-size: 0.9rem;
   vertical-align: middle;
@@ -740,50 +770,52 @@
   margin-bottom: 0;
 }
 
-/* Мобильные таблицы */
-.table-mobile-cards {
-  border: none;
-}
+/* Мобильные таблицы - только на мобильных устройствах */
+@media (max-width: 768px) {
+  .table-mobile-cards {
+    border: none;
+  }
 
-.table-mobile-cards thead {
-  display: none;
-}
+  .table-mobile-cards thead {
+    display: none;
+  }
 
-.table-mobile-cards tbody tr {
-  display: block;
-  margin-bottom: 1rem;
-  background: #fff;
-  border: 1px solid rgba(0, 42, 90, 0.08);
-  border-radius: 1rem;
-  padding: 0.75rem 1rem;
-  box-shadow: 0 15px 32px rgba(0, 23, 61, 0.08);
-}
+  .table-mobile-cards tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 15px 32px rgba(0, 23, 61, 0.08);
+  }
 
-.table-mobile-cards tbody td {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 0;
-  border: none;
-}
+  .table-mobile-cards tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border: none;
+  }
 
-.table-mobile-cards tbody td:first-child {
-  display: block;
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(0, 42, 90, 0.1);
-}
+  .table-mobile-cards tbody td:first-child {
+    display: block;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+  }
 
-.table-mobile-cards tbody td:before {
-  content: attr(data-label);
-  font-weight: 600;
-  color: #6c7a92;
-  margin-right: 0.75rem;
-  text-align: left;
-}
+  .table-mobile-cards tbody td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6c7a92;
+    margin-right: 0.75rem;
+    text-align: left;
+  }
 
-.table-mobile-cards tbody td:first-child:before {
-  content: '';
+  .table-mobile-cards tbody td:first-child:before {
+    content: '';
+  }
 }
 
 /* Адаптивность для планшетов */
