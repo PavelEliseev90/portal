@@ -4567,10 +4567,8 @@ def rlks_trade_in(request):
         else:
             month_end	= date_period.month + 1
             year_end 	= date_period.year
-        date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)
-    
-    else:
-    
+        date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)    
+    else:    
         dates = date.split('-')
         if len(dates) == 3:
             year 	        = int(dates[0])
@@ -4586,6 +4584,13 @@ def rlks_trade_in(request):
                 year_end 	= year
             date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)			
     
+    date_start_lo   = request.GET.get('date_start_lo', '')
+    date_end_lo     = request.GET.get('date_end_lo', '')
+    if date_start_lo != '':
+        date_start_lo    = DT.datetime.strptime(date_start_lo, '%Y-%m-%d')
+    if date_end_lo != '':
+        date_end_lo     = DT.datetime.strptime(date_end_lo, '%Y-%m-%d')
+    
     countList = 15
 
     staffKKID   = ""
@@ -4600,7 +4605,11 @@ def rlks_trade_in(request):
     staffsSelect    = ""
     
     #docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).filter(staff__domain_login = request.user.username ).order_by('-dataTime')
-    docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+    if date_start_lo == '':
+        docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+    else:
+        docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
+    
     subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     
@@ -4620,12 +4629,22 @@ def rlks_trade_in(request):
         year    = Subquery(subquery.values('year')[:1])).annotate(
         vin     = Subquery(subquery.values('vin')[:1])).annotate(
         lo_pk   = Subquery(subquery.values('id')[:1])).annotate(
-        lo_   = Subquery(subquery_lo.values('id')[:1]))
+        lo_date_time   = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
+        lo_nomer   = Subquery(subquery_lo.values('nomer')[:1])).annotate(
+        lo_active   = Subquery(subquery_lo.values('active')[:1]))
 
     filtr_number_doc    = request.GET.get('number_doc', '')
     filtr_vin           = request.GET.get('vin', '')
+    
+    if date_start_lo != '':
+        docs = docs.filter(lo_date_time__gte = date_start_lo).filter(lo_active = True)
+    
+    if date_end_lo != '':
+        docs = docs.filter(lo_date_time__lte = date_end_lo).filter(lo_active = True)
+
     if filtr_number_doc != '':
         docs = docs.filter(nomer__icontains = filtr_number_doc)    
+    
     if type_receptions_id != '':
         type_receptions_id = int(type_receptions_id)
         docs = docs.filter(type_estimation_ocenka_id = type_receptions_id)    
@@ -4666,6 +4685,8 @@ def rlks_trade_in(request):
         'date_start'        : date_start,
         'type_receptions_id': type_receptions_id, 
         'date_end'          : date_end,
+        'date_start_lo'     : date_start_lo,
+        'date_end_lo'       : date_end_lo,
         'status_id'         : status_id,
         'unit_name'         : filtr_unit_name,
         'vin'               : filtr_vin
@@ -4734,10 +4755,8 @@ def rlks_trade_in_export(request):
         else:
             month_end	= date_period.month + 1
             year_end 	= date_period.year
-        date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)
-    
-    else:
-    
+        date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)    
+    else:    
         dates = date.split('-')
         if len(dates) == 3:
             year 	        = int(dates[0])
@@ -4753,6 +4772,13 @@ def rlks_trade_in_export(request):
                 year_end 	= year
             date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)			
     
+    date_start_lo   = request.GET.get('date_start_lo', '')
+    date_end_lo     = request.GET.get('date_end_lo', '')
+    if date_start_lo != '':
+        date_start_lo    = DT.datetime.strptime(date_start_lo, '%Y-%m-%d')
+    if date_end_lo != '':
+        date_end_lo     = DT.datetime.strptime(date_end_lo, '%Y-%m-%d')
+    
     countList = 15
 
     staffKKID   = ""
@@ -4767,8 +4793,14 @@ def rlks_trade_in_export(request):
     staffsSelect    = ""
     
     #docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).filter(staff__domain_login = request.user.username ).order_by('-dataTime')
-    docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
-    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    if date_start_lo == '':
+        docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+    else:
+        docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
+    
+    subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
+    
     docs        = docs.annotate(
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
@@ -4782,14 +4814,25 @@ def rlks_trade_in_export(request):
         modification = Subquery(subquery.values('modification__name')[:1])).annotate(
         type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
         type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year = Subquery(subquery.values('year')[:1])).annotate(
-        vin = Subquery(subquery.values('vin')[:1])).annotate(
-        lo_pk = Subquery(subquery.values('id')[:1]))
+        year    = Subquery(subquery.values('year')[:1])).annotate(
+        vin     = Subquery(subquery.values('vin')[:1])).annotate(
+        lo_pk   = Subquery(subquery.values('id')[:1])).annotate(
+        lo_date_time   = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
+        lo_nomer   = Subquery(subquery_lo.values('nomer')[:1])).annotate(
+        lo_active   = Subquery(subquery_lo.values('active')[:1]))
 
     filtr_number_doc    = request.GET.get('number_doc', '')
     filtr_vin           = request.GET.get('vin', '')
+    
+    if date_start_lo != '':
+        docs = docs.filter(lo_date_time__gte = date_start_lo).filter(lo_active = True)
+    
+    if date_end_lo != '':
+        docs = docs.filter(lo_date_time__lte = date_end_lo).filter(lo_active = True)
+
     if filtr_number_doc != '':
         docs = docs.filter(nomer__icontains = filtr_number_doc)    
+    
     if type_receptions_id != '':
         type_receptions_id = int(type_receptions_id)
         docs = docs.filter(type_estimation_ocenka_id = type_receptions_id)    
@@ -4831,11 +4874,11 @@ def rlks_trade_in_export(request):
     ws.title = "Прайс лист"
 
     # Add headers
-    headers = ["Дата", "Номер", "Подразделение ДЦ", "Источник", "VIN"]
+    headers = ["Дата", "Номер", "Подразделение ДЦ", "Источник", "VIN", 'Дата принятия', 'Номер листа оценки']
     ws.append(headers)
 
     # Add data from the model
-    dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'unit_name', 'vin')
+    dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'unit_name', 'vin', 'lo_date_time', 'lo_nomer')
     for doc_val in dosc_val:
         unit_in = ''
         if doc_val != doc_val['unit_dc__name']:
@@ -4848,7 +4891,7 @@ def rlks_trade_in_export(request):
         unit__name = doc_val['unit__name']
         if unit__name == None:
             unit__name = doc_val['unit_dc__name'] 
-        ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, init_in, doc_val['vin']])
+        ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, init_in, doc_val['vin'], doc_val['lo_date_time'], doc_val['lo_nomer']])
     wb.save(response)
     return response
 

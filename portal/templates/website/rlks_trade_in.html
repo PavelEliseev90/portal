@@ -315,6 +315,20 @@
           </div>
         </div>
 
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input class="form-control" type="date" id="date_start_lo" name="date_start_lo" value="{{params.filtr.date_start_lo|date:"Y-m-d"}}">
+            <label for="date_start">Дата начала ЛО</label>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input class="form-control" type="date" id="date_end_lo" name="date_end_lo" value="{{params.filtr.date_end_lo|date:"Y-m-d"}}">
+            <label for="date_end">Дата окончания ЛО</label>
+          </div>
+        </div>
+
         <div class="col-md-12">
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <button class="btn btn-outline-success" type="submit"><span class="icon-mbri-play"></span> Применить</button>
@@ -351,6 +365,7 @@
               <th>Клиент</th>
               <th>Комментарий админа</th>
               <th>Комментарий менеджера</th>
+              <th>Принят</th>
             </tr>
           </thead>
           <tbody>
@@ -395,6 +410,8 @@
               </td>
               <td data-label="Комментарий админа">{{object.commentAdministrator}}</td>
               <td data-label="Комментарий менеджера">{{object.commentManager}}</td>
+
+              <td data-label="Комментарий менеджера">{{object.lo_date_time}}</td>
             </tr>
             {% endfor %}
           </tbody>
