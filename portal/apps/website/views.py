@@ -4590,6 +4590,7 @@ def rlks_trade_in(request):
         date_start_lo    = DT.datetime.strptime(date_start_lo, '%Y-%m-%d')
     if date_end_lo != '':
         date_end_lo     = DT.datetime.strptime(date_end_lo, '%Y-%m-%d')
+        date_end_lo     = date_end_lo.replace(hour = 23, minute=59, second=59)
     
     countList = 15
 
@@ -4778,6 +4779,7 @@ def rlks_trade_in_export(request):
         date_start_lo    = DT.datetime.strptime(date_start_lo, '%Y-%m-%d')
     if date_end_lo != '':
         date_end_lo     = DT.datetime.strptime(date_end_lo, '%Y-%m-%d')
+        date_end_lo     = date_end_lo.replace(hour = 23, minute=59, second=59)
     
     countList = 15
 
