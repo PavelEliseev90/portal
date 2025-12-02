@@ -4600,8 +4600,10 @@ def rlks_trade_in(request):
     staffsSelect    = ""
     
     #docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).filter(staff__domain_login = request.user.username ).order_by('-dataTime')
-    docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
-    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+    subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
+    
     docs        = docs.annotate(
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
@@ -4615,9 +4617,10 @@ def rlks_trade_in(request):
         modification = Subquery(subquery.values('modification__name')[:1])).annotate(
         type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
         type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year = Subquery(subquery.values('year')[:1])).annotate(
-        vin = Subquery(subquery.values('vin')[:1])).annotate(
-        lo_pk = Subquery(subquery.values('id')[:1]))
+        year    = Subquery(subquery.values('year')[:1])).annotate(
+        vin     = Subquery(subquery.values('vin')[:1])).annotate(
+        lo_pk   = Subquery(subquery.values('id')[:1])).annotate(
+        lo_   = Subquery(subquery_lo.values('id')[:1]))
 
     filtr_number_doc    = request.GET.get('number_doc', '')
     filtr_vin           = request.GET.get('vin', '')
