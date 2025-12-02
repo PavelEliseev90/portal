@@ -4651,31 +4651,6 @@ def rlks_trade_in(request):
                 docs = docs.filter(rlk__unit = RefUnit.objects.get(id = unit_id))
                 staffsSelect = list(RefStaff.objects.filter(unit = RefUnit.objects.get(id = unit_id)).order_by('name'))
 
-    if 'save' in request.GET:
-        file_name = 'rlks_trade_in' + f'{DT.datetime.now():%Y-%m-%d %H:%M:%S}' + '.xlsx'
-        headers = {
-            'file_name' : file_name
-        }
-
-        response = HttpResponse(content_type='application/ms-excel', headers = headers)
-        response['Content-Disposition'] = 'attachment; filename="' + file_name + '"'
-        
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Прайс лист"
-
-        # Add headers
-        headers = ["Дата", "Номер", "Подразделение ДЦ", "VIN"]
-        ws.append(headers)
-
-        # Add data from the model
-        dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'vin')
-        for doc_val in dosc_val:
-            unit__name = ''
-            ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, doc_val['vin']])
-        wb.save(response)
-        return response
-
     paginator   = Paginator(docs, countList)	
     page_number = request.GET.get('page', 1)
     page_obj    = paginator.get_page(page_number)
@@ -4707,7 +4682,8 @@ def rlks_trade_in(request):
         'filtr_count'   : len(filtr),
         'objects'       : page_obj,
         'filters_user'  : filters_user,
-        'selected'      : selected
+        'selected'      : selected,
+        'puth'          : request.get_full_path().replace('rlks_trade_in', 'rlks_trade_in/export')
     }
     return render(request, 'website/rlks_trade_in.html', {'params':params}) 
 
@@ -4852,16 +4828,24 @@ def rlks_trade_in_export(request):
     ws.title = "Прайс лист"
 
     # Add headers
-    headers = ["Дата", "Номер", "Подразделение ДЦ", "VIN"]
+    headers = ["Дата", "Номер", "Подразделение ДЦ", "Источник", "VIN"]
     ws.append(headers)
 
     # Add data from the model
-    dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'vin')
+    dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'unit_name', 'vin')
     for doc_val in dosc_val:
+        unit_in = ''
+        if doc_val != doc_val['unit_dc__name']:
+            init_in = doc_val['unit_dc__name']
+        elif doc_val != doc_val['unit__name']:
+            init_in = doc_val['unit__name']
+        else:
+            init_in = doc_val['unit__name']
+
         unit__name = doc_val['unit__name']
         if unit__name == None:
             unit__name = doc_val['unit_dc__name'] 
-        ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, doc_val['vin']])
+        ws.append([doc_val['dataTime'], doc_val['nomer'], unit__name, init_in, doc_val['vin']])
     wb.save(response)
     return response
 
