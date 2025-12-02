@@ -18634,6 +18634,10 @@
     cursor: grab;
   }
 
+  .modern-gallery-fullscreen-content.zoomed {
+    padding: 20px;
+  }
+
   .modern-gallery-fullscreen-content:active {
     cursor: grabbing;
   }
@@ -18967,6 +18971,63 @@
     function applyFullscreenTransform(state) {
       if (!fullscreenImage) return;
       applyImageTransform(fullscreenImage, state);
+      
+      // Добавляем класс zoomed при зуме > 1 для уменьшения padding
+      const content = fullscreen ? fullscreen.querySelector('.modern-gallery-fullscreen-content') : null;
+      if (content) {
+        if (state.zoom > 1) {
+          content.classList.add('zoomed');
+        } else {
+          content.classList.remove('zoomed');
+        }
+      }
+    }
+    
+    function calculateMaxMove(state) {
+      if (!fullscreenImage || !fullscreen || state.zoom <= 1) {
+        return { maxX: 0, maxY: 0 };
+      }
+      
+      const content = fullscreen.querySelector('.modern-gallery-fullscreen-content');
+      if (!content) return { maxX: 0, maxY: 0 };
+      
+      // Получаем естественные размеры изображения или используем текущие размеры
+      const img = fullscreenImage;
+      const imgWidth = img.naturalWidth || img.offsetWidth || img.width;
+      const imgHeight = img.naturalHeight || img.offsetHeight || img.height;
+      
+      // Получаем размеры контейнера
+      const contentRect = content.getBoundingClientRect();
+      const containerWidth = contentRect.width;
+      const containerHeight = contentRect.height;
+      
+      // Рассчитываем исходные размеры изображения в контейнере (до зума)
+      // Изображение масштабируется с сохранением пропорций (object-fit: contain)
+      const imgAspect = imgWidth / imgHeight;
+      const containerAspect = containerWidth / containerHeight;
+      
+      let baseWidth, baseHeight;
+      if (imgAspect > containerAspect) {
+        // Изображение шире контейнера
+        baseWidth = containerWidth;
+        baseHeight = containerWidth / imgAspect;
+      } else {
+        // Изображение выше контейнера
+        baseHeight = containerHeight;
+        baseWidth = containerHeight * imgAspect;
+      }
+      
+      // Размеры изображения с учетом зума
+      const scaledWidth = baseWidth * state.zoom;
+      const scaledHeight = baseHeight * state.zoom;
+      
+      // Рассчитываем максимальное перемещение так, чтобы можно было увидеть все края
+      // Добавляем отступ 100px с каждой стороны для удобства просмотра краев
+      const padding = 100;
+      const maxX = Math.max(0, (scaledWidth - containerWidth) / 2 + padding);
+      const maxY = Math.max(0, (scaledHeight - containerHeight) / 2 + padding);
+      
+      return { maxX, maxY };
     }
     
     function getCurrentImage() {
@@ -19103,6 +19164,14 @@
       const newZoom = state.zoom + 0.2;
       if (newZoom <= 3) {
         state.zoom = newZoom;
+        
+        // Корректируем позицию, если она выходит за новые границы
+        if (state.zoom > 1) {
+          const { maxX, maxY } = calculateMaxMove(state);
+          state.x = Math.max(-maxX, Math.min(maxX, state.x));
+          state.y = Math.max(-maxY, Math.min(maxY, state.y));
+        }
+        
         applyFullscreenTransform(state);
         updateSlider();
       }
@@ -19120,6 +19189,11 @@
         if (state.zoom <= 1) {
           state.x = 0;
           state.y = 0;
+        } else {
+          // Корректируем позицию, если она выходит за новые границы
+          const { maxX, maxY } = calculateMaxMove(state);
+          state.x = Math.max(-maxX, Math.min(maxX, state.x));
+          state.y = Math.max(-maxY, Math.min(maxY, state.y));
         }
         
         applyFullscreenTransform(state);
@@ -19146,29 +19220,34 @@
     let dragStartImageX = 0;
     let dragStartImageY = 0;
     
-    // Обработчик зума колесиком мыши
-    if (fullscreen && fullscreenImage) {
-      fullscreen.addEventListener('wheel', (e) => {
-        if (!fullscreen.classList.contains('active')) return;
-        
-        e.preventDefault();
-        
-        const state = getImageState(currentIndex);
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        const newZoom = Math.max(0.5, Math.min(5, state.zoom + delta));
-        
-        if (newZoom !== state.zoom) {
-          state.zoom = newZoom;
+      // Обработчик зума колесиком мыши
+      if (fullscreen && fullscreenImage) {
+        fullscreen.addEventListener('wheel', (e) => {
+          if (!fullscreen.classList.contains('active')) return;
           
-          // Если зум уменьшился до 1 или меньше, сбрасываем позицию
-          if (state.zoom <= 1) {
-            state.x = 0;
-            state.y = 0;
+          e.preventDefault();
+          
+          const state = getImageState(currentIndex);
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          const newZoom = Math.max(0.5, Math.min(5, state.zoom + delta));
+          
+          if (newZoom !== state.zoom) {
+            state.zoom = newZoom;
+            
+            // Если зум уменьшился до 1 или меньше, сбрасываем позицию
+            if (state.zoom <= 1) {
+              state.x = 0;
+              state.y = 0;
+            } else {
+              // Корректируем позицию, если она выходит за новые границы
+              const { maxX, maxY } = calculateMaxMove(state);
+              state.x = Math.max(-maxX, Math.min(maxX, state.x));
+              state.y = Math.max(-maxY, Math.min(maxY, state.y));
+            }
+            
+            applyFullscreenTransform(state);
           }
-          
-          applyFullscreenTransform(state);
-        }
-      }, { passive: false });
+        }, { passive: false });
       
       // Обработчики перетаскивания мышью
       fullscreenImage.addEventListener('mousedown', (e) => {
@@ -19195,10 +19274,11 @@
         const deltaX = e.clientX - dragStartX;
         const deltaY = e.clientY - dragStartY;
         
-        // Ограничиваем перемещение в зависимости от зума
-        const maxMove = (state.zoom - 1) * 200;
-        state.x = Math.max(-maxMove, Math.min(maxMove, dragStartImageX + deltaX));
-        state.y = Math.max(-maxMove, Math.min(maxMove, dragStartImageY + deltaY));
+        // Рассчитываем максимальное перемещение на основе реальных размеров
+        const { maxX, maxY } = calculateMaxMove(state);
+        
+        state.x = Math.max(-maxX, Math.min(maxX, dragStartImageX + deltaX));
+        state.y = Math.max(-maxY, Math.min(maxY, dragStartImageY + deltaY));
         
         applyFullscreenTransform(state);
       });
@@ -19266,6 +19346,11 @@
           if (state.zoom <= 1) {
             state.x = 0;
             state.y = 0;
+          } else {
+            // Корректируем позицию, если она выходит за новые границы
+            const { maxX, maxY } = calculateMaxMove(state);
+            state.x = Math.max(-maxX, Math.min(maxX, state.x));
+            state.y = Math.max(-maxY, Math.min(maxY, state.y));
           }
           
           applyFullscreenTransform(state);
@@ -19275,9 +19360,11 @@
           const deltaX = e.touches[0].clientX - touchStartX;
           const deltaY = e.touches[0].clientY - touchStartY;
           
-          const maxMove = (state.zoom - 1) * 200;
-          state.x = Math.max(-maxMove, Math.min(maxMove, touchStartImageX + deltaX));
-          state.y = Math.max(-maxMove, Math.min(maxMove, touchStartImageY + deltaY));
+          // Рассчитываем максимальное перемещение на основе реальных размеров
+          const { maxX, maxY } = calculateMaxMove(state);
+          
+          state.x = Math.max(-maxX, Math.min(maxX, touchStartImageX + deltaX));
+          state.y = Math.max(-maxY, Math.min(maxY, touchStartImageY + deltaY));
           
           applyFullscreenTransform(state);
           e.preventDefault();
