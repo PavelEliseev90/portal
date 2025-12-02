@@ -15,8 +15,6 @@
 	  float: inline-block;
   }
   
-  
-  
   @media (max-width: 600px) {
 	  .highcharts-figure,
 	  .highcharts-data-table table {
@@ -29,128 +27,293 @@
 		  margin: 0 auto;
 	  }
   }
+</style>
   
-  </style>
-  
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://code.highcharts.com/highcharts-more.js"></script>
-  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
-  <script src="https://code.highcharts.com/modules/exporting.js"></script>
-  <script src="https://code.highcharts.com/modules/export-data.js"></script>
-  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-  
-  
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Рабочий лист </h2>
+	<p>№ {{params.object.nomer}} от {{params.object.dataTime}}</p>
+  </div>
+
 <div class="row">
 
 	<div class="col-sm-6">
 		
-		<div class="card">
-			<div class="card-body">
-
-				<h5><span class="icon-mbri-edit2"></span> Рабочий лист</h5>
-				<hr style="width: 75%;">
-
-				<label class="fs-6 text-start fw-normal">
-					Номер дата: 
-				</label> 
-				<br>
-
-				<label class="fs-6 text-start fw-normal">
-				<span class="icon-mbri-minus text-secondary"> {{params.object.nomer}} от {{params.object.dataTime}} 
-				</label>
-				<br>
-				  
-				<label class="fs-6 text-start fw-normal">
-					Подразделение: 
-				</label> 
-				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary"> {% if params.object.unit == None %} {{params.object.unit_dc.name}} {% else %} {{params.object.unit.name}} {% endif %} </span>
-				</label>
-				
-				<br>
+		<div class="portal-panel">
 			
-				<label class="fs-6 text-start fw-normal">
-					Менеджер: 
-				</label> 
+			<div class="row g-1">
 				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary">  {% if params.object.manager_trade_in != '' %} {{params.object.manager_trade_in}} {% else %} {{params.object.staff.name}} {% endif%}  </span>
-				</label>
+				<div class="col-12">
+					<div class="form-floating">
+						<input type="text" class="form-control" value="{% if params.object.unit == None %} {{params.object.unit_dc.name}} {% else %} {{params.object.unit.name}} {% endif %}" readonly>
+						<label>Подразделение</label>
+					</div>
+				</div>
 				
-			
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Вид контакта: 
-				</label> 
+				<div class="col-12">
+					<div class="form-floating">
+						<input type="text" class="form-control" value="{% if params.object.manager_trade_in != '' %} {{params.object.manager_trade_in}} {% else %} {{params.object.staff.name}} {% endif%}" readonly>
+						<label>Менеджер</label>
+					</div>
+				</div>
 				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary"> {{params.object.contacType}}</span>
-				</label>
+				<div class="col-12">
+					<div class="form-floating">
+						<input type="text" class="form-control" value="{{params.object.contacType}}" readonly>
+						<label>Вид контакта</label>
+					</div>
+				</div>
 				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Клиент: 
-				</label> <br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary"> {{params.object.clientName}}</span><br>
-			
-				</label>
+				<div class="col-12">
+					<div class="form-floating">
+						<input type="text" class="form-control" value="{{params.object.clientName}}" readonly>
+						<label>Клиент</label>
+					</div>
+				</div>
 				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Комментарий администратора: 
-				</label> <br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary"> {{params.object.commentAdministrator}}</span><br>
-				</label>
-			
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Комментарий менеджера:
-				</label> <br>
-				<label class="fs-6 text-start fw-normal">
-					<span class="icon-mbri-minus text-secondary"> {{params.object.commentManager}}</span><br>
-				</label>
-
+				<div class="col-12">
+					<div class="form-floating">
+						<textarea class="form-control" readonly>{{params.object.commentAdministrator}}</textarea>
+						<label>Комментарий администратора</label>
+					</div>
+				</div>
+				
+				<div class="col-12">
+					<div class="form-floating">
+						<textarea class="form-control" readonly>{{params.object.commentManager}}</textarea>
+						<label>Комментарий менеджера</label>
+					</div>
+				</div>
 			</div>
+
 		</div>
 		
+		<div class="portal-panel">
+				<div class="accordion accordion-flush" id="accordionFlushExample">
+		
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="flush-headingOne">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
+							События  - {{params.object.events|length}}
+						</button>
+						</h2>
+						<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+							<div class="accordion-body">
+								<div class="table-responsive-sm">
+									<table class="table table-sm table-striped table-hover">
+										<tbody> 
+											{% for event in params.object.events %}
+												<tr class="align-middle"> 
+													<td class="align-middle" data-label="Дата">{{event.dataTime}}</td>
+													<td class="align-middle" data-label="Дата события">{{event.dataTimeEvent}}</td>
+													<td class="align-middle" data-label="Тип контакта">{{event.contacType}}</td>
+													<td class="align-middle" data-label="Комментарий">{{event.comment}}</td>
+													<td class="align-middle" data-label="Тип">{{event.contacType}}</td>
+													<td class="align-middle" data-label="Сотрудник">{{event.staff}}</td>
+													<td class="align-middle" data-label="Статус">{{event.status}}</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+			
+					<div class="accordion-item">
+						<h2 class="accordion-header" id="flush-headingTwo">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
+							Контроль качества
+						</button>
+						</h2>
+						<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+						<div class="accordion-body">
+							<div class="row g-1">
+								
+								
+								{% if params.object.get_check != None %}
+									<div class="col-md-6">
+										<div class="portal-panel text-center">
+											<figure class="highcharts-figure">
+												<div id="container-check" class="chart-container"></div>
+											</figure>
+											<div class="mt-3">
+												{% if params.object.unit.buauto %}						
+													<a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.object.id}}" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
+												{% else %}
+													<a href="/checklists/glav/op/doc/?checkid={{params.object.id}}" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
+												{% endif %}
+											</div>
+										</div>
+										
+										<script>
+			
+											var gaugeOptions = {
+											chart: {
+												type: 'solidgauge'
+											},
+											
+											title: null,
+											
+											pane: {
+												center: ['50%', '85%'],
+												size: '140%',
+												startAngle: -90,
+												endAngle: 90,
+												background: {
+													backgroundColor:
+														Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
+													innerRadius: '60%',
+													outerRadius: '100%',
+													shape: 'arc'
+												}
+											},
+											
+											exporting: {
+												enabled: false
+											},
+											
+											tooltip: {
+												enabled: false
+											},
+											
+											// the value axis
+											yAxis: {
+												stops: [
+													[0.3, '#DF5353'], // green
+													[0.5, '#DDDF0D'], // yellow
+													[0.7, '#55BF3B'] // red
+												],
+												lineWidth: 0,
+												tickWidth: 0,
+												minorTickInterval: null,
+												tickAmount: 2,
+												title: {
+													y: -70
+												},
+												labels: {
+													y: 16
+												}
+											},
+											
+											plotOptions: {
+												solidgauge: {
+													dataLabels: {
+														y: 5,
+														borderWidth: 0,
+														useHTML: true
+													}
+												}
+											}
+											};
+											
+											// The speed gauge
+											var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
+											yAxis: {
+												min: 0,
+												max: 100,
+												title: {
+													text: 'Выполнение чек листа'
+												}
+											},
+											
+											credits: {
+												enabled: false
+											},
+											
+											series: [{
+												name: 'CVC',
+												data: [{{params.object.get_check.result}}],
+												dataLabels: {
+													format:
+														'<div style="text-align:center">' +
+														'<span style="font-size:25px">{y}</span><br/>' +
+														'<span style="font-size:12px;opacity:0.4">%</span>' +
+														'</div>'
+												}
+											}]
+											
+											}));
+											
+											
+										</script>
+			
+									</div>
+								{% endif %}
+			
+								{% if params.object.get_opros != None %}
+									<div class="col-md-6">
+										<div class="portal-panel text-center">
+											<figure class="highcharts-figure">
+												<div id="container-sms" class="chart-container"></div>
+											</figure>
+											<div class="mt-3">
+												<a href="/sms_opros_op/{{params.object.get_opros.id}}/" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
+											</div>
+										</div>
+									</div>
+								{% endif %}
+			
+							</div>
+						</div>
+						</div>
+					</div>
+					</div>
+		</div>
+
 		{% if request.user.profiles.eco or request.user.profiles.korsavto_settings %}
 			{% if params.object.signal_seller != None %}
-			<br>
-
-			<div class="card">
-				<div class="card-body">
-
-					<h5><span class="icon-mbri-edit2 text-danger"> Сигнал</span>  </h5>
-					<hr style="width: 75%;">
-
-					<div class="row g-1">
-						<div class="col">
-							{{params.object.signal_seller}}
+			<div class="portal-panel mt-3">
+				<h5 class="mb-3"><span class="icon-mbri-edit2 text-danger"></span> Сигнал</h5>
+				
+				<div class="row g-3 mb-3">
+					<div class="col-md-6">
+						<div class="form-floating">
+							<input type="text" class="form-control" value="{{params.object.signal_seller}}" readonly>
+							<label>Продавец</label>
 						</div>
-						<div class="col">
-							{{params.object.signal_region_name}} {{params.object.signal_city_name}} 
-						</div>
-						<div class="col">
-							{{params.object.signal_brand}} {{params.object.signal_model}} {{params.object.signal_brand}} {{params.object.signal_year}} г.в.
-						</div>
-						<div class="col">
-							{{params.object.signal_mileage|floatformat:"0g"}} км.  
-						</div>
-						<div class="col">
-							{{params.object.signal_price|floatformat:"2g"}} &#8381;
-						</div>
-						
 					</div>
-					<hr style="width: 75%;">
-					{{params.object.signal_description}}
-					<hr style="width: 75%;">
-					<a href="{{params.object.signal_url}}" target="_blank">Открыть объявление</a> 
+					<div class="col-md-6">
+						<div class="form-floating">
+							<input type="text" class="form-control" value="{{params.object.signal_region_name}} {{params.object.signal_city_name}}" readonly>
+							<label>Регион / Город</label>
+						</div>
+					</div>
+					<div class="col-md-6">
+						<div class="form-floating">
+							<input type="text" class="form-control" value="{{params.object.signal_brand}} {{params.object.signal_model}} {{params.object.signal_year}} г.в." readonly>
+							<label>Автомобиль</label>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="form-floating">
+							<input type="text" class="form-control" value="{{params.object.signal_mileage|floatformat:"0g"}} км." readonly>
+							<label>Пробег</label>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="form-floating">
+							<input type="text" class="form-control" value="{{params.object.signal_price|floatformat:"2g"}} &#8381;" readonly>
+							<label>Цена</label>
+						</div>
+					</div>
+					<div class="col-12">
+						<div class="form-floating">
+							<textarea class="form-control" readonly>{{params.object.signal_description}}</textarea>
+							<label>Описание</label>
+						</div>
+					</div>
+					<div class="col-12">
+						<a href="{{params.object.signal_url}}" target="_blank" class="btn btn-outline-primary">Открыть объявление</a>
+					</div>
 				</div>
 			</div>
 			{% endif %}
@@ -159,13 +322,8 @@
 	</div>
 
 	<div class="col-sm-6">
-		
-		
-		<div class="card">
-			<div class="card-body">
-
-				<h5><span class="icon-mbri-preview"></span> Интерактивная оценка</h5>
-				<hr style="width: 75%;">
+		<div class="portal-panel">
+			<h5 class="mb-3"><span class="icon-mbri-preview"></span> Интерактивная оценка</h5>
 
 				{% if params.object.vin == '' and params.object.number_body == ''  or params.object.vin == None and params.object.number_body == None %}
 
@@ -178,7 +336,7 @@
 				<div class="col-sm">
 					{% if params.object.reginteractivocenka.fotos_car_all|length %}
 
-					<div style="object-fit: cover; border-radius: 10px; max-height: 320px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+					<div id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
 							
 						<div class="carousel-indicators">
 						{% for img in params.object.reginteractivocenka.fotos_car_all %}
@@ -190,8 +348,8 @@
 						
 						{% for img in params.object.reginteractivocenka.fotos_car_all %}
 						
-							<div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-all" onclick="visible_foto('gallery-item-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
-                            	<img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+							<div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-all" onclick="visible_foto('gallery-item-all',{{forloop.counter0}})" data-index="{{forloop.counter}}">
+                            	<img class="d-block w-100" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
                           	</div>
 
 						{% endfor %}
@@ -211,92 +369,51 @@
 					{% endif %}
 				</div>
 
-					<div class="row">
-						<div class="col-sm-2">
-							<label class="fs-6 text-start fw-normal">
-								Автомобиль: 
-							</label>
+					<div class="row g-3">
+						<div class="col-12">
+							<div class="form-floating">
+								<input type="text" class="form-control" value="{{params.object.mark|default_if_none:"Пока нет данных"}} {{params.object.model|default_if_none:""}} {{params.object.modification|default_if_none:""}} / {{params.object.vin|default_if_none:""}} / {{params.object.year|default_if_none:""}}" readonly>
+								<label>Автомобиль</label>
+							</div>
 						</div>
-						<div class="col-sm">
-							<label class="fs-6 text-start fw-normal">
-								<span class="icon-mbri-minus text-secondary">{{params.object.mark|default_if_none:"Пока нет данных"}} {{params.object.model|default_if_none:""}} {{params.object.modification|default_if_none:""}} <br> {{params.object.vin|default_if_none:""}} / {{params.object.year|default_if_none:""}}</span><br>		
-							</label>		
+
+						<div class="col-12">
+							<div class="form-floating">
+								<input type="text" class="form-control" value="{{params.object.status_estimation|default_if_none:"Новый"}}" readonly>
+								<label>Статус</label>
+							</div>
 						</div>
+
+						{% if request.user.profiles.eco %}
+							<div class="col-12">
+								<div class="form-floating">
+									<input type="text" class="form-control" value="{{params.object.estimation_price_staff|floatformat:"2g"}} &#8381;" readonly>
+									<label>Цена приема оценщик</label>
+								</div>
+							</div>
+
+							<div class="col-12">
+								<div class="form-floating">
+									<input type="text" class="form-control" value="{{params.object.estimation_price_staff_sale|floatformat:"2g"}} &#8381;" readonly>
+									<label>Цена продажи оценщик</label>
+								</div>
+							</div>
+
+							<div class="col-12">
+								<div class="form-floating">
+									<input type="text" class="form-control" value="{{params.object.estimation_price_before_kd|floatformat:"2g"}} &#8381;" readonly>
+									<label>Согласовано до диагностики</label>
+								</div>
+							</div>
+
+							<div class="col-12">
+								<div class="form-floating">
+									<input type="text" class="form-control" value="{{params.object.estimation_price_after_kd|floatformat:"2g"}} &#8381;" readonly>
+									<label>Согласовано после диагностики</label>
+								</div>
+							</div>
+						{% endif %}
 					</div>
-
-					<div class="row">
-						<div class="col-sm-2">
-							<label class="fs-6 text-start fw-normal">
-								Статус: 
-							</label>
-						</div>
-						<div class="col-sm">
-							<label class="fs-6 text-start fw-normal">
-								<span class="icon-mbri-minus text-secondary">{{params.object.status_estimation|default_if_none:"Новый"}}</span><br>		
-							</label>		
-						</div>						
-					</div>
-
-					{% if request.user.profiles.eco %}
-					
-						<hr style="width: 75%;">
-						
-						<div class="row">
-							<div class="col-sm-4">
-								<label class="fs-6 text-start fw-normal">
-									Цена приема оценщик: 
-								</label>
-							</div>
-							<div class="col-sm">
-								<label class="fs-6 text-start fw-normal">
-									<span class="icon-mbri-minus text-secondary">{{params.object.estimation_price_staff|floatformat:"2g"}} &#8381;</span><br>		
-								</label>		
-							</div>						
-						</div>
-
-						<div class="row">
-							<div class="col-sm-4">
-								<label class="fs-6 text-start fw-normal">
-									Цена продажи оценщик: 
-								</label>
-							</div>
-							<div class="col-sm">
-								<label class="fs-6 text-start fw-normal">
-									<span class="icon-mbri-minus text-secondary">{{params.object.estimation_price_staff_sale|floatformat:"2g"}} &#8381;</span><br>		
-								</label>		
-							</div>						
-						</div>
-
-						<div class="row">
-							<div class="col-sm-4">
-								<label class="fs-6 text-start fw-normal">
-									Согласовано до диагностики: 
-								</label>
-							</div>
-							<div class="col-sm">
-								<label class="fs-6 text-start fw-normal">
-									<span class="icon-mbri-minus text-secondary">{{params.object.estimation_price_before_kd|floatformat:"2g"}} &#8381;</span><br>		
-								</label>		
-							</div>						
-						</div>
-
-						<div class="row">
-							<div class="col-sm-4">
-								<label class="fs-6 text-start fw-normal">
-									Согласовано после диагностики: 
-								</label>
-							</div>
-							<div class="col-sm">
-								<label class="fs-6 text-start fw-normal">
-									<span class="icon-mbri-minus text-secondary">{{params.object.estimation_price_after_kd|floatformat:"2g"}} &#8381;</span><br>		
-								</label>		
-							</div>						
-						</div>
-
-						
-					{% endif %}
-
-					<hr style="width: 75%;">
 					
 					{% if params.object.remote_price > 0 %}
 						<a href="/eco/{{params.object.id}}/?page=9" class="btn btn-outline-success fs-6">
@@ -323,70 +440,50 @@
 					{% endif %}
 
 				{% endif %}
-			</div>
 		</div>
 	
 		{% if params.estimation != None %}
-		
-			<br>
-			<div class="card">
-				<div class="card-body">
-
-					<h5><span class="icon-mbri-preview"></span> Задачи</h5>
-					<hr style="width: 75%;">
+			<div class="portal-panel mt-3">
+				<h5 class="mb-3"><span class="icon-mbri-preview"></span> Задачи</h5>
 					
-					<div class="table-responsive table-responsive-sm">
-						<table class="table-sm table-fit">
-						<tr>
-							{% for task in params.estimation.tasks %}
-							<td>
-								<div class="card {% if task.date_close == None %} bg-danger  {% else %} bg-success {% endif %} bg-opacity-25"  style="width: 18rem;" data-bs-toggle="modal" data-bs-target="#exampleModalTask{{forloop.counter}}">
-									
-									<label> <span class="icon-mbri-alert"> {{task.comment_task}}</span> </label>
-									<label class="text-muted text-end">
-										{% if task.staff_open.profiles.eco_name != None and task.staff_open.profiles.eco_name|length > 4 %}
-
-											{{task.staff_open.profiles.eco_name}} <br> {{task.date_open}} 
-
-										{% else %}
-											
-											{{task.staff_open.profiles.last_name}} {{task.staff_open.profiles.first_name}} <br> {{task.date_open}}
-
-										{% endif %}
-									</label>
-									<hr style="width: 75%;">
-									
-									{% if task.date_close == None %} 
-										<span class="icon-mbri-info">Не выполнена</span>  <br>
-									{% else %} 
-										<span class="icon-mbri-help">Выполнена</span>  <br>
-										{{task.comment_success}}
-									{% endif %}
-
+				<div class="row g-3">
+					{% for task in params.estimation.tasks %}
+					<div class="col-md-6">
+						<div class="portal-panel {% if task.date_close == None %}border-danger{% else %}border-success{% endif %}" data-bs-toggle="modal" data-bs-target="#exampleModalTask{{forloop.counter}}">
+							<div class="d-flex justify-content-between align-items-start mb-2">
+								<div>
+									<span class="icon-mbri-alert"></span> {{task.comment_task}}
 								</div>
-							</td>
-
-							
-
-							{% endfor %}
-						</tr>
-						</table>
+								<small class="text-muted">
+									{% if task.staff_open.profiles.eco_name != None and task.staff_open.profiles.eco_name|length > 4 %}
+										{{task.staff_open.profiles.eco_name}}<br>{{task.date_open}}
+									{% else %}
+										{{task.staff_open.profiles.last_name}} {{task.staff_open.profiles.first_name}}<br>{{task.date_open}}
+									{% endif %}
+								</small>
+							</div>
+							<hr>
+							<div>
+								{% if task.date_close == None %}
+									<span class="badge bg-danger">Не выполнена</span>
+								{% else %}
+									<span class="badge bg-success">Выполнена</span><br>
+									<small>{{task.comment_success}}</small>
+								{% endif %}
+							</div>
+						</div>
 					</div>
-
-
+					{% endfor %}
 				</div>
 			</div>
 
 				{% for task in params.estimation.tasks %}
-					<div class="modal fade" id="exampleModalTask{{forloop.counter}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+					<div class="modal fade portal-modal" id="exampleModalTask{{forloop.counter}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 						<div class="modal-dialog modal-dialog-scrollable modal-xl">
 						<div class="modal-content">
 						<div class="modal-header">
-							
-							<label class="fs-6 fw-bold">Задание</label>
+							<h5 class="modal-title">Задание</h5>
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-							<hr>
-
 						</div>
 						
 							<div class="modal-body">
@@ -407,27 +504,20 @@
 								<label for="floatingInput">Задание</label>
 								</div>
 								
-								<hr style="width: 75%;">
-
-								<div class="form-floating">
-								<input class="form-control form-control-sm" type="text" id="" name="" value="{{task.date_close|default_if_none:"-"}}" readonly>
-								<label for="floatingInput">Дата выполнения</label>
+								<div class="form-floating mb-3">
+									<input class="form-control" type="text" id="" name="" value="{{task.date_close|default_if_none:"-"}}" readonly>
+									<label>Дата выполнения</label>
 								</div>
 
-								<br>
-
-								<div class="form-floating">
-								<input class="form-control form-control-sm" type="text" id="comment_success" name="comment_success" value="{{task.comment_success}}" required>
-								<label for="floatingInput">Комментарий выполнения</label>
+								<div class="form-floating mb-3">
+									<input class="form-control" type="text" id="comment_success" name="comment_success" value="{{task.comment_success}}" required>
+									<label for="comment_success">Комментарий выполнения</label>
 								</div>
-
-								<br>
 
 								{% if task.date_close == None %}
-
-								<input type="file" class="form-control" id="images_task" name="images_task" accept="image/*;capture=camera" multiple/>
-						
-								<hr style="width: 75%;">
+									<div class="mb-3">
+										<input type="file" class="form-control" id="images_task" name="images_task" accept="image/*;capture=camera" multiple/>
+									</div>
 
 								<div class="row g-3">
 									
@@ -442,19 +532,14 @@
 								</div>
 
 								{% else %}
-
-								<hr style="width: 75%;">
-
-								{% if task.files_all|length %}
+									{% if task.files_all|length %}
 
 									
 										<div class="row g-1 gallery-container">
 											{% for img in task.files_all %}
 										
 												<div class="col-sm-3 gallery-item-task{{task.id}}" onclick="visible_foto('gallery-item-task{{task.id}}', {{forloop.counter}})" data-index="{{forloop.counter}}">
-													
-													<img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
-													
+													<img class="d-block w-100" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
 												</div>
 
 											{% endfor %}
@@ -479,187 +564,11 @@
 
 </div>
 
-<div class="col-sm">
-	
-	<hr style="width: 75%;">
-			
-	<div class="accordion accordion-flush" id="accordionFlushExample">
-	
-		<div class="accordion-item">
-			<h2 class="accordion-header" id="flush-headingOne">
-			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
-				События  - {{params.object.events|length}}
-			</button>
-			</h2>
-			<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-				<div class="accordion-body">
-					<div class="table-responsive-sm">
-						<table class="table table-sm table-striped table-hover">
-							<tbody> 
-								{% for event in params.object.events %}
-									<tr class="align-middle"> 
-										<td class="align-middle">{{event.dataTime}}</td>
-										<td class="align-middle">{{event.dataTimeEvent}}</td>
-										<td class="align-middle">{{event.contacType}}</td>
-										<td class="align-middle">{{event.comment}}</td>
-										<td class="align-middle">{{event.contacType}}</td>
-										<td class="align-middle">{{event.staff}}</td>
-										<td class="align-middle">{{event.status}}</td>
-									</tr>
-								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-
-		<div class="accordion-item">
-			<h2 class="accordion-header" id="flush-headingTwo">
-			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
-				Контроль качества
-			</button>
-			</h2>
-			<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
-			<div class="accordion-body">
-				<div class="row g-1">
-					
-					
-					{% if params.object.get_check != None %}
-						<div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px;">
-			
-							<div class="card text-center align-self-center text-center">
-								<div class="card-body text-center align-self-center text-center">
-									<figure class="highcharts-figure">
-										<div id="container-check" class="chart-container"></div>
-									</figure>
-								</div>
-
-								{% if params.object.unit.buauto %}						
-									<a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.object.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
-								{% else %}
-									<a href="/checklists/glav/op/doc/?checkid={{params.object.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
-								{% endif %}
-							</div>
-							
-							<script>
-
-								var gaugeOptions = {
-								chart: {
-									type: 'solidgauge'
-								},
-								
-								title: null,
-								
-								pane: {
-									center: ['50%', '85%'],
-									size: '140%',
-									startAngle: -90,
-									endAngle: 90,
-									background: {
-										backgroundColor:
-											Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-										innerRadius: '60%',
-										outerRadius: '100%',
-										shape: 'arc'
-									}
-								},
-								
-								exporting: {
-									enabled: false
-								},
-								
-								tooltip: {
-									enabled: false
-								},
-								
-								// the value axis
-								yAxis: {
-									stops: [
-										[0.3, '#DF5353'], // green
-										[0.5, '#DDDF0D'], // yellow
-										[0.7, '#55BF3B'] // red
-									],
-									lineWidth: 0,
-									tickWidth: 0,
-									minorTickInterval: null,
-									tickAmount: 2,
-									title: {
-										y: -70
-									},
-									labels: {
-										y: 16
-									}
-								},
-								
-								plotOptions: {
-									solidgauge: {
-										dataLabels: {
-											y: 5,
-											borderWidth: 0,
-											useHTML: true
-										}
-									}
-								}
-								};
-								
-								// The speed gauge
-								var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
-								yAxis: {
-									min: 0,
-									max: 100,
-									title: {
-										text: 'Выполнение чек листа'
-									}
-								},
-								
-								credits: {
-									enabled: false
-								},
-								
-								series: [{
-									name: 'CVC',
-									data: [{{params.object.get_check.result}}],
-									dataLabels: {
-										format:
-											'<div style="text-align:center">' +
-											'<span style="font-size:25px">{y}</span><br/>' +
-											'<span style="font-size:12px;opacity:0.4">%</span>' +
-											'</div>'
-									}
-								}]
-								
-								}));
-								
-								
-							</script>
-
-						</div>
-					{% endif %}
-
-					{% if params.object.get_opros != None %}
-						<div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px; ">
-			
-							<div class="card text-center align-self-center text-center">
-								<div class="card-body text-center align-self-center text-center">
-									<figure class="highcharts-figure">
-										<div id="container-sms" class="chart-container"></div>
-									</figure>
-								</div>
-								<a href="/sms_opros_op/{{params.object.get_opros.id}}/" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
-							</div>
-						
-						</div>
-					{% endif %}
-
-				</div>
-			</div>
-			</div>
-		</div>
+  <div class="col-12 mt-3">
+	<div class="portal-panel">
 		
 	</div>
-		  
+</div>
 </div>
 	
 <script language="JavaScript">

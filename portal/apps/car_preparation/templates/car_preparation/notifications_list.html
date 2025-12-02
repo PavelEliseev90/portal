@@ -1,486 +1,253 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Уведомления по подготовке</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #eee;
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            color: #2c3e50;
-        }
-        
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .stat-card.urgent {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .stat-card.overdue {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-        
-        .stat-card h3 {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-bottom: 5px;
-        }
-        
-        .stat-card .value {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        
-        .filters {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .filters form {
-            display: flex;
-            gap: 15px;
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .filter-group label {
-            font-size: 12px;
-            color: #666;
-            font-weight: 500;
-        }
-        
-        .filter-group select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .notification-item {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 10px;
-            transition: all 0.3s;
-            position: relative;
-        }
-        
-        .notification-item:hover {
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        
-        .notification-item.unread {
-            border-left: 4px solid #3498db;
-            background: #f0f8ff;
-        }
-        
-        .notification-item.urgent {
-            border-left: 4px solid #e74c3c;
-            background: #ffeaea;
-        }
-        
-        .notification-item.read {
-            opacity: 0.7;
-        }
-        
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 10px;
-        }
-        
-        .notification-type {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .notification-date {
-            font-size: 11px;
-            color: #666;
-        }
-        
-        .notification-priority {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        
-        .priority-urgent { background: #e74c3c; color: #fff; }
-        .priority-high { background: #f39c12; color: #fff; }
-        .priority-normal { background: #3498db; color: #fff; }
-        .priority-low { background: #95a5a6; color: #fff; }
-        
-        .notification-message {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        
-        .notification-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            font-size: 12px;
-            color: #666;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
-        
-        .notification-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-        
-        .btn-mark-read {
-            background: #95a5a6;
-            color: #fff;
-        }
-        
-        .btn-mark-read:hover {
-            background: #7f8c8d;
-        }
-        
-        .btn-view {
-            background: #3498db;
-            color: #fff;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn-view:hover {
-            background: #2980b9;
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-        
-        .pagination a,
-        .pagination span {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            text-decoration: none;
-            color: #333;
-        }
-        
-        .pagination .current {
-            background: #3498db;
-            color: #fff;
-            border-color: #3498db;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        
-        .mark-all-read {
-            background: #27ae60;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .mark-all-read:hover {
-            background: #229954;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Уведомления по подготовке</h1>
-            {% if unread_count > 0 %}
-            <button class="mark-all-read" onclick="markAllRead()">
-                Отметить все как прочитанные ({{ unread_count }})
-            </button>
-            {% endif %}
-        </div>
-        
-        <!-- Статистика -->
-        <div class="stats-bar">
-            <div class="stat-card">
-                <h3>Непрочитанных</h3>
-                <div class="value">{{ unread_count }}</div>
-            </div>
-            <div class="stat-card urgent">
-                <h3>Срочных</h3>
-                <div class="value">{{ urgent_unread }}</div>
-            </div>
-            <div class="stat-card overdue">
-                <h3>Просроченных</h3>
-                <div class="value">{{ overdue_count }}</div>
-            </div>
-        </div>
-        
-        <!-- Фильтры -->
-        <div class="filters">
-            <form method="get" action="">
-                <div class="filter-group">
-                    <label>Тип уведомления</label>
-                    <select name="type">
-                        <option value="">Все типы</option>
-                        {% for type_code, type_name in notification_types %}
-                        <option value="{{ type_code }}" {% if selected_type == type_code %}selected{% endif %}>
-                            {{ type_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Приоритет</label>
-                    <select name="priority">
-                        <option value="">Все приоритеты</option>
-                        {% for priority_code, priority_name in priorities %}
-                        <option value="{{ priority_code }}" {% if selected_priority == priority_code %}selected{% endif %}>
-                            {{ priority_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Статус прочтения</label>
-                    <select name="read">
-                        <option value="">Все</option>
-                        <option value="unread" {% if selected_read == "unread" %}selected{% endif %}>Непрочитанные</option>
-                        <option value="read" {% if selected_read == "read" %}selected{% endif %}>Прочитанные</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>
-                        <input type="checkbox" name="show_read" {% if show_read %}checked{% endif %} onchange="this.form.submit()">
-                        Показывать прочитанные
-                    </label>
-                </div>
-                <div class="filter-group">
-                    <button type="submit" class="btn" style="background: #3498db; color: #fff;">Применить</button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Список уведомлений -->
-        {% if notifications %}
-        {% for notification in notifications %}
-        <div class="notification-item {% if not notification.read %}unread{% else %}read{% endif %} {% if notification.priority == 'urgent' %}urgent{% endif %}" 
-             id="notification-{{ notification.id }}">
-            <div class="notification-header">
-                <div>
-                    <span class="notification-type">{{ notification.get_notification_type_display }}</span>
-                    <span class="notification-priority priority-{{ notification.priority }}">
-                        {{ notification.get_priority_display }}
-                    </span>
-                </div>
-                <div class="notification-date">
-                    {{ notification.date_created|date:"d.m.Y H:i" }}
-                </div>
-            </div>
-            
-            <div class="notification-message">
-                {{ notification.message }}
-            </div>
-            
-            <div class="notification-details">
-                {% if notification.preparation %}
-                <div>
-                    <strong>Автомобиль:</strong> {{ notification.preparation.car.name }}<br>
-                    <strong>VIN:</strong> {{ notification.preparation.car.vin }}
-                </div>
-                {% endif %}
-                {% if notification.work_item %}
-                <div>
-                    <strong>Работа:</strong> {{ notification.work_item.work.name }}<br>
-                    <strong>Этап:</strong> {{ notification.work_item.work.stage.name|default:"-" }}
-                </div>
-                {% endif %}
-                {% if notification.work_schedule %}
-                <div>
-                    {% if notification.work_schedule.planned_start %}
-                    <strong>Начало:</strong> {{ notification.work_schedule.planned_start|date:"d.m.Y H:i" }}<br>
-                    {% endif %}
-                    {% if notification.work_schedule.planned_end %}
-                    <strong>Окончание:</strong> {{ notification.work_schedule.planned_end|date:"d.m.Y H:i" }}
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="notification-actions">
-                {% if not notification.read %}
-                <button class="btn btn-mark-read" onclick="markRead({{ notification.id }})">
-                    Отметить прочитанным
-                </button>
-                {% endif %}
-                {% if notification.preparation %}
-                <a href="{% url 'car_preparation:schedule' notification.preparation.id %}" class="btn btn-view">
-                    Перейти к планированию
-                </a>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-        
-        <!-- Пагинация -->
-        {% if page_obj.has_other_pages %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_read %}&read={{ selected_read }}{% endif %}">Предыдущая</a>
-            {% endif %}
-            
-            <span class="current">
-                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-            </span>
-            
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_read %}&read={{ selected_read }}{% endif %}">Следующая</a>
-            {% endif %}
-        </div>
-        {% endif %}
-        
-        {% else %}
-        <div class="empty-state">
-            <h3>Нет уведомлений</h3>
-            <p>У вас нет уведомлений по выбранным фильтрам</p>
-        </div>
-        {% endif %}
-    </div>
-    
-    <script>
-        function markRead(notificationId) {
-            fetch(`/car_preparation/notifications/${notificationId}/read/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const item = document.getElementById(`notification-${notificationId}`);
-                    item.classList.remove('unread');
-                    item.classList.add('read');
-                    const btn = item.querySelector('.btn-mark-read');
-                    if (btn) btn.remove();
-                } else {
-                    alert('Ошибка: ' + data.message);
-                }
-            });
-        }
-        
-        function markAllRead() {
-            if (confirm('Отметить все уведомления как прочитанные?')) {
-                fetch('/car_preparation/notifications/mark-all-read/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(`Отмечено ${data.updated} уведомлений как прочитанных`);
-                        window.location.reload();
-                    } else {
-                        alert('Ошибка: ' + data.message);
-                    }
-                });
-            }
-        }
-        
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-    </script>
-</body>
-</html>
+{% extends 'base_web.html' %}
+{% load static %}
 
+{% block title %} - Уведомления по подготовке {% endblock %}
+{% block title_navbar %} - Уведомления {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <h2>Уведомления по подготовке</h2>
+      {% if unread_count > 0 %}
+      <button class="btn btn-outline-success" onclick="markAllRead()">
+        <span class="icon-mbri-check"></span> Отметить все как прочитанные ({{ unread_count }})
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Статистика -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-card-label">Непрочитанных</div>
+        <div class="metric-card-value">{{ unread_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-card-label">Срочных</div>
+        <div class="metric-card-value">{{ urgent_unread }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-card-label">Просроченных</div>
+        <div class="metric-card-value">{{ overdue_count }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="portal-panel portal-filter">
+    <form method="get" action="">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="form-floating">
+            <select class="form-select" id="type" name="type">
+              <option value="">Все типы</option>
+              {% for type_code, type_name in notification_types %}
+              <option value="{{ type_code }}" {% if selected_type == type_code %}selected{% endif %}>{{ type_name }}</option>
+              {% endfor %}
+            </select>
+            <label for="type">Тип уведомления</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <select class="form-select" id="priority" name="priority">
+              <option value="">Все приоритеты</option>
+              {% for priority_code, priority_name in priorities %}
+              <option value="{{ priority_code }}" {% if selected_priority == priority_code %}selected{% endif %}>{{ priority_name }}</option>
+              {% endfor %}
+            </select>
+            <label for="priority">Приоритет</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <select class="form-select" id="read" name="read">
+              <option value="">Все</option>
+              <option value="unread" {% if selected_read == "unread" %}selected{% endif %}>Непрочитанные</option>
+              <option value="read" {% if selected_read == "read" %}selected{% endif %}>Прочитанные</option>
+            </select>
+            <label for="read">Статус прочтения</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check d-flex align-items-center h-100">
+            <input class="form-check-input" type="checkbox" id="show_read" name="show_read" {% if show_read %}checked{% endif %} onchange="this.form.submit()">
+            <label class="form-check-label ms-2" for="show_read">Показывать прочитанные</label>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-outline-success">
+            <span class="icon-mbri-search"></span> Применить
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Список уведомлений -->
+  {% if notifications %}
+  <div class="notifications-list">
+    {% for notification in notifications %}
+    <div class="portal-panel mb-3 {% if not notification.read %}border-primary{% endif %} {% if notification.priority == 'urgent' %}border-danger{% endif %}" 
+         id="notification-{{ notification.id }}">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <span class="fw-bold">{{ notification.get_notification_type_display }}</span>
+          <span class="badge 
+            {% if notification.priority == 'urgent' %}bg-danger
+            {% elif notification.priority == 'high' %}bg-warning
+            {% elif notification.priority == 'normal' %}bg-primary
+            {% else %}bg-secondary{% endif %} ms-2">
+            {{ notification.get_priority_display }}
+          </span>
+        </div>
+        <small class="text-muted">{{ notification.date_created|date:"d.m.Y H:i" }}</small>
+      </div>
+
+      <div class="mb-3">
+        {{ notification.message }}
+      </div>
+
+      <div class="row g-3 mb-3 bg-light p-3 rounded">
+        {% if notification.preparation %}
+        <div class="col-md-6">
+          <small class="text-muted d-block">Автомобиль:</small>
+          <strong>{{ notification.preparation.car.name }}</strong><br>
+          <code>{{ notification.preparation.car.vin }}</code>
+        </div>
+        {% endif %}
+        {% if notification.work_item %}
+        <div class="col-md-6">
+          <small class="text-muted d-block">Работа:</small>
+          <strong>{{ notification.work_item.work.name }}</strong><br>
+          <small>Этап: {{ notification.work_item.work.stage.name|default:"-" }}</small>
+        </div>
+        {% endif %}
+        {% if notification.work_schedule %}
+        <div class="col-md-6">
+          {% if notification.work_schedule.planned_start %}
+          <small class="text-muted d-block">Начало:</small>
+          <strong>{{ notification.work_schedule.planned_start|date:"d.m.Y H:i" }}</strong>
+          {% endif %}
+          {% if notification.work_schedule.planned_end %}
+          <br><small class="text-muted d-block">Окончание:</small>
+          <strong>{{ notification.work_schedule.planned_end|date:"d.m.Y H:i" }}</strong>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2">
+        {% if not notification.read %}
+        <button class="btn btn-sm btn-outline-secondary" onclick="markRead({{ notification.id }})">
+          <span class="icon-mbri-check"></span> Отметить прочитанным
+        </button>
+        {% endif %}
+        {% if notification.preparation %}
+        <a href="{% url 'car_preparation:schedule' notification.preparation.id %}" class="btn btn-sm btn-outline-primary">
+          <span class="icon-mbri-arrow-right"></span> Перейти к планированию
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Пагинация -->
+  {% if page_obj.has_other_pages %}
+  <nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_read %}&read={{ selected_read }}{% endif %}">Предыдущая</a>
+      </li>
+      {% endif %}
+      
+      <li class="page-item active">
+        <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+      </li>
+      
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_priority %}&priority={{ selected_priority }}{% endif %}{% if selected_read %}&read={{ selected_read }}{% endif %}">Следующая</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="portal-panel">
+    <div class="text-center py-5">
+      <h3>Нет уведомлений</h3>
+      <p class="text-muted">У вас нет уведомлений по выбранным фильтрам</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function markRead(notificationId) {
+    fetch(`/car_preparation/notifications/${notificationId}/read/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const item = document.getElementById(`notification-${notificationId}`);
+        item.classList.remove('border-primary');
+        const btn = item.querySelector('.btn-outline-secondary');
+        if (btn) btn.remove();
+      } else {
+        alert('Ошибка: ' + data.message);
+      }
+    });
+  }
+
+  function markAllRead() {
+    if (confirm('Отметить все уведомления как прочитанные?')) {
+      fetch('/car_preparation/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(`Отмечено ${data.updated} уведомлений как прочитанных`);
+          window.location.reload();
+        } else {
+          alert('Ошибка: ' + data.message);
+        }
+      });
+    }
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+{% endblock %}
