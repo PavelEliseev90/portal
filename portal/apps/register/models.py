@@ -1631,7 +1631,9 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     wheel                   = models.IntegerField('Рулевое управление', default=10, null=True, blank=True)          #'// 0 - не работает 1 работает 2 есть замечания'
     conditioner             = models.IntegerField('Кондиционер', default=10, null=True, blank=True)                 #'// 0 - не работает 1 работает 2 есть замечания'
     turbo                   = models.IntegerField('Турбина', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
-    
+    drive                   = models.IntegerField('Полный привод', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
+    to                      = models.IntegerField('ТО', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
+
     comment_engine          = models.CharField('Комментарий двигатель', max_length=512, default='', null=True, blank=True)  
     comment_system_og       = models.CharField('Комментарий система выпуска ОГ', max_length=512, default='', null=True, blank=True)  
     comment_gear            = models.CharField('Комментарий коробка передач', max_length=512, default='', null=True, blank=True)  
@@ -1640,6 +1642,7 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     comment_wheel           = models.CharField('Комментарий рулевого управления', max_length=512, default='', null=True, blank=True)  
     comment_conditioner     = models.CharField('Комментарий системы кондиционирования', max_length=512, default='', null=True, blank=True)  
     comment_turbo           = models.CharField('Комментарий турбокомпрессора', max_length=512, default='', null=True, blank=True)  
+    comment_drive           = models.CharField('Комментарий полный привод', max_length=512, default='', null=True, blank=True)  
     
     pp_dinamyc              = models.IntegerField('Разгонная динамика, посторонние шумы, вибрации при движении', default=10, null=True, blank=True)  #'// 0 - ремонт 1 норма 2 диагностика'
     pp_kpp                  = models.IntegerField('Плавность включения передач (автомобили с МКПП и АКПП, проверка CVT во всех режимах), все передачи', default=10, null=True, blank=True)  #'// 0 - ремонт 1 норма 2 диагностика'

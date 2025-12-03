@@ -4,7 +4,7 @@
 
 /* Основная страница */
 .portal-page {
-  padding: 1.25rem 1.5rem 3rem;
+  padding: 0.25rem 0.5rem 1rem;
   background: #f4f7fb;
   min-height: 100vh;
 }
@@ -1458,7 +1458,7 @@
    Стили для страницы интерактивной оценки (lo_v3)
    ============================================ */
 .lo-v3-page {
-  padding: 1.25rem 1.5rem 3rem;
+  padding: 0.25rem 0.5rem 1rem;
   background: #f4f7fb;
   min-height: 100vh;
 }
