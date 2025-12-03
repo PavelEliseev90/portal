@@ -1228,7 +1228,15 @@
           <div class="col-12 col-xxl-5">
             <div class="kors-brand-pill">
               <span class="icon-mbri-globe" aria-hidden="true"></span>
-              {{params.rlk.unit.name|default:params.rlk.unit_dc.name}} · РЛК {{params.rlk.nomer}} 
+              
+              {% if params.rlk.unit_dc != None %}
+                {{params.rlk.unit_dc.name}}
+              {% elif params.rlk.unit != None %}
+                {{params.rlk.unit.name}}
+              {% else %}
+                {{params.rlk.estimation.page_documents.unit.name}}
+              {% endif %} · РЛК {{params.rlk.nomer}} 
+
               {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
                 <a href="/estimations/{{params.estimation.rlk.id}}/" class="btn btn-primary-solid">
                   <span class="icon-mbri-edit" aria-hidden="true"></span>
@@ -1693,6 +1701,10 @@
                   </a>
                   <a href="?{% url_replace page=17 %}" class="kors-anchor-button" data-tab-target="17">
                     <span>Фото осмотра</span>                
+                  </a>
+
+                  <a href="?{% url_replace page=18 %}" class="kors-anchor-button" data-tab-target="18">
+                    <span>История просмотров</span>                
                   </a>
 
                 </div>
@@ -2621,11 +2633,12 @@
                             {% endfor %}
                           </div>
                           
+                          
                           <div class="carousel-inner gallery-containe">
                             
                             {% for img in params.estimation.fotos_salon %}
                             
-                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-salon" onclick="visible_foto('gallery-item-salon',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-salon-all" onclick="visible_foto('gallery-item-salon-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
                                 
                                 <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
                                 
@@ -2792,9 +2805,12 @@
                       </div>
                       
                       <div class="col-12 col-sm-6">
-                        <div class="col-sm gallery-item-pered-one" onclick="visible_foto('gallery-item-pered-one', 0)" data-index="0">
-                          <img class="d-block w-100" style="max-height: 600px; object-fit: none; border-radius: 10px;" src="{{params.estimation.fotos_salon_capture}}" src1="{{params.estimation.fotos_salon_capture}}"> 
+                        <div class="carousel-inner gallery-containe">
+                          <div class="col-sm gallery-item-salon-shema background_images" onclick="visible_foto('gallery-item-salon-shema', 0)" data-index="0">
+                            <img class="d-block w-100" style="max-height: 600px; object-fit: none; border-radius: 10px;" src="{{params.estimation.fotos_salon_capture}}" src1="{{params.estimation.fotos_salon_capture}}"> 
+                          </div>
                         </div>
+                        
                       </div>
 
                     </div>
