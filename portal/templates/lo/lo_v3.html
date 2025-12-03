@@ -1224,8 +1224,19 @@
     <div class="portal-page lo-v3-page">
       
       <section class="kors-hero">
+
+        {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
+          <div class="kors-brand-pill bg-danger bg-gradient">
+              <a href="/estimations/{{params.estimation.rlk.id}}/" class="text-white">
+                <span class="icon-mbri-edit" aria-hidden="true"></span>
+                Редактировать оценку
+              </a>                
+          </div>
+        {% endif %}
+
         <div class="kors-hero__grid row gy-4 align-items-center">
-          <div class="col-12 col-xxl-5">
+          <div class="col-12 col-xxl-5">            
+          
             <div class="kors-brand-pill">
               <span class="icon-mbri-globe" aria-hidden="true"></span>
               
@@ -1236,21 +1247,25 @@
               {% else %}
                 {{params.rlk.estimation.page_documents.unit.name}}
               {% endif %} · РЛК {{params.rlk.nomer}} 
-
-              {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
-                <a href="/estimations/{{params.estimation.rlk.id}}/" class="btn btn-primary-solid">
-                  <span class="icon-mbri-edit" aria-hidden="true"></span>
-                  Редактировать оценку
-                </a>
-              {% endif %}
             </div>
+
             <h1 class="kors-hero__title">
               {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} 
             </h1>
             <p class="kors-hero__subtitle">
               {{params.estimation.vin}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км. / {{params.estimation.modification.typeBody.name}} / {{params.estimation.page_documents.plate_number}}
-              <br> 
-            <label style="border-radius: 0.2rem; padding: 0.2rem;" class="{% if params.estimation.iznos %} bg-danger text-white {% else %} bg-success text-white {% endif %}"> Износ - {% if params.estimation.iznos %} Повышеный {% else %} Рабочий {% endif %} ({{params.estimation.k_i}})</label>
+              
+              {% if params.estimation.iznos %} 
+                <div class="kors-brand-pill bg-danger bg-gradient">
+                  <span class="icon-cd" aria-hidden="true"></span>
+                  Износ -  Повышеный ({{params.estimation.k_i}})
+                </div>
+              {% else %}
+                <div class="kors-brand-pill bg-success bg-gradient">
+                  <span class="icon-cd" aria-hidden="true"></span>
+                  Износ -  Повышеный ({{params.estimation.k_i}})
+                </div>
+              {% endif %}
             </p>
             
             <p class="kors-hero__subtitle">
