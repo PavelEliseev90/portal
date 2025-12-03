@@ -19120,7 +19120,9 @@
       if (!imageStates[index]) {
         imageStates[index] = {
           rotate: 0,
-          zoom: 1
+          zoom: 1,
+          x: 0,
+          y: 0
         };
       }
       return imageStates[index];
@@ -19133,6 +19135,11 @@
         transforms.push(`rotate(${state.rotate}deg)`);
       }
       
+      // Сначала применяем translate, потом scale
+      if (state.x !== 0 || state.y !== 0) {
+        transforms.push(`translate(${state.x}px, ${state.y}px)`);
+      }
+      
       if (state.zoom !== 1) {
         transforms.push(`scale(${state.zoom})`);
       }
@@ -19140,9 +19147,66 @@
       image.style.transform = transforms.length > 0 ? transforms.join(' ') : 'none';
     }
     
+    function calculateMaxMove(state) {
+      if (!fullscreenImage || !fullscreen || state.zoom <= 1) {
+        return { maxX: 0, maxY: 0 };
+      }
+      
+      const content = fullscreen.querySelector('.modern-gallery-fullscreen-content');
+      if (!content) return { maxX: 0, maxY: 0 };
+      
+      // Получаем естественные размеры изображения или используем текущие размеры
+      const img = fullscreenImage;
+      const imgWidth = img.naturalWidth || img.offsetWidth || img.width;
+      const imgHeight = img.naturalHeight || img.offsetHeight || img.height;
+      
+      // Получаем размеры контейнера
+      const contentRect = content.getBoundingClientRect();
+      const containerWidth = contentRect.width;
+      const containerHeight = contentRect.height;
+      
+      // Рассчитываем исходные размеры изображения в контейнере (до зума)
+      // Изображение масштабируется с сохранением пропорций (object-fit: contain)
+      const imgAspect = imgWidth / imgHeight;
+      const containerAspect = containerWidth / containerHeight;
+      
+      let baseWidth, baseHeight;
+      if (imgAspect > containerAspect) {
+        // Изображение шире контейнера
+        baseWidth = containerWidth;
+        baseHeight = containerWidth / imgAspect;
+      } else {
+        // Изображение выше контейнера
+        baseHeight = containerHeight;
+        baseWidth = containerHeight * imgAspect;
+      }
+      
+      // Размеры изображения с учетом зума
+      const scaledWidth = baseWidth * state.zoom;
+      const scaledHeight = baseHeight * state.zoom;
+      
+      // Рассчитываем максимальное перемещение так, чтобы можно было увидеть все края
+      // Добавляем отступ 100px с каждой стороны для удобства просмотра краев
+      const padding = 100;
+      const maxX = Math.max(0, (scaledWidth - containerWidth) / 2 + padding);
+      const maxY = Math.max(0, (scaledHeight - containerHeight) / 2 + padding);
+      
+      return { maxX, maxY };
+    }
+    
     function applyFullscreenTransform(state) {
       if (!fullscreenImage) return;
       applyImageTransform(fullscreenImage, state);
+      
+      // Добавляем класс zoomed при зуме > 1 для уменьшения padding
+      const content = fullscreen ? fullscreen.querySelector('.modern-gallery-fullscreen-content') : null;
+      if (content) {
+        if (state.zoom > 1) {
+          content.classList.add('zoomed');
+        } else {
+          content.classList.remove('zoomed');
+        }
+      }
     }
     
     function getCurrentImage() {
@@ -19277,8 +19341,16 @@
       
       const state = getImageState(currentIndex);
       const newZoom = state.zoom + 0.2;
-      if (newZoom <= 3) {
+      if (newZoom <= 5) {
         state.zoom = newZoom;
+        
+        // Корректируем позицию, если она выходит за новые границы
+        if (state.zoom > 1) {
+          const { maxX, maxY } = calculateMaxMove(state);
+          state.x = Math.max(-maxX, Math.min(maxX, state.x));
+          state.y = Math.max(-maxY, Math.min(maxY, state.y));
+        }
+        
         applyFullscreenTransform(state);
         updateSlider();
       }
@@ -19289,8 +19361,20 @@
       
       const state = getImageState(currentIndex);
       const newZoom = state.zoom - 0.2;
-      if (newZoom >= 0.2) {
+      if (newZoom >= 0.5) {
         state.zoom = newZoom;
+        
+        // Если зум уменьшился до 1 или меньше, сбрасываем позицию
+        if (state.zoom <= 1) {
+          state.x = 0;
+          state.y = 0;
+        } else {
+          // Корректируем позицию, если она выходит за новые границы
+          const { maxX, maxY } = calculateMaxMove(state);
+          state.x = Math.max(-maxX, Math.min(maxX, state.x));
+          state.y = Math.max(-maxY, Math.min(maxY, state.y));
+        }
+        
         applyFullscreenTransform(state);
         updateSlider();
       }
@@ -19301,6 +19385,176 @@
       
       fullscreen.classList.remove('active');
       document.body.style.overflow = '';
+      
+      // Сбрасываем состояние перетаскивания
+      isDragging = false;
+      isPinching = false;
+      isTouchDragging = false;
+    }
+    
+    // Переменные для перетаскивания
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartImageX = 0;
+    let dragStartImageY = 0;
+    
+    // Обработчик зума колесиком мыши и перетаскивания
+    if (fullscreen && fullscreenImage) {
+      // Зум колесиком мыши
+      fullscreen.addEventListener('wheel', (e) => {
+        if (!fullscreen.classList.contains('active')) return;
+        
+        e.preventDefault();
+        
+        const state = getImageState(currentIndex);
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Math.max(0.5, Math.min(5, state.zoom + delta));
+        
+        if (newZoom !== state.zoom) {
+          state.zoom = newZoom;
+          
+          // Если зум уменьшился до 1 или меньше, сбрасываем позицию
+          if (state.zoom <= 1) {
+            state.x = 0;
+            state.y = 0;
+          } else {
+            // Корректируем позицию, если она выходит за новые границы
+            const { maxX, maxY } = calculateMaxMove(state);
+            state.x = Math.max(-maxX, Math.min(maxX, state.x));
+            state.y = Math.max(-maxY, Math.min(maxY, state.y));
+          }
+          
+          applyFullscreenTransform(state);
+        }
+      }, { passive: false });
+      
+      // Обработчики перетаскивания мышью
+      fullscreenImage.addEventListener('mousedown', (e) => {
+        if (!fullscreen.classList.contains('active')) return;
+        
+        const state = getImageState(currentIndex);
+        
+        // Перетаскивание только при зуме > 1
+        if (state.zoom > 1) {
+          isDragging = true;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          dragStartImageX = state.x;
+          dragStartImageY = state.y;
+          fullscreenImage.style.cursor = 'grabbing';
+          e.preventDefault();
+        }
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging || !fullscreen.classList.contains('active')) return;
+        
+        const state = getImageState(currentIndex);
+        const deltaX = e.clientX - dragStartX;
+        const deltaY = e.clientY - dragStartY;
+        
+        // Рассчитываем максимальное перемещение на основе реальных размеров
+        const { maxX, maxY } = calculateMaxMove(state);
+        
+        state.x = Math.max(-maxX, Math.min(maxX, dragStartImageX + deltaX));
+        state.y = Math.max(-maxY, Math.min(maxY, dragStartImageY + deltaY));
+        
+        applyFullscreenTransform(state);
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          if (fullscreenImage) {
+            fullscreenImage.style.cursor = 'grab';
+          }
+        }
+      });
+      
+      // Обработчики для touch устройств (pinch zoom и перетаскивание)
+      let touchStartDistance = 0;
+      let touchStartZoom = 1;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartImageX = 0;
+      let touchStartImageY = 0;
+      let isPinching = false;
+      let isTouchDragging = false;
+      
+      function getTouchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+      
+      fullscreenImage.addEventListener('touchstart', (e) => {
+        if (!fullscreen.classList.contains('active')) return;
+        
+        const state = getImageState(currentIndex);
+        
+        if (e.touches.length === 2) {
+          // Pinch zoom
+          isPinching = true;
+          touchStartDistance = getTouchDistance(e.touches);
+          touchStartZoom = state.zoom;
+          e.preventDefault();
+        } else if (e.touches.length === 1 && state.zoom > 1) {
+          // Перетаскивание одним пальцем
+          isTouchDragging = true;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartImageX = state.x;
+          touchStartImageY = state.y;
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      fullscreenImage.addEventListener('touchmove', (e) => {
+        if (!fullscreen.classList.contains('active')) return;
+        
+        const state = getImageState(currentIndex);
+        
+        if (e.touches.length === 2 && isPinching) {
+          // Pinch zoom
+          const currentDistance = getTouchDistance(e.touches);
+          const scale = currentDistance / touchStartDistance;
+          const newZoom = Math.max(0.5, Math.min(5, touchStartZoom * scale));
+          
+          state.zoom = newZoom;
+          
+          if (state.zoom <= 1) {
+            state.x = 0;
+            state.y = 0;
+          } else {
+            // Корректируем позицию, если она выходит за новые границы
+            const { maxX, maxY } = calculateMaxMove(state);
+            state.x = Math.max(-maxX, Math.min(maxX, state.x));
+            state.y = Math.max(-maxY, Math.min(maxY, state.y));
+          }
+          
+          applyFullscreenTransform(state);
+          e.preventDefault();
+        } else if (e.touches.length === 1 && isTouchDragging && state.zoom > 1) {
+          // Перетаскивание
+          const deltaX = e.touches[0].clientX - touchStartX;
+          const deltaY = e.touches[0].clientY - touchStartY;
+          
+          // Рассчитываем максимальное перемещение на основе реальных размеров
+          const { maxX, maxY } = calculateMaxMove(state);
+          
+          state.x = Math.max(-maxX, Math.min(maxX, touchStartImageX + deltaX));
+          state.y = Math.max(-maxY, Math.min(maxY, touchStartImageY + deltaY));
+          
+          applyFullscreenTransform(state);
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      fullscreenImage.addEventListener('touchend', () => {
+        isPinching = false;
+        isTouchDragging = false;
+      });
     }
     
     function nextSlide() {
