@@ -100,7 +100,11 @@ def add_log_history_open(estimation, user, page):
         page_title = 'История просмотров'
     elif page == 20:
         page_title = 'Ценообразование админ'
+    elif page == 30:
+        page_title = 'Ценообразование ДДЦ'
     elif page == 21:
+        page_title = 'Ценообразование ЕЦО'
+    elif page == 22:
         page_title = 'Ценообразование'
     elif page == 22:
         page_title = 'История изменений'
@@ -1401,7 +1405,7 @@ def doc(request, id):
 
         add_log_history_open(estimation, user, page)
 
-        if page == 21 or page == 20:
+        if page == 21 or page == 20 or page == 23:
             
             if page == 20:
                 if not request.user.profiles.eco_page_price_info:
