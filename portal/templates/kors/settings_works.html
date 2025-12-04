@@ -21,11 +21,13 @@
     {% csrf_token %}
 
     <div class="settings-vnesh-panel">
-      <h3 class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_add_work" aria-expanded="false" aria-controls="collapse_add_work" style="cursor: pointer;">
         <span>Добавить новую работу</span>
+        <span class="icon-mbri-down"></span>
       </h3>
       
-      <div class="row g-3">
+      <div class="collapse" id="collapse_add_work">
+        <div class="row g-3 mt-3">
         <div class="col-md-3">
           <div class="form-floating">
             <input type="text" class="form-control" id="new_work_name" name="new_work_name" placeholder="" value="" autocomplete="off" required>
@@ -83,6 +85,7 @@
             <label for="new_work_price_podrad">Подряд</label>
           </div>
         </div>
+        </div>
       </div>
     </div>
 
@@ -117,7 +120,16 @@
             {% for work in params.settings.works %}
             <tr class="work-row" data-name="{{ work.name|lower }}" data-group="{{ work.name_group|lower }}">
               <td data-label="№">{{ work.pk }}</td>
-              <td data-label="Тип">{{ work.type_settings }}</td>
+              <td data-label="Тип">
+                <div class="form-floating">
+                  <select class="form-select" id="workdata_{{ work.pk }}_type_settings" name="workdata_{{ work.pk }}_type_settings">
+                    <option value="0" {% if work.type_settings == 0 %}selected{% endif %}>0</option>
+                    <option value="1" {% if work.type_settings == 1 %}selected{% endif %}>1</option>
+                    <option value="2" {% if work.type_settings == 2 %}selected{% endif %}>2</option>
+                  </select>
+                  <label for="workdata_{{ work.pk }}_type_settings">Тип</label>
+                </div>
+              </td>
               <td data-label="Группа">{{ work.name_group }}</td>
               <td data-label="Наименование">{{ work.name }}</td>
               <td data-label="Коэффициент материалов">

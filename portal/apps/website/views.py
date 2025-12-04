@@ -7121,18 +7121,20 @@ def settings_vnesh(request):
             if key.startswith('workdata_') and key.find('normo') > 0:
                 try:
                     pk_work = key.split('_')[1]
-                    work = RegPodgotovkaWork.objects.get(pk=pk_work, type_settings=2)
+                    work = RegPodgotovkaWork.objects.get(pk=pk_work)
                     normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
                     price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
                     price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
                     materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
                     materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
+                    type_settings_val = request.POST.get('workdata_' + pk_work + '_type_settings', '2')
                     
                     work.normo = float(normo_val) if normo_val else 0.0
                     work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
                     work.price_kors = int(price_kors_val) if price_kors_val else 0
                     work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
                     work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
+                    work.type_settings = int(type_settings_val) if type_settings_val else 2
                     work.save()
                 except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
                     pass  # Пропускаем работы, которых нет в модели
@@ -7142,8 +7144,8 @@ def settings_vnesh(request):
     
     settings_estimation = RegEstimationsSettings.objects.all().last()
     
-    # Получаем работы с type_settings == 2
-    works = RegPodgotovkaWork.objects.filter(type_settings=2).order_by('name_group', 'name')
+    # Получаем все работы (теперь можно менять type_settings)
+    works = RegPodgotovkaWork.objects.all().order_by('type_settings', 'name_group', 'name')
     
     settings_data = {
         'settings_estimation' : settings_estimation,
@@ -7182,19 +7184,20 @@ def settings_works(request):
                 try:
                     pk_work = key.split('_')[1]
                     work = RegPodgotovkaWork.objects.get(pk=pk_work)
-                    if work.type_settings in [0, 1]:
-                        normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
-                        price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
-                        price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
-                        materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
-                        materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
-                        
-                        work.normo = float(normo_val) if normo_val else 0.0
-                        work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
-                        work.price_kors = int(price_kors_val) if price_kors_val else 0
-                        work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
-                        work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
-                        work.save()
+                    normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
+                    price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
+                    price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
+                    materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
+                    materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
+                    type_settings_val = request.POST.get('workdata_' + pk_work + '_type_settings', str(work.type_settings))
+                    
+                    work.normo = float(normo_val) if normo_val else 0.0
+                    work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
+                    work.price_kors = int(price_kors_val) if price_kors_val else 0
+                    work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
+                    work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
+                    work.type_settings = int(type_settings_val) if type_settings_val else work.type_settings
+                    work.save()
                 except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
                     pass
         
