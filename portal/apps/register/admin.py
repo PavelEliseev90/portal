@@ -179,9 +179,9 @@ class RegUnitMonthlyPlanAdmin(admin.ModelAdmin):
 
 @admin.register(RegInteractivOcenkaRLK)
 class RegInteractivOcenkaRLKAdmin(admin.ModelAdmin):
-    list_display = ('rlk', 'estimation', 'staff', 'staff_eco_1', 'staff_eco_2', 'unit', 'status', 'returned', 'date_diagnostic')
-    raw_id_fields = ('rlk', 'estimation', 'staff', 'staff_eco_1', 'staff_eco_2', 'unit', 'organization', 'filial', 'store', 'type_reception', 'status', 'page_soglasovanie')
-    list_filter = ('status', 'returned', 'date_diagnostic', 'unit', 'organization')
+    list_display = ('rlk', 'estimation', 'staff_rlk', 'staff_eco_1_rlk', 'staff_eco_2_rlk', 'unit', 'status', 'date_diagnostic')
+    raw_id_fields = ('rlk', 'estimation', 'staff_rlk', 'staff_eco_1_rlk', 'staff_eco_2_rlk', 'unit', 'organization', 'filial', 'store', 'type_reception', 'status', 'page_soglasovanie')
+    list_filter = ('status', 'date_diagnostic', 'unit', 'organization')
     search_fields = ('rlk__nomer', 'rlk__vin', 'estimation__vin')
     filter_horizontal = ('access_user',)
     

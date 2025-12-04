@@ -2612,6 +2612,8 @@ post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
 
 
+
+
 class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
     rlk                 = models.OneToOneField(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
     estimation          = models.ForeignKey(RegInteractivOcenka, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Оценка")
@@ -2623,9 +2625,9 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
     unit                = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
     store               = models.ForeignKey(RefStore, null=True, on_delete=models.SET_NULL, verbose_name='Склад / стоянка')
     
-    staff               = models.ForeignKey(RefStaff, related_name="staff_estimation", on_delete=models.SET_NULL, null=True, verbose_name="Оценщик")
-    staff_eco_1         = models.ForeignKey(User, related_name="staff_eco_1", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик до кд")
-    staff_eco_2         = models.ForeignKey(User, related_name="staff_eco_2", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик после кд")
+    staff_rlk               = models.ForeignKey(RefStaff, related_name="staff_estimation_rlk", on_delete=models.SET_NULL, null=True, verbose_name="Оценщик")
+    staff_eco_1_rlk         = models.ForeignKey(User, related_name="staff_eco_1_rlk", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик до кд")
+    staff_eco_2_rlk         = models.ForeignKey(User, related_name="staff_eco_2_rlk", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик после кд")
     
     page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование")
     

@@ -100,7 +100,11 @@ def add_log_history_open(estimation, user, page):
         page_title = 'История просмотров'
     elif page == 20:
         page_title = 'Ценообразование админ'
+    elif page == 30:
+        page_title = 'Ценообразование ДДЦ'
     elif page == 21:
+        page_title = 'Ценообразование ЕЦО'
+    elif page == 22:
         page_title = 'Ценообразование'
     elif page == 22:
         page_title = 'История изменений'
@@ -1277,7 +1281,7 @@ def doc(request, id):
 
     rlk     = DocRLK.objects.get(pk=id)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
-
+    
     if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
@@ -1292,7 +1296,7 @@ def doc(request, id):
     warning_list = list()
 
     params  = {}
-    
+    selected            = ''
     balance_date        = estimation.start_estimation 
     balance_date_start  = balance_date - relativedelta(months=1)
     balance_date_start  = balance_date_start.replace(day=1, hour=1)
@@ -1401,7 +1405,7 @@ def doc(request, id):
 
         add_log_history_open(estimation, user, page)
 
-        if page == 21 or page == 20:
+        if page == 21 or page == 20 or page == 23:
             
             if page == 20:
                 if not request.user.profiles.eco_page_price_info:
@@ -1649,7 +1653,9 @@ def doc(request, id):
                 'balance_unit'          : balance_unit,
                 'signal'                : signal,
                 'warning_list'          : warning_list,
-                'expenses'              : expenses
+                'expenses'              : expenses,
+                'selected'              : selected
+
             }
     
     elif request.method == "POST":
@@ -1722,8 +1728,25 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.suspension         = int(request.POST.get('radio_suspension', '3'))
             reg_interactiv_ocenka_test_drive.comment_suspension = request.POST.get('comment_suspension', '')
 
+            reg_interactiv_ocenka_test_drive.conditioner         = int(request.POST.get('radio_conditioner', '3'))
+            reg_interactiv_ocenka_test_drive.comment_conditioner = request.POST.get('comment_conditioner', '')
+
+            reg_interactiv_ocenka_test_drive.turbo              = int(request.POST.get('radio_turbo', '3'))
+            reg_interactiv_ocenka_test_drive.comment_turbo      = request.POST.get('comment_turbo', '')
+            
+            reg_interactiv_ocenka_test_drive.drive              = int(request.POST.get('radio_drive', '3'))
+            reg_interactiv_ocenka_test_drive.comment_drive      = request.POST.get('comment_drive', '')
+            
+            reg_interactiv_ocenka_test_drive.wheel              = int(request.POST.get('radio_wheel', '3'))
+            reg_interactiv_ocenka_test_drive.comment_wheel      = request.POST.get('comment_wheel', '')
+
+
             reg_interactiv_ocenka_test_drive.airbag             = int(request.POST.get('radio_airbag', '3'))
             reg_interactiv_ocenka_test_drive.comment_airbag     = request.POST.get('comment_airbag', '')
+
+
+            reg_interactiv_ocenka_test_drive.to                 = int(request.POST.get('radio_to', '10'))
+
 
             reg_interactiv_ocenka_test_drive.pp_dinamyc             = int(request.POST.get('radio_pp_dinamyc', '3'))
             reg_interactiv_ocenka_test_drive.pp_kpp                 = int(request.POST.get('radio_pp_kpp', '3'))
