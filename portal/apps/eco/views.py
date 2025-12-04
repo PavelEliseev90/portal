@@ -2751,6 +2751,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_200     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_200      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_200
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_200
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_200
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_200
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_200
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_200
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_200
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_200
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_200
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_200
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_200
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_200
+        drive_danger_kf              = estimation_settings.drive_danger_kf_200
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
+        drive_warning_kf             = estimation_settings.drive_warning_kf_200
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_200
     elif zna < 400000:
         zg              = '400'
         matrix_auction  = settings_matrix.charge_bcp_400
@@ -2805,6 +2821,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_400     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_400      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_400
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_400
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_400
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_400
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_400
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_400
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_400
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_400
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_400
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_400
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_400
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_400
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_400
+        drive_danger_kf              = estimation_settings.drive_danger_kf_400
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
+        drive_warning_kf             = estimation_settings.drive_warning_kf_400
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_400
     elif zna < 700000:
         zg              = '700'
         matrix_auction  = settings_matrix.charge_bcp_700
@@ -2859,6 +2891,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_700     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_700      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_700
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_700
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_700
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_700
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_700
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_700
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_700
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_700
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_700
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_700
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_700
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_700
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_700
+        drive_danger_kf              = estimation_settings.drive_danger_kf_700
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
+        drive_warning_kf             = estimation_settings.drive_warning_kf_700
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_700
     elif zna < 1200000:
         zg              = '1 200'
         matrix_auction  = settings_matrix.charge_bcp_1200
@@ -2913,6 +2961,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_1200     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_1200      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_1200
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_1200
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_1200
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_1200
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_1200
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_1200
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_1200
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_1200
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_1200
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_1200
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_1200
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_1200
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_1200
+        drive_danger_kf              = estimation_settings.drive_danger_kf_1200
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
+        drive_warning_kf             = estimation_settings.drive_warning_kf_1200
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_1200
     elif zna < 2000000:
         zg              = '2 000'
         matrix_auction  = settings_matrix.charge_bcp_2000
@@ -2967,6 +3031,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_2000     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_2000      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_2000
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_2000
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_2000
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_2000
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_2000
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_2000
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_2000
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_2000
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_2000
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_2000
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_2000
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_2000
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_2000
+        drive_danger_kf              = estimation_settings.drive_danger_kf_2000
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
+        drive_warning_kf             = estimation_settings.drive_warning_kf_2000
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_2000
     elif zna < 3000000:
         zg              = '3 000'
         matrix_auction  = settings_matrix.charge_bcp_3000
@@ -3021,6 +3101,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_3000     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_3000      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_3000
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_3000
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_3000
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_3000
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_3000
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_3000
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_3000
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_3000
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_3000
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_3000
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_3000
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_3000
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_3000
+        drive_danger_kf              = estimation_settings.drive_danger_kf_3000
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
+        drive_warning_kf             = estimation_settings.drive_warning_kf_3000
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_3000
     elif zna < 5000000:
         zg              = '5 000'
         matrix_auction  = settings_matrix.charge_bcp_5000
@@ -3075,6 +3171,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5000     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_5000      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5000
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5000
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5000
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5000
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5000
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_5000
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5000
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_5000
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5000
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_5000
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5000
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_5000
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5000
+        drive_danger_kf              = estimation_settings.drive_danger_kf_5000
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
+        drive_warning_kf             = estimation_settings.drive_warning_kf_5000
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5000
     else:
         zg              = '5 000+'
         matrix_auction  = settings_matrix.charge_bcp_5001
@@ -3129,6 +3241,22 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5001     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_5001      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5001
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5001
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5001
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5001
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5001
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_5001
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5001
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_5001
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5001
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_5001
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5001
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_5001
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5001
+        drive_danger_kf              = estimation_settings.drive_danger_kf_5001
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
+        drive_warning_kf             = estimation_settings.drive_warning_kf_5001
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5001
 
     if percent_torg < 0:
         percent_torg = percent_torg * -1
@@ -3483,8 +3611,8 @@ def estimations_price_calculation(estimation, type_calculation):
                 info_diff   = 'Дизельный двигатель сумма ремонта минимальное значение ' +  str(engine_dt_danger_amount_min)
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3513,8 +3641,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3559,8 +3687,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3609,8 +3737,8 @@ def estimations_price_calculation(estimation, type_calculation):
         
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3630,8 +3758,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : 'Подвеска ремонт неисправности',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)  
@@ -3652,8 +3780,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : 'Подвеска устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3665,16 +3793,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * system_og_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(system_og_danger_kf)
-
+        
         if price_diff < system_og_danger_amount_min:
             price_diff = system_og_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(system_og_danger_amount_min)
-
+            
         dop = {
             'name'      : 'Система выпуска ОГ ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3684,21 +3810,199 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * system_og_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(system_og_warning_kf)
-
+        
         if price_diff < system_og_warning_amount_min:
             price_diff = system_og_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(system_og_warning_amount_min)
-
+           
         dop = {
             'name'      : 'Система выпуска ОГ устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
 
+    # кондиционер
+    if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * conditioner_danger_kf / 100)
+        
+        if price_diff < conditioner_danger_amount_min:
+            price_diff = conditioner_danger_amount_min
+            
+        dop = {
+            'name'      : 'Кондиционер ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * conditioner_warning_kf / 100)
+       
+        if price_diff < conditioner_warning_amount_min:
+            price_diff = conditioner_warning_amount_min
+            
+        dop = {
+            'name'      : 'Кондиционер устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # турбокомпрессор
+    if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * turbo_danger_kf / 100)
+        
+        if price_diff < turbo_danger_amount_min:
+            price_diff = turbo_danger_amount_min
+            
+        dop = {
+            'name'      : 'Турбокомпрессор ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * turbo_warning_kf / 100)
+       
+        if price_diff < turbo_warning_amount_min:
+            price_diff = turbo_warning_amount_min
+            
+        dop = {
+            'name'      : 'Турбокомпрессор устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # рулевое управление
+    if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * wheel_danger_kf / 100)
+       
+        if price_diff < wheel_danger_amount_min:
+            price_diff = wheel_danger_amount_min
+           
+        dop = {
+            'name'      : 'Рулевое управление ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * wheel_warning_kf / 100)
+       
+        if price_diff < wheel_warning_amount_min:
+            price_diff = wheel_warning_amount_min
+           
+        dop = {
+            'name'      : 'Рулевое управление устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # привод
+    if estimation.page_test_drive != None and estimation.page_test_drive.drive == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * drive_danger_kf / 100)
+        
+        if price_diff < drive_danger_amount_min:
+            price_diff = drive_danger_amount_min
+           
+        dop = {
+            'name'      : 'Привод ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.drive == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * drive_warning_kf / 100)
+        
+        if price_diff < drive_warning_amount_min:
+            price_diff = drive_warning_amount_min
+            
+        dop = {
+            'name'      : 'Привод устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # ТО
+    estimation_settings = RegEstimationsSettings.objects.all().last()
+    to_1 = estimation_settings.to_1
+    to_2 = estimation_settings.to_2
+    to_3 = estimation_settings.to_3
+    
+    if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
+        price_diff = to_1 
+        dop = {
+            'name'      : 'ТО Minimal',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+    elif estimation.page_test_drive != None and estimation.page_test_drive.to == 2:
+        price_diff = to_2 
+        dop = {
+            'name'      : 'ТО Middle',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+    elif estimation.page_test_drive != None and estimation.page_test_drive.to == 3:
+        price_diff = to_3 
+        dop = {
+            'name'      : 'ТО Full',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
 
     kors_price_reception = 0
     if estimation.kors_count_sale > 0: 
