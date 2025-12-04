@@ -3597,18 +3597,18 @@ def estimations_price_calculation(estimation, type_calculation):
         price_diff = 0
         if modification.typeEngine.id == 1:
             price_diff  = (price * engine_danger_kf / 100)
-            info_diff   = 'Бензиновый двигатель сумма ремонта в процентах ' +  str(engine_danger_kf)
+            info_diff   = 'Бензиновый двигатель ремонт'
 
             if price_diff < engine_danger_amount_min:
                 price_diff  = engine_danger_amount_min
-                info_diff   = 'Бензиновый двигатель сумма ремонта минимальное значение ' +  str(engine_danger_amount_min)
+                info_diff   = 'Бензиновый двигатель ремонт'
         else:
             price_diff  = (price * engine_dt_danger_kf / 100)
-            info_diff   = 'Дизельный двигатель сумма ремонта в процентах ' +  str(engine_dt_danger_kf)
+            info_diff   = 'Дизельный двигатель ремонт'
 
             if price_diff < engine_dt_danger_amount_min:
                 price_diff  = engine_dt_danger_amount_min
-                info_diff   = 'Дизельный двигатель сумма ремонта минимальное значение ' +  str(engine_dt_danger_amount_min)
+                info_diff   = 'Дизельный двигатель ремонт'
         dop = {
             'name'      : info_diff,
             'quantity'  : 1,
@@ -3625,19 +3625,19 @@ def estimations_price_calculation(estimation, type_calculation):
         
         if modification.typeEngine.id == 1:  
             price_diff = (price * engine_warning_kf / 100)
-            info_diff   = 'Бензиновый двигатель сумма ремонта в процентах ' +  str(engine_warning_kf)
+            info_diff   = 'Бензиновый двигатель устранение замечаний'
             
             if price_diff < engine_warning_amount_min:
                 price_diff = engine_warning_amount_min
-                info_diff   = 'Бензиновый двигатель сумма ремонта минимальное значение ' +  str(engine_warning_amount_min)
+                info_diff   = 'Бензиновый двигатель устранение замечаний'
         else:
         
             price_diff = (price * engine_dt_warning_kf / 100)
-            info_diff   = 'Дизельный двигатель сумма ремонта в процентах ' +  str(engine_dt_warning_kf)
+            info_diff   = 'Дизельный двигатель устранение замечаний'
 
             if price_diff < engine_dt_warning_amount_min:
                 price_diff = engine_dt_warning_amount_min
-                info_diff   = 'Дизельный двигатель сумма ремонта минимальное значение ' +  str(engine_dt_warning_amount_min)
+                info_diff   = 'Дизельный двигатель устранение замечаний'
 
         dop = {
             'name'      : info_diff,
@@ -3656,34 +3656,34 @@ def estimations_price_calculation(estimation, type_calculation):
         
         if modification.typeGear.id == 1:
             price_diff = (price * gear_amt_danger_kf / 100)
-            info_diff   = 'Робот сумма ремонта в процентах ' +  str(gear_amt_danger_kf)
+            info_diff   = 'Робот устранение замечаний'
 
             if price_diff < gear_amt_danger_amount_min:
                 price_diff = gear_amt_danger_amount_min
-                info_diff   = 'Робот сумма ремонта минимальное значение ' +  str(gear_amt_danger_amount_min)
+                info_diff   = 'Робот устранение замечаний'
 
         elif modification.typeGear.id == 2:
             price_diff = (price * gear_mt_danger_kf / 100)
-            info_diff   = 'Механика сумма ремонта в процентах ' +  str(gear_mt_danger_kf)
+            info_diff   = 'Механика устранение замечаний'
 
             if price_diff < gear_mt_danger_amount_min:
                 price_diff = gear_mt_danger_amount_min
-                info_diff   = 'Механика сумма ремонта минимальное значение ' +  str(gear_mt_danger_amount_min)
+                info_diff   = 'Механика устранение замечаний'
 
         elif modification.typeGear.id == 3:
             price_diff = (price * gear_at_danger_kf / 100)
-            info_diff   = 'Автомат сумма ремонта в процентах ' +  str(gear_at_danger_kf)
+            info_diff   = 'Автомат устранение замечаний'
             if price_diff < gear_at_danger_amount_min:
                 price_diff = gear_at_danger_amount_min
-                info_diff   = 'Автомат сумма ремонта минимальное значение ' +  str(gear_at_danger_amount_min)
+                info_diff   = 'Автомат устранение замечаний'
 
         elif modification.typeGear.id == 4:
             price_diff = (price * gear_cvt_danger_kf / 100)
-            info_diff   = 'Вариатор сумма ремонта в процентах ' +  str(gear_cvt_danger_kf)
+            info_diff   = 'Вариатор устранение замечаний'
 
             if price_diff < gear_cvt_danger_amount_min:
                 price_diff = gear_cvt_danger_amount_min
-                info_diff   = 'Вариатор сумма ремонта минимальное значение ' +  str(gear_cvt_danger_amount_min)
+                info_diff   = 'Вариатор устранение замечаний'
 
         dop = {
             'name'      : info_diff,
@@ -3702,38 +3702,38 @@ def estimations_price_calculation(estimation, type_calculation):
         if modification.typeGear.id == 1:
             
             price_diff = (price * gear_amt_warning_kf / 100)
-            info_diff   = 'Робот сумма ремонта в процентах ' +  str(gear_amt_warning_kf)
+            info_diff   = 'Робот ремонт'
 
             if price_diff < gear_amt_warning_amount_min:
                 price_diff = gear_amt_warning_amount_min
-                info_diff   = 'Робот сумма ремонта минимальное значение ' +  str(gear_amt_warning_amount_min)
+                info_diff   = 'Робот ремонт'
 
         elif modification.typeGear.id == 2:
             
             price_diff = (price * gear_mt_warning_kf / 100)
-            info_diff   = 'Механика сумма ремонта в процентах ' +  str(gear_mt_warning_kf)
+            info_diff   = 'Механика ремонт'
 
             if price_diff < gear_mt_warning_amount_min:
                 price_diff = gear_mt_warning_amount_min
-                info_diff   = 'Механика сумма ремонта минимальное значение ' +  str(gear_mt_warning_amount_min)
+                info_diff   = 'Механика ремонт'
 
         elif modification.typeGear.id == 3:
             
             price_diff = (price * gear_at_warning_kf / 100)
-            info_diff   = 'Автомат сумма ремонта в процентах ' +  str(gear_at_warning_kf)
+            info_diff   = 'Автомат ремонт'
 
             if price_diff < gear_at_warning_amount_min:
                 price_diff = gear_at_warning_amount_min
-                info_diff   = 'Автомат сумма ремонта минимальное значение ' +  str(gear_at_warning_amount_min)
+                info_diff   = 'Автомат ремонт'
         
         elif modification.typeGear.id == 4:
             
             price_diff = (price * gear_cvt_warning_kf / 100)
-            info_diff   = 'Вариатор сумма ремонта в процентах ' +  str(gear_cvt_warning_kf)
+            info_diff   = 'Вариатор ремонт'
 
             if price_diff < gear_cvt_warning_amount_min:
                 price_diff = gear_cvt_warning_amount_min
-                info_diff   = 'Вариатор сумма ремонта минимальное значение ' +  str(gear_cvt_warning_amount_min)
+                info_diff   = 'Вариатор ремонт'
         
         dop = {
             'name'      : info_diff,
@@ -3772,12 +3772,10 @@ def estimations_price_calculation(estimation, type_calculation):
         price_diff = 0
         
         price_diff = (price * suspension_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(suspension_warning_kf)
-
+        
         if price_diff < suspension_warning_amount_min:
             price_diff = suspension_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(suspension_warning_amount_min)
-
+            
         dop = {
             'name'      : 'Подвеска устранение замечаний',
             'quantity'  : 1,
