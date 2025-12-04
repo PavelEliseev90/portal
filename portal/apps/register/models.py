@@ -622,6 +622,63 @@ class RegEstimationsSettings(models.Model):
     turbo_warning_kf_1200            	= models.IntegerField('Турбо есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     turbo_warning_amount_min_1200    	= models.IntegerField('Турбо есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
 
+    drive_danger_amount_200                 = models.IntegerField('Привод не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_200                     = models.IntegerField('Привод не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_200             = models.IntegerField('Привод не исправен мин сумма 200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_200            = models.IntegerField('Привод есть замечания сумма 200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_200            	= models.IntegerField('Привод есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_200    	= models.IntegerField('Привод есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_400                 = models.IntegerField('Привод не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_400                     = models.IntegerField('Привод не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_400             = models.IntegerField('Привод не исправен мин сумма 400',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_400            = models.IntegerField('Привод есть замечания сумма 400',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_400            	= models.IntegerField('Привод есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_400    	= models.IntegerField('Привод есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_700                 = models.IntegerField('Привод не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_700                     = models.IntegerField('Привод не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_700             = models.IntegerField('Привод не исправен мин сумма 700',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_700            = models.IntegerField('Привод есть замечания сумма 700',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_700            	= models.IntegerField('Привод есть замечания коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_700    	= models.IntegerField('Привод есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_1200                 = models.IntegerField('Привод не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_1200                     = models.IntegerField('Привод не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_1200             = models.IntegerField('Привод не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    drive_warning_amount_1200            = models.IntegerField('Привод есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_1200            	= models.IntegerField('Привод есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_1200    	= models.IntegerField('Привод есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+    
+    drive_danger_amount_2000                 = models.IntegerField('Привод не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_2000                     = models.IntegerField('Привод не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_2000             = models.IntegerField('Привод не исправен мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_2000            = models.IntegerField('Привод есть замечания сумма 2000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_2000            	= models.IntegerField('Привод есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_2000    	= models.IntegerField('Привод есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_3000                 = models.IntegerField('Привод не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_3000                     = models.IntegerField('Привод не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_3000             = models.IntegerField('Привод не исправен мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_3000            = models.IntegerField('Привод есть замечания сумма 3000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_3000            	= models.IntegerField('Привод есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_3000    	= models.IntegerField('Привод есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_5000                 = models.IntegerField('Привод не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_5000                     = models.IntegerField('Привод не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_5000             = models.IntegerField('Привод не исправен мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_5000            = models.IntegerField('Привод есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_5000            	= models.IntegerField('Привод есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_5000    	= models.IntegerField('Привод есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_5001                 = models.IntegerField('Привод не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_5001                     = models.IntegerField('Привод не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_5001             = models.IntegerField('Привод не исправен мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_5001            = models.IntegerField('Привод есть замечания сумма 5001',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_5001            	= models.IntegerField('Привод есть замечания коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_5001    	= models.IntegerField('Привод есть замечания мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
     engine_danger_amount_1200        = models.IntegerField('Двигатель не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_1200            = models.IntegerField('Двигатель не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     engine_danger_amount_min_1200    = models.IntegerField('Двигатель не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
@@ -1195,6 +1252,10 @@ class RegEstimationsSettings(models.Model):
     bumper_pered_replace_kf_5001        = models.IntegerField('Бампер замена 5001 ',      default=0, null=False, blank=True)       
     bumper_zad_replace_kf_5001          = models.IntegerField('Бампер замена 5001 зад',      default=0, null=False, blank=True)
     
+    to_1    = models.IntegerField('ТО 1',      default=0, null=False, blank=True)
+    to_2    = models.IntegerField('ТО 2',      default=0, null=False, blank=True)
+    to_3    = models.IntegerField('ТО 3',      default=0, null=False, blank=True)
+
     def __str__(self):
         return "{}".format(self.name)
 
@@ -2551,6 +2612,68 @@ post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
 
 
+
+
+class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
+    rlk                 = models.OneToOneField(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
+    estimation          = models.ForeignKey(RegInteractivOcenka, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Оценка")
+    
+    type_reception      = models.ForeignKey(RefTypeReceptionCarsOrganization, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Тип приема автомобиля')
+    
+    organization        = models.ForeignKey(RefOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Организация")
+    filial              = models.ForeignKey(RefFilial, on_delete=models.SET_NULL, null=True, verbose_name="Филиал")
+    unit                = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
+    store               = models.ForeignKey(RefStore, null=True, on_delete=models.SET_NULL, verbose_name='Склад / стоянка')
+    
+    staff               = models.ForeignKey(RefStaff, related_name="staff_estimation", on_delete=models.SET_NULL, null=True, verbose_name="Оценщик")
+    staff_eco_1         = models.ForeignKey(User, related_name="staff_eco_1", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик до кд")
+    staff_eco_2         = models.ForeignKey(User, related_name="staff_eco_2", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик после кд")
+    
+    page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование")
+    
+    status              = models.ForeignKey(RefStatusEstimation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Статус")
+    
+    access_user         = models.ManyToManyField(User, verbose_name='Пользователь', blank=True)
+    
+    prev_img                = models.CharField("Превью", max_length=2500, default='', null=True, blank=True) 
+    qr                      = models.ImageField(storage=save_directory,  upload_to="estimationrlk/qr/", verbose_name="QR", blank=True, null=True)
+    slug                    = models.SlugField(max_length=512, null=True, blank=True)
+    
+    users_eco               = models.IntegerField('Сотрудников ецо в чате', default=0, null=True, blank=True)
+    users_no_eco            = models.IntegerField('Сотрудников не ецо в чате', default=0, null=True, blank=True)
+    users_dop               = models.IntegerField('Сотрудников доп согласования', default=0, null=True, blank=True)
+
+    date_s_do_diag  = models.DateTimeField('Дата согласования до диагностики', blank=True, null=True)
+    date_diagnostic = models.DateTimeField('Дата диагностики', blank=True, null=True)
+    date_s_diag     = models.DateTimeField('Дата согласования после диагностики', blank=True, null=True)
+    
+    status_ocenka                       = models.IntegerField('Секунд оценка', default=0, null=True, blank=True)
+    status_soglasovanie_do_diag         = models.IntegerField('Секунд до согласования диагностики', default=0, null=True, blank=True)
+    status_diagnostika                  = models.IntegerField('Секунд диагностика', default=0, null=True, blank=True)
+    status_soglasovanie_posle_kd        = models.IntegerField('Секунд после диагностики', default=0, null=True, blank=True)
+    
+    count_task                          = models.IntegerField('Задач', default=0, null=True, blank=True)
+    seconds_task                        = models.IntegerField('Время на задачи', default=0, null=True, blank=True)
+    count_answer                        = models.IntegerField('Ответов ЕЦО', default=0, null=True, blank=True)
+    seconds_answer                      = models.IntegerField('Среднее время ответа', default=0, null=True, blank=True)
+    seconds_estimation                  = models.IntegerField('Секунд оценки', default=0, null=True, blank=True)
+    
+    
+    def save(self, *args, **kwargs):
+        
+        super().save(*args, **kwargs)
+
+
+    def __str__(self):
+        return "{} / {}".format(self.rlk, self.estimation)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['rlk', 'estimation'])
+        ]
+        db_table = 'regInteractivOcenkaRLK'
+        verbose_name = "Данные интерактивной оценки рабочего листа"
+        verbose_name_plural = "данные интерактивных оценок рабочего листа"
 
 
 class RegInteractivOcenkaOptions(models.Model):

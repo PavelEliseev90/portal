@@ -6103,8 +6103,21 @@ def korsavto_settings_dc(request):
                     work.materials_amount   = float(request.POST.get('workdata_'+ pk_work + '_materials_amount'))
                     
                     work.save()
-                if key.startswith('engine_') or key.startswith('system_og_') > 0 or key.startswith('suspension_') > 0 or key.startswith('gear_') > 0 or key.startswith('wheel_') > 0 or key.startswith('turbo_') > 0 or key.startswith('conditioner_') > 0: 
-                    setattr(estimation_settings, key, int(request.POST.get(key)))          
+                if (key.startswith('engine_') or 
+                    key.startswith('system_og_') or 
+                    key.startswith('suspension_') or 
+                    key.startswith('gear_') or 
+                    key.startswith('wheel_') or 
+                    key.startswith('turbo_') or 
+                    key.startswith('conditioner_') or
+                    key.startswith('drive_')):
+                    try:
+                        value = request.POST.get(key, 0)
+                        if value == '':
+                            value = 0
+                        setattr(estimation_settings, key, int(value))
+                    except (ValueError, AttributeError):
+                        pass  # Пропускаем поля, которых нет в модели          
 
             estimation_settings.save()
             return HttpResponseRedirect(request.build_absolute_uri())
@@ -7021,6 +7034,42 @@ def settings_matrix_auction(request):
 
 @login_required
 def settings_diagnostic(request):
+    
+    if request.method == 'POST':
+        settings_estimation = RegEstimationsSettings.objects.all().last()
+        if not settings_estimation:
+            settings_estimation = RegEstimationsSettings()
+        
+        # Обрабатываем поля ТО
+        for to_field in ['to_1', 'to_2', 'to_3']:
+            try:
+                value = request.POST.get(to_field, 0)
+                if value == '':
+                    value = 0
+                setattr(settings_estimation, to_field, int(value))
+            except (ValueError, AttributeError):
+                pass
+        
+        # Обрабатываем все поля диагностики
+        for key in request.POST.keys():
+            if (key.startswith('engine_') or 
+                key.startswith('system_og_') or 
+                key.startswith('suspension_') or 
+                key.startswith('gear_') or 
+                key.startswith('wheel_') or 
+                key.startswith('turbo_') or 
+                key.startswith('conditioner_') or
+                key.startswith('drive_')):
+                try:
+                    value = request.POST.get(key, 0)
+                    if value == '':
+                        value = 0
+                    setattr(settings_estimation, key, int(value))
+                except (ValueError, AttributeError):
+                    pass  # Пропускаем поля, которых нет в модели
+        
+        settings_estimation.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
     
     settings_estimation = RegEstimationsSettings.objects.all().last()
     
