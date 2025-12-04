@@ -7086,10 +7086,61 @@ def settings_diagnostic(request):
 @login_required
 def settings_vnesh(request):
     
+    if request.method == 'POST':
+        settings_estimation = RegEstimationsSettings.objects.all().last()
+        if not settings_estimation:
+            settings_estimation = RegEstimationsSettings()
+        
+        # Обрабатываем все поля внешнего осмотра
+        for key in request.POST.keys():
+            if (key.startswith('battery_') or 
+                key.startswith('windshield_') or 
+                key.startswith('light_') or 
+                key.startswith('bumper_')):
+                try:
+                    value = request.POST.get(key, 0)
+                    if value == '':
+                        value = 0
+                    # Для полей с formatted_float используем float, для остальных int
+                    if key.startswith('battery_'):
+                        setattr(settings_estimation, key, float(value))
+                    else:
+                        setattr(settings_estimation, key, int(value))
+                except (ValueError, AttributeError):
+                    pass  # Пропускаем поля, которых нет в модели
+        
+        # Обрабатываем работы по подготовке с type_settings == 2
+        for key in request.POST.keys():
+            if key.startswith('workdata_') and key.find('normo') > 0:
+                try:
+                    pk_work = key.split('_')[1]
+                    work = RegPodgotovkaWork.objects.get(pk=pk_work, type_settings=2)
+                    normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
+                    price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
+                    price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
+                    materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
+                    materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
+                    
+                    work.normo = float(normo_val) if normo_val else 0.0
+                    work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
+                    work.price_kors = int(price_kors_val) if price_kors_val else 0
+                    work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
+                    work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
+                    work.save()
+                except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
+                    pass  # Пропускаем работы, которых нет в модели
+        
+        settings_estimation.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
     settings_estimation = RegEstimationsSettings.objects.all().last()
     
+    # Получаем работы с type_settings == 2
+    works = RegPodgotovkaWork.objects.filter(type_settings=2).order_by('name_group', 'name')
+    
     settings_data = {
-        'settings_estimation' : settings_estimation
+        'settings_estimation' : settings_estimation,
+        'works' : works
     }
     params = {
         'type'          : 'settings',
