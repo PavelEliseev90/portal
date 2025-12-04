@@ -2551,6 +2551,8 @@ post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
 
 
+
+
 class RegInteractivOcenkaOptions(models.Model):
     estimation          = models.OneToOneField(RegInteractivOcenka, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
     name                = models.CharField('Опция', max_length=21, default='')
