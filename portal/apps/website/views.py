@@ -7217,6 +7217,79 @@ def settings_works(request):
     return render(request, "kors/settings_works.html", {'params': params})
 
 @login_required
+def settings_unit_groups(request):
+    
+    if request.method == 'POST':
+        # Обрабатываем создание новой группы
+        if 'new_group' in request.POST:
+            try:
+                new_group = RefUnitGroup()
+                new_group.name = request.POST.get('new_group_name', '')
+                new_group.name_bi = request.POST.get('new_group_name_bi', '')
+                new_group.comment = request.POST.get('new_group_comment', '')
+                new_group.active = 'new_group_active' in request.POST
+                city_id = request.POST.get('new_group_city', '')
+                if city_id:
+                    new_group.city_id = int(city_id)
+                new_group.save()
+                
+                # Добавляем подразделения
+                unit_ids = request.POST.getlist('new_group_units')
+                if unit_ids:
+                    new_group.units.set(unit_ids)
+            except (ValueError, AttributeError):
+                pass
+        
+        # Обрабатываем обновление существующих групп
+        for key in request.POST.keys():
+            if key.startswith('groupdata_') and key.find('_name') > 0:
+                try:
+                    pk_group = key.split('_')[1]
+                    group = RefUnitGroup.objects.get(pk=pk_group)
+                    
+                    group.name = request.POST.get('groupdata_' + pk_group + '_name', '')
+                    group.name_bi = request.POST.get('groupdata_' + pk_group + '_name_bi', '')
+                    group.comment = request.POST.get('groupdata_' + pk_group + '_comment', '')
+                    group.active = 'groupdata_' + pk_group + '_active' in request.POST
+                    
+                    city_id = request.POST.get('groupdata_' + pk_group + '_city', '')
+                    if city_id:
+                        group.city_id = int(city_id) if city_id else None
+                    else:
+                        group.city_id = None
+                    
+                    group.save()
+                    
+                    # Обновляем подразделения
+                    unit_ids = request.POST.getlist('groupdata_' + pk_group + '_units')
+                    group.units.set(unit_ids)
+                except (ValueError, AttributeError, RefUnitGroup.DoesNotExist):
+                    pass
+        
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Получаем все группы подразделений
+    groups = RefUnitGroup.objects.all().order_by('name')
+    
+    # Получаем все подразделения для выбора
+    units = RefUnit.objects.all().order_by('name')
+    
+    # Получаем все города для выбора
+    cities = RefCity.objects.all().order_by('name')
+    
+    settings_data = {
+        'groups' : groups,
+        'units' : units,
+        'cities' : cities
+    }
+    params = {
+        'type'          : 'settings',
+        'settings'      : settings_data        
+    }
+    
+    return render(request, "kors/settings_unit_groups.html", {'params': params})
+
+@login_required
 def kpi_eco(request):
     
     type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')

@@ -38,6 +38,7 @@ urlpatterns = [
    path('settings/settings_diagnostic/',                    views.settings_diagnostic),
    path('settings/settings_vnesh/',                         views.settings_vnesh),
    path('settings/settings_works/',                         views.settings_works),
+   path('settings/settings_unit_groups/',                   views.settings_unit_groups),
 
    path('refs/units_group/',     views.refs_unit_group_list),
    
