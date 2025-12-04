@@ -3611,8 +3611,8 @@ def estimations_price_calculation(estimation, type_calculation):
                 info_diff   = 'Дизельный двигатель сумма ремонта минимальное значение ' +  str(engine_dt_danger_amount_min)
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3641,8 +3641,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3687,8 +3687,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3737,8 +3737,8 @@ def estimations_price_calculation(estimation, type_calculation):
         
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3758,8 +3758,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : 'Подвеска ремонт неисправности',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)  
@@ -3780,8 +3780,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : 'Подвеска устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3793,16 +3793,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * system_og_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(system_og_danger_kf)
-
+        
         if price_diff < system_og_danger_amount_min:
             price_diff = system_og_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(system_og_danger_amount_min)
-
+            
         dop = {
             'name'      : 'Система выпуска ОГ ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3812,16 +3810,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * system_og_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(system_og_warning_kf)
-
+        
         if price_diff < system_og_warning_amount_min:
             price_diff = system_og_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(system_og_warning_amount_min)
-
+           
         dop = {
             'name'      : 'Система выпуска ОГ устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3833,16 +3829,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * conditioner_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(conditioner_danger_kf)
-
+        
         if price_diff < conditioner_danger_amount_min:
             price_diff = conditioner_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(conditioner_danger_amount_min)
-
+            
         dop = {
             'name'      : 'Кондиционер ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3852,16 +3846,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * conditioner_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(conditioner_warning_kf)
-
+       
         if price_diff < conditioner_warning_amount_min:
             price_diff = conditioner_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(conditioner_warning_amount_min)
-
+            
         dop = {
             'name'      : 'Кондиционер устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3873,16 +3865,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * turbo_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(turbo_danger_kf)
-
+        
         if price_diff < turbo_danger_amount_min:
             price_diff = turbo_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(turbo_danger_amount_min)
-
+            
         dop = {
             'name'      : 'Турбокомпрессор ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3892,16 +3882,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * turbo_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(turbo_warning_kf)
-
+       
         if price_diff < turbo_warning_amount_min:
             price_diff = turbo_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(turbo_warning_amount_min)
-
+            
         dop = {
             'name'      : 'Турбокомпрессор устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3913,16 +3901,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * wheel_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(wheel_danger_kf)
-
+       
         if price_diff < wheel_danger_amount_min:
             price_diff = wheel_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(wheel_danger_amount_min)
-
+           
         dop = {
             'name'      : 'Рулевое управление ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3932,16 +3918,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * wheel_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(wheel_warning_kf)
-
+       
         if price_diff < wheel_warning_amount_min:
             price_diff = wheel_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(wheel_warning_amount_min)
-
+           
         dop = {
             'name'      : 'Рулевое управление устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3953,16 +3937,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * drive_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(drive_danger_kf)
-
+        
         if price_diff < drive_danger_amount_min:
             price_diff = drive_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(drive_danger_amount_min)
-
+           
         dop = {
             'name'      : 'Привод ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3972,21 +3954,21 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * drive_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(drive_warning_kf)
-
+        
         if price_diff < drive_warning_amount_min:
             price_diff = drive_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(drive_warning_amount_min)
-
+            
         dop = {
             'name'      : 'Привод устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
 
+    # ТО
+    estimation_settings = RegEstimationsSettings.objects.all().last()
     to_1 = estimation_settings.to_1
     to_2 = estimation_settings.to_2
     to_3 = estimation_settings.to_3
@@ -4021,7 +4003,7 @@ def estimations_price_calculation(estimation, type_calculation):
         }
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
-        
+
     kors_price_reception = 0
     if estimation.kors_count_sale > 0: 
         kors_price_reception = round(((estimation.kors_sale_cost_price_min + estimation.kors_sale_cost_price_max)  / 2) - estimation.kors_outlay_avg, -3)
