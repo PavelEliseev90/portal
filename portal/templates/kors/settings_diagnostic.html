@@ -20,32 +20,6 @@
     {% csrf_token %}
 
     <div class="settings-diagnostic-panel">
-      <h3 class="d-flex justify-content-between align-items-center mb-3">
-        <span>Техническое обслуживание (ТО)</span>
-      </h3>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="to_1" name="to_1" placeholder="" value="{{params.settings.settings_estimation.to_1|default:0}}" autocomplete="off">
-            <label for="to_1">ТО 1</label>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="to_2" name="to_2" placeholder="" value="{{params.settings.settings_estimation.to_2|default:0}}" autocomplete="off">
-            <label for="to_2">ТО 2</label>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="to_3" name="to_3" placeholder="" value="{{params.settings.settings_estimation.to_3|default:0}}" autocomplete="off">
-            <label for="to_3">ТО 3</label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-diagnostic-panel">
       <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_200" aria-expanded="false" aria-controls="collapse_200" style="cursor: pointer;">
         <span>200</span>
         <span class="icon-mbri-down"></span>
@@ -409,6 +383,24 @@
                   <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_200" name="wheel_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_200}}" autocomplete="off">
                   <label for="wheel_danger_amount_min_200">Мин. сумма</label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_200" name="to_1_200" placeholder="" value="{{params.settings.settings_estimation.to_1_200|default:0}}" autocomplete="off">
+                <label for="to_1_200">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_200" name="to_2_200" placeholder="" value="{{params.settings.settings_estimation.to_2_200|default:0}}" autocomplete="off">
+                <label for="to_2_200">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_200" name="to_3_200" placeholder="" value="{{params.settings.settings_estimation.to_3_200|default:0}}" autocomplete="off">
+                <label for="to_3_200">ТО 3</label>
               </div>
             </div>
           </div>
@@ -780,6 +772,24 @@
               </div>
             </div>
           </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_400" name="to_1_400" placeholder="" value="{{params.settings.settings_estimation.to_1_400|default:0}}" autocomplete="off">
+                <label for="to_1_400">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_400" name="to_2_400" placeholder="" value="{{params.settings.settings_estimation.to_2_400|default:0}}" autocomplete="off">
+                <label for="to_2_400">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_400" name="to_3_400" placeholder="" value="{{params.settings.settings_estimation.to_3_400|default:0}}" autocomplete="off">
+                <label for="to_3_400">ТО 3</label>
+              </div>
+            </div>
+          </div>
             </div>
       </div>
     </div>
@@ -1145,6 +1155,24 @@
                   <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_700" name="wheel_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_700}}" autocomplete="off">
                   <label for="wheel_danger_amount_min_700">Мин. сумма</label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_700" name="to_1_700" placeholder="" value="{{params.settings.settings_estimation.to_1_700|default:0}}" autocomplete="off">
+                <label for="to_1_700">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_700" name="to_2_700" placeholder="" value="{{params.settings.settings_estimation.to_2_700|default:0}}" autocomplete="off">
+                <label for="to_2_700">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_700" name="to_3_700" placeholder="" value="{{params.settings.settings_estimation.to_3_700|default:0}}" autocomplete="off">
+                <label for="to_3_700">ТО 3</label>
               </div>
             </div>
           </div>
@@ -1516,6 +1544,24 @@
               </div>
             </div>
           </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_1200" name="to_1_1200" placeholder="" value="{{params.settings.settings_estimation.to_1_1200|default:0}}" autocomplete="off">
+                <label for="to_1_1200">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_1200" name="to_2_1200" placeholder="" value="{{params.settings.settings_estimation.to_2_1200|default:0}}" autocomplete="off">
+                <label for="to_2_1200">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_1200" name="to_3_1200" placeholder="" value="{{params.settings.settings_estimation.to_3_1200|default:0}}" autocomplete="off">
+                <label for="to_3_1200">ТО 3</label>
+              </div>
+            </div>
+          </div>
             </div>
       </div>
     </div>
@@ -1884,10 +1930,28 @@
               </div>
             </div>
           </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_2000" name="to_1_2000" placeholder="" value="{{params.settings.settings_estimation.to_1_2000|default:0}}" autocomplete="off">
+                <label for="to_1_2000">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_2000" name="to_2_2000" placeholder="" value="{{params.settings.settings_estimation.to_2_2000|default:0}}" autocomplete="off">
+                <label for="to_2_2000">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_2000" name="to_3_2000" placeholder="" value="{{params.settings.settings_estimation.to_3_2000|default:0}}" autocomplete="off">
+                <label for="to_3_2000">ТО 3</label>
+              </div>
+            </div>
+          </div>
             </div>
       </div>
     </div>
-    
+
     <div class="settings-diagnostic-panel">
       <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_3000" aria-expanded="false" aria-controls="collapse_3000" style="cursor: pointer;">
         <span>3 000</span>
@@ -2249,6 +2313,24 @@
                   <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_3000" name="wheel_danger_amount_min_3000" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_3000}}" autocomplete="off">
                   <label for="wheel_danger_amount_min_3000">Мин. сумма</label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_3000" name="to_1_3000" placeholder="" value="{{params.settings.settings_estimation.to_1_3000|default:0}}" autocomplete="off">
+                <label for="to_1_3000">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_3000" name="to_2_3000" placeholder="" value="{{params.settings.settings_estimation.to_2_3000|default:0}}" autocomplete="off">
+                <label for="to_2_3000">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_3000" name="to_3_3000" placeholder="" value="{{params.settings.settings_estimation.to_3_3000|default:0}}" autocomplete="off">
+                <label for="to_3_3000">ТО 3</label>
               </div>
             </div>
           </div>  
@@ -2620,6 +2702,24 @@
               </div>
             </div>
           </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_5000" name="to_1_5000" placeholder="" value="{{params.settings.settings_estimation.to_1_5000|default:0}}" autocomplete="off">
+                <label for="to_1_5000">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_5000" name="to_2_5000" placeholder="" value="{{params.settings.settings_estimation.to_2_5000|default:0}}" autocomplete="off">
+                <label for="to_2_5000">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_5000" name="to_3_5000" placeholder="" value="{{params.settings.settings_estimation.to_3_5000|default:0}}" autocomplete="off">
+                <label for="to_3_5000">ТО 3</label>
+              </div>
+            </div>
+          </div>
             </div>
       </div>
     </div>
@@ -2985,6 +3085,24 @@
                   <input type="number" class="form-control bg-danger bg-opacity-25" id="wheel_danger_amount_min_5001" name="wheel_danger_amount_min_5001" placeholder="" value="{{params.settings.settings_estimation.wheel_danger_amount_min_5001}}" autocomplete="off">
                   <label for="wheel_danger_amount_min_5001">Мин. сумма</label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="diagnostic-param-card">
+            <div class="diagnostic-param-card-title">Техническое обслуживание (ТО)</div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_1_5001" name="to_1_5001" placeholder="" value="{{params.settings.settings_estimation.to_1_5001|default:0}}" autocomplete="off">
+                <label for="to_1_5001">ТО 1</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_2_5001" name="to_2_5001" placeholder="" value="{{params.settings.settings_estimation.to_2_5001|default:0}}" autocomplete="off">
+                <label for="to_2_5001">ТО 2</label>
+              </div>
+              <div class="form-floating">
+                <input type="number" class="form-control" id="to_3_5001" name="to_3_5001" placeholder="" value="{{params.settings.settings_estimation.to_3_5001|default:0}}" autocomplete="off">
+                <label for="to_3_5001">ТО 3</label>
               </div>
             </div>
           </div>

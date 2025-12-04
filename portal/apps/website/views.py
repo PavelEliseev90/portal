@@ -7040,16 +7040,6 @@ def settings_diagnostic(request):
         if not settings_estimation:
             settings_estimation = RegEstimationsSettings()
         
-        # Обрабатываем поля ТО
-        for to_field in ['to_1', 'to_2', 'to_3']:
-            try:
-                value = request.POST.get(to_field, 0)
-                if value == '':
-                    value = 0
-                setattr(settings_estimation, to_field, int(value))
-            except (ValueError, AttributeError):
-                pass
-        
         # Обрабатываем все поля диагностики
         for key in request.POST.keys():
             if (key.startswith('engine_') or 
@@ -7059,7 +7049,8 @@ def settings_diagnostic(request):
                 key.startswith('wheel_') or 
                 key.startswith('turbo_') or 
                 key.startswith('conditioner_') or
-                key.startswith('drive_')):
+                key.startswith('drive_') or
+                key.startswith('to_')):
                 try:
                     value = request.POST.get(key, 0)
                     if value == '':
@@ -7109,6 +7100,22 @@ def settings_vnesh(request):
                 except (ValueError, AttributeError):
                     pass  # Пропускаем поля, которых нет в модели
         
+        # Обрабатываем создание новой работы
+        if 'new_work' in request.POST:
+            try:
+                new_work = RegPodgotovkaWork()
+                new_work.name = request.POST.get('new_work_name', '')
+                new_work.name_group = request.POST.get('new_work_group', '')
+                new_work.type_settings = 2
+                new_work.normo = float(request.POST.get('new_work_normo', '0') or 0)
+                new_work.price_podrad = int(request.POST.get('new_work_price_podrad', '0') or 0)
+                new_work.price_kors = int(request.POST.get('new_work_price_kors', '0') or 0)
+                new_work.materials_kf = float(request.POST.get('new_work_materials_kf', '0') or 0)
+                new_work.materials_amount = float(request.POST.get('new_work_materials_amount', '0') or 0)
+                new_work.save()
+            except (ValueError, AttributeError):
+                pass
+        
         # Обрабатываем работы по подготовке с type_settings == 2
         for key in request.POST.keys():
             if key.startswith('workdata_') and key.find('normo') > 0:
@@ -7148,6 +7155,63 @@ def settings_vnesh(request):
     }
     
     return render(request, "kors/settings_vnesh.html", {'params': params})
+
+@login_required
+def settings_works(request):
+    
+    if request.method == 'POST':
+        # Обрабатываем создание новой работы
+        if 'new_work' in request.POST:
+            try:
+                new_work = RegPodgotovkaWork()
+                new_work.name = request.POST.get('new_work_name', '')
+                new_work.name_group = request.POST.get('new_work_group', '')
+                new_work.type_settings = int(request.POST.get('new_work_type_settings', '0'))
+                new_work.normo = float(request.POST.get('new_work_normo', '0') or 0)
+                new_work.price_podrad = int(request.POST.get('new_work_price_podrad', '0') or 0)
+                new_work.price_kors = int(request.POST.get('new_work_price_kors', '0') or 0)
+                new_work.materials_kf = float(request.POST.get('new_work_materials_kf', '0') or 0)
+                new_work.materials_amount = float(request.POST.get('new_work_materials_amount', '0') or 0)
+                new_work.save()
+            except (ValueError, AttributeError):
+                pass
+        
+        # Обрабатываем обновление существующих работ
+        for key in request.POST.keys():
+            if key.startswith('workdata_') and key.find('normo') > 0:
+                try:
+                    pk_work = key.split('_')[1]
+                    work = RegPodgotovkaWork.objects.get(pk=pk_work)
+                    if work.type_settings in [0, 1]:
+                        normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
+                        price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
+                        price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
+                        materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
+                        materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
+                        
+                        work.normo = float(normo_val) if normo_val else 0.0
+                        work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
+                        work.price_kors = int(price_kors_val) if price_kors_val else 0
+                        work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
+                        work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
+                        work.save()
+                except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
+                    pass
+        
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Получаем работы с type_settings == 0 или 1
+    works = RegPodgotovkaWork.objects.filter(type_settings__in=[0, 1]).order_by('name_group', 'name')
+    
+    settings_data = {
+        'works' : works
+    }
+    params = {
+        'type'          : 'settings',
+        'settings'      : settings_data        
+    }
+    
+    return render(request, "kors/settings_works.html", {'params': params})
 
 @login_required
 def kpi_eco(request):

@@ -2767,6 +2767,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
         drive_warning_kf             = estimation_settings.drive_warning_kf_200
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_200
+        to_1                         = estimation_settings.to_1_200
+        to_2                         = estimation_settings.to_2_200
+        to_3                         = estimation_settings.to_3_200
     elif zna < 400000:
         zg              = '400'
         matrix_auction  = settings_matrix.charge_bcp_400
@@ -2837,6 +2840,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
         drive_warning_kf             = estimation_settings.drive_warning_kf_400
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_400
+        to_1                         = estimation_settings.to_1_400
+        to_2                         = estimation_settings.to_2_400
+        to_3                         = estimation_settings.to_3_400
     elif zna < 700000:
         zg              = '700'
         matrix_auction  = settings_matrix.charge_bcp_700
@@ -2907,6 +2913,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
         drive_warning_kf             = estimation_settings.drive_warning_kf_700
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_700
+        to_1                         = estimation_settings.to_1_700
+        to_2                         = estimation_settings.to_2_700
+        to_3                         = estimation_settings.to_3_700
     elif zna < 1200000:
         zg              = '1 200'
         matrix_auction  = settings_matrix.charge_bcp_1200
@@ -2977,6 +2986,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
         drive_warning_kf             = estimation_settings.drive_warning_kf_1200
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_1200
+        to_1                         = estimation_settings.to_1_1200
+        to_2                         = estimation_settings.to_2_1200
+        to_3                         = estimation_settings.to_3_1200
     elif zna < 2000000:
         zg              = '2 000'
         matrix_auction  = settings_matrix.charge_bcp_2000
@@ -3047,6 +3059,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
         drive_warning_kf             = estimation_settings.drive_warning_kf_2000
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_2000
+        to_1                         = estimation_settings.to_1_2000
+        to_2                         = estimation_settings.to_2_2000
+        to_3                         = estimation_settings.to_3_2000
     elif zna < 3000000:
         zg              = '3 000'
         matrix_auction  = settings_matrix.charge_bcp_3000
@@ -3117,6 +3132,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
         drive_warning_kf             = estimation_settings.drive_warning_kf_3000
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_3000
+        to_1                         = estimation_settings.to_1_3000
+        to_2                         = estimation_settings.to_2_3000
+        to_3                         = estimation_settings.to_3_3000
     elif zna < 5000000:
         zg              = '5 000'
         matrix_auction  = settings_matrix.charge_bcp_5000
@@ -3187,6 +3205,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
         drive_warning_kf             = estimation_settings.drive_warning_kf_5000
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5000
+        to_1                         = estimation_settings.to_1_5000
+        to_2                         = estimation_settings.to_2_5000
+        to_3                         = estimation_settings.to_3_5000
     else:
         zg              = '5 000+'
         matrix_auction  = settings_matrix.charge_bcp_5001
@@ -3257,6 +3278,9 @@ def estimations_price_calculation(estimation, type_calculation):
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
         drive_warning_kf             = estimation_settings.drive_warning_kf_5001
         drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5001
+        to_1                         = estimation_settings.to_1_5001
+        to_2                         = estimation_settings.to_2_5001
+        to_3                         = estimation_settings.to_3_5001
 
     if percent_torg < 0:
         percent_torg = percent_torg * -1
@@ -3966,11 +3990,6 @@ def estimations_price_calculation(estimation, type_calculation):
         amount_ss = amount_ss + price_diff
 
     # ТО
-    estimation_settings = RegEstimationsSettings.objects.all().last()
-    to_1 = estimation_settings.to_1
-    to_2 = estimation_settings.to_2
-    to_3 = estimation_settings.to_3
-    
     if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
         price_diff = to_1 
         dop = {

@@ -1,0 +1,191 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - Настройки - Работы по подготовке {% endblock %}
+
+{% block title_navbar %} - Настройки - Работы по подготовке {% endblock %}
+
+{% block content %}
+  
+<section class="settings-vnesh-page">
+  <div class="settings-vnesh-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Работы по подготовке</h2>
+      <p>Настройка работ по подготовке автомобилей (type_settings: 0, 1).</p>
+    </div>
+    <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="settings-vnesh-panel">
+      <h3 class="d-flex justify-content-between align-items-center mb-3">
+        <span>Добавить новую работу</span>
+      </h3>
+      
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="new_work_name" name="new_work_name" placeholder="" value="" autocomplete="off" required>
+            <label for="new_work_name">Наименование</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="new_work_group" name="new_work_group" placeholder="" value="" autocomplete="off" required>
+            <label for="new_work_group">Группа</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-floating">
+            <select class="form-select" id="new_work_type_settings" name="new_work_type_settings" required>
+              <option value="0">0</option>
+              <option value="1">1</option>
+            </select>
+            <label for="new_work_type_settings">Тип настройки</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_normo" name="new_work_normo" placeholder="0.0" step="0.01" value="0" autocomplete="off">
+            <label for="new_work_normo">Н/Ч</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" name="new_work" class="btn btn-primary w-100 h-100">Добавить</button>
+        </div>
+      </div>
+      
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_materials_kf" name="new_work_materials_kf" placeholder="0.0" step="0.01" value="0" autocomplete="off">
+            <label for="new_work_materials_kf">Коэффициент материалов</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_materials_amount" name="new_work_materials_amount" placeholder="0.0" step="0.01" value="0" autocomplete="off">
+            <label for="new_work_materials_amount">Стоимость материалов</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_price_kors" name="new_work_price_kors" placeholder="0" value="0" autocomplete="off">
+            <label for="new_work_price_kors">КорсАвто</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_price_podrad" name="new_work_price_podrad" placeholder="0" value="0" autocomplete="off">
+            <label for="new_work_price_podrad">Подряд</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-vnesh-panel">
+      <h3 class="d-flex justify-content-between align-items-center mb-3">
+        <span>Работы по подготовке (type_settings: 0, 1)</span>
+      </h3>
+      
+      <div class="mb-3">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="work_search" placeholder="Поиск по наименованию работы..." autocomplete="off">
+          <label for="work_search">Поиск по наименованию работы...</label>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-hover table-mobile-cards" id="works_table">
+          <thead>
+            <tr>
+              <th style="min-width: 60px;">№</th>
+              <th style="min-width: 100px;">Тип</th>
+              <th style="min-width: 150px;">Группа</th>
+              <th style="min-width: 200px;">Наименование</th>
+              <th style="min-width: 120px;">Коэффициент<br>материалов</th>
+              <th style="min-width: 120px;">Стоимость<br>материалов</th>
+              <th style="min-width: 100px;">Н/Ч</th>
+              <th style="min-width: 120px;">КорсАвто</th>
+              <th style="min-width: 120px;">Подряд</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for work in params.settings.works %}
+            <tr class="work-row" data-name="{{ work.name|lower }}" data-group="{{ work.name_group|lower }}">
+              <td data-label="№">{{ work.pk }}</td>
+              <td data-label="Тип">{{ work.type_settings }}</td>
+              <td data-label="Группа">{{ work.name_group }}</td>
+              <td data-label="Наименование">{{ work.name }}</td>
+              <td data-label="Коэффициент материалов">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="workdata_{{ work.pk }}_materials_kf" name="workdata_{{ work.pk }}_materials_kf" placeholder="0.0" step="0.01" value="{{ work.materials_kf|formatted_float }}" autocomplete="off">
+                  <label for="workdata_{{ work.pk }}_materials_kf">Коэффициент</label>
+                </div>
+              </td>
+              <td data-label="Стоимость материалов">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="workdata_{{ work.pk }}_materials_amount" name="workdata_{{ work.pk }}_materials_amount" placeholder="0.0" step="0.01" value="{{ work.materials_amount|formatted_float }}" autocomplete="off">
+                  <label for="workdata_{{ work.pk }}_materials_amount">Стоимость</label>
+                </div>
+              </td>
+              <td data-label="Н/Ч">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="workdata_{{ work.pk }}_normo" name="workdata_{{ work.pk }}_normo" placeholder="0.0" step="0.01" value="{{ work.normo|formatted_float }}" autocomplete="off">
+                  <label for="workdata_{{ work.pk }}_normo">Н/Ч</label>
+                </div>
+              </td>
+              <td data-label="КорсАвто">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="workdata_{{ work.pk }}_price_kors" name="workdata_{{ work.pk }}_price_kors" placeholder="0" value="{{ work.price_kors }}" autocomplete="off">
+                  <label for="workdata_{{ work.pk }}_price_kors">КорсАвто</label>
+                </div>
+              </td>
+              <td data-label="Подряд">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="workdata_{{ work.pk }}_price_podrad" name="workdata_{{ work.pk }}_price_podrad" placeholder="0" value="{{ work.price_podrad }}" autocomplete="off">
+                  <label for="workdata_{{ work.pk }}_price_podrad">Подряд</label>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="settings-vnesh-panel" style="text-align: right;">
+      <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
+    </div>
+
+  </form>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('work_search');
+  const workRows = document.querySelectorAll('.work-row');
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase().trim();
+      
+      workRows.forEach(function(row) {
+        const name = row.getAttribute('data-name') || '';
+        const group = row.getAttribute('data-group') || '';
+        
+        if (searchTerm === '' || name.includes(searchTerm) || group.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+});
+</script>
+{% endblock %}
+
