@@ -1588,7 +1588,7 @@ def refresh_signal_run():
 
         header['Authorization'] = f"Bearer {token}"
 
-        url         = 'https://pro.autoteka.ru/autoteka/v1/get-leads'
+        url         = 'https://pro.autoteka.ru/autoteka/v1/get-leads/'
         data_filter = {
             "lastId"        : last_id,
             "limit"         : 5000,

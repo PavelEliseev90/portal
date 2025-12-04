@@ -1544,13 +1544,28 @@
               </div>
             {% endif %}
 
+              <div class="col-auto">
+                {% if params.estimation.page_test_drive.to == 1 %}
+                  <div class="kors-brand-pill bg-secondary text-nowrap">
+                      <b><span class="icon-mbri-add-submenu"></span> &nbsp; ТО Minimal &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.to == 2  %}
+                  <div class="kors-brand-pill bg-secondary text-nowrap">
+                      <b><span class="icon-mbri-add-submenu"></span> &nbsp; ТО Middle &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.to == 3  %}
+                  <div class="kors-brand-pill bg-secondary text-nowrap">
+                      <b><span class="icon-mbri-add-submenu"></span> &nbsp; ТО Full &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
           
               <div class="col-auto">
                 {% if params.estimation.page_test_drive.engine == 2 %}
                   <div class="kors-brand-pill bg-warning text-nowrap">
                       <b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b>
                   </div>
-                {% elif params.estimation.page_test_drive.engine == 3 %}
+                {% elif params.estimation.page_test_drive.engine == 0 %}
                   <div class="kors-brand-pill bg-danger text-nowrap">
                       <b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b>
                   </div>
@@ -1562,7 +1577,7 @@
                   <div class="kors-brand-pill bg-warning text-nowrap">
                     <b><span class="icon-mbri-rocket"></span> &nbsp; Система выпуска ОГ &nbsp; </b>
                   </div>
-                {% elif params.estimation.page_test_drive.system_og == 3  %}
+                {% elif params.estimation.page_test_drive.system_og == 0  %}
                   <div class="kors-brand-pill bg-danger text-nowrap">
                     <b><span class="icon-mbri-rocket"></span> &nbsp; Система выпуска ОГ &nbsp; </b>
                   </div>
@@ -1574,7 +1589,7 @@
                   <div class="kors-brand-pill bg-warning text-nowrap">
                       <b><span class="icon-mbri-transmission1"></span> &nbsp; Коробка передач &nbsp; </b>
                   </div>
-                {% elif params.estimation.page_test_drive.gear == 3  %}
+                {% elif params.estimation.page_test_drive.gear == 0  %}
                   <div class="kors-brand-pill bg-danger text-nowrap">
                       <b><span class="icon-mbri-transmission1"></span> &nbsp; Коробка передач &nbsp; </b>
                   </div>
@@ -1586,7 +1601,7 @@
                   <div class="kors-brand-pill bg-warning text-nowrap">
                     <b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b>
                   </div>
-                {% elif params.estimation.page_test_drive.suspension == 3  %}
+                {% elif params.estimation.page_test_drive.suspension == 0  %}
                   <div class="kors-brand-pill bg-danger text-nowrap">
                     <b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b>
                   </div>
@@ -1596,14 +1611,62 @@
               <div class="col-auto">
                 {% if params.estimation.page_test_drive.airbag == 2 %}
                   <div class="kors-brand-pill bg-warning text-nowrap">
-                    <b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b>
+                    <b><span class="icon-mbri-hearth"></span> &nbsp; Подушки безопасности &nbsp; </b>
                   </div>
-                {% elif params.estimation.page_test_drive.airbag == 3  %}
+                {% elif params.estimation.page_test_drive.airbag == 0  %}
                   <div class="kors-brand-pill bg-danger text-nowrap">
-                    <b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b>
+                    <b><span class="icon-mbri-hearth"></span> &nbsp; Подушки безопасности &nbsp; </b>
                   </div>
                 {% endif %}
-              </div>            
+              </div>  
+              
+              <div class="col-auto">
+                {% if params.estimation.page_test_drive.conditioner == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-sun2"></span> &nbsp; Кондиционер &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.conditioner == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-sun2"></span> &nbsp; Кондиционер &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div> 
+
+              <div class="col-auto">
+                {% if params.estimation.page_test_drive.turbo == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-speed"></span> &nbsp; Турбокомпрессор &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.turbo == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-speed"></span> &nbsp; Турбокомпрессор &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="col-auto">
+                {% if params.estimation.page_test_drive.drive == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Полный привод &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.drive == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Полный привод &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="col-auto">
+                {% if params.estimation.page_test_drive.wheel == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.wheel == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
 
           </div>
 
@@ -5451,10 +5514,8 @@
 
                   <div class="row g-1">
                     
-                    <div class="col-12 col-sm-8">
-                      
-                    
-                      
+                    <div class="col-12 col-sm-9">
+                                                              
                       {% if params.estimation.page_remote == None or params.estimation.page_remote.end_estimation != None %}
                         <div class="portal-panel">
                           <div class="">
@@ -6213,26 +6274,33 @@
                     
                                         <div class="row">                         
                                         
-                                          <div class="col-sm-auto">
+                                          <div class="col-sm-3">
                                             <div class="form-check form-check-inline">
                                               <input class="form-check-input input_radio_success" type="radio" name="radio_airbag" id="inlineRadio1_airbag" value="1" {% if params.estimation.page_test_drive.airbag == 1 %} checked {% endif %} >
                                               <label class="form-check-label" for="inlineRadio1_airbag">Исправны</label>
                                             </div>
                                           </div>
                         
-                                          <div class="col-sm-auto">
+                                          <div class="col-sm-3">
                                             <div class="form-check form-check-inline">
                                               <input class="form-check-input input_radio_danger" type="radio" name="radio_airbag" id="inlineRadio2_airbag" value="0" {% if params.estimation.page_test_drive.airbag == 0 %} checked {% endif %}>
                                               <label class="form-check-label" for="inlineRadio2_airbag">Не исправны</label>
                                             </div>
                                           </div>
                         
-                                          <div class="col-sm-auto">
+                                          <div class="col-sm-3">
                                             <div class="form-check form-check-inline">
                                               <input class="form-check-input input_radio_warning" type="radio" name="radio_airbag" id="inlineRadio3_airbag" value="2" {% if params.estimation.page_test_drive.airbag == 2 %} checked {% endif %}>
                                               <label class="form-check-label" for="inlineRadio3_airbag">Есть замечания</label>
                                             </div>
                                           </div>
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_airbag" id="inlineRadio4_airbag" value="4" {% if params.estimation.page_test_drive.airbag == 4 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio4_airbag">Не предусмотрен</label>
+                                            </div>
+                                          </div>
+
                                         </div>
                         
                                         
@@ -6255,25 +6323,31 @@
                                     
                                       <div class="row">
                                         
-                                        <div class="col-sm-auto">
+                                        <div class="col-sm-3">
                                         <div class="form-check form-check-inline">
-                                          <input class="form-check-input input_radio_success opacity-100" type="radio" name="radio_conditioner" id="inlineRadio1_conditioner" value="option1" {% if params.estimation.page_test_drive.conditioner == 1 %} checked {% endif %} >
+                                          <input class="form-check-input input_radio_success opacity-100" type="radio" name="radio_conditioner" id="inlineRadio1_conditioner" value="1" {% if params.estimation.page_test_drive.conditioner == 1 %} checked {% endif %} >
                                           <label class="form-check-label opacity-100" for="inlineRadio1_conditioner">Исправна</label>
                                         </div>
                                         </div>
                                     
-                                        <div class="col-sm-auto">
+                                        <div class="col-sm-3">
                                         <div class="form-check form-check-inline">
-                                          <input class="form-check-input input_radio_danger opacity-100" type="radio" name="radio_conditioner" id="inlineRadio2_conditioner" value="option2" {% if params.estimation.page_test_drive.conditioner == 0 %} checked {% endif %} >
+                                          <input class="form-check-input input_radio_danger opacity-100" type="radio" name="radio_conditioner" id="inlineRadio2_conditioner" value="0" {% if params.estimation.page_test_drive.conditioner == 0 %} checked {% endif %} >
                                           <label class="form-check-label opacity-100" for="inlineRadio2_conditioner">Не исправна</label>
                                         </div>
                                         </div>
                                     
-                                        <div class="col-sm-auto">
+                                        <div class="col-sm-3">
                                         <div class="form-check form-check-inline">
-                                          <input class="form-check-input input_radio_warning opacity-100" type="radio" name="radio_conditioner" id="inlineRadio3_conditioner" value="option3" {% if params.estimation.page_test_drive.conditioner == 2 %} checked {% endif %} >
+                                          <input class="form-check-input input_radio_warning opacity-100" type="radio" name="radio_conditioner" id="inlineRadio3_conditioner" value="2" {% if params.estimation.page_test_drive.conditioner == 2 %} checked {% endif %} >
                                           <label class="form-check-label opacity-100" for="inlineRadio3_conditioner">Есть замечания</label>
                                         </div>
+                                        </div>
+                                        <div class="col-sm-3">
+                                          <div class="form-check form-check-inline">
+                                            <input class="form-check-input input_radio_success opacity-100" type="radio" name="radio_conditioner" id="inlineRadio4_conditioner" value="4" {% if params.estimation.page_test_drive.conditioner == 4 %} checked {% endif %} >
+                                            <label class="form-check-label opacity-100" for="inlineRadio4_conditioner">Не предусмотрен</label>
+                                          </div>
                                         </div>
                                       </div>
                                     
@@ -6300,26 +6374,34 @@
                     
                                         <div class="row">                         
                                         
-                                          <div class="col-sm-auto">
+                                          <div class="col-sm-3">
                                             <div class="form-check form-check-inline">
                                               <input class="form-check-input input_radio_success" type="radio" name="radio_turbo" id="inlineRadio1_turbo" value="1" {% if params.estimation.page_test_drive.turbo == 1 %} checked {% endif %} >
                                               <label class="form-check-label" for="inlineRadio1_turbo">Исправен</label>
                                             </div>
                                           </div>
                         
-                                          <div class="col-sm-auto">
+                                          <div class="col-sm-3">
                                             <div class="form-check form-check-inline">
                                               <input class="form-check-input input_radio_danger" type="radio" name="radio_turbo" id="inlineRadio2_turbo" value="0" {% if params.estimation.page_test_drive.turbo == 0 %} checked {% endif %}>
                                               <label class="form-check-label" for="inlineRadio2_turbo">Не исправен</label>
                                             </div>
                                           </div>
                         
-                                          <div class="col-sm-auto">
+                                          <div class="col-sm-3">
                                             <div class="form-check form-check-inline">
                                               <input class="form-check-input input_radio_warning" type="radio" name="radio_turbo" id="inlineRadio3_turbo" value="2" {% if params.estimation.page_test_drive.turbo == 2 %} checked {% endif %}>
                                               <label class="form-check-label" for="inlineRadio3_turbo">Есть замечания</label>
                                             </div>
                                           </div>
+
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_turbo" id="inlineRadio4_turbo" value="4" {% if params.estimation.page_test_drive.turbo == 4 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio4_turbo">Не предусмотрен</label>
+                                            </div>
+                                          </div>
+
                                         </div>
                         
                                         
@@ -6344,21 +6426,21 @@
                                         
                                         <div class="col-sm-auto">
                                         <div class="form-check form-check-inline">
-                                          <input class="form-check-input input_radio_success opacity-100" type="radio" name="radio_wheel" id="inlineRadio1_wheel" value="option1" {% if params.estimation.page_test_drive.wheel == 1 %} checked {% endif %} >
+                                          <input class="form-check-input input_radio_success opacity-100" type="radio" name="radio_wheel" id="inlineRadio1_wheel" value="1" {% if params.estimation.page_test_drive.wheel == 1 %} checked {% endif %} >
                                           <label class="form-check-label opacity-100" for="inlineRadio1_wheel">Исправно</label>
                                         </div>
                                         </div>
                                     
                                         <div class="col-sm-auto">
                                         <div class="form-check form-check-inline">
-                                          <input class="form-check-input input_radio_danger opacity-100" type="radio" name="radio_wheel" id="inlineRadio2_wheel" value="option2" {% if params.estimation.page_test_drive.wheel == 0 %} checked {% endif %} >
+                                          <input class="form-check-input input_radio_danger opacity-100" type="radio" name="radio_wheel" id="inlineRadio2_wheel" value="0" {% if params.estimation.page_test_drive.wheel == 0 %} checked {% endif %} >
                                           <label class="form-check-label opacity-100" for="inlineRadio2_wheel">Не исправно</label>
                                         </div>
                                         </div>
                                     
                                         <div class="col-sm-auto">
                                         <div class="form-check form-check-inline">
-                                          <input class="form-check-input input_radio_warning opacity-100" type="radio" name="radio_wheel" id="inlineRadio3_wheel" value="option3" {% if params.estimation.page_test_drive.wheel == 2 %} checked {% endif %} >
+                                          <input class="form-check-input input_radio_warning opacity-100" type="radio" name="radio_wheel" id="inlineRadio3_wheel" value="2" {% if params.estimation.page_test_drive.wheel == 2 %} checked {% endif %} >
                                           <label class="form-check-label opacity-100" for="inlineRadio3_wheel">Есть замечания</label>
                                         </div>
                                         </div>
@@ -6373,6 +6455,120 @@
                                     </div>
                                   </div>
 
+                                </div>
+
+                                <div class="row g-1">
+                                  
+                                  <div class="col-sm-6">
+                                    <div class="portal-panel bg-opacity-50 bg-light">
+                            
+                                      <div class="">
+                                        
+                                        <h6><span class="icon-mbri-info"></span> Полный привод</h6>
+                                        <hr class="my-3">
+                    
+                                        <div class="row">                         
+                                        
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_drive" id="inlineRadio1_drive" value="1" {% if params.estimation.page_test_drive.drive == 1 %} checked {% endif %} >
+                                              <label class="form-check-label" for="inlineRadio1_drive">Исправен</label>
+                                            </div>
+                                          </div>
+                        
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_danger" type="radio" name="radio_drive" id="inlineRadio2_drive" value="0" {% if params.estimation.page_test_drive.drive == 0 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio2_drive">Не исправен</label>
+                                            </div>
+                                          </div>
+                        
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_warning" type="radio" name="radio_drive" id="inlineRadio3_drive" value="2" {% if params.estimation.page_test_drive.drive == 2 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio3_drive">Есть замечания</label>
+                                            </div>
+                                          </div>
+
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_drive" id="inlineRadio4_drive" value="4" {% if params.estimation.page_test_drive.drive == 4 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio4_drive">Не предусмотрен</label>
+                                            </div>
+                                          </div>
+
+                                        </div>
+                        
+                                        
+                                          <div class="form-floating mb-3">
+                                            <input type="text" class="form-control  text-secondary" id="comment_drive" name="comment_drive" value="{{params.estimation.page_test_drive.comment_drive}}" placeholder="" autocomplete="off">
+                                            <label for="floatingInput">Комментарий</label>
+                                          </div>	
+                                        
+                                      </div>
+                    
+                                    </div> 
+                                  </div>
+                        
+                                </div>
+
+                                <br>
+
+                                <div class="row g-1">
+                                  
+                                  <div class="col-sm-12">
+                                    <div class="portal-panel bg-opacity-50 bg-light">
+                            
+                                      <div class="">
+                                        
+                                        <h6><span class="icon-mbri-info"></span> ТО</h6>
+                                        <small>В случае если автомобилю требуется ТО и/или замечания и/или проблемы автомобиля устранимы в рамках  технологического обслуживания можно выбрать необходимый уровень ТО</small>
+                                        <hr class="my-3">
+                    
+                                        <div class="row">                         
+                                          
+                                          <div class="col-sm-2">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_to" id="inlineRadio1_to" value="10" {% if params.estimation.page_test_drive.to == 10 %} checked {% endif %} >
+                                              <label class="form-check-label" for="inlineRadio1_to">Все ок</label>
+                                              <br>
+                                              <small><label class="form-check-label" for="inlineRadio1_to">ТО не нужно</label></small>
+                                            </div>
+                                          </div>
+
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_to" id="inlineRadio2_to" value="1" {% if params.estimation.page_test_drive.to == 1 %} checked {% endif %} >
+                                              <label class="form-check-label" for="inlineRadio2_to">Minimal</label>
+                                              <br>
+                                              <small><label class="form-check-label" for="inlineRadio2_to">масло, масляный фильтр</label></small>
+                                            </div>
+                                          </div>
+                        
+                                          <div class="col-sm-3">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_to" id="inlineRadio3_to" value="2" {% if params.estimation.page_test_drive.to == 2 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio3_to">Middle</label>
+                                              <br>
+                                              <small><label class="form-check-label" for="inlineRadio3_to">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания</label></small>
+                                            </div>
+                                          </div>
+                        
+                                          <div class="col-sm-4">
+                                            <div class="form-check form-check-inline">
+                                              <input class="form-check-input input_radio_success" type="radio" name="radio_to" id="inlineRadio4_to" value="3" {% if params.estimation.page_test_drive.to == 3 %} checked {% endif %}>
+                                              <label class="form-check-label" for="inlineRadio4_to">Full</label>
+                                              <br>
+                                              <small><label class="form-check-label" for="inlineRadio4_to">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки</label></small>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                      </div>
+                    
+                                    </div> 
+                                  </div>
+                        
                                 </div>
         
                                 <br>
@@ -6470,7 +6666,7 @@
         
                     </div>
 
-                    <div class="col-12 col-sm-4"> 
+                    <div class="col-12 col-sm-3"> 
                       <div class="card " style="margin: 0.2rem;" id="price_custom">
                         <div class="card-body {% if params.price_custom.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-10" >
                         

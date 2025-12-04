@@ -8,6 +8,8 @@ import random
 import json
 
 
+from django.contrib.auth.models import User, Group
+
 
 class DocServiceRequest(models.Model):
     uin            = models.CharField('uin', default='', null=True, max_length=64, blank=False)
@@ -429,6 +431,7 @@ class DocZNPerformers(models.Model):
 
 
 class DocRLK(models.Model):
+    
     dataTime                    = models.DateTimeField('Дата', default=datetime.now, blank=False)    
     type_archive                = models.ForeignKey(RefReasonArchiveRLK, null=True, on_delete=models.SET_NULL, verbose_name="Причина отправки в архив", blank=True) 
     status                      = models.ForeignKey(RefStatusRLK, null=True, on_delete=models.SET_NULL, verbose_name="Статус рабочего листа", blank=True) 

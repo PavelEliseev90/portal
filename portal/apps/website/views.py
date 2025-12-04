@@ -8032,8 +8032,11 @@ def customer_est(request, slug):
 
 def test(request):
     
-    from task_manager.views import refresh_chat_data
-    refresh_chat_data()
+    #from task_manager.views import refresh_signal_run
+    #refresh_signal_run()
+    
+    #from task_manager.views import refresh_chat_data
+    #refresh_chat_data()
     
     # from background_task.models import Task
     # task = Task.objects.all()
