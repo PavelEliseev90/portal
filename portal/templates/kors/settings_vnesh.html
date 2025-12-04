@@ -20,125 +20,124 @@
   <form method="post">
     {% csrf_token %}
 
-    <div class="settings-vnesh-panel">
-      <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_200" aria-expanded="false" aria-controls="collapse_200" style="cursor: pointer;">
-        <span>200</span>
-        <span class="icon-mbri-down"></span>
-      </h3>
-       
-      <div class="collapse" id="collapse_200">
-        <div class="diagnostic-params-grid">
-          <div class="diagnostic-param-card">
-            <div class="diagnostic-param-card-title">Общие параметры</div>
-            <div class="diagnostic-param-fields">
-              <div class="form-floating">
-                <input type="number" class="form-control" id="battery_200" name="battery_200" placeholder="" value="{{params.settings.settings_estimation.battery_200|formatted_float}}" autocomplete="off">
-                <label for="battery_200">Аккумулятор (для авто старше 4-х лет)</label>
-              </div>
-              <div class="form-floating">
-                <input type="number" class="form-control" id="windshield_200" name="windshield_200" placeholder="" value="{{params.settings.settings_estimation.windshield_200}}" autocomplete="off">
-                <label for="windshield_200">Лобовое стекло без подогрева</label>
-              </div>
-              <div class="form-floating">
-                <input type="number" class="form-control" id="windshield_heat_200" name="windshield_heat_200" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_200}}" autocomplete="off">
-                <label for="windshield_heat_200">Лобовое стекло с подогревом</label>
-              </div>
-            </div>
-          </div>
-
-          <div class="diagnostic-param-card">
-            <div class="diagnostic-param-card-title">Фара (перед)</div>
-            <div class="diagnostic-param-fields">
-              <div class="form-floating">
-                <input type="number" class="form-control bg-warning bg-opacity-25" id="light_pered_kf_200" name="light_pered_kf_200" placeholder="" value="{{params.settings.settings_estimation.light_pered_kf_200}}" autocomplete="off">
-                <label for="light_pered_kf_200">% понижения от оценки</label>
-              </div>
-              <div class="form-floating">
-                <input type="number" class="form-control" id="light_pered_200" name="light_pered_200" placeholder="" value="{{params.settings.settings_estimation.light_pered_200}}" autocomplete="off">
-                <label for="light_pered_200">Минимальная сумма понижения</label>
-              </div>
-            </div>
-          </div>
-
-          <div class="diagnostic-param-card">
-            <div class="diagnostic-param-card-title">Фонарь (зад)</div>
-            <div class="diagnostic-param-fields">
-              <div class="form-floating">
-                <input type="number" class="form-control bg-warning bg-opacity-25" id="light_zad_kf_200" name="light_zad_kf_200" placeholder="" value="{{params.settings.settings_estimation.light_zad_kf_200}}" autocomplete="off">
-                <label for="light_zad_kf_200">% понижения от оценки</label>
-              </div>
-              <div class="form-floating">
-                <input type="number" class="form-control" id="light_zad_200" name="light_zad_200" placeholder="" value="{{params.settings.settings_estimation.light_zad_200}}" autocomplete="off">
-                <label for="light_zad_200">Минимальная сумма понижения</label>
-              </div>
-            </div>
-          </div>
-
-          <div class="diagnostic-param-card">
-            <div class="diagnostic-param-card-title">Бампер (перед)</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Ремонт</div>
+      <div class="settings-vnesh-panel">
+        <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_200" aria-expanded="false" aria-controls="collapse_200" style="cursor: pointer;">
+          <span>200</span>
+          <span class="icon-mbri-down"></span>
+        </h3>
+        
+        <div class="collapse" id="collapse_200">
+          <div class="diagnostic-params-grid">
+            <div class="diagnostic-param-card">
+              <div class="diagnostic-param-card-title">Общие параметры</div>
               <div class="diagnostic-param-fields">
                 <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_pered_kf_200" name="bumper_pered_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_kf_200}}" autocomplete="off">
-                  <label for="bumper_pered_kf_200">% понижения от оценки</label>
+                  <input type="number" class="form-control" id="battery_200" name="battery_200" placeholder="" value="{{params.settings.settings_estimation.battery_200|formatted_float}}" autocomplete="off">
+                  <label for="battery_200">Аккумулятор (для авто старше 4-х лет)</label>
                 </div>
                 <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_pered_200" name="bumper_pered_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_200}}" autocomplete="off">
-                  <label for="bumper_pered_200">Минимальная сумма понижения</label>
+                  <input type="number" class="form-control" id="windshield_200" name="windshield_200" placeholder="" value="{{params.settings.settings_estimation.windshield_200}}" autocomplete="off">
+                  <label for="windshield_200">Лобовое стекло без подогрева</label>
+                </div>
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="windshield_heat_200" name="windshield_heat_200" placeholder="" value="{{params.settings.settings_estimation.windshield_heat_200}}" autocomplete="off">
+                  <label for="windshield_heat_200">Лобовое стекло с подогревом</label>
                 </div>
               </div>
             </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Замена</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_pered_replace_kf_200" name="bumper_pered_replace_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_replace_kf_200}}" autocomplete="off">
-                  <label for="bumper_pered_replace_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_pered_replace_200" name="bumper_pered_replace_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_replace_200}}" autocomplete="off">
-                  <label for="bumper_pered_replace_200">Минимальная сумма понижения</label>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div class="diagnostic-param-card">
-            <div class="diagnostic-param-card-title">Бампер (зад)</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Ремонт</div>
+            <div class="diagnostic-param-card">
+              <div class="diagnostic-param-card-title">Фара (перед)</div>
               <div class="diagnostic-param-fields">
                 <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_zad_kf_200" name="bumper_zad_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_kf_200}}" autocomplete="off">
-                  <label for="bumper_zad_kf_200">% понижения от оценки</label>
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="light_pered_kf_200" name="light_pered_kf_200" placeholder="" value="{{params.settings.settings_estimation.light_pered_kf_200}}" autocomplete="off">
+                  <label for="light_pered_kf_200">% понижения от оценки</label>
                 </div>
                 <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_zad_200" name="bumper_zad_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_200}}" autocomplete="off">
-                  <label for="bumper_zad_200">Минимальная сумма понижения</label>
+                  <input type="number" class="form-control" id="light_pered_200" name="light_pered_200" placeholder="" value="{{params.settings.settings_estimation.light_pered_200}}" autocomplete="off">
+                  <label for="light_pered_200">Минимальная сумма понижения</label>
                 </div>
               </div>
             </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Замена</div>
+
+            <div class="diagnostic-param-card">
+              <div class="diagnostic-param-card-title">Фонарь (зад)</div>
               <div class="diagnostic-param-fields">
                 <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_zad_replace_kf_200" name="bumper_zad_replace_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_replace_kf_200}}" autocomplete="off">
-                  <label for="bumper_zad_replace_kf_200">% понижения от оценки</label>
+                  <input type="number" class="form-control bg-warning bg-opacity-25" id="light_zad_kf_200" name="light_zad_kf_200" placeholder="" value="{{params.settings.settings_estimation.light_zad_kf_200}}" autocomplete="off">
+                  <label for="light_zad_kf_200">% понижения от оценки</label>
                 </div>
                 <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_zad_replace_200" name="bumper_zad_replace_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_replace_200}}" autocomplete="off">
-                  <label for="bumper_zad_replace_200">Минимальная сумма понижения</label>
+                  <input type="number" class="form-control" id="light_zad_200" name="light_zad_200" placeholder="" value="{{params.settings.settings_estimation.light_zad_200}}" autocomplete="off">
+                  <label for="light_zad_200">Минимальная сумма понижения</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="diagnostic-param-card">
+              <div class="diagnostic-param-card-title">Бампер (перед)</div>
+              <div class="diagnostic-param-section">
+                <div class="diagnostic-param-section-title warning">Ремонт</div>
+                <div class="diagnostic-param-fields">
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_pered_kf_200" name="bumper_pered_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_kf_200}}" autocomplete="off">
+                    <label for="bumper_pered_kf_200">% понижения от оценки</label>
+                  </div>
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_pered_200" name="bumper_pered_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_200}}" autocomplete="off">
+                    <label for="bumper_pered_200">Минимальная сумма понижения</label>
+                  </div>
+                </div>
+              </div>
+              <div class="diagnostic-param-section">
+                <div class="diagnostic-param-section-title danger">Замена</div>
+                <div class="diagnostic-param-fields">
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_pered_replace_kf_200" name="bumper_pered_replace_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_replace_kf_200}}" autocomplete="off">
+                    <label for="bumper_pered_replace_kf_200">% понижения от оценки</label>
+                  </div>
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_pered_replace_200" name="bumper_pered_replace_200" placeholder="" value="{{params.settings.settings_estimation.bumper_pered_replace_200}}" autocomplete="off">
+                    <label for="bumper_pered_replace_200">Минимальная сумма понижения</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="diagnostic-param-card">
+              <div class="diagnostic-param-card-title">Бампер (зад)</div>
+              <div class="diagnostic-param-section">
+                <div class="diagnostic-param-section-title warning">Ремонт</div>
+                <div class="diagnostic-param-fields">
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_zad_kf_200" name="bumper_zad_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_kf_200}}" autocomplete="off">
+                    <label for="bumper_zad_kf_200">% понижения от оценки</label>
+                  </div>
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-warning bg-opacity-25" id="bumper_zad_200" name="bumper_zad_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_200}}" autocomplete="off">
+                    <label for="bumper_zad_200">Минимальная сумма понижения</label>
+                  </div>
+                </div>
+              </div>
+              <div class="diagnostic-param-section">
+                <div class="diagnostic-param-section-title danger">Замена</div>
+                <div class="diagnostic-param-fields">
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_zad_replace_kf_200" name="bumper_zad_replace_kf_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_replace_kf_200}}" autocomplete="off">
+                    <label for="bumper_zad_replace_kf_200">% понижения от оценки</label>
+                  </div>
+                  <div class="form-floating">
+                    <input type="number" class="form-control bg-danger bg-opacity-25" id="bumper_zad_replace_200" name="bumper_zad_replace_200" placeholder="" value="{{params.settings.settings_estimation.bumper_zad_replace_200}}" autocomplete="off">
+                    <label for="bumper_zad_replace_200">Минимальная сумма понижения</label>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <br>
-    <div class="settings-vnesh-panel">
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_400" aria-expanded="false" aria-controls="collapse_400" style="cursor: pointer;">
           <span>400</span>
           <span class="icon-mbri-down"></span>
@@ -253,10 +252,8 @@
           </div>
         </div>        
       </div>
-    </div>
-
-    <br>
-    <div class="settings-vnesh-panel">
+    
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_700" aria-expanded="false" aria-controls="collapse_700" style="cursor: pointer;">
           <span>700</span>
           <span class="icon-mbri-down"></span>
@@ -371,10 +368,8 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <br>
-    <div class="settings-vnesh-panel">
+    
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_1200" aria-expanded="false" aria-controls="collapse_1200" style="cursor: pointer;">
           <span>1 200</span>
           <span class="icon-mbri-down"></span>
@@ -489,10 +484,8 @@
           </div>
         </div>        
       </div>
-    </div>
-
-        <br>
-    <div class="settings-vnesh-panel">
+    
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_2000" aria-expanded="false" aria-controls="collapse_2000" style="cursor: pointer;">
           <span>2 000</span>
           <span class="icon-mbri-down"></span>
@@ -607,10 +600,8 @@
           </div>
         </div>
       </div>
-    </div>
     
-        <br>
-    <div class="settings-vnesh-panel">
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_3000" aria-expanded="false" aria-controls="collapse_3000" style="cursor: pointer;">
           <span>3 000</span>
           <span class="icon-mbri-down"></span>
@@ -725,10 +716,8 @@
           </div>
         </div>
       </div>
-    </div>
     
-        <br>
-    <div class="settings-vnesh-panel">
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_5000" aria-expanded="false" aria-controls="collapse_5000" style="cursor: pointer;">
           <span>5 000</span>
           <span class="icon-mbri-down"></span>
@@ -843,9 +832,8 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="settings-vnesh-panel">
+    
+      <div class="settings-vnesh-panel">
         <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_5001" aria-expanded="false" aria-controls="collapse_5001" style="cursor: pointer;">
           <span>5 000+</span>
           <span class="icon-mbri-down"></span>
@@ -957,6 +945,62 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    
+    <div class="settings-vnesh-panel">
+      <h3 class="d-flex justify-content-between align-items-center mb-3">
+        <span>Добавить новую работу</span>
+      </h3>
+      
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="new_work_name" name="new_work_name" placeholder="" value="" autocomplete="off" required>
+            <label for="new_work_name">Наименование</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="new_work_group" name="new_work_group" placeholder="" value="" autocomplete="off" required>
+            <label for="new_work_group">Группа</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_normo" name="new_work_normo" placeholder="0.0" step="0.01" value="0" autocomplete="off">
+            <label for="new_work_normo">Н/Ч</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" name="new_work" class="btn btn-primary w-100 h-100">Добавить</button>
+        </div>
+      </div>
+      
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_materials_kf" name="new_work_materials_kf" placeholder="0.0" step="0.01" value="0" autocomplete="off">
+            <label for="new_work_materials_kf">Коэффициент материалов</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_materials_amount" name="new_work_materials_amount" placeholder="0.0" step="0.01" value="0" autocomplete="off">
+            <label for="new_work_materials_amount">Стоимость материалов</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_price_kors" name="new_work_price_kors" placeholder="0" value="0" autocomplete="off">
+            <label for="new_work_price_kors">КорсАвто</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="new_work_price_podrad" name="new_work_price_podrad" placeholder="0" value="0" autocomplete="off">
+            <label for="new_work_price_podrad">Подряд</label>
           </div>
         </div>
       </div>

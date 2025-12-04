@@ -1252,9 +1252,37 @@ class RegEstimationsSettings(models.Model):
     bumper_pered_replace_kf_5001        = models.IntegerField('Бампер замена 5001 ',      default=0, null=False, blank=True)       
     bumper_zad_replace_kf_5001          = models.IntegerField('Бампер замена 5001 зад',      default=0, null=False, blank=True)
     
-    to_1    = models.IntegerField('ТО 1',      default=0, null=False, blank=True)
-    to_2    = models.IntegerField('ТО 2',      default=0, null=False, blank=True)
-    to_3    = models.IntegerField('ТО 3',      default=0, null=False, blank=True)
+    to_1_200    = models.IntegerField('ТО 1 200',      default=0, null=False, blank=True)
+    to_2_200    = models.IntegerField('ТО 2 200',      default=0, null=False, blank=True)
+    to_3_200    = models.IntegerField('ТО 3 200',      default=0, null=False, blank=True)
+    
+    to_1_400    = models.IntegerField('ТО 1 400',      default=0, null=False, blank=True)
+    to_2_400    = models.IntegerField('ТО 2 400',      default=0, null=False, blank=True)
+    to_3_400    = models.IntegerField('ТО 3 400',      default=0, null=False, blank=True)
+    
+    to_1_700    = models.IntegerField('ТО 1 700',      default=0, null=False, blank=True)
+    to_2_700    = models.IntegerField('ТО 2 700',      default=0, null=False, blank=True)
+    to_3_700    = models.IntegerField('ТО 3 700',      default=0, null=False, blank=True)
+    
+    to_1_1200    = models.IntegerField('ТО 1 1200',      default=0, null=False, blank=True)
+    to_2_1200    = models.IntegerField('ТО 2 1200',      default=0, null=False, blank=True)
+    to_3_1200    = models.IntegerField('ТО 3 1200',      default=0, null=False, blank=True)
+    
+    to_1_2000    = models.IntegerField('ТО 1 2000',      default=0, null=False, blank=True)
+    to_2_2000    = models.IntegerField('ТО 2 2000',      default=0, null=False, blank=True)
+    to_3_2000    = models.IntegerField('ТО 3 2000',      default=0, null=False, blank=True)
+    
+    to_1_3000    = models.IntegerField('ТО 1 3000',      default=0, null=False, blank=True)
+    to_2_3000    = models.IntegerField('ТО 2 3000',      default=0, null=False, blank=True)
+    to_3_3000    = models.IntegerField('ТО 3 3000',      default=0, null=False, blank=True)
+    
+    to_1_5000    = models.IntegerField('ТО 1 5000',      default=0, null=False, blank=True)
+    to_2_5000    = models.IntegerField('ТО 2 5000',      default=0, null=False, blank=True)
+    to_3_5000    = models.IntegerField('ТО 3 5000',      default=0, null=False, blank=True)
+    
+    to_1_5001    = models.IntegerField('ТО 1 5001',      default=0, null=False, blank=True)
+    to_2_5001    = models.IntegerField('ТО 2 5001',      default=0, null=False, blank=True)
+    to_3_5001    = models.IntegerField('ТО 3 5001',      default=0, null=False, blank=True)
 
     def __str__(self):
         return "{}".format(self.name)
