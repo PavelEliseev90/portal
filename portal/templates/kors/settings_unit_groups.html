@@ -132,7 +132,7 @@
                 <div class="border rounded p-2 units-checkbox-container" style="max-height: 200px; overflow-y: auto;">
                   {% for unit in params.settings.units %}
                   <div class="form-check form-check-sm mb-1">
-                    <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_unit_{{ unit.pk }}" name="groupdata_{{ group.pk }}_units" value="{{ unit.pk }}" {% if unit in group.units.all %}checked{% endif %}>
+                    <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_unit_{{ unit.pk }}" name="groupdata_{{ group.pk }}_units" value="{{ unit.pk }}" {% if unit.pk in group.units_ids %}checked{% endif %}>
                     <label class="form-check-label" for="groupdata_{{ group.pk }}_unit_{{ unit.pk }}" style="font-size: 0.875rem;">
                       {{ unit.name }}{% if unit.city %} ({{ unit.city.name }}){% endif %}
                     </label>
