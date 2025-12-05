@@ -7268,19 +7268,27 @@ def settings_unit_groups(request):
         
         return HttpResponseRedirect(request.build_absolute_uri())
     
-    # Получаем все группы подразделений
-    groups = RefUnitGroup.objects.all().order_by('name')
+    # Получаем все группы подразделений с оптимизацией запросов
+    groups = RefUnitGroup.objects.select_related('city').prefetch_related('units', 'units__city').order_by('name')
     
-    # Получаем все подразделения для выбора
-    units = RefUnit.objects.all().order_by('name')
+    # Получаем все подразделения для выбора с оптимизацией
+    units = RefUnit.objects.select_related('city').order_by('name')
     
     # Получаем все города для выбора
     cities = RefCity.objects.all().order_by('name')
     
+    # Добавляем атрибут units_ids к каждой группе для быстрой проверки в шаблоне
+    # Это избегает N+1 запросов в шаблоне
+    groups_list = []
+    for group in groups:
+        # Предзагружаем ID подразделений для каждой группы (список для работы в шаблоне)
+        group.units_ids = list(group.units.all().values_list('pk', flat=True))
+        groups_list.append(group)
+    
     settings_data = {
-        'groups' : groups,
-        'units' : units,
-        'cities' : cities
+        'groups' : groups_list,
+        'units' : list(units),
+        'cities' : list(cities)
     }
     params = {
         'type'          : 'settings',
