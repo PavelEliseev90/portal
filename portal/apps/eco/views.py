@@ -3993,7 +3993,7 @@ def estimations_price_calculation(estimation, type_calculation):
     if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
         price_diff = to_1 
         dop = {
-            'name'      : 'ТО Minimal',
+            'name'      : 'ТО Minimal (масло, масляный фильтр)',
             'quantity'  : 1,
             'amount_pod': 1, 
             'amount'    : price_diff
@@ -4003,7 +4003,7 @@ def estimations_price_calculation(estimation, type_calculation):
     elif estimation.page_test_drive != None and estimation.page_test_drive.to == 2:
         price_diff = to_2 
         dop = {
-            'name'      : 'ТО Middle',
+            'name'      : 'ТО Middle (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания)',
             'quantity'  : 1,
             'amount_pod': 1, 
             'amount'    : price_diff
@@ -4013,7 +4013,7 @@ def estimations_price_calculation(estimation, type_calculation):
     elif estimation.page_test_drive != None and estimation.page_test_drive.to == 3:
         price_diff = to_3 
         dop = {
-            'name'      : 'ТО Full',
+            'name'      : 'ТО Full (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки)',
             'quantity'  : 1,
             'amount_pod': 1, 
             'amount'    : price_diff
