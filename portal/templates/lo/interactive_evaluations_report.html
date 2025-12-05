@@ -341,26 +341,23 @@
       <tbody>
         {% for row in params.page_obj %}
           <tr>
-            <td><a href="/eco/{{ row.rlk.id}}/" target="_blank"><span class="icon-doc"></span> </a> </td>
+            <td><a href="/eco/{{ row.rlk_id}}/" target="_blank"><span class="icon-doc"></span> </a> </td>
             <td>{{ row.start_estimation|date:"d.m.Y H:i" }}</td>
-            {% if row.rlk.unit_dc == None %}
-              <td>{{ row.rlk.unit.name }}</td>
-            {% else %}
-              <td>{{ row.rlk.unit_dc.name }}</td>
-            {% endif %}
-            <td>{{ row.page_documents.type_reception.name }}</td>
-            <td>{{ row.status }}</td>
-            <td>{{ row.modification.model.mark.name }} {{ row.modification.model.name }} {{ row.modification.name }}</td>
+            <td>{{ row.unit_name }}</td>
+            
+            <td>{{ row.unit_source }}</td>
+            <td>{{ row.status_name }}</td>
+            <td>{{ row.model }}</td>
             <td class="text-end">{{ row.year }} </td>
             <td lass="text-end">{{ row.page_salon.run|floatformat:"0g" }} </td>
             <td>{{ row.vin }}</td>
-            <td>{{ row.staff|default:"—" }}</td>
-            <td>{{ row.staff_eco_1.profiles.eco_name|default:"—" }}</td>
-            <td>{{ row.staff_eco_2.profiles.eco_name|default:"—" }}</td>
-            <td lass="text-end">{{ row.page_soglasovanie.price_reception|floatformat:0 }}</td>
-            <td lass="text-end">{{ row.page_soglasovanie.price_before_kd|floatformat:0 }}</td>
-            <td lass="text-end">{{ row.page_soglasovanie.price_after_kd|floatformat:0 }}</td>
-            <td lass="text-end">{{ row.page_soglasovanie.price_auto_2|floatformat:0 }}</td>
+            <td>{{ row.staff_name }}</td>
+            <td>{{ row.analyst_before_name }}</td>
+            <td>{{ row.analyst_after_name|default:"—" }}</td>
+            <td lass="text-end">{{ row.price_reception|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.price_before_kd|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.price_after_kd|floatformat:0 }}</td>
+            <td lass="text-end">{{ row.price_auto_2|floatformat:0 }}</td>
             <td class="{% if row.diff_before >= 0 %}diff-positive{% else %}diff-negative{% endif %}">
               {{ row.diff_before|floatformat:0 }}
             </td>
@@ -379,9 +376,9 @@
                 {{ row.cost_total|floatformat:0 }} ₽
               </div>
               <div class="text-muted small">
-                П: {{ row.costs.podgotovka|floatformat:0 }},
-                С: {{ row.costs.ss|floatformat:0 }},
-                К: {{ row.costs.mcu|floatformat:0 }}
+                П: {{ row.cost_podgotovka|floatformat:0 }},
+                С: {{ row.cost_ss|floatformat:0 }},
+                К: {{ row.cost_mcu|floatformat:0 }}
               </div>
             </td>
           </tr>

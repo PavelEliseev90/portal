@@ -8280,6 +8280,78 @@ def customer_est(request, slug):
 
 def test(request):
     
+    # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
+    # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
+    # for interactiv in interactivs:
+
+
+    # from analytics.models import InteractivePricingSnapshot
+    # date_start = DT.datetime.now().replace(day=1)
+    # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
+    # for interactiv in interactivs:
+        
+    #     data = InteractivePricingSnapshot()
+    #     data.estimation_id = interactiv.id
+    #     data.rlk_id         = interactiv.rlk.id
+    #     data.start_estimation       = interactiv.start_estimation
+    #     data.end_estimation         = interactiv.end_estimation
+    #     data.unit_id                = interactiv.page_documents.unit.id
+    #     data.unit_name              = interactiv.page_documents.unit.name
+    #     data.unit_source            = interactiv.page_documents.type_reception.name
+
+    #     data.staff_id   = interactiv.staff.id
+    #     data.staff_name = interactiv.staff.name
+
+    #     data.analyst_before_id = interactiv.staff_eco_1.id
+    #     data.analyst_before_name = interactiv.staff_eco_1.profiles.eco_name
+    #     if interactiv.staff_eco_2 != None: 
+    #         data.analyst_after_id = interactiv.staff_eco_2.id
+    #         data.analyst_after_name = interactiv.staff_eco_2.profiles.eco_name
+
+    #     data.type_reception_id  = interactiv.page_documents.type_reception.id
+    #     data.status_id          = interactiv.status.id
+    #     data.status_name        = interactiv.status.name
+
+    #     data.model_name = interactiv.modification.model.name
+    #     data.vin        = interactiv.vin
+
+    #     data.price_auto_1 = interactiv.page_soglasovanie.price_auto_1
+    #     data.price_auto_2 = interactiv.page_soglasovanie.price_auto_2
+    #     data.price_auto_3 = interactiv.page_soglasovanie.price_auto_3
+    #     data.price_auto_selected = 2
+
+    #     data.price_before_kd = interactiv.page_soglasovanie.price_before_kd
+    #     data.price_after_kd = interactiv.page_soglasovanie.price_after_kd
+    #     data.diff_before = interactiv.page_soglasovanie.price_auto_2 - interactiv.page_soglasovanie.price_before_kd
+    #     data.diff_after = interactiv.page_soglasovanie.price_auto_2 - interactiv.page_soglasovanie.price_after_kd
+
+    #     data.price_auto_bcp = interactiv.page_soglasovanie.price_auto_bcp
+    #     data.price_bcp = interactiv.page_soglasovanie.price_bcp
+
+    #     data.price_reception = interactiv.page_soglasovanie.price_reception
+    #     data.price_sale = interactiv.page_soglasovanie.price_sale
+
+    #     data.cost_podgotovka = interactiv.page_soglasovanie.amount_podgotovka
+    #     data.cost_ss = interactiv.page_soglasovanie.amount_ss
+    #     data.cost_mcu = interactiv.page_soglasovanie.amount_mcu
+    #     data.cost_recovery = interactiv.page_soglasovanie.price_recovery
+    #     data.cost_total = interactiv.page_soglasovanie.amount_recovery
+
+    #     data.tasks_total = 0
+    #     data.tasks_closed = 0
+
+    #     data.has_soglasovanie = True
+    #     data.has_diagnostics = True
+    #     data.accepted = True
+
+    #     # data.duration_estimation_sec = models.IntegerField(null=True, blank=True)
+    #     # data.duration_sogl_before_sec = models.IntegerField(null=True, blank=True)
+    #     # data.duration_diagnostics_sec = models.IntegerField(null=True, blank=True)
+    #     # data.duration_sogl_after_sec = models.IntegerField(null=True, blank=True)
+
+    #     data.save()
+
+
     #from task_manager.views import refresh_signal_run
     #refresh_signal_run()
     
