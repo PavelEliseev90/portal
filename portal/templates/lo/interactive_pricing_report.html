@@ -163,6 +163,51 @@
     </div>
   </div>
 
+  {% if params.analyst_stats %}
+  <div class="panel mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="mb-0">Аналитики: до и после диагностики</h3>
+      <small class="text-muted">Отклонение от авторасчета</small>
+    </div>
+    <div class="table-responsive table-mobile-cards">
+      <table class="table table-hover table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Аналитик</th>
+            <th>До КД, шт</th>
+            <th>Δ до КД</th>
+            <th>После КД, шт</th>
+            <th>Δ после КД</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.analyst_stats %}
+          <tr>
+            <td data-label="Аналитик"><strong>{{ row.analyst_name }}</strong></td>
+            <td data-label="До КД, шт">{{ row.count_before }}</td>
+            <td data-label="Δ до КД">
+              {% if row.avg_diff_before >= 0 %}
+                <span class="text-success">+{{ row.avg_diff_before|floatformat:0 }} ₽</span>
+              {% else %}
+                <span class="text-danger">{{ row.avg_diff_before|floatformat:0 }} ₽</span>
+              {% endif %}
+            </td>
+            <td data-label="После КД, шт">{{ row.count_after }}</td>
+            <td data-label="Δ после КД">
+              {% if row.avg_diff_after >= 0 %}
+                <span class="text-success">+{{ row.avg_diff_after|floatformat:0 }} ₽</span>
+              {% else %}
+                <span class="text-danger">{{ row.avg_diff_after|floatformat:0 }} ₽</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="panel table-responsive table-sticky">
     <h3>Таблица согласований</h3>
     <table class="table table-hover table-sm align-middle">

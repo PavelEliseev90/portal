@@ -2624,6 +2624,12 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
         super().save(*args, **kwargs)
 
+        # Обновляем витрину аналитиков
+        try:
+            update_eco_analyst_snapshots(self)
+        except Exception:
+            pass
+
 
     def __str__(self):
         return "{} / {}".format(self.rlk, self.type_estimation)
@@ -2638,6 +2644,114 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
 post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
+
+# --- Вспомогательная функция для витрины аналитиков ---
+def update_eco_analyst_snapshots(estimation):
+    """
+    Обновляет витрину EcoAnalystSnapshot при изменении RegInteractivOcenka.
+    Создает/обновляет записи для ролей 'before' и 'after' при наличии аналитиков.
+    """
+    try:
+        from analytics.models import EcoAnalystSnapshot
+    except Exception:
+        return
+
+    try:
+        sogl = estimation.page_soglasovanie
+    except Exception:
+        sogl = None
+
+    auto_price = None
+    if sogl:
+        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+
+    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+    if unit is None and estimation.rlk:
+        unit = getattr(estimation.rlk, 'unit', None)
+
+    unit_id = unit.id if unit else None
+    unit_name = unit.name if unit else ''
+    unit_source = 'documents' if getattr(estimation, 'page_documents', None) else ('rlk' if estimation.rlk else '')
+
+    type_reception_id = None
+    if getattr(estimation, 'page_documents', None):
+        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+
+    status_id = estimation.status_id if estimation.status_id else None
+    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+
+    price_reception = sogl.price_reception if sogl else None
+    price_sale = sogl.price_sale if sogl else None
+    cost_total = None
+    if sogl:
+        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+
+    def _duration_sec(start, end):
+        if start and end:
+            try:
+                return int((end - start).total_seconds())
+            except Exception:
+                return None
+        return None
+
+    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+
+    def _upsert(role, analyst):
+        if not analyst:
+            return
+
+        if role == 'before':
+            price = sogl.price_before_kd if sogl else None
+            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+            duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
+            duration_sogl_after_sec = None
+            duration_diagnostics_sec = None
+        else:
+            price = sogl.price_after_kd if sogl else None
+            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+            duration_sogl_before_sec = None
+            duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
+            duration_diagnostics_sec = None
+
+        EcoAnalystSnapshot.objects.update_or_create(
+            estimation_id=estimation.id,
+            role=role,
+            defaults={
+                'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+                'start_estimation': estimation.start_estimation,
+                'end_estimation': estimation.end_estimation,
+                'unit_id': unit_id,
+                'unit_name': unit_name,
+                'unit_source': unit_source,
+                'staff_id': estimation.staff_id if estimation.staff_id else None,
+                'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+                'analyst_id': analyst.id,
+                'analyst_name': analyst.get_full_name() or analyst.username,
+                'type_reception_id': type_reception_id,
+                'status_id': status_id,
+                'status_name': status_name,
+                'has_soglasovanie': bool(sogl),
+                'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+                'accepted': bool(estimation.status_id in [4, 8]),
+                'price_auto_selected': auto_price,
+                'price_before_kd': price if role == 'before' else None,
+                'price_after_kd': price if role == 'after' else None,
+                'diff_before': diff if role == 'before' else None,
+                'diff_after': diff if role == 'after' else None,
+                'price_reception': price_reception,
+                'price_sale': price_sale,
+                'cost_total': cost_total,
+                'duration_estimation_sec': duration_estimation_sec,
+                'duration_sogl_before_sec': duration_sogl_before_sec,
+                'duration_sogl_after_sec': duration_sogl_after_sec,
+                'duration_diagnostics_sec': duration_diagnostics_sec,
+                'tasks_total': 0,
+                'tasks_closed': 0,
+            }
+        )
+
+    _upsert('before', getattr(estimation, 'staff_eco_1', None))
+    _upsert('after', getattr(estimation, 'staff_eco_2', None))
 
 
 

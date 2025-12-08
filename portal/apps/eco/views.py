@@ -5865,6 +5865,67 @@ def interactive_pricing_report(request):
 
     total_count = base_qs.count()
 
+    # Статистика по аналитикам из витрины EcoAnalystSnapshot
+    analyst_qs = EcoAnalystSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+    if unit_id:
+        analyst_qs = analyst_qs.filter(unit_id=unit_id)
+    if analyst_id:
+        analyst_qs = analyst_qs.filter(analyst_id=analyst_id)
+
+    before_stats = analyst_qs.filter(role='before').values('analyst_id', 'analyst_name').annotate(
+        cnt=Count('estimation_id'),
+        avg_diff=Avg('diff_before'),
+        avg_price=Avg('price_before_kd'),
+        avg_auto=Avg('price_auto_selected'),
+    )
+    after_stats = analyst_qs.filter(role='after').values('analyst_id', 'analyst_name').annotate(
+        cnt=Count('estimation_id'),
+        avg_diff=Avg('diff_after'),
+        avg_price=Avg('price_after_kd'),
+        avg_auto=Avg('price_auto_selected'),
+    )
+
+    analyst_stats_map = {}
+    for row in before_stats:
+        aid = row['analyst_id'] or 0
+        analyst_stats_map[aid] = {
+            'analyst_id': row['analyst_id'],
+            'analyst_name': row['analyst_name'] or '—',
+            'count_before': row['cnt'],
+            'avg_diff_before': row['avg_diff'] or 0,
+            'avg_price_before': row['avg_price'] or 0,
+            'avg_auto': row['avg_auto'] or 0,
+            'count_after': 0,
+            'avg_diff_after': 0,
+            'avg_price_after': 0,
+        }
+    for row in after_stats:
+        aid = row['analyst_id'] or 0
+        if aid not in analyst_stats_map:
+            analyst_stats_map[aid] = {
+                'analyst_id': row['analyst_id'],
+                'analyst_name': row['analyst_name'] or '—',
+                'count_before': 0,
+                'avg_diff_before': 0,
+                'avg_price_before': 0,
+                'avg_auto': row['avg_auto'] or 0,
+                'count_after': row['cnt'],
+                'avg_diff_after': row['avg_diff'] or 0,
+                'avg_price_after': row['avg_price'] or 0,
+            }
+        else:
+            analyst_stats_map[aid]['count_after'] = row['cnt']
+            analyst_stats_map[aid]['avg_diff_after'] = row['avg_diff'] or 0
+            analyst_stats_map[aid]['avg_price_after'] = row['avg_price'] or 0
+            # Обновим avg_auto, если было пусто
+            if not analyst_stats_map[aid]['avg_auto']:
+                analyst_stats_map[aid]['avg_auto'] = row['avg_auto'] or 0
+
+    analyst_stats = sorted(analyst_stats_map.values(), key=lambda x: x['analyst_name'])
+
     aggregates = base_qs.aggregate(
         total_price_before=Coalesce(Sum('price_before_kd', output_field=FloatField()), 0.0),
         total_price_after=Coalesce(Sum('price_after_kd', output_field=FloatField()), 0.0),
@@ -6036,6 +6097,7 @@ def interactive_pricing_report(request):
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
+        'analyst_stats': analyst_stats,
     }
 
     return render(request, 'lo/interactive_pricing_report.html', {'params': params})
