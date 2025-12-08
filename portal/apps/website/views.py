@@ -8278,8 +8278,146 @@ def customer_est(request, slug):
 
     return render(request, "customer/customer_est_rlk_op.html")
 
-def test(request):
+
+###
+##
+#  Служба безопасности
+def sb_lo(request):
     
+    if not request.user.profiles.user_sb:
+        params = {
+        'type'          : 'sb_lo',
+        'nav_selected'  : 4,
+        'request'       : request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+   
+    filtr_vin           = request.GET.get('vin', '')
+    plate_number        = request.GET.get('plate_number', '')
+    name_mark_model     = request.GET.get('name_mark_model', '')
+    unit_id             = request.GET.get('unit_id', '') 
+    
+   
+    type_receptions_id = ''
+    filtr_unit_name = ''
+
+    docs = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.datetime(1,1,1)).order_by('-start_estimation')
+    
+    if unit_id != '':
+        unit_id = int(unit_id)
+        docs = docs.filter(page_documents__unit__id = unit_id) 
+
+    if plate_number != '':
+        docs = docs.filter(page_documents__plate_number__icontains = plate_number) 
+    
+    if name_mark_model != '':
+        docs = docs.filter(modification__model__mark__name__icontains = name_mark_model)  | docs.filter(modification__model__name__icontains = name_mark_model)  
+
+    if type_receptions_id != '':
+        type_receptions_id = int(type_receptions_id)
+        docs = docs.filter(page_documents__type_estimation__id = type_receptions_id)    
+    
+    if filtr_vin != '':
+        docs = docs.filter(vin__icontains = filtr_vin)  
+    
+    if filtr_unit_name != '':
+        docs = docs.filter(page_documents__unit__name__icontains = filtr_unit_name) | docs.filter(unit_dc__name__icontains = filtr_unit_name)
+    
+    status_id = request.GET.get('status_id', '')
+    if status_id != '':
+        status_id = int(status_id)
+        docs = docs.filter(status__id = status_id)
+
+    units_select = RefUnit.objects.filter(buauto = True).filter(name__icontains = 'КорсАвто').order_by("name")
+    
+    type_receptions_id = request.GET.get('type_receptions_id', '')
+    if type_receptions_id != '':
+        type_receptions_id = int(type_receptions_id)
+
+    staffID         = ""
+    staffsSelect    = ""
+    countList       = 25
+    paginator   = Paginator(docs, countList)	
+    page_number = request.GET.get('page', 1)
+    page_obj    = paginator.get_page(page_number)
+
+
+    filtr = {
+        'unit_id'           : unit_id,
+        'staffID'           : staffID,
+        'type_receptions_id': type_receptions_id, 
+        'status_id'         : status_id,
+        'unit_name'         : filtr_unit_name,
+        'vin'               : filtr_vin,
+        'plate_number'      : plate_number,
+        'name_mark_model'   : name_mark_model
+    }
+
+    selected = {
+        'units'             : units_select,
+        'staffs'            : staffsSelect,
+        'staffsKK'          : '',
+        'statuses'          : list(RefStatusEstimation.objects.all().order_by('-pk')),
+        'type_receptions'   : RefTypeReceptionCarsOrganization.objects.exclude(name = '').order_by('name')
+    }
+
+    params = {
+        'type'          : 'sb_lo',
+        'nav_selected'  : 4,
+        'request'       : request,
+        'filtr'         : filtr,
+        'selected'      : selected,
+        'objects'       : page_obj,
+
+        }
+    return render(request, 'website/sb_lo.html', {'params': params})
+    
+
+def test(request):
+
+    from register.models import RegInteractivOcenkaRLK
+    count = RegInteractivOcenka.objects.all().count()
+    s = 0
+    estimations_id = RegInteractivOcenka.objects.all().order_by('-start_estimation').values('id')
+    for estimation_id in estimations_id:
+        estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+
+        reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
+
+        if estimation.page_documents != None:
+            reg_interactiv.type_reception   = estimation.page_documents.type_reception
+            reg_interactiv.organization     = estimation.page_documents.organization
+            reg_interactiv.filial           = estimation.page_documents.filial
+            reg_interactiv.unit             = estimation.page_documents.unit
+            reg_interactiv.store            = estimation.page_documents.store
+
+        reg_interactiv.staff_rlk            = estimation.staff
+        reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
+        reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
+        
+        reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
+        
+        reg_interactiv.status              = estimation.status
+        for uss in estimation.access_user.all():
+            reg_interactiv.access_user.add(uss)
+        
+        reg_interactiv.save()
+
+        if reg_interactiv.page_soglasovanie != None:
+            if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
+                price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+                if price_autohub != None:
+                    reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+                    reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                    reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                    reg_interactiv_ocenka_soglasovanie.save()
+
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count))
+
     # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
     # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
     # for interactiv in interactivs:

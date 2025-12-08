@@ -27,6 +27,7 @@ urlpatterns = [
    path('sale/<id>/',            views.sale, name='id'),
    path('dashboard_sms_opros/',  views.dashboard_sms_opros),
    
+   path('sb_lo/',                views.sb_lo),
    # Мониторинг
    path('monitorings/',          views.board_monitoring),
 
