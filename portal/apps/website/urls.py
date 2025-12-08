@@ -40,6 +40,7 @@ urlpatterns = [
    path('settings/settings_vnesh/',                         views.settings_vnesh),
    path('settings/settings_works/',                         views.settings_works),
    path('settings/settings_unit_groups/',                   views.settings_unit_groups),
+   path('settings/settings_unit_groups/<int:group_id>/units/', views.settings_unit_group_units),
 
    path('refs/units_group/',     views.refs_unit_group_list),
    

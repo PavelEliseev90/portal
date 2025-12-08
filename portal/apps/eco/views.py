@@ -16,7 +16,6 @@ import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from django.contrib.auth.models import User, Group
 from django.db.models.functions import Cast, Coalesce
-from avtosalon.models import Autoteka_signal
 from dateutil.relativedelta import relativedelta
 
 import re
@@ -344,8 +343,8 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         item['conv_to_accepted'] = conv_to_accepted
         item['overall_conv'] = overall_conv
 
-    # Получаем все активные группы подразделений
-    unit_groups = RefUnitGroup.objects.filter(active=True).prefetch_related('units').order_by('name')
+    # Получаем все активные группы подразделений с bu_auto=True
+    unit_groups = RefUnitGroup.objects.filter(active=True, bu_auto=True).prefetch_related('units').order_by('name')
     
     # Создаем карту: имя подразделения -> группа
     unit_to_group = {}
@@ -740,59 +739,6 @@ def tradein_funnel(request):
     type_monthly_available = bool(type_monthly_chart and type_monthly_chart.get('datasets'))
     type_pie_available = bool(type_pie_chart and type_pie_chart.get('labels'))
 
-    unresolved_qs = stage_diagnostics_qs.exclude(status__name__icontains='ам принят')
-    unresolved_vins = list(
-        unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True)
-    )
-    query_without_flag = request.GET.copy()
-    if 'show_autoteka' in query_without_flag:
-        query_without_flag.pop('show_autoteka')
-    query_show_all = query_without_flag.copy()
-    query_show_all['show_autoteka'] = '1'
-
-    autoteka_summary = {
-        'total': 0,
-        'unique': 0,
-        'rows': [],
-        'show_all': request.GET.get('show_autoteka') == '1',
-        'query_base': query_without_flag.urlencode(),
-        'query_show_all': query_show_all.urlencode(),
-    }
-    if unresolved_vins:
-        vin_map = {}
-        for item in unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values(
-            'vin',
-            'pk',
-            'rlk_id',
-            'page_soglasovanie__price_reception',
-        ):
-            vin_map.setdefault(item['vin'], item)
-
-        leads_qs = Autoteka_signal.objects.filter(vin__in=unresolved_vins)
-        leads_qs = leads_qs.filter(date__gte=date_start).filter(date__lte=date_end)
-        autoteka_summary['total'] = leads_qs.count()
-        autoteka_summary['unique'] = leads_qs.values('vin').distinct().count()
-        leads_qs = leads_qs.order_by('-date')
-        if not autoteka_summary['show_all']:
-            leads_qs = leads_qs[:10]
-
-        rows = []
-        for row in leads_qs:
-            info = vin_map.get(row.vin)
-            rows.append({
-                'vin': row.vin,
-                'brand': row.brand,
-                'model': row.model,
-                'price': row.price,
-                'city_name': row.city_name,
-                'date': row.date,
-                'url': row.url,
-                'rlk_id': info['rlk_id'] if info else None,
-                'estimation_id': info['pk'] if info else None,
-                'price_reception': info['page_soglasovanie__price_reception'] if info else None,
-            })
-        autoteka_summary['rows'] = rows
-
     source_stats, source_totals = _get_source_stats(
         date_start,
         date_end,
@@ -830,7 +776,6 @@ def tradein_funnel(request):
         'unit_trend_available': unit_trend_available,
         'type_monthly_available': type_monthly_available,
         'type_pie_available': type_pie_available,
-        'autoteka_summary': autoteka_summary,
         'source_stats': source_stats,
         'source_totals': source_totals,
     }

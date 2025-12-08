@@ -57,23 +57,16 @@
               <label for="new_group_comment">Комментарий</label>
             </div>
           </div>
-          <div class="col-md-12">
+          <div class="col-md-6">
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="new_group_active" name="new_group_active" checked>
               <label class="form-check-label" for="new_group_active">Активно</label>
             </div>
           </div>
-          <div class="col-md-12">
-            <label class="form-label fw-semibold">Подразделения в группе:</label>
-            <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
-              {% for unit in params.settings.units %}
-              <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="new_group_unit_{{ unit.pk }}" name="new_group_units" value="{{ unit.pk }}">
-                <label class="form-check-label" for="new_group_unit_{{ unit.pk }}">
-                  {{ unit.name }}{% if unit.city %} ({{ unit.city.name }}){% endif %}
-                </label>
-              </div>
-              {% endfor %}
+          <div class="col-md-6">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="new_group_bu_auto" name="new_group_bu_auto">
+              <label class="form-check-label" for="new_group_bu_auto">Б/У Автомобили</label>
             </div>
           </div>
           <div class="col-md-12">
@@ -96,9 +89,10 @@
               <th style="min-width: 200px;">Наименование</th>
               <th style="min-width: 200px;">Наименование BI</th>
               <th style="min-width: 150px;">Город</th>
-              <th style="min-width: 300px;">Подразделения</th>
               <th style="min-width: 200px;">Комментарий</th>
               <th style="min-width: 100px;">Активно</th>
+              <th style="min-width: 120px;">Б/У Автомобили</th>
+              <th style="min-width: 150px;">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -128,18 +122,6 @@
                   <label for="groupdata_{{ group.pk }}_city">Город</label>
                 </div>
               </td>
-              <td data-label="Подразделения">
-                <div class="border rounded p-2 units-checkbox-container" style="max-height: 200px; overflow-y: auto;">
-                  {% for unit in params.settings.units %}
-                  <div class="form-check form-check-sm mb-1">
-                    <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_unit_{{ unit.pk }}" name="groupdata_{{ group.pk }}_units" value="{{ unit.pk }}" {% if unit.pk in group.units_ids %}checked{% endif %}>
-                    <label class="form-check-label" for="groupdata_{{ group.pk }}_unit_{{ unit.pk }}" style="font-size: 0.875rem;">
-                      {{ unit.name }}{% if unit.city %} ({{ unit.city.name }}){% endif %}
-                    </label>
-                  </div>
-                  {% endfor %}
-                </div>
-              </td>
               <td data-label="Комментарий">
                 <div class="form-floating">
                   <input type="text" class="form-control" id="groupdata_{{ group.pk }}_comment" name="groupdata_{{ group.pk }}_comment" placeholder="" value="{{ group.comment }}" autocomplete="off">
@@ -151,6 +133,17 @@
                   <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_active" name="groupdata_{{ group.pk }}_active" {% if group.active %}checked{% endif %}>
                   <label class="form-check-label" for="groupdata_{{ group.pk }}_active">Активно</label>
                 </div>
+              </td>
+              <td data-label="Б/У Автомобили">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_bu_auto" name="groupdata_{{ group.pk }}_bu_auto" {% if group.bu_auto %}checked{% endif %}>
+                  <label class="form-check-label" for="groupdata_{{ group.pk }}_bu_auto">Б/У Автомобили</label>
+                </div>
+              </td>
+              <td data-label="Действия">
+                <a href="/settings/settings_unit_groups/{{ group.pk }}/units/" class="btn btn-sm btn-outline-primary">
+                  Редактировать состав
+                </a>
               </td>
             </tr>
             {% endfor %}
@@ -165,26 +158,5 @@
 
   </form>
 </section>
-
-<style>
-@media (max-width: 768px) {
-  .units-checkbox-container {
-    max-height: 150px !important;
-  }
-  
-  .table-mobile-cards tbody td .units-checkbox-container {
-    max-height: 120px !important;
-  }
-  
-  .table-mobile-cards tbody td .form-check {
-    margin-bottom: 0.5rem;
-  }
-  
-  .table-mobile-cards tbody td .form-check-label {
-    font-size: 0.8rem;
-    line-height: 1.3;
-  }
-}
-</style>
 {% endblock %}
 
