@@ -16,6 +16,7 @@ import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from django.contrib.auth.models import User, Group
 from django.db.models.functions import Cast, Coalesce
+from avtosalon.models import Autoteka_signal
 from dateutil.relativedelta import relativedelta
 
 import re
