@@ -1298,6 +1298,9 @@ def doc(request, id):
     params  = {}
     selected            = ''
     balance_date        = estimation.start_estimation 
+    if balance_date == None:
+        balance_date = estimation.rlk.dataTime 
+        
     balance_date_start  = balance_date - relativedelta(months=1)
     balance_date_start  = balance_date_start.replace(day=1, hour=1)
     balance_date_end    = balance_date

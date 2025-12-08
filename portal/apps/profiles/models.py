@@ -28,6 +28,8 @@ class Profiles(models.Model):
     korsavto_stores         = models.ManyToManyField(RefStore, verbose_name='Стоянки автомобилей доступны', blank=True)
     korsavto_city           = models.CharField("Наименование города", max_length=512, default='', blank= True, null=True) 
     korsavto_auction        = models.BooleanField("Сотрудник аукциона", default = False)
+
+    user_sb                 = models.BooleanField("Сотрудник службы безопасности", default = False)
     
     def image_img(self):
         if self.image:

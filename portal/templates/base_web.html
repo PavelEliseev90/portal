@@ -966,6 +966,27 @@
                             </a>
                         </li>
                         
+                        {% if request.user.profiles.user_sb %}
+                        
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="#" data-bs-toggle="collapse" data-bs-target="#collapse_sb" aria-expanded="false" aria-controls="collapse_sb">
+                                    <span class="sidebar-icon bi bi-shield-lock"></span>
+                                    Служба безопасности 
+                                </a>
+                            </li>
+                            
+                            <div class="collapse {% if params.type == 'sb_lo' %} show {% endif %}" id="collapse_sb" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'sb_lo' %}secondary active {% else %}white {% endif %}" href="/sb_lo/">
+                                        <span class="sidebar-icon bi bi-journal-check"></span>
+                                        Листы оценки
+                                    </a>
+                                </li>
+                                
+                            </div>
+                        
+                        {% endif %}
+
                         {% if request.user.is_superuser %}
                         
                             <li class="nav-item">
