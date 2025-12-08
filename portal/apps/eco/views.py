@@ -70,6 +70,10 @@ def send_web_socket_message(group, chat, user, text, estimation_id):
 
 def add_log_history_open(estimation, user, page):
     
+    if user != None:
+        if user.profiles.user_sb:
+            return
+        
     page_title = 'Главная'
     
     if page == 1:
@@ -1282,7 +1286,7 @@ def doc(request, id):
     rlk     = DocRLK.objects.get(pk=id)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
+    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
         
@@ -1300,7 +1304,7 @@ def doc(request, id):
     balance_date        = estimation.start_estimation 
     if balance_date == None:
         balance_date = estimation.rlk.dataTime 
-        
+
     balance_date_start  = balance_date - relativedelta(months=1)
     balance_date_start  = balance_date_start.replace(day=1, hour=1)
     balance_date_end    = balance_date

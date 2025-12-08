@@ -1773,10 +1773,12 @@
                       <span>Ценообразование ЕЦО</span>                
                     </a>
                   {% endif %}
-
-                  <a href="?{% url_replace page=23 %}" class="kors-anchor-button" data-tab-target="23">
-                    <span>Ценообразование</span>                
-                  </a>
+                  
+                  {% if not request.user.profiles.user_sb %}
+                    <a href="?{% url_replace page=23 %}" class="kors-anchor-button" data-tab-target="23">
+                      <span>Ценообразование</span>                
+                    </a>
+                  {% endif %}
                   
                   <a href="?{% url_replace page=9 %}" class="kors-anchor-button" data-tab-target="9">
                     <span>Согласование</span>                
@@ -1825,15 +1827,19 @@
                 {% if request.user.profiles.eco_page_price_info %}
                   <option {% if params.tabindex == 20 %} selected {% endif %} value="20">Ценообразование Админ</option>
                 {% endif %}
+                
                 {% if request.user.profiles.eco_page_price_auto %}
                   <option {% if params.tabindex == 30 %} selected {% endif %} value="30">Ценообразование ДДЦ</option>
                 {% endif %}
+                
                 {% if request.user.profiles.eco_page_price_info or request.user.profiles.eco %}
                   <option {% if params.tabindex == 21 %} selected {% endif %} value="21">Ценообразование ЕЦО</option>
                 {% endif %}
                 
-                <option {% if params.tabindex == 23 %} selected {% endif %} value="23">Ценообразование</option>
-                
+                {% if not request.user.profiles.user_sb %}
+                  <option {% if params.tabindex == 23 %} selected {% endif %} value="23">Ценообразование</option>
+                {% endif %}
+
                 {% if request.user.profiles.eco_page_price_info %}
                   <option {% if params.tabindex == 22 %} selected {% endif %} value="21">История изменений</option>
                 {% endif %}
