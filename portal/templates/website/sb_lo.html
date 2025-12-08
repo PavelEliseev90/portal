@@ -25,68 +25,64 @@
         
           <div class="modal-body">
             
-            <div class="row">
+            <div class="row g-3">
               
-                <div class="col-sm">
-                
-                  <div class="form-floating mb-3">
-                    <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.filtr.vin}}">
-                    <label for="floatingInput">VIN</label>
+                <div class="col-12">
+                  <div class="form-floating">
+                    <input class="form-control" type="text" id="vin_modal" name="vin" value="{{params.filtr.vin}}">
+                    <label for="vin_modal">VIN</label>
                   </div>
-            
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-12">
                   <div class="form-floating">
-                    <input class="form-control" type="text" id="name_mark_model" name="name_mark_model" value="{{params.filtr.name_mark_model}}">
-                    <label for="name_mark_model">Марка, модель</label>
+                    <input class="form-control" type="text" id="name_mark_model_modal" name="name_mark_model" value="{{params.filtr.name_mark_model}}">
+                    <label for="name_mark_model_modal">Марка, модель</label>
                   </div>
                 </div>
         
-                <div class="col-md-3">
+                <div class="col-12">
                   <div class="form-floating">
-                    <input class="form-control" type="text" id="plate_number" name="plate_number" value="{{params.filtr.plate_number}}">
-                    <label for="plate_number">Гос. номер</label>
+                    <input class="form-control" type="text" id="plate_number_modal" name="plate_number" value="{{params.filtr.plate_number}}">
+                    <label for="plate_number_modal">Гос. номер</label>
                   </div>
                 </div>
 
-                <div class="col-sm">
-                  <div class="form-floating mb-3">							
-                    <select class="form-select" id="status_id" name="status_id" placeholder="">
+                <div class="col-12">
+                  <div class="form-floating">
+                    <select class="form-select" id="status_id_modal" name="status_id">
                       <option></option>
                       {% for status in params.selected.statuses %}
-                        <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}> {{status.name}} </option>
+                        <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}>{{status.name}}</option>
                       {% endfor %}
                     </select>
-                    <label for="floatingInput">Статус</label>
+                    <label for="status_id_modal">Статус</label>
                   </div>
                 </div>
           
-              <div class="col-sm">
-                <div class="form-floating mb-3">							
-                  <select class="form-select" id="type_receptions_id" name="type_receptions_id" placeholder="">
+              <div class="col-12">
+                <div class="form-floating">
+                  <select class="form-select" id="type_receptions_id_modal" name="type_receptions_id">
                     <option></option>
                     {% for type_reception in params.selected.type_receptions %}
-                      <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}> {{type_reception.name}} </option>
+                      <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}>{{type_reception.name}}</option>
                     {% endfor %}
                   </select>
-                  <label for="floatingInput">Тип приема</label>
+                  <label for="type_receptions_id_modal">Тип приема</label>
                 </div>
               </div>
           
-          
-              <div class="col-sm">
-                <div class="form-floating mb-3">							
-                  <select class="form-select" id="unit_id" name="unit_id" placeholder="">
+              <div class="col-12">
+                <div class="form-floating">
+                  <select class="form-select" id="unit_id_modal" name="unit_id">
                     <option></option>
                     {% for unit in params.selected.units %}
-                      <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
+                      <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}>{{unit.name}}</option>
                     {% endfor %}
                   </select>
-                  <label for="floatingInput">Подразделение ДЦ</label>
+                  <label for="unit_id_modal">Подразделение ДЦ</label>
                 </div>
               </div>
-          
           
             </div>  
             
@@ -117,28 +113,28 @@
     <div class="portal-panel portal-filter">
       <div class="row g-3">
         
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
           <div class="form-floating">
             <input class="form-control" type="text" id="vin" name="vin" value="{{params.filtr.vin}}">
             <label for="vin">VIN</label>
           </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
           <div class="form-floating">
             <input class="form-control" type="text" id="name_mark_model" name="name_mark_model" value="{{params.filtr.name_mark_model}}">
             <label for="name_mark_model">Марка, модель</label>
           </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
           <div class="form-floating">
             <input class="form-control" type="text" id="plate_number" name="plate_number" value="{{params.filtr.plate_number}}">
             <label for="plate_number">Гос. номер</label>
           </div>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
           <div class="form-floating">
             <select class="form-select" id="status_id" name="status_id">
               <option></option>
@@ -150,7 +146,7 @@
           </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-3 col-12">
           <div class="form-floating">
             <select class="form-select" id="type_receptions_id" name="type_receptions_id">
               <option></option>
@@ -162,22 +158,22 @@
           </div>
         </div>
 
-        <div class="col-sm">
-          <div class="form-floating mb-3">							
-            <select class="form-select" id="unit_id" name="unit_id" placeholder="">
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <select class="form-select" id="unit_id" name="unit_id">
               <option></option>
               {% for unit in params.selected.units %}
-                <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
+                <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}>{{unit.name}}</option>
               {% endfor %}
             </select>
-            <label for="floatingInput">Подразделение ДЦ</label>
+            <label for="unit_id">Подразделение ДЦ</label>
           </div>
         </div>
 
-        <div class="col-md-12">
+        <div class="col-md-12 col-12">
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <button class="btn btn-outline-success" type="submit"><span class="icon-mbri-play"></span> Применить</button>
-            
+          </div>
         </div>
       </div>
     </div>
@@ -187,7 +183,7 @@
   {% if params.objects.object_list %}
     <div class="portal-panel">
       <div class="table-responsive table-sticky">
-        <table class="table table-hover">
+        <table class="table table-hover table-mobile-cards">
           <thead>
             <tr>
               <th></th>
@@ -206,19 +202,24 @@
             {% for object in params.objects.object_list %}
             <tr>
               <td data-label="">
-                <a class="icon-mbri-edit2 text-dark" href="/eco/{{object.rlk.id}}/"></a>
+                <a class="btn btn-sm btn-outline-primary" href="/eco/{{object.rlk.id}}/" title="Редактировать">
+                  <span class="icon-mbri-edit2"></span> Открыть
+                </a>
               </td>
-              <td data-label="Номер / Дата РЛК">
-                <span class="icon-mbri-clock"></span> {{object.rlk.nomer}} от {{object.rlk.dataTime}}
+              <td data-label="Номер / Дата">
+                <div>
+                  <strong>{{object.rlk.nomer|default_if_none:"-"}}</strong><br>
+                  <small class="text-muted">
+                    <span class="icon-mbri-clock"></span> {{object.rlk.dataTime|date:"d.m.Y H:i"|default_if_none:"-"}}
+                  </small>
+                </div>
               </td>
               <td data-label="Подразделение">
                 <span class="icon-mbri-home"></span>
-                
-                {{object.page_documents.unit.name}} 
-                
+                {{object.page_documents.unit.name|default_if_none:"-"}} 
               </td>
               <td data-label="Менеджер">
-                <span class="icon-mbri-user"></span> {{object.rlk.manager_trade_in}}
+                <span class="icon-mbri-user"></span> {{object.rlk.manager_trade_in|default_if_none:"-"}}
               </td>
               <td data-label="Статус">
                 <span class="icon-mbri-bookmark"></span> {{object.status|default_if_none:"Новый"}}
@@ -230,13 +231,20 @@
                 <span class="icon-mbri-bookmark"></span> {{object.staff|default_if_none:"-"}}
               </td>
               <td data-label="Автомобиль">
-                
-                {{object.modification.model.mark.name}} {{object.modification.model}} {{object.modification|default_if_none:""}}<br>
-                {{object.vin|default_if_none:""}} / {{object.year|default_if_none:""}} / {{object.page_documents.plate_number|default_if_none:""}}
-                
+                <div>
+                  <strong>{{object.modification.model.mark.name|default_if_none:""}} {{object.modification.model.name|default_if_none:""}}</strong>
+                  {% if object.modification.name %}<br>{{object.modification.name}}{% endif %}
+                  {% if object.vin %}<br><small class="text-muted">VIN: {{object.vin}}</small>{% endif %}
+                  {% if object.year or object.page_documents.plate_number %}
+                  <br><small class="text-muted">
+                    {% if object.year %}Год: {{object.year}}{% endif %}
+                    {% if object.page_documents.plate_number %}{% if object.year %} / {% endif %}Гос. номер: {{object.page_documents.plate_number}}{% endif %}
+                  </small>
+                  {% endif %}
+                </div>
               </td>
               <td data-label="Клиент">
-                <span class="icon-mbri-users"></span> {{object.rlk.clientName}}
+                <span class="icon-mbri-users"></span> {{object.rlk.clientName|default_if_none:"-"}}
               </td>
               
             </tr>
