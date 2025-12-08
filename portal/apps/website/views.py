@@ -7285,6 +7285,11 @@ def settings_unit_group_units(request, group_id):
     group = get_object_or_404(RefUnitGroup, pk=group_id)
     
     if request.method == 'POST':
+        # Обновляем параметры группы
+        group.active = 'group_active' in request.POST
+        group.bu_auto = 'group_bu_auto' in request.POST
+        group.save(update_fields=['active', 'bu_auto'])
+        
         # Обновляем состав группы
         unit_ids = request.POST.getlist('units')
         group.units.set(unit_ids)

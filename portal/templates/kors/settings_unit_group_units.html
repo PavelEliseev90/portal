@@ -21,6 +21,24 @@
     {% csrf_token %}
 
     <div class="settings-vnesh-panel">
+      <h3 class="mb-3">Параметры группы</h3>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="group_active" name="group_active" {% if params.group.active %}checked{% endif %}>
+            <label class="form-check-label" for="group_active">Активно</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="group_bu_auto" name="group_bu_auto" {% if params.group.bu_auto %}checked{% endif %}>
+            <label class="form-check-label" for="group_bu_auto">Б/У Автомобили</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-vnesh-panel">
       <h3 class="mb-3">Поиск подразделений</h3>
       <div class="row g-3 mb-4">
         <div class="col-md-12">
