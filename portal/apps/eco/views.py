@@ -560,7 +560,7 @@ def tradein_funnel(request):
 
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    analysts = User.objects.filter(profiles__eco=True)
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
@@ -4971,6 +4971,7 @@ class Point:
         self.y = y
 
 def eco_efficiency_analysis(request):
+    
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
@@ -4995,7 +4996,7 @@ def eco_efficiency_analysis(request):
     type_id = _get_int(request.GET.get('type_id'))
     status_id = _get_int(request.GET.get('status_id'))
 
-    pricing_qs = InteractivePricingSnapshot.objects.filter(
+    pricing_qs = EcoAnalystSnapshot.objects.filter(
         start_estimation__gte=date_start,
         start_estimation__lte=date_end,
     )
@@ -5013,8 +5014,11 @@ def eco_efficiency_analysis(request):
 
     total_count = pricing_qs.count()
     with_soglasovanie_count = pricing_qs.filter(has_soglasovanie=True).count()
-    soglasovanie_percent = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
-
+    with_accepted_count = pricing_qs.filter(accepted=True).count()
+    
+    soglasovanie_percent    = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
+    accepted_percent        = round((with_accepted_count / with_soglasovanie_count * 100), 1) if total_count > 0 else 0
+    
     avg_time_total = pricing_qs.aggregate(avg=Avg('duration_estimation_sec'))['avg']
     avg_time_total = round(avg_time_total / 3600, 1) if avg_time_total else None
 
@@ -5101,6 +5105,8 @@ def eco_efficiency_analysis(request):
             {
                 'name': row['analyst_name'] or '—',
                 'total': count,
+                'with_soglasovanie_count' : with_soglasovanie_count,
+                'accepted_percent'      : accepted_percent,
                 'with_soglasovanie': row['with_soglas'],
                 'accepted': row['accepted'],
                 'avg_time': avg_time,
@@ -5138,7 +5144,7 @@ def eco_efficiency_analysis(request):
 
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    analysts = User.objects.filter(profiles__eco=True)
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
 
@@ -6048,7 +6054,7 @@ def interactive_pricing_report(request):
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    analysts = User.objects.filter(profiles__eco=True)
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
 

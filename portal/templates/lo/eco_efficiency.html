@@ -272,35 +272,72 @@
     </div>
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
-        <h3>Со согласованием</h3>
+        <h3>Согласовано до диагностики</h3>
         <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
         <div class="metric-label">{{ params.soglasovanie_percent }}% от общего числа</div>
       </article>
     </div>
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
-        <h3>Среднее время оценки</h3>
-        <div class="metric-value">
-          {% if params.avg_time_total %}
-            {{ params.avg_time_total }} ч
-          {% else %}
-            —
-          {% endif %}
-        </div>
-        <div class="metric-label">От начала до завершения оценки</div>
+        <h3>Согласовано после диагностики</h3>
+        <div class="metric-value">{{ params.with_accepted_count }}</div>
+        <div class="metric-label">{{ params.accepted_percent }}% от согласований до КД</div>
       </article>
     </div>
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
-        <h3>Время согласования</h3>
-        <div class="metric-value">
-          {% if params.avg_soglasovanie_time %}
-            {{ params.avg_soglasovanie_time }} ч
-          {% else %}
-            —
-          {% endif %}
-        </div>
-        <div class="metric-label">Среднее время до согласования</div>
+        <h3>Принято</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_percent }}% от согласований после КД</div>
+      </article>
+    </div>
+  </div>
+
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Выше авторасчета до кд</h3>
+        <div class="metric-value">{{ params.total_count }}</div>
+        <div class="metric-label"></div>
+      </article>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Примерно равно авторасчету до КД</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Ниже авторасчета до КД</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_percent }}% от согласований до КД</div>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Выше авторасчета после кд</h3>
+        <div class="metric-value">{{ params.total_count }}</div>
+        <div class="metric-label"></div>
+      </article>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Примерно равно авторасчету после КД</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card">
+        <h3>Ниже авторасчета после КД</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_percent }}% от согласований до КД</div>
       </article>
     </div>
   </div>
@@ -308,7 +345,7 @@
   <!-- Блок метрик по чатам временно отключён -->
 
 
-
+<!--
   <div class="row g-3 mb-3">
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
@@ -345,82 +382,7 @@
       </article>
     </div>
   </div>
-
-  <div class="row g-3 mb-3">
-    <div class="col-lg-6">
-      <article class="kors-panel">
-        <div class="kors-panel__head">
-          <h3>Сравнение цен</h3>
-          <p class="text-muted mb-0">Согласованная цена vs авторасчет</p>
-        </div>
-        <div class="mt-3">
-          {% if params.price_comparison.total_compared > 0 %}
-            <div class="row g-3 mb-3">
-              <div class="col-4">
-                <div class="text-center">
-                  <div class="h4 mb-1 text-success">{{ params.price_comparison.higher_count }}</div>
-                  <div class="text-muted small">Выше авторасчета</div>
-                </div>
-              </div>
-              <div class="col-4">
-                <div class="text-center">
-                  <div class="h4 mb-1 text-warning">{{ params.price_comparison.equal_count }}</div>
-                  <div class="text-muted small">Примерно равно</div>
-                </div>
-              </div>
-              <div class="col-4">
-                <div class="text-center">
-                  <div class="h4 mb-1 text-danger">{{ params.price_comparison.lower_count }}</div>
-                  <div class="text-muted small">Ниже авторасчета</div>
-                </div>
-              </div>
-            </div>
-            <hr>
-            <div class="row">
-              <div class="col-6">
-                <strong>Средняя разница:</strong>
-                <div class="h5 mt-1">
-                  {% if params.price_comparison.avg_diff > 0 %}
-                    <span class="text-success">+{{ params.price_comparison.avg_diff|floatformat:0 }} ₽</span>
-                  {% elif params.price_comparison.avg_diff < 0 %}
-                    <span class="text-danger">{{ params.price_comparison.avg_diff|floatformat:0 }} ₽</span>
-                  {% else %}
-                    <span>0 ₽</span>
-                  {% endif %}
-                </div>
-              </div>
-              <div class="col-6">
-                <strong>В процентах:</strong>
-                <div class="h5 mt-1">
-                  {% if params.price_comparison.avg_diff_percent > 0 %}
-                    <span class="text-success">+{{ params.price_comparison.avg_diff_percent }}%</span>
-                  {% elif params.price_comparison.avg_diff_percent < 0 %}
-                    <span class="text-danger">{{ params.price_comparison.avg_diff_percent }}%</span>
-                  {% else %}
-                    <span>0%</span>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-            <div class="mt-2 text-muted small">
-              Всего сравнений: {{ params.price_comparison.total_compared }}
-            </div>
-          {% else %}
-            <p class="text-muted">Нет данных для сравнения</p>
-          {% endif %}
-        </div>
-      </article>
-    </div>
-    <div class="col-lg-6">
-      <article class="kors-panel">
-        <div class="kors-panel__head">
-          <h3>Динамика по месяцам</h3>
-          <p class="text-muted mb-0">Количество оценок и среднее время</p>
-        </div>
-        <canvas id="monthlyChart"></canvas>
-      </article>
-    </div>
-  </div>
+-->
 
   <div class="row g-3 mt-3">
     <div class="col-12">

@@ -2671,7 +2671,13 @@ def update_eco_analyst_snapshots(estimation):
 
     unit_id = unit.id if unit else None
     unit_name = unit.name if unit else ''
-    unit_source = 'documents' if getattr(estimation, 'page_documents', None) else ('rlk' if estimation.rlk else '')
+    
+    if estimation.rlk.unit_dc != None:
+        unit_source = estimation.rlk.unit_dc.name
+    elif estimation.rlk.unit != None:
+        unit_source = estimation.rlk.unit.name 
+    else:
+        unit_source = estimation.page_documents.unit.name
 
     type_reception_id = None
     if getattr(estimation, 'page_documents', None):
@@ -2683,9 +2689,7 @@ def update_eco_analyst_snapshots(estimation):
     price_reception = sogl.price_reception if sogl else None
     price_sale = sogl.price_sale if sogl else None
     cost_total = None
-    if sogl:
-        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
-
+    
     def _duration_sec(start, end):
         if start and end:
             try:
@@ -2706,12 +2710,17 @@ def update_eco_analyst_snapshots(estimation):
             duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
             duration_sogl_after_sec = None
             duration_diagnostics_sec = None
+            if sogl:
+                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+
         else:
             price = sogl.price_after_kd if sogl else None
             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
             duration_sogl_before_sec = None
             duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
             duration_diagnostics_sec = None
+            if sogl:
+                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
 
         EcoAnalystSnapshot.objects.update_or_create(
             estimation_id=estimation.id,
@@ -2726,7 +2735,7 @@ def update_eco_analyst_snapshots(estimation):
                 'staff_id': estimation.staff_id if estimation.staff_id else None,
                 'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
                 'analyst_id': analyst.id,
-                'analyst_name': analyst.get_full_name() or analyst.username,
+                'analyst_name': analyst.profiles.eco_name,
                 'type_reception_id': type_reception_id,
                 'status_id': status_id,
                 'status_name': status_name,
