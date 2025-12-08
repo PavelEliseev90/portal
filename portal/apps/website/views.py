@@ -8374,49 +8374,56 @@ def sb_lo(request):
     
 
 def test(request):
+    
+    infs = RegInteractivOcenka.objects.filter(id = 40274).filter(start_estimation__gt = DT.datetime.now().replace(day=1, month=10, hour = 1)).values('id')
+    for inf in infs:
+        estimation  = RegInteractivOcenka.objects.get(id = inf['id'])
+        estimation.save()
 
-    from register.models import RegInteractivOcenkaRLK
-    count = RegInteractivOcenka.objects.all().count()
-    s = 0
-    estimations_id = RegInteractivOcenka.objects.all().order_by('-start_estimation').values('id')
-    for estimation_id in estimations_id:
-        estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+    
 
-        reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
+    # from register.models import RegInteractivOcenkaRLK
+    # count = RegInteractivOcenka.objects.all().count()
+    # s = 0
+    # estimations_id = RegInteractivOcenka.objects.all().order_by('-start_estimation').values('id')
+    # for estimation_id in estimations_id:
+    #     estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
 
-        if estimation.page_documents != None:
-            reg_interactiv.type_reception   = estimation.page_documents.type_reception
-            reg_interactiv.organization     = estimation.page_documents.organization
-            reg_interactiv.filial           = estimation.page_documents.filial
-            reg_interactiv.unit             = estimation.page_documents.unit
-            reg_interactiv.store            = estimation.page_documents.store
+    #     reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
 
-        reg_interactiv.staff_rlk            = estimation.staff
-        reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
-        reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
+    #     if estimation.page_documents != None:
+    #         reg_interactiv.type_reception   = estimation.page_documents.type_reception
+    #         reg_interactiv.organization     = estimation.page_documents.organization
+    #         reg_interactiv.filial           = estimation.page_documents.filial
+    #         reg_interactiv.unit             = estimation.page_documents.unit
+    #         reg_interactiv.store            = estimation.page_documents.store
+
+    #     reg_interactiv.staff_rlk            = estimation.staff
+    #     reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
+    #     reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
         
-        reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
+    #     reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
         
-        reg_interactiv.status              = estimation.status
-        for uss in estimation.access_user.all():
-            reg_interactiv.access_user.add(uss)
+    #     reg_interactiv.status              = estimation.status
+    #     for uss in estimation.access_user.all():
+    #         reg_interactiv.access_user.add(uss)
         
-        reg_interactiv.save()
+    #     reg_interactiv.save()
 
-        if reg_interactiv.page_soglasovanie != None:
-            if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
-                price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
-                if price_autohub != None:
-                    reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
-                    reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                    reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-                    reg_interactiv_ocenka_soglasovanie.save()
+    #     if reg_interactiv.page_soglasovanie != None:
+    #         if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
+    #             price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+    #             if price_autohub != None:
+    #                 reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+    #                 reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+    #                 reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+    #                 reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+    #                 reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+    #                 reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+    #                 reg_interactiv_ocenka_soglasovanie.save()
 
-        s = s + 1 
-        print(' ' + str(s) + ' ' + str(count))
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count))
 
     # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
     # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
