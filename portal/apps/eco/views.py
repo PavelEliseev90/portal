@@ -2,7 +2,7 @@ from tkinter.tix import Tree
 from django.shortcuts import redirect, render
 from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
-from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
+from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup
 from profiles.models import Profiles
 from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
@@ -291,6 +291,7 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         )
     )
 
+    # Собираем статистику по подразделениям
     stats_map = {}
     for row in work_orders:
         name = row['source_name'] or 'Без подразделения'
@@ -331,7 +332,7 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         stats_map[name]['diagnostics'] = row['diagnostics']
         stats_map[name]['accepted'] = row['accepted']
 
-    stats_list = []
+    # Вычисляем конверсии для каждого подразделения
     for item in stats_map.values():
         conv_to_eval = round((item['evaluations'] / item['work_orders'] * 100) if item['work_orders'] > 0 else 0, 1)
         conv_to_diag = round((item['diagnostics'] / item['evaluations'] * 100) if item['evaluations'] > 0 else 0, 1)
@@ -342,31 +343,129 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         item['conv_to_diag'] = conv_to_diag
         item['conv_to_accepted'] = conv_to_accepted
         item['overall_conv'] = overall_conv
-        stats_list.append(item)
+
+    # Получаем все активные группы подразделений
+    unit_groups = RefUnitGroup.objects.filter(active=True).prefetch_related('units').order_by('name')
     
-    stats_list = sorted(
-        stats_list,
+    # Создаем карту: имя подразделения -> группа
+    unit_to_group = {}
+    for group in unit_groups:
+        for unit in group.units.all():
+            unit_to_group[unit.name] = group
+    
+    # Группируем статистику по группам
+    grouped_stats = {}
+    ungrouped_stats = []
+    
+    for unit_name, unit_stats in stats_map.items():
+        if unit_name in unit_to_group:
+            group = unit_to_group[unit_name]
+            group_name = group.name or 'Без названия'
+            if group_name not in grouped_stats:
+                grouped_stats[group_name] = {
+                    'group_name': group_name,
+                    'group_id': group.id,
+                    'units': [],
+                    'work_orders': 0,
+                    'evaluations': 0,
+                    'diagnostics': 0,
+                    'accepted': 0,
+                }
+            grouped_stats[group_name]['units'].append(unit_stats)
+            grouped_stats[group_name]['work_orders'] += unit_stats['work_orders']
+            grouped_stats[group_name]['evaluations'] += unit_stats['evaluations']
+            grouped_stats[group_name]['diagnostics'] += unit_stats['diagnostics']
+            grouped_stats[group_name]['accepted'] += unit_stats['accepted']
+        else:
+            ungrouped_stats.append(unit_stats)
+    
+    # Вычисляем итоговые показатели и конверсии для групп
+    grouped_list = []
+    for group_name, group_data in grouped_stats.items():
+        # Сортируем подразделения внутри группы
+        group_data['units'] = sorted(
+            group_data['units'],
+            key=lambda item: item['work_orders'],
+            reverse=True,
+        )
+        
+        # Вычисляем конверсии для группы
+        group_data['conv_to_eval'] = round((group_data['evaluations'] / group_data['work_orders'] * 100) if group_data['work_orders'] > 0 else 0, 1)
+        group_data['conv_to_diag'] = round((group_data['diagnostics'] / group_data['evaluations'] * 100) if group_data['evaluations'] > 0 else 0, 1)
+        group_data['conv_to_accepted'] = round((group_data['accepted'] / group_data['diagnostics'] * 100) if group_data['diagnostics'] > 0 else 0, 1)
+        group_data['overall_conv'] = round((group_data['accepted'] / group_data['work_orders'] * 100) if group_data['work_orders'] > 0 else 0, 1)
+        
+        grouped_list.append(group_data)
+    
+    # Сортируем группы по количеству рабочих листов
+    grouped_list = sorted(
+        grouped_list,
         key=lambda item: item['work_orders'],
         reverse=True,
     )
     
+    # Сортируем негруппированные подразделения
+    ungrouped_stats = sorted(
+        ungrouped_stats,
+        key=lambda item: item['work_orders'],
+        reverse=True,
+    )
+    
+    # Вычисляем общие итоги
     totals = {
-        'work_orders': sum(item['work_orders'] for item in stats_list),
-        'evaluations': sum(item['evaluations'] for item in stats_list),
-        'diagnostics': sum(item['diagnostics'] for item in stats_list),
-        'accepted': sum(item['accepted'] for item in stats_list),
+        'work_orders': sum(item['work_orders'] for item in grouped_list) + sum(item['work_orders'] for item in ungrouped_stats),
+        'evaluations': sum(item['evaluations'] for item in grouped_list) + sum(item['evaluations'] for item in ungrouped_stats),
+        'diagnostics': sum(item['diagnostics'] for item in grouped_list) + sum(item['diagnostics'] for item in ungrouped_stats),
+        'accepted': sum(item['accepted'] for item in grouped_list) + sum(item['accepted'] for item in ungrouped_stats),
     }
+    totals['overall_conv'] = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
     
     avg_overall_conv = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
     
-    for item in stats_list:
+    # Отмечаем лучшие группы и подразделения
+    for group_data in grouped_list:
+        is_good = False
+        if group_data['work_orders'] >= 5:
+            if group_data['overall_conv'] >= max(avg_overall_conv, 30):
+                is_good = True
+        group_data['is_good'] = is_good
+        
+        for unit_item in group_data['units']:
+            is_good_unit = False
+            if unit_item['work_orders'] >= 5:
+                if unit_item['overall_conv'] >= max(avg_overall_conv, 30):
+                    is_good_unit = True
+            unit_item['is_good'] = is_good_unit
+    
+    for item in ungrouped_stats:
         is_good = False
         if item['work_orders'] >= 5:
             if item['overall_conv'] >= max(avg_overall_conv, 30):
                 is_good = True
         item['is_good'] = is_good
 
-    return stats_list, totals
+    # Формируем итоговый список: группы с подразделениями + негруппированные
+    result_list = []
+    for group_data in grouped_list:
+        result_list.append({
+            'type': 'group',
+            **group_data
+        })
+        for unit_item in group_data['units']:
+            result_list.append({
+                'type': 'unit',
+                'group_id': group_data['group_id'],
+                **unit_item
+            })
+    
+    for unit_item in ungrouped_stats:
+        result_list.append({
+            'type': 'unit',
+            'group_id': None,
+            **unit_item
+        })
+
+    return result_list, totals
 
 
 def tradein_funnel(request):
