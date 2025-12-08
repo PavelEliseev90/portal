@@ -5094,24 +5094,38 @@ def eco_efficiency_analysis(request):
     )
     avg_soglasovanie_time = round(avg_soglasovanie_time / 3600, 1) if avg_soglasovanie_time else None
 
+    # Маркеры по согласованиям после диагностики
     price_diffs = []
     price_percent_diffs = []
-    higher_count = lower_count = equal_count = 0
-    for price_after, auto_price in pricing_qs.values_list('price_after_kd', 'price_auto_selected')[:2000]:
+    higher_count_after = lower_count_after = equal_count_after = 0
+    for price_after, auto_price in pricing_qs.filter(role='after', has_soglasovanie=True).values_list('price_after_kd', 'price_auto_selected')[:2000]:
         if price_after and auto_price:
             diff = float(price_after) - float(auto_price)
             price_diffs.append(diff)
             diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
             price_percent_diffs.append(diff_percent)
-            if diff > 1000:
-                higher_count += 1
-            elif diff < -1000:
-                lower_count += 1
-            else:
-                equal_count += 1
+            if diff_percent > 5:  # Выше на 5% и более
+                higher_count_after += 1
+            elif diff_percent < -5:  # Ниже на 5% и более
+                lower_count_after += 1
+            else:  # В пределах ±5%
+                equal_count_after += 1
 
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
+
+    # Маркеры по согласованиям до диагностики
+    higher_count_before = lower_count_before = equal_count_before = 0
+    for price_before, auto_price in pricing_qs.filter(role='before', has_soglasovanie=True).values_list('price_before_kd', 'price_auto_selected')[:2000]:
+        if price_before and auto_price:
+            diff = float(price_before) - float(auto_price)
+            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+            if diff_percent > 5:  # Выше на 5% и более
+                higher_count_before += 1
+            elif diff_percent < -5:  # Ниже на 5% и более
+                lower_count_before += 1
+            else:  # В пределах ±5%
+                equal_count_before += 1
 
     task_aggregate = pricing_qs.aggregate(
         total_tasks=Coalesce(Sum('tasks_total'), 0),
@@ -5168,6 +5182,38 @@ def eco_efficiency_analysis(request):
             'open_tasks': total_tasks - closed_tasks,
             'closed_percent': round((closed_tasks / total_tasks * 100), 1) if total_tasks else 0,
         }
+        
+        # Маркеры по согласованиям для аналитика
+        analyst_id = row['analyst_id']
+        analyst_before_qs = analyst_qs.filter(analyst_id=analyst_id, role='before', has_soglasovanie=True)
+        analyst_after_qs = analyst_qs.filter(analyst_id=analyst_id, role='after', has_soglasovanie=True)
+        
+        # До диагностики
+        higher_before = lower_before = equal_before = 0
+        for price_before, auto_price in analyst_before_qs.values_list('price_before_kd', 'price_auto_selected'):
+            if price_before and auto_price:
+                diff = float(price_before) - float(auto_price)
+                diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+                if diff_percent > 5:
+                    higher_before += 1
+                elif diff_percent < -5:
+                    lower_before += 1
+                else:
+                    equal_before += 1
+        
+        # После диагностики
+        higher_after = lower_after = equal_after = 0
+        for price_after, auto_price in analyst_after_qs.values_list('price_after_kd', 'price_auto_selected'):
+            if price_after and auto_price:
+                diff = float(price_after) - float(auto_price)
+                diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+                if diff_percent > 5:
+                    higher_after += 1
+                elif diff_percent < -5:
+                    lower_after += 1
+                else:
+                    equal_after += 1
+        
         analyst_stats.append(
             {
                 'name': row['analyst_name'] or '—',
@@ -5180,6 +5226,18 @@ def eco_efficiency_analysis(request):
                 'conv_rate': round((row['with_soglas'] / count * 100), 1) if count else 0,
                 'accept_rate': round((row['accepted'] / count * 100), 1) if count else 0,
                 'task_stats': task_stats,
+                'price_markers_before': {
+                    'higher': higher_before,
+                    'equal': equal_before,
+                    'lower': lower_before,
+                    'total': higher_before + equal_before + lower_before,
+                },
+                'price_markers_after': {
+                    'higher': higher_after,
+                    'equal': equal_after,
+                    'lower': lower_after,
+                    'total': higher_after + equal_after + lower_after,
+                },
             }
         )
 
@@ -5227,6 +5285,10 @@ def eco_efficiency_analysis(request):
 
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
 
+    # Вычисляем проценты для маркеров
+    total_compared_after = higher_count_after + lower_count_after + equal_count_after
+    total_compared_before = higher_count_before + lower_count_before + equal_count_before
+
     params = {
         'type': 'eco_efficiency',
         'nav_selected': 4,
@@ -5240,10 +5302,20 @@ def eco_efficiency_analysis(request):
         'price_comparison': {
             'avg_diff': avg_price_diff,
             'avg_diff_percent': avg_price_diff_percent,
-            'higher_count': higher_count,
-            'lower_count': lower_count,
-            'equal_count': equal_count,
-            'total_compared': len(price_diffs),
+            'higher_count_after': higher_count_after,
+            'lower_count_after': lower_count_after,
+            'equal_count_after': equal_count_after,
+            'total_compared_after': total_compared_after,
+            'higher_percent_after': round((higher_count_after / total_compared_after * 100), 1) if total_compared_after > 0 else 0,
+            'lower_percent_after': round((lower_count_after / total_compared_after * 100), 1) if total_compared_after > 0 else 0,
+            'equal_percent_after': round((equal_count_after / total_compared_after * 100), 1) if total_compared_after > 0 else 0,
+            'higher_count_before': higher_count_before,
+            'lower_count_before': lower_count_before,
+            'equal_count_before': equal_count_before,
+            'total_compared_before': total_compared_before,
+            'higher_percent_before': round((higher_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
+            'lower_percent_before': round((lower_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
+            'equal_percent_before': round((equal_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
         },
         'task_stats': {
             'total_tasks': all_tasks_total,
