@@ -5216,6 +5216,7 @@ def eco_efficiency_analysis(request):
         
         analyst_stats.append(
             {
+                'analyst_id': analyst_id,
                 'name': row['analyst_name'] or '—',
                 'total': count,
                 'with_soglasovanie_count' : with_soglasovanie_count,
@@ -5337,6 +5338,159 @@ def eco_efficiency_analysis(request):
     }
 
     return render(request, 'lo/eco_efficiency.html', {'params': params})
+
+
+def eco_analyst_detail(request, analyst_id):
+    """Детальная страница по аналитику с оценками"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_analyst_detail',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+    role_filter = request.GET.get('role', '')
+
+    # Получаем аналитика
+    try:
+        analyst = User.objects.get(pk=analyst_id)
+        analyst_name = analyst.profiles.eco_name if hasattr(analyst, 'profiles') and analyst.profiles.eco_name else analyst.get_full_name() or analyst.username
+    except User.DoesNotExist:
+        analyst_name = 'Неизвестный аналитик'
+
+    # Получаем оценки аналитика
+    evaluations_qs = EcoAnalystSnapshot.objects.filter(
+        analyst_id=analyst_id,
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+
+    if unit_id:
+        evaluations_qs = evaluations_qs.filter(unit_id=unit_id)
+    if staff_id:
+        evaluations_qs = evaluations_qs.filter(staff_id=staff_id)
+    if type_id:
+        evaluations_qs = evaluations_qs.filter(type_reception_id=type_id)
+    if status_id:
+        evaluations_qs = evaluations_qs.filter(status_id=status_id)
+    if role_filter:
+        evaluations_qs = evaluations_qs.filter(role=role_filter)
+
+    # Пагинация
+    paginator = Paginator(evaluations_qs.order_by('-start_estimation'), 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # Подготовка данных для таблицы
+    evaluations = []
+    for eval_snapshot in page_obj:
+        # Определяем маркер цены
+        price_marker = None
+        price_marker_class = ''
+        if eval_snapshot.role == 'before' and eval_snapshot.price_before_kd and eval_snapshot.price_auto_selected:
+            diff = float(eval_snapshot.price_before_kd) - float(eval_snapshot.price_auto_selected)
+            diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+            if diff_percent > 5:
+                price_marker = 'Выше'
+                price_marker_class = 'text-success'
+            elif diff_percent < -5:
+                price_marker = 'Ниже'
+                price_marker_class = 'text-danger'
+            else:
+                price_marker = 'Равно'
+                price_marker_class = 'text-info'
+        elif eval_snapshot.role == 'after' and eval_snapshot.price_after_kd and eval_snapshot.price_auto_selected:
+            diff = float(eval_snapshot.price_after_kd) - float(eval_snapshot.price_auto_selected)
+            diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+            if diff_percent > 5:
+                price_marker = 'Выше'
+                price_marker_class = 'text-success'
+            elif diff_percent < -5:
+                price_marker = 'Ниже'
+                price_marker_class = 'text-danger'
+            else:
+                price_marker = 'Равно'
+                price_marker_class = 'text-info'
+
+        # Вычисляем время в часах
+        duration_estimation_hours = round((eval_snapshot.duration_estimation_sec or 0) / 3600, 1) if eval_snapshot.duration_estimation_sec else None
+        duration_sogl_hours = None
+        if eval_snapshot.role == 'before' and eval_snapshot.duration_sogl_before_sec:
+            duration_sogl_hours = round(eval_snapshot.duration_sogl_before_sec / 3600, 1)
+        elif eval_snapshot.role == 'after' and eval_snapshot.duration_sogl_after_sec:
+            duration_sogl_hours = round(eval_snapshot.duration_sogl_after_sec / 3600, 1)
+
+        evaluations.append({
+            'estimation_id': eval_snapshot.estimation_id,
+            'rlk_id': eval_snapshot.rlk_id,
+            'role': eval_snapshot.role,
+            'role_display': 'До КД' if eval_snapshot.role == 'before' else 'После КД',
+            'start_estimation': eval_snapshot.start_estimation,
+            'end_estimation': eval_snapshot.end_estimation,
+            'unit_name': eval_snapshot.unit_name,
+            'staff_name': eval_snapshot.staff_name,
+            'status_name': eval_snapshot.status_name,
+            'has_soglasovanie': eval_snapshot.has_soglasovanie,
+            'has_diagnostics': eval_snapshot.has_diagnostics,
+            'accepted': eval_snapshot.accepted,
+            'price_auto_selected': eval_snapshot.price_auto_selected,
+            'price_before_kd': eval_snapshot.price_before_kd,
+            'price_after_kd': eval_snapshot.price_after_kd,
+            'duration_estimation_hours': duration_estimation_hours,
+            'duration_sogl_hours': duration_sogl_hours,
+            'tasks_total': eval_snapshot.tasks_total,
+            'tasks_closed': eval_snapshot.tasks_closed,
+            'price_marker': price_marker,
+            'price_marker_class': price_marker_class,
+        })
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'type_id': type_id or '',
+        'status_id': status_id or '',
+        'role': role_filter or '',
+    }
+
+    params = {
+        'type': 'eco_analyst_detail',
+        'nav_selected': 4,
+        'request': request,
+        'analyst_id': analyst_id,
+        'analyst_name': analyst_name,
+        'filters': filters,
+        'evaluations': evaluations,
+        'page_obj': page_obj,
+        'units': units,
+        'staffs': staffs,
+        'types': types,
+        'statuses': statuses,
+    }
+
+    return render(request, 'lo/eco_analyst_detail.html', {'params': params})
 
 
 def staff_performance_analysis(request):

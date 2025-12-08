@@ -452,7 +452,15 @@
             <tbody>
               {% for analyst in params.analyst_stats %}
               <tr>
-                <td data-label="Аналитик"><strong>{{ analyst.name }}</strong></td>
+                <td data-label="Аналитик">
+                  <div class="d-flex align-items-center gap-2">
+                    <strong>{{ analyst.name }}</strong>
+                    <a href="/eco/efficiency/analyst/{{ analyst.analyst_id }}/?date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&staff_id={{ params.filters.staff_id }}&type_id={{ params.filters.type_id }}&status_id={{ params.filters.status_id }}" 
+                       class="btn btn-sm btn-outline-primary" title="Детальные данные аналитика">
+                      <span class="icon-mbri-setting2"></span>
+                    </a>
+                  </div>
+                </td>
                 <td class="text-end" data-label="Всего оценок">{{ analyst.total }}</td>
                 <td class="text-end" data-label="Со согласованием">{{ analyst.with_soglasovanie }}</td>
                 <td class="text-end" data-label="Принято">{{ analyst.accepted }}</td>
