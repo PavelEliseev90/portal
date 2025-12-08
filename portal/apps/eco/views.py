@@ -548,13 +548,35 @@ def tradein_funnel(request):
                 'datasets': type_datasets,
             }
 
+    # Преобразуем абсолютные значения в проценты относительно рабочих листов
+    trend_series_percent = {
+        'work_orders': [],
+        'evaluations': [],
+        'diagnostics': [],
+        'accepted': [],
+    }
+    for idx, month_label in enumerate(monthly_labels):
+        work_orders_count = monthly_series['work_orders'][idx]
+        if work_orders_count > 0:
+            # Рабочие листы всегда 100%
+            trend_series_percent['work_orders'].append(100.0)
+            # Остальные ступени - процент от рабочих листов
+            trend_series_percent['evaluations'].append(round(monthly_series['evaluations'][idx] / work_orders_count * 100, 1))
+            trend_series_percent['diagnostics'].append(round(monthly_series['diagnostics'][idx] / work_orders_count * 100, 1))
+            trend_series_percent['accepted'].append(round(monthly_series['accepted'][idx] / work_orders_count * 100, 1))
+        else:
+            trend_series_percent['work_orders'].append(0)
+            trend_series_percent['evaluations'].append(0)
+            trend_series_percent['diagnostics'].append(0)
+            trend_series_percent['accepted'].append(0)
+    
     trend_chart = {
         'labels': monthly_labels,
         'series': [
-            {'label': stage_labels[0], 'data': monthly_series['work_orders']},
-            {'label': stage_labels[1], 'data': monthly_series['evaluations']},
-            {'label': stage_labels[2], 'data': monthly_series['diagnostics']},
-            {'label': stage_labels[3], 'data': monthly_series['accepted']},
+            {'label': stage_labels[0], 'data': trend_series_percent['work_orders']},
+            {'label': stage_labels[1], 'data': trend_series_percent['evaluations']},
+            {'label': stage_labels[2], 'data': trend_series_percent['diagnostics']},
+            {'label': stage_labels[3], 'data': trend_series_percent['accepted']},
         ],
     }
 
