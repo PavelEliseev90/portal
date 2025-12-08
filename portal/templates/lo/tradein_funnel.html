@@ -692,10 +692,21 @@
         datalabels: {
           anchor: 'end',
           align: 'top',
-          formatter: (value) => value || '',
+          formatter: (value) => value ? value.toFixed(1) + '%' : '',
           color: '#555',
           font: { size: 10 },
         },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: function(value) {
+              return value + '%';
+            }
+          }
+        }
       },
       scales: {
         y: {
