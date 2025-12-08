@@ -296,48 +296,84 @@
 
   <div class="row g-3 mb-3">
     <div class="col-xl-4 col-md-6">
-      <article class="kors-metric-card">
-        <h3>Выше авторасчета до кд</h3>
-        <div class="metric-value">{{ params.total_count }}</div>
-        <div class="metric-label"></div>
+      <article class="kors-metric-card price-marker-higher">
+        <h3>Выше авторасчета до КД</h3>
+        <div class="metric-value">{{ params.price_comparison.higher_count_before }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_before > 0 %}
+            {{ params.price_comparison.higher_percent_before }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
       </article>
     </div>
     <div class="col-xl-4 col-md-6">
-      <article class="kors-metric-card">
+      <article class="kors-metric-card price-marker-equal">
         <h3>Примерно равно авторасчету до КД</h3>
-        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
-        <div class="metric-label">{{ params.soglasovanie_percent }}% от общего числа</div>
+        <div class="metric-value">{{ params.price_comparison.equal_count_before }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_before > 0 %}
+            {{ params.price_comparison.equal_percent_before }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
       </article>
     </div>
     <div class="col-xl-4 col-md-6">
-      <article class="kors-metric-card">
+      <article class="kors-metric-card price-marker-lower">
         <h3>Ниже авторасчета до КД</h3>
-        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
-        <div class="metric-label">{{ params.soglasovanie_percent }}% от согласований до КД</div>
+        <div class="metric-value">{{ params.price_comparison.lower_count_before }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_before > 0 %}
+            {{ params.price_comparison.lower_percent_before }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
       </article>
     </div>
   </div>
 
   <div class="row g-3 mb-3">
     <div class="col-xl-4 col-md-6">
-      <article class="kors-metric-card">
-        <h3>Выше авторасчета после кд</h3>
-        <div class="metric-value">{{ params.total_count }}</div>
-        <div class="metric-label"></div>
+      <article class="kors-metric-card price-marker-higher">
+        <h3>Выше авторасчета после КД</h3>
+        <div class="metric-value">{{ params.price_comparison.higher_count_after }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_after > 0 %}
+            {{ params.price_comparison.higher_percent_after }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
       </article>
     </div>
     <div class="col-xl-4 col-md-6">
-      <article class="kors-metric-card">
+      <article class="kors-metric-card price-marker-equal">
         <h3>Примерно равно авторасчету после КД</h3>
-        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
-        <div class="metric-label">{{ params.soglasovanie_percent }}% от общего числа</div>
+        <div class="metric-value">{{ params.price_comparison.equal_count_after }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_after > 0 %}
+            {{ params.price_comparison.equal_percent_after }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
       </article>
     </div>
     <div class="col-xl-4 col-md-6">
-      <article class="kors-metric-card">
+      <article class="kors-metric-card price-marker-lower">
         <h3>Ниже авторасчета после КД</h3>
-        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
-        <div class="metric-label">{{ params.soglasovanie_percent }}% от согласований до КД</div>
+        <div class="metric-value">{{ params.price_comparison.lower_count_after }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_after > 0 %}
+            {{ params.price_comparison.lower_percent_after }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
       </article>
     </div>
   </div>
@@ -405,6 +441,12 @@
                 <th class="text-end">Задач</th>
                 <th class="text-end">Ср. задач/оценку</th>
                 <th class="text-end">Закрыто</th>
+                <th class="text-end" style="color: #16a34a;">До КД: Выше</th>
+                <th class="text-end" style="color: #2563eb;">До КД: Равно</th>
+                <th class="text-end" style="color: #dc2626;">До КД: Ниже</th>
+                <th class="text-end" style="color: #16a34a;">После КД: Выше</th>
+                <th class="text-end" style="color: #2563eb;">После КД: Равно</th>
+                <th class="text-end" style="color: #dc2626;">После КД: Ниже</th>
               </tr>
             </thead>
             <tbody>
@@ -452,6 +494,48 @@
                     <span class="{% if analyst.task_stats.closed_percent >= 80 %}text-success{% elif analyst.task_stats.closed_percent >= 50 %}text-warning{% else %}text-danger{% endif %}">
                       {{ analyst.task_stats.closed_tasks }} / {{ analyst.task_stats.total_tasks }} ({{ analyst.task_stats.closed_percent }}%)
                     </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="До КД: Выше">
+                  {% if analyst.price_markers_before.total > 0 %}
+                    <span class="text-success">{{ analyst.price_markers_before.higher }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="До КД: Равно">
+                  {% if analyst.price_markers_before.total > 0 %}
+                    <span class="text-info">{{ analyst.price_markers_before.equal }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="До КД: Ниже">
+                  {% if analyst.price_markers_before.total > 0 %}
+                    <span class="text-danger">{{ analyst.price_markers_before.lower }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="После КД: Выше">
+                  {% if analyst.price_markers_after.total > 0 %}
+                    <span class="text-success">{{ analyst.price_markers_after.higher }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="После КД: Равно">
+                  {% if analyst.price_markers_after.total > 0 %}
+                    <span class="text-info">{{ analyst.price_markers_after.equal }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="После КД: Ниже">
+                  {% if analyst.price_markers_after.total > 0 %}
+                    <span class="text-danger">{{ analyst.price_markers_after.lower }}</span>
                   {% else %}
                     —
                   {% endif %}
