@@ -5076,8 +5076,8 @@ def eco_efficiency_analysis(request):
         with_soglas=Count('id', filter=Q(has_soglasovanie=True)),
         accepted=Count('id', filter=Q(accepted=True)),
         avg_duration=Avg('duration_estimation_sec'),
-        tasks_total=Coalesce(Sum('tasks_total'), 0),
-        tasks_closed=Coalesce(Sum('tasks_closed'), 0),
+        tasks_total_sum=Coalesce(Sum('tasks_total'), 0),
+        tasks_closed_sum=Coalesce(Sum('tasks_closed'), 0),
         evaluations_with_tasks=Count('id', filter=Q(tasks_total__gt=0)),
     )
 
@@ -5087,8 +5087,8 @@ def eco_efficiency_analysis(request):
         if count == 0:
             continue
         avg_time = round((row['avg_duration'] or 0) / 3600, 1) if row['avg_duration'] else None
-        total_tasks = row['tasks_total'] or 0
-        closed_tasks = row['tasks_closed'] or 0
+        total_tasks = row['tasks_total_sum'] or 0
+        closed_tasks = row['tasks_closed_sum'] or 0
         task_stats = {
             'total_tasks': total_tasks,
             'evaluations_with_tasks': row['evaluations_with_tasks'] or 0,
