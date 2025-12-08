@@ -66,26 +66,27 @@ z-index: 1030;">
             </div>
         </div>
     </section>
-
-    <section id="form_send" class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  style="position:absolute;
-    bottom:0.25rem; padding: 0rem; width: -webkit-fill-available; margin-left: 0.25rem; margin-right: 0.25rem;">
-       
-       <form id="post-form" class="">
+    
+    {% if not params.user.profiles.user_sb %}
+        <section id="form_send" class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  style="position:absolute;
+        bottom:0.25rem; padding: 0rem; width: -webkit-fill-available; margin-left: 0.25rem; margin-right: 0.25rem;">
         
-        {% csrf_token %}
+        <form id="post-form" class="">
+            
+            {% csrf_token %}
+                    
+                <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
+                <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
                 
-            <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
-            <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
-               
-            <div class="input-group  form-control bg-primary" style="padding: 0rem;">
-                <textarea class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
-                <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
-            </div>
-   
-        </form>
+                <div class="input-group  form-control bg-primary" style="padding: 0rem;">
+                    <textarea class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
+                    <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+                </div>
+    
+            </form>
 
-    </section>
-
+        </section>
+    {% endif %}
 
 </div>
 </div>
