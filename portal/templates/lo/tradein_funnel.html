@@ -218,6 +218,44 @@
     overflow: hidden;
   }
 
+  .collapsible-card__toggle {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .collapsible-card__toggle .kors-panel__head {
+    position: relative;
+    padding-right: 2.5rem;
+  }
+
+  .collapsible-card__icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s;
+    color: #6c7a92;
+    font-size: 0.875rem;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__icon {
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  .collapsible-card__body {
+    padding: 1.5rem;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .collapsible-card.is-collapsed .collapsible-card__body {
+    display: none;
+  }
+
   /* Мобильная адаптация */
   @media (max-width: 768px) {
     .kors-funnel-page {
@@ -270,6 +308,10 @@
     @media (max-width: 768px) {
       .table-responsive.mobile-cards-wrapper {
         overflow-x: visible;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(100vh - 300px);
+        min-height: 400px;
       }
 
       .table-mobile-cards {
@@ -586,12 +628,10 @@
     <div class="col-12">
       <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
         <button type="button" class="collapsible-card__toggle" aria-expanded="false">
-          <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2 mb-0 w-100">
-            <div>
-              <h3>Источники поступлений</h3>
-              <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
-            </div>
-            <div class="text-end ms-auto">
+          <div class="kors-panel__head mb-0">
+            <h3>Источники поступлений</h3>
+            <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
+            <div class="mt-2">
               <div class="fw-bold text-primary">Рабочие листы: {{ params.source_totals.work_orders }}</div>
               <div class="text-muted">Принято: {{ params.source_totals.accepted }}</div>
             </div>
@@ -599,7 +639,7 @@
           <span class="collapsible-card__icon" aria-hidden="true">▼</span>
         </button>
         <div class="collapsible-card__body">
-          <div class="table-responsive mt-3">
+          <div class="table-responsive mobile-cards-wrapper mt-3">
             <table class="table table-sm align-middle table-hover table-mobile-cards">
               <thead class="table-light">
                 <tr>
