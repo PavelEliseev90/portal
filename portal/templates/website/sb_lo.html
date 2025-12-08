@@ -90,9 +90,7 @@
         
           <div class="modal-footer">
             <div class="row">
-              <div class="col-auto">
-                <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
-              </div>
+              
               <div class="col">
                 <button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
               </div>
@@ -210,25 +208,25 @@
                 <div>
                   <strong>{{object.rlk.nomer|default_if_none:"-"}}</strong><br>
                   <small class="text-muted">
-                    <span class="icon-mbri-clock"></span> {{object.rlk.dataTime|date:"d.m.Y H:i"|default_if_none:"-"}}
+                     {{object.rlk.dataTime|date:"d.m.Y H:i"|default_if_none:"-"}}
                   </small>
                 </div>
               </td>
               <td data-label="Подразделение">
-                <span class="icon-mbri-home"></span>
+               
                 {{object.page_documents.unit.name|default_if_none:"-"}} 
               </td>
               <td data-label="Менеджер">
-                <span class="icon-mbri-user"></span> {{object.rlk.manager_trade_in|default_if_none:"-"}}
+                 {{object.rlk.manager_trade_in|default_if_none:"-"}}
               </td>
               <td data-label="Статус">
-                <span class="icon-mbri-bookmark"></span> {{object.status|default_if_none:"Новый"}}
+                 {{object.status|default_if_none:"Новый"}}
               </td>
               <td data-label="Тип оценки">
-                <span class="icon-mbri-extension"></span> {{object.page_documents.type_reception|default_if_none:"-"}}
+                 {{object.page_documents.type_reception|default_if_none:"-"}}
               </td>
               <td data-label="Оценщик">
-                <span class="icon-mbri-bookmark"></span> {{object.staff|default_if_none:"-"}}
+                {{object.staff|default_if_none:"-"}}
               </td>
               <td data-label="Автомобиль">
                 <div>
@@ -244,7 +242,7 @@
                 </div>
               </td>
               <td data-label="Клиент">
-                <span class="icon-mbri-users"></span> {{object.rlk.clientName|default_if_none:"-"}}
+                 {{object.rlk.clientName|default_if_none:"-"}}
               </td>
               
             </tr>
