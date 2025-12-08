@@ -7228,15 +7228,11 @@ def settings_unit_groups(request):
                 new_group.name_bi = request.POST.get('new_group_name_bi', '')
                 new_group.comment = request.POST.get('new_group_comment', '')
                 new_group.active = 'new_group_active' in request.POST
+                new_group.bu_auto = 'new_group_bu_auto' in request.POST
                 city_id = request.POST.get('new_group_city', '')
                 if city_id:
                     new_group.city_id = int(city_id)
                 new_group.save()
-                
-                # Добавляем подразделения
-                unit_ids = request.POST.getlist('new_group_units')
-                if unit_ids:
-                    new_group.units.set(unit_ids)
             except (ValueError, AttributeError):
                 pass
         
@@ -7251,6 +7247,7 @@ def settings_unit_groups(request):
                     group.name_bi = request.POST.get('groupdata_' + pk_group + '_name_bi', '')
                     group.comment = request.POST.get('groupdata_' + pk_group + '_comment', '')
                     group.active = 'groupdata_' + pk_group + '_active' in request.POST
+                    group.bu_auto = 'groupdata_' + pk_group + '_bu_auto' in request.POST
                     
                     city_id = request.POST.get('groupdata_' + pk_group + '_city', '')
                     if city_id:
@@ -7259,35 +7256,19 @@ def settings_unit_groups(request):
                         group.city_id = None
                     
                     group.save()
-                    
-                    # Обновляем подразделения
-                    unit_ids = request.POST.getlist('groupdata_' + pk_group + '_units')
-                    group.units.set(unit_ids)
                 except (ValueError, AttributeError, RefUnitGroup.DoesNotExist):
                     pass
         
         return HttpResponseRedirect(request.build_absolute_uri())
     
     # Получаем все группы подразделений с оптимизацией запросов
-    groups = RefUnitGroup.objects.select_related('city').prefetch_related('units', 'units__city').order_by('name')
-    
-    # Получаем все подразделения для выбора с оптимизацией
-    units = RefUnit.objects.select_related('city').order_by('name')
+    groups = RefUnitGroup.objects.select_related('city').order_by('name')
     
     # Получаем все города для выбора
     cities = RefCity.objects.all().order_by('name')
     
-    # Добавляем атрибут units_ids к каждой группе для быстрой проверки в шаблоне
-    # Это избегает N+1 запросов в шаблоне
-    groups_list = []
-    for group in groups:
-        # Предзагружаем ID подразделений для каждой группы (список для работы в шаблоне)
-        group.units_ids = list(group.units.all().values_list('pk', flat=True))
-        groups_list.append(group)
-    
     settings_data = {
-        'groups' : groups_list,
-        'units' : list(units),
+        'groups' : list(groups),
         'cities' : list(cities)
     }
     params = {
@@ -7296,6 +7277,50 @@ def settings_unit_groups(request):
     }
     
     return render(request, "kors/settings_unit_groups.html", {'params': params})
+
+
+@login_required
+def settings_unit_group_units(request, group_id):
+    """Страница редактирования состава группы подразделений"""
+    group = get_object_or_404(RefUnitGroup, pk=group_id)
+    
+    if request.method == 'POST':
+        # Обновляем состав группы
+        unit_ids = request.POST.getlist('units')
+        group.units.set(unit_ids)
+        return HttpResponseRedirect('/settings/settings_unit_groups/')
+    
+    # Получаем все подразделения
+    all_units = RefUnit.objects.select_related('city').order_by('name')
+    
+    # Получаем ID подразделений, входящих в группу
+    group_unit_ids = set(group.units.all().values_list('pk', flat=True))
+    
+    # Разделяем на входящие и не входящие
+    units_in_group = []
+    units_not_in_group = []
+    
+    for unit in all_units:
+        unit_data = {
+            'pk': unit.pk,
+            'name': unit.name,
+            'city': unit.city.name if unit.city else '',
+            'buauto': unit.buauto,
+        }
+        if unit.pk in group_unit_ids:
+            units_in_group.append(unit_data)
+        else:
+            units_not_in_group.append(unit_data)
+    
+    params = {
+        'type': 'settings',
+        'group': group,
+        'units_in_group': units_in_group,
+        'units_not_in_group': units_not_in_group,
+    }
+    
+    return render(request, "kors/settings_unit_group_units.html", {'params': params})
+
 
 @login_required
 def kpi_eco(request):

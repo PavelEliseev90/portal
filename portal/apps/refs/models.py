@@ -381,6 +381,7 @@ class RefUnitGroup(models.Model):
     units       = models.ManyToManyField(RefUnit, verbose_name='Подразделения', blank=True)
     comment     = models.CharField("Комментарий", default='', max_length=300, blank=True)
     active      = models.BooleanField("Активно", default=False)
+    bu_auto     = models.BooleanField("Б/У Автомобили", default=False)
     city        = models.ForeignKey(RefCity, null=True, on_delete=models.SET_NULL, verbose_name='Город')
 
     def get_info_units(self):
