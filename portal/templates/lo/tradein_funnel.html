@@ -107,14 +107,98 @@
     cursor: pointer;
   }
 
+  /* Стили для таблицы источников на десктопе */
   .table-group-header {
-    background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff);
+    background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff) !important;
     border-left: 4px solid #00509d;
     font-weight: 600;
   }
 
   .table-group-child {
-    background: rgba(0, 42, 90, 0.02);
+    background: rgba(0, 42, 90, 0.02) !important;
+  }
+
+  .table-group-header td {
+    border-top: 2px solid rgba(0, 42, 90, 0.15);
+    border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+    padding: 0.75rem 0.5rem;
+  }
+
+  .table-group-child td {
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
+
+  .table-group-header + .table-group-child td:first-child {
+    padding-left: 2rem;
+  }
+
+  /* На десктопе таблица должна отображаться нормально */
+  @media (min-width: 769px) {
+    .table-mobile-cards {
+      display: table;
+    }
+    
+    .table-mobile-cards thead {
+      display: table-header-group;
+    }
+    
+    .table-mobile-cards tbody {
+      display: table-row-group;
+    }
+    
+    .table-mobile-cards tbody tr {
+      display: table-row;
+      margin-bottom: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    
+    .table-mobile-cards tbody td {
+      display: table-cell;
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #dee2e6;
+      text-align: inherit;
+    }
+    
+    .table-mobile-cards tbody td:before {
+      display: none;
+    }
+    
+    .table-mobile-cards tbody td:first-child {
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #dee2e6;
+      margin-bottom: 0;
+    }
+    
+    .table-mobile-cards tfoot {
+      display: table-footer-group;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 2px solid rgba(0, 42, 90, 0.15);
+    }
+    
+    .table-mobile-cards tfoot tr {
+      display: table-row;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    
+    .table-mobile-cards tfoot th {
+      display: table-cell;
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #dee2e6;
+      text-align: inherit;
+      font-weight: 600;
+    }
+    
+    .table-mobile-cards tfoot th:before {
+      display: none;
+    }
   }
 
   .source-badge {
@@ -182,102 +266,106 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    .table-responsive.mobile-cards-wrapper {
-      overflow-x: visible;
-    }
+    /* Мобильная версия таблицы источников */
+    @media (max-width: 768px) {
+      .table-responsive.mobile-cards-wrapper {
+        overflow-x: visible;
+      }
 
-    .table-mobile-cards {
-      border: none;
-      width: 100%;
-    }
+      .table-mobile-cards {
+        border: none;
+        width: 100%;
+      }
 
-    .table-mobile-cards thead {
-      display: none;
-    }
+      .table-mobile-cards thead {
+        display: none;
+      }
 
-    .table-mobile-cards tbody tr {
-      display: block;
-      margin-bottom: 1rem;
-      background: #fff;
-      border: 1px solid rgba(0, 42, 90, 0.1);
-      border-radius: 0.75rem;
-      padding: 1rem;
-      box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
-    }
+      .table-mobile-cards tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        background: #fff;
+        border: 1px solid rgba(0, 42, 90, 0.1);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+      }
 
-    .table-mobile-cards tbody tr.source-good {
-      border-left: 4px solid #22c55e;
-      background: linear-gradient(to right, rgba(34, 197, 94, 0.05), #fff);
-    }
+      .table-mobile-cards tbody tr.source-good {
+        border-left: 4px solid #22c55e;
+        background: linear-gradient(to right, rgba(34, 197, 94, 0.05), #fff);
+      }
 
-    .table-mobile-cards tbody tr.table-group-header {
-      background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff);
-      border-left: 4px solid #00509d;
-    }
+      .table-mobile-cards tbody tr.table-group-header {
+        background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff);
+        border-left: 4px solid #00509d;
+      }
 
-    .table-mobile-cards tbody tr.table-group-child {
-      background: rgba(0, 42, 90, 0.02);
-    }
+      .table-mobile-cards tbody tr.table-group-child {
+        background: rgba(0, 42, 90, 0.02);
+      }
 
-    .table-mobile-cards tbody td {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0;
-      border: none;
-      text-align: right;
-    }
+      .table-mobile-cards tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border: none;
+        text-align: right;
+      }
 
-    .table-mobile-cards tbody td:before {
-      content: attr(data-label);
-      font-weight: 600;
-      color: #6c7a92;
-      text-align: left;
-      margin-right: 1rem;
-    }
+      .table-mobile-cards tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6c7a92;
+        text-align: left;
+        margin-right: 1rem;
+      }
 
-    .table-mobile-cards tbody td:first-child {
-      font-weight: 600;
-      font-size: 1.05rem;
-      color: #002a5a;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
-      margin-bottom: 0.5rem;
-    }
+      .table-mobile-cards tbody td:first-child {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #002a5a;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+        margin-bottom: 0.5rem;
+      }
 
-    .table-mobile-cards tbody td:first-child:before {
-      display: none;
-    }
+      .table-mobile-cards tbody td:first-child:before {
+        display: none;
+      }
 
-    .table-mobile-cards tfoot {
-      display: block;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 2px solid rgba(0, 42, 90, 0.15);
-    }
+      .table-mobile-cards tfoot {
+        display: block;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid rgba(0, 42, 90, 0.15);
+      }
 
-    .table-mobile-cards tfoot tr {
-      display: block;
-      background: #f8f9fa;
-      border: 1px solid rgba(0, 42, 90, 0.1);
-      border-radius: 0.75rem;
-      padding: 1rem;
-    }
+      .table-mobile-cards tfoot tr {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid rgba(0, 42, 90, 0.1);
+        border-radius: 0.75rem;
+        padding: 1rem;
+      }
 
-    .table-mobile-cards tfoot th {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0;
-      border: none;
-      text-align: right;
-      font-weight: 600;
-    }
+      .table-mobile-cards tfoot th {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border: none;
+        text-align: right;
+        font-weight: 600;
+      }
 
-    .table-mobile-cards tfoot th:before {
-      content: attr(data-label);
-      text-align: left;
-      margin-right: 1rem;
+      .table-mobile-cards tfoot th:before {
+        content: attr(data-label);
+        text-align: left;
+        margin-right: 1rem;
+      }
+    }
     }
 
     .table-mobile-cards tfoot th:first-child {
@@ -511,8 +599,8 @@
           <span class="collapsible-card__icon" aria-hidden="true">▼</span>
         </button>
         <div class="collapsible-card__body">
-          <div class="table-responsive mobile-cards-wrapper mt-3">
-            <table class="table table-sm align-middle table-mobile-cards">
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle table-hover table-mobile-cards">
               <thead class="table-light">
                 <tr>
                   <th>Источник</th>
