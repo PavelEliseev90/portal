@@ -5084,8 +5084,8 @@ def eco_efficiency_analysis(request):
     with_soglasovanie_before_count = pricing_qs.filter(role='before', has_soglasovanie=True).count()
     # Согласовано после КД (role='after' и has_soglasovanie=True)
     with_soglasovanie_after_count = pricing_qs.filter(role='after', has_soglasovanie=True).count()
-    # Принято (accepted=True)
-    with_accepted_count = pricing_qs.filter(accepted=True).count()
+    # Принято (только среди согласованных после КД: role='after', has_soglasovanie=True и accepted=True)
+    with_accepted_count = pricing_qs.filter(role='after', has_soglasovanie=True, accepted=True).count()
     
     soglasovanie_percent = round((with_soglasovanie_before_count / total_count * 100), 1) if total_count > 0 else 0
     soglasovanie_after_percent = round((with_soglasovanie_after_count / with_soglasovanie_before_count * 100), 1) if with_soglasovanie_before_count > 0 else 0
