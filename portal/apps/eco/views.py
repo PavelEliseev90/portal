@@ -5080,11 +5080,16 @@ def eco_efficiency_analysis(request):
         pricing_qs = pricing_qs.filter(status_id=status_id)
 
     total_count = pricing_qs.count()
-    with_soglasovanie_count = pricing_qs.filter(has_soglasovanie=True).count()
+    # Согласовано до КД (role='before' и has_soglasovanie=True)
+    with_soglasovanie_before_count = pricing_qs.filter(role='before', has_soglasovanie=True).count()
+    # Согласовано после КД (role='after' и has_soglasovanie=True)
+    with_soglasovanie_after_count = pricing_qs.filter(role='after', has_soglasovanie=True).count()
+    # Принято (accepted=True)
     with_accepted_count = pricing_qs.filter(accepted=True).count()
     
-    soglasovanie_percent    = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
-    accepted_percent        = round((with_accepted_count / with_soglasovanie_count * 100), 1) if total_count > 0 else 0
+    soglasovanie_percent = round((with_soglasovanie_before_count / total_count * 100), 1) if total_count > 0 else 0
+    soglasovanie_after_percent = round((with_soglasovanie_after_count / with_soglasovanie_before_count * 100), 1) if with_soglasovanie_before_count > 0 else 0
+    accepted_percent = round((with_accepted_count / with_soglasovanie_after_count * 100), 1) if with_soglasovanie_after_count > 0 else 0
     
     avg_time_total = pricing_qs.aggregate(avg=Avg('duration_estimation_sec'))['avg']
     avg_time_total = round(avg_time_total / 3600, 1) if avg_time_total else None
@@ -5296,8 +5301,12 @@ def eco_efficiency_analysis(request):
         'request': request,
         'filters': filters,
         'total_count': total_count,
-        'with_soglasovanie_count': with_soglasovanie_count,
+        'with_soglasovanie_count': with_soglasovanie_before_count,
         'soglasovanie_percent': soglasovanie_percent,
+        'with_soglasovanie_after_count': with_soglasovanie_after_count,
+        'soglasovanie_after_percent': soglasovanie_after_percent,
+        'with_accepted_count': with_accepted_count,
+        'accepted_percent': accepted_percent,
         'avg_time_total': avg_time_total,
         'avg_soglasovanie_time': avg_soglasovanie_time,
         'price_comparison': {

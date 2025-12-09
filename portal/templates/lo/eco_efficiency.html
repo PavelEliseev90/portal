@@ -280,15 +280,15 @@
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
         <h3>Согласовано после диагностики</h3>
-        <div class="metric-value">{{ params.with_accepted_count }}</div>
-        <div class="metric-label">{{ params.accepted_percent }}% от согласований до КД</div>
+        <div class="metric-value">{{ params.with_soglasovanie_after_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_after_percent }}% от согласований до КД</div>
       </article>
     </div>
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
         <h3>Принято</h3>
-        <div class="metric-value">{{ params.with_soglasovanie_count }}</div>
-        <div class="metric-label">{{ params.soglasovanie_percent }}% от согласований после КД</div>
+        <div class="metric-value">{{ params.with_accepted_count }}</div>
+        <div class="metric-label">{{ params.accepted_percent }}% от согласований после КД</div>
       </article>
     </div>
   </div>
@@ -436,7 +436,6 @@
                 <th class="text-end">Со согласованием</th>
                 <th class="text-end">Принято</th>
                 <th class="text-end">Среднее время</th>
-                <th class="text-end">Конверсия согласования</th>
                 <th class="text-end">Конверсия приема</th>
                 <th class="text-end">Задач</th>
                 <th class="text-end">Ср. задач/оценку</th>
@@ -462,7 +461,7 @@
                   </div>
                 </td>
                 <td class="text-end" data-label="Всего оценок">{{ analyst.total }}</td>
-                <td class="text-end" data-label="Со согласованием">{{ analyst.with_soglasovanie }}</td>
+                
                 <td class="text-end" data-label="Принято">{{ analyst.accepted }}</td>
                 <td class="text-end" data-label="Среднее время">
                   {% if analyst.avg_time %}
