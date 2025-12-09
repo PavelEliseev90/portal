@@ -5224,7 +5224,7 @@ def eco_efficiency_analysis(request):
                 'analyst_id': analyst_id,
                 'name': row['analyst_name'] or '—',
                 'total': count,
-                'with_soglasovanie_count' : with_soglasovanie_count,
+                'with_soglasovanie_count' : with_soglasovanie_before_count,
                 'accepted_percent'      : accepted_percent,
                 'with_soglasovanie': row['with_soglas'],
                 'accepted': row['accepted'],
