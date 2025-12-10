@@ -22876,4 +22876,256 @@
   })();
   </script>
 
+<!-- Печатная форма интерактивной оценки -->
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .print-form, .print-form * {
+      visibility: visible;
+    }
+    .print-form {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      padding: 20px;
+      background: white;
+    }
+    .no-print {
+      display: none !important;
+    }
+    .print-form img {
+      max-width: 100%;
+      height: auto;
+      page-break-inside: avoid;
+    }
+    .print-form .photo-grid {
+      page-break-inside: avoid;
+    }
+  }
+
+  @media screen {
+    .print-form {
+      display: none;
+    }
+  }
+
+  .print-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: #002a5a;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 600;
+  }
+
+  .print-btn:hover {
+    background: #003d7a;
+  }
+</style>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Печать формы</button>
+
+<div class="print-form">
+  <div style="max-width: 210mm; margin: 0 auto; padding: 15mm; font-family: Arial, sans-serif; color: #000;">
+    <!-- Заголовок -->
+    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: bold;">ИНТЕРАКТИВНАЯ ОЦЕНКА АВТОМОБИЛЯ</h1>
+      <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Рабочий лист № {{params.rlk.nomer|default:"—"}} от {{params.rlk.dataTime|date:"d.m.Y"|default:"—"}}</p>
+    </div>
+
+    <!-- Основные данные -->
+    <div style="margin-bottom: 25px;">
+      <h2 style="font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Основные данные</h2>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr>
+          <td style="padding: 8px; width: 30%; font-weight: bold; border: 1px solid #ddd;">Марка:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.brand.name|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Модель:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.model.name|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Модификация:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.name|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Год выпуска:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.year|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">VIN:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.vin|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Пробег:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            {% if params.estimation.page_salon %}
+              {{params.estimation.page_salon.run|default:"—"}} км
+            {% elif params.estimation.page_remote %}
+              {{params.estimation.page_remote.run|default:"—"}} км
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Клиент:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            {% if params.rlk.client %}
+              {{params.rlk.client.name|default:"—"}}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Подразделение:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            {% if params.rlk.unit.name %}
+              {{params.rlk.unit.name}}
+            {% elif params.rlk.unit_dc.name %}
+              {{params.rlk.unit_dc.name}}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Номер рабочего листа:</td>
+          <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">{{params.rlk.nomer|default:"—"}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Фото внешнего осмотра -->
+    <div style="margin-bottom: 25px;" class="photo-grid">
+      <h2 style="font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Фото внешнего осмотра с отмеченными повреждениями</h2>
+      
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+        <!-- Передняя часть -->
+        {% if params.estimation.fotos_vnesh_pered %}
+        <div style="border: 1px solid #ddd; padding: 10px; text-align: center;">
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ПЕРЕДНЯЯ ЧАСТЬ</div>
+          <img src="{{params.estimation.fotos_vnesh_pered.url}}" alt="Передняя часть" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+        </div>
+        {% endif %}
+        
+        <!-- Водительская сторона -->
+        {% if params.estimation.fotos_vnesh_vod %}
+        <div style="border: 1px solid #ddd; padding: 10px; text-align: center;">
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ВОДИТЕЛЬСКАЯ СТОРОНА</div>
+          <img src="{{params.estimation.fotos_vnesh_vod.url}}" alt="Водительская сторона" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+        </div>
+        {% endif %}
+        
+        <!-- Задняя часть -->
+        {% if params.estimation.fotos_vnesh_zad %}
+        <div style="border: 1px solid #ddd; padding: 10px; text-align: center;">
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ЗАДНЯЯ ЧАСТЬ</div>
+          <img src="{{params.estimation.fotos_vnesh_zad.url}}" alt="Задняя часть" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+        </div>
+        {% endif %}
+        
+        <!-- Пассажирская сторона -->
+        {% if params.estimation.fotos_vnesh_pass %}
+        <div style="border: 1px solid #ddd; padding: 10px; text-align: center;">
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ПАССАЖИРСКАЯ СТОРОНА</div>
+          <img src="{{params.estimation.fotos_vnesh_pass.url}}" alt="Пассажирская сторона" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+        </div>
+        {% endif %}
+      </div>
+      
+      <!-- Вид сверху -->
+      {% if params.estimation.fotos_vnesh_up %}
+      <div style="border: 1px solid #ddd; padding: 10px; text-align: center; margin-top: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ВИД СВЕРХУ</div>
+        <img src="{{params.estimation.fotos_vnesh_up.url}}" alt="Вид сверху" style="max-width: 100%; max-height: 300px; height: auto; border: 1px solid #ccc;">
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Сводная таблица повреждений -->
+    {% if params.body %}
+    <div style="margin-bottom: 25px; page-break-inside: avoid;">
+      <h2 style="font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Сводная информация о повреждениях кузова</h2>
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <thead>
+          <tr style="background: #f5f5f5;">
+            <th style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: bold;">Тип повреждения</th>
+            <th style="padding: 8px; border: 1px solid #000; text-align: center; font-weight: bold;">Количество</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Царапины</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.carap|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Царапины под окрас</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.carap_strong|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Ржавчина</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.rzav|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Сквозная ржавчина</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.rzav_strong|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Вмятины</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.vmyat|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Вмятины под окрас</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.vmyat_strong|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Сколы</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.skol|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Перекрашено</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.perecras|default:"0"}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px; border: 1px solid #ddd;">Шпатлевка</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">{{params.body.perecras_strong|default:"0"}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Подпись и дата -->
+    <div style="margin-top: 40px; border-top: 1px solid #000; padding-top: 15px;">
+      <div style="display: flex; justify-content: space-between; font-size: 12px;">
+        <div>
+          <div style="margin-bottom: 40px;">Оценщик: _________________</div>
+          <div>Дата: {{params.rlk.dataTime|date:"d.m.Y"|default:"—"}}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="margin-bottom: 40px;">Клиент: _________________</div>
+          <div>Подпись: _________________</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Футер -->
+    <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">
+      <p style="margin: 0;">Документ сформирован автоматически. {{params.rlk.dataTime|date:"d.m.Y H:i"|default:""}}</p>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
