@@ -1,0 +1,306 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - листы оценки {% endblock %}
+{% block title_navbar %} - листы оценки {% endblock %}
+
+{% block mestoName %}  {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Листы оценки</h2>
+    <p>Интерактивные оценки автомобилей</p>
+  </div>
+
+  <form method="get">
+    
+    <div class="modal fade portal-modal" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+          <div class="modal-body">
+            
+            <div class="row g-3">
+              
+                <div class="col-12">
+                  <div class="form-floating">
+                    <input class="form-control" type="text" id="vin_modal" name="vin" value="{{params.filtr.vin}}">
+                    <label for="vin_modal">VIN</label>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    <input class="form-control" type="text" id="name_mark_model_modal" name="name_mark_model" value="{{params.filtr.name_mark_model}}">
+                    <label for="name_mark_model_modal">Марка, модель</label>
+                  </div>
+                </div>
+        
+                <div class="col-12">
+                  <div class="form-floating">
+                    <input class="form-control" type="text" id="plate_number_modal" name="plate_number" value="{{params.filtr.plate_number}}">
+                    <label for="plate_number_modal">Гос. номер</label>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    <select class="form-select" id="status_id_modal" name="status_id">
+                      <option></option>
+                      {% for status in params.selected.statuses %}
+                        <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}>{{status.name}}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="status_id_modal">Статус</label>
+                  </div>
+                </div>
+          
+              <div class="col-12">
+                <div class="form-floating">
+                  <select class="form-select" id="type_receptions_id_modal" name="type_receptions_id">
+                    <option></option>
+                    {% for type_reception in params.selected.type_receptions %}
+                      <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}>{{type_reception.name}}</option>
+                    {% endfor %}
+                  </select>
+                  <label for="type_receptions_id_modal">Тип приема</label>
+                </div>
+              </div>
+          
+              <div class="col-12">
+                <div class="form-floating">
+                  <select class="form-select" id="unit_id_modal" name="unit_id">
+                    <option></option>
+                    {% for unit in params.selected.units %}
+                      <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}>{{unit.name}}</option>
+                    {% endfor %}
+                  </select>
+                  <label for="unit_id_modal">Подразделение ДЦ</label>
+                </div>
+              </div>
+          
+            </div>  
+            
+          </div>
+        
+          <div class="modal-footer">
+            <div class="row">
+              
+              <div class="col">
+                <button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
+              </div>
+            </div>
+          </div>
+    
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+
+  <form method="get" class="hidemobile">
+
+  
+
+    <div class="portal-panel portal-filter">
+      <div class="row g-3">
+        
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <input class="form-control" type="text" id="vin" name="vin" value="{{params.filtr.vin}}">
+            <label for="vin">VIN</label>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <input class="form-control" type="text" id="name_mark_model" name="name_mark_model" value="{{params.filtr.name_mark_model}}">
+            <label for="name_mark_model">Марка, модель</label>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <input class="form-control" type="text" id="plate_number" name="plate_number" value="{{params.filtr.plate_number}}">
+            <label for="plate_number">Гос. номер</label>
+          </div>
+        </div>
+        
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <select class="form-select" id="status_id" name="status_id">
+              <option></option>
+              {% for status in params.selected.statuses %}
+                <option value="{{status.id}}" {% if params.filtr.status_id == status.pk %} selected {% endif %}>{{status.name}}</option>
+              {% endfor %}
+            </select>
+            <label for="status_id">Статус</label>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <select class="form-select" id="type_receptions_id" name="type_receptions_id">
+              <option></option>
+              {% for type_reception in params.selected.type_receptions %}
+                <option value="{{type_reception.id}}" {% if params.filtr.type_receptions_id == type_reception.id %} selected {% endif %}>{{type_reception.name}}</option>
+              {% endfor %}
+            </select>
+            <label for="type_receptions_id">Тип приема</label>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-12">
+          <div class="form-floating">
+            <select class="form-select" id="unit_id" name="unit_id">
+              <option></option>
+              {% for unit in params.selected.units %}
+                <option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}>{{unit.name}}</option>
+              {% endfor %}
+            </select>
+            <label for="unit_id">Подразделение ДЦ</label>
+          </div>
+        </div>
+
+        <div class="col-md-12 col-12">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button class="btn btn-outline-success" type="submit"><span class="icon-mbri-play"></span> Применить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  {% if params.objects.object_list %}
+    <div class="portal-panel">
+      <div class="table-responsive table-sticky">
+        <table class="table table-hover table-mobile-cards">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Номер / Дата</th>
+              <th>Подразделение</th>
+              <th>Менеджер</th>
+              <th>Статус</th>
+              <th>Тип оценки</th>
+              <th>Оценщик</th>
+              <th>Автомобиль</th>
+              <th>Клиент</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            {% for object in params.objects.object_list %}
+            <tr>
+              <td data-label="">
+                <a class="btn btn-sm btn-outline-primary" href="/eco/{{object.rlk.id}}/" title="Редактировать">
+                  <span class="icon-mbri-edit2"></span> Открыть
+                </a>
+              </td>
+              <td data-label="Номер / Дата">
+                <div>
+                  <strong>{{object.rlk.nomer|default_if_none:"-"}}</strong><br>
+                  <small class="text-muted">
+                     {{object.rlk.dataTime|date:"d.m.Y H:i"|default_if_none:"-"}}
+                  </small>
+                </div>
+              </td>
+              <td data-label="Подразделение">
+               
+                {{object.page_documents.unit.name|default_if_none:"-"}} 
+              </td>
+              <td data-label="Менеджер">
+                 {{object.rlk.manager_trade_in|default_if_none:"-"}}
+              </td>
+              <td data-label="Статус">
+                 {{object.status|default_if_none:"Новый"}}
+              </td>
+              <td data-label="Тип оценки">
+                 {{object.page_documents.type_reception|default_if_none:"-"}}
+              </td>
+              <td data-label="Оценщик">
+                {{object.staff|default_if_none:"-"}}
+              </td>
+              <td data-label="Автомобиль">
+                <div>
+                  <strong>{{object.modification.model.mark.name|default_if_none:""}} {{object.modification.model.name|default_if_none:""}}</strong>
+                  {% if object.modification.name %}<br>{{object.modification.name}}{% endif %}
+                  {% if object.vin %}<br><small class="text-muted">VIN: {{object.vin}}</small>{% endif %}
+                  {% if object.year or object.page_documents.plate_number %}
+                  <br><small class="text-muted">
+                    {% if object.year %}Год: {{object.year}}{% endif %}
+                    {% if object.page_documents.plate_number %}{% if object.year %} / {% endif %}Гос. номер: {{object.page_documents.plate_number}}{% endif %}
+                  </small>
+                  {% endif %}
+                </div>
+              </td>
+              <td data-label="Клиент">
+                 {{object.rlk.clientName|default_if_none:"-"}}
+              </td>
+              
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+    <div>
+      <p class="mb-0">Всего записей: {{params.objects.paginator.count}} / Выведено: {{params.objects|length}}</p>
+    </div>
+   
+  </div>
+
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      {% if params.objects.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
+        </li>
+      {% endif %}
+      
+      {% for p in params.objects.paginator.page_range %}
+        {% if params.objects.number == p %}
+          <li class="page-item active">
+            <span class="page-link">{{p}}</span>
+          </li>
+        {% elif p >= params.objects.number|add:-2 and p <= params.objects.number|add:2 %}
+          <li class="page-item">
+            <a class="page-link" href="?{% url_replace page=p %}">{{p}}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+        
+      {% if params.objects.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% url_replace page=params.objects.next_page_number %}">&gt;</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+
+
+  <div class="hidesite">
+    <div class="mobile-filter-button">
+      <button type="button" class="btn btn-secondary opacity-75 bg-opacity-50" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo">
+        <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}
+      </button>
+    </div>
+  </div>
+
+
+
+    
+
+ 
+</div>
+{% endblock %}

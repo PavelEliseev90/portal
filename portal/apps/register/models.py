@@ -622,6 +622,63 @@ class RegEstimationsSettings(models.Model):
     turbo_warning_kf_1200            	= models.IntegerField('Турбо есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     turbo_warning_amount_min_1200    	= models.IntegerField('Турбо есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
 
+    drive_danger_amount_200                 = models.IntegerField('Привод не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_200                     = models.IntegerField('Привод не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_200             = models.IntegerField('Привод не исправен мин сумма 200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_200            = models.IntegerField('Привод есть замечания сумма 200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_200            	= models.IntegerField('Привод есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_200    	= models.IntegerField('Привод есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_400                 = models.IntegerField('Привод не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_400                     = models.IntegerField('Привод не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_400             = models.IntegerField('Привод не исправен мин сумма 400',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_400            = models.IntegerField('Привод есть замечания сумма 400',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_400            	= models.IntegerField('Привод есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_400    	= models.IntegerField('Привод есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_700                 = models.IntegerField('Привод не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_700                     = models.IntegerField('Привод не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_700             = models.IntegerField('Привод не исправен мин сумма 700',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_700            = models.IntegerField('Привод есть замечания сумма 700',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_700            	= models.IntegerField('Привод есть замечания коэфицент 700',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_700    	= models.IntegerField('Привод есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_1200                 = models.IntegerField('Привод не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_1200                     = models.IntegerField('Привод не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_1200             = models.IntegerField('Привод не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    drive_warning_amount_1200            = models.IntegerField('Привод есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_1200            	= models.IntegerField('Привод есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_1200    	= models.IntegerField('Привод есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+    
+    drive_danger_amount_2000                 = models.IntegerField('Привод не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_2000                     = models.IntegerField('Привод не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_2000             = models.IntegerField('Привод не исправен мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_2000            = models.IntegerField('Привод есть замечания сумма 2000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_2000            	= models.IntegerField('Привод есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_2000    	= models.IntegerField('Привод есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_3000                 = models.IntegerField('Привод не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_3000                     = models.IntegerField('Привод не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_3000             = models.IntegerField('Привод не исправен мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_3000            = models.IntegerField('Привод есть замечания сумма 3000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_3000            	= models.IntegerField('Привод есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_3000    	= models.IntegerField('Привод есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_5000                 = models.IntegerField('Привод не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_5000                     = models.IntegerField('Привод не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_5000             = models.IntegerField('Привод не исправен мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_5000            = models.IntegerField('Привод есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_5000            	= models.IntegerField('Привод есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_5000    	= models.IntegerField('Привод есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    drive_danger_amount_5001                 = models.IntegerField('Привод не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
+    drive_danger_kf_5001                     = models.IntegerField('Привод не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    drive_danger_amount_min_5001             = models.IntegerField('Привод не исправен мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_5001            = models.IntegerField('Привод есть замечания сумма 5001',      default=0, null=True, blank=True)       #'// 
+    drive_warning_kf_5001            	= models.IntegerField('Привод есть замечания коэфицент 5001',      default=0, null=True, blank=True)       #'// 
+    drive_warning_amount_min_5001    	= models.IntegerField('Привод есть замечания мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
     engine_danger_amount_1200        = models.IntegerField('Двигатель не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
     engine_danger_kf_1200            = models.IntegerField('Двигатель не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     engine_danger_amount_min_1200    = models.IntegerField('Двигатель не исправен мин сумма 1200',      default=0, null=True, blank=True)       #'// 
@@ -1195,6 +1252,38 @@ class RegEstimationsSettings(models.Model):
     bumper_pered_replace_kf_5001        = models.IntegerField('Бампер замена 5001 ',      default=0, null=False, blank=True)       
     bumper_zad_replace_kf_5001          = models.IntegerField('Бампер замена 5001 зад',      default=0, null=False, blank=True)
     
+    to_1_200    = models.IntegerField('ТО 1 200',      default=0, null=False, blank=True)
+    to_2_200    = models.IntegerField('ТО 2 200',      default=0, null=False, blank=True)
+    to_3_200    = models.IntegerField('ТО 3 200',      default=0, null=False, blank=True)
+    
+    to_1_400    = models.IntegerField('ТО 1 400',      default=0, null=False, blank=True)
+    to_2_400    = models.IntegerField('ТО 2 400',      default=0, null=False, blank=True)
+    to_3_400    = models.IntegerField('ТО 3 400',      default=0, null=False, blank=True)
+    
+    to_1_700    = models.IntegerField('ТО 1 700',      default=0, null=False, blank=True)
+    to_2_700    = models.IntegerField('ТО 2 700',      default=0, null=False, blank=True)
+    to_3_700    = models.IntegerField('ТО 3 700',      default=0, null=False, blank=True)
+    
+    to_1_1200    = models.IntegerField('ТО 1 1200',      default=0, null=False, blank=True)
+    to_2_1200    = models.IntegerField('ТО 2 1200',      default=0, null=False, blank=True)
+    to_3_1200    = models.IntegerField('ТО 3 1200',      default=0, null=False, blank=True)
+    
+    to_1_2000    = models.IntegerField('ТО 1 2000',      default=0, null=False, blank=True)
+    to_2_2000    = models.IntegerField('ТО 2 2000',      default=0, null=False, blank=True)
+    to_3_2000    = models.IntegerField('ТО 3 2000',      default=0, null=False, blank=True)
+    
+    to_1_3000    = models.IntegerField('ТО 1 3000',      default=0, null=False, blank=True)
+    to_2_3000    = models.IntegerField('ТО 2 3000',      default=0, null=False, blank=True)
+    to_3_3000    = models.IntegerField('ТО 3 3000',      default=0, null=False, blank=True)
+    
+    to_1_5000    = models.IntegerField('ТО 1 5000',      default=0, null=False, blank=True)
+    to_2_5000    = models.IntegerField('ТО 2 5000',      default=0, null=False, blank=True)
+    to_3_5000    = models.IntegerField('ТО 3 5000',      default=0, null=False, blank=True)
+    
+    to_1_5001    = models.IntegerField('ТО 1 5001',      default=0, null=False, blank=True)
+    to_2_5001    = models.IntegerField('ТО 2 5001',      default=0, null=False, blank=True)
+    to_3_5001    = models.IntegerField('ТО 3 5001',      default=0, null=False, blank=True)
+
     def __str__(self):
         return "{}".format(self.name)
 
@@ -2535,6 +2624,30 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
         super().save(*args, **kwargs)
 
+        # Обновляем витрину аналитиков
+        try:
+            update_eco_analyst_snapshots(self)
+        except Exception:
+            pass
+        
+        # Обновляем витрину интерактивных согласований
+        try:
+            update_pricing_snapshot(self)
+        except Exception:
+            pass
+        
+        # Обновляем витрину оценщиков
+        try:
+            update_appraiser_snapshot(self)
+        except Exception:
+            pass
+        
+        # Обновляем витрину воронки Trade-In
+        try:
+            update_tradein_snapshot(self)
+        except Exception:
+            pass
+
 
     def __str__(self):
         return "{} / {}".format(self.rlk, self.type_estimation)
@@ -2549,6 +2662,567 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
 post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
+
+# --- Вспомогательная функция для витрины аналитиков ---
+def update_eco_analyst_snapshots(estimation):
+    """
+    Обновляет витрину EcoAnalystSnapshot при изменении RegInteractivOcenka.
+    Создает/обновляет записи для ролей 'before' и 'after' при наличии аналитиков.
+    """
+    try:
+        from analytics.models import EcoAnalystSnapshot
+    except Exception:
+        return
+
+    try:
+        sogl = estimation.page_soglasovanie
+    except Exception:
+        sogl = None
+
+    auto_price = None
+    if sogl:
+        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+
+    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+    if unit is None and estimation.rlk:
+        unit = getattr(estimation.rlk, 'unit', None)
+
+    unit_id = unit.id if unit else None
+    unit_name = unit.name if unit else ''
+    
+    if estimation.rlk.unit_dc != None:
+        unit_source = estimation.rlk.unit_dc.name
+    elif estimation.rlk.unit != None:
+        unit_source = estimation.rlk.unit.name 
+    else:
+        unit_source = estimation.page_documents.unit.name
+
+    type_reception_id = None
+    if getattr(estimation, 'page_documents', None):
+        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+
+    status_id = estimation.status_id if estimation.status_id else None
+    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+
+    price_reception = sogl.price_reception if sogl else None
+    price_sale = sogl.price_sale if sogl else None
+    cost_total = None
+    
+    def _duration_sec(start, end):
+        if start and end:
+            try:
+                return int((end - start).total_seconds())
+            except Exception:
+                return None
+        return None
+
+    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+
+    def _upsert(role, analyst):
+        if not analyst:
+            return
+
+        if role == 'before':
+            price = sogl.price_before_kd if sogl else None
+            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+            duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
+            duration_sogl_after_sec = None
+            duration_diagnostics_sec = None
+            if sogl:
+                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+
+        else:
+            price = sogl.price_after_kd if sogl else None
+            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+            duration_sogl_before_sec = None
+            duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
+            duration_diagnostics_sec = None
+            if sogl:
+                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
+
+        EcoAnalystSnapshot.objects.update_or_create(
+            estimation_id=estimation.id,
+            role=role,
+            defaults={
+                'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+                'start_estimation': estimation.start_estimation,
+                'end_estimation': estimation.end_estimation,
+                'unit_id': unit_id,
+                'unit_name': unit_name,
+                'unit_source': unit_source,
+                'staff_id': estimation.staff_id if estimation.staff_id else None,
+                'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+                'analyst_id': analyst.id,
+                'analyst_name': analyst.profiles.eco_name,
+                'type_reception_id': type_reception_id,
+                'status_id': status_id,
+                'status_name': status_name,
+                'has_soglasovanie': bool(sogl),
+                'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+                'accepted': bool(estimation.status_id in [4, 8]),
+                'price_auto_selected': auto_price,
+                'price_before_kd': price if role == 'before' else None,
+                'price_after_kd': price if role == 'after' else None,
+                'diff_before': diff if role == 'before' else None,
+                'diff_after': diff if role == 'after' else None,
+                'price_reception': price_reception,
+                'price_sale': price_sale,
+                'cost_total': cost_total,
+                'duration_estimation_sec': duration_estimation_sec,
+                'duration_sogl_before_sec': duration_sogl_before_sec,
+                'duration_sogl_after_sec': duration_sogl_after_sec,
+                'duration_diagnostics_sec': duration_diagnostics_sec,
+                'tasks_total': 0,
+                'tasks_closed': 0,
+            }
+        )
+
+    _upsert('before', getattr(estimation, 'staff_eco_1', None))
+    _upsert('after', getattr(estimation, 'staff_eco_2', None))
+
+
+def update_pricing_snapshot(estimation):
+    """
+    Обновляет витрину InteractivePricingSnapshot при изменении RegInteractivOcenka.
+    """
+    try:
+        from analytics.models import InteractivePricingSnapshot
+    except Exception:
+        return
+
+    try:
+        sogl = estimation.page_soglasovanie
+    except Exception:
+        sogl = None
+
+    auto_price = None
+    if sogl:
+        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+
+    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+    if unit is None and estimation.rlk:
+        unit = getattr(estimation.rlk, 'unit', None)
+
+    unit_id = unit.id if unit else None
+    unit_name = unit.name if unit else ''
+    
+    if estimation.rlk and estimation.rlk.unit_dc:
+        unit_source = estimation.rlk.unit_dc.name
+    elif estimation.rlk and estimation.rlk.unit:
+        unit_source = estimation.rlk.unit.name 
+    elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
+        unit_source = estimation.page_documents.unit.name
+    else:
+        unit_source = ''
+
+    type_reception_id = None
+    if getattr(estimation, 'page_documents', None):
+        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+
+    status_id = estimation.status_id if estimation.status_id else None
+    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+
+    model_name = ''
+    if estimation.modification:
+        if estimation.modification.model:
+            model_name = estimation.modification.model.name
+            if estimation.modification.model.mark:
+                model_name = f"{estimation.modification.model.mark.name} {model_name}"
+
+    def _duration_sec(start, end):
+        if start and end:
+            try:
+                return int((end - start).total_seconds())
+            except Exception:
+                return None
+        return None
+
+    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+    duration_sogl_before_sec = None
+    duration_sogl_after_sec = None
+    duration_diagnostics_sec = None
+    
+    if sogl:
+        if estimation.start_estimation:
+            duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation)
+        duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation) if estimation.start_estimation else None
+        duration_diagnostics_sec = None  # Можно добавить логику для диагностики
+
+    # Подсчет задач
+    tasks_total = 0
+    tasks_closed = 0
+    try:
+        tasks = RegInteractivOcenkaTask.objects.filter(estimation=estimation)
+        tasks_total = tasks.count()
+        tasks_closed = tasks.exclude(date_close__isnull=True).count()
+    except Exception:
+        pass
+
+    analyst_before_id = None
+    analyst_before_name = ''
+    if estimation.staff_eco_1:
+        analyst_before_id = estimation.staff_eco_1.id
+        analyst_before_name = getattr(estimation.staff_eco_1.profiles, 'eco_name', '') if hasattr(estimation.staff_eco_1, 'profiles') else ''
+
+    analyst_after_id = None
+    analyst_after_name = ''
+    if estimation.staff_eco_2:
+        analyst_after_id = estimation.staff_eco_2.id
+        analyst_after_name = getattr(estimation.staff_eco_2.profiles, 'eco_name', '') if hasattr(estimation.staff_eco_2, 'profiles') else ''
+
+    cost_total = None
+    if sogl:
+        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+
+    InteractivePricingSnapshot.objects.update_or_create(
+        estimation_id=estimation.id,
+        defaults={
+            'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+            'start_estimation': estimation.start_estimation,
+            'end_estimation': estimation.end_estimation,
+            'unit_id': unit_id,
+            'unit_name': unit_name,
+            'unit_source': unit_source,
+            'staff_id': estimation.staff_id if estimation.staff_id else None,
+            'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+            'analyst_before_id': analyst_before_id,
+            'analyst_before_name': analyst_before_name,
+            'analyst_after_id': analyst_after_id,
+            'analyst_after_name': analyst_after_name,
+            'type_reception_id': type_reception_id,
+            'status_id': status_id,
+            'status_name': status_name,
+            'model_name': model_name,
+            'vin': estimation.vin or '',
+            'price_auto_1': sogl.price_auto_1 if sogl else None,
+            'price_auto_2': sogl.price_auto_2 if sogl else None,
+            'price_auto_3': sogl.price_auto_3 if sogl else None,
+            'price_auto_selected': auto_price,
+            'price_before_kd': sogl.price_before_kd if sogl else None,
+            'price_after_kd': sogl.price_after_kd if sogl else None,
+            'diff_before': (sogl.price_before_kd - auto_price) if (sogl and sogl.price_before_kd is not None and auto_price is not None) else None,
+            'diff_after': (sogl.price_after_kd - auto_price) if (sogl and sogl.price_after_kd is not None and auto_price is not None) else None,
+            'price_auto_bcp': None,  # Можно добавить логику для BCP
+            'price_bcp': None,  # Можно добавить логику для BCP
+            'price_reception': sogl.price_reception if sogl else None,
+            'price_sale': sogl.price_sale if sogl else None,
+            'cost_podgotovka': sogl.amount_podgotovka if sogl else None,
+            'cost_ss': sogl.amount_ss if sogl else None,
+            'cost_mcu': sogl.amount_mcu if sogl else None,
+            'cost_recovery': None,  # Можно добавить логику для recovery
+            'cost_total': cost_total,
+            'tasks_total': tasks_total,
+            'tasks_closed': tasks_closed,
+            'has_soglasovanie': bool(sogl),
+            'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+            'accepted': bool(estimation.status_id in [4, 8]),
+            'duration_estimation_sec': duration_estimation_sec,
+            'duration_sogl_before_sec': duration_sogl_before_sec,
+            'duration_diagnostics_sec': duration_diagnostics_sec,
+            'duration_sogl_after_sec': duration_sogl_after_sec,
+        }
+    )
+
+
+def update_appraiser_snapshot(estimation):
+    """
+    Обновляет витрину AppraiserPerformanceSnapshot при изменении RegInteractivOcenka.
+    """
+    try:
+        from analytics.models import AppraiserPerformanceSnapshot
+    except Exception:
+        return
+
+    try:
+        sogl = estimation.page_soglasovanie
+    except Exception:
+        sogl = None
+
+    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+    if unit is None and estimation.rlk:
+        unit = getattr(estimation.rlk, 'unit', None)
+
+    unit_id = unit.id if unit else None
+    unit_name = unit.name if unit else ''
+    
+    if estimation.rlk and estimation.rlk.unit_dc:
+        unit_source = estimation.rlk.unit_dc.name
+    elif estimation.rlk and estimation.rlk.unit:
+        unit_source = estimation.rlk.unit.name 
+    elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
+        unit_source = estimation.page_documents.unit.name
+    else:
+        unit_source = ''
+
+    status_id = estimation.status_id if estimation.status_id else None
+    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+
+    source_type = ''
+    if getattr(estimation, 'page_documents', None) and estimation.page_documents.type_reception:
+        source_type = estimation.page_documents.type_reception.name
+
+    auto_price = None
+    if sogl:
+        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+
+    def _duration_sec(start, end):
+        if start and end:
+            try:
+                return int((end - start).total_seconds())
+            except Exception:
+                return None
+        return None
+
+    worksheet_created_at = None
+    if estimation.rlk:
+        worksheet_created_at = estimation.rlk.dataTime
+
+    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+    duration_to_accept_sec = None
+    duration_to_sale_sec = None
+    days_in_stock = None
+
+    # Подсчет задач
+    tasks_total = 0
+    tasks_closed = 0
+    try:
+        tasks = RegInteractivOcenkaTask.objects.filter(estimation=estimation)
+        tasks_total = tasks.count()
+        tasks_closed = tasks.exclude(date_close__isnull=True).count()
+    except Exception:
+        pass
+
+    cost_total = None
+    if sogl:
+        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+
+    AppraiserPerformanceSnapshot.objects.update_or_create(
+        estimation_id=estimation.id,
+        defaults={
+            'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+            'worksheet_created_at': worksheet_created_at,
+            'start_estimation': estimation.start_estimation,
+            'end_estimation': estimation.end_estimation,
+            'unit_id': unit_id,
+            'unit_name': unit_name,
+            'unit_source': unit_source,
+            'staff_id': estimation.staff_id if estimation.staff_id else None,
+            'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+            'source_type': source_type,
+            'status_id': status_id,
+            'status_name': status_name,
+            'has_soglasovanie': bool(sogl),
+            'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+            'accepted': bool(estimation.status_id in [4, 8]),
+            'price_offer': sogl.price_before_kd if sogl else None,
+            'price_agreed': sogl.price_after_kd if sogl else None,
+            'price_reception': sogl.price_reception if sogl else None,
+            'price_sale': sogl.price_sale if sogl else None,
+            'price_auto_selected': auto_price,
+            'diff_vs_auto': (sogl.price_after_kd - auto_price) if (sogl and sogl.price_after_kd is not None and auto_price is not None) else None,
+            'cost_total': cost_total,
+            'duration_estimation_sec': duration_estimation_sec,
+            'duration_to_accept_sec': duration_to_accept_sec,
+            'duration_to_sale_sec': duration_to_sale_sec,
+            'days_in_stock': days_in_stock,
+            'tasks_total': tasks_total,
+            'tasks_closed': tasks_closed,
+        }
+    )
+
+
+def update_tradein_snapshot(estimation):
+    """
+    Обновляет витрину TradeInFunnelSnapshot при изменении RegInteractivOcenka.
+    """
+    try:
+        from analytics.models import TradeInFunnelSnapshot
+    except Exception:
+        return
+
+    if not estimation.rlk:
+        return
+
+    try:
+        sogl = estimation.page_soglasovanie
+    except Exception:
+        sogl = None
+
+    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+    if unit is None and estimation.rlk:
+        unit = getattr(estimation.rlk, 'unit', None)
+
+    unit_id = unit.id if unit else None
+    unit_name = unit.name if unit else ''
+    
+    if estimation.rlk.unit_dc:
+        unit_source = estimation.rlk.unit_dc.name
+    elif estimation.rlk.unit:
+        unit_source = estimation.rlk.unit.name 
+    elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
+        unit_source = estimation.page_documents.unit.name
+    else:
+        unit_source = ''
+
+    source_type = ''
+    if getattr(estimation, 'page_documents', None) and estimation.page_documents.type_reception:
+        source_type = estimation.page_documents.type_reception.name
+
+    type_reception_id = None
+    if getattr(estimation, 'page_documents', None):
+        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+
+    analyst_before_id = None
+    if estimation.staff_eco_1:
+        analyst_before_id = estimation.staff_eco_1.id
+
+    analyst_after_id = None
+    if estimation.staff_eco_2:
+        analyst_after_id = estimation.staff_eco_2.id
+
+    def _duration_sec(start, end):
+        if start and end:
+            try:
+                return int((end - start).total_seconds())
+            except Exception:
+                return None
+        return None
+
+    date_work_order = estimation.rlk.dataTime if estimation.rlk else None
+    date_evaluation = estimation.start_estimation
+    date_diagnostic = None
+    date_acceptance = None
+    date_sale = None
+    date_market = None
+
+    if sogl:
+        if sogl.end_estimation:
+            date_diagnostic = sogl.end_estimation
+        if estimation.status_id in [4, 8]:
+            date_acceptance = estimation.end_estimation
+
+    duration_to_evaluation_sec = _duration_sec(date_work_order, date_evaluation)
+    duration_to_diagnostic_sec = _duration_sec(date_evaluation, date_diagnostic)
+    duration_to_acceptance_sec = _duration_sec(date_evaluation, date_acceptance)
+    duration_to_sale_sec = _duration_sec(date_acceptance, date_sale)
+
+    cost_total = None
+    if sogl:
+        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+
+    # Определяем текущую стадию
+    stage = 'work_order'
+    if date_evaluation:
+        stage = 'evaluation'
+    if date_diagnostic:
+        stage = 'diagnostic'
+    if date_acceptance:
+        stage = 'acceptance'
+    if date_sale:
+        stage = 'sale'
+    if date_market:
+        stage = 'market'
+
+    TradeInFunnelSnapshot.objects.update_or_create(
+        rlk_id=estimation.rlk.id,
+        defaults={
+            'worksheet_number': estimation.rlk.nomer if estimation.rlk else '',
+            'unit_id': unit_id,
+            'unit_name': unit_name,
+            'unit_source': unit_source,
+            'staff_id': estimation.staff_id if estimation.staff_id else None,
+            'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+            'analyst_before_id': analyst_before_id,
+            'analyst_after_id': analyst_after_id,
+            'source_type': source_type,
+            'type_reception_id': type_reception_id,
+            'date_work_order': date_work_order,
+            'date_evaluation': date_evaluation,
+            'date_diagnostic': date_diagnostic,
+            'date_acceptance': date_acceptance,
+            'date_sale': date_sale,
+            'date_market': date_market,
+            'price_offer': sogl.price_before_kd if sogl else None,
+            'price_agreed_before': sogl.price_before_kd if sogl else None,
+            'price_agreed_after': sogl.price_after_kd if sogl else None,
+            'price_reception': sogl.price_reception if sogl else None,
+            'price_sale': sogl.price_sale if sogl else None,
+            'price_market': None,  # Можно добавить логику для market price
+            'cost_total': cost_total,
+            'duration_to_evaluation_sec': duration_to_evaluation_sec,
+            'duration_to_diagnostic_sec': duration_to_diagnostic_sec,
+            'duration_to_acceptance_sec': duration_to_acceptance_sec,
+            'duration_to_sale_sec': duration_to_sale_sec,
+            'accepted': bool(estimation.status_id in [4, 8]),
+            'sold': bool(date_sale),
+            'went_to_market': bool(date_market),
+            'stage': stage,
+        }
+    )
+
+
+
+
+class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
+    rlk                 = models.OneToOneField(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
+    estimation          = models.ForeignKey(RegInteractivOcenka, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Оценка")
+    
+    type_reception      = models.ForeignKey(RefTypeReceptionCarsOrganization, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Тип приема автомобиля')
+    
+    organization        = models.ForeignKey(RefOrganization, on_delete=models.SET_NULL, null=True, verbose_name="Организация")
+    filial              = models.ForeignKey(RefFilial, on_delete=models.SET_NULL, null=True, verbose_name="Филиал")
+    unit                = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, verbose_name="Подразделение")
+    store               = models.ForeignKey(RefStore, null=True, on_delete=models.SET_NULL, verbose_name='Склад / стоянка')
+    
+    staff_rlk               = models.ForeignKey(RefStaff, related_name="staff_estimation_rlk", on_delete=models.SET_NULL, null=True, verbose_name="Оценщик")
+    staff_eco_1_rlk         = models.ForeignKey(User, related_name="staff_eco_1_rlk", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик до кд")
+    staff_eco_2_rlk         = models.ForeignKey(User, related_name="staff_eco_2_rlk", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик после кд")
+    
+    page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование")
+    
+    status              = models.ForeignKey(RefStatusEstimation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Статус")
+    
+    access_user         = models.ManyToManyField(User, verbose_name='Пользователь', blank=True)
+    
+    prev_img                = models.CharField("Превью", max_length=2500, default='', null=True, blank=True) 
+    qr                      = models.ImageField(storage=save_directory,  upload_to="estimationrlk/qr/", verbose_name="QR", blank=True, null=True)
+    slug                    = models.SlugField(max_length=512, null=True, blank=True)
+    
+    users_eco               = models.IntegerField('Сотрудников ецо в чате', default=0, null=True, blank=True)
+    users_no_eco            = models.IntegerField('Сотрудников не ецо в чате', default=0, null=True, blank=True)
+    users_dop               = models.IntegerField('Сотрудников доп согласования', default=0, null=True, blank=True)
+
+    date_s_do_diag  = models.DateTimeField('Дата согласования до диагностики', blank=True, null=True)
+    date_diagnostic = models.DateTimeField('Дата диагностики', blank=True, null=True)
+    date_s_diag     = models.DateTimeField('Дата согласования после диагностики', blank=True, null=True)
+    
+    status_ocenka                       = models.IntegerField('Секунд оценка', default=0, null=True, blank=True)
+    status_soglasovanie_do_diag         = models.IntegerField('Секунд до согласования диагностики', default=0, null=True, blank=True)
+    status_diagnostika                  = models.IntegerField('Секунд диагностика', default=0, null=True, blank=True)
+    status_soglasovanie_posle_kd        = models.IntegerField('Секунд после диагностики', default=0, null=True, blank=True)
+    
+    count_task                          = models.IntegerField('Задач', default=0, null=True, blank=True)
+    seconds_task                        = models.IntegerField('Время на задачи', default=0, null=True, blank=True)
+    count_answer                        = models.IntegerField('Ответов ЕЦО', default=0, null=True, blank=True)
+    seconds_answer                      = models.IntegerField('Среднее время ответа', default=0, null=True, blank=True)
+    seconds_estimation                  = models.IntegerField('Секунд оценки', default=0, null=True, blank=True)
+    
+    
+    def save(self, *args, **kwargs):
+        
+        super().save(*args, **kwargs)
+
+
+    def __str__(self):
+        return "{} / {}".format(self.rlk, self.estimation)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['rlk', 'estimation'])
+        ]
+        db_table = 'regInteractivOcenkaRLK'
+        verbose_name = "Данные интерактивной оценки рабочего листа"
+        verbose_name_plural = "данные интерактивных оценок рабочего листа"
 
 
 class RegInteractivOcenkaOptions(models.Model):

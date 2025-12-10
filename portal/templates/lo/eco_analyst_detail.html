@@ -1,0 +1,380 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Детали по аналитику: {{ params.analyst_name }} {% endblock %}
+
+{% block content %}
+<style>
+  .kors-efficiency-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-efficiency-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-efficiency-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-filter .form-select,
+  .kors-filter .form-control {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive.mobile-cards-wrapper {
+    overflow-x: visible;
+  }
+
+  @media (max-width: 768px) {
+    .kors-efficiency-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-efficiency-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .kors-filter {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+
+    .kors-panel {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      background: #fff;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+    }
+
+    .table-responsive.mobile-cards-wrapper thead {
+      display: none;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #6c7a92;
+      text-align: left;
+      margin-right: 1rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:first-child {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #002a5a;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+      margin-bottom: 0.5rem;
+    }
+
+    .table-responsive.mobile-cards-wrapper tbody td:first-child:before {
+      display: none;
+    }
+  }
+</style>
+
+<div class="kors-efficiency-page">
+  <div class="kors-efficiency-header">
+    <h2>Детали по аналитику: {{ params.analyst_name }}</h2>
+    <p>Список оценок, которые попали в статистику аналитика</p>
+  </div>
+
+  <form class="kors-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" == params.filters.unit_id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Сотрудник</label>
+        <select class="form-select" name="staff_id">
+          <option value="">Любой</option>
+          {% for staff in params.staffs %}
+            <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Тип приема</label>
+        <select class="form-select" name="type_id">
+          <option value="">Любой</option>
+          {% for type in params.types %}
+            <option value="{{ type.id }}" {% if type.id|stringformat:"s" == params.filters.type_id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Статус оценки</label>
+        <select class="form-select" name="status_id">
+          <option value="">Любой</option>
+          {% for status in params.statuses %}
+            <option value="{{ status.id }}" {% if status.id|stringformat:"s" == params.filters.status_id|stringformat:"s" %}selected{% endif %}>{{ status.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Роль</label>
+        <select class="form-select" name="role">
+          <option value="">Все</option>
+          <option value="before" {% if params.filters.role == 'before' %}selected{% endif %}>До КД</option>
+          <option value="after" {% if params.filters.role == 'after' %}selected{% endif %}>После КД</option>
+        </select>
+      </div>
+      <div class="col-12 text-end">
+        <a href="/eco/efficiency/" class="btn btn-secondary px-4 me-2">&larr; Назад к статистике</a>
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Оценки аналитика</h3>
+          <p class="text-muted mb-0">Всего: {{ params.page_obj.paginator.count }}</p>
+        </div>
+        <div class="table-responsive mobile-cards-wrapper mt-3">
+          <table class="table table-sm align-middle table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>ID оценки</th>
+                <th>Роль</th>
+                <th>Дата начала</th>
+                <th>Дата окончания</th>
+                <th>Подразделение</th>
+                <th>Сотрудник</th>
+                <th>Статус</th>
+                <th class="text-end">Согласование</th>
+                <th class="text-end">Диагностика</th>
+                <th class="text-end">Принято</th>
+                <th class="text-end">Цена авторасчета</th>
+                <th class="text-end">Цена до КД</th>
+                <th class="text-end">Цена после КД</th>
+                <th class="text-end">Маркер</th>
+                <th class="text-end">Время оценки</th>
+                <th class="text-end">Время согласования</th>
+                <th class="text-end">Задач</th>
+                <th class="text-end">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for eval in params.evaluations %}
+              <tr>
+                <td data-label="ID оценки">
+                  <strong>#{{ eval.estimation_id }}</strong>
+                </td>
+                <td data-label="Роль">
+                  <span class="badge {% if eval.role == 'before' %}bg-info{% else %}bg-success{% endif %}">
+                    {{ eval.role_display }}
+                  </span>
+                </td>
+                <td data-label="Дата начала">
+                  {{ eval.start_estimation|date:"d.m.Y H:i" }}
+                </td>
+                <td data-label="Дата окончания">
+                  {% if eval.end_estimation %}
+                    {{ eval.end_estimation|date:"d.m.Y H:i" }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td data-label="Подразделение">{{ eval.unit_name|default:"—" }}</td>
+                <td data-label="Сотрудник">{{ eval.staff_name|default:"—" }}</td>
+                <td data-label="Статус">{{ eval.status_name|default:"—" }}</td>
+                <td class="text-end" data-label="Согласование">
+                  {% if eval.has_soglasovanie %}
+                    <span class="badge bg-success">Да</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Нет</span>
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Диагностика">
+                  {% if eval.has_diagnostics %}
+                    <span class="badge bg-success">Да</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Нет</span>
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Принято">
+                  {% if eval.accepted %}
+                    <span class="badge bg-success">Да</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Нет</span>
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Цена авторасчета">
+                  {% if eval.price_auto_selected %}
+                    {{ eval.price_auto_selected|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Цена до КД">
+                  {% if eval.price_before_kd %}
+                    {{ eval.price_before_kd|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Цена после КД">
+                  {% if eval.price_after_kd %}
+                    {{ eval.price_after_kd|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Маркер">
+                  {% if eval.price_marker %}
+                    <span class="{{ eval.price_marker_class }} fw-bold">{{ eval.price_marker }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Время оценки">
+                  {% if eval.duration_estimation_hours %}
+                    {{ eval.duration_estimation_hours }} ч
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Время согласования">
+                  {% if eval.duration_sogl_hours %}
+                    {{ eval.duration_sogl_hours }} ч
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Задач">
+                  {% if eval.tasks_total %}
+                    {{ eval.tasks_closed }} / {{ eval.tasks_total }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Действия">
+                  <a href="/eco/{{ eval.rlk_id }}/" class="btn btn-sm btn-outline-primary" target="_blank">
+                    Открыть
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="18" class="text-center text-muted py-4">
+                  Нет оценок для отображения
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  {% if params.page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Page navigation" class="mt-3">
+    <ul class="pagination justify-content-center">
+      {% if params.page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% if params.filters.date_start %}&date_start={{ params.filters.date_start }}{% endif %}{% if params.filters.date_end %}&date_end={{ params.filters.date_end }}{% endif %}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}{% if params.filters.staff_id %}&staff_id={{ params.filters.staff_id }}{% endif %}{% if params.filters.type_id %}&type_id={{ params.filters.type_id }}{% endif %}{% if params.filters.status_id %}&status_id={{ params.filters.status_id }}{% endif %}{% if params.filters.role %}&role={{ params.filters.role }}{% endif %}">&lt;</a>
+        </li>
+      {% endif %}
+      
+      {% for p in params.page_obj.paginator.page_range %}
+        {% if params.page_obj.number == p %}
+          <li class="page-item active">
+            <span class="page-link">{{ p }}</span>
+          </li>
+        {% elif p >= params.page_obj.number|add:-2 and p <= params.page_obj.number|add:2 %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ p }}{% if params.filters.date_start %}&date_start={{ params.filters.date_start }}{% endif %}{% if params.filters.date_end %}&date_end={{ params.filters.date_end }}{% endif %}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}{% if params.filters.staff_id %}&staff_id={{ params.filters.staff_id }}{% endif %}{% if params.filters.type_id %}&type_id={{ params.filters.type_id }}{% endif %}{% if params.filters.status_id %}&status_id={{ params.filters.status_id }}{% endif %}{% if params.filters.role %}&role={{ params.filters.role }}{% endif %}">{{ p }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+        
+      {% if params.page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% if params.filters.date_start %}&date_start={{ params.filters.date_start }}{% endif %}{% if params.filters.date_end %}&date_end={{ params.filters.date_end }}{% endif %}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}{% if params.filters.staff_id %}&staff_id={{ params.filters.staff_id }}{% endif %}{% if params.filters.type_id %}&type_id={{ params.filters.type_id }}{% endif %}{% if params.filters.status_id %}&status_id={{ params.filters.status_id }}{% endif %}{% if params.filters.role %}&role={{ params.filters.role }}{% endif %}">&gt;</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
+

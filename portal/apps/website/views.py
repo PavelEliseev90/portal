@@ -6103,8 +6103,21 @@ def korsavto_settings_dc(request):
                     work.materials_amount   = float(request.POST.get('workdata_'+ pk_work + '_materials_amount'))
                     
                     work.save()
-                if key.startswith('engine_') or key.startswith('system_og_') > 0 or key.startswith('suspension_') > 0 or key.startswith('gear_') > 0 or key.startswith('wheel_') > 0 or key.startswith('turbo_') > 0 or key.startswith('conditioner_') > 0: 
-                    setattr(estimation_settings, key, int(request.POST.get(key)))          
+                if (key.startswith('engine_') or 
+                    key.startswith('system_og_') or 
+                    key.startswith('suspension_') or 
+                    key.startswith('gear_') or 
+                    key.startswith('wheel_') or 
+                    key.startswith('turbo_') or 
+                    key.startswith('conditioner_') or
+                    key.startswith('drive_')):
+                    try:
+                        value = request.POST.get(key, 0)
+                        if value == '':
+                            value = 0
+                        setattr(estimation_settings, key, int(value))
+                    except (ValueError, AttributeError):
+                        pass  # Пропускаем поля, которых нет в модели          
 
             estimation_settings.save()
             return HttpResponseRedirect(request.build_absolute_uri())
@@ -7022,6 +7035,33 @@ def settings_matrix_auction(request):
 @login_required
 def settings_diagnostic(request):
     
+    if request.method == 'POST':
+        settings_estimation = RegEstimationsSettings.objects.all().last()
+        if not settings_estimation:
+            settings_estimation = RegEstimationsSettings()
+        
+        # Обрабатываем все поля диагностики
+        for key in request.POST.keys():
+            if (key.startswith('engine_') or 
+                key.startswith('system_og_') or 
+                key.startswith('suspension_') or 
+                key.startswith('gear_') or 
+                key.startswith('wheel_') or 
+                key.startswith('turbo_') or 
+                key.startswith('conditioner_') or
+                key.startswith('drive_') or
+                key.startswith('to_')):
+                try:
+                    value = request.POST.get(key, 0)
+                    if value == '':
+                        value = 0
+                    setattr(settings_estimation, key, int(value))
+                except (ValueError, AttributeError):
+                    pass  # Пропускаем поля, которых нет в модели
+        
+        settings_estimation.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
     settings_estimation = RegEstimationsSettings.objects.all().last()
     
     settings_data = {
@@ -7037,10 +7077,79 @@ def settings_diagnostic(request):
 @login_required
 def settings_vnesh(request):
     
+    if request.method == 'POST':
+        settings_estimation = RegEstimationsSettings.objects.all().last()
+        if not settings_estimation:
+            settings_estimation = RegEstimationsSettings()
+        
+        # Обрабатываем все поля внешнего осмотра
+        for key in request.POST.keys():
+            if (key.startswith('battery_') or 
+                key.startswith('windshield_') or 
+                key.startswith('light_') or 
+                key.startswith('bumper_')):
+                try:
+                    value = request.POST.get(key, 0)
+                    if value == '':
+                        value = 0
+                    # Для полей с formatted_float используем float, для остальных int
+                    if key.startswith('battery_'):
+                        setattr(settings_estimation, key, float(value))
+                    else:
+                        setattr(settings_estimation, key, int(value))
+                except (ValueError, AttributeError):
+                    pass  # Пропускаем поля, которых нет в модели
+        
+        # Обрабатываем создание новой работы
+        if 'new_work' in request.POST:
+            try:
+                new_work = RegPodgotovkaWork()
+                new_work.name = request.POST.get('new_work_name', '')
+                new_work.name_group = request.POST.get('new_work_group', '')
+                new_work.type_settings = 2
+                new_work.normo = float(request.POST.get('new_work_normo', '0') or 0)
+                new_work.price_podrad = int(request.POST.get('new_work_price_podrad', '0') or 0)
+                new_work.price_kors = int(request.POST.get('new_work_price_kors', '0') or 0)
+                new_work.materials_kf = float(request.POST.get('new_work_materials_kf', '0') or 0)
+                new_work.materials_amount = float(request.POST.get('new_work_materials_amount', '0') or 0)
+                new_work.save()
+            except (ValueError, AttributeError):
+                pass
+        
+        # Обрабатываем работы по подготовке с type_settings == 2
+        for key in request.POST.keys():
+            if key.startswith('workdata_') and key.find('normo') > 0:
+                try:
+                    pk_work = key.split('_')[1]
+                    work = RegPodgotovkaWork.objects.get(pk=pk_work)
+                    normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
+                    price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
+                    price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
+                    materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
+                    materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
+                    type_settings_val = request.POST.get('workdata_' + pk_work + '_type_settings', '2')
+                    
+                    work.normo = float(normo_val) if normo_val else 0.0
+                    work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
+                    work.price_kors = int(price_kors_val) if price_kors_val else 0
+                    work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
+                    work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
+                    work.type_settings = int(type_settings_val) if type_settings_val else 2
+                    work.save()
+                except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
+                    pass  # Пропускаем работы, которых нет в модели
+        
+        settings_estimation.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
     settings_estimation = RegEstimationsSettings.objects.all().last()
     
+    # Получаем все работы (теперь можно менять type_settings)
+    works = RegPodgotovkaWork.objects.all().order_by('type_settings', 'name_group', 'name')
+    
     settings_data = {
-        'settings_estimation' : settings_estimation
+        'settings_estimation' : settings_estimation,
+        'works' : works
     }
     params = {
         'type'          : 'settings',
@@ -7048,6 +7157,175 @@ def settings_vnesh(request):
     }
     
     return render(request, "kors/settings_vnesh.html", {'params': params})
+
+@login_required
+def settings_works(request):
+    
+    if request.method == 'POST':
+        # Обрабатываем создание новой работы
+        if 'new_work' in request.POST:
+            try:
+                new_work = RegPodgotovkaWork()
+                new_work.name = request.POST.get('new_work_name', '')
+                new_work.name_group = request.POST.get('new_work_group', '')
+                new_work.type_settings = int(request.POST.get('new_work_type_settings', '0'))
+                new_work.normo = float(request.POST.get('new_work_normo', '0') or 0)
+                new_work.price_podrad = int(request.POST.get('new_work_price_podrad', '0') or 0)
+                new_work.price_kors = int(request.POST.get('new_work_price_kors', '0') or 0)
+                new_work.materials_kf = float(request.POST.get('new_work_materials_kf', '0') or 0)
+                new_work.materials_amount = float(request.POST.get('new_work_materials_amount', '0') or 0)
+                new_work.save()
+            except (ValueError, AttributeError):
+                pass
+        
+        # Обрабатываем обновление существующих работ
+        for key in request.POST.keys():
+            if key.startswith('workdata_') and key.find('normo') > 0:
+                try:
+                    pk_work = key.split('_')[1]
+                    work = RegPodgotovkaWork.objects.get(pk=pk_work)
+                    normo_val = request.POST.get('workdata_' + pk_work + '_normo', '0')
+                    price_podrad_val = request.POST.get('workdata_' + pk_work + '_price_podrad', '0')
+                    price_kors_val = request.POST.get('workdata_' + pk_work + '_price_kors', '0')
+                    materials_kf_val = request.POST.get('workdata_' + pk_work + '_materials_kf', '0')
+                    materials_amount_val = request.POST.get('workdata_' + pk_work + '_materials_amount', '0')
+                    type_settings_val = request.POST.get('workdata_' + pk_work + '_type_settings', str(work.type_settings))
+                    
+                    work.normo = float(normo_val) if normo_val else 0.0
+                    work.price_podrad = int(price_podrad_val) if price_podrad_val else 0
+                    work.price_kors = int(price_kors_val) if price_kors_val else 0
+                    work.materials_kf = float(materials_kf_val) if materials_kf_val else 0.0
+                    work.materials_amount = float(materials_amount_val) if materials_amount_val else 0.0
+                    work.type_settings = int(type_settings_val) if type_settings_val else work.type_settings
+                    work.save()
+                except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
+                    pass
+        
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Получаем работы с type_settings == 0 или 1
+    works = RegPodgotovkaWork.objects.filter(type_settings__in=[0, 1]).order_by('name_group', 'name')
+    
+    settings_data = {
+        'works' : works
+    }
+    params = {
+        'type'          : 'settings',
+        'settings'      : settings_data        
+    }
+    
+    return render(request, "kors/settings_works.html", {'params': params})
+
+@login_required
+def settings_unit_groups(request):
+    
+    if request.method == 'POST':
+        # Обрабатываем создание новой группы
+        if 'new_group' in request.POST:
+            try:
+                new_group = RefUnitGroup()
+                new_group.name = request.POST.get('new_group_name', '')
+                new_group.name_bi = request.POST.get('new_group_name_bi', '')
+                new_group.comment = request.POST.get('new_group_comment', '')
+                new_group.active = 'new_group_active' in request.POST
+                new_group.bu_auto = 'new_group_bu_auto' in request.POST
+                city_id = request.POST.get('new_group_city', '')
+                if city_id:
+                    new_group.city_id = int(city_id)
+                new_group.save()
+            except (ValueError, AttributeError):
+                pass
+        
+        # Обрабатываем обновление существующих групп
+        for key in request.POST.keys():
+            if key.startswith('groupdata_') and key.find('_name') > 0:
+                try:
+                    pk_group = key.split('_')[1]
+                    group = RefUnitGroup.objects.get(pk=pk_group)
+                    
+                    group.name = request.POST.get('groupdata_' + pk_group + '_name', '')
+                    group.name_bi = request.POST.get('groupdata_' + pk_group + '_name_bi', '')
+                    group.comment = request.POST.get('groupdata_' + pk_group + '_comment', '')
+                    group.active = 'groupdata_' + pk_group + '_active' in request.POST
+                    group.bu_auto = 'groupdata_' + pk_group + '_bu_auto' in request.POST
+                    
+                    city_id = request.POST.get('groupdata_' + pk_group + '_city', '')
+                    if city_id:
+                        group.city_id = int(city_id) if city_id else None
+                    else:
+                        group.city_id = None
+                    
+                    group.save()
+                except (ValueError, AttributeError, RefUnitGroup.DoesNotExist):
+                    pass
+        
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Получаем все группы подразделений с оптимизацией запросов
+    groups = RefUnitGroup.objects.select_related('city').order_by('name')
+    
+    # Получаем все города для выбора
+    cities = RefCity.objects.all().order_by('name')
+    
+    settings_data = {
+        'groups' : list(groups),
+        'cities' : list(cities)
+    }
+    params = {
+        'type'          : 'settings',
+        'settings'      : settings_data        
+    }
+    
+    return render(request, "kors/settings_unit_groups.html", {'params': params})
+
+
+@login_required
+def settings_unit_group_units(request, group_id):
+    """Страница редактирования состава группы подразделений"""
+    group = get_object_or_404(RefUnitGroup, pk=group_id)
+    
+    if request.method == 'POST':
+        # Обновляем параметры группы
+        group.active = 'group_active' in request.POST
+        group.bu_auto = 'group_bu_auto' in request.POST
+        group.save(update_fields=['active', 'bu_auto'])
+        
+        # Обновляем состав группы
+        unit_ids = request.POST.getlist('units')
+        group.units.set(unit_ids)
+        return HttpResponseRedirect('/settings/settings_unit_groups/')
+    
+    # Получаем все подразделения
+    all_units = RefUnit.objects.select_related('city').order_by('name')
+    
+    # Получаем ID подразделений, входящих в группу
+    group_unit_ids = set(group.units.all().values_list('pk', flat=True))
+    
+    # Разделяем на входящие и не входящие
+    units_in_group = []
+    units_not_in_group = []
+    
+    for unit in all_units:
+        unit_data = {
+            'pk': unit.pk,
+            'name': unit.name,
+            'city': unit.city.name if unit.city else '',
+            'buauto': unit.buauto,
+        }
+        if unit.pk in group_unit_ids:
+            units_in_group.append(unit_data)
+        else:
+            units_not_in_group.append(unit_data)
+    
+    params = {
+        'type': 'settings',
+        'group': group,
+        'units_in_group': units_in_group,
+        'units_not_in_group': units_not_in_group,
+    }
+    
+    return render(request, "kors/settings_unit_group_units.html", {'params': params})
+
 
 @login_required
 def kpi_eco(request):
@@ -8030,10 +8308,230 @@ def customer_est(request, slug):
 
     return render(request, "customer/customer_est_rlk_op.html")
 
+
+###
+##
+#  Служба безопасности
+def sb_lo(request):
+    
+    if not request.user.profiles.user_sb:
+        params = {
+        'type'          : 'sb_lo',
+        'nav_selected'  : 4,
+        'request'       : request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+   
+    filtr_vin           = request.GET.get('vin', '')
+    plate_number        = request.GET.get('plate_number', '')
+    name_mark_model     = request.GET.get('name_mark_model', '')
+    unit_id             = request.GET.get('unit_id', '') 
+    
+   
+    type_receptions_id = ''
+    filtr_unit_name = ''
+
+    docs = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.datetime(1,1,1)).order_by('-start_estimation')
+    
+    if unit_id != '':
+        unit_id = int(unit_id)
+        docs = docs.filter(page_documents__unit__id = unit_id) 
+
+    if plate_number != '':
+        docs = docs.filter(page_documents__plate_number__icontains = plate_number) 
+    
+    if name_mark_model != '':
+        docs = docs.filter(modification__model__mark__name__icontains = name_mark_model)  | docs.filter(modification__model__name__icontains = name_mark_model)  
+
+    if type_receptions_id != '':
+        type_receptions_id = int(type_receptions_id)
+        docs = docs.filter(page_documents__type_estimation__id = type_receptions_id)    
+    
+    if filtr_vin != '':
+        docs = docs.filter(vin__icontains = filtr_vin)  
+    
+    if filtr_unit_name != '':
+        docs = docs.filter(page_documents__unit__name__icontains = filtr_unit_name) | docs.filter(unit_dc__name__icontains = filtr_unit_name)
+    
+    status_id = request.GET.get('status_id', '')
+    if status_id != '':
+        status_id = int(status_id)
+        docs = docs.filter(status__id = status_id)
+
+    units_select = RefUnit.objects.filter(buauto = True).filter(name__icontains = 'КорсАвто').order_by("name")
+    
+    type_receptions_id = request.GET.get('type_receptions_id', '')
+    if type_receptions_id != '':
+        type_receptions_id = int(type_receptions_id)
+
+    staffID         = ""
+    staffsSelect    = ""
+    countList       = 25
+    paginator   = Paginator(docs, countList)	
+    page_number = request.GET.get('page', 1)
+    page_obj    = paginator.get_page(page_number)
+
+
+    filtr = {
+        'unit_id'           : unit_id,
+        'staffID'           : staffID,
+        'type_receptions_id': type_receptions_id, 
+        'status_id'         : status_id,
+        'unit_name'         : filtr_unit_name,
+        'vin'               : filtr_vin,
+        'plate_number'      : plate_number,
+        'name_mark_model'   : name_mark_model
+    }
+
+    selected = {
+        'units'             : units_select,
+        'staffs'            : staffsSelect,
+        'staffsKK'          : '',
+        'statuses'          : list(RefStatusEstimation.objects.all().order_by('-pk')),
+        'type_receptions'   : RefTypeReceptionCarsOrganization.objects.exclude(name = '').order_by('name')
+    }
+
+    params = {
+        'type'          : 'sb_lo',
+        'nav_selected'  : 4,
+        'request'       : request,
+        'filtr'         : filtr,
+        'selected'      : selected,
+        'objects'       : page_obj,
+
+        }
+    return render(request, 'website/sb_lo.html', {'params': params})
+    
+
 def test(request):
     
-    from task_manager.views import refresh_chat_data
-    refresh_chat_data()
+    infs = RegInteractivOcenka.objects.filter(id = 40274).filter(start_estimation__gt = DT.datetime.now().replace(day=1, month=10, hour = 1)).values('id')
+    for inf in infs:
+        estimation  = RegInteractivOcenka.objects.get(id = inf['id'])
+        estimation.save()
+
+    
+
+    # from register.models import RegInteractivOcenkaRLK
+    # count = RegInteractivOcenka.objects.all().count()
+    # s = 0
+    # estimations_id = RegInteractivOcenka.objects.all().order_by('-start_estimation').values('id')
+    # for estimation_id in estimations_id:
+    #     estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+
+    #     reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
+
+    #     if estimation.page_documents != None:
+    #         reg_interactiv.type_reception   = estimation.page_documents.type_reception
+    #         reg_interactiv.organization     = estimation.page_documents.organization
+    #         reg_interactiv.filial           = estimation.page_documents.filial
+    #         reg_interactiv.unit             = estimation.page_documents.unit
+    #         reg_interactiv.store            = estimation.page_documents.store
+
+    #     reg_interactiv.staff_rlk            = estimation.staff
+    #     reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
+    #     reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
+        
+    #     reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
+        
+    #     reg_interactiv.status              = estimation.status
+    #     for uss in estimation.access_user.all():
+    #         reg_interactiv.access_user.add(uss)
+        
+    #     reg_interactiv.save()
+
+    #     if reg_interactiv.page_soglasovanie != None:
+    #         if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
+    #             price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+    #             if price_autohub != None:
+    #                 reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+    #                 reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+    #                 reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+    #                 reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+    #                 reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+    #                 reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+    #                 reg_interactiv_ocenka_soglasovanie.save()
+
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count))
+
+    # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
+    # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
+    # for interactiv in interactivs:
+
+
+    # from analytics.models import InteractivePricingSnapshot
+    # date_start = DT.datetime.now().replace(day=1)
+    # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
+    # for interactiv in interactivs:
+        
+    #     data = InteractivePricingSnapshot()
+    #     data.estimation_id = interactiv.id
+    #     data.rlk_id         = interactiv.rlk.id
+    #     data.start_estimation       = interactiv.start_estimation
+    #     data.end_estimation         = interactiv.end_estimation
+    #     data.unit_id                = interactiv.page_documents.unit.id
+    #     data.unit_name              = interactiv.page_documents.unit.name
+    #     data.unit_source            = interactiv.page_documents.type_reception.name
+
+    #     data.staff_id   = interactiv.staff.id
+    #     data.staff_name = interactiv.staff.name
+
+    #     data.analyst_before_id = interactiv.staff_eco_1.id
+    #     data.analyst_before_name = interactiv.staff_eco_1.profiles.eco_name
+    #     if interactiv.staff_eco_2 != None: 
+    #         data.analyst_after_id = interactiv.staff_eco_2.id
+    #         data.analyst_after_name = interactiv.staff_eco_2.profiles.eco_name
+
+    #     data.type_reception_id  = interactiv.page_documents.type_reception.id
+    #     data.status_id          = interactiv.status.id
+    #     data.status_name        = interactiv.status.name
+
+    #     data.model_name = interactiv.modification.model.name
+    #     data.vin        = interactiv.vin
+
+    #     data.price_auto_1 = interactiv.page_soglasovanie.price_auto_1
+    #     data.price_auto_2 = interactiv.page_soglasovanie.price_auto_2
+    #     data.price_auto_3 = interactiv.page_soglasovanie.price_auto_3
+    #     data.price_auto_selected = 2
+
+    #     data.price_before_kd = interactiv.page_soglasovanie.price_before_kd
+    #     data.price_after_kd = interactiv.page_soglasovanie.price_after_kd
+    #     data.diff_before = interactiv.page_soglasovanie.price_auto_2 - interactiv.page_soglasovanie.price_before_kd
+    #     data.diff_after = interactiv.page_soglasovanie.price_auto_2 - interactiv.page_soglasovanie.price_after_kd
+
+    #     data.price_auto_bcp = interactiv.page_soglasovanie.price_auto_bcp
+    #     data.price_bcp = interactiv.page_soglasovanie.price_bcp
+
+    #     data.price_reception = interactiv.page_soglasovanie.price_reception
+    #     data.price_sale = interactiv.page_soglasovanie.price_sale
+
+    #     data.cost_podgotovka = interactiv.page_soglasovanie.amount_podgotovka
+    #     data.cost_ss = interactiv.page_soglasovanie.amount_ss
+    #     data.cost_mcu = interactiv.page_soglasovanie.amount_mcu
+    #     data.cost_recovery = interactiv.page_soglasovanie.price_recovery
+    #     data.cost_total = interactiv.page_soglasovanie.amount_recovery
+
+    #     data.tasks_total = 0
+    #     data.tasks_closed = 0
+
+    #     data.has_soglasovanie = True
+    #     data.has_diagnostics = True
+    #     data.accepted = True
+
+    #     # data.duration_estimation_sec = models.IntegerField(null=True, blank=True)
+    #     # data.duration_sogl_before_sec = models.IntegerField(null=True, blank=True)
+    #     # data.duration_diagnostics_sec = models.IntegerField(null=True, blank=True)
+    #     # data.duration_sogl_after_sec = models.IntegerField(null=True, blank=True)
+
+    #     data.save()
+
+
+    #from task_manager.views import refresh_signal_run
+    #refresh_signal_run()
+    
+    #from task_manager.views import refresh_chat_data
+    #refresh_chat_data()
     
     # from background_task.models import Task
     # task = Task.objects.all()

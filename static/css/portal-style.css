@@ -4,7 +4,7 @@
 
 /* Основная страница */
 .portal-page {
-  padding: 1.25rem 1.5rem 3rem;
+  padding: 0.25rem 0.5rem 1rem;
   background: #f4f7fb;
   min-height: 100vh;
 }
@@ -135,6 +135,36 @@
   top: 0;
   background: #f8f9fc;
   z-index: 1;
+}
+
+/* Стили для таблиц на ПК */
+.panel .table,
+.portal-panel .table {
+  margin-bottom: 0;
+}
+
+.panel .table thead th,
+.portal-panel .table thead th {
+  background-color: #f8f9fc;
+  color: #002a5a;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  padding: 0.75rem 1rem;
+}
+
+.panel .table tbody td,
+.portal-panel .table tbody td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+}
+
+.panel .table tbody tr:hover,
+.portal-panel .table tbody tr:hover {
+  background-color: #f8f9fc;
 }
 
 .cost-table th, .cost-table td {
@@ -740,50 +770,84 @@
   margin-bottom: 0;
 }
 
-/* Мобильные таблицы */
-.table-mobile-cards {
-  border: none;
-}
+/* Мобильные таблицы - только на мобильных устройствах */
+@media (max-width: 768px) {
+  .table-mobile-cards {
+    border: none;
+  }
 
-.table-mobile-cards thead {
-  display: none;
-}
+  .table-mobile-cards thead {
+    display: none;
+  }
 
-.table-mobile-cards tbody tr {
-  display: block;
-  margin-bottom: 1rem;
-  background: #fff;
-  border: 1px solid rgba(0, 42, 90, 0.08);
-  border-radius: 1rem;
-  padding: 0.75rem 1rem;
-  box-shadow: 0 15px 32px rgba(0, 23, 61, 0.08);
-}
+  .table-mobile-cards tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    background: #fff;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 15px 32px rgba(0, 23, 61, 0.08);
+  }
 
-.table-mobile-cards tbody td {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 0;
-  border: none;
-}
+  .table-mobile-cards tbody td {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 0;
+    border: none;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
 
-.table-mobile-cards tbody td:first-child {
-  display: block;
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(0, 42, 90, 0.1);
-}
+  .table-mobile-cards tbody td:last-child {
+    border-bottom: none;
+  }
 
-.table-mobile-cards tbody td:before {
-  content: attr(data-label);
-  font-weight: 600;
-  color: #6c7a92;
-  margin-right: 0.75rem;
-  text-align: left;
-}
+  .table-mobile-cards tbody td:first-child {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.15);
+  }
 
-.table-mobile-cards tbody td:first-child:before {
-  content: '';
+  .table-mobile-cards tbody td:first-child:before {
+    display: none;
+  }
+
+  .table-mobile-cards tbody td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6c7a92;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
+  }
+
+  .table-mobile-cards tbody td strong {
+    color: #002a5a;
+    font-weight: 600;
+  }
+
+  .table-mobile-cards tbody td small {
+    font-size: 0.875rem;
+  }
+
+  .table-mobile-cards tbody td .form-floating {
+    width: 100%;
+  }
+
+  .table-mobile-cards tbody td .form-floating > .form-control,
+  .table-mobile-cards tbody td .form-floating > .form-select {
+    width: 100%;
+    min-height: 3rem;
+    font-size: 0.95rem;
+  }
+
+  .table-mobile-cards tbody td .form-floating > label {
+    font-size: 0.85rem;
+    padding: 0.75rem;
+  }
 }
 
 /* Адаптивность для планшетов */
@@ -1357,7 +1421,117 @@
   color: #8ea1ba;
 }
 
+/* Карточки параметров диагностики */
+.diagnostic-params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.diagnostic-param-card {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.diagnostic-param-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+  transform: translateY(-2px);
+}
+
+.diagnostic-param-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+}
+
+.diagnostic-param-section {
+  margin-bottom: 1.25rem;
+}
+
+.diagnostic-param-section:last-child {
+  margin-bottom: 0;
+}
+
+.diagnostic-param-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diagnostic-param-section-title.warning::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #f4b400;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.diagnostic-param-section-title.danger::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #d93025;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.diagnostic-param-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.diagnostic-param-card .form-floating {
+  margin-bottom: 0;
+}
+
+.diagnostic-param-card .form-floating .form-control {
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.diagnostic-param-card .form-floating label {
+  font-size: 0.75rem;
+  color: #8ea1ba;
+}
+
+@media (max-width: 992px) {
+  .diagnostic-params-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
+  .diagnostic-params-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .diagnostic-param-card {
+    padding: 1rem;
+  }
+
+  .diagnostic-param-fields {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
   .settings-diagnostic-panel .table thead {
     display: none;
   }
@@ -1426,7 +1600,7 @@
    Стили для страницы интерактивной оценки (lo_v3)
    ============================================ */
 .lo-v3-page {
-  padding: 1.25rem 1.5rem 3rem;
+  padding: 0.25rem 0.5rem 1rem;
   background: #f4f7fb;
   min-height: 100vh;
 }

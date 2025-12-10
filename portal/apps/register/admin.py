@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK
 
 
 @admin.register(RegInfoRefreshEstimationCarsExpress)
@@ -175,4 +175,13 @@ class RegUnitMonthlyPlanAdmin(admin.ModelAdmin):
     list_display = ('unit', 'year', 'month', 'intake_plan', 'sale_plan')
     list_filter = ('year', 'month', 'unit')
     search_fields = ('unit__name',)
+
+
+@admin.register(RegInteractivOcenkaRLK)
+class RegInteractivOcenkaRLKAdmin(admin.ModelAdmin):
+    list_display = ('rlk', 'estimation', 'staff_rlk', 'staff_eco_1_rlk', 'staff_eco_2_rlk', 'unit', 'status', 'date_diagnostic')
+    raw_id_fields = ('rlk', 'estimation', 'staff_rlk', 'staff_eco_1_rlk', 'staff_eco_2_rlk', 'unit', 'organization', 'filial', 'store', 'type_reception', 'status', 'page_soglasovanie')
+    list_filter = ('status', 'date_diagnostic', 'unit', 'organization')
+    search_fields = ('rlk__nomer', 'rlk__vin', 'estimation__vin')
+    filter_horizontal = ('access_user',)
     

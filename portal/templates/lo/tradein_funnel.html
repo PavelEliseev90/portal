@@ -103,14 +103,162 @@
     margin-bottom: 0.35rem;
   }
 
-  .kors-anchor-button {
-    cursor: pointer;
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive.mobile-cards-wrapper {
+    overflow-x: visible;
+  }
+
+  /* Стили для таблицы источников */
+  .table-group-header {
+    background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff) !important;
+    border-left: 4px solid #00509d;
+    font-weight: 600;
+  }
+
+  .table-group-child {
+    background: rgba(0, 42, 90, 0.02) !important;
+  }
+
+  .table-group-header td {
+    border-top: 2px solid rgba(0, 42, 90, 0.15);
+    border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+    padding: 0.75rem 0.5rem;
+  }
+
+  .table-group-child td {
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
+
+  .table-group-header + .table-group-child td:first-child {
+    padding-left: 2rem;
+  }
+
+  .source-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    background: #22c55e;
+    color: #fff;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* На десктопе таблица должна отображаться нормально */
+  @media (min-width: 769px) {
+    .table-mobile-cards {
+      display: table;
+    }
+    
+    .table-mobile-cards thead {
+      display: table-header-group;
+    }
+    
+    .table-mobile-cards tbody {
+      display: table-row-group;
+    }
+    
+    .table-mobile-cards tbody tr {
+      display: table-row;
+      margin-bottom: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    
+    .table-mobile-cards tbody td {
+      display: table-cell;
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #dee2e6;
+      text-align: inherit;
+    }
+    
+    .table-mobile-cards tbody td:before {
+      display: none;
+    }
+    
+    .table-mobile-cards tbody td:first-child {
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #dee2e6;
+      margin-bottom: 0;
+    }
+    
+    .table-mobile-cards tfoot {
+      display: table-footer-group;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 2px solid rgba(0, 42, 90, 0.15);
+    }
+    
+    .table-mobile-cards tfoot tr {
+      display: table-row;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    
+    .table-mobile-cards tfoot th {
+      display: table-cell;
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #dee2e6;
+      text-align: inherit;
+      font-weight: 600;
+    }
+    
+    .table-mobile-cards tfoot th:before {
+      display: none;
+    }
   }
 
   .collapsible-card {
     padding: 0;
     border-radius: 1.3rem;
     overflow: hidden;
+  }
+
+  .collapsible-card__toggle {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .collapsible-card__toggle .kors-panel__head {
+    position: relative;
+    padding-right: 2.5rem;
+  }
+
+  .collapsible-card__icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s;
+    color: #6c7a92;
+    font-size: 0.875rem;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__icon {
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  .collapsible-card__body {
+    padding: 1.5rem;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .collapsible-card.is-collapsed .collapsible-card__body {
+    display: none;
   }
 
   /* Мобильная адаптация */
@@ -151,18 +299,12 @@
       min-height: 350px;
     }
 
-    .row.g-3 > div {
-      margin-bottom: 1rem;
-    }
-
-    /* Таблицы в карточки на мобильных */
-    .table-responsive {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
     .table-responsive.mobile-cards-wrapper {
       overflow-x: visible;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: calc(100vh - 300px);
+      min-height: 400px;
     }
 
     .table-mobile-cards {
@@ -187,6 +329,15 @@
     .table-mobile-cards tbody tr.source-good {
       border-left: 4px solid #22c55e;
       background: linear-gradient(to right, rgba(34, 197, 94, 0.05), #fff);
+    }
+
+    .table-mobile-cards tbody tr.table-group-header {
+      background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff);
+      border-left: 4px solid #00509d;
+    }
+
+    .table-mobile-cards tbody tr.table-group-child {
+      background: rgba(0, 42, 90, 0.02);
     }
 
     .table-mobile-cards tbody td {
@@ -249,17 +400,7 @@
       text-align: left;
       margin-right: 1rem;
     }
-
-    .table-mobile-cards tfoot th:first-child {
-      font-size: 1.1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(0, 42, 90, 0.15);
-      margin-bottom: 0.5rem;
-    }
-
-    .table-mobile-cards tfoot th:first-child:before {
-      display: none;
-    }
+  }
 
     .source-badge {
       display: inline-block;
@@ -299,7 +440,7 @@
   }
 
   .collapsible-card:not(.is-collapsed) .collapsible-card__body {
-    max-height: 2000px;
+    max-height: 15000px;
     opacity: 1;
   }
 
@@ -468,12 +609,10 @@
     <div class="col-12">
       <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
         <button type="button" class="collapsible-card__toggle" aria-expanded="false">
-          <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2 mb-0 w-100">
-            <div>
-              <h3>Источники поступлений</h3>
-              <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
-            </div>
-            <div class="text-end ms-auto">
+          <div class="kors-panel__head mb-0">
+            <h3>Источники поступлений</h3>
+            <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
+            <div class="mt-2">
               <div class="fw-bold text-primary">Рабочие листы: {{ params.source_totals.work_orders }}</div>
               <div class="text-muted">Принято: {{ params.source_totals.accepted }}</div>
             </div>
@@ -482,7 +621,7 @@
         </button>
         <div class="collapsible-card__body">
           <div class="table-responsive mobile-cards-wrapper mt-3">
-            <table class="table table-sm align-middle table-mobile-cards">
+            <table class="table table-sm align-middle table-hover table-mobile-cards">
               <thead class="table-light">
                 <tr>
                   <th>Источник</th>
@@ -495,23 +634,46 @@
               </thead>
               <tbody>
                 {% for source in params.source_stats %}
-                <tr class="{% if source.is_good %}source-good{% endif %}">
-                  <td data-label="Источник">
-                    {{ source.source }}
-                    {% if source.is_good %}<span class="source-badge">✓ Лучший</span>{% endif %}
-                  </td>
-                  <td class="text-end" data-label="Рабочие листы">{{ source.work_orders }}</td>
-                  <td class="text-end" data-label="Оценки">{{ source.evaluations }}</td>
-                  <td class="text-end" data-label="Диагностика">{{ source.diagnostics }}</td>
-                  <td class="text-end" data-label="Принято">{{ source.accepted }}</td>
-                  <td class="text-end" data-label="Конверсия от РЛ">
-                    {% if source.work_orders > 0 %}
-                      <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.overall_conv }}%</strong>
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                </tr>
+                  {% if source.type == 'group' %}
+                    <tr class="table-group-header {% if source.is_good %}source-good{% endif %}">
+                      <td data-label="Источник" class="fw-bold">
+                        <span class="text-primary">📊 {{ source.group_name }}</span>
+                        {% if source.is_good %}<span class="source-badge">✓ Лучший</span>{% endif %}
+                      </td>
+                      <td class="text-end fw-bold" data-label="Рабочие листы">{{ source.work_orders }}</td>
+                      <td class="text-end fw-bold" data-label="Оценки">{{ source.evaluations }}</td>
+                      <td class="text-end fw-bold" data-label="Диагностика">{{ source.diagnostics }}</td>
+                      <td class="text-end fw-bold" data-label="Принято">{{ source.accepted }}</td>
+                      <td class="text-end fw-bold" data-label="Конверсия от РЛ">
+                        {% if source.work_orders > 0 %}
+                          <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.overall_conv }}%</strong>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% else %}
+                    <tr class="{% if source.group_id %}table-group-child{% endif %} {% if source.is_good %}source-good{% endif %}">
+                      <td data-label="Источник" class="{% if source.group_id %}ps-4{% endif %}">
+                        {% if source.group_id %}
+                          <span class="text-muted">└─</span>
+                        {% endif %}
+                        {{ source.source }}
+                        {% if source.is_good %}<span class="source-badge">✓ Лучший</span>{% endif %}
+                      </td>
+                      <td class="text-end" data-label="Рабочие листы">{{ source.work_orders }}</td>
+                      <td class="text-end" data-label="Оценки">{{ source.evaluations }}</td>
+                      <td class="text-end" data-label="Диагностика">{{ source.diagnostics }}</td>
+                      <td class="text-end" data-label="Принято">{{ source.accepted }}</td>
+                      <td class="text-end" data-label="Конверсия от РЛ">
+                        {% if source.work_orders > 0 %}
+                          <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.overall_conv }}%</strong>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endif %}
                 {% endfor %}
               </tbody>
               <tfoot class="table-light">
@@ -523,7 +685,7 @@
                   <th class="text-end" data-label="Принято">{{ params.source_totals.accepted }}</th>
                   <th class="text-end" data-label="Конверсия от РЛ">
                     {% if params.source_totals.work_orders > 0 %}
-                      <strong>{{ params.source_totals.conv_to_accepted }}%</strong>
+                      <strong>{{ params.source_totals.overall_conv }}%</strong>
                     {% else %}
                       —
                     {% endif %}
@@ -531,79 +693,6 @@
                 </tr>
               </tfoot>
             </table>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
-  {% endif %}
-
-  {% if params.autoteka_summary.total %}
-  <div class="row g-3 mt-3">
-    <div class="col-12">
-      <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
-        <button type="button" class="collapsible-card__toggle" aria-expanded="false">
-          <div class="kors-panel__head d-flex justify-content-between align-items-center flex-wrap gap-2 mb-0 w-100">
-            <div>
-              <h3>Авто ушли в рынок</h3>
-              <p class="text-muted mb-0">Оценки без приёма, но VIN замечен в Autoteka</p>
-            </div>
-            <div class="text-end ms-auto">
-              <div class="fw-bold text-primary">Записи: {{ params.autoteka_summary.total }}</div>
-              <div class="text-muted">Уникальных VIN: {{ params.autoteka_summary.unique }}</div>
-            </div>
-          </div>
-          <span class="collapsible-card__icon" aria-hidden="true">▼</span>
-        </button>
-        <div class="collapsible-card__body">
-          <div class="table-responsive mobile-cards-wrapper mt-3">
-            <table class="table table-sm align-middle table-mobile-cards">
-              <thead class="table-light">
-                <tr>
-                  <th>Дата</th>
-                  <th>VIN</th>
-                  <th>Модель</th>
-                  <th>Город</th>
-                  <th class="text-end">Цена</th>
-                  <th>Согласована</th>
-                  <th>Интерактивная оценка</th>
-                  <th>Ссылка</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for row in params.autoteka_summary.rows %}
-                <tr>
-                  <td data-label="Дата">{{ row.date|date:"d.m.Y" }}</td>
-                  <td data-label="VIN">{{ row.vin }}</td>
-                  <td data-label="Модель">{{ row.brand }} {{ row.model }}</td>
-                  <td data-label="Город">{{ row.city_name }}</td>
-                  <td class="text-end" data-label="Цена">{% if row.price %}{{ row.price }} ₽{% else %}—{% endif %}</td>
-                  <td class="text-end" data-label="Согласована">{% if row.price_reception %}{{ row.price_reception }} ₽{% else %}—{% endif %}</td>
-                  <td data-label="Интерактивная оценка">
-                    {% if row.rlk_id %}
-                      <a href="{% url 'eco:id' row.rlk_id %}" target="_blank" rel="noopener">Открыть</a>
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                  <td data-label="Ссылка">
-                    {% if row.url %}
-                      <a href="{{ row.url }}" target="_blank" rel="noopener">Открыть</a>
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          <div class="text-center mt-3">
-            {% if params.autoteka_summary.show_all %}
-              <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}{% if params.autoteka_summary.query_base %}?{{ params.autoteka_summary.query_base }}{% endif %}">Показать первые 10</a>
-            {% else %}
-              <a class="btn btn-outline-secondary btn-sm" href="{{ params.request.path }}?{{ params.autoteka_summary.query_show_all }}">Показать все</a>
-            {% endif %}
           </div>
         </div>
       </article>
@@ -692,10 +781,21 @@
         datalabels: {
           anchor: 'end',
           align: 'top',
-          formatter: (value) => value || '',
+          formatter: (value) => value ? value.toFixed(1) + '%' : '',
           color: '#555',
           font: { size: 10 },
         },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: function(value) {
+              return value + '%';
+            }
+          }
+        }
       },
       scales: {
         y: {

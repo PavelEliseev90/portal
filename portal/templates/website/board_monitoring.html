@@ -1,4 +1,5 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
 {% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
 
@@ -13,656 +14,687 @@
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
+<style>
+  .kors-monitoring-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .kors-monitoring-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-    <div class="row g-1">
+  .kors-monitoring-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
 
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.ip_errors %} bg-danger {% else %} bg-success {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5 text-truncate">{% if params.ip_errors %} <span class="icon-mbri-close"></span> Внимание {% else %} <span class="icon-mbri-success"></span> OK {% endif %}</label>
-            <hr>
-            <label class="fs-6">ОПФУ <-> Облака </label>
-          </div>
+  .kors-metric-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .kors-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 30px 55px rgba(0, 23, 61, 0.12);
+  }
+
+  .kors-metric-card h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-metric-card .metric-value {
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .kors-metric-card .metric-label {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  .kors-metric-card.status-success {
+    border-left: 4px solid #22c55e;
+  }
+
+  .kors-metric-card.status-warning {
+    border-left: 4px solid #f59e0b;
+  }
+
+  .kors-metric-card.status-danger {
+    border-left: 4px solid #ef4444;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .kors-panel__body {
+    padding-top: 0.5rem;
+  }
+
+  .status-icon {
+    font-size: 1.5rem;
+  }
+
+  .status-icon.success {
+    color: #22c55e;
+  }
+
+  .status-icon.warning {
+    color: #f59e0b;
+  }
+
+  .status-icon.danger {
+    color: #ef4444;
+  }
+
+  .kors-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .kors-table th {
+    text-align: left;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .kors-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+    color: #002a5a;
+  }
+
+  .kors-table tbody tr:hover {
+    background: rgba(0, 42, 90, 0.02);
+  }
+
+  .kors-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .kors-badge-success {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .kors-badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .kors-badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .kors-btn-toggle {
+    background: transparent;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    color: #002a5a;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .kors-btn-toggle:hover {
+    background: rgba(0, 42, 90, 0.05);
+    border-color: rgba(0, 42, 90, 0.25);
+  }
+
+  .kors-btn-toggle.danger {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .kors-btn-toggle.danger:hover {
+    background: #fee2e2;
+  }
+
+  .kors-btn-toggle.success {
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  .kors-btn-toggle.success:hover {
+    background: #dcfce7;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  }
+
+  .section-title:first-child {
+    margin-top: 0;
+  }
+
+  @media (max-width: 768px) {
+    .kors-monitoring-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-metric-card .metric-value {
+      font-size: 1.8rem;
+    }
+  }
+</style>
+
+<div class="kors-monitoring-page">
+  <div class="kors-monitoring-header">
+    <h2>Панель мониторинга системы</h2>
+    <p>Мониторинг состояния интеграций и сервисов</p>
+  </div>
+
+  <!-- Основные статусы интеграций -->
+  <h3 class="section-title">Статус интеграций</h3>
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.ip_errors %}status-danger{% else %}status-success{% endif %}">
+        <h3>ОПФУ ↔ Облака</h3>
+        <div class="metric-value">
+          {% if params.ip_errors %}
+            <span class="status-icon danger">⚠</span>
+            <span>Ошибка</span>
+          {% else %}
+            <span class="status-icon success">✓</span>
+            <span>OK</span>
+          {% endif %}
         </div>
       </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.count_swap_opfu > 20 %} bg-danger {% elif params.count_swap_opfu > 10 %} bg-warning {% else %} bg-success {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5"> <span class="icon-mbri-numbered-list"></span> {{params.count_swap_opfu}} </label>
-            <hr>
-            <label class="fs-6">ОПФУ -> ДЦ </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.ip_errors %} bg-danger {% else %} bg-success {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.ip_errors %} <span class="icon-mbri-close"></span> Внимание {% else %} <span class="icon-mbri-success"></span> OK {% endif %}</label>
-            <hr>
-            <label class="fs-6">ДЦ -> Портал </label>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.count_swap > 20 %} bg-danger {% elif params.count_swap > 10 %} bg-warning {% else %} bg-success {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5"> <span class="icon-mbri-numbered-list"></span> {{params.count_swap}} </label>
-            <hr>
-            <label class="fs-6">КорсАвто - свап </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.answer_bu_avito != True %} bg-danger {% else %} bg-success {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.answer_bu_avito == True %} <span class="icon-mbri-success"></span> OK {% else %} <span class="icon-mbri-close"></span> Есть проблема {% endif %} </label>
-            <hr>
-            <label class="fs-6">ИП Кострюков -> AVITO </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.answer_bu_avito != True %} bg-danger {% else %} bg-success {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.answer_bu_avito == True %} <span class="icon-mbri-success"></span> OK {% else %} <span class="icon-mbri-close"></span> Есть проблема {% endif %} </label>
-            <hr>
-            <label class="fs-6">Обновление автомобилей </label>
-          </div>
-        </div>
-      </div>
-
     </div>
- 
-    <br>
 
-    <div class="row g-2">
-      
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.autohab|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.now|date:'d' == params.autohab|date:'d' %} <span class="icon-mbri-success"></span> {{params.autohab}} {% else %} <span class="icon-mbri-close"></span> {{params.autohab}} {% endif %} </label>
-            <hr>
-            <label class="fs-6">Автохаб </label>
-          </div>
-        </div>
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.count_swap_opfu > 20 %}status-danger{% elif params.count_swap_opfu > 10 %}status-warning{% else %}status-success{% endif %}">
+        <h3>ОПФУ → ДЦ</h3>
+        <div class="metric-value">{{params.count_swap_opfu}}</div>
+        <div class="metric-label">Записей в очереди</div>
       </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.data_info_express_estimation_stok.date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.now|date:'d' == params.data_info_express_estimation_stok.date|date:'d' %} <span class="icon-mbri-success"></span> {{params.data_info_express_estimation_stok.date}} {% else %} <span class="icon-mbri-close"></span> {{params.data_info_express_estimation_stok.date}} {% endif %} </label>
-            <hr>
-            <label class="fs-6">Экспресс {{params.data_info_express_estimation_stok.count_all}} / {{params.data_info_express_estimation_stok.count_success}} / {{params.data_info_express_estimation_stok.count_error}} </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.robowash|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.now|date:'d' == params.robowash|date:'d' %} <span class="icon-mbri-success"></span> {{params.robowash}} {% else %} <span class="icon-mbri-close"></span> {{params.robowash}} {% endif %} </label>
-            <hr>
-            <label class="fs-6">Робомойки </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-sm-2">
-        <div class="card bg-opacity-75 {% if params.now|date:'d' == params.signal_last_date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
-          <div class="card-body">
-            <label class="fs-5">{% if params.now|date:'d' == params.signal_last_date|date:'d' %} <span class="icon-mbri-success"></span> {{params.signal_last_date}} {% else %} <span class="icon-mbri-close"></span> {{params.signal_last_date}} {% endif %} </label>
-            <hr>
-            <label class="fs-6">Сигнал </label>
-          </div>
-        </div>
-      </div>
-
-      {% for catalog in params.info_refresh_catalogs %}
-        <div class="col-12 col-sm-2">
-          <div class="card bg-opacity-75 {% if params.now|date:'d' == catalog.max_date|date:'d' %} bg-success {% else %} bg-danger {% endif %} text-white">
-            <div class="card-body">
-              <label class="fs-5">{% if params.now|date:'d' == catalog.max_date|date:'d' %}  <span class="icon-mbri-success"></span> {{catalog.max_date}} {% else %} <span class="icon-mbri-close"></span> {{catalog.max_date}} {% endif %} </label>
-              <hr>
-              <label class="fs-6"> {{catalog.site}} </label>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-
     </div>
 
-    <br>
-    
-  
-    <div class="row g-2">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.ip_errors %}status-danger{% else %}status-success{% endif %}">
+        <h3>ДЦ → Портал</h3>
+        <div class="metric-value">
+          {% if params.ip_errors %}
+            <span class="status-icon danger">⚠</span>
+            <span>Ошибка</span>
+          {% else %}
+            <span class="status-icon success">✓</span>
+            <span>OK</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
 
-      <div class="col-sm">
-        <div class="card bg-light ">
-          <div class="card-header">ОПФУ <--> Облака</div>
-          <div class="card-body">
-            <div class="d-grid gap-2">
-              {% if params.ip_errors %}
-                <button class="btn btn-danger " type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                  Внимание!
-                </button>
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.count_swap > 20 %}status-danger{% elif params.count_swap > 10 %}status-warning{% else %}status-success{% endif %}">
+        <h3>КорсАвто - свап</h3>
+        <div class="metric-value">{{params.count_swap}}</div>
+        <div class="metric-label">Записей в очереди</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.answer_bu_avito != True %}status-danger{% else %}status-success{% endif %}">
+        <h3>ИП → AVITO</h3>
+        <div class="metric-value">
+          {% if params.answer_bu_avito == True %}
+            <span class="status-icon success">✓</span>
+            <span>OK</span>
+          {% else %}
+            <span class="status-icon danger">⚠</span>
+            <span>Ошибка</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.answer_bu_avito != True %}status-danger{% else %}status-success{% endif %}">
+        <h3>Обновление авто</h3>
+        <div class="metric-value">
+          {% if params.answer_bu_avito == True %}
+            <span class="status-icon success">✓</span>
+            <span>OK</span>
+          {% else %}
+            <span class="status-icon danger">⚠</span>
+            <span>Ошибка</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Статус обновлений -->
+  <h3 class="section-title">Статус обновлений</h3>
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.now|date:'d' == params.autohab|date:'d' %}status-success{% else %}status-danger{% endif %}">
+        <h3>Автохаб</h3>
+        <div class="metric-value">{{params.autohab|date:'d.m.Y'}}</div>
+        <div class="metric-label">Последнее обновление</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.now|date:'d' == params.data_info_express_estimation_stok.date|date:'d' %}status-success{% else %}status-danger{% endif %}">
+        <h3>Экспресс</h3>
+        <div class="metric-value">{{params.data_info_express_estimation_stok.date|date:'d.m.Y'}}</div>
+        <div class="metric-label">{{params.data_info_express_estimation_stok.count_all}} / {{params.data_info_express_estimation_stok.count_success}} / {{params.data_info_express_estimation_stok.count_error}}</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.now|date:'d' == params.robowash|date:'d' %}status-success{% else %}status-danger{% endif %}">
+        <h3>Робомойки</h3>
+        <div class="metric-value">{{params.robowash|date:'d.m.Y'}}</div>
+        <div class="metric-label">Последнее обновление</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="kors-metric-card {% if params.now|date:'d' == params.signal_last_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
+        <h3>Сигнал</h3>
+        <div class="metric-value">{{params.signal_last_date|date:'d.m.Y'}}</div>
+        <div class="metric-label">Последнее обновление</div>
+      </div>
+    </div>
+
+    {% for catalog in params.info_refresh_catalogs %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+        <div class="kors-metric-card {% if params.now|date:'d' == catalog.max_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
+          <h3>{{catalog.site}}</h3>
+          <div class="metric-value">{{catalog.max_date|date:'d.m.Y'}}</div>
+          <div class="metric-label">Последнее обновление</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Детальная информация -->
+  <div class="row g-3">
+    <div class="col-12 col-lg-4">
+      <div class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>ОПФУ ↔ Облака</h3>
+          <button class="kors-btn-toggle {% if params.ip_errors %}danger{% else %}success{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIP" aria-expanded="{% if params.ip_errors %}true{% else %}false{% endif %}" aria-controls="collapseIP">
+            {% if params.ip_errors %}Внимание!{% else %}Подробнее{% endif %}
+          </button>
+        </div>
+        <div class="kors-panel__body {% if not params.ip_errors %}collapse{% endif %}" id="collapseIP">
+          <table class="kors-table">
+            <tbody>
+              {% for ip in params.ip %}
+                <tr>
+                  <th style="width: 40%;">{{ip.name}}</th>
+                  <td>
+                    {% for files in ip.files %}
+                      {% if files.size > 10 %}
+                        <span class="kors-badge kors-badge-danger">{{files.size}} кб</span>
+                      {% elif files.size > 7 %}
+                        <span class="kors-badge kors-badge-warning">{{files.size}} кб</span>
+                      {% else %}
+                        <span class="kors-badge kors-badge-success">{{files.size}} кб</span>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>ДЦ 1С</h3>
+          <button class="kors-btn-toggle {% if params.refs_ib_error %}danger{% else %}success{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDC" aria-expanded="{% if params.refs_ib_error %}true{% else %}false{% endif %}" aria-controls="collapseDC">
+            {% if params.refs_ib_error %}Внимание!{% else %}Подробнее{% endif %}
+          </button>
+        </div>
+        <div class="kors-panel__body {% if not params.refs_ib_error %}collapse{% endif %}" id="collapseDC">
+          <table class="kors-table">
+            <thead>
+              <tr>
+                <th>База</th>
+                <th>Название</th>
+                <th>Записей</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ref_base in params.refs_ib %}
+                <tr {% if ref_base.response != 200 %}style="background: #fee2e2;"{% endif %}>
+                  <td>
+                    {% if ref_base.ib.base == 'ralfahaval' %}
+                      Альфа
+                    {% else %}
+                      ДЦ
+                    {% endif %}
+                  </td>
+                  <td><span class="icon-mbri-database"></span> {{ref_base.ib.name}}</td>
+                  <td>
+                    {% if ref_base.count != '-' %}
+                      {% if ref_base.count > 50 %}
+                        <span class="kors-badge kors-badge-danger">{{ref_base.count}}</span>
+                      {% else %}
+                        {{ref_base.count}}
+                      {% endif %}
+                    {% else %}
+                      <b>{{ref_base.count}}</b>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if ref_base.response == 200 %}
+                      <span class="kors-badge kors-badge-success">{{ref_base.response}}</span>
+                    {% else %}
+                      <span class="kors-badge kors-badge-danger">{{ref_base.response}}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>Обновление автомобилей корсавто</h3>
+        </div>
+        <div class="kors-panel__body">
+          <table class="kors-table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Подразделение</th>
+                <th>Добавлено</th>
+                <th>Удалено</th>
+                <th>В наличии</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log_cars in params.list_log_refresh_cars %}
+                <tr>
+                  <td>{{log_cars.date}}</td>
+                  <td>{{log_cars.unit.name}}</td>
+                  <td><span class="icon-mbri-plus text-success"></span> {{log_cars.add}}</td>
+                  <td><span class="icon-mbri-minus text-danger"></span> {{log_cars.del}}</td>
+                  <td><span class="icon-mbri-play text-danger"></span> {{log_cars.stock}}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>ОПФУ</h3>
+        </div>
+        <div class="kors-panel__body">
+          {% if params.count_swap_opfu > 20 %}
+            <span class="kors-badge kors-badge-danger">Отправка в ДЦ - {{params.count_swap_opfu}}</span>
+          {% elif params.count_swap_opfu > 10 %}
+            <span class="kors-badge kors-badge-warning">Отправка в ДЦ - {{params.count_swap_opfu}}</span>
+          {% else %}
+            <span class="kors-badge kors-badge-success">Отправка в ДЦ - {{params.count_swap_opfu}}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>1C КорсАвто</h3>
+        </div>
+        <div class="kors-panel__body">
+          <div class="d-flex flex-wrap gap-2">
+            {% if params.answer_kors_avto %}
+              <span class="kors-badge kors-badge-success">Web - service</span>
+            {% else %}
+              <span class="kors-badge kors-badge-danger">Web - service</span>
+            {% endif %}
+            {% if params.count_swap %}
+              {% if params.count_swap > 20 %}
+                <span class="kors-badge kors-badge-danger">Свап - {{params.count_swap}}</span>
+              {% elif params.count_swap > 10 %}
+                <span class="kors-badge kors-badge-warning">Свап - {{params.count_swap}}</span>
               {% else %}
-                <button class="btn btn-outline-success dw-block  " type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                  Подробнее
-                </button>
+                <span class="kors-badge kors-badge-success">Свап - {{params.count_swap}}</span>
               {% endif %}
-          </div>
-            <hr>
-            {% if params.ip_errors %}
-              <div class="" id="">
-            {% else %}
-              <div class="collapse" id="collapseExample">
             {% endif %}
-              
-              
-            <table class="table table-sm table-striped">
-              <tbody>
-                {% for ip in params.ip %}
-                  <tr>
-                    <th class="align-middle" scope="row">{{ip.name}}</th>
-                      <td class="align-middle">
-                        {% for files in ip.files %}
-                          {% if files.size > 10 %}  
-                            <button type="button" class="btn btn-danger ">{{files.size}} кб</button>
-                          {% elif files.size > 7 %}
-                            <button type="button" class="btn btn-warning ">{{files.size}} кб</button>
-                          {% else %}
-                            <button type="button" class="btn btn-success ">{{files.size}} кб</button>
-                          {% endif %}
-                        {% endfor %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            
+          </div>
+        </div>
+      </div>
+
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>ИП Кострюков → AVITO</h3>
+        </div>
+        <div class="kors-panel__body">
+          {% if params.answer_bu_avito == True %}
+            <span class="kors-badge kors-badge-success">OK</span>
+          {% else %}
+            <p style="font-size: 0.85rem; color: #6c7a92; margin-bottom: 0.5rem;">Смотри 194.87.107.139:55510 hfs должна быть запущена</p>
+            <span class="kors-badge kors-badge-danger">ERROR</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>K01SRVDASH</h3>
+        </div>
+        <div class="kors-panel__body">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">D:\ сервер</div>
+              {% if params.space_disk_free > 100 %}
+                <span class="kors-badge kors-badge-success">{{params.space_disk_free}} GB</span>
+              {% elif params.space_disk_free > 10 %}
+                <span class="kors-badge kors-badge-warning">{{params.space_disk_free}} GB</span>
+              {% else %}
+                <span class="kors-badge kors-badge-danger">{{params.space_disk_free}} GB</span>
+              {% endif %}
+            </div>
+            <div class="col-6">
+              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">E:\ сервер</div>
+              {% if params.space_disk_free_e > 200 %}
+                <span class="kors-badge kors-badge-success">{{params.space_disk_free_e}} GB</span>
+              {% elif params.space_disk_free_e > 100 %}
+                <span class="kors-badge kors-badge-warning">{{params.space_disk_free_e}} GB</span>
+              {% else %}
+                <span class="kors-badge kors-badge-danger">{{params.space_disk_free_e}} GB</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-12">
+              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">Записи для конвертации</div>
+              {% if params.record_convert < 5 %}
+                <span class="kors-badge kors-badge-success">{{params.record_convert}}</span>
+              {% else %}
+                <span class="kors-badge kors-badge-danger">{{params.record_convert}}</span>
+              {% endif %}
+            </div>
+            <div class="col-12">
+              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">Записи для распознавания</div>
+              {% if params.record_recognitions > 30 %}
+                <span class="kors-badge kors-badge-danger">{{params.record_recognitions}}</span>
+              {% elif params.record_recognitions > 10 %}
+                <span class="kors-badge kors-badge-warning">{{params.record_recognitions}}</span>
+              {% else %}
+                <span class="kors-badge kors-badge-success">{{params.record_recognitions}}</span>
+              {% endif %}
+            </div>
+            <div class="col-12">
+              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">Звонки для распознавания</div>
+              {% if params.op_queue_doc > 30 %}
+                <span class="kors-badge kors-badge-danger">{{params.op_queue_doc}} / {{params.op_queue}}</span>
+              {% elif params.op_queue_doc > 10 %}
+                <span class="kors-badge kors-badge-warning">{{params.op_queue_doc}} / {{params.op_queue}}</span>
+              {% else %}
+                <span class="kors-badge kors-badge-success">{{params.op_queue_doc}} / {{params.op_queue}}</span>
+              {% endif %}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="col-sm">
-        <div class="card bg-light ">
-          <div class="card-header">ДЦ 1С</div>
-          <div class="card-body">
-              <div class="d-grid gap-2">
-                {% if params.refs_ib_error %}
-                  <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample_dc" aria-expanded="false" aria-controls="collapseExample_dc">
-                    Внимание!
-                  </button>
-                {% else %}
-                  <button class="btn btn-outline-success dw-block" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample_dc" aria-expanded="false" aria-controls="collapseExample_dc">
-                    Подробнее
-                  </button>
-                {% endif %}
-            </div> 
-            <hr>
-            {% if params.refs_ib_error %}
-              <div class="" id="">
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>Интеграция</h3>
+        </div>
+        <div class="kors-panel__body">
+          <div class="d-flex flex-wrap gap-2">
+            <span class="kors-badge kors-badge-success">Автохаб - {{params.autohab|date:'d.m.Y'}}</span>
+            <span class="kors-badge kors-badge-success">Робомойки - {{params.robowash|date:'d.m.Y'}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>Каталоги</h3>
+        </div>
+        <div class="kors-panel__body">
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            {% for catalog in params.info_refresh_catalogs %}
+              <span class="kors-badge kors-badge-success">{{catalog.site}} - {{catalog.max_date|date:'d.m.Y'}}</span>
+            {% endfor %}
+          </div>
+          <span class="kors-badge kors-badge-success">Обновить тех информацию - {{params.modifications_count}}</span>
+        </div>
+      </div>
+
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>Интерактивная оценка</h3>
+        </div>
+        <div class="kors-panel__body">
+          <div class="d-flex flex-wrap gap-2">
+            {% if params.estimation_1c > 5 %}
+              <span class="kors-badge kors-badge-danger">1C - {{params.estimation_1c}}</span>
             {% else %}
-              <div class="collapse" id="collapseExample_dc">
+              <span class="kors-badge kors-badge-success">1C - {{params.estimation_1c}}</span>
             {% endif %}
-            <table class="table table-sm table-striped">
-              <tbody>
-                {% for ref_base in params.refs_ib %}
-                  <tr {% if ref_base.response != 200 %} class="bg-warning" {% endif %}>
-                    <td>
-                      {% if ref_base.ib.base == 'ralfahaval' %}  
-                        Альфа
-                      {% else %}
-                        ДЦ
-                      {% endif %}
-                    </td>
-                    <th class="align-middle" scope="row"><span class="icon-mbri-database"></span> {{ref_base.ib.name}}</th>
-                    <!--
-                    <td class="align-middle">
-                      <form method="post">
-                        <input hidden name="id_base" value="{{ref_base.ib.id}}">
-                        <button class="btn" type="submit" name="delite_base"><span class="icon-mbri-error"></span></button>
-                      </form>
-                    </td>
-                    -->
-                    
-                    <td>
-                      {% if ref_base.count != '-' %}  
-                        {% if ref_base.count > 50 %}
-                          <span class="bg-danger text-white">{{ref_base.count}}</span>
-                        {% else %}
-                          {{ref_base.count}}
-                        {% endif %}
-                      {% else %}
-                        <b>{{ref_base.count}}</b>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if ref_base.response == 200 %}  
-                        {{ref_base.response}}
-                      {% else %}
-                        <b>{{ref_base.response}}</b>
-                      {% endif %}
-                    </td>
-                    <td class="align-middle">
-                      {% if ref_base.response == 200 %}  
-                        <a class="text-success" href="http://{{ref_base.ib.server}}/{{ref_base.ib.base}}/ws/DCChange.1cws"><span class="icon-mbri-play"></span></a>
-                      {% else %}
-                        <b><a class="text-danger" href="http://{{ref_base.ib.server}}/{{ref_base.ib.base}}/ws/DCChange.1cws"><span class="icon-mbri-close"></span></a> </td>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            </div>
-          </div>
-        </div>
-
-        <br>
-
-        <div class="card bg-light ">
-          <div class="card-header">Обновление автомобилей корсавто</div>
-          <div class="card-body">
-              
-            <table class="table table-sm table-striped">
-              <tbody>
-                {% for log_cars in params.list_log_refresh_cars %}
-                  <tr>
-                    <td>
-                      {{log_cars.date}}
-                    </td>
-                    <td>
-                      {{log_cars.unit.name}}
-                    </td>
-                    <td>
-                      <span class="icon-mbri-plus text-success"></span><br>{{log_cars.add}}
-                    </td>
-                    <td>
-                      <span class="icon-mbri-minus text-danger"></span><br>{{log_cars.del}}
-                    </td>
-                    <td>
-                      <span class="icon-mbri-play text-danger"></span><br>{{log_cars.stock}}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            
+            {% if params.autoteka_count_1 > 5 %}
+              <span class="kors-badge kors-badge-danger">Автотека - {{params.autoteka_count_1}} / {{params.autoteka_count_2}} / {{params.autoteka_count_3}}</span>
+            {% else %}
+              <span class="kors-badge kors-badge-success">Автотека - {{params.autoteka_count_1}} / {{params.autoteka_count_2}} / {{params.autoteka_count_3}}</span>
+            {% endif %}
+            {% if params.autohub_count > 5 %}
+              <span class="kors-badge kors-badge-danger">Автохаб - {{params.autohub_count}}</span>
+            {% else %}
+              <span class="kors-badge kors-badge-success">Автохаб - {{params.autohub_count}}</span>
+            {% endif %}
+            {% if params.push_count > 5 %}
+              <span class="kors-badge kors-badge-danger">Оповещения - {{params.push_count}}</span>
+            {% else %}
+              <span class="kors-badge kors-badge-success">Оповещения - {{params.push_count}}</span>
+            {% endif %}
+            {% if params.send_1c > 5 %}
+              <span class="kors-badge kors-badge-danger">Отправка в 1С - {{params.send_1c}}</span>
+            {% else %}
+              <span class="kors-badge kors-badge-success">Отправка в 1С - {{params.send_1c}}</span>
+            {% endif %}
           </div>
         </div>
       </div>
 
-      <div class="col-sm">
-        
-        <div class="row g-1">
-          <div class="col-sm">
-                  
-            <div class="card bg-light ">
-              <div class="card-header">ОПФУ</div>
-              <div class="card-body">
-                
-                <div class="row g-1">
-              
-                <div class="col-sm-auto">
-                   
-                      {% if params.count_swap_opfu > 20 %}
-                        <button type="button" class="btn btn-danger">отправка в ДЦ - {{params.count_swap_opfu}}</button>
-                      {% elif params.count_swap_opfu > 10 %}
-                        <button type="button" class="btn btn-warning">отправка в ДЦ - {{params.count_swap_opfu}}</button>
-                      {% else %}
-                        <button type="button" class="btn btn-success">отправка в ДЦ - {{params.count_swap_opfu}}</button>
-                      {% endif %}
-                   
-                </div>
-
-              </div>
-              </div>
-            </div>
-
-          </div>
+      <div class="kors-panel mt-3">
+        <div class="kors-panel__head">
+          <h3>Прайс листы</h3>
         </div>
-        
-        <br>
-
-        <div class="row g-1">
-
-          <div class="col-sm">
-
-            <div class="card bg-light ">
-              <div class="card-header">1C КорсАвто</div>
-              <div class="card-body">
-                
-                <div class="row g-2">
-              
-                  <div class="col-sm-auto">
-                        
-                      {% if params.answer_kors_avto %}
-                        <button type="button" class="btn btn-success">Web - service</button>
-                      {% else %}
-                        <button type="button" class="btn btn-danger">Web - service</button>
-                      {% endif %}
-                    
-                  </div>
-  
-                  <div class="col-sm-auto">
-                       
-                      {% if params.count_swap %}
-                        {% if params.count_swap > 20 %}
-                          <button type="button" class="btn btn-danger">Свап - {{params.count_swap}}</button>
-                        {% elif params.count_swap > 10 %}
-                          <button type="button" class="btn btn-warning">Свап - {{params.count_swap}}</button>
-                        {% else %}
-                          <button type="button" class="btn btn-success">Свап -{{params.count_swap}}</button>
-                        {% endif %}
-                      {% endif %}
-                    
-                  </div>
-
-                </div>
-              </div>
-            </div>
-  
-          </div>
-  
+        <div class="kors-panel__body">
+          {% if params.task_price_count > 5 %}
+            <span class="kors-badge kors-badge-danger">Загрузка - {{params.task_price_count}}</span>
+          {% else %}
+            <span class="kors-badge kors-badge-success">Загрузка - {{params.task_price_count}}</span>
+          {% endif %}
         </div>
-
-        <br>
-        
-        <div class="row g-2">
-        
-          <div class="col-sm">
-                    
-            <div class="card bg-light ">
-              <div class="card-header">ИП Кострюков --> AVITO</div>
-              <div class="card-body">
-                <div class="row g-1">
-              
-                  <div class="col-sm">
-                    <div class="row g-2">
-                      {% if params.answer_bu_avito == True %}
-                        <button type="button" class="btn btn-success"> OK </button>
-                      {% else %}
-                        <p>Смотри 194.87.107.139:55510 hfs должна быть запущена</p>
-                        <button type="button" class="btn btn-danger"> ERROR </button>
-                      {% endif %}
-                    </div>
-                  </div>
-              </div>  
-              </div>
-            </div>
-          </div>
-          
-        </div>
-
-        <br>
-
-        <div class="card bg-light ">
-          <div class="card-header">K01SRVDASH</div>
-          <div class="card-body">
-            
-            <div class="row g-1">
-          
-              <div class="row g-2">
-                
-                <div class="col-sm">
-                  <div class="card bg-light ">
-                    <div class="card-header">D:\ cервер</div>
-                    <div class="card-body">
-                      <div class="row g-1">
-                    
-                        <div class="col-sm">
-                          <div class="row g-2">
-                            {% if params.space_disk_free > 100 %}
-                              <button type="button" class="btn btn-success"> {{params.space_disk_free}} GB </button>
-                            {% elif params.count_swap > 10 %}
-                              <button type="button" class="btn btn-warning"> {{params.space_disk_free}} GB </button>
-                            {% else %}
-                              <button type="button" class="btn btn-danger"> {{params.space_disk_free}} GB </button>
-                            {% endif %}
-                          </div>
-                        </div>
-                    </div>  
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-sm">
-                  <div class="card bg-light ">
-                    <div class="card-header">E:\ cервер</div>
-                    <div class="card-body">
-                      <div class="row g-1">
-                    
-                        <div class="col-sm">
-                          <div class="row g-2">
-                            {% if params.space_disk_free_e > 200 %}
-                              <button type="button" class="btn btn-success"> {{params.space_disk_free_e}} GB </button>
-                            {% elif params.space_disk_free_e > 100 %}
-                              <button type="button" class="btn btn-warning"> {{params.space_disk_free_e}} GB </button>
-                            {% else %}
-                              <button type="button" class="btn btn-danger"> {{params.space_disk_free_e}} GB </button>
-                            {% endif %}
-                          </div>
-                        </div>
-                    </div>  
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="row g-2">
-                <div class="col-sm">
-                          
-                  <div class="card bg-light ">
-                    <div class="card-header">Записи для конвертации</div>
-                    <div class="card-body">
-                      <div class="row g-1">
-                    
-                        <div class="col-sm">
-                          <div class="row g-2">
-                            {% if params.record_convert < 5 %}
-                              <button type="button" class="btn btn-success"> {{params.record_convert}} </button>
-                            {% else %}
-                              <button type="button" class="btn btn-danger"> {{params.record_convert}} </button>
-                            {% endif %}
-                          </div>
-                        </div>
-                    </div>  
-                    </div>
-                  </div>
-      
-                </div>
-                
-                <div class="col-sm">
-                          
-                  <div class="card bg-light ">
-                    <div class="card-header">Записи для распознавания</div>
-                    <div class="card-body">
-                      <div class="row g-1">
-                    
-                        <div class="col-sm">
-                          <div class="row g-2">
-                            {% if params.record_recognitions > 30 %}
-                              <button type="button" class="btn btn-danger"> {{params.record_recognitions}} </button>
-                            {% elif params.record_recognitions > 10 %}
-                              <button type="button" class="btn btn-warning"> {{params.record_recognitions}} </button>
-                            {% else %}
-                              <button type="button" class="btn btn-success"> {{params.record_recognitions}} </button>
-                            {% endif %}
-                          </div>
-                        </div>
-                    </div>  
-                    </div>
-                  </div>
-      
-                </div>
-
-                <div class="col-sm">
-                          
-                  <div class="card bg-light ">
-                    <div class="card-header">Звонки для распознавания</div>
-                    <div class="card-body">
-                      <div class="row g-1">
-                    
-                        <div class="col-sm">
-                          <div class="row g-2">
-                            {% if params.op_queue_doc > 30 %}
-                              <button type="button" class="btn btn-danger"> {{params.op_queue_doc}} / {{params.op_queue}}</button>
-                            {% elif params.op_queue_doc > 10 %}
-                              <button type="button" class="btn btn-warning"> {{params.op_queue_doc}} / {{params.op_queue}}</button>
-                            {% else %}
-                              <button type="button" class="btn btn-success"> {{params.op_queue_doc}} / {{params.op_queue}}</button>
-                            {% endif %}
-                          </div>
-                        </div>
-                    </div>  
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <br>
-
-        <div class="card bg-light">
-          <div class="card-header">Интеграция</div>
-            <div class="card-body">
-              <div class="row g-2">                      
-                <div class="col-auto">
-                  <button type="button" class="btn btn-success"> Автохаб - {{params.autohab}} </button>                    
-                </div>
-                <div class="col-auto">
-                  <button type="button" class="btn btn-success"> Робомойки - {{params.robowash}} </button>                    
-                </div> 
-              </div>
-            </div>                
-        </div>
-        
-        <br>
-
-        <div class="row g-2">
-          <div class="col-sm">
-                        
-            <div class="card bg-light ">
-              <div class="card-header">Каталоги</div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for catalog in params.info_refresh_catalogs %}
-                          <div class="col-auto">
-                            <button type="button" class="btn btn-success"> {{catalog.site}} - {{catalog.max_date}}  </button>
-                          </div>
-                        {% endfor %}
-                    </div>
-                    <br>
-                    <button type="button" class="btn btn-success"> Обновить тех информацию - {{params.modifications_count}} </button>
-                </div>
-
-                
-            </div>
-          
-          </div>
-        </div>
-
-        <br>
-              
-        <div class="row g-2">
-          <div class="col-sm">
-                        
-            <div class="card bg-light ">
-              <div class="card-header">Интерактивная оценка</div>
-                <div class="card-body">
-                    <div class="row g-1">
-                      
-                      <div class="col-auto">
-                        {% if params.estimation_1c > 5 %}
-                          <button type="button" class="btn btn-danger"> 1C - {{params.estimation_1c}} </button>  
-                        {% else %}
-                          <button type="button" class="btn btn-success"> 1C - {{params.estimation_1c}} </button>  
-                        {% endif %}
-                      </div>
-                      <div class="col-auto">
-                        {% if params.autoteka_count_1 > 5 %}
-                          <button type="button" class="btn btn-danger"> Автотека - {{params.autoteka_count_1}} / {{params.autoteka_count_2}} / {{params.autoteka_count_3}} </button>  
-                        {% else %}
-                          <button type="button" class="btn btn-success"> Автотека - {{params.autoteka_count_1}} / {{params.autoteka_count_2}} / {{params.autoteka_count_3}} </button>  
-                        {% endif %}
-                      </div>
-                      <div class="col-auto">
-                        {% if params.autohub_count > 5 %}
-                          <button type="button" class="btn btn-danger"> Автохаб - {{params.autohub_count}} </button>  
-                        {% else %}
-                          <button type="button" class="btn btn-success"> Автохаб - {{params.autohub_count}} </button>  
-                        {% endif %}
-                      </div>
-                      <div class="col-auto">
-                        {% if params.push_count > 5 %}
-                          <button type="button" class="btn btn-danger"> Оповещения - {{params.push_count}} </button>  
-                        {% else %}
-                          <button type="button" class="btn btn-success"> Оповещения - {{params.push_count}} </button>  
-                        {% endif %}
-                      </div>
-                      <div class="col-auto">
-                        {% if params.push_count > 5 %}
-                          <button type="button" class="btn btn-danger"> Отправка в 1С - {{params.send_1c}} </button>  
-                        {% else %}
-                          <button type="button" class="btn btn-success"> Отправка в 1С - {{params.send_1c}} </button>  
-                        {% endif %}
-                      </div>
-                      
-                    </div>
-                </div>                      
-            </div>
-          
-          </div>
-        </div>
-
-        <br>
-
-        <div class="row g-2">
-          <div class="col-sm">
-                        
-            <div class="card bg-light ">
-              <div class="card-header">Прайс листы</div>
-                <div class="card-body">
-                    <div class="row">
-                      <div class="col-auto">
-                        {% if params.task_price_count > 5 %}
-                          <button type="button" class="btn btn-danger"> Загрузка - {{params.task_price_count}} </button>  
-                        {% else %}
-                          <button type="button" class="btn btn-success"> Загрузка - {{params.task_price_count}} </button>  
-                        {% endif %}
-                      </div>                            
-                    </div>
-                </div>                      
-            </div>
-          
-          </div>
-        </div>
-
       </div>
+    </div>
+  </div>
 
+  <!-- График -->
+  {% if params.info_ip.list_name %}
+    <div class="kors-panel mt-4">
+      <div class="kors-panel__head">
+        <h3>Облачка</h3>
       </div>
-        
+      <div class="kors-panel__body">
+        <div id="container" style="min-height: 400px;"></div>
       </div>
+    </div>
+  {% endif %}
 
-      
-    
-
-    
+</div>
 
 <script>
-
+{% if params.info_ip.list_name %}
 Highcharts.chart('container', {
     chart: {
         type: 'bar'
@@ -717,10 +749,7 @@ Highcharts.chart('container', {
         data: {{params.info_ip.list_ip_out|safe}},
     }]
 });
-
-
+{% endif %}
 </script>
 
- 
- 
 {% endblock %}

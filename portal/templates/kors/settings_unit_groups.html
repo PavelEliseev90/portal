@@ -1,0 +1,159 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - Настройки - Группы подразделений {% endblock %}
+
+{% block title_navbar %} - Настройки - Группы подразделений {% endblock %}
+
+{% block content %}
+  
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Группы подразделений</h2>
+    <p>Управление группами подразделений и их составом.</p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="portal-panel">
+      <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_add_group" aria-expanded="false" aria-controls="collapse_add_group" style="cursor: pointer;">
+        <span>Добавить новую группу</span>
+        <span class="icon-mbri-down"></span>
+      </h3>
+      
+      <div class="collapse" id="collapse_add_group">
+        <div class="row g-3 mt-3">
+          <div class="col-md-4">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="new_group_name" name="new_group_name" placeholder="" value="" autocomplete="off" required>
+              <label for="new_group_name">Наименование</label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="new_group_name_bi" name="new_group_name_bi" placeholder="" value="" autocomplete="off">
+              <label for="new_group_name_bi">Наименование BI</label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-floating">
+              <select class="form-select" id="new_group_city" name="new_group_city">
+                <option value="">Не выбрано</option>
+                {% for city in params.settings.cities %}
+                <option value="{{ city.pk }}">{{ city.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="new_group_city">Город</label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="new_group_comment" name="new_group_comment" placeholder="" value="" autocomplete="off">
+              <label for="new_group_comment">Комментарий</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="new_group_active" name="new_group_active" checked>
+              <label class="form-check-label" for="new_group_active">Активно</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="new_group_bu_auto" name="new_group_bu_auto">
+              <label class="form-check-label" for="new_group_bu_auto">Б/У Автомобили</label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <button type="submit" name="new_group" class="btn btn-primary">Добавить группу</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="portal-panel">
+      <h3 class="d-flex justify-content-between align-items-center mb-3">
+        <span>Список групп подразделений</span>
+      </h3>
+      
+      <div class="table-responsive table-sticky">
+        <table class="table table-hover table-mobile-cards">
+          <thead>
+            <tr>
+              <th style="min-width: 60px;">№</th>
+              <th style="min-width: 200px;">Наименование</th>
+              <th style="min-width: 200px;">Наименование BI</th>
+              <th style="min-width: 150px;">Город</th>
+              <th style="min-width: 200px;">Комментарий</th>
+              <th style="min-width: 100px;">Активно</th>
+              <th style="min-width: 120px;">Б/У Автомобили</th>
+              <th style="min-width: 150px;">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in params.settings.groups %}
+            <tr>
+              <td data-label="№">{{ group.pk }}</td>
+              <td data-label="Наименование">
+                <div class="form-floating">
+                  <input type="text" class="form-control" id="groupdata_{{ group.pk }}_name" name="groupdata_{{ group.pk }}_name" placeholder="" value="{{ group.name }}" autocomplete="off">
+                  <label for="groupdata_{{ group.pk }}_name">Наименование</label>
+                </div>
+              </td>
+              <td data-label="Наименование BI">
+                <div class="form-floating">
+                  <input type="text" class="form-control" id="groupdata_{{ group.pk }}_name_bi" name="groupdata_{{ group.pk }}_name_bi" placeholder="" value="{{ group.name_bi }}" autocomplete="off">
+                  <label for="groupdata_{{ group.pk }}_name_bi">Наименование BI</label>
+                </div>
+              </td>
+              <td data-label="Город">
+                <div class="form-floating">
+                  <select class="form-select" id="groupdata_{{ group.pk }}_city" name="groupdata_{{ group.pk }}_city">
+                    <option value="">Не выбрано</option>
+                    {% for city in params.settings.cities %}
+                    <option value="{{ city.pk }}" {% if group.city and group.city.pk == city.pk %}selected{% endif %}>{{ city.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label for="groupdata_{{ group.pk }}_city">Город</label>
+                </div>
+              </td>
+              <td data-label="Комментарий">
+                <div class="form-floating">
+                  <input type="text" class="form-control" id="groupdata_{{ group.pk }}_comment" name="groupdata_{{ group.pk }}_comment" placeholder="" value="{{ group.comment }}" autocomplete="off">
+                  <label for="groupdata_{{ group.pk }}_comment">Комментарий</label>
+                </div>
+              </td>
+              <td data-label="Активно">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_active" name="groupdata_{{ group.pk }}_active" {% if group.active %}checked{% endif %}>
+                  <label class="form-check-label" for="groupdata_{{ group.pk }}_active">Активно</label>
+                </div>
+              </td>
+              <td data-label="Б/У Автомобили">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_bu_auto" name="groupdata_{{ group.pk }}_bu_auto" {% if group.bu_auto %}checked{% endif %}>
+                  <label class="form-check-label" for="groupdata_{{ group.pk }}_bu_auto">Б/У Автомобили</label>
+                </div>
+              </td>
+              <td data-label="Действия">
+                <a href="/settings/settings_unit_groups/{{ group.pk }}/units/" class="btn btn-sm btn-outline-primary">
+                  Редактировать состав
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="portal-panel" style="text-align: right;">
+      <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+

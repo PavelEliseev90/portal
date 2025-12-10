@@ -170,3 +170,10 @@ def balance_top_unit(context, **kwargs):
         'name'      : '' + str(position) + ' / ' + str(all_count)
     }
     return info
+
+@register.filter(name='get_item')
+def get_item(dictionary, key):
+    """Получить элемент из словаря по ключу"""
+    if dictionary is None:
+        return []
+    return dictionary.get(key, [])

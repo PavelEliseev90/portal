@@ -1,0 +1,189 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+
+{% block title %} - Настройки - Состав группы "{{ params.group.name }}" {% endblock %}
+
+{% block title_navbar %} - Настройки - Состав группы "{{ params.group.name }}" {% endblock %}
+
+{% block content %}
+  
+<section class="settings-vnesh-page">
+  <div class="settings-vnesh-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Состав группы: {{ params.group.name }}</h2>
+      <p>Управление подразделениями в группе.</p>
+    </div>
+    <a href="/settings/settings_unit_groups/" class="btn btn-link text-decoration-none">&larr; Назад к группам</a>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="settings-vnesh-panel">
+      <h3 class="mb-3">Параметры группы</h3>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="group_active" name="group_active" {% if params.group.active %}checked{% endif %}>
+            <label class="form-check-label" for="group_active">Активно</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="group_bu_auto" name="group_bu_auto" {% if params.group.bu_auto %}checked{% endif %}>
+            <label class="form-check-label" for="group_bu_auto">Б/У Автомобили</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-vnesh-panel">
+      <h3 class="mb-3">Поиск подразделений</h3>
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="search_units" placeholder="Поиск по названию или городу..." autocomplete="off">
+            <label for="search_units">Поиск по названию или городу...</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="settings-vnesh-panel">
+          <h3 class="mb-3">Подразделения в группе <span class="badge bg-primary">0</span></h3>
+          <div class="border rounded p-3" style="max-height: 600px; overflow-y: auto;" id="units_in_group">
+            {% for unit in params.units_in_group %}
+            <div class="form-check mb-2 unit-item" data-name="{{ unit.name|lower }}" data-city="{{ unit.city|lower }}">
+              <input class="form-check-input" type="checkbox" id="unit_{{ unit.pk }}" name="units" value="{{ unit.pk }}" checked>
+              <label class="form-check-label" for="unit_{{ unit.pk }}">
+                <strong>{{ unit.name }}</strong>{% if unit.city %} <span class="text-muted">({{ unit.city }})</span>{% endif %}
+                {% if unit.buauto %}<span class="badge bg-secondary ms-1">Б/У</span>{% endif %}
+              </label>
+            </div>
+            {% empty %}
+            <p class="text-muted">В группе нет подразделений</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="settings-vnesh-panel">
+          <h3 class="mb-3">Доступные подразделения <span class="badge bg-secondary">0</span></h3>
+          <div class="border rounded p-3" style="max-height: 600px; overflow-y: auto;" id="units_not_in_group">
+            {% for unit in params.units_not_in_group %}
+            <div class="form-check mb-2 unit-item" data-name="{{ unit.name|lower }}" data-city="{{ unit.city|lower }}">
+              <input class="form-check-input" type="checkbox" id="unit_{{ unit.pk }}" name="units" value="{{ unit.pk }}">
+              <label class="form-check-label" for="unit_{{ unit.pk }}">
+                <strong>{{ unit.name }}</strong>{% if unit.city %} <span class="text-muted">({{ unit.city }})</span>{% endif %}
+                {% if unit.buauto %}<span class="badge bg-secondary ms-1">Б/У</span>{% endif %}
+              </label>
+            </div>
+            {% empty %}
+            <p class="text-muted">Все подразделения уже в группе</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-vnesh-panel" style="text-align: right;">
+      <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
+      <a href="/settings/settings_unit_groups/" class="btn btn-secondary px-4">Отмена</a>
+    </div>
+
+  </form>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('search_units');
+  const allUnitItems = document.querySelectorAll('.unit-item');
+  const unitsInGroupContainer = document.getElementById('units_in_group');
+  const unitsNotInGroupContainer = document.getElementById('units_not_in_group');
+  
+  // Функция поиска
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase().trim();
+    
+    allUnitItems.forEach(function(item) {
+      const name = item.getAttribute('data-name') || '';
+      const city = item.getAttribute('data-city') || '';
+      const searchText = name + ' ' + city;
+      
+      if (searchTerm === '' || searchText.includes(searchTerm)) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  });
+  
+  // Подсчет выбранных подразделений
+  function updateCounts() {
+    const checkedInGroup = unitsInGroupContainer.querySelectorAll('input[type="checkbox"]:checked').length;
+    const checkedNotInGroup = unitsNotInGroupContainer.querySelectorAll('input[type="checkbox"]:checked').length;
+    const totalInGroup = unitsInGroupContainer.querySelectorAll('input[type="checkbox"]').length;
+    const totalNotInGroup = unitsNotInGroupContainer.querySelectorAll('input[type="checkbox"]').length;
+    
+    // Обновляем заголовки с количеством
+    const inGroupPanel = unitsInGroupContainer.closest('.settings-vnesh-panel');
+    const notInGroupPanel = unitsNotInGroupContainer.closest('.settings-vnesh-panel');
+    
+    if (inGroupPanel) {
+      const inGroupTitle = inGroupPanel.querySelector('h3');
+      if (inGroupTitle) {
+        inGroupTitle.innerHTML = `Подразделения в группе <span class="badge bg-primary">${checkedInGroup} из ${totalInGroup}</span>`;
+      }
+    }
+    if (notInGroupPanel) {
+      const notInGroupTitle = notInGroupPanel.querySelector('h3');
+      if (notInGroupTitle) {
+        notInGroupTitle.innerHTML = `Доступные подразделения <span class="badge bg-secondary">${checkedNotInGroup} из ${totalNotInGroup}</span>`;
+      }
+    }
+  }
+  
+  // Обновляем счетчики при изменении чекбоксов
+  allUnitItems.forEach(function(item) {
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      checkbox.addEventListener('change', updateCounts);
+    }
+  });
+  
+  // Инициализируем счетчики
+  updateCounts();
+});
+</script>
+
+<style>
+.unit-item {
+  transition: opacity 0.2s;
+}
+
+.unit-item[style*="display: none"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-vnesh-panel {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.settings-vnesh-panel h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+

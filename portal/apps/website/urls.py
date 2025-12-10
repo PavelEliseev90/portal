@@ -27,6 +27,7 @@ urlpatterns = [
    path('sale/<id>/',            views.sale, name='id'),
    path('dashboard_sms_opros/',  views.dashboard_sms_opros),
    
+   path('sb_lo/',                views.sb_lo),
    # Мониторинг
    path('monitorings/',          views.board_monitoring),
 
@@ -37,6 +38,9 @@ urlpatterns = [
    path('settings/settings_matrix_auction/',                views.settings_matrix_auction),
    path('settings/settings_diagnostic/',                    views.settings_diagnostic),
    path('settings/settings_vnesh/',                         views.settings_vnesh),
+   path('settings/settings_works/',                         views.settings_works),
+   path('settings/settings_unit_groups/',                   views.settings_unit_groups),
+   path('settings/settings_unit_groups/<int:group_id>/units/', views.settings_unit_group_units),
 
    path('refs/units_group/',     views.refs_unit_group_list),
    

@@ -2,7 +2,7 @@ from tkinter.tix import Tree
 from django.shortcuts import redirect, render
 from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
-from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
+from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup
 from profiles.models import Profiles
 from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
@@ -70,6 +70,10 @@ def send_web_socket_message(group, chat, user, text, estimation_id):
 
 def add_log_history_open(estimation, user, page):
     
+    if user != None:
+        if user.profiles.user_sb:
+            return
+        
     page_title = 'Главная'
     
     if page == 1:
@@ -100,7 +104,11 @@ def add_log_history_open(estimation, user, page):
         page_title = 'История просмотров'
     elif page == 20:
         page_title = 'Ценообразование админ'
+    elif page == 30:
+        page_title = 'Ценообразование ДДЦ'
     elif page == 21:
+        page_title = 'Ценообразование ЕЦО'
+    elif page == 22:
         page_title = 'Ценообразование'
     elif page == 22:
         page_title = 'История изменений'
@@ -283,6 +291,7 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         )
     )
 
+    # Собираем статистику по подразделениям
     stats_map = {}
     for row in work_orders:
         name = row['source_name'] or 'Без подразделения'
@@ -323,7 +332,7 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         stats_map[name]['diagnostics'] = row['diagnostics']
         stats_map[name]['accepted'] = row['accepted']
 
-    stats_list = []
+    # Вычисляем конверсии для каждого подразделения
     for item in stats_map.values():
         conv_to_eval = round((item['evaluations'] / item['work_orders'] * 100) if item['work_orders'] > 0 else 0, 1)
         conv_to_diag = round((item['diagnostics'] / item['evaluations'] * 100) if item['evaluations'] > 0 else 0, 1)
@@ -334,31 +343,129 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
         item['conv_to_diag'] = conv_to_diag
         item['conv_to_accepted'] = conv_to_accepted
         item['overall_conv'] = overall_conv
-        stats_list.append(item)
+
+    # Получаем все активные группы подразделений с bu_auto=True
+    unit_groups = RefUnitGroup.objects.filter(active=True, bu_auto=True).prefetch_related('units').order_by('name')
     
-    stats_list = sorted(
-        stats_list,
+    # Создаем карту: имя подразделения -> группа
+    unit_to_group = {}
+    for group in unit_groups:
+        for unit in group.units.all():
+            unit_to_group[unit.name] = group
+    
+    # Группируем статистику по группам
+    grouped_stats = {}
+    ungrouped_stats = []
+    
+    for unit_name, unit_stats in stats_map.items():
+        if unit_name in unit_to_group:
+            group = unit_to_group[unit_name]
+            group_name = group.name or 'Без названия'
+            if group_name not in grouped_stats:
+                grouped_stats[group_name] = {
+                    'group_name': group_name,
+                    'group_id': group.id,
+                    'units': [],
+                    'work_orders': 0,
+                    'evaluations': 0,
+                    'diagnostics': 0,
+                    'accepted': 0,
+                }
+            grouped_stats[group_name]['units'].append(unit_stats)
+            grouped_stats[group_name]['work_orders'] += unit_stats['work_orders']
+            grouped_stats[group_name]['evaluations'] += unit_stats['evaluations']
+            grouped_stats[group_name]['diagnostics'] += unit_stats['diagnostics']
+            grouped_stats[group_name]['accepted'] += unit_stats['accepted']
+        else:
+            ungrouped_stats.append(unit_stats)
+    
+    # Вычисляем итоговые показатели и конверсии для групп
+    grouped_list = []
+    for group_name, group_data in grouped_stats.items():
+        # Сортируем подразделения внутри группы
+        group_data['units'] = sorted(
+            group_data['units'],
+            key=lambda item: item['work_orders'],
+            reverse=True,
+        )
+        
+        # Вычисляем конверсии для группы
+        group_data['conv_to_eval'] = round((group_data['evaluations'] / group_data['work_orders'] * 100) if group_data['work_orders'] > 0 else 0, 1)
+        group_data['conv_to_diag'] = round((group_data['diagnostics'] / group_data['evaluations'] * 100) if group_data['evaluations'] > 0 else 0, 1)
+        group_data['conv_to_accepted'] = round((group_data['accepted'] / group_data['diagnostics'] * 100) if group_data['diagnostics'] > 0 else 0, 1)
+        group_data['overall_conv'] = round((group_data['accepted'] / group_data['work_orders'] * 100) if group_data['work_orders'] > 0 else 0, 1)
+        
+        grouped_list.append(group_data)
+    
+    # Сортируем группы по количеству рабочих листов
+    grouped_list = sorted(
+        grouped_list,
         key=lambda item: item['work_orders'],
         reverse=True,
     )
     
+    # Сортируем негруппированные подразделения
+    ungrouped_stats = sorted(
+        ungrouped_stats,
+        key=lambda item: item['work_orders'],
+        reverse=True,
+    )
+    
+    # Вычисляем общие итоги
     totals = {
-        'work_orders': sum(item['work_orders'] for item in stats_list),
-        'evaluations': sum(item['evaluations'] for item in stats_list),
-        'diagnostics': sum(item['diagnostics'] for item in stats_list),
-        'accepted': sum(item['accepted'] for item in stats_list),
+        'work_orders': sum(item['work_orders'] for item in grouped_list) + sum(item['work_orders'] for item in ungrouped_stats),
+        'evaluations': sum(item['evaluations'] for item in grouped_list) + sum(item['evaluations'] for item in ungrouped_stats),
+        'diagnostics': sum(item['diagnostics'] for item in grouped_list) + sum(item['diagnostics'] for item in ungrouped_stats),
+        'accepted': sum(item['accepted'] for item in grouped_list) + sum(item['accepted'] for item in ungrouped_stats),
     }
+    totals['overall_conv'] = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
     
     avg_overall_conv = round((totals['accepted'] / totals['work_orders'] * 100) if totals['work_orders'] > 0 else 0, 1)
     
-    for item in stats_list:
+    # Отмечаем лучшие группы и подразделения
+    for group_data in grouped_list:
+        is_good = False
+        if group_data['work_orders'] >= 5:
+            if group_data['overall_conv'] >= max(avg_overall_conv, 30):
+                is_good = True
+        group_data['is_good'] = is_good
+        
+        for unit_item in group_data['units']:
+            is_good_unit = False
+            if unit_item['work_orders'] >= 5:
+                if unit_item['overall_conv'] >= max(avg_overall_conv, 30):
+                    is_good_unit = True
+            unit_item['is_good'] = is_good_unit
+    
+    for item in ungrouped_stats:
         is_good = False
         if item['work_orders'] >= 5:
             if item['overall_conv'] >= max(avg_overall_conv, 30):
                 is_good = True
         item['is_good'] = is_good
 
-    return stats_list, totals
+    # Формируем итоговый список: группы с подразделениями + негруппированные
+    result_list = []
+    for group_data in grouped_list:
+        result_list.append({
+            'type': 'group',
+            **group_data
+        })
+        for unit_item in group_data['units']:
+            result_list.append({
+                'type': 'unit',
+                'group_id': group_data['group_id'],
+                **unit_item
+            })
+    
+    for unit_item in ungrouped_stats:
+        result_list.append({
+            'type': 'unit',
+            'group_id': None,
+            **unit_item
+        })
+
+    return result_list, totals
 
 
 def tradein_funnel(request):
@@ -540,19 +647,41 @@ def tradein_funnel(request):
                 'datasets': type_datasets,
             }
 
+    # Преобразуем абсолютные значения в проценты относительно рабочих листов
+    trend_series_percent = {
+        'work_orders': [],
+        'evaluations': [],
+        'diagnostics': [],
+        'accepted': [],
+    }
+    for idx, month_label in enumerate(monthly_labels):
+        work_orders_count = monthly_series['work_orders'][idx]
+        if work_orders_count > 0:
+            # Рабочие листы всегда 100%
+            trend_series_percent['work_orders'].append(100.0)
+            # Остальные ступени - процент от рабочих листов
+            trend_series_percent['evaluations'].append(round(monthly_series['evaluations'][idx] / work_orders_count * 100, 1))
+            trend_series_percent['diagnostics'].append(round(monthly_series['diagnostics'][idx] / work_orders_count * 100, 1))
+            trend_series_percent['accepted'].append(round(monthly_series['accepted'][idx] / work_orders_count * 100, 1))
+        else:
+            trend_series_percent['work_orders'].append(0)
+            trend_series_percent['evaluations'].append(0)
+            trend_series_percent['diagnostics'].append(0)
+            trend_series_percent['accepted'].append(0)
+    
     trend_chart = {
         'labels': monthly_labels,
         'series': [
-            {'label': stage_labels[0], 'data': monthly_series['work_orders']},
-            {'label': stage_labels[1], 'data': monthly_series['evaluations']},
-            {'label': stage_labels[2], 'data': monthly_series['diagnostics']},
-            {'label': stage_labels[3], 'data': monthly_series['accepted']},
+            {'label': stage_labels[0], 'data': trend_series_percent['work_orders']},
+            {'label': stage_labels[1], 'data': trend_series_percent['evaluations']},
+            {'label': stage_labels[2], 'data': trend_series_percent['diagnostics']},
+            {'label': stage_labels[3], 'data': trend_series_percent['accepted']},
         ],
     }
 
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    analysts = User.objects.filter(profiles__eco=True)
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
@@ -611,59 +740,6 @@ def tradein_funnel(request):
     type_monthly_available = bool(type_monthly_chart and type_monthly_chart.get('datasets'))
     type_pie_available = bool(type_pie_chart and type_pie_chart.get('labels'))
 
-    unresolved_qs = stage_diagnostics_qs.exclude(status__name__icontains='ам принят')
-    unresolved_vins = list(
-        unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True)
-    )
-    query_without_flag = request.GET.copy()
-    if 'show_autoteka' in query_without_flag:
-        query_without_flag.pop('show_autoteka')
-    query_show_all = query_without_flag.copy()
-    query_show_all['show_autoteka'] = '1'
-
-    autoteka_summary = {
-        'total': 0,
-        'unique': 0,
-        'rows': [],
-        'show_all': request.GET.get('show_autoteka') == '1',
-        'query_base': query_without_flag.urlencode(),
-        'query_show_all': query_show_all.urlencode(),
-    }
-    if unresolved_vins:
-        vin_map = {}
-        for item in unresolved_qs.exclude(vin__isnull=True).exclude(vin='').values(
-            'vin',
-            'pk',
-            'rlk_id',
-            'page_soglasovanie__price_reception',
-        ):
-            vin_map.setdefault(item['vin'], item)
-
-        leads_qs = Autoteka_signal.objects.filter(vin__in=unresolved_vins)
-        leads_qs = leads_qs.filter(date__gte=date_start).filter(date__lte=date_end)
-        autoteka_summary['total'] = leads_qs.count()
-        autoteka_summary['unique'] = leads_qs.values('vin').distinct().count()
-        leads_qs = leads_qs.order_by('-date')
-        if not autoteka_summary['show_all']:
-            leads_qs = leads_qs[:10]
-
-        rows = []
-        for row in leads_qs:
-            info = vin_map.get(row.vin)
-            rows.append({
-                'vin': row.vin,
-                'brand': row.brand,
-                'model': row.model,
-                'price': row.price,
-                'city_name': row.city_name,
-                'date': row.date,
-                'url': row.url,
-                'rlk_id': info['rlk_id'] if info else None,
-                'estimation_id': info['pk'] if info else None,
-                'price_reception': info['page_soglasovanie__price_reception'] if info else None,
-            })
-        autoteka_summary['rows'] = rows
-
     source_stats, source_totals = _get_source_stats(
         date_start,
         date_end,
@@ -701,7 +777,6 @@ def tradein_funnel(request):
         'unit_trend_available': unit_trend_available,
         'type_monthly_available': type_monthly_available,
         'type_pie_available': type_pie_available,
-        'autoteka_summary': autoteka_summary,
         'source_stats': source_stats,
         'source_totals': source_totals,
     }
@@ -1277,8 +1352,8 @@ def doc(request, id):
 
     rlk     = DocRLK.objects.get(pk=id)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
-
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
+    
+    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
         
@@ -1292,8 +1367,11 @@ def doc(request, id):
     warning_list = list()
 
     params  = {}
-    
+    selected            = ''
     balance_date        = estimation.start_estimation 
+    if balance_date == None:
+        balance_date = estimation.rlk.dataTime 
+
     balance_date_start  = balance_date - relativedelta(months=1)
     balance_date_start  = balance_date_start.replace(day=1, hour=1)
     balance_date_end    = balance_date
@@ -1401,7 +1479,7 @@ def doc(request, id):
 
         add_log_history_open(estimation, user, page)
 
-        if page == 21 or page == 20:
+        if page == 21 or page == 20 or page == 23:
             
             if page == 20:
                 if not request.user.profiles.eco_page_price_info:
@@ -1649,7 +1727,9 @@ def doc(request, id):
                 'balance_unit'          : balance_unit,
                 'signal'                : signal,
                 'warning_list'          : warning_list,
-                'expenses'              : expenses
+                'expenses'              : expenses,
+                'selected'              : selected
+
             }
     
     elif request.method == "POST":
@@ -1722,8 +1802,25 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.suspension         = int(request.POST.get('radio_suspension', '3'))
             reg_interactiv_ocenka_test_drive.comment_suspension = request.POST.get('comment_suspension', '')
 
+            reg_interactiv_ocenka_test_drive.conditioner         = int(request.POST.get('radio_conditioner', '3'))
+            reg_interactiv_ocenka_test_drive.comment_conditioner = request.POST.get('comment_conditioner', '')
+
+            reg_interactiv_ocenka_test_drive.turbo              = int(request.POST.get('radio_turbo', '3'))
+            reg_interactiv_ocenka_test_drive.comment_turbo      = request.POST.get('comment_turbo', '')
+            
+            reg_interactiv_ocenka_test_drive.drive              = int(request.POST.get('radio_drive', '3'))
+            reg_interactiv_ocenka_test_drive.comment_drive      = request.POST.get('comment_drive', '')
+            
+            reg_interactiv_ocenka_test_drive.wheel              = int(request.POST.get('radio_wheel', '3'))
+            reg_interactiv_ocenka_test_drive.comment_wheel      = request.POST.get('comment_wheel', '')
+
+
             reg_interactiv_ocenka_test_drive.airbag             = int(request.POST.get('radio_airbag', '3'))
             reg_interactiv_ocenka_test_drive.comment_airbag     = request.POST.get('comment_airbag', '')
+
+
+            reg_interactiv_ocenka_test_drive.to                 = int(request.POST.get('radio_to', '10'))
+
 
             reg_interactiv_ocenka_test_drive.pp_dinamyc             = int(request.POST.get('radio_pp_dinamyc', '3'))
             reg_interactiv_ocenka_test_drive.pp_kpp                 = int(request.POST.get('radio_pp_kpp', '3'))
@@ -2728,6 +2825,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_200     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_200      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_200
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_200
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_200
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_200
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_200
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_200
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_200
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_200
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_200
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_200
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_200
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_200
+        drive_danger_kf              = estimation_settings.drive_danger_kf_200
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
+        drive_warning_kf             = estimation_settings.drive_warning_kf_200
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_200
+        to_1                         = estimation_settings.to_1_200
+        to_2                         = estimation_settings.to_2_200
+        to_3                         = estimation_settings.to_3_200
     elif zna < 400000:
         zg              = '400'
         matrix_auction  = settings_matrix.charge_bcp_400
@@ -2782,6 +2898,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_400     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_400      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_400
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_400
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_400
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_400
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_400
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_400
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_400
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_400
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_400
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_400
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_400
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_400
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_400
+        drive_danger_kf              = estimation_settings.drive_danger_kf_400
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
+        drive_warning_kf             = estimation_settings.drive_warning_kf_400
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_400
+        to_1                         = estimation_settings.to_1_400
+        to_2                         = estimation_settings.to_2_400
+        to_3                         = estimation_settings.to_3_400
     elif zna < 700000:
         zg              = '700'
         matrix_auction  = settings_matrix.charge_bcp_700
@@ -2836,6 +2971,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_700     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_700      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_700
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_700
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_700
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_700
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_700
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_700
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_700
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_700
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_700
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_700
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_700
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_700
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_700
+        drive_danger_kf              = estimation_settings.drive_danger_kf_700
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
+        drive_warning_kf             = estimation_settings.drive_warning_kf_700
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_700
+        to_1                         = estimation_settings.to_1_700
+        to_2                         = estimation_settings.to_2_700
+        to_3                         = estimation_settings.to_3_700
     elif zna < 1200000:
         zg              = '1 200'
         matrix_auction  = settings_matrix.charge_bcp_1200
@@ -2890,6 +3044,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_1200     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_1200      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_1200
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_1200
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_1200
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_1200
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_1200
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_1200
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_1200
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_1200
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_1200
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_1200
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_1200
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_1200
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_1200
+        drive_danger_kf              = estimation_settings.drive_danger_kf_1200
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
+        drive_warning_kf             = estimation_settings.drive_warning_kf_1200
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_1200
+        to_1                         = estimation_settings.to_1_1200
+        to_2                         = estimation_settings.to_2_1200
+        to_3                         = estimation_settings.to_3_1200
     elif zna < 2000000:
         zg              = '2 000'
         matrix_auction  = settings_matrix.charge_bcp_2000
@@ -2944,6 +3117,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_2000     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_2000      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_2000
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_2000
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_2000
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_2000
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_2000
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_2000
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_2000
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_2000
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_2000
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_2000
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_2000
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_2000
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_2000
+        drive_danger_kf              = estimation_settings.drive_danger_kf_2000
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
+        drive_warning_kf             = estimation_settings.drive_warning_kf_2000
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_2000
+        to_1                         = estimation_settings.to_1_2000
+        to_2                         = estimation_settings.to_2_2000
+        to_3                         = estimation_settings.to_3_2000
     elif zna < 3000000:
         zg              = '3 000'
         matrix_auction  = settings_matrix.charge_bcp_3000
@@ -2998,6 +3190,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_3000     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_3000      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_3000
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_3000
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_3000
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_3000
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_3000
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_3000
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_3000
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_3000
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_3000
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_3000
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_3000
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_3000
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_3000
+        drive_danger_kf              = estimation_settings.drive_danger_kf_3000
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
+        drive_warning_kf             = estimation_settings.drive_warning_kf_3000
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_3000
+        to_1                         = estimation_settings.to_1_3000
+        to_2                         = estimation_settings.to_2_3000
+        to_3                         = estimation_settings.to_3_3000
     elif zna < 5000000:
         zg              = '5 000'
         matrix_auction  = settings_matrix.charge_bcp_5000
@@ -3052,6 +3263,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5000     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_5000      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5000
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5000
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5000
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5000
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5000
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_5000
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5000
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_5000
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5000
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_5000
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5000
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_5000
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5000
+        drive_danger_kf              = estimation_settings.drive_danger_kf_5000
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
+        drive_warning_kf             = estimation_settings.drive_warning_kf_5000
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5000
+        to_1                         = estimation_settings.to_1_5000
+        to_2                         = estimation_settings.to_2_5000
+        to_3                         = estimation_settings.to_3_5000
     else:
         zg              = '5 000+'
         matrix_auction  = settings_matrix.charge_bcp_5001
@@ -3106,6 +3336,25 @@ def estimations_price_calculation(estimation, type_calculation):
         system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5001     
         system_og_warning_kf         = estimation_settings.system_og_warning_kf_5001      
         system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5001
+        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5001
+        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5001
+        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5001
+        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5001
+        turbo_danger_kf              = estimation_settings.turbo_danger_kf_5001
+        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5001
+        turbo_warning_kf             = estimation_settings.turbo_warning_kf_5001
+        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5001
+        wheel_danger_kf              = estimation_settings.wheel_danger_kf_5001
+        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5001
+        wheel_warning_kf             = estimation_settings.wheel_warning_kf_5001
+        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5001
+        drive_danger_kf              = estimation_settings.drive_danger_kf_5001
+        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
+        drive_warning_kf             = estimation_settings.drive_warning_kf_5001
+        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5001
+        to_1                         = estimation_settings.to_1_5001
+        to_2                         = estimation_settings.to_2_5001
+        to_3                         = estimation_settings.to_3_5001
 
     if percent_torg < 0:
         percent_torg = percent_torg * -1
@@ -3446,22 +3695,22 @@ def estimations_price_calculation(estimation, type_calculation):
         price_diff = 0
         if modification.typeEngine.id == 1:
             price_diff  = (price * engine_danger_kf / 100)
-            info_diff   = 'Бензиновый двигатель сумма ремонта в процентах ' +  str(engine_danger_kf)
+            info_diff   = 'Бензиновый двигатель ремонт'
 
             if price_diff < engine_danger_amount_min:
                 price_diff  = engine_danger_amount_min
-                info_diff   = 'Бензиновый двигатель сумма ремонта минимальное значение ' +  str(engine_danger_amount_min)
+                info_diff   = 'Бензиновый двигатель ремонт'
         else:
             price_diff  = (price * engine_dt_danger_kf / 100)
-            info_diff   = 'Дизельный двигатель сумма ремонта в процентах ' +  str(engine_dt_danger_kf)
+            info_diff   = 'Дизельный двигатель ремонт'
 
             if price_diff < engine_dt_danger_amount_min:
                 price_diff  = engine_dt_danger_amount_min
-                info_diff   = 'Дизельный двигатель сумма ремонта минимальное значение ' +  str(engine_dt_danger_amount_min)
+                info_diff   = 'Дизельный двигатель ремонт'
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3474,24 +3723,24 @@ def estimations_price_calculation(estimation, type_calculation):
         
         if modification.typeEngine.id == 1:  
             price_diff = (price * engine_warning_kf / 100)
-            info_diff   = 'Бензиновый двигатель сумма ремонта в процентах ' +  str(engine_warning_kf)
+            info_diff   = 'Бензиновый двигатель устранение замечаний'
             
             if price_diff < engine_warning_amount_min:
                 price_diff = engine_warning_amount_min
-                info_diff   = 'Бензиновый двигатель сумма ремонта минимальное значение ' +  str(engine_warning_amount_min)
+                info_diff   = 'Бензиновый двигатель устранение замечаний'
         else:
         
             price_diff = (price * engine_dt_warning_kf / 100)
-            info_diff   = 'Дизельный двигатель сумма ремонта в процентах ' +  str(engine_dt_warning_kf)
+            info_diff   = 'Дизельный двигатель устранение замечаний'
 
             if price_diff < engine_dt_warning_amount_min:
                 price_diff = engine_dt_warning_amount_min
-                info_diff   = 'Дизельный двигатель сумма ремонта минимальное значение ' +  str(engine_dt_warning_amount_min)
+                info_diff   = 'Дизельный двигатель устранение замечаний'
 
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3505,39 +3754,39 @@ def estimations_price_calculation(estimation, type_calculation):
         
         if modification.typeGear.id == 1:
             price_diff = (price * gear_amt_danger_kf / 100)
-            info_diff   = 'Робот сумма ремонта в процентах ' +  str(gear_amt_danger_kf)
+            info_diff   = 'Робот устранение замечаний'
 
             if price_diff < gear_amt_danger_amount_min:
                 price_diff = gear_amt_danger_amount_min
-                info_diff   = 'Робот сумма ремонта минимальное значение ' +  str(gear_amt_danger_amount_min)
+                info_diff   = 'Робот устранение замечаний'
 
         elif modification.typeGear.id == 2:
             price_diff = (price * gear_mt_danger_kf / 100)
-            info_diff   = 'Механика сумма ремонта в процентах ' +  str(gear_mt_danger_kf)
+            info_diff   = 'Механика устранение замечаний'
 
             if price_diff < gear_mt_danger_amount_min:
                 price_diff = gear_mt_danger_amount_min
-                info_diff   = 'Механика сумма ремонта минимальное значение ' +  str(gear_mt_danger_amount_min)
+                info_diff   = 'Механика устранение замечаний'
 
         elif modification.typeGear.id == 3:
             price_diff = (price * gear_at_danger_kf / 100)
-            info_diff   = 'Автомат сумма ремонта в процентах ' +  str(gear_at_danger_kf)
+            info_diff   = 'Автомат устранение замечаний'
             if price_diff < gear_at_danger_amount_min:
                 price_diff = gear_at_danger_amount_min
-                info_diff   = 'Автомат сумма ремонта минимальное значение ' +  str(gear_at_danger_amount_min)
+                info_diff   = 'Автомат устранение замечаний'
 
         elif modification.typeGear.id == 4:
             price_diff = (price * gear_cvt_danger_kf / 100)
-            info_diff   = 'Вариатор сумма ремонта в процентах ' +  str(gear_cvt_danger_kf)
+            info_diff   = 'Вариатор устранение замечаний'
 
             if price_diff < gear_cvt_danger_amount_min:
                 price_diff = gear_cvt_danger_amount_min
-                info_diff   = 'Вариатор сумма ремонта минимальное значение ' +  str(gear_cvt_danger_amount_min)
+                info_diff   = 'Вариатор устранение замечаний'
 
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3551,43 +3800,43 @@ def estimations_price_calculation(estimation, type_calculation):
         if modification.typeGear.id == 1:
             
             price_diff = (price * gear_amt_warning_kf / 100)
-            info_diff   = 'Робот сумма ремонта в процентах ' +  str(gear_amt_warning_kf)
+            info_diff   = 'Робот ремонт'
 
             if price_diff < gear_amt_warning_amount_min:
                 price_diff = gear_amt_warning_amount_min
-                info_diff   = 'Робот сумма ремонта минимальное значение ' +  str(gear_amt_warning_amount_min)
+                info_diff   = 'Робот ремонт'
 
         elif modification.typeGear.id == 2:
             
             price_diff = (price * gear_mt_warning_kf / 100)
-            info_diff   = 'Механика сумма ремонта в процентах ' +  str(gear_mt_warning_kf)
+            info_diff   = 'Механика ремонт'
 
             if price_diff < gear_mt_warning_amount_min:
                 price_diff = gear_mt_warning_amount_min
-                info_diff   = 'Механика сумма ремонта минимальное значение ' +  str(gear_mt_warning_amount_min)
+                info_diff   = 'Механика ремонт'
 
         elif modification.typeGear.id == 3:
             
             price_diff = (price * gear_at_warning_kf / 100)
-            info_diff   = 'Автомат сумма ремонта в процентах ' +  str(gear_at_warning_kf)
+            info_diff   = 'Автомат ремонт'
 
             if price_diff < gear_at_warning_amount_min:
                 price_diff = gear_at_warning_amount_min
-                info_diff   = 'Автомат сумма ремонта минимальное значение ' +  str(gear_at_warning_amount_min)
+                info_diff   = 'Автомат ремонт'
         
         elif modification.typeGear.id == 4:
             
             price_diff = (price * gear_cvt_warning_kf / 100)
-            info_diff   = 'Вариатор сумма ремонта в процентах ' +  str(gear_cvt_warning_kf)
+            info_diff   = 'Вариатор ремонт'
 
             if price_diff < gear_cvt_warning_amount_min:
                 price_diff = gear_cvt_warning_amount_min
-                info_diff   = 'Вариатор сумма ремонта минимальное значение ' +  str(gear_cvt_warning_amount_min)
+                info_diff   = 'Вариатор ремонт'
         
         dop = {
             'name'      : info_diff,
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)
@@ -3607,8 +3856,8 @@ def estimations_price_calculation(estimation, type_calculation):
 
         dop = {
             'name'      : 'Подвеска ремонт неисправности',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop)  
@@ -3621,16 +3870,14 @@ def estimations_price_calculation(estimation, type_calculation):
         price_diff = 0
         
         price_diff = (price * suspension_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(suspension_warning_kf)
-
+        
         if price_diff < suspension_warning_amount_min:
             price_diff = suspension_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(suspension_warning_amount_min)
-
+            
         dop = {
             'name'      : 'Подвеска устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3642,16 +3889,14 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * system_og_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(system_og_danger_kf)
-
+        
         if price_diff < system_og_danger_amount_min:
             price_diff = system_og_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(system_og_danger_amount_min)
-
+            
         dop = {
             'name'      : 'Система выпуска ОГ ремонт',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
@@ -3661,21 +3906,194 @@ def estimations_price_calculation(estimation, type_calculation):
         info_diff = ''
         price_diff = 0
         price_diff = (price * system_og_warning_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(system_og_warning_kf)
-
+        
         if price_diff < system_og_warning_amount_min:
             price_diff = system_og_warning_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(system_og_warning_amount_min)
-
+           
         dop = {
             'name'      : 'Система выпуска ОГ устранение замечаний',
-            'quantity'  : 0,
-            'amount_pod': 0, 
+            'quantity'  : 1,
+            'amount_pod': 1, 
             'amount'    : price_diff
         }
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
 
+    # кондиционер
+    if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * conditioner_danger_kf / 100)
+        
+        if price_diff < conditioner_danger_amount_min:
+            price_diff = conditioner_danger_amount_min
+            
+        dop = {
+            'name'      : 'Кондиционер ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * conditioner_warning_kf / 100)
+       
+        if price_diff < conditioner_warning_amount_min:
+            price_diff = conditioner_warning_amount_min
+            
+        dop = {
+            'name'      : 'Кондиционер устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # турбокомпрессор
+    if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * turbo_danger_kf / 100)
+        
+        if price_diff < turbo_danger_amount_min:
+            price_diff = turbo_danger_amount_min
+            
+        dop = {
+            'name'      : 'Турбокомпрессор ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * turbo_warning_kf / 100)
+       
+        if price_diff < turbo_warning_amount_min:
+            price_diff = turbo_warning_amount_min
+            
+        dop = {
+            'name'      : 'Турбокомпрессор устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # рулевое управление
+    if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * wheel_danger_kf / 100)
+       
+        if price_diff < wheel_danger_amount_min:
+            price_diff = wheel_danger_amount_min
+           
+        dop = {
+            'name'      : 'Рулевое управление ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * wheel_warning_kf / 100)
+       
+        if price_diff < wheel_warning_amount_min:
+            price_diff = wheel_warning_amount_min
+           
+        dop = {
+            'name'      : 'Рулевое управление устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # привод
+    if estimation.page_test_drive != None and estimation.page_test_drive.drive == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * drive_danger_kf / 100)
+        
+        if price_diff < drive_danger_amount_min:
+            price_diff = drive_danger_amount_min
+           
+        dop = {
+            'name'      : 'Привод ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.drive == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * drive_warning_kf / 100)
+        
+        if price_diff < drive_warning_amount_min:
+            price_diff = drive_warning_amount_min
+            
+        dop = {
+            'name'      : 'Привод устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # ТО
+    if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
+        price_diff = to_1 
+        dop = {
+            'name'      : 'ТО Minimal (масло, масляный фильтр)',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+    elif estimation.page_test_drive != None and estimation.page_test_drive.to == 2:
+        price_diff = to_2 
+        dop = {
+            'name'      : 'ТО Middle (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания)',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+    elif estimation.page_test_drive != None and estimation.page_test_drive.to == 3:
+        price_diff = to_3 
+        dop = {
+            'name'      : 'ТО Full (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки)',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
 
     kors_price_reception = 0
     if estimation.kors_count_sale > 0: 
@@ -4620,6 +5038,7 @@ class Point:
         self.y = y
 
 def eco_efficiency_analysis(request):
+    
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
@@ -4644,7 +5063,7 @@ def eco_efficiency_analysis(request):
     type_id = _get_int(request.GET.get('type_id'))
     status_id = _get_int(request.GET.get('status_id'))
 
-    pricing_qs = InteractivePricingSnapshot.objects.filter(
+    pricing_qs = EcoAnalystSnapshot.objects.filter(
         start_estimation__gte=date_start,
         start_estimation__lte=date_end,
     )
@@ -4661,9 +5080,17 @@ def eco_efficiency_analysis(request):
         pricing_qs = pricing_qs.filter(status_id=status_id)
 
     total_count = pricing_qs.count()
-    with_soglasovanie_count = pricing_qs.filter(has_soglasovanie=True).count()
-    soglasovanie_percent = round((with_soglasovanie_count / total_count * 100), 1) if total_count > 0 else 0
-
+    # Согласовано до КД (role='before' и has_soglasovanie=True)
+    with_soglasovanie_before_count = pricing_qs.filter(role='before', has_soglasovanie=True).count()
+    # Согласовано после КД (role='after' и has_soglasovanie=True)
+    with_soglasovanie_after_count = pricing_qs.filter(role='after', has_soglasovanie=True).count()
+    # Принято (только среди согласованных после КД: role='after', has_soglasovanie=True и accepted=True)
+    with_accepted_count = pricing_qs.filter(role='after', has_soglasovanie=True, accepted=True).count()
+    
+    soglasovanie_percent = round((with_soglasovanie_before_count / total_count * 100), 1) if total_count > 0 else 0
+    soglasovanie_after_percent = round((with_soglasovanie_after_count / with_soglasovanie_before_count * 100), 1) if with_soglasovanie_before_count > 0 else 0
+    accepted_percent = round((with_accepted_count / with_soglasovanie_after_count * 100), 1) if with_soglasovanie_after_count > 0 else 0
+    
     avg_time_total = pricing_qs.aggregate(avg=Avg('duration_estimation_sec'))['avg']
     avg_time_total = round(avg_time_total / 3600, 1) if avg_time_total else None
 
@@ -4672,24 +5099,38 @@ def eco_efficiency_analysis(request):
     )
     avg_soglasovanie_time = round(avg_soglasovanie_time / 3600, 1) if avg_soglasovanie_time else None
 
+    # Маркеры по согласованиям после диагностики
     price_diffs = []
     price_percent_diffs = []
-    higher_count = lower_count = equal_count = 0
-    for price_after, auto_price in pricing_qs.values_list('price_after_kd', 'price_auto_selected')[:2000]:
+    higher_count_after = lower_count_after = equal_count_after = 0
+    for price_after, auto_price in pricing_qs.filter(role='after', has_soglasovanie=True).values_list('price_after_kd', 'price_auto_selected')[:2000]:
         if price_after and auto_price:
             diff = float(price_after) - float(auto_price)
             price_diffs.append(diff)
             diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
             price_percent_diffs.append(diff_percent)
-            if diff > 1000:
-                higher_count += 1
-            elif diff < -1000:
-                lower_count += 1
-            else:
-                equal_count += 1
+            if diff_percent > 5:  # Выше на 5% и более
+                higher_count_after += 1
+            elif diff_percent < -5:  # Ниже на 5% и более
+                lower_count_after += 1
+            else:  # В пределах ±5%
+                equal_count_after += 1
 
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
+
+    # Маркеры по согласованиям до диагностики
+    higher_count_before = lower_count_before = equal_count_before = 0
+    for price_before, auto_price in pricing_qs.filter(role='before', has_soglasovanie=True).values_list('price_before_kd', 'price_auto_selected')[:2000]:
+        if price_before and auto_price:
+            diff = float(price_before) - float(auto_price)
+            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+            if diff_percent > 5:  # Выше на 5% и более
+                higher_count_before += 1
+            elif diff_percent < -5:  # Ниже на 5% и более
+                lower_count_before += 1
+            else:  # В пределах ±5%
+                equal_count_before += 1
 
     task_aggregate = pricing_qs.aggregate(
         total_tasks=Coalesce(Sum('tasks_total'), 0),
@@ -4725,8 +5166,8 @@ def eco_efficiency_analysis(request):
         with_soglas=Count('id', filter=Q(has_soglasovanie=True)),
         accepted=Count('id', filter=Q(accepted=True)),
         avg_duration=Avg('duration_estimation_sec'),
-        tasks_total=Coalesce(Sum('tasks_total'), 0),
-        tasks_closed=Coalesce(Sum('tasks_closed'), 0),
+        tasks_total_sum=Coalesce(Sum('tasks_total'), 0),
+        tasks_closed_sum=Coalesce(Sum('tasks_closed'), 0),
         evaluations_with_tasks=Count('id', filter=Q(tasks_total__gt=0)),
     )
 
@@ -4736,8 +5177,8 @@ def eco_efficiency_analysis(request):
         if count == 0:
             continue
         avg_time = round((row['avg_duration'] or 0) / 3600, 1) if row['avg_duration'] else None
-        total_tasks = row['tasks_total'] or 0
-        closed_tasks = row['tasks_closed'] or 0
+        total_tasks = row['tasks_total_sum'] or 0
+        closed_tasks = row['tasks_closed_sum'] or 0
         task_stats = {
             'total_tasks': total_tasks,
             'evaluations_with_tasks': row['evaluations_with_tasks'] or 0,
@@ -4746,16 +5187,63 @@ def eco_efficiency_analysis(request):
             'open_tasks': total_tasks - closed_tasks,
             'closed_percent': round((closed_tasks / total_tasks * 100), 1) if total_tasks else 0,
         }
+        
+        # Маркеры по согласованиям для аналитика
+        analyst_id = row['analyst_id']
+        analyst_before_qs = analyst_qs.filter(analyst_id=analyst_id, role='before', has_soglasovanie=True)
+        analyst_after_qs = analyst_qs.filter(analyst_id=analyst_id, role='after', has_soglasovanie=True)
+        
+        # До диагностики
+        higher_before = lower_before = equal_before = 0
+        for price_before, auto_price in analyst_before_qs.values_list('price_before_kd', 'price_auto_selected'):
+            if price_before and auto_price:
+                diff = float(price_before) - float(auto_price)
+                diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+                if diff_percent > 5:
+                    higher_before += 1
+                elif diff_percent < -5:
+                    lower_before += 1
+                else:
+                    equal_before += 1
+        
+        # После диагностики
+        higher_after = lower_after = equal_after = 0
+        for price_after, auto_price in analyst_after_qs.values_list('price_after_kd', 'price_auto_selected'):
+            if price_after and auto_price:
+                diff = float(price_after) - float(auto_price)
+                diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+                if diff_percent > 5:
+                    higher_after += 1
+                elif diff_percent < -5:
+                    lower_after += 1
+                else:
+                    equal_after += 1
+        
         analyst_stats.append(
             {
+                'analyst_id': analyst_id,
                 'name': row['analyst_name'] or '—',
                 'total': count,
+                'with_soglasovanie_count' : with_soglasovanie_before_count,
+                'accepted_percent'      : accepted_percent,
                 'with_soglasovanie': row['with_soglas'],
                 'accepted': row['accepted'],
                 'avg_time': avg_time,
                 'conv_rate': round((row['with_soglas'] / count * 100), 1) if count else 0,
                 'accept_rate': round((row['accepted'] / count * 100), 1) if count else 0,
                 'task_stats': task_stats,
+                'price_markers_before': {
+                    'higher': higher_before,
+                    'equal': equal_before,
+                    'lower': lower_before,
+                    'total': higher_before + equal_before + lower_before,
+                },
+                'price_markers_after': {
+                    'higher': higher_after,
+                    'equal': equal_after,
+                    'lower': lower_after,
+                    'total': higher_after + equal_after + lower_after,
+                },
             }
         )
 
@@ -4787,7 +5275,7 @@ def eco_efficiency_analysis(request):
 
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    analysts = User.objects.filter(profiles__eco=True)
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
 
@@ -4803,23 +5291,41 @@ def eco_efficiency_analysis(request):
 
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
 
+    # Вычисляем проценты для маркеров
+    total_compared_after = higher_count_after + lower_count_after + equal_count_after
+    total_compared_before = higher_count_before + lower_count_before + equal_count_before
+
     params = {
         'type': 'eco_efficiency',
         'nav_selected': 4,
         'request': request,
         'filters': filters,
         'total_count': total_count,
-        'with_soglasovanie_count': with_soglasovanie_count,
+        'with_soglasovanie_count': with_soglasovanie_before_count,
         'soglasovanie_percent': soglasovanie_percent,
+        'with_soglasovanie_after_count': with_soglasovanie_after_count,
+        'soglasovanie_after_percent': soglasovanie_after_percent,
+        'with_accepted_count': with_accepted_count,
+        'accepted_percent': accepted_percent,
         'avg_time_total': avg_time_total,
         'avg_soglasovanie_time': avg_soglasovanie_time,
         'price_comparison': {
             'avg_diff': avg_price_diff,
             'avg_diff_percent': avg_price_diff_percent,
-            'higher_count': higher_count,
-            'lower_count': lower_count,
-            'equal_count': equal_count,
-            'total_compared': len(price_diffs),
+            'higher_count_after': higher_count_after,
+            'lower_count_after': lower_count_after,
+            'equal_count_after': equal_count_after,
+            'total_compared_after': total_compared_after,
+            'higher_percent_after': round((higher_count_after / total_compared_after * 100), 1) if total_compared_after > 0 else 0,
+            'lower_percent_after': round((lower_count_after / total_compared_after * 100), 1) if total_compared_after > 0 else 0,
+            'equal_percent_after': round((equal_count_after / total_compared_after * 100), 1) if total_compared_after > 0 else 0,
+            'higher_count_before': higher_count_before,
+            'lower_count_before': lower_count_before,
+            'equal_count_before': equal_count_before,
+            'total_compared_before': total_compared_before,
+            'higher_percent_before': round((higher_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
+            'lower_percent_before': round((lower_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
+            'equal_percent_before': round((equal_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
         },
         'task_stats': {
             'total_tasks': all_tasks_total,
@@ -4841,6 +5347,159 @@ def eco_efficiency_analysis(request):
     }
 
     return render(request, 'lo/eco_efficiency.html', {'params': params})
+
+
+def eco_analyst_detail(request, analyst_id):
+    """Детальная страница по аналитику с оценками"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_analyst_detail',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+    role_filter = request.GET.get('role', '')
+
+    # Получаем аналитика
+    try:
+        analyst = User.objects.get(pk=analyst_id)
+        analyst_name = analyst.profiles.eco_name if hasattr(analyst, 'profiles') and analyst.profiles.eco_name else analyst.get_full_name() or analyst.username
+    except User.DoesNotExist:
+        analyst_name = 'Неизвестный аналитик'
+
+    # Получаем оценки аналитика
+    evaluations_qs = EcoAnalystSnapshot.objects.filter(
+        analyst_id=analyst_id,
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+
+    if unit_id:
+        evaluations_qs = evaluations_qs.filter(unit_id=unit_id)
+    if staff_id:
+        evaluations_qs = evaluations_qs.filter(staff_id=staff_id)
+    if type_id:
+        evaluations_qs = evaluations_qs.filter(type_reception_id=type_id)
+    if status_id:
+        evaluations_qs = evaluations_qs.filter(status_id=status_id)
+    if role_filter:
+        evaluations_qs = evaluations_qs.filter(role=role_filter)
+
+    # Пагинация
+    paginator = Paginator(evaluations_qs.order_by('-start_estimation'), 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # Подготовка данных для таблицы
+    evaluations = []
+    for eval_snapshot in page_obj:
+        # Определяем маркер цены
+        price_marker = None
+        price_marker_class = ''
+        if eval_snapshot.role == 'before' and eval_snapshot.price_before_kd and eval_snapshot.price_auto_selected:
+            diff = float(eval_snapshot.price_before_kd) - float(eval_snapshot.price_auto_selected)
+            diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+            if diff_percent > 5:
+                price_marker = 'Выше'
+                price_marker_class = 'text-success'
+            elif diff_percent < -5:
+                price_marker = 'Ниже'
+                price_marker_class = 'text-danger'
+            else:
+                price_marker = 'Равно'
+                price_marker_class = 'text-info'
+        elif eval_snapshot.role == 'after' and eval_snapshot.price_after_kd and eval_snapshot.price_auto_selected:
+            diff = float(eval_snapshot.price_after_kd) - float(eval_snapshot.price_auto_selected)
+            diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+            if diff_percent > 5:
+                price_marker = 'Выше'
+                price_marker_class = 'text-success'
+            elif diff_percent < -5:
+                price_marker = 'Ниже'
+                price_marker_class = 'text-danger'
+            else:
+                price_marker = 'Равно'
+                price_marker_class = 'text-info'
+
+        # Вычисляем время в часах
+        duration_estimation_hours = round((eval_snapshot.duration_estimation_sec or 0) / 3600, 1) if eval_snapshot.duration_estimation_sec else None
+        duration_sogl_hours = None
+        if eval_snapshot.role == 'before' and eval_snapshot.duration_sogl_before_sec:
+            duration_sogl_hours = round(eval_snapshot.duration_sogl_before_sec / 3600, 1)
+        elif eval_snapshot.role == 'after' and eval_snapshot.duration_sogl_after_sec:
+            duration_sogl_hours = round(eval_snapshot.duration_sogl_after_sec / 3600, 1)
+
+        evaluations.append({
+            'estimation_id': eval_snapshot.estimation_id,
+            'rlk_id': eval_snapshot.rlk_id,
+            'role': eval_snapshot.role,
+            'role_display': 'До КД' if eval_snapshot.role == 'before' else 'После КД',
+            'start_estimation': eval_snapshot.start_estimation,
+            'end_estimation': eval_snapshot.end_estimation,
+            'unit_name': eval_snapshot.unit_name,
+            'staff_name': eval_snapshot.staff_name,
+            'status_name': eval_snapshot.status_name,
+            'has_soglasovanie': eval_snapshot.has_soglasovanie,
+            'has_diagnostics': eval_snapshot.has_diagnostics,
+            'accepted': eval_snapshot.accepted,
+            'price_auto_selected': eval_snapshot.price_auto_selected,
+            'price_before_kd': eval_snapshot.price_before_kd,
+            'price_after_kd': eval_snapshot.price_after_kd,
+            'duration_estimation_hours': duration_estimation_hours,
+            'duration_sogl_hours': duration_sogl_hours,
+            'tasks_total': eval_snapshot.tasks_total,
+            'tasks_closed': eval_snapshot.tasks_closed,
+            'price_marker': price_marker,
+            'price_marker_class': price_marker_class,
+        })
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'type_id': type_id or '',
+        'status_id': status_id or '',
+        'role': role_filter or '',
+    }
+
+    params = {
+        'type': 'eco_analyst_detail',
+        'nav_selected': 4,
+        'request': request,
+        'analyst_id': analyst_id,
+        'analyst_name': analyst_name,
+        'filters': filters,
+        'evaluations': evaluations,
+        'page_obj': page_obj,
+        'units': units,
+        'staffs': staffs,
+        'types': types,
+        'statuses': statuses,
+    }
+
+    return render(request, 'lo/eco_analyst_detail.html', {'params': params})
 
 
 def staff_performance_analysis(request):
@@ -5514,6 +6173,67 @@ def interactive_pricing_report(request):
 
     total_count = base_qs.count()
 
+    # Статистика по аналитикам из витрины EcoAnalystSnapshot
+    analyst_qs = EcoAnalystSnapshot.objects.filter(
+        start_estimation__gte=date_start,
+        start_estimation__lte=date_end,
+    )
+    if unit_id:
+        analyst_qs = analyst_qs.filter(unit_id=unit_id)
+    if analyst_id:
+        analyst_qs = analyst_qs.filter(analyst_id=analyst_id)
+
+    before_stats = analyst_qs.filter(role='before').values('analyst_id', 'analyst_name').annotate(
+        cnt=Count('estimation_id'),
+        avg_diff=Avg('diff_before'),
+        avg_price=Avg('price_before_kd'),
+        avg_auto=Avg('price_auto_selected'),
+    )
+    after_stats = analyst_qs.filter(role='after').values('analyst_id', 'analyst_name').annotate(
+        cnt=Count('estimation_id'),
+        avg_diff=Avg('diff_after'),
+        avg_price=Avg('price_after_kd'),
+        avg_auto=Avg('price_auto_selected'),
+    )
+
+    analyst_stats_map = {}
+    for row in before_stats:
+        aid = row['analyst_id'] or 0
+        analyst_stats_map[aid] = {
+            'analyst_id': row['analyst_id'],
+            'analyst_name': row['analyst_name'] or '—',
+            'count_before': row['cnt'],
+            'avg_diff_before': row['avg_diff'] or 0,
+            'avg_price_before': row['avg_price'] or 0,
+            'avg_auto': row['avg_auto'] or 0,
+            'count_after': 0,
+            'avg_diff_after': 0,
+            'avg_price_after': 0,
+        }
+    for row in after_stats:
+        aid = row['analyst_id'] or 0
+        if aid not in analyst_stats_map:
+            analyst_stats_map[aid] = {
+                'analyst_id': row['analyst_id'],
+                'analyst_name': row['analyst_name'] or '—',
+                'count_before': 0,
+                'avg_diff_before': 0,
+                'avg_price_before': 0,
+                'avg_auto': row['avg_auto'] or 0,
+                'count_after': row['cnt'],
+                'avg_diff_after': row['avg_diff'] or 0,
+                'avg_price_after': row['avg_price'] or 0,
+            }
+        else:
+            analyst_stats_map[aid]['count_after'] = row['cnt']
+            analyst_stats_map[aid]['avg_diff_after'] = row['avg_diff'] or 0
+            analyst_stats_map[aid]['avg_price_after'] = row['avg_price'] or 0
+            # Обновим avg_auto, если было пусто
+            if not analyst_stats_map[aid]['avg_auto']:
+                analyst_stats_map[aid]['avg_auto'] = row['avg_auto'] or 0
+
+    analyst_stats = sorted(analyst_stats_map.values(), key=lambda x: x['analyst_name'])
+
     aggregates = base_qs.aggregate(
         total_price_before=Coalesce(Sum('price_before_kd', output_field=FloatField()), 0.0),
         total_price_after=Coalesce(Sum('price_after_kd', output_field=FloatField()), 0.0),
@@ -5636,7 +6356,7 @@ def interactive_pricing_report(request):
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(Q(profiles__eco=True) | Q(profiles__eco_visible=True)).order_by('profiles__eco_name')
+    analysts = User.objects.filter(profiles__eco=True)
     types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
 
@@ -5685,6 +6405,7 @@ def interactive_pricing_report(request):
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
+        'analyst_stats': analyst_stats,
     }
 
     return render(request, 'lo/interactive_pricing_report.html', {'params': params})
