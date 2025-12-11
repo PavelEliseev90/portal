@@ -22876,4 +22876,468 @@
   })();
   </script>
 
+<!-- Печатная форма интерактивной оценки -->
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .print-form, .print-form * {
+      visibility: visible;
+    }
+    .print-form {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      padding: 20px;
+      background: white;
+    }
+    .no-print {
+      display: none !important;
+    }
+    .print-form img {
+      max-width: 100%;
+      height: auto;
+      page-break-inside: avoid;
+    }
+    .print-form .photo-grid {
+      page-break-inside: avoid;
+    }
+  }
+
+  @media screen {
+    .print-form {
+      display: none;
+    }
+  }
+
+  .print-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: #002a5a;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 600;
+  }
+
+  .print-btn:hover {
+    background: #003d7a;
+  }
+</style>
+
+<!-- <button class="print-btn no-print" onclick="window.print()">🖨️ Печать формы</button> -->
+
+<div class="print-form">
+  
+  <div style="max-width: 210mm; margin: 0 auto; padding: 5mm; font-family: Arial, sans-serif; color: #000;">
+    <!-- Заголовок -->
+    <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: bold;">ИНТЕРАКТИВНАЯ ОЦЕНКА АВТОМОБИЛЯ</h1>
+      <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Рабочий лист № {{params.rlk.nomer|default:"—"}} от {{params.rlk.dataTime|date:"d.m.Y"|default:"—"}}</p>
+    </div>
+
+    <!-- Основные данные -->
+    <div style="margin-bottom: 5px;">
+      <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Автомобиль</p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <tr>
+          <td style="padding: 8px; width: 30%; font-weight: bold; border: 1px solid #ddd;">Автомобиль:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.model.mark.name|default:"—"}} {{params.estimation.modification.model.name|default:"—"}} {{params.estimation.modification.name|default:"—"}}</td> 
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Год выпуска:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.year|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">VIN:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.vin|default:"—"}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Пробег:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            {% if params.estimation.page_salon %}
+              {{params.estimation.page_salon.run|default:"—"}} км
+            {% elif params.estimation.page_remote %}
+              {{params.estimation.page_remote.run|default:"—"}} км
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Клиент:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            {% if params.estimation.page_documents %}
+              {{params.estimation.page_documents.customer_family|default:"—"}} {{params.estimation.page_documents.customer_name|default:"—"}} {{params.estimation.page_documents.customer_patronymic|default:"—"}}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Подразделение:</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            {% if params.rlk.unit.name %}
+              {{params.rlk.unit.name}}
+            {% elif params.rlk.unit_dc.name %}
+              {{params.rlk.unit_dc.name}}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        
+      </table>
+
+      <!-- <div class="row g-1">
+
+        {% if params.estimation.check_run == False %}
+          <div class="col-auto">   
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              Есть расхождения в пробегах 
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.page_vnesh.check_vin_int == 0 %}
+          <div class="col-auto">              
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              <b>VIN возможно не читается</b>
+            </div>          
+          </div>
+        {% endif %}
+
+        {% if params.estimation.carsharing %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              <b>Каршеринг !</b>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.taxi %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              <b>Такси !</b>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.count_dtp %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              <b>Был в ДТП - {{params.estimation.count_dtp}}</b>
+            </div>  
+          </div>
+        {% endif %}
+
+        {% if params.estimation.avtoteka_car_autodex > 300000 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              <b>Расчет ремонта - {{params.estimation.avtoteka_car_autodex|floatformat:"2g" }} &#8381;</b></b>
+            </div>
+          </div>
+        {% elif params.estimation.avtoteka_car_autodex > 0 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              <b>Расчет ремонта - {{params.estimation.avtoteka_car_autodex|floatformat:"2g" }} &#8381;</b></b>
+            </div>
+          </div>   
+        {% endif %}
+
+        {% if params.estimation.car_repaint %}
+          <div class="col-auto">   
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              Есть крашеные элементы
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.dachboard_critical_error > 0 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              Критические ошибки - {{params.estimation.dachboard_critical_error}}
+            </div>
+          </div>
+        {% endif %}
+        
+        {% if params.estimation.dachboard_no_critical_error > 0 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Ошибки на приборной панели - {{params.estimation.dachboard_no_critical_error}}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.page_salon.cleaning_int == 1 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Требуется химчистка
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.page_salon.damage_wheel_int == 1 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Повреждения / затертость руля
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.page_salon.damage_seat_int == 1 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warningtext-nowrap">
+              Повреждения / затертость сидений
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.page_vnesh.windshield_error_int == 1 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Лобовое стекло с повреждениями
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.fotos_vmatin > 3 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              Много вмятин
+            </div>
+          </div>
+        {% elif params.estimation.fotos_carap > 1 %}
+          <div class="col-auto">  
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Вмятины
+            </div>
+          </div>        
+        {% endif %}
+
+        {% if params.estimation.fotos_carap > 3 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              Много царапин
+            </div>
+          </div>
+        {% elif params.estimation.fotos_carap > 1 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Царапины
+            </div>
+          </div>
+        {% endif %}
+
+        {% if params.estimation.fotos_rzav > 3 %}
+          <div class="col-auto">   
+            <div class="kors-brand-pill bg-danger text-nowrap">
+              Много ржавчины
+            </div>
+          </div>          
+        {% elif params.estimation.fotos_rzav > 1 %}
+          <div class="col-auto">
+            <div class="kors-brand-pill bg-warning text-nowrap">
+              Ржавчина
+            </div>
+          </div>
+        {% endif %}
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.to == 1 %}
+              <div class="kors-brand-pill bg-secondary text-nowrap">
+                  <b><span class="icon-mbri-add-submenu"></span> &nbsp; ТО Minimal &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.to == 2  %}
+              <div class="kors-brand-pill bg-secondary text-nowrap">
+                  <b><span class="icon-mbri-add-submenu"></span> &nbsp; ТО Middle &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.to == 3  %}
+              <div class="kors-brand-pill bg-secondary text-nowrap">
+                  <b><span class="icon-mbri-add-submenu"></span> &nbsp; ТО Full &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+      
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.engine == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                  <b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.engine == 0 %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                  <b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.system_og == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-rocket"></span> &nbsp; Система выпуска ОГ &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.system_og == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-rocket"></span> &nbsp; Система выпуска ОГ &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.gear == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                  <b><span class="icon-mbri-transmission1"></span> &nbsp; Коробка передач &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.gear == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                  <b><span class="icon-mbri-transmission1"></span> &nbsp; Коробка передач &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.suspension == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.suspension == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.airbag == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-hearth"></span> &nbsp; Подушки безопасности &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.airbag == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-hearth"></span> &nbsp; Подушки безопасности &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>  
+          
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.conditioner == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-sun2"></span> &nbsp; Кондиционер &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.conditioner == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-sun2"></span> &nbsp; Кондиционер &nbsp; </b>
+              </div>
+            {% endif %}
+          </div> 
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.turbo == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-speed"></span> &nbsp; Турбокомпрессор &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.turbo == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-speed"></span> &nbsp; Турбокомпрессор &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.drive == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-setting"></span> &nbsp; Полный привод &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.drive == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-setting"></span> &nbsp; Полный привод &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-auto">
+            {% if params.estimation.page_test_drive.wheel == 2 %}
+              <div class="kors-brand-pill bg-warning text-nowrap">
+                <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
+              </div>
+            {% elif params.estimation.page_test_drive.wheel == 0  %}
+              <div class="kors-brand-pill bg-danger text-nowrap">
+                <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
+              </div>
+            {% endif %}
+          </div>
+
+      </div> -->
+
+    </div>
+
+    <!-- Фото внешнего осмотра -->
+    <div style="margin-bottom: 15px;" class="photo-grid">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 5px;">
+        <!-- Передняя часть -->
+        {% if params.estimation.fotos_vnesh_pered %}
+        <div style=" text-align: center;">
+          <img src="{{params.estimation.fotos_vnesh_pered}}" alt="Передняя часть" style="max-width: 100%; height: auto; ">
+        </div>
+        {% endif %}
+        
+        <!-- Водительская сторона -->
+        {% if params.estimation.fotos_vnesh_vod %}
+        <div style=" text-align: center;">
+          <img src="{{params.estimation.fotos_vnesh_vod}}" alt="Водительская сторона" style="max-width: 100%; height: auto; ">
+        </div>
+        {% endif %}
+        
+        <!-- Задняя часть -->
+        {% if params.estimation.fotos_vnesh_zad %}
+        <div style=" text-align: center;">
+          <img src="{{params.estimation.fotos_vnesh_zad}}" alt="Задняя часть" style="max-width: 100%; height: auto; ">
+        </div>
+        {% endif %}
+        
+        <!-- Пассажирская сторона -->
+        {% if params.estimation.fotos_vnesh_pass %}
+        <div style=" text-align: center;">
+          <img src="{{params.estimation.fotos_vnesh_pass}}" alt="Пассажирская сторона" style="max-width: 100%; height: auto; ">
+        </div>
+        {% endif %}
+        
+        {% if params.estimation.fotos_vnesh_up %}
+          <div style=" text-align: center;">
+            <img src="{{params.estimation.fotos_vnesh_up}}" alt="Вид сверху" style="max-width: 100%; height: auto;">
+          </div>
+        {% endif %}
+        
+      </div>
+
+    </div>
+
+    <!-- Подпись и дата -->
+    <div style="margin-top: 40px; border-top: 1px solid #000; padding-top: 15px;">
+      <div style="display: flex; justify-content: space-between; font-size: 12px;">
+        <div>
+          <div style="margin-bottom: 40px;">Оценщик: _________________</div>
+          <div>Дата: {{params.rlk.dataTime|date:"d.m.Y"|default:"—"}}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="margin-bottom: 40px;">Клиент: _________________</div>
+          <div>Подпись: _________________</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Футер -->
+    <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">
+      <p style="margin: 0;">Документ сформирован автоматически. {{params.rlk.dataTime|date:"d.m.Y H:i"|default:""}}</p>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

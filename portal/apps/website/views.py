@@ -7800,7 +7800,7 @@ def auction_doc(request, slug_auction):
 
         auction.user                = user
         
-        auction.store               = RefStore.objects.get(name = request.POST.get('store', ''))
+        auction.store               = RefStore.objects.get(id = request.POST.get('store', ''))
         auction.start_price         = int(request.POST.get('price_start', '0')) 
         auction.dateStart           = DT.datetime.strptime(request.POST.get('dateStart', ''), "%Y-%m-%dT%H:%M")
         auction.description         = request.POST.get('description', '')        
