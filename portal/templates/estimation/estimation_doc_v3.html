@@ -7,14 +7,209 @@
 
 {% block content %}
 
+<style>
+  .kors-estimation-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-      <div class="hidesite">
-        
-        <br>
-        
-      </div>
+  .kors-estimation-header {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-      <div class="tab-content">
+  .kors-estimation-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-estimation-header p {
+    color: #6c7a92;
+    margin-bottom: 0;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .kors-panel hr {
+    border-color: rgba(0, 42, 90, 0.1);
+    margin: 1rem 0;
+  }
+
+  .kors-form-control {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .kors-form-control:focus {
+    border-color: #002a5a;
+    box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+  }
+
+  .kors-btn {
+    border-radius: 0.85rem;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.2s ease;
+  }
+
+  .kors-btn-primary {
+    background: linear-gradient(140deg, #002c63, #00509d);
+    color: #fff;
+    border: none;
+    box-shadow: 0 20px 35px rgba(0, 33, 79, 0.3);
+  }
+
+  .kors-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 45px rgba(0, 33, 79, 0.4);
+  }
+
+  .kors-nav-header {
+    background: linear-gradient(140deg, #002a5a, #003d7a);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 0 0 1.25rem 1.25rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .kors-nav-header h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+    color: #fff;
+  }
+
+  .kors-nav-header .btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 0.75rem;
+  }
+
+  .kors-nav-header .btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .kors-nav-header .dropdown-menu {
+    background: #002a5a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .kors-nav-header .dropdown-menu .btn {
+    background: transparent;
+    border: none;
+    text-align: left;
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+
+  .kors-nav-header .dropdown-menu .btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .kors-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-card h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-floating label {
+    color: #8ea1ba;
+    font-size: 0.85rem;
+  }
+
+  .form-floating > .form-control:focus ~ label,
+  .form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: #002a5a;
+  }
+
+  .search-select {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+  }
+
+  .carousel-item img {
+    border-radius: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .kors-estimation-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-nav-header {
+      padding: 0.75rem 1rem;
+    }
+
+    .kors-nav-header h3 {
+      font-size: 1.1rem;
+    }
+
+    .kors-panel,
+    .kors-card {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+  }
+</style>
+
+<div class="kors-estimation-page">
+  
+  <div class="kors-estimation-header">
+    <h2>Интерактивная оценка автомобиля</h2>
+    <p>Рабочий лист № {{params.estimation.rlk.nomer|default:"—"}} от {{params.estimation.rlk.dataTime|date:"d.m.Y"|default:"—"}}</p>
+  </div>
+
+  <div class="hidesite">
+    <br>
+  </div>
+
+  <div class="tab-content">
 
         
         <div class="tab-pane {% if params.tabindex == 0 or not params.tabindex or params.tabindex == 1 %} active {% endif %}" id="document" role="tabpanel" aria-labelledby="document-tab">
@@ -77,70 +272,50 @@
               
               {% csrf_token %} 
             
-              <div class="fixed-top hidemobile my_pages_title" >
-      
-                <div class="row g-1">
-                  
+              <div class="fixed-top hidemobile kors-nav-header" >
+                <div class="row g-1 align-items-center">
                   <div class="col">
-                    <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
-                      
-                      <div class="col-sm" style="padding-bottom: 0.4rem;">
-                        <label class="fs-3"> <span class="icon-mbri-edit"></span> Документы</label>
-                      </div>
-                      
-                      <div class="col-sm-auto">
-                        
-                        <button type="button" class="btn btn-block btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                          <span class="icon-mbri-right"></span> Документы
-                        </button>
-                        <ul class="dropdown-menu bg-dark" style="width: 14rem; z-index: 0;">
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="1" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Документы</button>
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="2" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Салон</button>
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="3" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Внешний осмотр</button>
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="4" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Комплектность</button>
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="5" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Колеса</button>
-                          <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
-                          <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
-                        </ul>
-                      </div>
-
-                      <div class="col-sm-auto">
-                        <button class="btn btn-dark" type="submit" name="save"> <span class="icon-mbri-save"></span> Сохранить</button>  
-                      </div>
-
-                      <div class="col-sm-auto" style="padding-right: 0.5rem;">
-                        <button class="btn btn-dark" type="submit" name="save_and_next"> <span class="icon-mbri-right"></span> Салон</button>  
-                      </div>
-                      
-                    </div>   
+                    <h3><span class="icon-mbri-edit"></span> Документы</h3>
                   </div>
-              
+                  <div class="col-auto">
+                    <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                      <span class="icon-mbri-right"></span> Навигация
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="1"> <span class="icon-mbri-right"></span> Документы</button></li>
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="2"> <span class="icon-mbri-right"></span> Салон</button></li>
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="3"> <span class="icon-mbri-right"></span> Внешний осмотр</button></li>
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="4"> <span class="icon-mbri-right"></span> Комплектность</button></li>
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="5"> <span class="icon-mbri-right"></span> Колеса</button></li>
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="7"> <span class="icon-mbri-right"></span> Проверки</button></li>
+                      <li><button class="btn btn_block text-start" type="submit" name="page" value="8"> <span class="icon-mbri-right"></span> Согласование</button></li>
+                    </ul>
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn kors-btn-primary" type="submit" name="save"> <span class="icon-mbri-save"></span> Сохранить</button>  
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn kors-btn-primary" type="submit" name="save_and_next"> <span class="icon-mbri-right"></span> Салон</button>  
+                  </div>
                 </div>
-              
               </div>
               
-              <div class="fixed-top hidesite my_pages_title" >
-                
-                <div class="row1 dw-block text-white" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; width: 100%;">
-
-                    <button type="button" class="btn btn-dark dropdown-toggle btn_block text-end" style="float: right" data-bs-toggle="dropdown" aria-expanded="false">
-                      <span class="icon-mbri-edit"></span> Документы
-                    </button>
-
-                    <ul class="dropdown-menu dropdown-menu-end bg-dark" style="width: 14rem; z-index: 0;">
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="1" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Документы</button>
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="2" style="margin-top: 0.1rem;" data-bs-toggle="modal" data-bs-target="#exampleModal"> <span class="icon-mbri-right"></span> Салон</button>
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="3" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Внешний осмотр</button>
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="4" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Комплектность</button>
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="5" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Колеса</button>
-                      <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
-                      <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
-                    </ul>
-
+              <div class="fixed-top hidesite kors-nav-header" >
+                <div class="d-flex justify-content-between align-items-center">
+                  <h3 style="font-size: 1rem;"><span class="icon-mbri-edit"></span> Документы</h3>
+                  <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="icon-mbri-menu"></span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="1"> <span class="icon-mbri-right"></span> Документы</button></li>
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="2"> <span class="icon-mbri-right"></span> Салон</button></li>
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="3"> <span class="icon-mbri-right"></span> Внешний осмотр</button></li>
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="4"> <span class="icon-mbri-right"></span> Комплектность</button></li>
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="5"> <span class="icon-mbri-right"></span> Колеса</button></li>
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="7"> <span class="icon-mbri-right"></span> Проверки</button></li>
+                    <li><button class="btn btn_block text-start" type="submit" name="page" value="8"> <span class="icon-mbri-right"></span> Согласование</button></li>
+                  </ul>
                 </div>
-                
               </div>
 
               <div class="my_pages_info_doc">
@@ -148,9 +323,7 @@
                 <div class="row g-1" style="padding-top: 0.2rem;">
                   <div class="col-sm">
                     
-                    <div class="card">
-                      <div class="card-body">
-                        
+                    <div class="kors-card">
                         <h6><span class="icon-mbri-delivery"></span> Данные автомобиля</h6>
 
                         <hr style="width: 75%;">
@@ -159,14 +332,14 @@
                           
                           <div class="col-sm-4">
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="mark" name="mark" value="{{params.estimation.modification.model.mark.name}}" placeholder="-" readonly>
+                              <input class="form-control form-control-sm kors-form-control" type="text" id="mark" name="mark" value="{{params.estimation.modification.model.mark.name}}" placeholder="-" readonly>
                               <label class="fs-6" for="floatingInput">Марка</label>
                             </div>
                           </div>
 
                           <div class="col-sm-4">
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="model" name="model" value="{{params.estimation.modification.model.name}}" placeholder="-" readonly>
+                              <input class="form-control form-control-sm kors-form-control" type="text" id="model" name="model" value="{{params.estimation.modification.model.name}}" placeholder="-" readonly>
                               <label class="fs-6" for="floatingInput">Модель</label>
                             </div>
                           </div>
@@ -176,7 +349,7 @@
                             <div class="row g-1 align-items-center">
                               <div class="col"> 
                                 <div class="form-floating mb-3">
-                                  <input class="form-control form-control-sm" type="text" id="modification" name="modification" value="{{params.estimation.modification.name}}" placeholder="-" readonly>
+                                  <input class="form-control form-control-sm kors-form-control" type="text" id="modification" name="modification" value="{{params.estimation.modification.name}}" placeholder="-" readonly>
                                   <label class="fs-6" for="floatingInput">Модификация</label>
                                 </div>
                               </div>
@@ -210,7 +383,7 @@
                             <div class="row g-1 align-items-center">
                               <div class="col"> 
                                 <div class="form-floating mb-3">
-                                  <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.estimation.vin|default_if_none:"Отсутствует"}}" placeholder="-" readonly>
+                                  <input class="form-control form-control-sm kors-form-control" type="text" id="vin" name="vin" value="{{params.estimation.vin|default_if_none:"Отсутствует"}}" placeholder="-" readonly>
                                   <label class="fs-6" for="floatingInput">VIN</label>
                                 </div>
                               </div>
@@ -224,14 +397,14 @@
                           
                           <div class="col-sm-3">
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="number_body" name="number_body" value="{{params.estimation.number_body|default_if_none:"Не указан"}}" placeholder="-" readonly>
+                              <input class="form-control form-control-sm kors-form-control" type="text" id="number_body" name="number_body" value="{{params.estimation.number_body|default_if_none:"Не указан"}}" placeholder="-" readonly>
                               <label class="fs-6" for="floatingInput">Номер кузова</label>
                             </div>
                           </div>
 
                           <div class="col-sm-3">
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="year" name="year" value="{{params.estimation.year}}" placeholder="-">
+                              <input class="form-control form-control-sm kors-form-control" type="text" id="year" name="year" value="{{params.estimation.year}}" placeholder="-">
                               <label class="fs-6" for="floatingInput">Год выпуска</label>
                             </div>
                           </div>
@@ -239,7 +412,7 @@
                           <div class="col-sm-3">
                             
                             <div class="form-floating mb-3">							
-                              <select class="form-select" id="type_drive" name="type_drive" placeholder="">
+                              <select class="form-select kors-form-control" id="type_drive" name="type_drive" placeholder="">
                                 <option></option>
                               
                                 <option value="Передний" {% if params.estimation.type_drive == "Передний" %} selected {% endif %}> Передний </option>
@@ -255,8 +428,6 @@
                           </div>
 
                         </div>
-
-                      </div>
                     </div>
 
                   </div>
@@ -265,9 +436,7 @@
                 <div class="row g-1" style="padding-top: 0.2rem;">
                   <div class="col-sm">
                     
-                    <div class="card">
-                      <div class="card-body">
-                        
+                    <div class="kors-card">
                         <h6><span class="icon-mbri-credit-card"></span> Данные оценки</h6>
 
                         <hr style="width: 75%;">
@@ -354,8 +523,6 @@
                           </div>
 
                         </div>
-
-                      </div>
                     </div>
 
                   </div>
@@ -365,82 +532,72 @@
                   
                   <div class="col-sm-6">
                     
-                    <div class="card">
-                      <div class="card-body">
-                        
+                    <div class="kors-card">
                         <h6><span class="icon-mbri-user"></span> Клиент</h6>
 
                         <hr style="width: 75%;">
 
 
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="customer_family" name="customer_family" value="{{params.estimation.page_documents.customer_family}}" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="customer_family" name="customer_family" value="{{params.estimation.page_documents.customer_family}}" required>
                           <label class="fs-6" for="floatingInput">Фамилия</label>
                         </div>
         
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="customer_name" name="customer_name" value="{{params.estimation.page_documents.customer_name}}" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="customer_name" name="customer_name" value="{{params.estimation.page_documents.customer_name}}" required>
                           <label class="fs-6" for="floatingInput">Имя</label>
                         </div>
         
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="customer_patronymic" name="customer_patronymic" value="{{params.estimation.page_documents.customer_patronymic}}">
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="customer_patronymic" name="customer_patronymic" value="{{params.estimation.page_documents.customer_patronymic}}">
                           <label class="fs-6" for="floatingInput">Отчество</label>
                         </div>
         
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="customer_phone" name="customer_phone" value="{{params.estimation.page_documents.customer_phone}}" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="customer_phone" name="customer_phone" value="{{params.estimation.page_documents.customer_phone}}" required>
                           <label class="fs-6" for="floatingInput">Телефон клиента</label>
                         </div>
 
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="customer_region" name="customer_region" value="{{params.estimation.page_documents.customer_region}}">
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="customer_region" name="customer_region" value="{{params.estimation.page_documents.customer_region}}">
                           <label class="fs-6" for="floatingInput">Область клиента</label>
                         </div>
-
-                      </div>
-
                     </div>
                     
                   </div>
 
                   <div class="col-sm-6">
                     
-                    <div class="card">
-                      <div class="card-body">
-                        
+                    <div class="kors-card">
                         <h6><span class="icon-mbri-user"></span> Данные по автомобилю</h6>
 
                         <hr style="width: 75%;">
 
 
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="number" id="count_key" name="count_key" value="{{params.estimation.page_documents.count_key}}" placeholder="-" required>
+                          <input class="form-control form-control-sm kors-form-control" type="number" id="count_key" name="count_key" value="{{params.estimation.page_documents.count_key}}" placeholder="-" required>
                           <label class="fs-6" for="floatingInput">Количество ключей</label>
                         </div>
         
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="count_owners" name="count_owners" value="{{params.estimation.page_documents.count_owners}}" placeholder="-" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="count_owners" name="count_owners" value="{{params.estimation.page_documents.count_owners}}" placeholder="-" required>
                           <label class="fs-6" for="floatingInput">Количество владельцев</label>
                         </div>
         
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="plate_number" name="plate_number" value="{{params.estimation.page_documents.plate_number}}" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="plate_number" name="plate_number" value="{{params.estimation.page_documents.plate_number}}" required>
                           <label class="fs-6" for="floatingInput">Гос. номер</label>
                         </div>
         
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="engine_number" name="engine_number" value="{{params.estimation.page_documents.engine_number}}" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="engine_number" name="engine_number" value="{{params.estimation.page_documents.engine_number}}" required>
                           <label class="fs-6" for="floatingInput">№ двигателя</label>
                         </div>
 
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="pts_color" name="pts_color" value="{{params.estimation.page_documents.pts_color}}" required>
+                          <input class="form-control form-control-sm kors-form-control" type="text" id="pts_color" name="pts_color" value="{{params.estimation.page_documents.pts_color}}" required>
                           <label class="fs-6" for="floatingInput">Цвет по ПТС</label>
                         </div>
-
-                      </div>
-
                     </div>
                     
                   </div>
@@ -452,10 +609,7 @@
 
                   <div class="col-sm-6">
                     
-                    <div class="card">
-                      <div class="card-body">
-                        
-                        
+                    <div class="kors-card">
                         <div class="row g-1">
                           
                           <div class="col-sm-6">
@@ -465,16 +619,16 @@
                             <hr style="width: 75%;">
 
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="sts_number" name="sts_number" value="{{params.estimation.page_documents.sts_number}}" required>
+                              <input class="form-control form-control-sm kors-form-control" type="text" id="sts_number" name="sts_number" value="{{params.estimation.page_documents.sts_number}}" required>
                               <label class="fs-6" for="floatingInput">Номер</label>
                             </div>
             
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="date" id="sts_date" name="sts_date" value="{{params.estimation.page_documents.sts_date|date:'Y-m-d'}}" required min="1950-01-01">
+                              <input class="form-control form-control-sm kors-form-control" type="date" id="sts_date" name="sts_date" value="{{params.estimation.page_documents.sts_date|date:'Y-m-d'}}" required min="1950-01-01">
                               <label class="fs-6" for="floatingInput">Дата</label>
                             </div>
 
-                            <input type="file" class="form-control" id="image_sts" name="image_sts" accept="capture=camera" multiple/>
+                            <input type="file" class="form-control kors-form-control" id="image_sts" name="image_sts" accept="capture=camera" multiple/>
                                     
                           </div>
 
@@ -525,9 +679,6 @@
                           </div>
 
                         </div>
-
-                      </div>
-
                     </div>
                     
                   </div>
@@ -622,12 +773,14 @@
                 </div>
 
                 <div class="hidesite" >
-                  <div class="row fixed-bottom" style="padding: 0.5rem; margin-left: 0.1rem; margin-right: 0.1rem;"  >
+                  <div class="row fixed-bottom kors-nav-header" style="padding: 0.75rem; margin: 0; border-radius: 1.25rem 1.25rem 0 0;"  >
                       <div class="col">
-                        <button class="btn btn-block btn-dark" type="submit" name="save">
-                          <span class="icon-mbri-save" ></span>
+                        <button class="btn kors-btn-primary btn-block" type="submit" name="save">
+                          <span class="icon-mbri-save" ></span> Сохранить
                         </button>
-                        <button class="btn btn-block btn-dark col-10" type="submit" name="save_and_next">
+                      </div>
+                      <div class="col">
+                        <button class="btn kors-btn-primary btn-block" type="submit" name="save_and_next">
                           Салон <span class="icon-mbri-right text-end"></span> 
                         </button>
                       </div>                
@@ -5258,9 +5411,7 @@
 
                 <br>
 
-                <div class="card">
-                  <div class="card-body">
-                  
+                <div class="kors-card">
                       <div class="row g-1">
 
                         <div class="col-sm-6 g-1">
@@ -5269,14 +5420,14 @@
                           <hr style="width: 75%;">
 
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" id="price_reception" name="price_reception" value="{{params.estimation.page_remote.price_reception}}" required>
+                            <input class="form-control form-control-sm kors-form-control" type="number" id="price_reception" name="price_reception" value="{{params.estimation.page_remote.price_reception}}" required>
                             <label class="fs-6" for="floatingInput">Цена приема &#8381;</label>
                           </div>
                         
                           <br>
           
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" id="price_sale" name="price_sale" value="{{params.estimation.page_remote.price_sale}}" required>
+                            <input class="form-control form-control-sm kors-form-control" type="number" id="price_sale" name="price_sale" value="{{params.estimation.page_remote.price_sale}}" required>
                             <label class="fs-6" for="floatingInput">Цена продажи &#8381;</label>
                           </div>
                           <br>
@@ -5285,14 +5436,14 @@
                           <hr style="width: 75%;">
 
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_remote.car_sale_info}}" required>
+                            <input class="form-control form-control-sm kors-form-control" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_remote.car_sale_info}}" required>
                             <label class="fs-6" for="floatingInput">Приобретаемый АМ</label>
                           </div>
                         
                           <br>
           
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="text" id="car_sale_price" name="car_sale_price" value="{{params.estimation.page_remote.car_sale_price}}" required>
+                            <input class="form-control form-control-sm kors-form-control" type="text" id="car_sale_price" name="car_sale_price" value="{{params.estimation.page_remote.car_sale_price}}" required>
                             <label class="fs-6" for="floatingInput">Цена приобретаемого АМ &#8381;</label>
                           </div>
 
@@ -5303,7 +5454,7 @@
                         <div class="col-sm-6">
                           <div class="form-group">
                             <label class="fs-6" for="comment">Комментарий</label>
-                            <textarea class="form-control" name="comment" id="comment" rows="12" {% if params.estimation.page_remote.end_estimation != None %} readonly {% endif %} >{{params.estimation.page_remote.comment}}</textarea>
+                            <textarea class="form-control kors-form-control" name="comment" id="comment" rows="12" {% if params.estimation.page_remote.end_estimation != None %} readonly {% endif %} >{{params.estimation.page_remote.comment}}</textarea>
                           </div>
                           {% if params.estimation.page_remote.end_estimation == None %} 
                         
@@ -5354,34 +5505,27 @@
                         </div>
                         
                       </div>
-
-                    </div>
                 </div>
 
               </div>
                         
               <div class="hidesite" >
-                <div class="row fixed-bottom" style="padding: 0.5rem; margin-left: 0.1rem; margin-right: 0.1rem;"  >
+                <div class="row fixed-bottom kors-nav-header" style="padding: 0.75rem; margin: 0; border-radius: 1.25rem 1.25rem 0 0;"  >
                     <div class="col">
-                      
-                      <button class="btn btn-block btn-dark" type="submit" name="save">
-                        <span class="icon-mbri-save" ></span>
+                      <button class="btn kors-btn-primary btn-block" type="submit" name="save">
+                        <span class="icon-mbri-save" ></span> Сохранить
                       </button>
-                      
+                    </div>
+                    <div class="col">
                       {% if params.list_checks.error %}
-                        
-                      <button class="btn btn-block btn-danger col-10" type="button">
+                        <button class="btn btn-danger btn-block" type="button">
                           Необходимо исправить ошибки<span class="icon-mbri-close text-end"></span> 
                         </button>
-
                       {% else %}
-
-                        <button class="btn btn-block btn-dark col-10" type="submit" name="save_and_next">
+                        <button class="btn kors-btn-primary btn-block" type="submit" name="save_and_next">
                           Отправить на согласование <span class="icon-mbri-success text-end"></span> 
                         </button>
-
                       {% endif %}
-
                     </div>                
                 </div>
               </div>
@@ -5407,6 +5551,7 @@
     </main>
     
   </div>
+</div>
 	         
   <br>
   
