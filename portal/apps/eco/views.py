@@ -3391,6 +3391,18 @@ def estimations_price_calculation(estimation, type_calculation):
         }
         iznos_price = diff
         list_info_price.append(inf_price)
+    elif estimation.taxi:
+        price_new  = price - (price * (100 - kf_auction) / 100)
+        diff       = price - price_new
+        price = price_new
+        inf_price = {
+            'price'     : price,
+            'dif'       : diff,
+            'comment'  : "Цена скоректирована c учетом использования в такси",  
+            'name'      : "износ" 
+        }
+        iznos_price = diff
+        list_info_price.append(inf_price)
 
     #Считаем авто в продаже 
     price_sale_rdo = 0
