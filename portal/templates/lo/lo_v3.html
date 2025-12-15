@@ -7293,6 +7293,32 @@
                                   </div>
                                 </div>
                               </div>
+
+                              <div class="col-12 col-xl-6">
+                                <div class="portal-panel">
+                                  <h6><span class="icon-mbri-info"></span> Тормозная система</h6>
+                                  
+                                  <div class="kors-btn-group-wrapper-simple">
+                                    <div class="kors-btn-group-compact" role="group" aria-label="Тормозная система">
+                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio1_brake" value="1" {% if params.estimation.page_test_drive.brake == 1 %} checked {% endif %}>
+                                      <label class="btn btn-outline-success" for="inlineRadio1_brake">Исправна</label>
+                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio2_brake" value="0" {% if params.estimation.page_test_drive.brake == 0 %} checked {% endif %}>
+                                      <label class="btn btn-outline-danger" for="inlineRadio2_brake">Не исправна</label>
+                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio3_brake" value="2" {% if params.estimation.page_test_drive.brake == 2 %} checked {% endif %}>
+                                      <label class="btn btn-outline-warning" for="inlineRadio3_brake">Есть замечания</label>
+                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio4_brake" value="4" {% if params.estimation.page_test_drive.brake == 4 %} checked {% endif %}>
+                                      <label class="btn btn-outline-success" for="inlineRadio4_brake">Не предусмотрена</label>
+                                    </div>
+                                    <label class="fs-6" for="radio_brake">Тормозная система</label>
+                                  </div>
+                                  
+                                  <div class="form-floating mb-3">
+                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_brake" name="comment_brake" value="{{params.estimation.page_test_drive.comment_brake}}" placeholder="" autocomplete="off">
+                                    <label for="comment_brake">Комментарий</label>
+                                  </div>
+                                </div>
+                              </div>
+
                             </div>
                             
                             <div class="row g-2">

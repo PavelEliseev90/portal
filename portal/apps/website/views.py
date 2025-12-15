@@ -7050,6 +7050,7 @@ def settings_diagnostic(request):
                 key.startswith('turbo_') or 
                 key.startswith('conditioner_') or
                 key.startswith('drive_') or
+                key.startswith('brake_') or
                 key.startswith('to_')):
                 try:
                     value = request.POST.get(key, 0)

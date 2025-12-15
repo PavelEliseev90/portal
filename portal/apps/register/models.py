@@ -339,6 +339,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_kf_200            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 200',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_200    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 200',      default=0, null=True, blank=True)       #'// 
     
+    brake_danger_amount_200              = models.IntegerField('Тормозная система не исправна сумма 200',      default=0, null=True, blank=True)
+    brake_danger_kf_200                  = models.IntegerField('Тормозная система не исправна коэффициент 200', default=0, null=True, blank=True)
+    brake_danger_amount_min_200          = models.IntegerField('Тормозная система не исправна мин сумма 200',   default=0, null=True, blank=True)
+    brake_warning_amount_200             = models.IntegerField('Тормозная система есть замечания сумма 200',    default=0, null=True, blank=True)
+    brake_warning_kf_200                 = models.IntegerField('Тормозная система есть замечания коэффициент 200', default=0, null=True, blank=True)
+    brake_warning_amount_min_200         = models.IntegerField('Тормозная система есть замечания мин сумма 200', default=0, null=True, blank=True)
+    
     conditioner_danger_amount_200        = models.IntegerField('Кондиционер не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_200            = models.IntegerField('Кондиционер не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_amount_min_200    = models.IntegerField('Кондиционер не исправен мин сумма 200',      default=0, null=True, blank=True)       #'// 
@@ -428,6 +435,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_kf_400            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 400',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_400    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 400',      default=0, null=True, blank=True)       #'// 
     
+    brake_danger_amount_400              = models.IntegerField('Тормозная система не исправна сумма 400',      default=0, null=True, blank=True)
+    brake_danger_kf_400                  = models.IntegerField('Тормозная система не исправна коэффициент 400', default=0, null=True, blank=True)
+    brake_danger_amount_min_400          = models.IntegerField('Тормозная система не исправна мин сумма 400',   default=0, null=True, blank=True)
+    brake_warning_amount_400             = models.IntegerField('Тормозная система есть замечания сумма 400',    default=0, null=True, blank=True)
+    brake_warning_kf_400                 = models.IntegerField('Тормозная система есть замечания коэффициент 400', default=0, null=True, blank=True)
+    brake_warning_amount_min_400         = models.IntegerField('Тормозная система есть замечания мин сумма 400', default=0, null=True, blank=True)
+    
     conditioner_danger_amount_400        = models.IntegerField('Кондиционер не исправен сумма 400',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_400            = models.IntegerField('Кондиционер не исправен коэфицент 400',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_amount_min_400    = models.IntegerField('Кондиционер не исправен мин сумма 400',      default=0, null=True, blank=True)       #'// 
@@ -516,6 +530,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_amount_700        	= models.IntegerField('Рулевая рейка есть замечания сумма 700',      default=0, null=True, blank=True)       #'// 
     wheel_warning_kf_700            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 700',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_700    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 700',      default=0, null=True, blank=True)       #'// 
+
+    brake_danger_amount_700              = models.IntegerField('Тормозная система не исправна сумма 700',      default=0, null=True, blank=True)
+    brake_danger_kf_700                  = models.IntegerField('Тормозная система не исправна коэффициент 700', default=0, null=True, blank=True)
+    brake_danger_amount_min_700          = models.IntegerField('Тормозная система не исправна мин сумма 700',   default=0, null=True, blank=True)
+    brake_warning_amount_700             = models.IntegerField('Тормозная система есть замечания сумма 700',    default=0, null=True, blank=True)
+    brake_warning_kf_700                 = models.IntegerField('Тормозная система есть замечания коэффициент 700', default=0, null=True, blank=True)
+    brake_warning_amount_min_700         = models.IntegerField('Тормозная система есть замечания мин сумма 700', default=0, null=True, blank=True)
     
     conditioner_danger_amount_700        = models.IntegerField('Кондиционер не исправен сумма 700',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_700            = models.IntegerField('Кондиционер не исправен коэфицент 700',      default=0, null=True, blank=True)       #'// 
@@ -605,6 +626,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_amount_1200        	= models.IntegerField('Рулевая рейка есть замечания сумма 1200',      default=0, null=True, blank=True)       #'// 
     wheel_warning_kf_1200            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 1200',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_1200    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 1200',      default=0, null=True, blank=True)       #'// 
+
+    brake_danger_amount_1200              = models.IntegerField('Тормозная система не исправна сумма 1200',      default=0, null=True, blank=True)
+    brake_danger_kf_1200                  = models.IntegerField('Тормозная система не исправна коэффициент 1200', default=0, null=True, blank=True)
+    brake_danger_amount_min_1200          = models.IntegerField('Тормозная система не исправна мин сумма 1200',   default=0, null=True, blank=True)
+    brake_warning_amount_1200             = models.IntegerField('Тормозная система есть замечания сумма 1200',    default=0, null=True, blank=True)
+    brake_warning_kf_1200                 = models.IntegerField('Тормозная система есть замечания коэффициент 1200', default=0, null=True, blank=True)
+    brake_warning_amount_min_1200         = models.IntegerField('Тормозная система есть замечания мин сумма 1200', default=0, null=True, blank=True)
     
     conditioner_danger_amount_1200        = models.IntegerField('Кондиционер не исправен сумма 1200',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_1200            = models.IntegerField('Кондиционер не исправен коэфицент 1200',      default=0, null=True, blank=True)       #'// 
@@ -751,6 +779,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_amount_2000        	= models.IntegerField('Рулевая рейка есть замечания сумма 2000',      default=0, null=True, blank=True)       #'// 
     wheel_warning_kf_2000            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 2000',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_2000    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 2000',      default=0, null=True, blank=True)       #'// 
+
+    brake_danger_amount_2000              = models.IntegerField('Тормозная система не исправна сумма 2000',      default=0, null=True, blank=True)
+    brake_danger_kf_2000                  = models.IntegerField('Тормозная система не исправна коэффициент 2000', default=0, null=True, blank=True)
+    brake_danger_amount_min_2000          = models.IntegerField('Тормозная система не исправна мин сумма 2000',   default=0, null=True, blank=True)
+    brake_warning_amount_2000             = models.IntegerField('Тормозная система есть замечания сумма 2000',    default=0, null=True, blank=True)
+    brake_warning_kf_2000                 = models.IntegerField('Тормозная система есть замечания коэффициент 2000', default=0, null=True, blank=True)
+    brake_warning_amount_min_2000         = models.IntegerField('Тормозная система есть замечания мин сумма 2000', default=0, null=True, blank=True)
     
     conditioner_danger_amount_2000        = models.IntegerField('Кондиционер не исправен сумма 2000',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_2000            = models.IntegerField('Кондиционер не исправен коэфицент 2000',      default=0, null=True, blank=True)       #'// 
@@ -840,6 +875,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_amount_3000        	= models.IntegerField('Рулевая рейка есть замечания сумма 3000',      default=0, null=True, blank=True)       #'// 
     wheel_warning_kf_3000            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 3000',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_3000    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 3000',      default=0, null=True, blank=True)       #'// 
+
+    brake_danger_amount_3000              = models.IntegerField('Тормозная система не исправна сумма 3000',      default=0, null=True, blank=True)
+    brake_danger_kf_3000                  = models.IntegerField('Тормозная система не исправна коэффициент 3000', default=0, null=True, blank=True)
+    brake_danger_amount_min_3000          = models.IntegerField('Тормозная система не исправна мин сумма 3000',   default=0, null=True, blank=True)
+    brake_warning_amount_3000             = models.IntegerField('Тормозная система есть замечания сумма 3000',    default=0, null=True, blank=True)
+    brake_warning_kf_3000                 = models.IntegerField('Тормозная система есть замечания коэффициент 3000', default=0, null=True, blank=True)
+    brake_warning_amount_min_3000         = models.IntegerField('Тормозная система есть замечания мин сумма 3000', default=0, null=True, blank=True)
     
     conditioner_danger_amount_3000        = models.IntegerField('Кондиционер не исправен сумма 3000',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_3000            = models.IntegerField('Кондиционер не исправен коэфицент 3000',      default=0, null=True, blank=True)       #'// 
@@ -928,6 +970,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_amount_5000        	= models.IntegerField('Рулевая рейка есть замечания сумма 5000',      default=0, null=True, blank=True)       #'// 
     wheel_warning_kf_5000            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 5000',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_5000    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 5000',      default=0, null=True, blank=True)       #'// 
+
+    brake_danger_amount_5000              = models.IntegerField('Тормозная система не исправна сумма 5000',      default=0, null=True, blank=True)
+    brake_danger_kf_5000                  = models.IntegerField('Тормозная система не исправна коэффициент 5000', default=0, null=True, blank=True)
+    brake_danger_amount_min_5000          = models.IntegerField('Тормозная система не исправна мин сумма 5000',   default=0, null=True, blank=True)
+    brake_warning_amount_5000             = models.IntegerField('Тормозная система есть замечания сумма 5000',    default=0, null=True, blank=True)
+    brake_warning_kf_5000                 = models.IntegerField('Тормозная система есть замечания коэффициент 5000', default=0, null=True, blank=True)
+    brake_warning_amount_min_5000         = models.IntegerField('Тормозная система есть замечания мин сумма 5000', default=0, null=True, blank=True)
     
     conditioner_danger_amount_5000        = models.IntegerField('Кондиционер не исправен сумма 5000',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_5000            = models.IntegerField('Кондиционер не исправен коэфицент 5000',      default=0, null=True, blank=True)       #'// 
@@ -1017,6 +1066,13 @@ class RegEstimationsSettings(models.Model):
     wheel_warning_amount_5001        	= models.IntegerField('Рулевая рейка есть замечания сумма 5001',      default=0, null=True, blank=True)       #'// 
     wheel_warning_kf_5001            	= models.IntegerField('Рулевая рейка есть замечания коэфицент 5001',      default=0, null=True, blank=True)       #'// 
     wheel_warning_amount_min_5001    	= models.IntegerField('Рулевая рейка есть замечания мин сумма 5001',      default=0, null=True, blank=True)       #'// 
+
+    brake_danger_amount_5001              = models.IntegerField('Тормозная система не исправна сумма 5001',      default=0, null=True, blank=True)
+    brake_danger_kf_5001                  = models.IntegerField('Тормозная система не исправна коэффициент 5001', default=0, null=True, blank=True)
+    brake_danger_amount_min_5001          = models.IntegerField('Тормозная система не исправна мин сумма 5001',   default=0, null=True, blank=True)
+    brake_warning_amount_5001             = models.IntegerField('Тормозная система есть замечания сумма 5001',    default=0, null=True, blank=True)
+    brake_warning_kf_5001                 = models.IntegerField('Тормозная система есть замечания коэффициент 5001', default=0, null=True, blank=True)
+    brake_warning_amount_min_5001         = models.IntegerField('Тормозная система есть замечания мин сумма 5001', default=0, null=True, blank=True)
     
     conditioner_danger_amount_5001        = models.IntegerField('Кондиционер не исправен сумма 5001',      default=0, null=True, blank=True)       #'// 
     conditioner_danger_kf_5001            = models.IntegerField('Кондиционер не исправен коэфицент 5001',      default=0, null=True, blank=True)       #'// 
@@ -1718,6 +1774,7 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     suspension              = models.IntegerField('Подвеска', default=10, null=True, blank=True)                    #'// 0 - не работает 1 работает 2 есть замечания'
     airbag                  = models.IntegerField('Подушка безопастности', default=10, null=True, blank=True)       #'// 0 - не работает 1 работает 2 есть замечания'
     wheel                   = models.IntegerField('Рулевое управление', default=10, null=True, blank=True)          #'// 0 - не работает 1 работает 2 есть замечания'
+    brake                   = models.IntegerField('Тормозная система', default=10, null=True, blank=True)           #'// 0 - не работает 1 работает 2 есть замечания 4 не предусмотрен'
     conditioner             = models.IntegerField('Кондиционер', default=10, null=True, blank=True)                 #'// 0 - не работает 1 работает 2 есть замечания'
     turbo                   = models.IntegerField('Турбина', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
     drive                   = models.IntegerField('Полный привод', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
@@ -1729,6 +1786,7 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     comment_suspension      = models.CharField('Комментарий подвеска', max_length=512, default='', null=True, blank=True)  
     comment_airbag          = models.CharField('Комментарий подушки безопастности', max_length=512, default='', null=True, blank=True)  
     comment_wheel           = models.CharField('Комментарий рулевого управления', max_length=512, default='', null=True, blank=True)  
+    comment_brake            = models.CharField('Комментарий тормозной системы', max_length=512, default='', null=True, blank=True)  
     comment_conditioner     = models.CharField('Комментарий системы кондиционирования', max_length=512, default='', null=True, blank=True)  
     comment_turbo           = models.CharField('Комментарий турбокомпрессора', max_length=512, default='', null=True, blank=True)  
     comment_drive           = models.CharField('Комментарий полный привод', max_length=512, default='', null=True, blank=True)  
