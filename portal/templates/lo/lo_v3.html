@@ -3316,6 +3316,71 @@
                   <div class="col-12 col-xl-6">
                     
                     <div class="portal-panel">
+                      
+                      <h6 class="d-flex align-items-center gap-2 mb-3">
+                        <span class="icon-mbri-image-slider"></span> Фотографии
+                      </h6>
+
+                      {% if params.estimation.fotos_salon|length %}
+
+                        <div style="object-fit: cover; border-radius: 10px; height: 320px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              
+                          <div class="carousel-indicators">
+                            {% for img in params.estimation.fotos_salon %}
+                              <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
+                            {% endfor %}
+                          </div>
+                          
+                          
+                          <div class="carousel-inner gallery-containe">
+                            
+                            {% for img in params.estimation.fotos_salon %}
+                            
+                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-salon-all" onclick="visible_foto('gallery-item-salon-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                
+                                <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                
+                                {% if img.type_file == 'run' %}
+                                  
+                                  <div class="carousel-caption d-md-block bg-title-slider">
+                                      <label class="fs-6">Пробег автомобиля<label>
+                                  </div>
+                              
+                                {% elif img.type_file == 'salon_all' %}
+                                
+                                  <div class="carousel-caption d-md-block bg-title-slider">
+                                    <label class="fs-6">Салон автомобиля<label>
+                                  </div>
+
+                                
+                                {% elif img.type_file == 'salon_error' %}
+                                
+                                  <div class="carousel-caption d-md-block bg-title-slider">
+                                    <label class="fs-6">Повреждения салона<label>
+                                  </div>
+
+                                {% endif %}
+
+                              </div>
+
+                            {% endfor %}
+                            
+                          </div>
+                          
+                          <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
+                          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                          <span class="visually-hidden">Предыдущий</span>
+                          </button>
+                          <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
+                          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                          <span class="visually-hidden">Следующий</span>
+                          </button>
+                        </div>
+                      
+                      {% endif %}
+                    </div>
+                    
+                    <div class="portal-panel">
                     
                       <h6 class="d-flex align-items-center gap-2 mb-3">
                         <span class="icon-mbri-info"></span> Замечания по салону автомобиля
@@ -3382,70 +3447,7 @@
   
                     </div>
 
-                    <div class="portal-panel">
-                      
-                      <h6 class="d-flex align-items-center gap-2 mb-3">
-                        <span class="icon-mbri-image-slider"></span> Фотографии
-                      </h6>
-
-                      {% if params.estimation.fotos_salon|length %}
-
-                        <div style="object-fit: cover; border-radius: 10px; height: 320px;" id="carouselExampleIndicatorsMesto" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
-                              
-                          <div class="carousel-indicators">
-                            {% for img in params.estimation.fotos_salon %}
-                              <button type="button" data-bs-target="#carouselExampleIndicatorsMesto" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"></button>
-                            {% endfor %}
-                          </div>
-                          
-                          
-                          <div class="carousel-inner gallery-containe">
-                            
-                            {% for img in params.estimation.fotos_salon %}
-                            
-                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-salon-all" onclick="visible_foto('gallery-item-salon-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
-                                
-                                <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
-                                
-                                {% if img.type_file == 'run' %}
-                                  
-                                  <div class="carousel-caption d-md-block bg-title-slider">
-                                      <label class="fs-6">Пробег автомобиля<label>
-                                  </div>
-                              
-                                {% elif img.type_file == 'salon_all' %}
-                                
-                                  <div class="carousel-caption d-md-block bg-title-slider">
-                                    <label class="fs-6">Салон автомобиля<label>
-                                  </div>
-
-                                
-                                {% elif img.type_file == 'salon_error' %}
-                                
-                                  <div class="carousel-caption d-md-block bg-title-slider">
-                                    <label class="fs-6">Повреждения салона<label>
-                                  </div>
-
-                                {% endif %}
-
-                              </div>
-
-                            {% endfor %}
-                            
-                          </div>
-                          
-                          <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="prev">
-                          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                          <span class="visually-hidden">Предыдущий</span>
-                          </button>
-                          <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicatorsMesto"  data-bs-slide="next">
-                          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                          <span class="visually-hidden">Следующий</span>
-                          </button>
-                        </div>
-                      
-                      {% endif %}
-                    </div>
+                    
                   </div>
                 
                 </div>
@@ -21733,12 +21735,7 @@
       
     }
 
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function() {
-      loads(true);
-      //$('#exampleModal').modal('show');
-      ////alert('6');
-    });
+   
     
     window.addEventListener("load", function(){
       loads(false);
