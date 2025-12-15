@@ -68,12 +68,23 @@ def get_info_estimation_vin(request):
                                        start_estimation__gte =  date_start)
         if infos.count() > 0:
             for info in infos:
+                customer = ''
+                run = 0
+                if info.page_documents != None:
+                    customer = '' + info.page_documents.customer_family + ' ' + info.page_documents.customer_name + ' ' + info.page_documents.customer_patronymic 
+                if info.page_salon != None:
+                    run = info.page_salon.run
+                    
                 to_json = {
+                    'id'                    : info.id,
+                    'date'                  : info.start_estimation,
+                    'customer'              : customer,
                     'vin'                   : info.vin,
                     'status'                : info.status.name,
                     'staff'                 : info.staff.name,
                     'mark'                  : info.modification.model.mark.name + ' ' + info.modification.model.name + ' ' + info.modification.name,
-                    'year'                  : info.year
+                    'year'                  : info.year,
+                    'run'                   : run
                 }
                 list_info.append(to_json)
 
