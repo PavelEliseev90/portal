@@ -1635,7 +1635,7 @@
 
 @media (max-width: 992px) {
   .lo-v3-page {
-    padding: 1rem 1.25rem 2rem;
+    padding: 0.25rem 0.25rem 1rem;
   }
 
   .portal-sidebar {
@@ -1645,7 +1645,7 @@
 
 @media (max-width: 768px) {
   .lo-v3-page {
-    padding: 0.75rem 1rem 1.5rem;
+    padding: 0.25rem 0.25rem 0.5rem;
   }
 
   .portal-sidebar {
