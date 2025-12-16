@@ -184,7 +184,6 @@
         <table class="table table-hover table-mobile-cards">
           <thead>
             <tr>
-              <th></th>
               <th>Номер / Дата</th>
               <th>Подразделение</th>
               <th>Менеджер</th>
@@ -193,18 +192,14 @@
               <th>Оценщик</th>
               <th>Автомобиль</th>
               <th>Клиент</th>
+              <th></th>
               
             </tr>
           </thead>
           <tbody>
             {% for object in params.objects.object_list %}
             <tr>
-              <td data-label="">
-                <a class="btn btn-sm btn-outline-primary" href="/eco/{{object.rlk.id}}/" title="Редактировать">
-                  <span class="icon-mbri-edit2"></span> Открыть
-                </a>
-              </td>
-              <td data-label="Номер / Дата">
+              <td data-label="Номер / Дата РЛК">
                 <div>
                   <strong>{{object.rlk.nomer|default_if_none:"-"}}</strong><br>
                   <small class="text-muted">
@@ -243,6 +238,11 @@
               </td>
               <td data-label="Клиент">
                  {{object.rlk.clientName|default_if_none:"-"}}
+              </td>
+              <td data-label="">
+                <a class="btn btn-sm btn-outline-primary" href="/eco/{{object.rlk.id}}/" title="Редактировать">
+                  <span class="icon-mbri-edit2"></span> Открыть
+                </a>
               </td>
               
             </tr>

@@ -101,8 +101,10 @@ urlpatterns = [
 
    path('index/',                   views.index),
    # Временный обмен с корсавто
-   path('refresh_rlk_bu/',          views.refresh_rlk_bu),
+   path('refresh_rlk_bu/',             views.refresh_rlk_bu),
+   path('get_estimation_bcp/',       views.get_estimation_bcp),   
    path('get_info_estimation_vin/',  views.get_info_estimation_vin),
+
    #Обмен с 1С по формату общего модуля ОбменДаннымиAPI в 1С
    path('exchange/',                views.exchange),
 
