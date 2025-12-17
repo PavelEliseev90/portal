@@ -2091,6 +2091,18 @@
               </div>
 
               <div class="col-auto">
+                {% if params.estimation.page_test_drive.brake == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Тормознная система &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.brake == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Тормознная система &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="col-auto">
                 {% if params.estimation.page_test_drive.wheel == 2 %}
                   <div class="kors-brand-pill bg-warning text-nowrap">
                     <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
@@ -15617,16 +15629,7 @@
                               {% else %} 
                                 <label class="fs-6 fw-bold text-success">Розница</label>
                               {% endif %}
-                              <hr style="margin: 0.2rem;">
-                              <div class="form-floating">
-                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
-                                <label for="floatingInput">БЦП &#8381</label>
-                              </div>
-                              {% if params.price_kors.estimation_price > 0 or params.price_kors.estimation_price_do_kd > 0 %}
-                                <hr style="margin: 0.2rem;">
-                                <button type="button" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
-                              {% endif %}
-                              <hr style="margin: 0.2rem;">
+                              
                             </div>
                           </div>
                         </div>
@@ -16149,10 +16152,7 @@
                                 <label class="fs-6 fw-bold text-success">Розница</label>
                               {% endif %}
                               
-                              <hr style="margin: 0.2rem;">
-                              БЦП
-                              <br>
-                              <label class="fw-bold fs-4"> {{params.price_autohub.cna_expenses|floatformat:"2g"}} &#8381 </span> </label>
+                              
                               
                             </div>
                           </div>
@@ -16551,16 +16551,7 @@
                               {% else %} 
                                 <label class="fs-6 fw-bold text-success">Розница</label>
                               {% endif %}
-                              <hr style="margin: 0.2rem;">
-                              <div class="form-floating">
-                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
-                                <label for="floatingInput">БЦП &#8381</label>
-                              </div>
-                              {% if params.price.estimation_price > 0 or params.price.estimation_price_do_kd > 0 %}
-                                <hr style="margin: 0.2rem;">
-                                <button type="button" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
-                              {% endif %}
-                              <hr style="margin: 0.2rem;">
+                              
                             </div>
                           </div>
     
@@ -16887,16 +16878,7 @@
                                 <textarea class="form-control" id="exampleFormControlTextarea1" rows="4">{{params.estimation.auction_comment}}</textarea>
                               </div>
                               
-                              <hr style="margin: 0.2rem;">
-                              <div class="form-floating">
-                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
-                                <label for="floatingInput">БЦП &#8381</label>
-                              </div>
-                              {% if params.price_custom.estimation_price > 0 or params.price_custom.estimation_price_do_kd > 0 %}
-                                <hr style="margin: 0.2rem;">
-                                <button type="button" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
-                              {% endif %}
-                              <hr style="margin: 0.2rem;">
+                              
                             </div>
                           </div>
     
@@ -17206,8 +17188,6 @@
                             
                           </h3>
                           
-                          
-
                             <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
                             <li class="fw-bold">ЕЦО</li>
                             
