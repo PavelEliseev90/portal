@@ -1818,14 +1818,16 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.airbag             = int(request.POST.get('radio_airbag', '3'))
             reg_interactiv_ocenka_test_drive.comment_airbag     = request.POST.get('comment_airbag', '')
 
+            reg_interactiv_ocenka_test_drive.brake              = int(request.POST.get('radio_brake', '3'))  
+            reg_interactiv_ocenka_test_drive.comment_brake      = request.POST.get('comment_brake', '')
 
             reg_interactiv_ocenka_test_drive.to                 = int(request.POST.get('radio_to', '10'))
-
 
             reg_interactiv_ocenka_test_drive.pp_dinamyc             = int(request.POST.get('radio_pp_dinamyc', '3'))
             reg_interactiv_ocenka_test_drive.pp_kpp                 = int(request.POST.get('radio_pp_kpp', '3'))
             reg_interactiv_ocenka_test_drive.pp_uvod                = int(request.POST.get('radio_pp_uvod', '3'))
-            reg_interactiv_ocenka_test_drive.pp_pribor              = int(request.POST.get('radio_pp_pribor', '3'))  
+            reg_interactiv_ocenka_test_drive.pp_pribor              = int(request.POST.get('radio_pp_pribor', '3'))
+            
 
             reg_interactiv_ocenka_test_drive.no_test            = 'no_test' in request.POST
             reg_interactiv_ocenka_test_drive.comment            = request.POST.get('comment', '')
@@ -4903,8 +4905,21 @@ def estimations_price_calculation(estimation, type_calculation):
                 difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
         
         estimation_price = estimation_price + difference_sum
+    
+    if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
+        estimation_price = estimation_price_do_kd - amount_ss 
+        if estimation_price < 1000:
+            estimation_price = 1000
+       
+        if estimation_price_do_kd < 1000:
+            estimation_price_do_kd = 1000 
+        
+        difference_sum = 0
+        if estimation.page_soglasovanie != None:
+            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price
 
-    cna_expenses = zna - amount_sum 
+    cna_expenses = zna + difference_sum - amount_sum
     
     if estimation_price < 1000:
         estimation_price = 1000
@@ -4929,8 +4944,11 @@ def estimations_price_calculation(estimation, type_calculation):
                 difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
         if difference_sum > 0:
             estimation_price_to_bcp = estimation_price + difference_sum
-                 
+        else:
+            estimation_price_to_bcp = estimation_price         
+        
         matrix_auction = 0
+        
         if estimation_price_to_bcp < 200000:
             matrix_auction  = settings_matrix.charge_bcp_200
         elif estimation_price_to_bcp < 400000:

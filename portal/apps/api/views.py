@@ -57,6 +57,29 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 @api_view(['GET'])
+def get_estimation_bcp(request):
+    
+    id          = request.GET.get('id', '')
+    info        = None 
+    
+    from eco.views import estimations_price_calculation
+    
+    if id != '':
+        infos = RegInteractivOcenka.objects.filter(id = id)
+        if infos.count() > 0:
+            for infs in infos:
+
+                price_info = estimations_price_calculation(infs, 'autohub')
+                info = {
+
+                    'id'                    : infs.id,
+                    'bcp'                   : price_info['cna_expenses']
+                    
+                }
+                
+    return JsonResponse(info, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
 def get_info_estimation_vin(request):
     
     vin         = request.GET.get('vin', '')
