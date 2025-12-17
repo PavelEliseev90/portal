@@ -2091,6 +2091,18 @@
               </div>
 
               <div class="col-auto">
+                {% if params.estimation.page_test_drive.brake == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Тормознная система &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.brake == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Тормознная система &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="col-auto">
                 {% if params.estimation.page_test_drive.wheel == 2 %}
                   <div class="kors-brand-pill bg-warning text-nowrap">
                     <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
