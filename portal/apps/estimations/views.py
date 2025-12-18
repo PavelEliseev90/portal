@@ -630,6 +630,7 @@ def estimation_rlk(request, rlk_id):
             reg_interactiv_ocenka_salon.run_respond     = int(request.POST.get('run_respond', '3'))
 
             reg_interactiv_ocenka_salon.cleaning_int            = int(request.POST.get('cleaning_int', '3'))
+            reg_interactiv_ocenka_salon.type_salon_int          = int(request.POST.get('type_salon_int', '3'))
             reg_interactiv_ocenka_salon.damage_kpp_int          = int(request.POST.get('damage_kpp_int', '3'))
             reg_interactiv_ocenka_salon.damage_wheel_int        = int(request.POST.get('damage_wheel_int', '3'))
             reg_interactiv_ocenka_salon.damage_pedal_int        = int(request.POST.get('damage_pedal_int', '3'))
@@ -729,6 +730,7 @@ def estimation_rlk(request, rlk_id):
             
             reg_interactiv_ocenka_vnesh.check_vin_int           = int(request.POST.get('check_vin_int', '3'))
             reg_interactiv_ocenka_vnesh.check_engine_int        = int(request.POST.get('check_engine_int', '3'))
+            reg_interactiv_ocenka_vnesh.windshield_heat_int     = int(request.POST.get('windshield_heat_int', '3'))
             reg_interactiv_ocenka_vnesh.windshield_error_int    = int(request.POST.get('windshield_error_int', '3'))
             reg_interactiv_ocenka_vnesh.light_error_int         = int(request.POST.get('light_error_int', '3'))
             reg_interactiv_ocenka_vnesh.oil_error_int           = int(request.POST.get('oil_error_int', '3'))

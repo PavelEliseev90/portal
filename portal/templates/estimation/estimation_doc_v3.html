@@ -518,21 +518,21 @@
                           
                         </div>
                         
-                        <div class="col-4 col-xl-4">
+                        <div class="col-4 col-xl-3">
                           <div class="form-floating mb-3">
                             <input class="form-control form-control-sm" type="text" id="number_body" name="number_body" value="{{params.estimation.number_body|default_if_none:"Не указан"}}" placeholder="-" readonly>
                             <label class="fs-6" for="floatingInput">Номер кузова</label>
                           </div>
                         </div>
 
-                        <div class="col-4 col-xl-4">
+                        <div class="col-4 col-xl-3">
                           <div class="form-floating mb-3">
                             <input class="form-control form-control-sm" type="text" id="year" name="year" value="{{params.estimation.year}}" placeholder="-">
                             <label class="fs-6" for="floatingInput">Год выпуска</label>
                           </div>
                         </div>
                         
-                        <div class="col-4 col-xl-4">
+                        <div class="col-4 col-xl-3">
                           
                           <div class="form-floating mb-3">							
                             <select class="form-select" id="type_drive" name="type_drive" placeholder="">
@@ -1286,6 +1286,30 @@
                       <div class="">
                         <h6><span class="icon-mbri-image-slider"></span> Осмотр салона автомобиля </h6>
                         
+                        <div class="kors-btn-group-wrapper">
+                          <div class="kors-btn-group-compact" role="group" aria-label="Салон автомобиля">
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="type_salon_int" 
+                                   id="type_salon_int-radio" 
+                                   autocomplete="off" 
+                                   {% if params.estimation.page_salon.type_salon_int == 0 %} checked {% endif %} 
+                                   value="0" 
+                                   required>
+                            <label class="btn btn-outline-success" for="type_salon_int-radio">Ткань</label>
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="type_salon_int" 
+                                   id="type_salon_int-radio1" 
+                                   autocomplete="off" 
+                                   {% if params.estimation.page_salon.type_salon_int == 1 %} checked {% endif %} 
+                                   value="1" 
+                                   required>
+                            <label class="btn btn-outline-success" for="type_salon_int-radio1">Кожа</label>
+                          </div>
+                          <label class="fs-6" for="cleaning">Салон автомобиля</label>
+                        </div>
+
                         <div class="kors-btn-group-wrapper">
                           <div class="kors-btn-group-compact" role="group" aria-label="Химчистка салона">
                             <input type="radio" 
@@ -2122,6 +2146,34 @@
     
                         <h6><span class="icon-mbri-image-slider"></span> Дополнительно</h6>
     
+                        <div class="row g-2">
+                          <div class="col-sm-12">
+                            <div class="kors-btn-group-wrapper">
+                              <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с подогревом">
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_heat_int" 
+                                       id="windshield_heat_int-radio1" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_heat_int == 0 %} checked {% endif %} 
+                                       value="0" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_heat_int-radio1">Нет</label>
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_heat_int" 
+                                       id="windshield_heat_int-radio2" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_heat_int == 1 %} checked {% endif %} 
+                                       value="1" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_heat_int-radio2">Да</label>
+                              </div>
+                              <label class="fs-6" for="check_engine">Лобовое стекло с подогревом</label>
+                            </div>
+                          </div>
+                        </div>
+
                         <div class="row g-2">
                           <div class="col-sm-12">
                             <div class="kors-btn-group-wrapper">
