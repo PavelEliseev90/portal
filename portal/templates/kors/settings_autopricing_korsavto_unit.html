@@ -23,9 +23,11 @@
   </div>
 
   <form method="post">
+
     {% csrf_token %}
 
     {% for range in params.ranges %}
+    
     <div class="settings-dc-panel mb-3">
       <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_{{ range.price }}" aria-expanded="false" aria-controls="collapse_{{ range.price }}" style="cursor: pointer;">
         <span>Ценовой диапазон {{ range.price }}</span>
@@ -34,12 +36,12 @@
 
       <div class="collapse show" id="collapse_{{ range.price }}">
         <div class="row g-3 mt-2">
-          <div class="col-lg-6">
+          <div class="col-12">
             <div class="portal-panel">
-              <h5 class="mb-3">Основные флаги</h5>
-              <div class="row g-2">
+              <h5 class="mb-3">Настройки</h5>
+              <div class="row g-1">
                 {% for field in range.bool_fields %}
-                <div class="col-sm-6">
+                <div class="col-12 col-xl-4">
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="{{ field.name }}" name="{{ field.name }}" {% if field.value %}checked{% endif %}>
                     <label class="form-check-label" for="{{ field.name }}">{{ field.label }}</label>
@@ -47,27 +49,11 @@
                 </div>
                 {% endfor %}
               </div>
-            </div>
-          </div>
+              
+              <br>
 
-          <div class="col-lg-6">
-            <div class="portal-panel">
-              <h5 class="mb-3">Использование данных Автохаб и вывод в продажу</h5>
-              <div class="row g-3">
-                {% for field in range.autohub_fields %}
-                <div class="col-sm-6">
-                  <div class="form-floating">
-                    <select class="form-select" id="{{ field.name }}" name="{{ field.name }}">
-                      <option value="">Не использовать</option>
-                      {% for code, title in params.autohub_choices %}
-                      <option value="{{ code }}" {% if field.value == code %}selected{% endif %}>{{ title }}</option>
-                      {% endfor %}
-                    </select>
-                    <label for="{{ field.name }}">{{ field.label }}</label>
-                  </div>
-                </div>
-                {% endfor %}
-                <div class="col-12">
+              <div class="row g-1">
+                <div class="col-12 col-xl-4">
                   <div class="form-floating">
                     <select class="form-select" id="{{ range.eval_field.name }}" name="{{ range.eval_field.name }}">
                       <option value="">Не задано</option>
@@ -78,40 +64,354 @@
                     <label for="{{ range.eval_field.name }}">{{ range.eval_field.label }}</label>
                   </div>
                 </div>
+                
+                <div class="col-12 col-xl-4">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Максимальная скидка торг в процентах" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12 col-xl-4">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Максимальная скидка за TradeIn" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+                
               </div>
+
             </div>
           </div>
         </div>
 
-        <div class="portal-panel mt-3">
-          <h5 class="mb-3">Корректировки, скидки и маркетинг</h5>
-          <div class="row g-3">
-            {% for field in range.numeric_fields %}
-            <div class="col-sm-6 col-md-4 col-lg-3">
-              <div class="form-floating">
-                <input type="number" step="0.01" class="form-control" id="{{ field.name }}" name="{{ field.name }}" placeholder="" value="{{ field.value|default_if_none:'' }}">
-                <label for="{{ field.name }}">{{ field.label }}</label>
+        <div class="row">
+          
+          <div class="col-12 col-xl-3">
+            <div class="portal-panel bg-success bg-opacity-25">
+                <h5 class="mb-3">Тест - прайс</h5>
+                <div class="row g-1">
+                  <div class="col-12">
+                    <div class="form-floating">
+                      {% for field in range.numeric_fields %}
+                        {% if field.label == "Корректировка Тест прайс Экспресс" %}
+                          <input type="number" step="0.01" class="form-control"
+                                 id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                                 value="{{ field.value|default_if_none:'' }}">
+                          <label for="{{ field.name }}">{{ field.label }}</label>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating">
+                      {% for field in range.numeric_fields %}
+                        {% if field.label == "Корректировка Тест прайс" %}
+                          <input type="number" step="0.01" class="form-control"
+                                 id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                                 value="{{ field.value|default_if_none:'' }}">
+                          <label for="{{ field.name }}">{{ field.label }}</label>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating">
+                      {% for field in range.numeric_fields %}
+                        {% if field.label == "Корректировка Тест прайс 1С" %}
+                          <input type="number" step="0.01" class="form-control"
+                                 id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                                 value="{{ field.value|default_if_none:'' }}">
+                          <label for="{{ field.name }}">{{ field.label }}</label>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating">
+                      {% for field in range.markup_fields %}
+                        {% if field.label == "Процент наценки Тест прайс" %}
+                          <input type="number" step="0.01" class="form-control"
+                                 id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                                 value="{{ field.value|default_if_none:'' }}">
+                          <label for="{{ field.name }}">{{ field.label }}</label>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating">
+                      {% for field in range.autohub_fields %}
+                        {% if field.label == "Вариант использования данных Автохаб Тест прайс" %}
+                          <select class="form-select" id="{{ field.name }}" name="{{ field.name }}">
+                            <option value="">Не использовать</option>
+                            {% for code, title in params.autohub_choices %}
+                              <option value="{{ code }}" {% if field.value == code %}selected{% endif %}>{{ title }}</option>
+                            {% endfor %}
+                          </select>
+                          <label for="{{ field.name }}">{{ field.label }}</label>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+                
+                
+
+            </div>
+          </div>
+          
+          <div class="col-12 col-xl-3">
+            <div class="portal-panel bg-warning bg-opacity-25">
+              <h5 class="mb-3">РДО</h5>
+              <div class="row g-1">
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка РДО Экспресс" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка РДО" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка РДО 1С" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.markup_fields %}
+                      {% if field.label == "Процент наценки РДО" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.autohub_fields %}
+                      {% if field.label == "Вариант использования данных Автохаб РДО" %}
+                        <select class="form-select" id="{{ field.name }}" name="{{ field.name }}">
+                          <option value="">Не использовать</option>
+                          {% for code, title in params.autohub_choices %}
+                            <option value="{{ code }}"
+                                    {% if field.value == code %}selected{% endif %}>
+                              {{ title }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
               </div>
             </div>
-            {% endfor %}
           </div>
+
+          <div class="col-12 col-xl-3">
+            <div class="portal-panel bg-danger bg-opacity-10">
+              <h5 class="mb-3">Коррекция</h5>
+              <div class="row g-1">
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка Коррекция Экспресс" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка Коррекция" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка Коррекция 1С" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.markup_fields %}
+                      {% if field.label == "Процент наценки Коррекция" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.autohub_fields %}
+                      {% if field.label == "Вариант использования данных Автохаб Коррекция" %}
+                        <select class="form-select" id="{{ field.name }}" name="{{ field.name }}">
+                          <option value="">Не использовать</option>
+                          {% for code, title in params.autohub_choices %}
+                            <option value="{{ code }}"
+                                    {% if field.value == code %}selected{% endif %}>
+                              {{ title }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-xl-3">
+            <div class="portal-panel bg-danger bg-opacity-25">
+              <h5 class="mb-3">TXT</h5>
+              <div class="row g-1">
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка ТХТ Экспресс" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка ТХТ" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.numeric_fields %}
+                      {% if field.label == "Корректировка ТХТ 1С" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                               <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.markup_fields %}
+                      {% if field.label == "Процент наценки ТХТ" %}
+                        <input type="number" step="0.01" class="form-control"
+                               id="{{ field.name }}" name="{{ field.name }}" placeholder=""
+                               value="{{ field.value|default_if_none:'' }}">
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-floating">
+                    {% for field in range.autohub_fields %}
+                      {% if field.label == "Вариант использования данных Автохаб ТХТ" %}
+                        <select class="form-select" id="{{ field.name }}" name="{{ field.name }}">
+                          <option value="">Не использовать</option>
+                          {% for code, title in params.autohub_choices %}
+                            <option value="{{ code }}"
+                                    {% if field.value == code %}selected{% endif %}>
+                              {{ title }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        <label for="{{ field.name }}">{{ field.label }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <div class="portal-panel mt-3">
-          <h5 class="mb-3">Проценты наценки</h5>
-          <div class="row g-3">
-            {% for field in range.markup_fields %}
-            <div class="col-sm-6 col-md-4 col-lg-3">
-              <div class="form-floating">
-                <input type="number" step="0.01" class="form-control" id="{{ field.name }}" name="{{ field.name }}" placeholder="" value="{{ field.value|default_if_none:'' }}">
-                <label for="{{ field.name }}">{{ field.label }}</label>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
       </div>
     </div>
+
     {% endfor %}
 
     <div class="text-end mt-3">

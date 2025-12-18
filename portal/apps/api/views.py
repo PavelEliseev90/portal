@@ -4239,6 +4239,96 @@ def get_unit(json_unit):
                 ref_unit.discount_tt_5001 = settings_unit['ЦГ5001МаксимальнаяСкидкаЗаTradeIn']
                 saves = True    
 
+        # Синхронизируем старые поля настроек с новыми полями автопереоценки,
+        # чтобы значения из 1С автоматически попадали в структуру автопереоценки.
+        for price in (200, 400, 700, 1200, 2000, 3000, 5000, 5001):
+            suffix = f"_{price}"
+
+            # Тест-прайс (Автохаб)
+            legacy = getattr(ref_unit, f"ratio_avtohub_test_price{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_test{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # РДО
+            legacy = getattr(ref_unit, f"ratio_avtohub_rdo{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_rdo{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Коррекция
+            legacy = getattr(ref_unit, f"ratio_avtohub_kor{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_kor{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # ТХТ (Автохаб)
+            legacy = getattr(ref_unit, f"ratio_avtohub_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_txt{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Коэффициенты 1С
+            legacy = getattr(ref_unit, f"ratio_1с_test_price{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_test_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            legacy = getattr(ref_unit, f"ratio_1с_rdo{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_rdo_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            legacy = getattr(ref_unit, f"ratio_1с_kor{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_kor_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            legacy = getattr(ref_unit, f"ratio_1с_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_txt_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Процент наценки ТХТ → markup_txt
+            legacy = getattr(ref_unit, f"percent_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"markup_txt{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Максимальная скидка торг → max_discount_bargain_percent
+            legacy = getattr(ref_unit, f"percent_torg_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"max_discount_bargain_percent{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Максимальная скидка за TradeIn → max_discount_tradein
+            legacy = getattr(ref_unit, f"discount_tt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"max_discount_tradein{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
     if "BuAuto" in json_unit:
         if json_unit['BuAuto'] != ref_unit.buauto: 
             ref_unit.buauto = json_unit['BuAuto']
