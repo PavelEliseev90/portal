@@ -1,0 +1,126 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Настройки - Автопереоценка КорсАвто {% endblock %}
+
+{% block title_navbar %} - Настройки - Автопереоценка КорсАвто {% endblock %}
+
+{% block content %}
+<section class="settings-dc-page">
+  <div class="settings-dc-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Автопереоценка КорсАвто</h2>
+      <p>Настройка параметров автопереоценки по ценовым диапазонам для подразделения <strong>{{ params.unit.name }}</strong>.</p>
+      <p class="mb-0 text-muted">
+        {% if params.unit.city %}Город: {{ params.unit.city.name }}{% endif %}
+        {% if params.unit.ib %} • База: {{ params.unit.ib.name }}{% endif %}
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="/settings/settings_autopricing_korsavto/" class="btn btn-outline-secondary">&larr; К списку подразделений</a>
+      <a href="/settings/" class="btn btn-link text-decoration-none">Центр настроек</a>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% for range in params.ranges %}
+    <div class="settings-dc-panel mb-3">
+      <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_{{ range.price }}" aria-expanded="false" aria-controls="collapse_{{ range.price }}" style="cursor: pointer;">
+        <span>Ценовой диапазон {{ range.price }}</span>
+        <span class="icon-mbri-down"></span>
+      </h3>
+
+      <div class="collapse show" id="collapse_{{ range.price }}">
+        <div class="row g-3 mt-2">
+          <div class="col-lg-6">
+            <div class="portal-panel">
+              <h5 class="mb-3">Основные флаги</h5>
+              <div class="row g-2">
+                {% for field in range.bool_fields %}
+                <div class="col-sm-6">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="{{ field.name }}" name="{{ field.name }}" {% if field.value %}checked{% endif %}>
+                    <label class="form-check-label" for="{{ field.name }}">{{ field.label }}</label>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="portal-panel">
+              <h5 class="mb-3">Использование данных Автохаб и вывод в продажу</h5>
+              <div class="row g-3">
+                {% for field in range.autohub_fields %}
+                <div class="col-sm-6">
+                  <div class="form-floating">
+                    <select class="form-select" id="{{ field.name }}" name="{{ field.name }}">
+                      <option value="">Не использовать</option>
+                      {% for code, title in params.autohub_choices %}
+                      <option value="{{ code }}" {% if field.value == code %}selected{% endif %}>{{ title }}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="{{ field.name }}">{{ field.label }}</label>
+                  </div>
+                </div>
+                {% endfor %}
+                <div class="col-12">
+                  <div class="form-floating">
+                    <select class="form-select" id="{{ range.eval_field.name }}" name="{{ range.eval_field.name }}">
+                      <option value="">Не задано</option>
+                      {% for ev in params.evaluations %}
+                      <option value="{{ ev.pk }}" {% if range.eval_field.value_id == ev.pk %}selected{% endif %}>{{ ev.name }}</option>
+                      {% endfor %}
+                    </select>
+                    <label for="{{ range.eval_field.name }}">{{ range.eval_field.label }}</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="portal-panel mt-3">
+          <h5 class="mb-3">Корректировки, скидки и маркетинг</h5>
+          <div class="row g-3">
+            {% for field in range.numeric_fields %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="form-floating">
+                <input type="number" step="0.01" class="form-control" id="{{ field.name }}" name="{{ field.name }}" placeholder="" value="{{ field.value|default_if_none:'' }}">
+                <label for="{{ field.name }}">{{ field.label }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="portal-panel mt-3">
+          <h5 class="mb-3">Проценты наценки</h5>
+          <div class="row g-3">
+            {% for field in range.markup_fields %}
+            <div class="col-sm-6 col-md-4 col-lg-3">
+              <div class="form-floating">
+                <input type="number" step="0.01" class="form-control" id="{{ field.name }}" name="{{ field.name }}" placeholder="" value="{{ field.value|default_if_none:'' }}">
+                <label for="{{ field.name }}">{{ field.label }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="text-end mt-3">
+      <button type="submit" class="btn btn-primary px-4">
+        <span class="icon-mbri-save"></span> Сохранить изменения
+      </button>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+

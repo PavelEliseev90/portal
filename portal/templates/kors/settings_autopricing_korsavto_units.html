@@ -1,0 +1,75 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Настройки - Автопереоценка КорсАвто {% endblock %}
+
+{% block title_navbar %} - Настройки - Автопереоценка КорсАвто {% endblock %}
+
+{% block content %}
+<section class="settings-page">
+  <div class="settings-header">
+    <h2>Автопереоценка КорсАвто</h2>
+    <p>Выберите подразделение Б/У КорсАвто для настройки параметров автопереоценки по ценовым диапазонам.</p>
+  </div>
+
+  <div class="settings-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="mb-0">Подразделения Б/У КорсАвто</h3>
+      <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+    </div>
+
+    <div class="table-responsive table-sticky">
+      <table class="table table-hover table-mobile-cards">
+        <thead>
+          <tr>
+            <th style="min-width: 60px;">ID</th>
+            <th style="min-width: 220px;">Подразделение</th>
+            <th style="min-width: 160px;">Город</th>
+            <th style="min-width: 160px;">Информационная база</th>
+            <th style="min-width: 140px;">Б/У Авто</th>
+            <th style="min-width: 150px;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if params.units %}
+            {% for unit in params.units %}
+            <tr>
+              <td data-label="ID">{{ unit.pk }}</td>
+              <td data-label="Подразделение">
+                {{ unit.name }}
+              </td>
+              <td data-label="Город">
+                {% if unit.city %}{{ unit.city.name }}{% endif %}
+              </td>
+              <td data-label="Инф. база">
+                {% if unit.ib %}{{ unit.ib.name }}{% endif %}
+              </td>
+              <td data-label="Б/У Авто">
+                {% if unit.buauto %}
+                  <span class="badge bg-success bg-opacity-10 text-success">Да</span>
+                {% else %}
+                  <span class="badge bg-secondary bg-opacity-10 text-muted">Нет</span>
+                {% endif %}
+              </td>
+              <td data-label="Действия">
+                <a href="/settings/settings_autopricing_korsavto/{{ unit.pk }}/" class="btn btn-sm btn-outline-primary">
+                  Настроить
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                Нет подразделений Б/У КорсАвто для настройки.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+
