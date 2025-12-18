@@ -24,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -53,6 +53,56 @@ import urllib
 from django.contrib.auth.models import User, Group
 
 from eco.views import estimations_price_calculation 
+
+# Настройки автопереоценки КорсАвто
+AUTOPRICING_PRICE_RANGES = [200, 400, 700, 1200, 2000, 3000, 5000, 5001]
+
+AUTOPRICING_BOOL_FIELDS = [
+    ('auto_strategy', "Автостратегия цены"),
+    ('auto_active', "Активна"),
+    ('lock_eval_change_after_stage', "Запрет изменения варианта управления ценой после перехода на новый этап"),
+    ('deny_manual_price', "Запрет на ручной ввод"),
+    ('deny_discount', "Запрет скидки"),
+    ('no_limit_max_manual', "Не ограничивать максимальную ручную цену стратегией"),
+    ('reset_manual_prices', "Обнуление ручных цен"),
+    ('delay_repricing_new_stage', "Отсрочка переоценки в новом этапе"),
+    ('check_price_rule_before_sale', "Проверка выполнения ценового правила при продаже"),
+    ('check_open_tasks', "Проверка не закрытых задач"),
+    ('calc_by_days_in_sale', "Расчет по дням в продаже"),
+]
+
+AUTOPRICING_AUTOHUB_FIELDS = [
+    ('autohub_mode_kor', "Вариант использования данных Автохаб Коррекция"),
+    ('autohub_mode_rdo', "Вариант использования данных Автохаб РДО"),
+    ('autohub_mode_test', "Вариант использования данных Автохаб Тест прайс"),
+    ('autohub_mode_txt', "Вариант использования данных Автохаб ТХТ"),
+]
+
+AUTOPRICING_NUMERIC_FIELDS = [
+    ('correction_kor', "Корректировка Коррекция"),
+    ('correction_kor_1c', "Корректировка Коррекция 1С"),
+    ('correction_kor_express', "Корректировка Коррекция Экспресс"),
+    ('correction_rdo', "Корректировка РДО"),
+    ('correction_rdo_1c', "Корректировка РДО 1С"),
+    ('correction_rdo_express', "Корректировка РДО Экспресс"),
+    ('correction_test', "Корректировка Тест прайс"),
+    ('correction_test_1c', "Корректировка Тест прайс 1С"),
+    ('correction_test_express', "Корректировка Тест прайс Экспресс"),
+    ('correction_txt', "Корректировка ТХТ"),
+    ('correction_txt_1c', "Корректировка ТХТ 1С"),
+    ('correction_txt_express', "Корректировка ТХТ Экспресс"),
+    ('max_discount_tradein', "Максимальная скидка за TradeIn"),
+    ('max_discount_bargain_percent', "Максимальная скидка торг в процентах"),
+    ('marketing', "Маркетинг"),
+]
+
+AUTOPRICING_MARKUP_FIELDS = [
+    ('markup_base', "Процент наценки"),
+    ('markup_kor', "Процент наценки Коррекция"),
+    ('markup_rdo', "Процент наценки РДО"),
+    ('markup_test', "Процент наценки Тест прайс"),
+    ('markup_txt', "Процент наценки ТХТ"),
+]
 
 #Настройки параметров доступа
 #server_im      = 'http://k01srv1c07/rinternetmag/hs/mb/'
@@ -7329,6 +7379,142 @@ def settings_unit_group_units(request, group_id):
 
 
 @login_required
+def settings_autopricing_korsavto_units(request):
+    """
+    Список подразделений Б/У КорсАвто для настройки автопереоценки.
+    """
+    units = RefUnit.objects.filter(buauto=True, name__icontains='КорсАвто').select_related('city', 'ib').order_by('name')
+
+    params = {
+        'type': 'settings_autopricing_korsavto',
+        'units': units,
+    }
+
+    return render(request, "kors/settings_autopricing_korsavto_units.html", {'params': params})
+
+
+@login_required
+def settings_autopricing_korsavto_unit(request, unit_id):
+    """
+    Страница редактирования настроек автопереоценки для конкретного подразделения Б/У КорсАвто.
+    """
+    unit = get_object_or_404(RefUnit, pk=unit_id, buauto=True)
+    evaluations = RefTypeEvaluationCarsOrganization.objects.all().order_by('name')
+
+    if request.method == 'POST':
+        # Обработка сохранения значений по всем диапазонам
+        for price in AUTOPRICING_PRICE_RANGES:
+            suffix = "_%s" % price
+
+            # Булевые флаги
+            for code, _label in AUTOPRICING_BOOL_FIELDS:
+                field_name = f"{code}{suffix}"
+                setattr(unit, field_name, field_name in request.POST)
+
+            # Варианты использования данных Автохаб
+            for code, _label in AUTOPRICING_AUTOHUB_FIELDS:
+                field_name = f"{code}{suffix}"
+                value = request.POST.get(field_name, '')
+                setattr(unit, field_name, value or '')
+
+            # Числовые корректировки и маркетинг
+            for code, _label in AUTOPRICING_NUMERIC_FIELDS + AUTOPRICING_MARKUP_FIELDS:
+                field_name = f"{code}{suffix}"
+                raw = request.POST.get(field_name, '').strip()
+                if raw == '':
+                    setattr(unit, field_name, None)
+                else:
+                    try:
+                        # поддержка ввода с запятой
+                        raw_normalized = raw.replace(',', '.')
+                        setattr(unit, field_name, float(raw_normalized))
+                    except (ValueError, TypeError):
+                        # игнорируем некорректные значения, оставляя старое
+                        pass
+
+            # Вариант управления ценой (FK на RefTypeEvaluationCarsOrganization)
+            eval_field_name = f"eval_type_{price}"
+            eval_id = request.POST.get(eval_field_name, '').strip()
+            if eval_id:
+                try:
+                    eval_obj = RefTypeEvaluationCarsOrganization.objects.get(pk=int(eval_id))
+                    setattr(unit, eval_field_name, eval_obj)
+                except (ValueError, RefTypeEvaluationCarsOrganization.DoesNotExist):
+                    # некорректный id — не изменяем поле
+                    pass
+            else:
+                setattr(unit, eval_field_name, None)
+
+        unit.save()
+        return HttpResponseRedirect(request.build_absolute_uri())
+
+    # Формируем структуру для отображения в шаблоне
+    ranges = []
+    for price in AUTOPRICING_PRICE_RANGES:
+        suffix = "_%s" % price
+        range_data = {
+            'price': price,
+            'bool_fields': [],
+            'autohub_fields': [],
+            'numeric_fields': [],
+            'markup_fields': [],
+            'eval_field': {},
+        }
+
+        for code, label in AUTOPRICING_BOOL_FIELDS:
+            field_name = f"{code}{suffix}"
+            range_data['bool_fields'].append({
+                'name': field_name,
+                'label': label,
+                'value': getattr(unit, field_name, False),
+            })
+
+        for code, label in AUTOPRICING_AUTOHUB_FIELDS:
+            field_name = f"{code}{suffix}"
+            range_data['autohub_fields'].append({
+                'name': field_name,
+                'label': label,
+                'value': getattr(unit, field_name, ''),
+            })
+
+        for code, label in AUTOPRICING_NUMERIC_FIELDS:
+            field_name = f"{code}{suffix}"
+            range_data['numeric_fields'].append({
+                'name': field_name,
+                'label': label,
+                'value': getattr(unit, field_name, None),
+            })
+
+        for code, label in AUTOPRICING_MARKUP_FIELDS:
+            field_name = f"{code}{suffix}"
+            range_data['markup_fields'].append({
+                'name': field_name,
+                'label': label,
+                'value': getattr(unit, field_name, None),
+            })
+
+        eval_field_name = f"eval_type_{price}"
+        eval_value_id = getattr(unit, f"{eval_field_name}_id", None)
+        range_data['eval_field'] = {
+            'name': eval_field_name,
+            'label': "Выводить в продажу по правилу",
+            'value_id': eval_value_id,
+        }
+
+        ranges.append(range_data)
+
+    params = {
+        'type': 'settings_autopricing_korsavto',
+        'unit': unit,
+        'ranges': ranges,
+        'evaluations': evaluations,
+        'autohub_choices': AVTOHUB_DATA_USAGE_CHOICES,
+    }
+
+    return render(request, "kors/settings_autopricing_korsavto_unit.html", {'params': params})
+
+
+@login_required
 def kpi_eco(request):
     
     type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
@@ -7531,76 +7717,76 @@ def refresh_estimation_balance_unit(id_estimation):
                                         
                                         if zg.name == '200':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_200
+                                                kf = unit.correction_txt_200 or unit.ratio_avtohub_txt_200
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_200
+                                                kf = unit.correction_rdo_200 or unit.ratio_avtohub_rdo_200
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_200
+                                                kf = unit.correction_kor_200 or unit.ratio_avtohub_kor_200
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_200
+                                                kf = unit.correction_test_200 or unit.ratio_avtohub_test_price_200
                                         elif zg.name == '400':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_400
+                                                kf = unit.correction_txt_400 or unit.ratio_avtohub_txt_400
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_400
+                                                kf = unit.correction_rdo_400 or unit.ratio_avtohub_rdo_400
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_400
+                                                kf = unit.correction_kor_400 or unit.ratio_avtohub_kor_400
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_400   
+                                                kf = unit.correction_test_400 or unit.ratio_avtohub_test_price_400   
                                         elif zg.name == '700':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_700
+                                                kf = unit.correction_txt_700 or unit.ratio_avtohub_txt_700
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_700
+                                                kf = unit.correction_rdo_700 or unit.ratio_avtohub_rdo_700
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_700
+                                                kf = unit.correction_kor_700 or unit.ratio_avtohub_kor_700
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_700 
+                                                kf = unit.correction_test_700 or unit.ratio_avtohub_test_price_700 
                                         elif zg.name == '1200' or zg.name == '1 200':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_1200
+                                                kf = unit.correction_txt_1200 or unit.ratio_avtohub_txt_1200
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_1200
+                                                kf = unit.correction_rdo_1200 or unit.ratio_avtohub_rdo_1200
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_1200
+                                                kf = unit.correction_kor_1200 or unit.ratio_avtohub_kor_1200
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_1200
+                                                kf = unit.correction_test_1200 or unit.ratio_avtohub_test_price_1200
                                         elif zg.name == '2000' or zg.name == '2 000':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_2000
+                                                kf = unit.correction_txt_2000 or unit.ratio_avtohub_txt_2000
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_2000
+                                                kf = unit.correction_rdo_2000 or unit.ratio_avtohub_rdo_2000
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_2000
+                                                kf = unit.correction_kor_2000 or unit.ratio_avtohub_kor_2000
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_2000 
+                                                kf = unit.correction_test_2000 or unit.ratio_avtohub_test_price_2000 
                                         elif zg.name == '3000' or zg.name == '3 000' or zg.name == '3 001+':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_3000
+                                                kf = unit.correction_txt_3000 or unit.ratio_avtohub_txt_3000
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_3000
+                                                kf = unit.correction_rdo_3000 or unit.ratio_avtohub_rdo_3000
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_3000
+                                                kf = unit.correction_kor_3000 or unit.ratio_avtohub_kor_3000
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_3000
+                                                kf = unit.correction_test_3000 or unit.ratio_avtohub_test_price_3000
                                         elif zg.name == '5000' or zg.name == '5 000':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_5000
+                                                kf = unit.correction_txt_5000 or unit.ratio_avtohub_txt_5000
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_5000
+                                                kf = unit.correction_rdo_5000 or unit.ratio_avtohub_rdo_5000
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_5000
+                                                kf = unit.correction_kor_5000 or unit.ratio_avtohub_kor_5000
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_5000
+                                                kf = unit.correction_test_5000 or unit.ratio_avtohub_test_price_5000
                                         elif zg.name == '5 000' or zg.name == '5 000+':
                                             if stage.pk == 1:
-                                                kf = unit.ratio_avtohub_txt_5001
+                                                kf = unit.correction_txt_5001 or unit.ratio_avtohub_txt_5001
                                             elif stage.pk == 2:
-                                                kf = unit.ratio_avtohub_rdo_5001
+                                                kf = unit.correction_rdo_5001 or unit.ratio_avtohub_rdo_5001
                                             elif stage.pk == 3:
-                                                kf = unit.ratio_avtohub_kor_5001
+                                                kf = unit.correction_kor_5001 or unit.ratio_avtohub_kor_5001
                                             elif stage.pk == 4:
-                                                kf = unit.ratio_avtohub_test_price_5001
+                                                kf = unit.correction_test_5001 or unit.ratio_avtohub_test_price_5001
 
                                         if estimation != None:
                                             

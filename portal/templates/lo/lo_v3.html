@@ -2174,21 +2174,27 @@
                       <span>Дистанционная оценка</span>                 
                     </a>            
                   {% endif %}
-                  <a href="?{% url_replace page=1 %}" class="kors-anchor-button" data-tab-target="1">
-                    <span>Документы</span>                
-                  </a>
-                  <a href="?{% url_replace page=2 %}" class="kors-anchor-button" data-tab-target="2">
-                    <span>Салон</span>                
-                  </a>
-                  <a href="?{% url_replace page=3 %}" class="kors-anchor-button" data-tab-target="3">
-                    <span>Внешний осмотр</span>                
-                  </a>
-                  <a href="?{% url_replace page=4 %}" class="kors-anchor-button" data-tab-target="4">
-                    <span>Комплектность</span>                
-                  </a>
-                  <a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
-                    <span>Колеса</span>                
-                  </a>
+                  
+                  {% if params.estimation.page_remote == None or params.estimation.page_remote.end_estimation != None %}
+
+                    <a href="?{% url_replace page=1 %}" class="kors-anchor-button" data-tab-target="1">
+                      <span>Документы</span>                
+                    </a>
+                    <a href="?{% url_replace page=2 %}" class="kors-anchor-button" data-tab-target="2">
+                      <span>Салон</span>                
+                    </a>
+                    <a href="?{% url_replace page=3 %}" class="kors-anchor-button" data-tab-target="3">
+                      <span>Внешний осмотр</span>                
+                    </a>
+                    <a href="?{% url_replace page=4 %}" class="kors-anchor-button" data-tab-target="4">
+                      <span>Комплектность</span>                
+                    </a>
+                    <a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
+                      <span>Колеса</span>                
+                    </a>
+                    
+                  {% endif %}
+
                   <a href="?{% url_replace page=7 %}" class="kors-anchor-button" data-tab-target="7">
                     <span>Проверки</span>                
                   </a>
@@ -3395,13 +3401,37 @@
                     <div class="portal-panel">
                     
                       <h6 class="d-flex align-items-center gap-2 mb-3">
-                        <span class="icon-mbri-info"></span> Замечания по салону автомобиля
+                        <span class="icon-mbri-info"></span> Салон
                       </h6>
                         
                       <div class="row">
   
                         <div class="col-12">
-                                                          
+
+                          <div class="kors-btn-group-wrapper">
+                            <div class="kors-btn-group-compact" role="group" aria-label="Салон автомобиля">
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="type_salon_int" 
+                                     id="type_salon_int-radio" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_salon.type_salon_int == 0 %} checked {% endif %} 
+                                     value="0" 
+                                     required>
+                              <label class="btn btn-outline-success" for="type_salon_int-radio">Ткань</label>
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="type_salon_int" 
+                                     id="type_salon_int-radio1" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_salon.type_salon_int == 1 %} checked {% endif %} 
+                                     value="1" 
+                                     required>
+                              <label class="btn btn-outline-success" for="type_salon_int-radio1">Кожа</label>
+                            </div>
+                            <label class="fs-6" for="cleaning">Вариант салона</label>
+                          </div>
+                          
                           <div class="kors-btn-group-wrapper">
                             <div class="kors-btn-group-compact" role="group" aria-label="Химчистка салона">
                               <input type="radio" 
@@ -3489,6 +3519,34 @@
                     <div class="row g-1">
 
                       <div class="col-12 col-xl-6">
+
+                        <div class="row g-1">
+                          <div class="col-sm-12">
+                            <div class="kors-btn-group-wrapper">
+                              <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с подогревом">
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_heat_int" 
+                                       id="windshield_heat_int-radio1" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_heat_int == 0 %} checked {% endif %} 
+                                       value="0" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_heat_int-radio1">Нет</label>
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_heat_int" 
+                                       id="windshield_heat_int-radio2" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_heat_int == 1 %} checked {% endif %} 
+                                       value="1" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_heat_int-radio2">Да</label>
+                              </div>
+                              <label class="fs-6" for="check_engine">Лобовое стекло с подогревом</label>
+                            </div>
+                          </div>
+                        </div>
 
                         <div class="row g-1">
                           <div class="col-sm-12">
@@ -7482,23 +7540,22 @@
 
                     <div class="row g-1" style="padding: 0.2rem;">
                       
-                      <div class="col-sm-3">
+                      <div class="col-12 col-xl-3">
                         <div class="form-floating mb-3">
                           <input class="form-control form-control-sm" type="text" id="mark" name="mark" value="{{params.estimation.modification.model.mark.name}}" placeholder="-" readonly>
                           <label class="fs-6" for="floatingInput">Марка</label>
                         </div>
                       </div>
 
-                      <div class="col-sm-3">
+                      <div class="col-12 col-xl-3">
                         <div class="form-floating mb-3">
                           <input class="form-control form-control-sm" type="text" id="model" name="model" value="{{params.estimation.modification.model.name}}" placeholder="-" readonly>
                           <label class="fs-6" for="floatingInput">Модель</label>
                         </div>
                       </div>
                       
-                      <div class="col-sm-3">
+                      <div class="col-12 col-xl-3">
                       
-                        
                         <div class="form-floating mb-3">
                           <input class="form-control form-control-sm" type="text" id="modification" name="modification" value="{{params.estimation.modification.name}}" placeholder="-" readonly>
                           <label class="fs-6" for="floatingInput">Модификация</label>
@@ -7506,37 +7563,25 @@
                         
                       </div>
 
-                      <div class="col-sm-2">
+                      <div class="col-12 col-xl-3">
                         <div class="form-floating mb-3">
                           <input class="form-control form-control-sm" type="text" id="year" name="year" value="{{params.estimation.year}}" placeholder="-" readonly>
                           <label class="fs-6" for="floatingInput">Год выпуска</label>
                         </div>
                       </div>
 
-                      <div class="col-sm-1 align-self-center">
-                        <button type="button" class="btn btn-outline-dark align-self-center" data-bs-toggle="modal" data-bs-target="#edit_modification"><span class="icon-mbri-edit"></span></button>
-                      </div>
-
                     </div>
 
                     <div class="row g-1" style="padding: 0.2rem;">
                       
-                      <div class="col-sm-3">
-                        <div class="row g-1 align-items-center">
-                          <div class="col"> 
-                            <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.estimation.vin|default_if_none:"Отсутствует"}}" placeholder="-" readonly>
-                              <label class="fs-6" for="floatingInput">VIN</label>
-                            </div>
-                          </div>
-
-                          <div class="col-auto align-items-center">
-                            <button type="button" class="btn btn-outline-dark align-self-center" data-bs-toggle="modal" data-bs-target="#vin_edit"><span class="icon-mbri-edit"></span></button>
-                          </div>
+                      <div class="col-12 col-xl-3">
+                        <div class="form-floating mb-3">
+                          <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.estimation.vin|default_if_none:"Отсутствует"}}" placeholder="-" readonly>
+                          <label class="fs-6" for="floatingInput">VIN</label>
+                          
                         </div>
-                        
                       </div>
-                      
+
                       <div class="col-sm-3">
                         <div class="form-floating mb-3">
                           <input class="form-control form-control-sm" type="text" id="number_body" name="number_body" value="{{params.estimation.number_body|default_if_none:"Не указан"}}" placeholder="-" readonly>
@@ -7545,8 +7590,7 @@
                       </div>
 
                       
-                      
-                      <div class="col-sm-3">
+                      <div class="col-12 col-xl-3">
                         
                         <div class="form-floating mb-3">							
                           <select class="form-select" id="type_drive" name="type_drive" placeholder="" required>
@@ -7562,7 +7606,7 @@
                         
                       </div>
 
-                      <div class="col-sm-3">
+                      <div class="col-12 col-xl-3">
                         
                         <div class="form-floating">
                           <input class="form-control form-control-sm" type="number" id="run" name="run" value="{{params.estimation.page_remote.run}}" readonly min="1" >

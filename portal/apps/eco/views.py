@@ -2767,6 +2767,8 @@ def estimations_price_calculation(estimation, type_calculation):
     zna_izp_type        = 0
     percent_sale_1C     = 100
     percent_sale        = 100
+    percent_sale_rdo    = 100
+    percent_sale_kor    = 100
     battery             = 0
     matrix_auction      = 0
     
@@ -2775,15 +2777,17 @@ def estimations_price_calculation(estimation, type_calculation):
     if zna < 200000:
         zg              = '200'
         matrix_auction  = settings_matrix.charge_bcp_200
-        kf              = dc.ratio_avtohub_txt_200
-        percent_ss      = dc.percent_txt_200
-        percent_torg    = dc.percent_torg_txt_200
+        # ИРЦ ТХТ / защита от скидок / лимиты
+        kf              = getattr(dc, 'correction_txt_200', None) if getattr(dc, 'correction_txt_200', None) not in (None, 0) else dc.ratio_avtohub_txt_200
+        percent_ss      = getattr(dc, 'markup_txt_200',   None) if getattr(dc, 'markup_txt_200',   None) not in (None, 0) else dc.percent_txt_200
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_200', None) if getattr(dc, 'max_discount_bargain_percent_200', None) not in (None, 0) else dc.percent_torg_txt_200
         zna_izp_kf      = estimation_settings.izp_200
         zna_izp_type    = estimation_settings.izp_200_v
-        percent_sale_1C = dc.ratio_1с_test_price_200
-        percent_sale    = dc.ratio_avtohub_test_price_200
-        percent_sale_rdo= dc.ratio_avtohub_rdo_200
-        percent_sale_kor= dc.ratio_avtohub_kor_200
+        # Коэффициенты продажи по каналам
+        percent_sale_1C = getattr(dc, 'correction_test_1c_200', None) if getattr(dc, 'correction_test_1c_200', None) not in (None, 0) else dc.ratio_1с_test_price_200
+        percent_sale    = getattr(dc, 'correction_test_200',    None) if getattr(dc, 'correction_test_200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_200
+        percent_sale_rdo= getattr(dc, 'correction_rdo_200',     None) if getattr(dc, 'correction_rdo_200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_200
+        percent_sale_kor= getattr(dc, 'correction_kor_200',     None) if getattr(dc, 'correction_kor_200',     None) not in (None, 0) else dc.ratio_avtohub_kor_200
         kf_auction      = estimation_settings.auction_kf_200
         fin_zg          = estimation_settings.percent_financity_200
         day_sale_zg     = estimation_settings.days_stok_financity_200
@@ -2839,6 +2843,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_200
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_200
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_200
+        brake_danger_kf              = estimation_settings.brake_danger_kf_200
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_200
+        brake_warning_kf             = estimation_settings.brake_warning_kf_200
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_200
         drive_danger_kf              = estimation_settings.drive_danger_kf_200
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
         drive_warning_kf             = estimation_settings.drive_warning_kf_200
@@ -2851,15 +2859,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_400
         fin_zg          = estimation_settings.percent_financity_400
         day_sale_zg     = estimation_settings.days_stok_financity_400
-        kf              = dc.ratio_avtohub_txt_400
-        percent_ss      = dc.percent_txt_400
-        percent_torg    = dc.percent_torg_txt_400
+        kf              = getattr(dc, 'correction_txt_400', None) if getattr(dc, 'correction_txt_400', None) not in (None, 0) else dc.ratio_avtohub_txt_400
+        percent_ss      = getattr(dc, 'markup_txt_400',   None) if getattr(dc, 'markup_txt_400',   None) not in (None, 0) else dc.percent_txt_400
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_400', None) if getattr(dc, 'max_discount_bargain_percent_400', None) not in (None, 0) else dc.percent_torg_txt_400
         zna_izp_kf      = estimation_settings.izp_400
         zna_izp_type    = estimation_settings.izp_400_v
-        percent_sale_1C = dc.ratio_1с_test_price_400
-        percent_sale    = dc.ratio_avtohub_test_price_400
-        percent_sale_rdo= dc.ratio_avtohub_rdo_400
-        percent_sale_kor= dc.ratio_avtohub_kor_400
+        percent_sale_1C = getattr(dc, 'correction_test_1c_400', None) if getattr(dc, 'correction_test_1c_400', None) not in (None, 0) else dc.ratio_1с_test_price_400
+        percent_sale    = getattr(dc, 'correction_test_400',    None) if getattr(dc, 'correction_test_400',    None) not in (None, 0) else dc.ratio_avtohub_test_price_400
+        percent_sale_rdo= getattr(dc, 'correction_rdo_400',     None) if getattr(dc, 'correction_rdo_400',     None) not in (None, 0) else dc.ratio_avtohub_rdo_400
+        percent_sale_kor= getattr(dc, 'correction_kor_400',     None) if getattr(dc, 'correction_kor_400',     None) not in (None, 0) else dc.ratio_avtohub_kor_400
         kf_auction      = estimation_settings.auction_kf_400
         windshield      = estimation_settings.windshield_400
         windshield_heat = estimation_settings.windshield_heat_400
@@ -2912,6 +2920,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_400
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_400
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_400
+        brake_danger_kf              = estimation_settings.brake_danger_kf_400
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_400
+        brake_warning_kf             = estimation_settings.brake_warning_kf_400
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_400
         drive_danger_kf              = estimation_settings.drive_danger_kf_400
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
         drive_warning_kf             = estimation_settings.drive_warning_kf_400
@@ -2924,15 +2936,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_700
         fin_zg          = estimation_settings.percent_financity_700
         day_sale_zg     = estimation_settings.days_stok_financity_700
-        kf              = dc.ratio_avtohub_txt_700
-        percent_ss      = dc.percent_txt_700
-        percent_torg    = dc.percent_torg_txt_700
+        kf              = getattr(dc, 'correction_txt_700', None) if getattr(dc, 'correction_txt_700', None) not in (None, 0) else dc.ratio_avtohub_txt_700
+        percent_ss      = getattr(dc, 'markup_txt_700',   None) if getattr(dc, 'markup_txt_700',   None) not in (None, 0) else dc.percent_txt_700
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_700', None) if getattr(dc, 'max_discount_bargain_percent_700', None) not in (None, 0) else dc.percent_torg_txt_700
         zna_izp_kf      = estimation_settings.izp_700
         zna_izp_type    = estimation_settings.izp_700_v
-        percent_sale_1C = dc.ratio_1с_test_price_700
-        percent_sale    = dc.ratio_avtohub_test_price_700
-        percent_sale_rdo= dc.ratio_avtohub_rdo_700
-        percent_sale_kor= dc.ratio_avtohub_kor_700
+        percent_sale_1C = getattr(dc, 'correction_test_1c_700', None) if getattr(dc, 'correction_test_1c_700', None) not in (None, 0) else dc.ratio_1с_test_price_700
+        percent_sale    = getattr(dc, 'correction_test_700',    None) if getattr(dc, 'correction_test_700',    None) not in (None, 0) else dc.ratio_avtohub_test_price_700
+        percent_sale_rdo= getattr(dc, 'correction_rdo_700',     None) if getattr(dc, 'correction_rdo_700',     None) not in (None, 0) else dc.ratio_avtohub_rdo_700
+        percent_sale_kor= getattr(dc, 'correction_kor_700',     None) if getattr(dc, 'correction_kor_700',     None) not in (None, 0) else dc.ratio_avtohub_kor_700
         kf_auction      = estimation_settings.auction_kf_700
         windshield      = estimation_settings.windshield_700
         windshield_heat = estimation_settings.windshield_heat_700
@@ -2985,6 +2997,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_700
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_700
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_700
+        brake_danger_kf              = estimation_settings.brake_danger_kf_700
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_700
+        brake_warning_kf             = estimation_settings.brake_warning_kf_700
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_700
         drive_danger_kf              = estimation_settings.drive_danger_kf_700
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
         drive_warning_kf             = estimation_settings.drive_warning_kf_700
@@ -2997,15 +3013,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_1200
         fin_zg          = estimation_settings.percent_financity_1200
         day_sale_zg     = estimation_settings.days_stok_financity_1200
-        kf              = dc.ratio_avtohub_txt_1200
-        percent_ss      = dc.percent_txt_1200
-        percent_torg    = dc.percent_torg_txt_1200
+        kf              = getattr(dc, 'correction_txt_1200', None) if getattr(dc, 'correction_txt_1200', None) not in (None, 0) else dc.ratio_avtohub_txt_1200
+        percent_ss      = getattr(dc, 'markup_txt_1200',   None) if getattr(dc, 'markup_txt_1200',   None) not in (None, 0) else dc.percent_txt_1200
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_1200', None) if getattr(dc, 'max_discount_bargain_percent_1200', None) not in (None, 0) else dc.percent_torg_txt_1200
         zna_izp_kf      = estimation_settings.izp_1200
         zna_izp_type    = estimation_settings.izp_1200_v
-        percent_sale_1C = dc.ratio_1с_test_price_1200
-        percent_sale    = dc.ratio_avtohub_test_price_1200
-        percent_sale_rdo= dc.ratio_avtohub_rdo_1200
-        percent_sale_kor= dc.ratio_avtohub_kor_1200
+        percent_sale_1C = getattr(dc, 'correction_test_1c_1200', None) if getattr(dc, 'correction_test_1c_1200', None) not in (None, 0) else dc.ratio_1с_test_price_1200
+        percent_sale    = getattr(dc, 'correction_test_1200',    None) if getattr(dc, 'correction_test_1200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_1200
+        percent_sale_rdo= getattr(dc, 'correction_rdo_1200',     None) if getattr(dc, 'correction_rdo_1200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_1200
+        percent_sale_kor= getattr(dc, 'correction_kor_1200',     None) if getattr(dc, 'correction_kor_1200',     None) not in (None, 0) else dc.ratio_avtohub_kor_1200
         kf_auction      = estimation_settings.auction_kf_1200
         windshield      = estimation_settings.windshield_1200
         windshield_heat = estimation_settings.windshield_heat_1200
@@ -3058,6 +3074,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_1200
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_1200
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_1200
+        brake_danger_kf              = estimation_settings.brake_danger_kf_1200
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_1200
+        brake_warning_kf             = estimation_settings.brake_warning_kf_1200
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_1200
         drive_danger_kf              = estimation_settings.drive_danger_kf_1200
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
         drive_warning_kf             = estimation_settings.drive_warning_kf_1200
@@ -3070,15 +3090,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_2000
         fin_zg          = estimation_settings.percent_financity_2000
         day_sale_zg     = estimation_settings.days_stok_financity_2000
-        kf              = dc.ratio_avtohub_txt_2000
-        percent_ss      = dc.percent_txt_2000
-        percent_torg    = dc.percent_torg_txt_2000
+        kf              = getattr(dc, 'correction_txt_2000', None) if getattr(dc, 'correction_txt_2000', None) not in (None, 0) else dc.ratio_avtohub_txt_2000
+        percent_ss      = getattr(dc, 'markup_txt_2000',   None) if getattr(dc, 'markup_txt_2000',   None) not in (None, 0) else dc.percent_txt_2000
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_2000', None) if getattr(dc, 'max_discount_bargain_percent_2000', None) not in (None, 0) else dc.percent_torg_txt_2000
         zna_izp_kf      = estimation_settings.izp_2000
         zna_izp_type    = estimation_settings.izp_2000_v
-        percent_sale_1C = dc.ratio_1с_test_price_2000
-        percent_sale    = dc.ratio_avtohub_test_price_2000
-        percent_sale_rdo= dc.ratio_avtohub_rdo_2000
-        percent_sale_kor= dc.ratio_avtohub_kor_2000
+        percent_sale_1C = getattr(dc, 'correction_test_1c_2000', None) if getattr(dc, 'correction_test_1c_2000', None) not in (None, 0) else dc.ratio_1с_test_price_2000
+        percent_sale    = getattr(dc, 'correction_test_2000',    None) if getattr(dc, 'correction_test_2000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_2000
+        percent_sale_rdo= getattr(dc, 'correction_rdo_2000',     None) if getattr(dc, 'correction_rdo_2000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_2000
+        percent_sale_kor= getattr(dc, 'correction_kor_2000',     None) if getattr(dc, 'correction_kor_2000',     None) not in (None, 0) else dc.ratio_avtohub_kor_2000
         kf_auction      = estimation_settings.auction_kf_2000
         windshield      = estimation_settings.windshield_2000
         windshield_heat = estimation_settings.windshield_heat_2000
@@ -3131,6 +3151,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_2000
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_2000
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_2000
+        brake_danger_kf              = estimation_settings.brake_danger_kf_2000
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_2000
+        brake_warning_kf             = estimation_settings.brake_warning_kf_2000
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_2000
         drive_danger_kf              = estimation_settings.drive_danger_kf_2000
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
         drive_warning_kf             = estimation_settings.drive_warning_kf_2000
@@ -3143,15 +3167,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_3000
         fin_zg          = estimation_settings.percent_financity_3000
         day_sale_zg     = estimation_settings.days_stok_financity_3000
-        kf              = dc.ratio_avtohub_txt_3000
-        percent_ss      = dc.percent_txt_3000
-        percent_torg    = dc.percent_torg_txt_3000
+        kf              = getattr(dc, 'correction_txt_3000', None) if getattr(dc, 'correction_txt_3000', None) not in (None, 0) else dc.ratio_avtohub_txt_3000
+        percent_ss      = getattr(dc, 'markup_txt_3000',   None) if getattr(dc, 'markup_txt_3000',   None) not in (None, 0) else dc.percent_txt_3000
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_3000', None) if getattr(dc, 'max_discount_bargain_percent_3000', None) not in (None, 0) else dc.percent_torg_txt_3000
         zna_izp_kf      = estimation_settings.izp_3000
         zna_izp_type    = estimation_settings.izp_3000_v
-        percent_sale_1C = dc.ratio_1с_test_price_3000
-        percent_sale    = dc.ratio_avtohub_test_price_3000
-        percent_sale_rdo= dc.ratio_avtohub_rdo_3000
-        percent_sale_kor= dc.ratio_avtohub_kor_3000
+        percent_sale_1C = getattr(dc, 'correction_test_1c_3000', None) if getattr(dc, 'correction_test_1c_3000', None) not in (None, 0) else dc.ratio_1с_test_price_3000
+        percent_sale    = getattr(dc, 'correction_test_3000',    None) if getattr(dc, 'correction_test_3000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_3000
+        percent_sale_rdo= getattr(dc, 'correction_rdo_3000',     None) if getattr(dc, 'correction_rdo_3000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_3000
+        percent_sale_kor= getattr(dc, 'correction_kor_3000',     None) if getattr(dc, 'correction_kor_3000',     None) not in (None, 0) else dc.ratio_avtohub_kor_3000
         kf_auction      = estimation_settings.auction_kf_3000
         windshield      = estimation_settings.windshield_3000
         windshield_heat = estimation_settings.windshield_heat_3000
@@ -3204,6 +3228,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_3000
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_3000
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_3000
+        brake_danger_kf              = estimation_settings.brake_danger_kf_3000
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_3000
+        brake_warning_kf             = estimation_settings.brake_warning_kf_3000
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_3000
         drive_danger_kf              = estimation_settings.drive_danger_kf_3000
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
         drive_warning_kf             = estimation_settings.drive_warning_kf_3000
@@ -3216,15 +3244,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_5000
         fin_zg          = estimation_settings.percent_financity_5000
         day_sale_zg     = estimation_settings.days_stok_financity_5000
-        kf              = dc.ratio_avtohub_txt_5000
-        percent_ss      = dc.percent_txt_5000
-        percent_torg    = dc.percent_torg_txt_5000
+        kf              = getattr(dc, 'correction_txt_5000', None) if getattr(dc, 'correction_txt_5000', None) not in (None, 0) else dc.ratio_avtohub_txt_5000
+        percent_ss      = getattr(dc, 'markup_txt_5000',   None) if getattr(dc, 'markup_txt_5000',   None) not in (None, 0) else dc.percent_txt_5000
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_5000', None) if getattr(dc, 'max_discount_bargain_percent_5000', None) not in (None, 0) else dc.percent_torg_txt_5000
         zna_izp_kf      = estimation_settings.izp_5000
         zna_izp_type    = estimation_settings.izp_5000_v
-        percent_sale_1C = dc.ratio_1с_test_price_5000
-        percent_sale    = dc.ratio_avtohub_test_price_5000
-        percent_sale_rdo= dc.ratio_avtohub_rdo_5000
-        percent_sale_kor= dc.ratio_avtohub_kor_5000
+        percent_sale_1C = getattr(dc, 'correction_test_1c_5000', None) if getattr(dc, 'correction_test_1c_5000', None) not in (None, 0) else dc.ratio_1с_test_price_5000
+        percent_sale    = getattr(dc, 'correction_test_5000',    None) if getattr(dc, 'correction_test_5000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5000
+        percent_sale_rdo= getattr(dc, 'correction_rdo_5000',     None) if getattr(dc, 'correction_rdo_5000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5000
+        percent_sale_kor= getattr(dc, 'correction_kor_5000',     None) if getattr(dc, 'correction_kor_5000',     None) not in (None, 0) else dc.ratio_avtohub_kor_5000
         kf_auction      = estimation_settings.auction_kf_5000
         windshield      = estimation_settings.windshield_5000
         windshield_heat = estimation_settings.windshield_heat_5000
@@ -3277,6 +3305,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5000
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_5000
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5000
+        brake_danger_kf              = estimation_settings.brake_danger_kf_5000
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5000
+        brake_warning_kf             = estimation_settings.brake_warning_kf_5000
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5000
         drive_danger_kf              = estimation_settings.drive_danger_kf_5000
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
         drive_warning_kf             = estimation_settings.drive_warning_kf_5000
@@ -3289,15 +3321,15 @@ def estimations_price_calculation(estimation, type_calculation):
         matrix_auction  = settings_matrix.charge_bcp_5001
         fin_zg          = estimation_settings.percent_financity_5001
         day_sale_zg     = estimation_settings.days_stok_financity_5001
-        kf              = dc.ratio_avtohub_txt_5001
-        percent_ss      = dc.percent_txt_5001
-        percent_torg    = dc.percent_torg_txt_5001
+        kf              = getattr(dc, 'correction_txt_5001', None) if getattr(dc, 'correction_txt_5001', None) not in (None, 0) else dc.ratio_avtohub_txt_5001
+        percent_ss      = getattr(dc, 'markup_txt_5001',   None) if getattr(dc, 'markup_txt_5001',   None) not in (None, 0) else dc.percent_txt_5001
+        percent_torg    = getattr(dc, 'max_discount_bargain_percent_5001', None) if getattr(dc, 'max_discount_bargain_percent_5001', None) not in (None, 0) else dc.percent_torg_txt_5001
         zna_izp_kf      = estimation_settings.izp_5001
         zna_izp_type    = estimation_settings.izp_5001_v
-        percent_sale_1C = dc.ratio_1с_test_price_5001
-        percent_sale    = dc.ratio_avtohub_test_price_5001
-        percent_sale_rdo= dc.ratio_avtohub_rdo_5001
-        percent_sale_kor= dc.ratio_avtohub_kor_5001
+        percent_sale_1C = getattr(dc, 'correction_test_1c_5001', None) if getattr(dc, 'correction_test_1c_5001', None) not in (None, 0) else dc.ratio_1с_test_price_5001
+        percent_sale    = getattr(dc, 'correction_test_5001',    None) if getattr(dc, 'correction_test_5001',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5001
+        percent_sale_rdo= getattr(dc, 'correction_rdo_5001',     None) if getattr(dc, 'correction_rdo_5001',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5001
+        percent_sale_kor= getattr(dc, 'correction_kor_5001',     None) if getattr(dc, 'correction_kor_5001',     None) not in (None, 0) else dc.ratio_avtohub_kor_5001
         kf_auction      = estimation_settings.auction_kf_5001
         windshield      = estimation_settings.windshield_5001
         windshield_heat = estimation_settings.windshield_heat_5001
@@ -3350,6 +3382,10 @@ def estimations_price_calculation(estimation, type_calculation):
         wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5001
         wheel_warning_kf             = estimation_settings.wheel_warning_kf_5001
         wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5001
+        brake_danger_kf              = estimation_settings.brake_danger_kf_5001
+        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5001
+        brake_warning_kf             = estimation_settings.brake_warning_kf_5001
+        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5001
         drive_danger_kf              = estimation_settings.drive_danger_kf_5001
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
         drive_warning_kf             = estimation_settings.drive_warning_kf_5001
@@ -3494,9 +3530,28 @@ def estimations_price_calculation(estimation, type_calculation):
         }
         list_info_price.append(inf_price)
     
-    if estimation.page_salon != None:
-    
-    # Химчистка +
+    if estimation.page_vnesh != None:
+        if estimation.page_vnesh.windshield_error_int == 1:
+                if estimation.page_vnesh.windshield_heat_int == 1:
+                    price_diff = windshield_heat
+                    info_diff   = "Лобовое стекло c подогревом"
+                else:
+                    price_diff = windshield
+                    info_diff   = "Лобовое стекло"
+
+                work        = info_diff.capitalize()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum  
+
+    if estimation.page_salon != None:        
+        # Химчистка +
         if estimation.page_salon.cleaning_int == 1:
             work = RegPodgotovkaWork.objects.get(pk = 117) 
             diff = work.price_kors 
@@ -3701,7 +3756,7 @@ def estimations_price_calculation(estimation, type_calculation):
             }
             list_info_price.append(inf_price)      
 
-    
+
     # двигатель
     if estimation.page_test_drive != None and estimation.page_test_drive.engine == 0:
         
@@ -4077,6 +4132,42 @@ def estimations_price_calculation(estimation, type_calculation):
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
 
+    # тормозная система
+    if estimation.page_test_drive != None and estimation.page_test_drive.brake == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * brake_danger_kf / 100)
+       
+        if price_diff < brake_danger_amount_min:
+            price_diff = brake_danger_amount_min
+           
+        dop = {
+            'name'      : 'Тормозная система ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.brake == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * brake_warning_kf / 100)
+       
+        if price_diff < brake_warning_amount_min:
+            price_diff = brake_warning_amount_min
+           
+        dop = {
+            'name'      : 'Тормозная система устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
     # ТО
     if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
         price_diff = to_1 
@@ -4295,12 +4386,12 @@ def estimations_price_calculation(estimation, type_calculation):
                 amount_podgotovka = amount_podgotovka + diff_sum 
             elif info['replace_add'] > 0:
                 price_diff = (price * light_pered_kf / 100)
-                info_diff   = info['name'].title() + ' / замена'
+                info_diff   = info['name'].capitalize() + ' / замена'
 
                 if price_diff < light_pered:
                     price_diff = light_pered
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4312,12 +4403,12 @@ def estimations_price_calculation(estimation, type_calculation):
                 amount_mcu = amount_mcu + diff_sum
             else:
                 price_diff = (price * light_pered_kf / 100)
-                info_diff   = info['name'].title()
+                info_diff   = info['name'].capitalize()
 
                 if price_diff < light_pered:
                     price_diff = light_pered
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4347,7 +4438,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 if price_diff < light_zad:
                     price_diff = light_zad
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4364,7 +4455,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 if price_diff < light_zad:
                     price_diff = light_zad
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4375,10 +4466,15 @@ def estimations_price_calculation(estimation, type_calculation):
                 list_work_mcu.append(dop)
                 amount_mcu = amount_mcu + diff_sum              
         elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
-            price_diff = windshield
-            info_diff   = info['name']
+            
+            if estimation.page_vnesh.windshield_heat_int == 1:
+                price_diff = windshield_heat
+                info_diff   = info['name'] + " c подогревом"
+            else:
+                price_diff = windshield
+                info_diff   = info['name']
 
-            work        = info_diff.title()
+            work        = info_diff.capitalize()
             diff_sum    = price_diff
             dop = {
                 'name'      : work,
