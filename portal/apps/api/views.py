@@ -2449,6 +2449,7 @@ def exchange_bu(request):
     data            = json.loads(body_unicode)
     
     list_services           = list()
+    list_units              = list()
     list_staff              = list()
     list_filials            = list()
     list_cars               = list()
@@ -2469,6 +2470,12 @@ def exchange_bu(request):
         services  = data['Services']
         if len(services) > 0:
             list_services = load_doc_services(services)
+
+    if 'Units' in data:
+        #Подразделения ДЦ
+        units  = data['Units']
+        if len(units) > 0:
+            list_units = load_units(units)
 
     if 'Filials' in data:
         #Филиалы
@@ -2565,7 +2572,8 @@ def exchange_bu(request):
         'SMSS'              : list_smss,
         'Los'               : list_los,
         'Services'          : list_services,
-        'Washings'          : list_washings
+        'Washings'          : list_washings,
+        'Units'             : list_units        
     }   
 
     return JsonResponse(to, status=status.HTTP_200_OK)
@@ -2808,6 +2816,21 @@ def load_doc_services(doc_services):
             answer = {
                 'Uin'       : doc_service_object.uin,
                 'Version'   : doc_service['Version']
+            }
+            answer_data.append(answer)
+        except:
+            error = 1 
+    return answer_data
+
+def load_units(units):
+    
+    answer_data = list()
+    for unit in units:
+        try:
+            unit_object = get_unit(unit)
+            answer = {
+                'Uin'       : unit_object.uin,
+                'Version'   : unit['Version']
             }
             answer_data.append(answer)
         except:

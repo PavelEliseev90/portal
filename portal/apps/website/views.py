@@ -7445,6 +7445,57 @@ def settings_autopricing_korsavto_unit(request, unit_id):
             else:
                 setattr(unit, eval_field_name, None)
 
+            # Зеркалим новые поля автопереоценки обратно в старые поля,
+            # которые используются 1С (для совместимости и обмена).
+            legacy_suffix = f"_{price}"
+
+            # Тест‑прайс (Автохаб и 1С)
+            val = getattr(unit, f"correction_test{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_avtohub_test_price{legacy_suffix}", val)
+            val = getattr(unit, f"correction_test_1c{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_1с_test_price{legacy_suffix}", val)
+
+            # РДО
+            val = getattr(unit, f"correction_rdo{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_avtohub_rdo{legacy_suffix}", val)
+            val = getattr(unit, f"correction_rdo_1c{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_1с_rdo{legacy_suffix}", val)
+
+            # Коррекция
+            val = getattr(unit, f"correction_kor{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_avtohub_kor{legacy_suffix}", val)
+            val = getattr(unit, f"correction_kor_1c{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_1с_kor{legacy_suffix}", val)
+
+            # ТХТ (Автохаб и 1С)
+            val = getattr(unit, f"correction_txt{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_avtohub_txt{legacy_suffix}", val)
+            val = getattr(unit, f"correction_txt_1c{suffix}", None)
+            if val is not None:
+                setattr(unit, f"ratio_1с_txt{legacy_suffix}", val)
+
+            # Наценка ТХТ → старое поле percent_txt_*
+            val = getattr(unit, f"markup_txt{suffix}", None)
+            if val is not None:
+                setattr(unit, f"percent_txt{legacy_suffix}", val)
+
+            # Максимальная скидка торг → percent_torg_txt_*
+            val = getattr(unit, f"max_discount_bargain_percent{suffix}", None)
+            if val is not None:
+                setattr(unit, f"percent_torg_txt{legacy_suffix}", val)
+
+            # Максимальная скидка за TradeIn → discount_tt_*
+            val = getattr(unit, f"max_discount_tradein{suffix}", None)
+            if val is not None:
+                setattr(unit, f"discount_tt{legacy_suffix}", val)
+
         unit.save()
         return HttpResponseRedirect(request.build_absolute_uri())
 
