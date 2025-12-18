@@ -1636,6 +1636,8 @@ class RegInteractivOcenkaSalon(ChangeloggableMixin, models.Model):
     damage_pedal_int        = models.IntegerField('Повреждения / затертые педали',          default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_door_int         = models.IntegerField('Повреждения / затертые карты дверей',    default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_seat_int         = models.IntegerField('Повреждения / затертые сиденья',         default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
+    
+    type_salon_int         = models.IntegerField('Тип салона',         default=10, null=True, blank=True)       #'// 0 - нет 1 - ткань 2 - кожа 3 - кожа'
 
 
     def __str__(self):
@@ -1672,6 +1674,8 @@ class RegInteractivOcenkaVnesh(ChangeloggableMixin, models.Model):
     oil_error_int           = models.IntegerField('Следы подтекания масла', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
     water_error_int         = models.IntegerField('Следы подтекания охлаждающей жидкости', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
 
+    windshield_heat_int    = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True) #'// 1 - есть обогрев
+    
     def __str__(self):
         return "{} / {}".format(self.start_estimation, self.end_estimation)
 

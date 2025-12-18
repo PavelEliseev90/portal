@@ -3526,9 +3526,28 @@ def estimations_price_calculation(estimation, type_calculation):
         }
         list_info_price.append(inf_price)
     
-    if estimation.page_salon != None:
-    
-    # Химчистка +
+    if estimation.page_vnesh != None:
+        if estimation.page_vnesh.windshield_error_int == 1:
+                if estimation.page_vnesh.windshield_heat_int == 1:
+                    price_diff = windshield_heat
+                    info_diff   = "Лобовое стекло c подогревом"
+                else:
+                    price_diff = windshield
+                    info_diff   = "Лобовое стекло"
+
+                work        = info_diff.capitalize()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum  
+
+    if estimation.page_salon != None:        
+        # Химчистка +
         if estimation.page_salon.cleaning_int == 1:
             work = RegPodgotovkaWork.objects.get(pk = 117) 
             diff = work.price_kors 
@@ -3733,7 +3752,7 @@ def estimations_price_calculation(estimation, type_calculation):
             }
             list_info_price.append(inf_price)      
 
-    
+
     # двигатель
     if estimation.page_test_drive != None and estimation.page_test_drive.engine == 0:
         
@@ -4363,12 +4382,12 @@ def estimations_price_calculation(estimation, type_calculation):
                 amount_podgotovka = amount_podgotovka + diff_sum 
             elif info['replace_add'] > 0:
                 price_diff = (price * light_pered_kf / 100)
-                info_diff   = info['name'].title() + ' / замена'
+                info_diff   = info['name'].capitalize() + ' / замена'
 
                 if price_diff < light_pered:
                     price_diff = light_pered
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4380,12 +4399,12 @@ def estimations_price_calculation(estimation, type_calculation):
                 amount_mcu = amount_mcu + diff_sum
             else:
                 price_diff = (price * light_pered_kf / 100)
-                info_diff   = info['name'].title()
+                info_diff   = info['name'].capitalize()
 
                 if price_diff < light_pered:
                     price_diff = light_pered
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4415,7 +4434,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 if price_diff < light_zad:
                     price_diff = light_zad
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4432,7 +4451,7 @@ def estimations_price_calculation(estimation, type_calculation):
                 if price_diff < light_zad:
                     price_diff = light_zad
                     info_diff   = info['name']
-                work        = info_diff.title()
+                work        = info_diff.capitalize()
                 diff_sum    = price_diff
                 dop = {
                     'name'      : work,
@@ -4443,10 +4462,15 @@ def estimations_price_calculation(estimation, type_calculation):
                 list_work_mcu.append(dop)
                 amount_mcu = amount_mcu + diff_sum              
         elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
-            price_diff = windshield
-            info_diff   = info['name']
+            
+            if estimation.page_vnesh.windshield_heat_int == 1:
+                price_diff = windshield_heat
+                info_diff   = info['name'] + " c подогревом"
+            else:
+                price_diff = windshield
+                info_diff   = info['name']
 
-            work        = info_diff.title()
+            work        = info_diff.capitalize()
             diff_sum    = price_diff
             dop = {
                 'name'      : work,
