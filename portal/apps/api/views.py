@@ -2449,6 +2449,7 @@ def exchange_bu(request):
     data            = json.loads(body_unicode)
     
     list_services           = list()
+    list_units              = list()
     list_staff              = list()
     list_filials            = list()
     list_cars               = list()
@@ -2469,6 +2470,12 @@ def exchange_bu(request):
         services  = data['Services']
         if len(services) > 0:
             list_services = load_doc_services(services)
+
+    if 'Units' in data:
+        #Подразделения ДЦ
+        units  = data['Units']
+        if len(units) > 0:
+            list_units = load_units(units)
 
     if 'Filials' in data:
         #Филиалы
@@ -2565,7 +2572,8 @@ def exchange_bu(request):
         'SMSS'              : list_smss,
         'Los'               : list_los,
         'Services'          : list_services,
-        'Washings'          : list_washings
+        'Washings'          : list_washings,
+        'Units'             : list_units        
     }   
 
     return JsonResponse(to, status=status.HTTP_200_OK)
@@ -2808,6 +2816,21 @@ def load_doc_services(doc_services):
             answer = {
                 'Uin'       : doc_service_object.uin,
                 'Version'   : doc_service['Version']
+            }
+            answer_data.append(answer)
+        except:
+            error = 1 
+    return answer_data
+
+def load_units(units):
+    
+    answer_data = list()
+    for unit in units:
+        try:
+            unit_object = get_unit(unit)
+            answer = {
+                'Uin'       : unit_object.uin,
+                'Version'   : unit['Version']
             }
             answer_data.append(answer)
         except:
@@ -4238,6 +4261,96 @@ def get_unit(json_unit):
             if settings_unit['ЦГ5001МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_5001: 
                 ref_unit.discount_tt_5001 = settings_unit['ЦГ5001МаксимальнаяСкидкаЗаTradeIn']
                 saves = True    
+
+        # Синхронизируем старые поля настроек с новыми полями автопереоценки,
+        # чтобы значения из 1С автоматически попадали в структуру автопереоценки.
+        for price in (200, 400, 700, 1200, 2000, 3000, 5000, 5001):
+            suffix = f"_{price}"
+
+            # Тест-прайс (Автохаб)
+            legacy = getattr(ref_unit, f"ratio_avtohub_test_price{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_test{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # РДО
+            legacy = getattr(ref_unit, f"ratio_avtohub_rdo{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_rdo{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Коррекция
+            legacy = getattr(ref_unit, f"ratio_avtohub_kor{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_kor{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # ТХТ (Автохаб)
+            legacy = getattr(ref_unit, f"ratio_avtohub_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_txt{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Коэффициенты 1С
+            legacy = getattr(ref_unit, f"ratio_1с_test_price{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_test_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            legacy = getattr(ref_unit, f"ratio_1с_rdo{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_rdo_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            legacy = getattr(ref_unit, f"ratio_1с_kor{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_kor_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            legacy = getattr(ref_unit, f"ratio_1с_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"correction_txt_1c{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Процент наценки ТХТ → markup_txt
+            legacy = getattr(ref_unit, f"percent_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"markup_txt{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Максимальная скидка торг → max_discount_bargain_percent
+            legacy = getattr(ref_unit, f"percent_torg_txt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"max_discount_bargain_percent{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
+
+            # Максимальная скидка за TradeIn → max_discount_tradein
+            legacy = getattr(ref_unit, f"discount_tt{suffix}", None)
+            if legacy is not None:
+                auto_field = f"max_discount_tradein{suffix}"
+                if getattr(ref_unit, auto_field, None) != legacy:
+                    setattr(ref_unit, auto_field, legacy)
+                    saves = True
 
     if "BuAuto" in json_unit:
         if json_unit['BuAuto'] != ref_unit.buauto: 
