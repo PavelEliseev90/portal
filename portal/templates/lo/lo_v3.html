@@ -2103,6 +2103,18 @@
               </div>
 
               <div class="col-auto">
+                {% if params.estimation.page_test_drive.subframe == 2 %}
+                  <div class="kors-brand-pill bg-warning text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Подрамник &nbsp; </b>
+                  </div>
+                {% elif params.estimation.page_test_drive.subframe == 0  %}
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <b><span class="icon-mbri-setting"></span> &nbsp; Подрамник &nbsp; </b>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="col-auto">
                 {% if params.estimation.page_test_drive.wheel == 2 %}
                   <div class="kors-brand-pill bg-warning text-nowrap">
                     <b><span class="icon-mbri-delivery"></span> &nbsp; Рулевое управление &nbsp; </b>
@@ -7383,6 +7395,29 @@
                                   <div class="form-floating mb-3">
                                     <input type="text" class="form-control kors-form-control text-secondary" id="comment_brake" name="comment_brake" value="{{params.estimation.page_test_drive.comment_brake}}" placeholder="" autocomplete="off">
                                     <label for="comment_brake">Комментарий</label>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div class="col-12 col-xl-6">
+                                <div class="portal-panel">
+                                  <h6><span class="icon-mbri-info"></span> Подрамник</h6>
+                                  
+                                  <div class="kors-btn-group-wrapper-simple">
+                                    <div class="kors-btn-group-compact" role="group" aria-label="Подрамник">
+                                      <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio1_subframe" value="1" {% if params.estimation.page_test_drive.subframe == 1 %} checked {% endif %}>
+                                      <label class="btn btn-outline-success" for="inlineRadio1_subframe">Исправен</label>
+                                      <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio2_subframe" value="0" {% if params.estimation.page_test_drive.subframe == 0 %} checked {% endif %}>
+                                      <label class="btn btn-outline-danger" for="inlineRadio2_subframe">Не исправен</label>
+                                      <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio3_subframe" value="2" {% if params.estimation.page_test_drive.subframe == 2 %} checked {% endif %}>
+                                      <label class="btn btn-outline-warning" for="inlineRadio3_subframe">Есть замечания</label>
+                                    </div>
+                                    <label class="fs-6" for="radio_subframe">Подрамник</label>
+                                  </div>
+                                  
+                                  <div class="form-floating mb-3">
+                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_subframe" name="comment_subframe" value="{{params.estimation.page_test_drive.comment_subframe}}" placeholder="" autocomplete="off">
+                                    <label for="comment_subframe">Комментарий</label>
                                   </div>
                                 </div>
                               </div>

@@ -1821,6 +1821,9 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.brake              = int(request.POST.get('radio_brake', '3'))  
             reg_interactiv_ocenka_test_drive.comment_brake      = request.POST.get('comment_brake', '')
 
+            reg_interactiv_ocenka_test_drive.subframe              = int(request.POST.get('radio_subframe', '10'))  
+            reg_interactiv_ocenka_test_drive.comment_subframe      = request.POST.get('comment_subframe', '')
+
             reg_interactiv_ocenka_test_drive.to                 = int(request.POST.get('radio_to', '10'))
 
             reg_interactiv_ocenka_test_drive.pp_dinamyc             = int(request.POST.get('radio_pp_dinamyc', '3'))
@@ -2847,6 +2850,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_200
         brake_warning_kf             = estimation_settings.brake_warning_kf_200
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_200
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_200
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_200
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_200
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_200
         drive_danger_kf              = estimation_settings.drive_danger_kf_200
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
         drive_warning_kf             = estimation_settings.drive_warning_kf_200
@@ -2924,6 +2931,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_400
         brake_warning_kf             = estimation_settings.brake_warning_kf_400
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_400
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_400
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_400
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_400
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_400
         drive_danger_kf              = estimation_settings.drive_danger_kf_400
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
         drive_warning_kf             = estimation_settings.drive_warning_kf_400
@@ -3001,6 +3012,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_700
         brake_warning_kf             = estimation_settings.brake_warning_kf_700
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_700
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_700
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_700
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_700
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_700
         drive_danger_kf              = estimation_settings.drive_danger_kf_700
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
         drive_warning_kf             = estimation_settings.drive_warning_kf_700
@@ -3078,6 +3093,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_1200
         brake_warning_kf             = estimation_settings.brake_warning_kf_1200
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_1200
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_1200
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_1200
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_1200
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_1200
         drive_danger_kf              = estimation_settings.drive_danger_kf_1200
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
         drive_warning_kf             = estimation_settings.drive_warning_kf_1200
@@ -3155,6 +3174,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_2000
         brake_warning_kf             = estimation_settings.brake_warning_kf_2000
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_2000
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_2000
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_2000
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_2000
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_2000
         drive_danger_kf              = estimation_settings.drive_danger_kf_2000
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
         drive_warning_kf             = estimation_settings.drive_warning_kf_2000
@@ -3232,6 +3255,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_3000
         brake_warning_kf             = estimation_settings.brake_warning_kf_3000
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_3000
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_3000
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_3000
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_3000
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_3000
         drive_danger_kf              = estimation_settings.drive_danger_kf_3000
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
         drive_warning_kf             = estimation_settings.drive_warning_kf_3000
@@ -3309,6 +3336,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5000
         brake_warning_kf             = estimation_settings.brake_warning_kf_5000
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5000
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_5000
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_5000
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_5000
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_5000
         drive_danger_kf              = estimation_settings.drive_danger_kf_5000
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
         drive_warning_kf             = estimation_settings.drive_warning_kf_5000
@@ -3386,6 +3417,10 @@ def estimations_price_calculation(estimation, type_calculation):
         brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5001
         brake_warning_kf             = estimation_settings.brake_warning_kf_5001
         brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5001
+        subframe_danger_kf           = estimation_settings.subframe_danger_kf_5001
+        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_5001
+        subframe_warning_kf          = estimation_settings.subframe_warning_kf_5001
+        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_5001
         drive_danger_kf              = estimation_settings.drive_danger_kf_5001
         drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
         drive_warning_kf             = estimation_settings.drive_warning_kf_5001
@@ -4161,6 +4196,42 @@ def estimations_price_calculation(estimation, type_calculation):
            
         dop = {
             'name'      : 'Тормозная система устранение замечаний',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    # подрамник
+    if estimation.page_test_drive != None and estimation.page_test_drive.subframe == 0:
+        
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * subframe_danger_kf / 100)
+       
+        if price_diff < subframe_danger_amount_min:
+            price_diff = subframe_danger_amount_min
+           
+        dop = {
+            'name'      : 'Подрамник ремонт',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+
+    if estimation.page_test_drive != None and estimation.page_test_drive.subframe == 2:
+        info_diff = ''
+        price_diff = 0
+        price_diff = (price * subframe_warning_kf / 100)
+       
+        if price_diff < subframe_warning_amount_min:
+            price_diff = subframe_warning_amount_min
+           
+        dop = {
+            'name'      : 'Подрамник устранение замечаний',
             'quantity'  : 1,
             'amount_pod': 1, 
             'amount'    : price_diff
