@@ -33,7 +33,7 @@ from register.models import RegEstimationPodgotovka, RegEstimationMCU, RegEstima
 from register.serializers import RegInteractivOcenkaSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
-from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer
+from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer, RefUnitSerializer
 from datetime import datetime, date
 import base64
 from django.db.models import Min, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
@@ -76,6 +76,15 @@ avtoteka_url            = 'https://api.avito.ru/'
 ssl_context         = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 localhost_pem       = 'D:\\kors_group\\portal\\portal\\apps\\task_manager\\certificate.pem'
 ssl_context.load_verify_locations(localhost_pem)
+
+def send_settings_unit(unit):
+    data_unit = RefUnitSerializer(unit, many=False).data
+    js_data = {
+        'Type'      : 'settings_dc',
+        'Settings'  : data_unit 
+    }
+    response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
+    return response.status_code
 
 #Отправка информации о матрице бцп аукциона
 def send_matrix_auction():

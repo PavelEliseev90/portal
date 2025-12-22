@@ -35,7 +35,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import send_matrix_auction, info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import send_settings_unit, send_matrix_auction, info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -7497,12 +7497,14 @@ def settings_autopricing_korsavto_unit(request, unit_id):
                 setattr(unit, f"discount_tt{legacy_suffix}", val)
 
         unit.save()
+        send_settings_unit(unit)
         return HttpResponseRedirect(request.build_absolute_uri())
 
     # Формируем структуру для отображения в шаблоне
     ranges = []
     for price in AUTOPRICING_PRICE_RANGES:
         suffix = "_%s" % price
+        legacy_suffix = "_%s" % price
         range_data = {
             'price': price,
             'bool_fields': [],
@@ -7510,6 +7512,11 @@ def settings_autopricing_korsavto_unit(request, unit_id):
             'numeric_fields': [],
             'markup_fields': [],
             'eval_field': {},
+            # Дополнительные структуры, чтобы в шаблоне можно было
+            # однозначно привязаться к полям по их коду (имени)
+            'numeric': {},   # code -> {name, label, value}
+            'markup': {},    # code -> {name, label, value}
+            'autohub': {},   # code -> {name, label, value}
         }
 
         for code, label in AUTOPRICING_BOOL_FIELDS:
@@ -7522,27 +7529,88 @@ def settings_autopricing_korsavto_unit(request, unit_id):
 
         for code, label in AUTOPRICING_AUTOHUB_FIELDS:
             field_name = f"{code}{suffix}"
+            value = getattr(unit, field_name, '')
             range_data['autohub_fields'].append({
                 'name': field_name,
                 'label': label,
-                'value': getattr(unit, field_name, ''),
+                'value': value,
             })
+            range_data['autohub'][code] = {
+                'name': field_name,
+                'label': label,
+                'value': value,
+            }
 
         for code, label in AUTOPRICING_NUMERIC_FIELDS:
             field_name = f"{code}{suffix}"
-            range_data['numeric_fields'].append({
+            value = getattr(unit, field_name, None)
+
+            # Фолбэки из старых полей, чтобы при первом открытии настроек сразу видеть актуальные значения
+            if (value is None or value == 0):
+                legacy_value = None
+
+                # Коррекция
+                if code == 'correction_kor':
+                    legacy_value = getattr(unit, f"ratio_avtohub_kor{legacy_suffix}", None)
+                elif code == 'correction_kor_1c':
+                    legacy_value = getattr(unit, f"ratio_1с_kor{legacy_suffix}", None)
+
+                # РДО
+                elif code == 'correction_rdo':
+                    legacy_value = getattr(unit, f"ratio_avtohub_rdo{legacy_suffix}", None)
+                elif code == 'correction_rdo_1c':
+                    legacy_value = getattr(unit, f"ratio_1с_rdo{legacy_suffix}", None)
+
+                # Тест‑прайс
+                elif code == 'correction_test':
+                    legacy_value = getattr(unit, f"ratio_avtohub_test_price{legacy_suffix}", None)
+                elif code == 'correction_test_1c':
+                    legacy_value = getattr(unit, f"ratio_1с_test_price{legacy_suffix}", None)
+
+                # ТХТ
+                elif code == 'correction_txt':
+                    legacy_value = getattr(unit, f"ratio_avtohub_txt{legacy_suffix}", None)
+                elif code == 'correction_txt_1c':
+                    legacy_value = getattr(unit, f"ratio_1с_txt{legacy_suffix}", None)
+
+                # Максимальная скидка за TradeIn
+                elif code == 'max_discount_tradein':
+                    legacy_value = getattr(unit, f"discount_tt{legacy_suffix}", None)
+
+                # Максимальная скидка торг в процентах
+                elif code == 'max_discount_bargain_percent':
+                    legacy_value = getattr(unit, f"percent_torg_txt{legacy_suffix}", None)
+
+                # Маркетинг – отдельное новое поле, фолбэка нет
+
+                if legacy_value not in (None, 0):
+                    value = legacy_value
+
+            field_info = {
                 'name': field_name,
                 'label': label,
-                'value': getattr(unit, field_name, None),
-            })
+                'value': value,
+            }
+            range_data['numeric_fields'].append(field_info)
+            range_data['numeric'][code] = field_info
 
         for code, label in AUTOPRICING_MARKUP_FIELDS:
             field_name = f"{code}{suffix}"
-            range_data['markup_fields'].append({
+            value = getattr(unit, field_name, None)
+
+            # Для ТХТ показываем старое percent_txt, если явная наценка ещё не задана
+            if (value is None or value == 0) and code == 'markup_txt':
+                legacy_value = getattr(unit, f"percent_txt{legacy_suffix}", None)
+                if legacy_value not in (None, 0):
+                    value = legacy_value
+
+            field_info = {
                 'name': field_name,
                 'label': label,
-                'value': getattr(unit, field_name, None),
-            })
+                'value': value,
+            }
+            range_data['markup_fields'].append(field_info)
+            range_data['markup'][code] = field_info
 
         eval_field_name = f"eval_type_{price}"
         eval_value_id = getattr(unit, f"{eval_field_name}_id", None)
