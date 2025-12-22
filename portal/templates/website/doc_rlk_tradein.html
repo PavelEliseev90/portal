@@ -9,19 +9,14 @@
 {% block content %}
  	
 <style>
-	.highcharts-figure .chart-container {
+	.chart-container {
 	  width: 250px;
 	  height: 175px;
 	  float: inline-block;
   }
   
   @media (max-width: 600px) {
-	  .highcharts-figure,
-	  .highcharts-data-table table {
-		  width: 100%;
-	  }
-  
-	  .highcharts-figure .chart-container {
+	  .chart-container {
 		  width: 250px;
 		  float: none;
 		  margin: 0 auto;
@@ -29,12 +24,7 @@
   }
 </style>
   
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/highcharts-more.js"></script>
-<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
-<script src="https://code.highcharts.com/modules/export-data.js"></script>
-<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <div class="portal-page">
   <div class="portal-header">
@@ -142,7 +132,7 @@
 								{% if params.object.get_check != None %}
 									<div class="col-md-6">
 										<div class="portal-panel text-center">
-											<figure class="highcharts-figure">
+											<figure>
 												<div id="container-check" class="chart-container"></div>
 											</figure>
 											<div class="mt-3">
@@ -155,95 +145,73 @@
 										</div>
 										
 										<script>
-			
-											var gaugeOptions = {
-											chart: {
-												type: 'solidgauge'
-											},
-											
-											title: null,
-											
-											pane: {
-												center: ['50%', '85%'],
-												size: '140%',
-												startAngle: -90,
-												endAngle: 90,
-												background: {
-													backgroundColor:
-														Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-													innerRadius: '60%',
-													outerRadius: '100%',
-													shape: 'arc'
-												}
-											},
-											
-											exporting: {
-												enabled: false
-											},
-											
-											tooltip: {
-												enabled: false
-											},
-											
-											// the value axis
-											yAxis: {
-												stops: [
-													[0.3, '#DF5353'], // green
-													[0.5, '#DDDF0D'], // yellow
-													[0.7, '#55BF3B'] // red
-												],
-												lineWidth: 0,
-												tickWidth: 0,
-												minorTickInterval: null,
-												tickAmount: 2,
-												title: {
-													y: -70
-												},
-												labels: {
-													y: 16
-												}
-											},
-											
-											plotOptions: {
-												solidgauge: {
-													dataLabels: {
-														y: 5,
-														borderWidth: 0,
-														useHTML: true
-													}
-												}
+											var checkValue = {{params.object.get_check.result}};
+											var checkColor = '#DF5353'; // red
+											if (checkValue >= 70) {
+												checkColor = '#55BF3B'; // green
+											} else if (checkValue >= 50) {
+												checkColor = '#DDDF0D'; // yellow
 											}
+											
+											var checkOptions = {
+												series: [checkValue],
+												chart: {
+													height: 175,
+													type: 'radialBar',
+													toolbar: {
+														show: false
+													}
+												},
+												plotOptions: {
+													radialBar: {
+														startAngle: -90,
+														endAngle: 90,
+														hollow: {
+															size: '60%',
+															background: '#EEE'
+														},
+														track: {
+															background: '#EEE',
+															strokeWidth: '100%'
+														},
+														dataLabels: {
+															name: {
+																show: false
+															},
+															value: {
+																show: true,
+																fontSize: '25px',
+																fontWeight: 600,
+																offsetY: -10,
+																formatter: function(val) {
+																	return val + '%';
+																}
+															}
+														}
+													}
+												},
+												fill: {
+													type: 'gradient',
+													gradient: {
+														shade: 'light',
+														type: 'horizontal',
+														shadeIntensity: 0.5,
+														gradientToColors: [checkColor],
+														inverseColors: true,
+														opacityFrom: 1,
+														opacityTo: 1,
+														stops: [0, 100]
+													},
+													colors: [checkColor]
+												},
+												stroke: {
+													lineCap: 'round'
+												},
+												labels: ['Выполнение чек листа']
 											};
 											
-											// The speed gauge
-											var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
-											yAxis: {
-												min: 0,
-												max: 100,
-												title: {
-													text: 'Выполнение чек листа'
-												}
-											},
-											
-											credits: {
-												enabled: false
-											},
-											
-											series: [{
-												name: 'CVC',
-												data: [{{params.object.get_check.result}}],
-												dataLabels: {
-													format:
-														'<div style="text-align:center">' +
-														'<span style="font-size:25px">{y}</span><br/>' +
-														'<span style="font-size:12px;opacity:0.4">%</span>' +
-														'</div>'
-												}
-											}]
-											
-											}));
-											
-											
+											var checkChart = new ApexCharts(document.querySelector("#container-check"), checkOptions);
+											checkChart.render();
 										</script>
 			
 									</div>
@@ -252,13 +220,82 @@
 								{% if params.object.get_opros != None %}
 									<div class="col-md-6">
 										<div class="portal-panel text-center">
-											<figure class="highcharts-figure">
+											<figure>
 												<div id="container-sms" class="chart-container"></div>
 											</figure>
 											<div class="mt-3">
 												<a href="/sms_opros_op/{{params.object.get_opros.id}}/" class="btn btn-outline-primary">Посмотреть <span class="icon-mbri-right"></span></a>
 											</div>
 										</div>
+										<script>
+											var smsValue = {{params.object.rating_sms_opros}};
+											var smsColor = '#DF5353'; // red
+											if (smsValue >= 3.5) {
+												smsColor = '#55BF3B'; // green
+											} else if (smsValue >= 2.5) {
+												smsColor = '#DDDF0D'; // yellow
+											}
+											
+											var smsOptions = {
+												series: [(smsValue / 5.0) * 100],
+												chart: {
+													height: 175,
+													type: 'radialBar',
+													toolbar: {
+														show: false
+													}
+												},
+												plotOptions: {
+													radialBar: {
+														startAngle: -90,
+														endAngle: 90,
+														hollow: {
+															size: '60%',
+															background: '#EEE'
+														},
+														track: {
+															background: '#EEE',
+															strokeWidth: '100%'
+														},
+														dataLabels: {
+															name: {
+																show: false
+															},
+															value: {
+																show: true,
+																fontSize: '25px',
+																fontWeight: 600,
+																offsetY: -10,
+																formatter: function(val) {
+																	return smsValue.toFixed(1);
+																}
+															}
+														}
+													}
+												},
+												fill: {
+													type: 'gradient',
+													gradient: {
+														shade: 'light',
+														type: 'horizontal',
+														shadeIntensity: 0.5,
+														gradientToColors: [smsColor],
+														inverseColors: true,
+														opacityFrom: 1,
+														opacityTo: 1,
+														stops: [0, 100]
+													},
+													colors: [smsColor]
+												},
+												stroke: {
+													lineCap: 'round'
+												},
+												labels: ['SMS']
+											};
+											
+											var smsChart = new ApexCharts(document.querySelector("#container-sms"), smsOptions);
+											smsChart.render();
+										</script>
 									</div>
 								{% endif %}
 			
@@ -385,28 +422,28 @@
 						</div>
 
 						{% if request.user.profiles.eco %}
-							<div class="col-12">
+							<div class="col-12 col-xl-6">
 								<div class="form-floating">
 									<input type="text" class="form-control" value="{{params.object.estimation_price_staff|floatformat:"2g"}} &#8381;" readonly>
 									<label>Цена приема оценщик</label>
 								</div>
 							</div>
 
-							<div class="col-12">
+							<div class="col-12 col-xl-6">
 								<div class="form-floating">
 									<input type="text" class="form-control" value="{{params.object.estimation_price_staff_sale|floatformat:"2g"}} &#8381;" readonly>
 									<label>Цена продажи оценщик</label>
 								</div>
 							</div>
 
-							<div class="col-12">
+							<div class="col-12 col-xl-6">
 								<div class="form-floating">
 									<input type="text" class="form-control" value="{{params.object.estimation_price_before_kd|floatformat:"2g"}} &#8381;" readonly>
 									<label>Согласовано до диагностики</label>
 								</div>
 							</div>
 
-							<div class="col-12">
+							<div class="col-12 col-xl-6">
 								<div class="form-floating">
 									<input type="text" class="form-control" value="{{params.object.estimation_price_after_kd|floatformat:"2g"}} &#8381;" readonly>
 									<label>Согласовано после диагностики</label>
@@ -926,150 +963,5 @@
   
   </script>
 
-<script>
-
-	var gaugeOptions = {
-	  chart: {
-		  type: 'solidgauge'
-	  },
-	
-	  title: null,
-	
-	  pane: {
-		  center: ['50%', '85%'],
-		  size: '140%',
-		  startAngle: -90,
-		  endAngle: 90,
-		  background: {
-			  backgroundColor:
-				  Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-			  innerRadius: '60%',
-			  outerRadius: '100%',
-			  shape: 'arc'
-		  }
-	  },
-	
-	  exporting: {
-		  enabled: false
-	  },
-	
-	  tooltip: {
-		  enabled: false
-	  },
-	
-	  // the value axis
-	  yAxis: {
-		  stops: [
-			  [0.3, '#DF5353'], // green
-			  [0.5, '#DDDF0D'], // yellow
-			  [0.7, '#55BF3B'] // red
-		  ],
-		  lineWidth: 0,
-		  tickWidth: 0,
-		  minorTickInterval: null,
-		  tickAmount: 0,
-		  title: {
-			  y: -70
-		  },
-		  labels: {
-			  y: 16
-		  }
-	  },
-	
-	  plotOptions: {
-		  solidgauge: {
-			  dataLabels: {
-				  y: 5,
-				  borderWidth: 0,
-				  useHTML: true
-			  }
-		  }
-	  }
-	};
-	
-	var gaugeOptions_sms = {
-	  chart: {
-		  type: 'solidgauge'
-	  },
-	
-	  title: null,
-	
-	  pane: {
-		  center: ['50%', '85%'],
-		  size: '140%',
-		  startAngle: -90,
-		  endAngle: 90,
-		  background: {
-			  backgroundColor:
-				  Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-			  innerRadius: '60%',
-			  outerRadius: '100%',
-			  shape: 'arc'
-		  }
-	  },
-	
-	  exporting: {
-		  enabled: false
-	  },
-	
-	  tooltip: {
-		  enabled: false
-	  },
-	
-	  // the value axis
-	  yAxis: {
-		  stops: [
-			  [0.3, '#DF5353'], // green
-			  [0.5, '#DDDF0D'], // yellow
-			  [0.7, '#55BF3B'] // red
-		  ],
-		  lineWidth: 0,
-		  tickWidth: 0,
-		 
-		 
-		  title: {
-			  y: -70
-		  },
-		  labels: {
-			  y: 16
-		  }
-	  },
-	
-	  plotOptions: {
-		  solidgauge: {
-			  dataLabels: {
-				  y: 5,
-				  borderWidth: 0,
-				  useHTML: true
-			  }
-		  }
-	  }
-	};
-	
-	
-	var chartRpm = Highcharts.chart('container-sms', Highcharts.merge(gaugeOptions_sms, {
-	  yAxis: {
-		  min: 0,
-		  max: 5.0,
-		  title: {
-			  text: 'SMS'
-		  }
-	  },
-	
-	  series: [{
-		  name: 'SMS',
-		  data: [{{params.object.rating_sms_opros}}],
-		  dataLabels: {
-			format:
-				  '<div style="text-align:center">' +
-				  '<span style="font-size:25px">{y}</span><br/>' +
-				  '<span style="font-size:12px;opacity:0.4"><span class="icon-mbri-star fw-bold"></span></span>' +
-				  '</div>'
-		  }
-	  }]
-	
-	}));
-	  
-</script>
 
 {% endblock %}
