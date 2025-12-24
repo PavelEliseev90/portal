@@ -5326,7 +5326,7 @@ def eco_efficiency_analysis(request):
             price_percent_diffs.append(diff_percent)
             if diff_percent > 5:  # Выше на 5% и более
                 higher_count_after += 1
-            elif diff_percent < -5:  # Ниже на 5% и более
+            elif diff_percent < 0:  # Ниже на 5% и более
                 lower_count_after += 1
             else:  # В пределах ±5%
                 equal_count_after += 1
@@ -5342,7 +5342,7 @@ def eco_efficiency_analysis(request):
             diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
             if diff_percent > 5:  # Выше на 5% и более
                 higher_count_before += 1
-            elif diff_percent < -5:  # Ниже на 5% и более
+            elif diff_percent < 0:  # Ниже на 5% и более
                 lower_count_before += 1
             else:  # В пределах ±5%
                 equal_count_before += 1
