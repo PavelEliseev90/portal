@@ -465,6 +465,8 @@ class DocRLK(models.Model):
     dateArchive                 = models.DateTimeField('Дата отправки в архив', null=True, blank=True)    
     reasonArchive               = models.CharField('Причина отправки в архивв', blank=True, default='', null=True, max_length=1024)
     footing                     = models.ForeignKey('self', null=True, on_delete=models.SET_NULL, verbose_name="Основание", blank=True) 
+    vin_trade_in                = models.CharField('VIN трейд ин', blank=True, default='', null=True, max_length=17)
+    estimation_id               = models.IntegerField('ИД оценки', default=0, blank=True, null=False)
 
     def rating_sms_opros(self):
         count_opros = DocOprosCarShipment.objects.filter(shipment__rlk = self).count()
