@@ -1,6 +1,6 @@
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
-from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup
 from profiles.models import Profiles
@@ -1351,6 +1351,7 @@ def doc(request, id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
     rlk     = DocRLK.objects.get(pk=id)
+    estimations_data = RegInteractivOcenkaRLK.objects.filter(rlk = rlk)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
     
     if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
@@ -5325,7 +5326,7 @@ def eco_efficiency_analysis(request):
             price_percent_diffs.append(diff_percent)
             if diff_percent > 5:  # Выше на 5% и более
                 higher_count_after += 1
-            elif diff_percent < -5:  # Ниже на 5% и более
+            elif diff_percent < 0:  # Ниже на 5% и более
                 lower_count_after += 1
             else:  # В пределах ±5%
                 equal_count_after += 1
@@ -5341,7 +5342,7 @@ def eco_efficiency_analysis(request):
             diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
             if diff_percent > 5:  # Выше на 5% и более
                 higher_count_before += 1
-            elif diff_percent < -5:  # Ниже на 5% и более
+            elif diff_percent < 0:  # Ниже на 5% и более
                 lower_count_before += 1
             else:  # В пределах ±5%
                 equal_count_before += 1
