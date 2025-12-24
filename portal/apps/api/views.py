@@ -3402,6 +3402,12 @@ def get_worksheet(worksheet):
     if 'ReasonArchive' in worksheet:
         rlk_object.reasonArchive      = worksheet['ReasonArchive']
 
+    if 'Vin' in worksheet:
+        rlk_object.vin_trade_in      = worksheet['Vin']
+
+    if 'Estimation' in worksheet:
+        rlk_object.estimation_id      = worksheet['Estimation']
+
     rlk_object.type                 = get_type_rlk(worksheet['Type'])
     rlk_object.contacType           = get_contactType(worksheet['ContactType'])
     rlk_object.phone                = worksheet['Phone']

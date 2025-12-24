@@ -5134,6 +5134,23 @@ def estimations_price_calculation(estimation, type_calculation):
             matrix_auction  = settings_matrix.charge_bcp_5001        
         cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
 
+    try:
+        if type_calculation == 'kors':
+            estimation.page_soglasovanie.price_auto_1       = estimation_price
+            estimation.page_soglasovanie.price_auto_bcp_1   = cna_expenses
+            estimation.page_soglasovanie.price_zna_1        = zna
+        elif type_calculation == 'autohub':
+            estimation.page_soglasovanie.price_auto_2         = estimation_price
+            estimation.page_soglasovanie.price_auto_bcp_2     = cna_expenses
+            estimation.page_soglasovanie.price_zna_2          = zna
+        elif type_calculation == 'avito':
+            estimation.page_soglasovanie.price_auto_3         = estimation_price
+            estimation.page_soglasovanie.price_auto_bcp_3     = cna_expenses
+            estimation.page_soglasovanie.price_zna_3          = zna
+        estimation.page_soglasovanie.save()
+    except:
+        s= 1   
+
     price = {
         'kors_price_reception'          : kors_price_reception,
         'profit'                        : profit,
