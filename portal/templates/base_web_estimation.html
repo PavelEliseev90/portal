@@ -618,7 +618,14 @@ html:before {
                             Отдел продаж
                             </a>
                         </li>
-                            <div class="collapse {% if params.type == 'cars' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
+                            <div class="collapse {% if params.type == 'cars' or params.type == 'disposition' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
+                                
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'disposition' %}secondary active {% else %}white{% endif %}" href="/cars/disposition/">
+                                    <span class="icon-mbri-journal"></span>
+                                        Диспозиция 
+                                    </a>
+                                </li>
                                 
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'cars' %}secondary active {% else %}white{% endif %}" href="/cars/">
@@ -627,12 +634,6 @@ html:before {
                                     </a>
                                 </li>
                                 <!--
-                                <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'docs_zn' %}secondary active {% else %}white{% endif %}" href="/docs_zn/">
-                                    <span class="icon-mbri-video-play"></span>
-                                        Диспозиция 
-                                    </a>
-                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'online_doc' %}secondary active {% else %}white{% endif %}" href="/online_doc/">
                                     <span class="icon-mbri-video-play"></span>

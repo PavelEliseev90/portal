@@ -6,6 +6,8 @@ app_name = 'avtosalon'
 
 urlpatterns = [
    
+   path('disposition/',                      views.disposition, name='disposition'),
+   path('disposition/get_models/',           views.disposition_get_models, name='disposition_get_models'),
    path('catalog/',                          views.cars_catalog),
    path('catalog/<slug:mark_name_en>/',      views.catalog_mark, name='slug'),
    path('catalog/<slug:mark_name_en>/<slug:model_name>/',  views.catalog_model, name='slug'),
