@@ -338,6 +338,169 @@ def cars(request):
     return render(request, "avtosalon/cars_new.html", {'params': params})  
 
 
+def disposition(request):
+    """
+    Страница диспозиции - отображение автомобилей с фильтрацией
+    """
+    from datetime import datetime, timedelta
+    from django.db.models import Q
+    
+    # Параметры фильтрации
+    status_type = request.GET.get('status', 'sale')  # По умолчанию "В продаже"
+    select_count = int(request.GET.get('select_count', 50))
+    
+    # Базовый запрос
+    cars = RefCarsOrganization.objects.exclude(quantity=0)
+    
+    # Фильтр по статусу (тип диспозиции)
+    if status_type == 'warehouse':
+        cars = cars.filter(status__name__icontains='Склад')
+    elif status_type == 'ready':
+        cars = cars.filter(status__name__icontains='Готов')
+    elif status_type == 'sale':
+        cars = cars.filter(status__name__icontains='В продаже')
+    elif status_type == 'auction':
+        cars = cars.filter(status__name__icontains='Аукцион')
+    elif status_type == 'reserve':
+        cars = cars.filter(reserve__gt=0)
+    elif status_type == 'transit':
+        cars = cars.filter(status__name__icontains='Транзит')
+    elif status_type == 'preparation':
+        cars = cars.filter(status__name__icontains='Подготовка')
+    elif status_type == 'repair':
+        cars = cars.filter(status__name__icontains='Ремонт')
+    elif status_type == 'sold':
+        cars = cars.filter(status__name__icontains='Продан')
+    elif status_type == 'no_sale':
+        cars = cars.filter(status__name__icontains='Не продавать')
+    elif status_type == 'returned':
+        cars = cars.filter(status__name__icontains='Возвращен')
+    
+    # Фильтры
+    vin = request.GET.get('vin', '').strip()
+    if vin:
+        cars = cars.filter(Q(vin__icontains=vin) | Q(vin2__icontains=vin))
+    
+    mark_id = request.GET.get('mark', '')
+    if mark_id:
+        cars = cars.filter(modification_autoru__model__mark__id=mark_id)
+    
+    model_id = request.GET.get('model', '')
+    if model_id:
+        cars = cars.filter(modification_autoru__model__id=model_id)
+    
+    year_start = request.GET.get('year_start', '')
+    if year_start:
+        try:
+            cars = cars.filter(year__gte=int(year_start))
+        except ValueError:
+            pass
+    
+    year_end = request.GET.get('year_end', '')
+    if year_end:
+        try:
+            cars = cars.filter(year__lte=int(year_end))
+        except ValueError:
+            pass
+    
+    price_start = request.GET.get('price_start', '')
+    if price_start:
+        try:
+            cars = cars.filter(price__gte=int(float(price_start)))
+        except ValueError:
+            pass
+    
+    price_end = request.GET.get('price_end', '')
+    if price_end:
+        try:
+            cars = cars.filter(price__lte=int(float(price_end)))
+        except ValueError:
+            pass
+    
+    stock_number = request.GET.get('stock_number', '').strip()
+    if stock_number:
+        cars = cars.filter(lo_link_number__icontains=stock_number)
+    
+    no_photo = request.GET.get('no_photo', '')
+    if no_photo == 'on':
+        cars = cars.annotate(photos_count=Count('refcarsorganizationfiles__id')).filter(photos_count=0)
+    
+    promotion = request.GET.get('promotion', '')
+    if promotion == 'on':
+        # Фильтр по акции (можно настроить по полю stage_price или другому)
+        cars = cars.filter(stage_price__name__icontains='акция')
+    
+    # Сортировка
+    order_by = request.GET.get('order_by', '-date_create')
+    if order_by:
+        cars = cars.order_by(order_by)
+    else:
+        cars = cars.order_by('-date_create')
+    
+    # Пагинация
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(cars, select_count)
+    page_obj = paginator.get_page(page_number)
+    
+    # Данные для фильтров
+    selected = {
+        'marks': AutoruMark.objects.all().order_by('name'),
+        'statuses': RefStatusCarsOrganization.objects.all().order_by('name'),
+        'stores': RefStore.objects.all().order_by('name'),
+        'units': RefUnit.objects.filter(buauto=True).order_by('name'),
+    }
+    
+    # Если выбрана марка, загружаем модели
+    models_list = []
+    if mark_id:
+        models_list = AutoruModel.objects.filter(mark__id=mark_id).order_by('name')
+    
+    filtr = {
+        'status': status_type,
+        'vin': vin,
+        'mark': mark_id,
+        'model': model_id,
+        'year_start': year_start,
+        'year_end': year_end,
+        'price_start': price_start,
+        'price_end': price_end,
+        'stock_number': stock_number,
+        'no_photo': no_photo,
+        'promotion': promotion,
+        'select_count': select_count,
+        'order_by': order_by,
+    }
+    
+    params = {
+        'type': 'disposition',
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'selected': selected,
+        'filtr': filtr,
+        'models_list': models_list,
+    }
+    
+    return render(request, "avtosalon/disposition.html", {'params': params})
+
+
+def disposition_get_models(request):
+    """
+    AJAX endpoint для загрузки моделей по марке
+    """
+    from django.http import JsonResponse
+    
+    mark_id = request.GET.get('mark_id', '')
+    if not mark_id:
+        return JsonResponse({'models': []})
+    
+    try:
+        models = AutoruModel.objects.filter(mark__id=mark_id).order_by('name')
+        models_list = [{'id': model.id, 'name': model.name} for model in models]
+        return JsonResponse({'models': models_list})
+    except Exception as e:
+        return JsonResponse({'models': [], 'error': str(e)})
+
+
 def car(request, slug):
 
     car = RefCarsOrganization.objects.filter(slug = slug)[0]
