@@ -133,14 +133,134 @@
       </div>
       
       <div class="mt-2">
-        <a href="#" class="text-decoration-none small" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false">
-          Дополнительные фильтры <span class="icon-mbri-down"></span>
+        <a href="#" class="text-decoration-none small d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false" id="additionalFiltersToggle">
+          <span>Дополнительные фильтры</span>
+          <span class="icon-mbri-down" id="additionalFiltersIcon" style="transition: transform 0.3s ease;"></span>
         </a>
       </div>
       
       <div class="collapse mt-2" id="additionalFilters">
         <div class="row g-2">
-          <!-- Здесь можно добавить дополнительные фильтры -->
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <select class="form-select" id="body_type" name="body_type">
+                <option value="">Выберите кузов</option>
+                {% for body_type in params.selected.body_types %}
+                  <option value="{{ body_type.id }}" {% if params.filtr.body_type == body_type.id|stringformat:"s" %}selected{% endif %}>{{ body_type.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="body_type">Тип кузова</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <select class="form-select" id="gear_type" name="gear_type">
+                <option value="">Выберите КПП</option>
+                {% for gear_type in params.selected.gear_types %}
+                  <option value="{{ gear_type.id }}" {% if params.filtr.gear_type == gear_type.id|stringformat:"s" %}selected{% endif %}>{{ gear_type.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="gear_type">Коробка передач</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <select class="form-select" id="drive_type" name="drive_type">
+                <option value="">Выберите привод</option>
+                {% for drive_type in params.selected.drive_types %}
+                  <option value="{{ drive_type.id }}" {% if params.filtr.drive_type == drive_type.id|stringformat:"s" %}selected{% endif %}>{{ drive_type.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="drive_type">Привод</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <select class="form-select" id="evaluation_type" name="evaluation_type">
+                <option value="">Выберите тип оценки</option>
+                {% for eval_type in params.selected.evaluation_types %}
+                  <option value="{{ eval_type.id }}" {% if params.filtr.evaluation_type == eval_type.id|stringformat:"s" %}selected{% endif %}>{{ eval_type.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="evaluation_type">Тип оценки</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <select class="form-select" id="unit" name="unit">
+                <option value="">Выберите филиал</option>
+                {% for unit in params.selected.units %}
+                  <option value="{{ unit.id }}" {% if params.filtr.unit == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="unit">Филиал</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <select class="form-select" id="store" name="store">
+                <option value="">Выберите стоянку</option>
+                {% for store in params.selected.stores %}
+                  <option value="{{ store.id }}" {% if params.filtr.store == store.id|stringformat:"s" %}selected{% endif %}>{{ store.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="store">Стоянка</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="color" name="color" value="{{ params.filtr.color }}" placeholder="Цвет">
+              <label for="color">Цвет</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="run_start" name="run_start" value="{{ params.filtr.run_start }}" placeholder="Пробег от">
+              <label for="run_start">Пробег от (км)</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="run_end" name="run_end" value="{{ params.filtr.run_end }}" placeholder="Пробег до">
+              <label for="run_end">Пробег до (км)</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="engine_volume_start" name="engine_volume_start" value="{{ params.filtr.engine_volume_start }}" placeholder="Объем от" step="0.1">
+              <label for="engine_volume_start">Объем двигателя от (л)</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="engine_volume_end" name="engine_volume_end" value="{{ params.filtr.engine_volume_end }}" placeholder="Объем до" step="0.1">
+              <label for="engine_volume_end">Объем двигателя до (л)</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="days_in_stock_start" name="days_in_stock_start" value="{{ params.filtr.days_in_stock_start }}" placeholder="Дней на складе от">
+              <label for="days_in_stock_start">Дней на складе от</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="days_in_stock_end" name="days_in_stock_end" value="{{ params.filtr.days_in_stock_end }}" placeholder="Дней на складе до">
+              <label for="days_in_stock_end">Дней на складе до</label>
+            </div>
+          </div>
         </div>
       </div>
     </form>
@@ -486,6 +606,29 @@ function loadModels(markId) {
     })
     .catch(error => console.error('Error:', error));
 }
+
+// Обработка иконки раскрытия/сворачивания дополнительных фильтров
+document.addEventListener('DOMContentLoaded', function() {
+  const additionalFiltersToggle = document.getElementById('additionalFiltersToggle');
+  const additionalFiltersIcon = document.getElementById('additionalFiltersIcon');
+  const additionalFilters = document.getElementById('additionalFilters');
+  
+  if (additionalFiltersToggle && additionalFiltersIcon && additionalFilters) {
+    // Проверяем, открыты ли фильтры по умолчанию
+    const isExpanded = additionalFilters.classList.contains('show');
+    if (isExpanded) {
+      additionalFiltersIcon.style.transform = 'rotate(180deg)';
+    }
+    
+    additionalFilters.addEventListener('show.bs.collapse', function() {
+      additionalFiltersIcon.style.transform = 'rotate(180deg)';
+    });
+    
+    additionalFilters.addEventListener('hide.bs.collapse', function() {
+      additionalFiltersIcon.style.transform = 'rotate(0deg)';
+    });
+  }
+});
 </script>
 {% endblock %}
 
