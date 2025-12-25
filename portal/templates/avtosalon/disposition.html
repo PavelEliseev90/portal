@@ -15,7 +15,6 @@
   <!-- Вкладки статусов -->
   <div class="portal-panel mb-3">
     <div class="d-flex flex-wrap gap-2 align-items-center">
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'warehouse' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('warehouse')">Склад</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'ready' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('ready')">Готов</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'sale' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('sale')">В продаже</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'auction' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('auction')">Аукцион</button>
@@ -23,14 +22,6 @@
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'transit' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('transit')">Транзит</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'preparation' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('preparation')">Подготовка</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'repair' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('repair')">Ремонт</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'sold' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('sold')">Проданные</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'no_sale' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('no_sale')">Не продавать</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'returned' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('returned')">Возвращенные клиенту</button>
-      <div class="ms-auto">
-        <a href="/cars/disposition/?status={{ params.filtr.status }}&action=deal" class="btn btn-sm btn-success">
-          <span class="icon-mbri-success me-1"></span>Оформить сделку
-        </a>
-      </div>
     </div>
   </div>
 
@@ -48,26 +39,25 @@
         </div>
         
         <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <select class="form-select" id="mark" name="mark" onchange="loadModels(this.value)">
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="mark" name="mark" onchange="loadModels(this.value)">
               <option value="">Выберите марку</option>
               {% for mark in params.selected.marks %}
                 <option value="{{ mark.id }}" {% if params.filtr.mark == mark.id|stringformat:"s" %}selected{% endif %}>{{ mark.name }}</option>
               {% endfor %}
             </select>
-            <label for="mark">Марка</label>
+            <label class="fs-6" for="mark">Марка</label>
           </div>
         </div>
         
         <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <select class="form-select" id="model" name="model">
-              <option value="">Выберите модель</option>
-              {% for model in params.models_list %}
-                <option value="{{ model.id }}" {% if params.filtr.model == model.id|stringformat:"s" %}selected{% endif %}>{{ model.name }}</option>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="model" name="model[]" multiple>
+              {% for model in params.all_models %}
+                <option value="{{ model.id }}" {% if model.id|stringformat:"s" in params.filtr.model %}selected{% endif %}>{{ model.name }}</option>
               {% endfor %}
             </select>
-            <label for="model">Модель</label>
+            <label class="fs-6" for="model">Модель</label>
           </div>
         </div>
         
@@ -120,17 +110,18 @@
           </div>
         </div>
         
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary flex-fill">
-              <span class="icon-mbri-search me-1"></span>Применить
-            </button>
-            <a href="/cars/disposition/?status={{ params.filtr.status }}" class="btn btn-outline-secondary">
-              <span class="icon-mbri-close me-1"></span>Сбросить
-            </a>
+      </div>
+      
+      {% if params.has_filters %}
+      <div class="mt-3">
+        <div class="alert alert-info mb-0 d-flex align-items-center justify-content-between">
+          <div>
+            <strong><span class="icon-mbri-search me-1"></span>Найдено автомобилей: {{ params.total_cars_count }}</strong>
           </div>
+          <small class="text-muted">По текущим фильтрам</small>
         </div>
       </div>
+      {% endif %}
       
       <div class="mt-2">
         <a href="#" class="text-decoration-none small d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false" id="additionalFiltersToggle">
@@ -142,74 +133,68 @@
       <div class="collapse mt-2" id="additionalFilters">
         <div class="row g-2">
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <select class="form-select" id="body_type" name="body_type">
-                <option value="">Выберите кузов</option>
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="body_type" name="body_type[]" multiple>
                 {% for body_type in params.selected.body_types %}
-                  <option value="{{ body_type.id }}" {% if params.filtr.body_type == body_type.id|stringformat:"s" %}selected{% endif %}>{{ body_type.name }}</option>
+                  <option value="{{ body_type.id }}" {% if body_type.id|stringformat:"s" in params.filtr.body_type %}selected{% endif %}>{{ body_type.name }}</option>
                 {% endfor %}
               </select>
-              <label for="body_type">Тип кузова</label>
+              <label class="fs-6" for="body_type">Тип кузова</label>
             </div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <select class="form-select" id="gear_type" name="gear_type">
-                <option value="">Выберите КПП</option>
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="gear_type" name="gear_type[]" multiple>
                 {% for gear_type in params.selected.gear_types %}
-                  <option value="{{ gear_type.id }}" {% if params.filtr.gear_type == gear_type.id|stringformat:"s" %}selected{% endif %}>{{ gear_type.name }}</option>
+                  <option value="{{ gear_type.id }}" {% if gear_type.id|stringformat:"s" in params.filtr.gear_type %}selected{% endif %}>{{ gear_type.name }}</option>
                 {% endfor %}
               </select>
-              <label for="gear_type">Коробка передач</label>
+              <label class="fs-6" for="gear_type">Коробка передач</label>
             </div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <select class="form-select" id="drive_type" name="drive_type">
-                <option value="">Выберите привод</option>
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="drive_type" name="drive_type[]" multiple>
                 {% for drive_type in params.selected.drive_types %}
-                  <option value="{{ drive_type.id }}" {% if params.filtr.drive_type == drive_type.id|stringformat:"s" %}selected{% endif %}>{{ drive_type.name }}</option>
+                  <option value="{{ drive_type.id }}" {% if drive_type.id|stringformat:"s" in params.filtr.drive_type %}selected{% endif %}>{{ drive_type.name }}</option>
                 {% endfor %}
               </select>
-              <label for="drive_type">Привод</label>
+              <label class="fs-6" for="drive_type">Привод</label>
             </div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <select class="form-select" id="evaluation_type" name="evaluation_type">
-                <option value="">Выберите тип оценки</option>
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="evaluation_type" name="evaluation_type[]" multiple>
                 {% for eval_type in params.selected.evaluation_types %}
-                  <option value="{{ eval_type.id }}" {% if params.filtr.evaluation_type == eval_type.id|stringformat:"s" %}selected{% endif %}>{{ eval_type.name }}</option>
+                  <option value="{{ eval_type.id }}" {% if eval_type.id|stringformat:"s" in params.filtr.evaluation_type %}selected{% endif %}>{{ eval_type.name }}</option>
                 {% endfor %}
               </select>
-              <label for="evaluation_type">Тип оценки</label>
+              <label class="fs-6" for="evaluation_type">Тип оценки</label>
             </div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <select class="form-select" id="unit" name="unit">
-                <option value="">Выберите филиал</option>
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="unit" name="unit[]" multiple>
                 {% for unit in params.selected.units %}
-                  <option value="{{ unit.id }}" {% if params.filtr.unit == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+                  <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filtr.unit %}selected{% endif %}>{{ unit.name }}</option>
                 {% endfor %}
               </select>
-              <label for="unit">Филиал</label>
+              <label class="fs-6" for="unit">Филиал</label>
             </div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <select class="form-select" id="store" name="store">
-                <option value="">Выберите стоянку</option>
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="store" name="store[]" multiple>
                 {% for store in params.selected.stores %}
-                  <option value="{{ store.id }}" {% if params.filtr.store == store.id|stringformat:"s" %}selected{% endif %}>{{ store.name }}</option>
+                  <option value="{{ store.id }}" {% if store.id|stringformat:"s" in params.filtr.store %}selected{% endif %}>{{ store.name }}</option>
                 {% endfor %}
               </select>
-              <label for="store">Стоянка</label>
+              <label class="fs-6" for="store">Стоянка</label>
             </div>
           </div>
           
@@ -263,6 +248,18 @@
           </div>
         </div>
       </div>
+
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary flex-fill">
+            <span class="icon-mbri-search me-1"></span>Применить
+          </button>
+          <a href="/cars/disposition/?status={{ params.filtr.status }}" class="btn btn-outline-secondary">
+            <span class="icon-mbri-close me-1"></span>Сбросить
+          </a>
+        </div>
+      </div>
+
     </form>
   </div>
 
@@ -302,16 +299,10 @@
               <td>
                 {% if car.slug %}
                   <a href="/cars/{{ car.slug }}/" target="_blank">
-                    <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 60px; height: 45px; object-fit: cover; cursor: pointer;">
+                    <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 120px; height: 90px; object-fit: cover; cursor: pointer;">
                   </a>
                 {% else %}
-                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 60px; height: 45px; object-fit: cover;">
-                {% endif %}
-              </td>
-              <td>
-                <small class="text-muted d-block">{{ car.vin|default:"—" }}</small>
-                {% if car.plate_number %}
-                  <small class="text-muted">{{ car.plate_number }}</small>
+                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 120px; height: 90px; object-fit: cover;">
                 {% endif %}
               </td>
               <td>
@@ -324,6 +315,12 @@
                 </strong>
                 {% if car.group_price %}
                   <br><small class="text-muted">{{ car.group_price.name }}</small>
+                {% endif %}
+              </td>
+              <td>
+                <small class="text-muted d-block">{{ car.vin|default:"—" }}</small>
+                {% if car.plate_number %}
+                  <small class="text-muted">{{ car.plate_number }}</small>
                 {% endif %}
               </td>
               <td>
@@ -587,28 +584,121 @@ function changeStatus(status) {
 }
 
 function loadModels(markId) {
+  if (typeof $ === 'undefined' || !$.fn.select2) {
+    console.error('jQuery or Select2 not loaded');
+    return;
+  }
+  
+  const modelSelect = $('#model');
+  
   if (!markId) {
-    document.getElementById('model').innerHTML = '<option value="">Выберите модель</option>';
+    // Очищаем выбор и показываем все модели (опции уже загружены в шаблоне)
+    modelSelect.val(null).trigger('change');
     return;
   }
   
   fetch(`/cars/disposition/get_models/?mark_id=${markId}`)
     .then(response => response.json())
     .then(data => {
-      const modelSelect = document.getElementById('model');
-      modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+      // Сохраняем выбранные значения
+      const selectedValues = modelSelect.val() || [];
+      
+      // Очищаем и заполняем новыми опциями
+      modelSelect.empty();
+      
       data.models.forEach(model => {
-        const option = document.createElement('option');
-        option.value = model.id;
-        option.textContent = model.name;
-        modelSelect.appendChild(option);
+        const option = new Option(model.name, model.id, false, false);
+        modelSelect.append(option);
       });
+      
+      // Восстанавливаем выбранные значения, если они есть в новых опциях
+      const availableValues = data.models.map(m => String(m.id));
+      const validSelectedValues = selectedValues.filter(val => availableValues.includes(String(val)));
+      
+      if (validSelectedValues.length > 0) {
+        modelSelect.val(validSelectedValues).trigger('change');
+      } else {
+        modelSelect.val(null).trigger('change');
+      }
     })
     .catch(error => console.error('Error:', error));
 }
 
-// Обработка иконки раскрытия/сворачивания дополнительных фильтров
+// Инициализация Select2 и обработка дополнительных фильтров
 document.addEventListener('DOMContentLoaded', function() {
+  // Проверяем наличие jQuery и Select2
+  if (typeof $ === 'undefined' || !$.fn.select2) {
+    console.error('jQuery or Select2 not loaded');
+    return;
+  }
+  
+  // Одиночный выбор для марки
+  $('#mark').select2({
+    placeholder: 'Выберите марку',
+    allowClear: true,
+    width: '100%',
+    language: {
+      noResults: function() {
+        return "Результаты не найдены";
+      }
+    }
+  });
+  
+  // Множественный выбор для модели
+  $('#model').select2({
+    placeholder: 'Выберите модели',
+    allowClear: true,
+    width: '100%',
+    language: {
+      noResults: function() {
+        return "Результаты не найдены";
+      }
+    }
+  });
+  
+  // Функция для получения метки поля
+  function getFieldLabel(fieldId) {
+    const labels = {
+      'body_type': 'типы кузова',
+      'gear_type': 'КПП',
+      'drive_type': 'приводы',
+      'evaluation_type': 'типы оценки',
+      'unit': 'филиалы',
+      'store': 'стоянки'
+    };
+    return labels[fieldId] || 'значения';
+  }
+  
+  // Функция инициализации множественного выбора для дополнительных фильтров
+  function initMultiSelectFields() {
+    const multiSelectFields = [
+      'body_type',
+      'gear_type', 
+      'drive_type',
+      'evaluation_type',
+      'unit',
+      'store'
+    ];
+    
+    multiSelectFields.forEach(function(fieldId) {
+      const fieldLabel = getFieldLabel(fieldId);
+      $(`#${fieldId}`).select2({
+        placeholder: `Выберите ${fieldLabel}`,
+        allowClear: true,
+        width: '100%',
+        language: {
+          noResults: function() {
+            return "Результаты не найдены";
+          }
+        }
+      });
+    });
+  }
+  
+  // Инициализируем множественный выбор
+  initMultiSelectFields();
+  
+  // Обработка иконки раскрытия/сворачивания дополнительных фильтров
   const additionalFiltersToggle = document.getElementById('additionalFiltersToggle');
   const additionalFiltersIcon = document.getElementById('additionalFiltersIcon');
   const additionalFilters = document.getElementById('additionalFilters');
@@ -622,6 +712,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     additionalFilters.addEventListener('show.bs.collapse', function() {
       additionalFiltersIcon.style.transform = 'rotate(180deg)';
+      // Обновляем размер Select2 после раскрытия (небольшая задержка для корректного рендеринга)
+      setTimeout(function() {
+        initMultiSelectFields();
+      }, 100);
     });
     
     additionalFilters.addEventListener('hide.bs.collapse', function() {
