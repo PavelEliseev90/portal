@@ -8097,15 +8097,21 @@ def refresh_estimation_balance_unit(id_estimation):
                                                 zak_new = zak + price_info['iznos_price'] + price_info['amount_sum']  
                                                 
                                                 if doc.typeSale != 'Аукцион':
+                                                    
                                                     manager_effency = 0
                                                     if agreement.amount > zna:
                                                        manager_effency = agreement.amount - zna
-
+                                                    
+                                                    #if price_info['amount_sum'] > zna:
+                                                    #   manager_effency = agreement.amount - zna
+                                                       
                                                     vr_int      = price_info['amount_sum'] 
                                                     var_sum     = vr_int - agreement.outlay
                                                     iznos       = price_info['iznos_price']
-                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum + iznos + fin_prim - fin_fact) 
-                                                    val_itog    = cum - (t + kso_fact + bu_wheels_fact) - manager_effency
+                                                    t           = zna - (zna - zna * kf / 100) - (zak + agreement.outlay + iznos + fin_prim - fin_fact) 
+                                                    
+                                                    val_itog      = agreement.amount - agreement.cost_price - agreement.outlay  - t - manager_effency
+                                                    val_itog_1        = cum - (t + kso_fact + bu_wheels_fact) - manager_effency
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
