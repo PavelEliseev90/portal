@@ -2145,20 +2145,275 @@ class RefCarsOrganization(models.Model):
         from register.models import RegEstimationRefCarsOrganizations
         return RegEstimationRefCarsOrganizations.objects.filter(car = self).order_by('-date') 
 
-    def dop_cars(self):
-        cars_model = RefCarsOrganization.objects.exclude(modification_autoru = None).exclude(pk = self.pk).exclude(quantity = 0).filter(
-             reserve = 0).filter(
-                  unit = self.unit).filter(
-                       modification_autoru__model__id = self.modification_autoru.model.id)
-
-        min_price = self.price  - (self.price * 10 / 100)
-        max_price = self.price  + (self.price * 10 / 100)
-        cars_price = RefCarsOrganization.objects.exclude(modification_autoru = None).exclude(pk = self.pk).exclude(quantity = 0).filter(
-             reserve = 0).filter(
-                  unit = self.unit).exclude(
-                       modification_autoru__model__id = self.modification_autoru.model.id).filter(price__range = [min_price, max_price ])
-        cars = chain(cars_model, cars_price)
-        return list(cars)
+    def dop_cars(self, limit=12):
+        """
+        Расширенный метод подбора похожих автомобилей с приоритетами и системой релевантности.
+        
+        Приоритеты поиска:
+        1. Та же модель (самый высокий приоритет)
+        2. Та же марка + похожая цена (±15%)
+        3. Та же марка + похожий год (±2 года) + похожий пробег (±30%)
+        4. Та же марка + тот же объем двигателя
+        5. Та же марка + та же КПП
+        6. Та же марка + тот же кузов
+        7. Похожая цена (±15%) из других подразделений
+        8. Та же марка, любой вариант
+        
+        Результаты сортируются по системе баллов релевантности.
+        """
+        if not self.modification_autoru:
+            return []
+        
+        try:
+            base_filter = Q(
+                modification_autoru__isnull=False,
+                quantity__gt=0,
+                reserve=0
+            ) & ~Q(pk=self.pk)
+            
+            # Базовые фильтры - только активные автомобили
+            all_cars = RefCarsOrganization.objects.filter(base_filter)
+        
+            # Приоритет 1: Та же модель (самый высокий приоритет)
+            if self.unit:
+                cars_same_model = all_cars.filter(
+                    modification_autoru__model__id=self.modification_autoru.model.id,
+                    unit=self.unit
+                ).order_by('-date_create')[:limit]
+            else:
+                cars_same_model = all_cars.filter(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).order_by('-date_create')[:limit]
+        
+            # Приоритет 2: Та же марка, похожая цена (±15%)
+            if self.price > 0:
+                min_price = max(0, int(self.price - (self.price * 15 / 100)))
+                max_price = int(self.price + (self.price * 15 / 100))
+                query = all_cars.filter(
+                    modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+                ).exclude(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).filter(
+                    price__range=[min_price, max_price]
+                )
+                if self.unit:
+                    query = query.filter(unit=self.unit)
+                cars_same_mark_price = query.order_by('-date_create')[:limit]
+            else:
+                cars_same_mark_price = []
+        
+            # Приоритет 3: Та же марка, похожий год (±2 года), похожий пробег (±30%)
+            if self.year > 0 and self.run and self.run > 0:
+                year_min = max(1950, self.year - 2)
+                year_max = min(2030, self.year + 2)
+                run_min = max(0, int(self.run * 0.7))
+                run_max = int(self.run * 1.3)
+                
+                query = all_cars.filter(
+                    modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+                ).exclude(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).filter(
+                    year__range=[year_min, year_max],
+                    run__range=[run_min, run_max]
+                )
+                if self.unit:
+                    query = query.filter(unit=self.unit)
+                cars_same_mark_similar = query.order_by('-date_create')[:limit]
+            else:
+                cars_same_mark_similar = []
+        
+            # Приоритет 4: Та же марка, тот же объем двигателя
+            if hasattr(self.modification_autoru, 'engine_volume') and self.modification_autoru.engine_volume and self.modification_autoru.engine_volume > 0:
+                query = all_cars.filter(
+                    modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+                ).exclude(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).filter(
+                    modification_autoru__engine_volume=self.modification_autoru.engine_volume
+                )
+                if self.unit:
+                    query = query.filter(unit=self.unit)
+                cars_same_mark_engine = query.order_by('-date_create')[:limit]
+            else:
+                cars_same_mark_engine = []
+            
+            # Приоритет 5: Та же марка, та же КПП
+            if hasattr(self.modification_autoru, 'typeGear') and self.modification_autoru.typeGear:
+                query = all_cars.filter(
+                    modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+                ).exclude(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).filter(
+                    modification_autoru__typeGear__id=self.modification_autoru.typeGear.id
+                )
+                if self.unit:
+                    query = query.filter(unit=self.unit)
+                cars_same_mark_gear = query.order_by('-date_create')[:limit]
+            else:
+                cars_same_mark_gear = []
+            
+            # Приоритет 6: Та же марка, тот же кузов
+            if hasattr(self.modification_autoru, 'typeBody') and self.modification_autoru.typeBody:
+                query = all_cars.filter(
+                    modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+                ).exclude(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).filter(
+                    modification_autoru__typeBody__id=self.modification_autoru.typeBody.id
+                )
+                if self.unit:
+                    query = query.filter(unit=self.unit)
+                cars_same_mark_body = query.order_by('-date_create')[:limit]
+            else:
+                cars_same_mark_body = []
+        
+            # Приоритет 7: Похожая цена (±15%), другой подразделение (если в текущем подразделении мало вариантов)
+            if self.price > 0 and self.unit:
+                min_price = max(0, int(self.price - (self.price * 15 / 100)))
+                max_price = int(self.price + (self.price * 15 / 100))
+                cars_similar_price_other_unit = all_cars.filter(
+                    price__range=[min_price, max_price]
+                ).exclude(
+                    modification_autoru__model__id=self.modification_autoru.model.id
+                ).exclude(
+                    unit=self.unit
+                ).order_by('-date_create')[:limit]
+            else:
+                cars_similar_price_other_unit = []
+            
+            # Приоритет 8: Та же марка, любой вариант (если еще не набрали достаточно)
+            query = all_cars.filter(
+                modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+            ).exclude(
+                modification_autoru__model__id=self.modification_autoru.model.id
+            )
+            if self.unit:
+                query = query.filter(unit=self.unit)
+            cars_same_mark_any = query.order_by('-date_create')[:limit]
+        
+            # Объединяем все результаты с приоритетами
+            result_cars = []
+            seen_ids = {self.pk}  # Исключаем текущий автомобиль
+            
+            # Добавляем автомобили по приоритетам
+            priority_lists = [
+                cars_same_model,
+                cars_same_mark_price,
+                cars_same_mark_similar,
+                cars_same_mark_engine,
+                cars_same_mark_gear,
+                cars_same_mark_body,
+                cars_similar_price_other_unit,
+                cars_same_mark_any
+            ]
+            
+            for car_list in priority_lists:
+                for car in car_list:
+                    if car.pk not in seen_ids and len(result_cars) < limit * 2:  # Берем больше для сортировки
+                        result_cars.append(car)
+                        seen_ids.add(car.pk)
+                    if len(result_cars) >= limit * 2:
+                        break
+                if len(result_cars) >= limit * 2:
+                    break
+            
+            # Сортируем результаты по релевантности (вычисляем "балл похожести")
+            def calculate_relevance_score(car):
+                score = 0
+                
+                try:
+                    # Та же модель = +100 баллов
+                    if (car.modification_autoru and self.modification_autoru and 
+                        car.modification_autoru.model.id == self.modification_autoru.model.id):
+                        score += 100
+                    
+                    # Та же марка = +50 баллов
+                    if (car.modification_autoru and self.modification_autoru and 
+                        car.modification_autoru.model.mark.id == self.modification_autoru.model.mark.id):
+                        score += 50
+                    
+                    # Похожая цена (±10%) = +30 баллов, (±15%) = +20 баллов
+                    if self.price > 0 and car.price and car.price > 0:
+                        price_diff_percent = abs(car.price - self.price) / self.price * 100
+                        if price_diff_percent <= 10:
+                            score += 30
+                        elif price_diff_percent <= 15:
+                            score += 20
+                    
+                    # Похожий год (±1 год = +20, ±2 года = +10)
+                    if self.year > 0 and car.year and car.year > 0:
+                        year_diff = abs(car.year - self.year)
+                        if year_diff <= 1:
+                            score += 20
+                        elif year_diff <= 2:
+                            score += 10
+                    
+                    # Похожий пробег (±20% = +20, ±30% = +10)
+                    if self.run and self.run > 0 and car.run and car.run > 0:
+                        run_diff_percent = abs(car.run - self.run) / self.run * 100
+                        if run_diff_percent <= 20:
+                            score += 20
+                        elif run_diff_percent <= 30:
+                            score += 10
+                    
+                    # Тот же объем двигателя = +15 баллов
+                    if (car.modification_autoru and self.modification_autoru and 
+                        hasattr(car.modification_autoru, 'engine_volume') and 
+                        hasattr(self.modification_autoru, 'engine_volume') and
+                        car.modification_autoru.engine_volume and 
+                        car.modification_autoru.engine_volume == self.modification_autoru.engine_volume):
+                        score += 15
+                    
+                    # Та же КПП = +10 баллов
+                    if (car.modification_autoru and self.modification_autoru and 
+                        hasattr(car.modification_autoru, 'typeGear') and 
+                        hasattr(self.modification_autoru, 'typeGear') and
+                        car.modification_autoru.typeGear and self.modification_autoru.typeGear and
+                        car.modification_autoru.typeGear.id == self.modification_autoru.typeGear.id):
+                        score += 10
+                    
+                    # Тот же кузов = +10 баллов
+                    if (car.modification_autoru and self.modification_autoru and 
+                        hasattr(car.modification_autoru, 'typeBody') and 
+                        hasattr(self.modification_autoru, 'typeBody') and
+                        car.modification_autoru.typeBody and self.modification_autoru.typeBody and
+                        car.modification_autoru.typeBody.id == self.modification_autoru.typeBody.id):
+                        score += 10
+                    
+                    # Тот же привод = +5 баллов
+                    if car.type_drive and self.type_drive and car.type_drive.id == self.type_drive.id:
+                        score += 5
+                    
+                    # Тот же цвет = +5 баллов
+                    if car.color and self.color and car.color.lower().strip() == self.color.lower().strip():
+                        score += 5
+                    
+                    # Бонус за новинку (на складе менее 30 дней) = +5 баллов
+                    if hasattr(car, 'days_in_stok') and car.days_in_stok and car.days_in_stok <= 30:
+                        score += 5
+                    
+                    # Бонус за популярность (много просмотров) = +3 балла
+                    if hasattr(car, 'view_card_cars') and car.view_card_cars and car.view_card_cars > 30:
+                        score += 3
+                    
+                    # Бонус за то же подразделение = +2 балла
+                    if car.unit and self.unit and car.unit.id == self.unit.id:
+                        score += 2
+                        
+                except (AttributeError, TypeError, ZeroDivisionError):
+                    pass  # Игнорируем ошибки при вычислении
+                
+                return score
+            
+            # Сортируем по релевантности (от большего к меньшему)
+            result_cars.sort(key=calculate_relevance_score, reverse=True)
+            
+            return result_cars[:limit]
+            
+        except Exception as e:
+            # В случае ошибки возвращаем пустой список или базовый результат
+            return []
 
     def wear(self):
         year = datetime.now().year - self.year

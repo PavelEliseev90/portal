@@ -162,25 +162,101 @@
 		{% if request.user_agent.is_pc %}
 			{% if params.object.dop_cars|length > 0 %}
 				<div class="portal-panel mt-3">
-					<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">Может заинтересовать</h3>
+					<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">
+						<span class="icon-mbri-star me-2"></span>Может заинтересовать
+					</h3>
 					<div class="row g-3">
 						{% if params.object.dop_cars %}
 							{% for car in params.object.dop_cars %}
-								<div class="col-12 col-sm-6">
-									<div class="related-car-card" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
-										<img src="{{car.get_photo}}" class="item-img_up">
-										<div class="p-3">
-											<h5 class="mb-2" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+								<div class="col-12 col-sm-6 col-lg-4">
+									<div class="related-car-card-improved" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+										<div class="related-car-image-wrapper">
+											<img src="{{car.get_photo_mini}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="related-car-image">
+											<div class="related-car-badges">
+												{% if car.modification_autoru.model.id == params.object.modification_autoru.model.id %}
+													<span class="badge bg-primary" title="Та же модель">
+														<span class="icon-mbri-car"></span> Та же модель
+													</span>
+												{% endif %}
+												<span class="badge-similar-price badge bg-success" 
+													data-car-price="{{car.price}}" 
+													data-current-price="{{params.object.price}}"
+													title="Похожая цена" style="display: none;">
+													<span class="icon-mbri-dollar"></span> Похожая цена
+												</span>
+												<span class="badge-similar-year badge bg-info" 
+													data-car-year="{{car.year}}" 
+													data-current-year="{{params.object.year}}"
+													title="Похожий год выпуска" style="display: none;">
+													<span class="icon-calendar"></span> Похожий год
+												</span>
+												<span class="badge-similar-run badge bg-warning text-dark" 
+													data-car-run="{{car.run}}" 
+													data-current-run="{{params.object.run}}"
+													title="Похожий пробег" style="display: none;">
+													<span class="icon-cd"></span> Похожий пробег
+												</span>
+												{% if car.modification_autoru.engine_volume == params.object.modification_autoru.engine_volume %}
+													<span class="badge bg-secondary" title="Тот же объем двигателя">
+														<span class="icon-mbri-engine"></span> Тот же двигатель
+													</span>
+												{% endif %}
+												{% if car.modification_autoru.typeGear.id == params.object.modification_autoru.typeGear.id %}
+													<span class="badge bg-dark" title="Та же коробка передач">
+														<span class="icon-mbri-transmission1"></span> Та же КПП
+													</span>
+												{% endif %}
+												{% if car.modification_autoru.typeBody.id == params.object.modification_autoru.typeBody.id %}
+													<span class="badge bg-light text-dark" title="Тот же кузов">
+														<span class="icon-truck"></span> Тот же кузов
+													</span>
+												{% endif %}
+												{% if car.days_in_stok <= 7 %}
+													<span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;" title="Новинка">
+														<span class="icon-mbri-star"></span> Новинка
+													</span>
+												{% endif %}
+												{% if car.view_card_cars > 50 %}
+													<span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;" title="Популярная модель">
+														<span class="icon-mbri-preview"></span> Популярная
+													</span>
+												{% endif %}
+											</div>
+										</div>
+										<div class="related-car-content">
+											<h5 class="related-car-title">
 												{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
 											</h5>
-											<p class="text-muted small mb-2">{{car.year}} г. / {{car.run|floatformat:"0g"|default_if_none:"---"}} км</p>
-											<p class="text-muted small mb-2">
-												{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
-												{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
-											</p>
-											<div class="d-flex justify-content-between align-items-center mt-3">
-												<span class="text-muted small">{{car.unit.name_web}}</span>
-												<span class="fw-bold" style="color: #e74c3c; font-size: 1.2rem;">{{car.price|floatformat:"2g"}} ₽</span>
+											<div class="related-car-specs">
+												<div class="spec-item">
+													<span class="spec-icon icon-calendar"></span>
+													<span class="spec-value">{{car.year}} г.</span>
+												</div>
+												<div class="spec-item">
+													<span class="spec-icon icon-cd"></span>
+													<span class="spec-value">{{car.run|floatformat:"0g"|default_if_none:"---"}} км</span>
+												</div>
+												<div class="spec-item">
+													<span class="spec-icon icon-mbri-engine"></span>
+													<span class="spec-value">{{car.modification_autoru.engine_volume}} л / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.с.</span>
+												</div>
+												<div class="spec-item">
+													<span class="spec-icon icon-mbri-transmission1"></span>
+													<span class="spec-value">{{car.modification_autoru.typeGear.name}}</span>
+												</div>
+											</div>
+											<div class="related-car-footer">
+												<div class="related-car-location">
+													<span class="icon-mbri-home"></span>
+													<small>{{car.unit.name_web}}</small>
+												</div>
+												<div class="related-car-price">
+													<strong>{{car.price|floatformat:"2g"}} ₽</strong>
+													<small class="price-diff text-danger d-block" 
+														data-car-price="{{car.price}}" 
+														data-current-price="{{params.object.price}}"
+														style="display: none;"></small>
+												</div>
 											</div>
 										</div>
 									</div>
@@ -550,25 +626,86 @@
 			{% if request.user_agent.is_mobile %}
 				{% if params.object.dop_cars|length > 0 %}
 					<div class="portal-panel mt-3">
-						<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">Может заинтересовать</h3>
+						<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">
+							<span class="icon-mbri-star me-2"></span>Может заинтересовать
+						</h3>
 						<div class="row g-3">
 							{% if params.object.dop_cars %}
 								{% for car in params.object.dop_cars %}
-									<div class="col-12 col-sm-6">
-										<div class="related-car-card" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
-											<img src="{{car.get_photo}}" class="item-img_up">
-											<div class="p-3">
-												<h5 class="mb-2" style="font-size: 1rem; font-weight: 600; color: #002a5a;">
+									<div class="col-12">
+										<div class="related-car-card-improved" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+											<div class="related-car-image-wrapper">
+												<img src="{{car.get_photo_mini}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="related-car-image">
+												<div class="related-car-badges">
+													{% if car.modification_autoru.model.id == params.object.modification_autoru.model.id %}
+														<span class="badge bg-primary" title="Та же модель">
+															<span class="icon-mbri-car"></span> Та же модель
+														</span>
+													{% endif %}
+													<span class="badge-similar-price badge bg-success" 
+														data-car-price="{{car.price}}" 
+														data-current-price="{{params.object.price}}"
+														title="Похожая цена" style="display: none;">
+														<span class="icon-mbri-dollar"></span> Похожая цена
+													</span>
+													<span class="badge-similar-year badge bg-info" 
+														data-car-year="{{car.year}}" 
+														data-current-year="{{params.object.year}}"
+														title="Похожий год выпуска" style="display: none;">
+														<span class="icon-calendar"></span> Похожий год
+													</span>
+													<span class="badge-similar-run badge bg-warning text-dark" 
+														data-car-run="{{car.run}}" 
+														data-current-run="{{params.object.run}}"
+														title="Похожий пробег" style="display: none;">
+														<span class="icon-cd"></span> Похожий пробег
+													</span>
+													{% if car.days_in_stok <= 7 %}
+														<span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;" title="Новинка">
+															<span class="icon-mbri-star"></span> Новинка
+														</span>
+													{% endif %}
+													{% if car.view_card_cars > 50 %}
+														<span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;" title="Популярная модель">
+															<span class="icon-mbri-preview"></span> Популярная
+														</span>
+													{% endif %}
+												</div>
+											</div>
+											<div class="related-car-content">
+												<h5 class="related-car-title">
 													{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
 												</h5>
-												<p class="text-muted small mb-2">{{car.year}} г. / {{car.run|floatformat:"0g"|default_if_none:"---"}} км</p>
-												<p class="text-muted small mb-2">
-													{{car.modification_autoru.engine_volume}} л. / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{car.modification_autoru.typeEngine.name}}<br>
-													{{car.modification_autoru.typeGear.name}} / {{car.modification_autoru.typeBody.name}}
-												</p>
-												<div class="d-flex justify-content-between align-items-center mt-3">
-													<span class="text-muted small">{{car.unit.name_web}}</span>
-													<span class="fw-bold" style="color: #e74c3c; font-size: 1.2rem;">{{car.price|floatformat:"2g"}} ₽</span>
+												<div class="related-car-specs">
+													<div class="spec-item">
+														<span class="spec-icon icon-calendar"></span>
+														<span class="spec-value">{{car.year}} г.</span>
+													</div>
+													<div class="spec-item">
+														<span class="spec-icon icon-cd"></span>
+														<span class="spec-value">{{car.run|floatformat:"0g"|default_if_none:"---"}} км</span>
+													</div>
+													<div class="spec-item">
+														<span class="spec-icon icon-mbri-engine"></span>
+														<span class="spec-value">{{car.modification_autoru.engine_volume}} л / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.с.</span>
+													</div>
+													<div class="spec-item">
+														<span class="spec-icon icon-mbri-transmission1"></span>
+														<span class="spec-value">{{car.modification_autoru.typeGear.name}}</span>
+													</div>
+												</div>
+												<div class="related-car-footer">
+													<div class="related-car-location">
+														<span class="icon-mbri-home"></span>
+														<small>{{car.unit.name_web}}</small>
+													</div>
+													<div class="related-car-price">
+														<strong>{{car.price|floatformat:"2g"}} ₽</strong>
+														<small class="price-diff text-danger d-block" 
+															data-car-price="{{car.price}}" 
+															data-current-price="{{params.object.price}}"
+															style="display: none;"></small>
+													</div>
 												</div>
 											</div>
 										</div>
@@ -1702,5 +1839,265 @@
   
   updateSlider();
 })();
+
+// Логика для бейджиков похожести
+document.addEventListener('DOMContentLoaded', function() {
+  const currentPrice = parseFloat('{{params.object.price}}') || 0;
+  const currentYear = parseInt('{{params.object.year}}') || 0;
+  const currentRun = parseInt('{{params.object.run}}') || 0;
+  
+  // Проверка похожей цены
+  document.querySelectorAll('.badge-similar-price').forEach(function(badge) {
+    const carPrice = parseFloat(badge.dataset.carPrice) || 0;
+    const currentPrice = parseFloat(badge.dataset.currentPrice) || 0;
+    
+    if (currentPrice > 0) {
+      const minPrice = currentPrice * 0.9;
+      const maxPrice = currentPrice * 1.1;
+      if (carPrice >= minPrice && carPrice <= maxPrice) {
+        badge.style.display = 'inline-flex';
+      }
+    }
+  });
+  
+  // Проверка похожего года
+  document.querySelectorAll('.badge-similar-year').forEach(function(badge) {
+    const carYear = parseInt(badge.dataset.carYear) || 0;
+    const currentYear = parseInt(badge.dataset.currentYear) || 0;
+    
+    if (carYear >= currentYear - 1 && carYear <= currentYear + 1) {
+      badge.style.display = 'inline-flex';
+    }
+  });
+  
+  // Проверка похожего пробега
+  document.querySelectorAll('.badge-similar-run').forEach(function(badge) {
+    const carRun = parseInt(badge.dataset.carRun) || 0;
+    const currentRun = parseInt(badge.dataset.currentRun) || 0;
+    
+    if (currentRun > 0 && carRun > 0) {
+      const minRun = currentRun * 0.8;
+      const maxRun = currentRun * 1.2;
+      if (carRun >= minRun && carRun <= maxRun) {
+        badge.style.display = 'inline-flex';
+      }
+    }
+  });
+  
+  // Вычисление разницы в цене
+  document.querySelectorAll('.price-diff').forEach(function(elem) {
+    const carPrice = parseFloat(elem.dataset.carPrice) || 0;
+    const currentPrice = parseFloat(elem.dataset.currentPrice) || 0;
+    
+    if (carPrice > currentPrice) {
+      const diff = carPrice - currentPrice;
+      elem.textContent = '+' + diff.toLocaleString('ru-RU', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' ₽';
+      elem.className = 'price-diff text-danger d-block';
+      elem.style.display = 'block';
+    } else if (carPrice < currentPrice) {
+      const diff = currentPrice - carPrice;
+      elem.textContent = '-' + diff.toLocaleString('ru-RU', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' ₽';
+      elem.className = 'price-diff text-success d-block';
+      elem.style.display = 'block';
+    }
+  });
+});
 </script>
+
+<style>
+/* Улучшенные карточки похожих автомобилей */
+.related-car-card-improved {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0, 42, 90, 0.1);
+}
+
+.related-car-card-improved:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 42, 90, 0.2);
+}
+
+.related-car-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.related-car-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.related-car-card-improved:hover .related-car-image {
+  transform: scale(1.05);
+}
+
+.related-car-badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  z-index: 2;
+  max-width: calc(100% - 16px);
+}
+
+.related-car-badges .badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.related-car-badges .badge .icon-mbri-car,
+.related-car-badges .badge .icon-mbri-dollar,
+.related-car-badges .badge .icon-calendar,
+.related-car-badges .badge .icon-cd,
+.related-car-badges .badge .icon-mbri-engine,
+.related-car-badges .badge .icon-mbri-transmission1,
+.related-car-badges .badge .icon-truck {
+  font-size: 0.85rem;
+}
+
+.related-car-content {
+  padding: 1rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.related-car-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.related-car-specs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.spec-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.spec-icon {
+  font-size: 1rem;
+  color: #8ea1ba;
+  flex-shrink: 0;
+}
+
+.spec-value {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.related-car-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 42, 90, 0.1);
+  margin-top: auto;
+}
+
+.related-car-location {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.related-car-location .icon-mbri-home {
+  font-size: 0.9rem;
+  color: #8ea1ba;
+}
+
+.related-car-price {
+  text-align: right;
+}
+
+.related-car-price strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #e74c3c;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.related-car-price small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .related-car-image-wrapper {
+    height: 180px;
+  }
+  
+  .related-car-badges {
+    top: 6px;
+    left: 6px;
+    gap: 3px;
+  }
+  
+  .related-car-badges .badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .related-car-content {
+    padding: 0.75rem;
+  }
+  
+  .related-car-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .related-car-specs {
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .spec-item {
+    font-size: 0.8rem;
+  }
+  
+  .related-car-price strong {
+    font-size: 1rem;
+  }
+}
+</style>
 {% endblock %}
