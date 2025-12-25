@@ -34,7 +34,7 @@
 
 <div class="row">
 
-	<div class="col-sm-6">
+	<div class="col-12 col-xl-6">
 		
 		<div class="portal-panel">
 			
@@ -130,7 +130,7 @@
 								
 								
 								{% if params.object.get_check != None %}
-									<div class="col-md-6">
+									<div class="col-12 col-xl-6">
 										<div class="portal-panel text-center">
 											<figure>
 												<div id="container-check" class="chart-container"></div>
@@ -358,7 +358,7 @@
 
 	</div>
 
-	<div class="col-sm-6">
+	<div class="col-12 col-xl-6">
 		<div class="portal-panel">
 			<h5 class="mb-3"><span class="icon-mbri-preview"></span> Интерактивная оценка</h5>
 
@@ -451,6 +451,8 @@
 							</div>
 						{% endif %}
 					</div>
+					
+					<br>
 					
 					{% if params.object.remote_price > 0 %}
 						<a href="/eco/{{params.object.id}}/?page=9" class="btn btn-outline-success fs-6">
@@ -601,11 +603,6 @@
 
 </div>
 
-  <div class="col-12 mt-3">
-	<div class="portal-panel">
-		
-	</div>
-</div>
 </div>
 	
 <script language="JavaScript">

@@ -30,7 +30,7 @@ from urllib.parse import unquote
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from refs.models import RefService, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
+from refs.models import RefTypeEvaluationCarsOrganization, RefService, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
 from documents.models import DocServices, DocServiceItem, DocZNServicesKA, DocZNPerformersKA, DocZNProductKA, DocZNWorkKA, DocZNKA, DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
@@ -3402,6 +3402,12 @@ def get_worksheet(worksheet):
     if 'ReasonArchive' in worksheet:
         rlk_object.reasonArchive      = worksheet['ReasonArchive']
 
+    if 'Vin' in worksheet:
+        rlk_object.vin_trade_in      = worksheet['Vin']
+
+    if 'Estimation' in worksheet:
+        rlk_object.estimation_id      = worksheet['Estimation']
+
     rlk_object.type                 = get_type_rlk(worksheet['Type'])
     rlk_object.contacType           = get_contactType(worksheet['ContactType'])
     rlk_object.phone                = worksheet['Phone']
@@ -3906,451 +3912,101 @@ def get_unit(json_unit):
     if "Settings" in json_unit:
         settings_unit = json_unit['Settings']
 
-        if 'ЦГ200КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_200: 
-                ref_unit.ratio_avtohub_test_price_200 = settings_unit['ЦГ200КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ200КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_200: 
-                ref_unit.ratio_avtohub_rdo_200 = settings_unit['ЦГ200КорректировкаРДО']
-                saves = True
-        if 'ЦГ200КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_200: 
-                ref_unit.ratio_avtohub_kor_200 = settings_unit['ЦГ200КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ200КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_200: 
-                ref_unit.ratio_avtohub_txt_200 = settings_unit['ЦГ200КорректировкаТХТ']
-                saves = True
-        if 'ЦГ200КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_200: 
-                ref_unit.ratio_1с_test_price_200 = settings_unit['ЦГ200КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ200КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_200: 
-                ref_unit.ratio_1с_rdo_200 = settings_unit['ЦГ200КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ200КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_200: 
-                ref_unit.ratio_1с_kor_200 = settings_unit['ЦГ200КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ200КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ200КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_200: 
-                ref_unit.ratio_1с_txt_200 = settings_unit['ЦГ200КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ400КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_400: 
-                ref_unit.ratio_avtohub_test_price_400 = settings_unit['ЦГ400КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ400КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_400: 
-                ref_unit.ratio_avtohub_rdo_400 = settings_unit['ЦГ400КорректировкаРДО']
-                saves = True
-        if 'ЦГ400КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_400: 
-                ref_unit.ratio_avtohub_kor_400 = settings_unit['ЦГ400КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ400КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_400: 
-                ref_unit.ratio_avtohub_txt_400 = settings_unit['ЦГ400КорректировкаТХТ']
-                saves = True
-        if 'ЦГ400КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_400: 
-                ref_unit.ratio_1с_test_price_400 = settings_unit['ЦГ400КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ400КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_400: 
-                ref_unit.ratio_1с_rdo_400 = settings_unit['ЦГ400КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ400КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_400: 
-                ref_unit.ratio_1с_kor_400 = settings_unit['ЦГ400КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ400КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ400КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_400: 
-                ref_unit.ratio_1с_txt_400 = settings_unit['ЦГ400КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ700КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_700: 
-                ref_unit.ratio_avtohub_test_price_700 = settings_unit['ЦГ700КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ700КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_700: 
-                ref_unit.ratio_avtohub_rdo_700 = settings_unit['ЦГ700КорректировкаРДО']
-                saves = True
-        if 'ЦГ700КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_700: 
-                ref_unit.ratio_avtohub_kor_700 = settings_unit['ЦГ700КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ700КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_700: 
-                ref_unit.ratio_avtohub_txt_700 = settings_unit['ЦГ700КорректировкаТХТ']
-                saves = True
-        if 'ЦГ700КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_700: 
-                ref_unit.ratio_1с_test_price_700 = settings_unit['ЦГ700КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ700КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_700: 
-                ref_unit.ratio_1с_rdo_700 = settings_unit['ЦГ700КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ700КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_700: 
-                ref_unit.ratio_1с_kor_700 = settings_unit['ЦГ700КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ700КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ700КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_700: 
-                ref_unit.ratio_1с_txt_700 = settings_unit['ЦГ700КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ1200КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_1200: 
-                ref_unit.ratio_avtohub_test_price_1200 = settings_unit['ЦГ1200КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ1200КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_1200: 
-                ref_unit.ratio_avtohub_rdo_1200 = settings_unit['ЦГ1200КорректировкаРДО']
-                saves = True
-        if 'ЦГ1200КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_1200: 
-                ref_unit.ratio_avtohub_kor_1200 = settings_unit['ЦГ1200КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ1200КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_1200: 
-                ref_unit.ratio_avtohub_txt_1200 = settings_unit['ЦГ1200КорректировкаТХТ']
-                saves = True
-        if 'ЦГ1200КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_1200: 
-                ref_unit.ratio_1с_test_price_1200 = settings_unit['ЦГ1200КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ1200КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_1200: 
-                ref_unit.ratio_1с_rdo_1200 = settings_unit['ЦГ1200КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ1200КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_1200: 
-                ref_unit.ratio_1с_kor_1200 = settings_unit['ЦГ1200КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ1200КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ1200КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_1200: 
-                ref_unit.ratio_1с_txt_1200 = settings_unit['ЦГ1200КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ2000КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_2000: 
-                ref_unit.ratio_avtohub_test_price_2000 = settings_unit['ЦГ2000КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ2000КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_2000: 
-                ref_unit.ratio_avtohub_rdo_2000 = settings_unit['ЦГ2000КорректировкаРДО']
-                saves = True
-        if 'ЦГ2000КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_2000: 
-                ref_unit.ratio_avtohub_kor_2000 = settings_unit['ЦГ2000КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ2000КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_2000: 
-                ref_unit.ratio_avtohub_txt_2000 = settings_unit['ЦГ2000КорректировкаТХТ']
-                saves = True
-        if 'ЦГ2000КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_2000: 
-                ref_unit.ratio_1с_test_price_2000 = settings_unit['ЦГ2000КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ2000КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_2000: 
-                ref_unit.ratio_1с_rdo_2000 = settings_unit['ЦГ2000КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ2000КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_2000: 
-                ref_unit.ratio_1с_kor_2000 = settings_unit['ЦГ2000КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ2000КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ2000КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_2000: 
-                ref_unit.ratio_1с_txt_2000 = settings_unit['ЦГ2000КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ3000КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_3000: 
-                ref_unit.ratio_avtohub_test_price_3000 = settings_unit['ЦГ3000КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ3000КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_3000: 
-                ref_unit.ratio_avtohub_rdo_3000 = settings_unit['ЦГ3000КорректировкаРДО']
-                saves = True
-        if 'ЦГ3000КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_3000: 
-                ref_unit.ratio_avtohub_kor_3000 = settings_unit['ЦГ3000КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ3000КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_3000: 
-                ref_unit.ratio_avtohub_txt_3000 = settings_unit['ЦГ3000КорректировкаТХТ']
-                saves = True
-        if 'ЦГ3000КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_3000: 
-                ref_unit.ratio_1с_test_price_3000 = settings_unit['ЦГ3000КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ3000КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_3000: 
-                ref_unit.ratio_1с_rdo_3000 = settings_unit['ЦГ3000КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ3000КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_3000: 
-                ref_unit.ratio_1с_kor_3000 = settings_unit['ЦГ3000КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ3000КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ3000КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_3000: 
-                ref_unit.ratio_1с_txt_3000 = settings_unit['ЦГ3000КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ5000КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_5000: 
-                ref_unit.ratio_avtohub_test_price_5000 = settings_unit['ЦГ5000КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ5000КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_5000: 
-                ref_unit.ratio_avtohub_rdo_5000 = settings_unit['ЦГ5000КорректировкаРДО']
-                saves = True
-        if 'ЦГ5000КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_5000: 
-                ref_unit.ratio_avtohub_kor_5000 = settings_unit['ЦГ5000КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ5000КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_5000: 
-                ref_unit.ratio_avtohub_txt_5000 = settings_unit['ЦГ5000КорректировкаТХТ']
-                saves = True
-        if 'ЦГ5000КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_5000: 
-                ref_unit.ratio_1с_test_price_5000 = settings_unit['ЦГ5000КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ5000КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_5000: 
-                ref_unit.ratio_1с_rdo_5000 = settings_unit['ЦГ5000КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ5000КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_5000: 
-                ref_unit.ratio_1с_kor_5000 = settings_unit['ЦГ5000КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ5000КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ5000КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_5000: 
-                ref_unit.ratio_1с_txt_5000 = settings_unit['ЦГ5000КорректировкаТХТ1С']
-                saves = True
-        if 'ЦГ5001КорректировкаТестПрайс' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаТестПрайс'] != ref_unit.ratio_avtohub_test_price_5001: 
-                ref_unit.ratio_avtohub_test_price_5001 = settings_unit['ЦГ5001КорректировкаТестПрайс']
-                saves = True
-        if 'ЦГ5001КорректировкаРДО' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаРДО'] != ref_unit.ratio_avtohub_rdo_5001: 
-                ref_unit.ratio_avtohub_rdo_5001 = settings_unit['ЦГ5001КорректировкаРДО']
-                saves = True
-        if 'ЦГ5001КорректировкаКоррекция' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаКоррекция'] != ref_unit.ratio_avtohub_kor_5001: 
-                ref_unit.ratio_avtohub_kor_5001 = settings_unit['ЦГ5001КорректировкаКоррекция']
-                saves = True
-        if 'ЦГ5001КорректировкаТХТ' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаТХТ'] != ref_unit.ratio_avtohub_txt_5001: 
-                ref_unit.ratio_avtohub_txt_5001 = settings_unit['ЦГ5001КорректировкаТХТ']
-                saves = True
-        if 'ЦГ5001КорректировкаТестПрайс1С' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаТестПрайс1С'] != ref_unit.ratio_1с_test_price_5001: 
-                ref_unit.ratio_1с_test_price_5001 = settings_unit['ЦГ5001КорректировкаТестПрайс1С']
-                saves = True
-        if 'ЦГ5001КорректировкаРДО1С' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаРДО1С'] != ref_unit.ratio_1с_rdo_5001: 
-                ref_unit.ratio_1с_rdo_5001 = settings_unit['ЦГ5001КорректировкаРДО1С']
-                saves = True
-        if 'ЦГ5001КорректировкаКоррекция1С' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаКоррекция1С'] != ref_unit.ratio_1с_kor_5001: 
-                ref_unit.ratio_1с_kor_5001 = settings_unit['ЦГ5001КорректировкаКоррекция1С']
-                saves = True
-        if 'ЦГ5001КорректировкаТХТ1С' in settings_unit: 
-            if settings_unit['ЦГ5001КорректировкаТХТ1С'] != ref_unit.ratio_1с_txt_5001: 
-                ref_unit.ratio_1с_txt_5001 = settings_unit['ЦГ5001КорректировкаТХТ1С']
-                saves = True
-        
-        if 'ЦГ200ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ200ПроцентНаценкиТХТ'] != ref_unit.percent_txt_200: 
-                ref_unit.percent_txt_200 = settings_unit['ЦГ200ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ400ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ400ПроцентНаценкиТХТ'] != ref_unit.percent_txt_400: 
-                ref_unit.percent_txt_400 = settings_unit['ЦГ400ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ700ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ700ПроцентНаценкиТХТ'] != ref_unit.percent_txt_700: 
-                ref_unit.percent_txt_700 = settings_unit['ЦГ700ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ1200ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ1200ПроцентНаценкиТХТ'] != ref_unit.percent_txt_1200: 
-                ref_unit.percent_txt_1200 = settings_unit['ЦГ1200ПроцентНаценкиТХТ']
-                saves = True
-        
-        if 'ЦГ2000ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ2000ПроцентНаценкиТХТ'] != ref_unit.percent_txt_2000: 
-                ref_unit.percent_txt_2000 = settings_unit['ЦГ2000ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ3000ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ3000ПроцентНаценкиТХТ'] != ref_unit.percent_txt_3000: 
-                ref_unit.percent_txt_3000 = settings_unit['ЦГ3000ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ5000ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ5000ПроцентНаценкиТХТ'] != ref_unit.percent_txt_5000: 
-                ref_unit.percent_txt_5000 = settings_unit['ЦГ5000ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ5001ПроцентНаценкиТХТ' in settings_unit: 
-            if settings_unit['ЦГ5001ПроцентНаценкиТХТ'] != ref_unit.percent_txt_5001: 
-                ref_unit.percent_txt_5001 = settings_unit['ЦГ5001ПроцентНаценкиТХТ']
-                saves = True
-        if 'ЦГ200МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ200МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_200: 
-                ref_unit.percent_torg_txt_200 = settings_unit['ЦГ200МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ400МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ400МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_400: 
-                ref_unit.percent_torg_txt_400 = settings_unit['ЦГ400МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ700МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ700МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_700: 
-                ref_unit.percent_torg_txt_700 = settings_unit['ЦГ700МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ1200МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ1200МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_1200: 
-                ref_unit.percent_torg_txt_1200 = settings_unit['ЦГ1200МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        
-        if 'ЦГ2000МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ2000МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_2000: 
-                ref_unit.percent_torg_txt_2000 = settings_unit['ЦГ2000МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ3000МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ3000МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_3000: 
-                ref_unit.percent_torg_txt_3000 = settings_unit['ЦГ3000МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ5000МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ5000МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_5000: 
-                ref_unit.percent_torg_txt_5000 = settings_unit['ЦГ5000МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ5001МаксимальнаяСкидкаТоргВПроцентах' in settings_unit: 
-            if settings_unit['ЦГ5001МаксимальнаяСкидкаТоргВПроцентах'] != ref_unit.percent_torg_txt_5001: 
-                ref_unit.percent_torg_txt_5001 = settings_unit['ЦГ5001МаксимальнаяСкидкаТоргВПроцентах']
-                saves = True
-        if 'ЦГ200МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ200МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_200: 
-                ref_unit.discount_tt_200 = settings_unit['ЦГ200МаксимальнаяСкидкаЗаTradeIn']
-                saves = True
-        if 'ЦГ400МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ400МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_400: 
-                ref_unit.discount_tt_400 = settings_unit['ЦГ400МаксимальнаяСкидкаЗаTradeIn']
-                saves = True   
-        if 'ЦГ700МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ700МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_700: 
-                ref_unit.discount_tt_700 = settings_unit['ЦГ700МаксимальнаяСкидкаЗаTradeIn']
-                saves = True 
-        if 'ЦГ1200МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ1200МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_1200: 
-                ref_unit.discount_tt_1200 = settings_unit['ЦГ1200МаксимальнаяСкидкаЗаTradeIn']
-                saves = True   
-        if 'ЦГ2000МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ2000МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_2000: 
-                ref_unit.discount_tt_2000 = settings_unit['ЦГ2000МаксимальнаяСкидкаЗаTradeIn']
-                saves = True
-        if 'ЦГ3000МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ3000МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_3000: 
-                ref_unit.discount_tt_3000 = settings_unit['ЦГ3000МаксимальнаяСкидкаЗаTradeIn']
-                saves = True
-        if 'ЦГ5000МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ5000МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_5000: 
-                ref_unit.discount_tt_5000 = settings_unit['ЦГ5000МаксимальнаяСкидкаЗаTradeIn']
-                saves = True    
-        if 'ЦГ5001МаксимальнаяСкидкаЗаTradeIn' in settings_unit:
-            if settings_unit['ЦГ5001МаксимальнаяСкидкаЗаTradeIn'] != ref_unit.discount_tt_5001: 
-                ref_unit.discount_tt_5001 = settings_unit['ЦГ5001МаксимальнаяСкидкаЗаTradeIn']
-                saves = True    
-
-        # Синхронизируем старые поля настроек с новыми полями автопереоценки,
-        # чтобы значения из 1С автоматически попадали в структуру автопереоценки.
+        # Синхронизируем новые поля автопереоценки с настройками из 1С
+        # Ожидается, что в settings_unit ключи совпадают с именами полей модели RefUnit,
+        # например: auto_strategy_200, auto_active_200, correction_kor_200, markup_txt_200 и т.д.
         for price in (200, 400, 700, 1200, 2000, 3000, 5000, 5001):
             suffix = f"_{price}"
 
-            # Тест-прайс (Автохаб)
-            legacy = getattr(ref_unit, f"ratio_avtohub_test_price{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_test{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
+            # === Булевые флаги ===
+            bool_codes = (
+                "auto_strategy",
+                "auto_active",
+                "lock_eval_change_after_stage",
+                "deny_manual_price",
+                "deny_discount",
+                "no_limit_max_manual",
+                "reset_manual_prices",
+                "delay_repricing_new_stage",
+                "check_price_rule_before_sale",
+                "check_open_tasks",
+                "calc_by_days_in_sale",
+            )
+            for code in bool_codes:
+                field_name = f"{code}{suffix}"
+                if field_name in settings_unit:
+                    new_raw = settings_unit[field_name]
+                    # если 1С шлёт 0/1 или True/False, можно сохранять как есть — BooleanField сам приведет
+                    new_val = new_raw
+                    if getattr(ref_unit, field_name, None) != new_val:
+                        setattr(ref_unit, field_name, new_val)
+                        saves = True
 
-            # РДО
-            legacy = getattr(ref_unit, f"ratio_avtohub_rdo{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_rdo{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
+            # === Числовые поля (корректировки, наценки, маркетинг, лимиты скидок) ===
+            numeric_codes = (
+                "correction_kor",
+                "correction_kor_1c",
+                "correction_kor_express",
+                "correction_rdo",
+                "correction_rdo_1c",
+                "correction_rdo_express",
+                "correction_test",
+                "correction_test_1c",
+                "correction_test_express",
+                "correction_txt",
+                "correction_txt_1c",
+                "correction_txt_express",
+                "max_discount_tradein",
+                "max_discount_bargain_percent",
+                "marketing",
+                "markup_base",
+                "markup_kor",
+                "markup_rdo",
+                "markup_test",
+                "markup_txt",
+            )
+            for code in numeric_codes:
+                field_name = f"{code}{suffix}"
+                if field_name in settings_unit:
+                    raw = settings_unit[field_name]
+                    if raw is None or raw == "":
+                        continue
+                    try:
+                        # поддержка "10,5" из 1С
+                        value = float(str(raw).replace(",", "."))
+                    except (TypeError, ValueError):
+                        continue
+                    if getattr(ref_unit, field_name, None) != value:
+                        setattr(ref_unit, field_name, value)
+                        saves = True
 
-            # Коррекция
-            legacy = getattr(ref_unit, f"ratio_avtohub_kor{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_kor{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
+            # eval_type_*  — ожидаем, что 1С шлёт ID правила (pk)
+            eval_key = f"eval_type{suffix}"      # eval_type_200, eval_type_400, ...
+            if eval_key in settings_unit:
+                raw = settings_unit[eval_key]
+                if raw in (None, "", 0, "0"):
+                    # сброс правила
+                    if getattr(ref_unit, f"{eval_key}_id", None) is not None:
+                        setattr(ref_unit, f"{eval_key}_id", None)
+                        saves = True
+                else:
+                    try:
+                        eval_id = RefTypeEvaluationCarsOrganization.objects.get(name = raw).id
+                    except (TypeError, ValueError):
+                        eval_id = None
+                    if eval_id is not None and getattr(ref_unit, f"{eval_key}_id", None) != eval_id:
+                        setattr(ref_unit, f"{eval_key}_id", eval_id)
+                        saves = True
 
-            # ТХТ (Автохаб)
-            legacy = getattr(ref_unit, f"ratio_avtohub_txt{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_txt{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            # Коэффициенты 1С
-            legacy = getattr(ref_unit, f"ratio_1с_test_price{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_test_1c{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            legacy = getattr(ref_unit, f"ratio_1с_rdo{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_rdo_1c{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            legacy = getattr(ref_unit, f"ratio_1с_kor{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_kor_1c{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            legacy = getattr(ref_unit, f"ratio_1с_txt{suffix}", None)
-            if legacy is not None:
-                auto_field = f"correction_txt_1c{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            # Процент наценки ТХТ → markup_txt
-            legacy = getattr(ref_unit, f"percent_txt{suffix}", None)
-            if legacy is not None:
-                auto_field = f"markup_txt{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            # Максимальная скидка торг → max_discount_bargain_percent
-            legacy = getattr(ref_unit, f"percent_torg_txt{suffix}", None)
-            if legacy is not None:
-                auto_field = f"max_discount_bargain_percent{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
-
-            # Максимальная скидка за TradeIn → max_discount_tradein
-            legacy = getattr(ref_unit, f"discount_tt{suffix}", None)
-            if legacy is not None:
-                auto_field = f"max_discount_tradein{suffix}"
-                if getattr(ref_unit, auto_field, None) != legacy:
-                    setattr(ref_unit, auto_field, legacy)
-                    saves = True
+            # autohub_mode_* — строки с кодами из AVTOHUB_DATA_USAGE_CHOICES
+            for code in ("autohub_mode_kor", "autohub_mode_rdo", "autohub_mode_test", "autohub_mode_txt"):
+                field_name = f"{code}{suffix}"   # autohub_mode_kor_200, autohub_mode_rdo_200, ...
+                if field_name in settings_unit:
+                    new_val = settings_unit[field_name] or ""
+                    if getattr(ref_unit, field_name, "") != new_val:
+                        setattr(ref_unit, field_name, new_val)
+                        saves = True
+            
 
     if "BuAuto" in json_unit:
         if json_unit['BuAuto'] != ref_unit.buauto: 
@@ -4496,10 +4152,10 @@ def get_filial(json_filial):
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])
 
-    if 'Unit' in json_filial:
-        unit_data = json_filial['Unit']
-        if len(unit_data) > 0:
-            filial.unit   = get_unit(unit_data)
+    # if 'Unit' in json_filial:
+    #     unit_data = json_filial['Unit']
+    #     if len(unit_data) > 0:
+    #         filial.unit   = get_unit(unit_data)
 
     filial.save()
 

@@ -20431,7 +20431,8 @@
                                   <hr style="margin: 0.2rem;">
                                   
                                   <div class="row g-1">
-                                    <div class="col">
+                                    
+                                    <!-- <div class="col">
                                       <div class="card" style="margin: 0.2rem;" >
                                         <div class="card-body" >
                                           <div class="row" >
@@ -20446,20 +20447,24 @@
             
                                         </div>
                                       </div>
-                                    </div>
+                                    </div> -->
+
                                     <div class="col">
-                                        <div class="card" style="margin: 0.2rem;" >
-                                          <div class="card-body" >
+                                        <div class="portal-panel" >
+                                          <div class="" >
                                             <div class="row" >
                                               <div class="col">
-                                                <label class="fs-6">ЕЦО</label>
+                                                <label class="fs-6">БЦП</label>
                                               </div>
                                             </div>
+                                           
+                                            {% if params.estimation.page_soglasovanie.price_auto_bcp_2 != None or params.estimation.page_soglasovanie.price_auto_bcp_2 > 0 %}
+                                              <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_auto_bcp_2|formatted_float}}" readonly >
                                             
-                                            <hr>
-                                            
-                                            <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
-                                    
+                                              <label class="fs-7 text-danger">Будет установлено автоматически, изменять значение не нужно не в 1С не на портале</label>
+                                            {% else %}
+                                              <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                                            {% endif %}
                                           </div>
                                         </div>
                                     </div>
