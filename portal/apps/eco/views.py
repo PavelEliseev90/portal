@@ -1,6 +1,6 @@
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
-from register.models import SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup
 from profiles.models import Profiles
@@ -1351,6 +1351,7 @@ def doc(request, id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
     rlk     = DocRLK.objects.get(pk=id)
+    estimations_data = RegInteractivOcenkaRLK.objects.filter(rlk = rlk)
     estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
     
     if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
@@ -4387,6 +4388,41 @@ def estimations_price_calculation(estimation, type_calculation):
                 }
                 list_work_podgotovka.append(dop)
                 amount_podgotovka = amount_podgotovka + diff_sum 
+        elif info['name'] == 'рулевое колесо':
+            if info['all'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 96)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+            if info['perecras'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 99)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum 
+            if info['pereshiv'] > 0:
+                diff_sum    = 0
+                work        = RegPodgotovkaWork.objects.get(pk = 133)
+                diff_sum    = work.price_kors
+                dop = {
+                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + diff_sum 
         elif info['name'].find('сиденье') > 0 or info['name'].find('сидение') > 0:
             if info['pereshiv'] > 0:
                 diff_sum    = 0
@@ -5134,6 +5170,32 @@ def estimations_price_calculation(estimation, type_calculation):
             matrix_auction  = settings_matrix.charge_bcp_5001        
         cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
 
+    try:
+        if type_calculation == 'custom':
+            s = 1
+            estimation.page_soglasovanie.amount_podgotovka  = amount_podgotovka
+            estimation.page_soglasovanie.amount_ss          = amount_ss
+            estimation.page_soglasovanie.amount_mcu         = amount_mcu
+            estimation.page_soglasovanie.amount_recovery    = amount_podgotovka + amount_ss + amount_mcu
+            estimation.page_soglasovanie.save()
+        if type_calculation == 'kors':
+            estimation.page_soglasovanie.price_auto_1       = estimation_price
+            estimation.page_soglasovanie.price_auto_bcp_1   = cna_expenses
+            estimation.page_soglasovanie.price_zna_1        = zna
+            estimation.page_soglasovanie.save()
+        elif type_calculation == 'autohub':
+            estimation.page_soglasovanie.price_auto_2         = estimation_price
+            estimation.page_soglasovanie.price_auto_bcp_2     = cna_expenses
+            estimation.page_soglasovanie.price_zna_2          = zna
+            estimation.page_soglasovanie.save()
+        elif type_calculation == 'avito':
+            estimation.page_soglasovanie.price_auto_3         = estimation_price
+            estimation.page_soglasovanie.price_auto_bcp_3     = cna_expenses
+            estimation.page_soglasovanie.price_zna_3          = zna
+            estimation.page_soglasovanie.save()
+    except:
+        s= 1   
+
     price = {
         'kors_price_reception'          : kors_price_reception,
         'profit'                        : profit,
@@ -5308,7 +5370,7 @@ def eco_efficiency_analysis(request):
             price_percent_diffs.append(diff_percent)
             if diff_percent > 5:  # Выше на 5% и более
                 higher_count_after += 1
-            elif diff_percent < -5:  # Ниже на 5% и более
+            elif diff_percent < 0:  # Ниже на 5% и более
                 lower_count_after += 1
             else:  # В пределах ±5%
                 equal_count_after += 1
@@ -5324,7 +5386,7 @@ def eco_efficiency_analysis(request):
             diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
             if diff_percent > 5:  # Выше на 5% и более
                 higher_count_before += 1
-            elif diff_percent < -5:  # Ниже на 5% и более
+            elif diff_percent < 0:  # Ниже на 5% и более
                 lower_count_before += 1
             else:  # В пределах ±5%
                 equal_count_before += 1

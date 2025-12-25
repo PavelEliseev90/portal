@@ -35,7 +35,7 @@ from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
 from django.http import StreamingHttpResponse
-from task_manager.views import send_matrix_auction, info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
+from task_manager.views import send_settings_unit, send_matrix_auction, info_car_auction, refresh_estimation_cars_organization_run, refresh_auction, send_auction, refresh_car_my_kors_portal, kors_estimation_data, get_info_max, get_info_max_remote, send_files_estimations, send_message_socket, send_push_estimation, swap_estimation, refresh_avtoteka_vin, refresh_catalog_auto_ru, add_task, refresh_autohub, start_back_monitoring, refresh_queue_recognition, cvc_background, cvc_get_info, start_hystory_call, cvc_get_record_info, refresh_wash, cvc_record_info, refresh_price
 from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
@@ -7498,6 +7498,7 @@ def settings_autopricing_korsavto_unit(request, unit_id):
                 setattr(unit, f"discount_tt{legacy_suffix}", val)
 
         unit.save()
+        send_settings_unit(unit)
         return HttpResponseRedirect(request.build_absolute_uri())
 
     # Формируем структуру для отображения в шаблоне
@@ -8096,22 +8097,29 @@ def refresh_estimation_balance_unit(id_estimation):
                                                 zak_new = zak + price_info['iznos_price'] + price_info['amount_sum']  
                                                 
                                                 if doc.typeSale != 'Аукцион':
+                                                    manager_effency = 0
+                                                    if agreement.amount > zna:
+                                                       manager_effency = agreement.amount - zna
+
                                                     vr_int      = price_info['amount_sum'] 
                                                     var_sum     = vr_int - agreement.outlay
-                                                    #iznos       = price_info['iznos_price']
-                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum  + fin_prim - fin_fact) 
-                                                    val_itog    = cum - (t + kso_fact + bu_wheels_fact)
+                                                    iznos       = price_info['iznos_price']
+                                                    t           = zna - (zna - zna * kf / 100) - (zak + var_sum + iznos + fin_prim - fin_fact) 
+                                                    val_itog    = cum - (t + kso_fact + bu_wheels_fact) - manager_effency
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)
-                                                    #iznos   = ", Износ: " + str(price_info['iznos_price']) 
+                                                    iznos   = ", Износ: " + str(price_info['iznos_price']) 
                                                     vr      = ", ВР: " + str(price_info['amount_sum']) 
                                                     fin_r   = ", Финансирование расчетное: " + str(price_info['finance_price']) 
                                                     fin_f   = ", Финансирование факт: " + str(fin_fact) 
                                                     day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
+                                                    str_mef = ", МЭФ: {:,.2f}".format(manager_effency).replace(',', ' ')
                                                     new_record.shipment     = doc
                                                     new_record.amount_out   = val_itog
-                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + iznos  + str_mef + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    
                                                     new_record.save()                                
                 else:
                     count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
@@ -8885,7 +8893,7 @@ def sb_lo(request):
 def test(request):
     
     from register.models import RegInteractivOcenkaRLK
-    date_start = DT.datetime.now().replace(day=1, hour = 1)
+    date_start = DT.datetime.now().replace(day=22, hour = 1)
     count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
     s = 0
     estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
@@ -9065,8 +9073,8 @@ def test(request):
     #object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
     #refresh_estimation_cars_organization()
     
-    '''
-    object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 6, 1)).order_by('-start_estimation')
+    
+    object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 10, 1)).order_by('-start_estimation')
     s = 0
     count = object_estimations.count()
     object_estimations = object_estimations.values('rlk__pk')
@@ -9074,6 +9082,6 @@ def test(request):
         refresh_estimation_balance_unit(object_estimation['rlk__pk'])     
         s = s + 1
         print(str(s) + '/' + str(count))
-    '''
+    
 
     return render(request, "website/test.html")

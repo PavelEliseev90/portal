@@ -9,94 +9,99 @@
 {% block content %}
   
 {% if params.page == 'plans' %}
-<section class="settings-dc-page" id="plans-dashboard">
-  <div class="settings-dc-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <div>
-      <h2>Планы по приему и продажам</h2>
-      <p>Введите месячные планы для каждого подразделения и отслеживайте выполнение на дашборде.</p>
-    </div>
-    <a class="btn btn-link text-decoration-none" href="{{ request.path }}">&larr; Назад к дашборду</a>
-  </div>
-
-  <form method="get" class="settings-dc-filter">
-    <div class="row g-3 align-items-end">
-      <div class="col-sm-3">
-        <label class="form-label">Месяц</label>
-        <input type="month" class="form-control" name="plan_month" value="{{ params.plan_month_value }}">
-      </div>
-      <div class="col-sm">
-        <label class="form-label">Подразделения</label>
-        <select class="form-select" name="unit[]" multiple size="6">
-            {% for unit in params.select_units %}
-              <option value="{{ unit.pk }}" {% if unit.pk in params.plan_filter_ids %}selected{% endif %}>{{ unit.name }}</option>
-            {% endfor %}
-          </select>
-        <small class="text-muted">Оставьте поле пустым, чтобы показать все подразделения.</small>
-      </div>
-      <div class="col-sm-auto d-flex gap-2">
-        <input type="hidden" name="page" value="plans">
-        <button type="submit" class="btn btn-primary align-self-end"><span class="icon-mbri-play"></span> Применить</button>
-      </div>
-    </div>
-  </form>
-
-  <form method="post" action="{{ request.path }}?page=plans{% if params.plan_month_value %}&plan_month={{ params.plan_month_value }}{% endif %}{% for unit_id in params.plan_filter_ids %}&unit[]={{ unit_id }}{% endfor %}" class="settings-dc-panel">
-    {% csrf_token %}
-    <input type="hidden" name="plan_month" value="{{ params.plan_month_value }}">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <section class="settings-dc-page" id="plans-dashboard">
+    <div class="settings-dc-header d-flex flex-wrap justify-content-between align-items-center gap-2">
       <div>
-        <h5>Планы на {{ params.plan_month_value }}</h5>
-        <small class="text-muted">Значения указываются в количестве автомобилей.</small>
+        <h2>Планы по приему и продажам</h2>
+        <p>Введите месячные планы для каждого подразделения и отслеживайте выполнение на дашборде.</p>
       </div>
-      <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
-        <span class="icon-mbri-save"></span> Сохранить планы
-      </button>
+      <a class="btn btn-link text-decoration-none" href="{{ request.path }}">&larr; Назад к дашборду</a>
     </div>
-    <div class="p-0">
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Подразделение</th>
-              <th class="text-end" style="width: 160px;">Прием, шт.</th>
-              <th class="text-end" style="width: 160px;">Продажи, шт.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if params.plan_rows %}
-              {% for row in params.plan_rows %}
-                <tr>
-                  <td class="fw-semibold">{{ row.unit.name }}</td>
-                  <td>
-                    <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_intake_{{ row.unit.id }}" value="{{ row.plan_intake }}">
-                  </td>
-                  <td>
-                    <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_sale_{{ row.unit.id }}" value="{{ row.plan_sale }}">
-                  </td>
-                </tr>
+
+    <form method="get" class="settings-dc-filter">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-3">
+          <label class="form-label">Месяц</label>
+          <input type="month" class="form-control" name="plan_month" value="{{ params.plan_month_value }}">
+        </div>
+        <div class="col-sm">
+          <label class="form-label">Подразделения</label>
+          <select class="form-select" name="unit[]" multiple size="6">
+              {% for unit in params.select_units %}
+                <option value="{{ unit.pk }}" {% if unit.pk in params.plan_filter_ids %}selected{% endif %}>{{ unit.name }}</option>
               {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="3" class="text-center text-muted py-4">Нет выбранных подразделений для отображения.</td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
+            </select>
+          <small class="text-muted">Оставьте поле пустым, чтобы показать все подразделения.</small>
+        </div>
+        <div class="col-sm-auto d-flex gap-2">
+          <input type="hidden" name="page" value="plans">
+          <button type="submit" class="btn btn-primary align-self-end"><span class="icon-mbri-play"></span> Применить</button>
+        </div>
       </div>
-    </div>
-    <div class="text-end mt-3">
-      <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
-        <span class="icon-mbri-save"></span> Сохранить планы
-      </button>
-    </div>
-  </form>
-</section>
+    </form>
+
+    <form method="post" action="{{ request.path }}?page=plans{% if params.plan_month_value %}&plan_month={{ params.plan_month_value }}{% endif %}{% for unit_id in params.plan_filter_ids %}&unit[]={{ unit_id }}{% endfor %}" class="settings-dc-panel">
+      {% csrf_token %}
+      <input type="hidden" name="plan_month" value="{{ params.plan_month_value }}">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h5>Планы на {{ params.plan_month_value }}</h5>
+          <small class="text-muted">Значения указываются в количестве автомобилей.</small>
+        </div>
+        <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
+          <span class="icon-mbri-save"></span> Сохранить планы
+        </button>
+      </div>
+      <div class="p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Подразделение</th>
+                <th class="text-end" style="width: 160px;">Прием, шт.</th>
+                <th class="text-end" style="width: 160px;">Продажи, шт.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if params.plan_rows %}
+                {% for row in params.plan_rows %}
+                  <tr>
+                    <td class="fw-semibold">{{ row.unit.name }}</td>
+                    <td>
+                      <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_intake_{{ row.unit.id }}" value="{{ row.plan_intake }}">
+                    </td>
+                    <td>
+                      <input type="number" min="0" class="form-control form-control-sm text-end" name="plan_sale_{{ row.unit.id }}" value="{{ row.plan_sale }}">
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">Нет выбранных подразделений для отображения.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="text-end mt-3">
+        <button type="submit" name="save_unit_plans" value="1" class="btn btn-primary">
+          <span class="icon-mbri-save"></span> Сохранить планы
+        </button>
+      </div>
+    </form>
+  </section>
 {% else %}
-<section class="settings-dc-page">
-{% include 'kors/partials/dashboard_overview.html' %}
-</section>
+
+  {% if params.page == ''%}
+  <section class="settings-dc-page">
+    {% include 'kors/partials/dashboard_overview.html' %}
+  </section>
+  {% endif %}
 {% endif %}
+
 {% comment %}
+
 
 <div class="container-fluid py-3" id="dc-dashboard">
 
@@ -2138,28 +2143,21 @@
 
 {% if params.page == 'balance_unit' %}
   
-    <div class="row g-1">
-        
-      <div class="col-auto">
-        <a href="/korsavto/settings/" class="text-dark"> <span class="icon-mbri-database"> </span> На главную </a>
-      </div>
-
-      <div class="col-auto">
-        <a href="{{request.path}}?dc={{params.unit.pk}}&page=balance_units" class="text-dark"> <span class="icon-mbri-database"> </span> Суммы резервов подразделений </a>
-      </div>
-      
-      <div class="col-auto">
-        <span class="icon-mbri-setting"> </span> Суммы резервов <b> {{params.unit.name}} </b>
-      </div>
-      
+<div class="portal-page">
+  
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Резерв</h2>
+      <p>Резерв подразделения компании {{params.unit.name}}</p>
     </div>
+    <a href="{{request.path}}?dc={{params.unit.pk}}&page=balance_units" class="btn btn-link text-decoration-none">&larr; Назад к списку подразделений</a>
+  </div>
 
-    <br>
 
     <form method="get" class="">
-      <div class="card">
+      <div class="portal-panel">
   
-        <div class="card-body">
+        <div class="">
           
           <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
   
@@ -2222,8 +2220,6 @@
   
     </form>
   
-    <hr>
-    
     <div class="row g-1">
       <div class="col-auto">
         <div class="card bg-gradient bg-success bg-opacity-25 text-center">
@@ -2308,8 +2304,6 @@
 
     </script>
 
-    <hr>
-  
     {% for info in params.balance_unit %}
        
     <div class="card {% if info.amount > 0 %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10" style="margin: 0.2rem;" id="card_{{info.id}}" data="list" type_reception='{{info.estimation.page_documents.type_reception.name}}'>
@@ -2354,29 +2348,24 @@
     </div>
 
     {% endfor %}
-
+  </div>
 {% endif %}
 
 {% if params.page == 'balance_units' %}
-  
-  <div class="row g-1">
-      
-    <div class="col-auto">
-      <a href="/korsavto/settings/" class="text-dark"> <span class="icon-mbri-database"> </span> На главную </a>
+
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Резервы</h2>
+      <p>Резервы подразделений компании</p>
     </div>
-    
-    <div class="col-auto">
-      <span class="icon-mbri-setting"> </span> Суммы резервов
-    </div>
-    
+    <a href="/korsavto/settings/" class="btn btn-link text-decoration-none">&larr; Назад в дашборд</a>
   </div>
 
-  <br>
   
   <form method="get" class="">
-    <div class="card">
-
-      <div class="card-body">
+    <div class="portal-panel">
+      <div class="">
         
         <label class="fs-5" data-bs-toggle="collapse" data-bs-target="#filtr" aria-expanded="false" aria-controls="filtr"> <b> &nbsp; Параметры</b></label> 
 
@@ -2491,7 +2480,7 @@
     </table>
   </div>
 
-  
+</div>
 
 {% endif %}
 

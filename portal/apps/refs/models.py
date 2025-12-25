@@ -150,9 +150,9 @@ class RefOrganization(models.Model):
 
 
 AVTOHUB_DATA_USAGE_CHOICES = [
-    ('PCP', 'ПЦП'),
-    ('CNA', 'ЦНА'),
-    ('AVITO', 'АвитоОценка'),
+    ('ПЦП', 'ПЦП'),
+    ('ЦНА', 'ЦНА'),
+    ('АвитоОценка', 'АвитоОценка'),
 ]
 
 
