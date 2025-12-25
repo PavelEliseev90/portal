@@ -2224,18 +2224,34 @@ class RefCarsOrganization(models.Model):
                 cars_same_mark_similar = []
         
             # Приоритет 4: Та же марка, тот же объем двигателя
-            if hasattr(self.modification_autoru, 'engine_volume') and self.modification_autoru.engine_volume and self.modification_autoru.engine_volume > 0:
-                query = all_cars.filter(
-                    modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
-                ).exclude(
-                    modification_autoru__model__id=self.modification_autoru.model.id
-                ).filter(
-                    modification_autoru__engine_volume=self.modification_autoru.engine_volume
-                )
-                if self.unit:
-                    query = query.filter(unit=self.unit)
-                cars_same_mark_engine = query.order_by('-date_create')[:limit]
-            else:
+            try:
+                engine_volume = None
+                # Пробуем получить значение из поля engineVolume
+                if hasattr(self.modification_autoru, 'engineVolume'):
+                    engine_volume = getattr(self.modification_autoru, 'engineVolume', None)
+                    # Если это callable (метод), вызываем его
+                    if callable(engine_volume):
+                        engine_volume = engine_volume()
+                # Если не получилось, пробуем engine_volume
+                if not engine_volume and hasattr(self.modification_autoru, 'engine_volume'):
+                    engine_volume = getattr(self.modification_autoru, 'engine_volume', None)
+                    if callable(engine_volume):
+                        engine_volume = engine_volume()
+                
+                if engine_volume and isinstance(engine_volume, (int, float)) and engine_volume > 0:
+                    query = all_cars.filter(
+                        modification_autoru__model__mark__id=self.modification_autoru.model.mark.id
+                    ).exclude(
+                        modification_autoru__model__id=self.modification_autoru.model.id
+                    ).filter(
+                        modification_autoru__engineVolume=engine_volume
+                    )
+                    if self.unit:
+                        query = query.filter(unit=self.unit)
+                    cars_same_mark_engine = query.order_by('-date_create')[:limit]
+                else:
+                    cars_same_mark_engine = []
+            except (AttributeError, TypeError, ValueError):
                 cars_same_mark_engine = []
             
             # Приоритет 5: Та же марка, та же КПП
@@ -2358,12 +2374,35 @@ class RefCarsOrganization(models.Model):
                             score += 10
                     
                     # Тот же объем двигателя = +15 баллов
-                    if (car.modification_autoru and self.modification_autoru and 
-                        hasattr(car.modification_autoru, 'engine_volume') and 
-                        hasattr(self.modification_autoru, 'engine_volume') and
-                        car.modification_autoru.engine_volume and 
-                        car.modification_autoru.engine_volume == self.modification_autoru.engine_volume):
-                        score += 15
+                    if car.modification_autoru and self.modification_autoru:
+                        car_engine_volume = None
+                        self_engine_volume = None
+                        
+                        # Получаем объем двигателя для car
+                        if hasattr(car.modification_autoru, 'engineVolume'):
+                            car_engine_volume = getattr(car.modification_autoru, 'engineVolume', None)
+                            if callable(car_engine_volume):
+                                car_engine_volume = car_engine_volume()
+                        if not car_engine_volume and hasattr(car.modification_autoru, 'engine_volume'):
+                            car_engine_volume = getattr(car.modification_autoru, 'engine_volume', None)
+                            if callable(car_engine_volume):
+                                car_engine_volume = car_engine_volume()
+                        
+                        # Получаем объем двигателя для self
+                        if hasattr(self.modification_autoru, 'engineVolume'):
+                            self_engine_volume = getattr(self.modification_autoru, 'engineVolume', None)
+                            if callable(self_engine_volume):
+                                self_engine_volume = self_engine_volume()
+                        if not self_engine_volume and hasattr(self.modification_autoru, 'engine_volume'):
+                            self_engine_volume = getattr(self.modification_autoru, 'engine_volume', None)
+                            if callable(self_engine_volume):
+                                self_engine_volume = self_engine_volume()
+                        
+                        if (car_engine_volume and self_engine_volume and 
+                            isinstance(car_engine_volume, (int, float)) and 
+                            isinstance(self_engine_volume, (int, float)) and
+                            car_engine_volume == self_engine_volume):
+                            score += 15
                     
                     # Та же КПП = +10 баллов
                     if (car.modification_autoru and self.modification_autoru and 

@@ -430,6 +430,99 @@ def disposition(request):
         # Фильтр по акции (можно настроить по полю stage_price или другому)
         cars = cars.filter(stage_price__name__icontains='акция')
     
+    # Дополнительные фильтры
+    body_type_id = request.GET.get('body_type', '')
+    if body_type_id:
+        try:
+            cars = cars.filter(modification_autoru__typeBody__id=body_type_id)
+        except ValueError:
+            pass
+    
+    gear_type_id = request.GET.get('gear_type', '')
+    if gear_type_id:
+        try:
+            cars = cars.filter(modification_autoru__typeGear__id=gear_type_id)
+        except ValueError:
+            pass
+    
+    drive_type_id = request.GET.get('drive_type', '')
+    if drive_type_id:
+        try:
+            cars = cars.filter(type_drive__id=drive_type_id)
+        except ValueError:
+            pass
+    
+    evaluation_type_id = request.GET.get('evaluation_type', '')
+    if evaluation_type_id:
+        try:
+            cars = cars.filter(evaluation__id=evaluation_type_id)
+        except ValueError:
+            pass
+    
+    unit_id = request.GET.get('unit', '')
+    if unit_id:
+        try:
+            cars = cars.filter(unit__id=unit_id)
+        except ValueError:
+            pass
+    
+    store_id = request.GET.get('store', '')
+    if store_id:
+        try:
+            cars = cars.filter(store__id=store_id)
+        except ValueError:
+            pass
+    
+    color = request.GET.get('color', '').strip()
+    if color:
+        cars = cars.filter(color__icontains=color)
+    
+    run_start = request.GET.get('run_start', '')
+    if run_start:
+        try:
+            cars = cars.filter(run__gte=int(run_start))
+        except ValueError:
+            pass
+    
+    run_end = request.GET.get('run_end', '')
+    if run_end:
+        try:
+            cars = cars.filter(run__lte=int(run_end))
+        except ValueError:
+            pass
+    
+    engine_volume_start = request.GET.get('engine_volume_start', '')
+    if engine_volume_start:
+        try:
+            cars = cars.filter(modification_autoru__engineVolume__gte=float(engine_volume_start))
+        except (ValueError, AttributeError):
+            pass
+    
+    engine_volume_end = request.GET.get('engine_volume_end', '')
+    if engine_volume_end:
+        try:
+            cars = cars.filter(modification_autoru__engineVolume__lte=float(engine_volume_end))
+        except (ValueError, AttributeError):
+            pass
+    
+    days_in_stock_start = request.GET.get('days_in_stock_start', '')
+    if days_in_stock_start:
+        try:
+            days = int(days_in_stock_start)
+            target_date = datetime.now().date() - timedelta(days=days)
+            cars = cars.filter(date_create__lte=target_date)
+        except ValueError:
+            pass
+    
+    days_in_stock_end = request.GET.get('days_in_stock_end', '')
+    if days_in_stock_end:
+        try:
+            days = int(days_in_stock_end)
+            target_date = datetime.now().date() - timedelta(days=days)
+            cars = cars.filter(date_create__gte=target_date)
+        except ValueError:
+            pass
+    
     # Сортировка
     order_by = request.GET.get('order_by', '-date_create')
     if order_by:
@@ -448,6 +541,10 @@ def disposition(request):
         'statuses': RefStatusCarsOrganization.objects.all().order_by('name'),
         'stores': RefStore.objects.all().order_by('name'),
         'units': RefUnit.objects.filter(buauto=True).order_by('name'),
+        'body_types': RefTypeBody.objects.all().order_by('name'),
+        'gear_types': RefTypeKpp.objects.all().order_by('name'),
+        'drive_types': RefTypeDrive.objects.all().order_by('name'),
+        'evaluation_types': RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
     }
     
     # Если выбрана марка, загружаем модели
@@ -469,6 +566,19 @@ def disposition(request):
         'promotion': promotion,
         'select_count': select_count,
         'order_by': order_by,
+        'body_type': body_type_id,
+        'gear_type': gear_type_id,
+        'drive_type': drive_type_id,
+        'evaluation_type': evaluation_type_id,
+        'unit': unit_id,
+        'store': store_id,
+        'color': color,
+        'run_start': run_start,
+        'run_end': run_end,
+        'engine_volume_start': engine_volume_start,
+        'engine_volume_end': engine_volume_end,
+        'days_in_stock_start': days_in_stock_start,
+        'days_in_stock_end': days_in_stock_end,
     }
     
     params = {
