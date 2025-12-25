@@ -1176,7 +1176,14 @@
                                 Отдел продаж
                             </a>
                         </li>
-                            <div class="collapse {% if params.type == 'auction' or params.type == 'cars' or params.type == 'doc_car_agreement' or params.type == 'doc_car_shipment' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
+                            <div class="collapse {% if params.type == 'auction' or params.type == 'cars' or params.type == 'disposition' or params.type == 'doc_car_agreement' or params.type == 'doc_car_shipment' or params.type == 'links' or params.type == 'sms_opros_op' %} show {% endif %}" id="collapse_op" style="transition: 0.5s; padding-left: 1.5rem;">
+                                
+                                <li class="nav-item">
+                                    <a class="nav-link text-{% if params.type == 'disposition' %}secondary active {% else %}white{% endif %}" href="/cars/disposition/">
+                                        <span class="sidebar-icon bi bi-journal-text"></span>
+                                        Диспозиция 
+                                    </a>
+                                </li>
                                 
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'cars' %}secondary active {% else %}white{% endif %}" href="/cars/">
@@ -1185,12 +1192,6 @@
                                     </a>
                                 </li>
                                 <!--
-                                <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'docs_zn' %}secondary active {% else %}white{% endif %}" href="/docs_zn/">
-                                        <span class="sidebar-icon bi bi-journal-text"></span>
-                                        Диспозиция 
-                                    </a>
-                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-{% if params.type == 'online_doc' %}secondary active {% else %}white{% endif %}" href="/online_doc/">
                                         <span class="sidebar-icon bi bi-list-task"></span>

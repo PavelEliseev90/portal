@@ -540,10 +540,14 @@
 
 
   <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse_plans" aria-expanded="false" aria-controls="collapse_plans">
       <h5 class="mb-0">Выполнение планов по подразделениям</h5>
-      <span class="text-muted small">Месяц: {{ params.filtr.date_start|date:"m.Y" }}</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">Месяц: {{ params.filtr.date_start|date:"m.Y" }}</span>
+        <span class="icon-mbri-down"></span>
+      </div>
     </div>
+    <div class="collapse" id="collapse_plans">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover table-sm align-middle mb-0">
@@ -745,10 +749,14 @@
   </div>
 
   <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse_units" aria-expanded="false" aria-controls="collapse_units">
       <h5 class="mb-0">Подразделения</h5>
-      <span class="text-muted small">Всего: {{ params.dash.count_cars__sum|default:0 }} авто</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">Всего: {{ params.dash.count_cars__sum|default:0 }} авто</span>
+        <span class="icon-mbri-down"></span>
+      </div>
     </div>
+    <div class="collapse" id="collapse_units">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover table-sm align-middle mb-0">
@@ -835,6 +843,7 @@
         </table>
       </div>
     </div>
+    </div>
   </div>
 
   <div class="row g-3 mb-4">
@@ -910,15 +919,19 @@
   </div>
 
   <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse_znka" aria-expanded="false" aria-controls="collapse_znka">
       <h5 class="mb-0">Заказ-наряды КорсАвто по видам ремонта</h5>
-      {% if params.znka_summary.total.count %}
-        <span class="text-muted small">
-          Всего: {{ params.znka_summary.total.count|default:0 }} ЗН —
-          {{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽
-        </span>
-      {% endif %}
+      <div class="d-flex align-items-center gap-2">
+        {% if params.znka_summary.total.count %}
+          <span class="text-muted small">
+            Всего: {{ params.znka_summary.total.count|default:0 }} ЗН —
+            {{ params.znka_summary.total.amount|default:0|floatformat:"2g" }} ₽
+          </span>
+        {% endif %}
+        <span class="icon-mbri-down"></span>
+      </div>
     </div>
+    <div class="collapse" id="collapse_znka">
     <div class="card-body p-0">
       {% if params.znka_summary.units %}
         <div class="table-responsive">
@@ -969,6 +982,7 @@
         </div>
       {% endif %}
     </div>
+    </div>
   </div>
 
   <div class="card shadow-sm border-0">
@@ -992,6 +1006,17 @@
   </div>
 
 </div>
+
+<style>
+  /* Анимация иконки при открытии/закрытии */
+  [data-bs-toggle="collapse"] .icon-mbri-down {
+    transition: transform 0.3s ease;
+  }
+  
+  [data-bs-toggle="collapse"][aria-expanded="true"] .icon-mbri-down {
+    transform: rotate(180deg);
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -1423,5 +1448,25 @@
     initDashboardCharts();
   }
 })();
+
+// Обновление иконок при открытии/закрытии блоков
+document.addEventListener('DOMContentLoaded', function() {
+  const collapseElements = document.querySelectorAll('[data-bs-toggle="collapse"]');
+  
+  collapseElements.forEach(function(element) {
+    const targetId = element.getAttribute('data-bs-target');
+    const targetElement = document.querySelector(targetId);
+    
+    if (targetElement) {
+      targetElement.addEventListener('show.bs.collapse', function() {
+        element.setAttribute('aria-expanded', 'true');
+      });
+      
+      targetElement.addEventListener('hide.bs.collapse', function() {
+        element.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+});
 </script>
 
