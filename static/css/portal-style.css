@@ -2183,28 +2183,134 @@
 
 /* Стили для Select2 (если используется Select2) */
 .select2-container--default .select2-selection--single {
-  border-radius: 0.95rem;
+  background-color: #fff;
   border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.95rem;
   box-shadow: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   height: calc(3.5rem + 2px);
   min-height: calc(3.5rem + 2px);
-  padding: 1.2rem 0.75rem 0.625rem;
+  padding: 1.625rem 0.75rem 0.625rem;
+  display: flex;
+  align-items: center;
 }
 
-.select2-container--default .select2-selection--single:focus {
+.select2-container--default .select2-selection--single:hover {
+  border-color: rgba(0, 42, 90, 0.25);
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single {
+  border-color: #002a5a;
   box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
   outline: 0;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #212529;
+  line-height: 1.5;
   padding-left: 0;
   padding-right: 0;
+  padding-top: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #6c757d;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__arrow {
   height: calc(3.5rem + 2px);
   right: 0.75rem;
+  top: 0;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+  border-color: #8ea1ba transparent transparent transparent;
+  border-style: solid;
+  border-width: 5px 4px 0 4px;
+  height: 0;
+  left: 50%;
+  margin-left: -4px;
+  margin-top: -2px;
+  position: absolute;
+  top: 50%;
+  width: 0;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+  border-color: transparent transparent #8ea1ba transparent;
+  border-width: 0 4px 5px 4px;
+}
+
+/* Стили для множественного выбора Select2 */
+.select2-container--default .select2-selection--multiple {
+  background-color: #fff;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.95rem;
+  box-shadow: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  min-height: calc(3.5rem + 2px);
+  padding: 1.625rem 0.75rem 0.625rem;
+  cursor: text;
+}
+
+.select2-container--default .select2-selection--multiple:hover {
+  border-color: rgba(0, 42, 90, 0.25);
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple,
+.select2-container--default.select2-container--open .select2-selection--multiple {
+  border-color: #002a5a;
+  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+  outline: 0;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+  padding: 0;
+  padding-top: 0;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+  background-color: #e9ecef;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  border-radius: 0.5rem;
+  color: #212529;
+  padding: 0.25rem 0.5rem;
+  margin: 0.125rem;
+  display: inline-block;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+  color: #6c757d;
+  cursor: pointer;
+  display: inline-block;
+  font-weight: bold;
+  margin-right: 0.25rem;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+  color: #002a5a;
+}
+
+.select2-container--default .select2-selection--multiple .select2-search--inline {
+  margin-top: 0;
+}
+
+.select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+  background: transparent;
+  border: none;
+  outline: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  height: auto;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #212529;
 }
 
 /* Обертка для label при использовании Select2 */
@@ -2620,32 +2726,6 @@
   opacity: 0.65;
   transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
   color: #002a5a;
-}
-
-/* Стили для Select2 (если используется Select2) */
-.select2-container--default .select2-selection--single {
-  border-radius: 0.95rem;
-  border: 1px solid rgba(0, 42, 90, 0.15);
-  box-shadow: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-  height: calc(3.5rem + 2px);
-  min-height: calc(3.5rem + 2px);
-  padding: 1.2rem 0.75rem 0.625rem;
-}
-
-.select2-container--default .select2-selection--single:focus {
-  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
-  outline: 0;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-  height: calc(3.5rem + 2px);
-  right: 0.75rem;
 }
 
   :root {
