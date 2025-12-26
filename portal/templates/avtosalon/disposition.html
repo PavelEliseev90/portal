@@ -25,8 +25,8 @@
     </div>
   </div>
 
-  <!-- Фильтры -->
-  <div class="portal-panel mb-3">
+  <!-- Фильтры (скрыто на мобильных, показывается в модальном окне) -->
+  <div class="portal-panel mb-3 d-none d-lg-block">
     <form method="get" id="filtersForm">
       <input type="hidden" name="status" value="{{ params.filtr.status }}">
       
@@ -40,7 +40,7 @@
         
         <div class="col-12 col-md-6 col-lg-3">
           <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="mark" name="mark" onchange="loadModels(this.value)">
+            <select class="search-select kors-form-control" id="mark" name="mark" onchange="loadModels(this.value, false)">
               <option value="">Выберите марку</option>
               {% for mark in params.selected.marks %}
                 <option value="{{ mark.id }}" {% if params.filtr.mark == mark.id|stringformat:"s" %}selected{% endif %}>{{ mark.name }}</option>
@@ -373,88 +373,131 @@
     <!-- Мобильная версия -->
     <div class="d-lg-none">
       {% for car in params.page_obj %}
-        <div class="card mb-3">
-          <div class="card-body">
-            <div class="d-flex gap-3 mb-3">
-              <div style="flex-shrink: 0;">
-                {% if car.slug %}
-                  <a href="/cars/{{ car.slug }}/" target="_blank">
-                    <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 160px; height: 120px; object-fit: cover; cursor: pointer;">
-                  </a>
-                {% else %}
-                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 160px; height: 120px; object-fit: cover;">
+        <div class="mobile-car-card">
+          <!-- Фото на всю ширину с бейджем статуса -->
+          <div class="mobile-car-card__photo-wrapper">
+            {% if car.slug %}
+              <a href="/cars/{{ car.slug }}/" target="_blank" class="mobile-car-card__photo-link">
+                <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="mobile-car-card__photo">
+                {% if car.status %}
+                  <span class="mobile-car-card__badge">{{ car.status.name }}</span>
+                {% endif %}
+              </a>
+            {% else %}
+              <div class="mobile-car-card__photo-link">
+                <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="mobile-car-card__photo">
+                {% if car.status %}
+                  <span class="mobile-car-card__badge">{{ car.status.name }}</span>
                 {% endif %}
               </div>
-              <div class="flex-grow-1">
-                <h6 class="mb-1">
+            {% endif %}
+          </div>
+          
+          <!-- Контент карточки -->
+          <div class="mobile-car-card__content">
+            <!-- Заголовок и цена -->
+            <div class="mobile-car-card__header">
+              <div class="mobile-car-card__title-wrapper">
+                <h5 class="mobile-car-card__title">
                   {% if car.modification_autoru %}
-                    {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }} {{ car.modification_autoru.name }}
+                    {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }}
                   {% else %}
                     {{ car.mark }} {{ car.model }}
                   {% endif %}
-                </h6>
-                <small class="text-muted d-block">ВИН: {{ car.vin|default:"—" }}</small>
-                {% if car.plate_number %}
-                  <small class="text-muted d-block">Гос. номер: {{ car.plate_number }}</small>
+                </h5>
+                {% if car.complectation_autoru %}
+                  <p class="mobile-car-card__subtitle">{{ car.complectation_autoru.name }}</p>
                 {% endif %}
-                <div class="mt-2">
-                  <span class="badge bg-primary fs-6">{{ car.price|floatformat:"2g"|default:"—" }} ₽</span>
-                  {% if car.status %}
-                    <span class="badge bg-secondary ms-1">{{ car.status.name }}</span>
-                  {% endif %}
-                </div>
+              </div>
+              <div class="mobile-car-card__price">
+                <strong>{{ car.price|floatformat:"2g"|default:"—" }} ₽</strong>
               </div>
             </div>
             
-            <div class="row g-2">
-              <div class="col-6">
-                <small class="text-muted d-block">Год</small>
-                <strong>{{ car.year|default:"—" }}</strong>
+            <!-- Основные характеристики -->
+            <div class="mobile-car-card__specs">
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Год выпуска</span>
+                <span class="spec-value">{{ car.year|default:"—" }}</span>
               </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Пробег</small>
-                <strong>{{ car.run|floatformat:"0g"|default:"—" }} км</strong>
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Пробег</span>
+                <span class="spec-value">{{ car.run|floatformat:"0g"|default:"—" }} км</span>
               </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Филиал</small>
-                <strong>{{ car.unit.name|default:"—" }}</strong>
+              {% if car.vin %}
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">ВИН</span>
+                <span class="spec-value spec-value--small">{{ car.vin }}</span>
               </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Стоянка</small>
-                <strong>{{ car.store.name|default:"—" }}</strong>
+              {% endif %}
+              {% if car.plate_number %}
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Гос. номер</span>
+                <span class="spec-value">{{ car.plate_number }}</span>
               </div>
-              <div class="col-6">
-                <small class="text-muted d-block">На складе</small>
-                <strong>{{ car.days_in_stok|default:0 }} дн.</strong>
+              {% endif %}
+              {% if car.modification_autoru.typeBody %}
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Кузов</span>
+                <span class="spec-value">{{ car.modification_autoru.typeBody.name }}</span>
               </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Код заказа</small>
-                <strong>{{ car.lo_link_number|default:"—" }}</strong>
+              {% endif %}
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Филиал</span>
+                <span class="spec-value">{{ car.unit.name|default:"—" }}</span>
               </div>
-              {% if car.description_op %}
-                <div class="col-12">
-                  <small class="text-muted d-block">Примечание</small>
-                  <strong>{{ car.description_op|truncatewords:15 }}</strong>
-                </div>
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Стоянка</span>
+                <span class="spec-value">{{ car.store.name|default:"—" }}</span>
+              </div>
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">На складе</span>
+                <span class="spec-value">{{ car.days_in_stok|default:0 }} дн.</span>
+              </div>
+              {% if car.lo_link_number %}
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Лист оценки</span>
+                <span class="spec-value">{{ car.lo_link_number }}</span>
+              </div>
               {% endif %}
             </div>
             
-            <div class="mt-3">
-              {% if car.slug %}
-                <a href="/cars/{{ car.slug }}/" target="_blank" class="btn btn-sm btn-primary w-100">
-                  <span class="icon-mbri-file me-1"></span>Открыть карточку
-                </a>
-              {% else %}
-                <button class="btn btn-sm btn-outline-secondary w-100" disabled>
-                  Карточка недоступна
-                </button>
+            <!-- Дополнительные бейджи -->
+            {% if car.evaluation.name or car.modification_autoru.type_body.name or car.color %}
+            <div class="mobile-car-card__badges">
+              {% if car.evaluation.name %}
+                <span class="badge bg-light text-dark">{{ car.evaluation.name }}</span>
+              {% endif %}
+              {% if car.modification_autoru.type_body.name %}
+                <span class="badge bg-light text-dark">{{ car.modification_autoru.type_body.name }}</span>
+              {% endif %}
+              {% if car.color %}
+                <span class="badge bg-light text-dark">{{ car.color }}</span>
               {% endif %}
             </div>
+            {% endif %}
+            
+            <!-- Примечание -->
+            {% if car.description_op %}
+            <div class="mobile-car-card__note">
+              <small class="text-muted">{{ car.description_op|truncatewords:20 }}</small>
+            </div>
+            {% endif %}
+            
+            <!-- Кнопка открытия карточки -->
+            {% if car.slug %}
+            <div class="mobile-car-card__footer">
+              <a href="/cars/{{ car.slug }}/" target="_blank" class="btn btn-primary w-100">
+                <span class="icon-mbri-file me-2"></span>Открыть карточку
+              </a>
+            </div>
+            {% endif %}
           </div>
         </div>
       {% empty %}
-        <div class="text-center py-4 text-muted">
-          Нет автомобилей для отображения
+        <div class="text-center py-5 text-muted">
+          <span class="icon-mbri-search" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.3;"></span>
+          <p>Нет автомобилей для отображения</p>
         </div>
       {% endfor %}
     </div>
@@ -493,6 +536,243 @@
         </ul>
       </nav>
     {% endif %}
+  </div>
+</div>
+
+<!-- Мобильная кнопка фильтров (закреплена внизу) -->
+<div class="d-lg-none">
+  <button type="button" class="mobile-filters-button" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
+    <span class="icon-mbri-setting me-2"></span>
+    <span>Фильтры</span>
+    {% if params.has_filters %}
+      <span class="mobile-filters-button__badge">{{ params.total_cars_count }}</span>
+    {% endif %}
+  </button>
+</div>
+
+<!-- Модальное окно фильтров для мобильных -->
+<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mobileFiltersModalLabel">
+          <span class="icon-mbri-setting me-2"></span>Фильтры
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <form method="get" id="mobileFiltersForm">
+          <input type="hidden" name="status" value="{{ params.filtr.status }}">
+          
+          <div class="row g-2">
+            <div class="col-12">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="mobile_vin" name="vin" value="{{ params.filtr.vin }}" placeholder="ВИН">
+                <label for="mobile_vin">ВИН</label>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="mobile_mark" name="mark" onchange="loadModels(this.value, true)">
+                  <option value="">Выберите марку</option>
+                  {% for mark in params.selected.marks %}
+                    <option value="{{ mark.id }}" {% if params.filtr.mark == mark.id|stringformat:"s" %}selected{% endif %}>{{ mark.name }}</option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="mobile_mark">Марка</label>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="mobile_model" name="model[]" multiple>
+                  {% for model in params.all_models %}
+                    <option value="{{ model.id }}" {% if model.id|stringformat:"s" in params.filtr.model %}selected{% endif %}>{{ model.name }}</option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="mobile_model">Модель</label>
+              </div>
+            </div>
+            
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="mobile_year_start" name="year_start" value="{{ params.filtr.year_start }}" placeholder="Год от">
+                <label for="mobile_year_start">Год от</label>
+              </div>
+            </div>
+            
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="mobile_year_end" name="year_end" value="{{ params.filtr.year_end }}" placeholder="Год до">
+                <label for="mobile_year_end">Год до</label>
+              </div>
+            </div>
+            
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="mobile_price_start" name="price_start" value="{{ params.filtr.price_start }}" placeholder="Цена от" step="0.01">
+                <label for="mobile_price_start">Цена от</label>
+              </div>
+            </div>
+            
+            <div class="col-6">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="mobile_price_end" name="price_end" value="{{ params.filtr.price_end }}" placeholder="Цена до" step="0.01">
+                <label for="mobile_price_end">Цена до</label>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="mobile_stock_number" name="stock_number" value="{{ params.filtr.stock_number }}" placeholder="Ск. №">
+                <label for="mobile_stock_number">Ск. №</label>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <a href="#" class="text-decoration-none d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#mobileAdditionalFilters" aria-expanded="false">
+                <span>Дополнительные фильтры</span>
+                <span class="icon-mbri-down" id="mobileAdditionalFiltersIcon" style="transition: transform 0.3s ease;"></span>
+              </a>
+            </div>
+          </div>
+          
+          <div class="collapse mt-2" id="mobileAdditionalFilters">
+            <div class="row g-2">
+              <div class="col-12">
+                <div class="search-select-wrapper select2-wrapper">
+                  <select class="search-select kors-form-control" id="mobile_body_type" name="body_type[]" multiple>
+                    {% for body_type in params.selected.body_types %}
+                      <option value="{{ body_type.id }}" {% if body_type.id|stringformat:"s" in params.filtr.body_type %}selected{% endif %}>{{ body_type.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label class="fs-6" for="mobile_body_type">Тип кузова</label>
+                </div>
+              </div>
+              
+              <div class="col-12">
+                <div class="search-select-wrapper select2-wrapper">
+                  <select class="search-select kors-form-control" id="mobile_gear_type" name="gear_type[]" multiple>
+                    {% for gear_type in params.selected.gear_types %}
+                      <option value="{{ gear_type.id }}" {% if gear_type.id|stringformat:"s" in params.filtr.gear_type %}selected{% endif %}>{{ gear_type.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label class="fs-6" for="mobile_gear_type">Коробка передач</label>
+                </div>
+              </div>
+              
+              <div class="col-12">
+                <div class="search-select-wrapper select2-wrapper">
+                  <select class="search-select kors-form-control" id="mobile_drive_type" name="drive_type[]" multiple>
+                    {% for drive_type in params.selected.drive_types %}
+                      <option value="{{ drive_type.id }}" {% if drive_type.id|stringformat:"s" in params.filtr.drive_type %}selected{% endif %}>{{ drive_type.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label class="fs-6" for="mobile_drive_type">Привод</label>
+                </div>
+              </div>
+              
+              <div class="col-12">
+                <div class="search-select-wrapper select2-wrapper">
+                  <select class="search-select kors-form-control" id="mobile_evaluation_type" name="evaluation_type[]" multiple>
+                    {% for eval_type in params.selected.evaluation_types %}
+                      <option value="{{ eval_type.id }}" {% if eval_type.id|stringformat:"s" in params.filtr.evaluation_type %}selected{% endif %}>{{ eval_type.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label class="fs-6" for="mobile_evaluation_type">Тип оценки</label>
+                </div>
+              </div>
+              
+              <div class="col-12">
+                <div class="search-select-wrapper select2-wrapper">
+                  <select class="search-select kors-form-control" id="mobile_unit" name="unit[]" multiple>
+                    {% for unit in params.selected.units %}
+                      <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filtr.unit %}selected{% endif %}>{{ unit.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label class="fs-6" for="mobile_unit">Филиал</label>
+                </div>
+              </div>
+              
+              <div class="col-12">
+                <div class="search-select-wrapper select2-wrapper">
+                  <select class="search-select kors-form-control" id="mobile_store" name="store[]" multiple>
+                    {% for store in params.selected.stores %}
+                      <option value="{{ store.id }}" {% if store.id|stringformat:"s" in params.filtr.store %}selected{% endif %}>{{ store.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <label class="fs-6" for="mobile_store">Стоянка</label>
+                </div>
+              </div>
+              
+              <div class="col-12">
+                <div class="form-floating">
+                  <input type="text" class="form-control" id="mobile_color" name="color" value="{{ params.filtr.color }}" placeholder="Цвет">
+                  <label for="mobile_color">Цвет</label>
+                </div>
+              </div>
+              
+              <div class="col-6">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="mobile_run_start" name="run_start" value="{{ params.filtr.run_start }}" placeholder="Пробег от">
+                  <label for="mobile_run_start">Пробег от (км)</label>
+                </div>
+              </div>
+              
+              <div class="col-6">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="mobile_run_end" name="run_end" value="{{ params.filtr.run_end }}" placeholder="Пробег до">
+                  <label for="mobile_run_end">Пробег до (км)</label>
+                </div>
+              </div>
+              
+              <div class="col-6">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="mobile_engine_volume_start" name="engine_volume_start" value="{{ params.filtr.engine_volume_start }}" placeholder="Объем от" step="0.1">
+                  <label for="mobile_engine_volume_start">Объем от (л)</label>
+                </div>
+              </div>
+              
+              <div class="col-6">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="mobile_engine_volume_end" name="engine_volume_end" value="{{ params.filtr.engine_volume_end }}" placeholder="Объем до" step="0.1">
+                  <label for="mobile_engine_volume_end">Объем до (л)</label>
+                </div>
+              </div>
+              
+              <div class="col-6">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="mobile_days_in_stock_start" name="days_in_stock_start" value="{{ params.filtr.days_in_stock_start }}" placeholder="Дней на складе от">
+                  <label for="mobile_days_in_stock_start">Дней на складе от</label>
+                </div>
+              </div>
+              
+              <div class="col-6">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="mobile_days_in_stock_end" name="days_in_stock_end" value="{{ params.filtr.days_in_stock_end }}" placeholder="Дней на складе до">
+                  <label for="mobile_days_in_stock_end">Дней на складе до</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {% if params.has_filters %}
+            <div class="alert alert-info mt-3 mb-0">
+              <strong><span class="icon-mbri-search me-1"></span>Найдено: {{ params.total_cars_count }} авто</strong>
+            </div>
+          {% endif %}
+        </form>
+      </div>
+      <div class="modal-footer">
+        <a href="/cars/disposition/?status={{ params.filtr.status }}" class="btn btn-outline-secondary">
+          <span class="icon-mbri-close me-1"></span>Сбросить
+        </a>
+        <button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
+          <span class="icon-mbri-search me-1"></span>Применить
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -802,6 +1082,273 @@
       padding: 1rem;
     }
   }
+
+  /* ===== МОБИЛЬНАЯ ВЕРСИЯ КАРТОЧЕК ===== */
+  .mobile-car-card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    box-shadow: 0 2px 12px rgba(0, 23, 61, 0.1);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-car-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 23, 61, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .mobile-car-card__photo-wrapper {
+    width: 100%;
+    position: relative;
+    background: #f8f9fa;
+    overflow: hidden;
+  }
+
+  .mobile-car-card__photo-link {
+    display: block;
+    width: 100%;
+    position: relative;
+    padding-top: 66.67%; /* 3:2 соотношение сторон */
+    overflow: hidden;
+  }
+
+  .mobile-car-card__photo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-car-card__photo-link:hover .mobile-car-card__photo {
+    transform: scale(1.05);
+  }
+
+  .mobile-car-card__badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-car-card__content {
+    padding: 1.25rem;
+  }
+
+  .mobile-car-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .mobile-car-card__title-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-car-card__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+
+  .mobile-car-card__subtitle {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+  }
+
+  .mobile-car-card__price {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #00509d;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .mobile-car-card__specs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .mobile-car-card__spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
+
+  .mobile-car-card__spec-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .mobile-car-card__spec-row .spec-label {
+    font-size: 0.8125rem;
+    color: #8ea1ba;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    min-width: 110px;
+  }
+
+  .mobile-car-card__spec-row .spec-value {
+    font-size: 0.9375rem;
+    color: #002a5a;
+    font-weight: 500;
+    text-align: right;
+    word-break: break-word;
+    flex: 1;
+  }
+
+  .mobile-car-card__spec-row .spec-value--small {
+    font-size: 0.8125rem;
+    font-family: 'Courier New', monospace;
+  }
+
+  .mobile-car-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .mobile-car-card__note {
+    padding: 0.875rem;
+    background: #f8f9fa;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid #00509d;
+  }
+
+  .mobile-car-card__note small {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #495057;
+  }
+
+  .mobile-car-card__footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  /* ===== ЗАКРЕПЛЕННАЯ КНОПКА ФИЛЬТРОВ ===== */
+  .mobile-filters-button {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1000;
+    background: linear-gradient(140deg, #002c63, #00509d);
+    color: #fff;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 42, 90, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 140px;
+  }
+
+  .mobile-filters-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 42, 90, 0.5);
+    background: linear-gradient(140deg, #003b87, #0066cc);
+    color: #fff;
+  }
+
+  .mobile-filters-button:active {
+    transform: translateY(0);
+  }
+
+  .mobile-filters-button__badge {
+    margin-left: 0.5rem;
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Модальное окно для мобильных фильтров */
+  @media (max-width: 991.98px) {
+    #mobileFiltersModal .modal-dialog {
+      margin: 0;
+    }
+
+    #mobileFiltersModal .modal-content {
+      border-radius: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #mobileFiltersModal .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+    }
+
+    #mobileFiltersModal .modal-header {
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+      padding: 1rem 1.25rem;
+    }
+
+    #mobileFiltersModal .modal-footer {
+      border-top: 1px solid rgba(0, 42, 90, 0.1);
+      padding: 1rem 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    #mobileFiltersModal .modal-footer .btn {
+      flex: 1;
+    }
+  }
+
+  /* Анимация иконки дополнительных фильтров */
+  #mobileAdditionalFiltersIcon {
+    transition: transform 0.3s ease;
+  }
+
+  #mobileAdditionalFilters.show ~ #mobileAdditionalFiltersIcon,
+  #mobileAdditionalFilters.collapsing ~ #mobileAdditionalFiltersIcon {
+    transform: rotate(180deg);
+  }
 </style>
 
 <script>
@@ -812,13 +1359,13 @@ function changeStatus(status) {
   form.submit();
 }
 
-function loadModels(markId) {
+function loadModels(markId, isMobile = false) {
   if (typeof $ === 'undefined' || !$.fn.select2) {
     console.error('jQuery or Select2 not loaded');
     return;
   }
   
-  const modelSelect = $('#model');
+  const modelSelect = isMobile ? $('#mobile_model') : $('#model');
   
   if (!markId) {
     // Очищаем выбор и показываем все модели (опции уже загружены в шаблоне)
@@ -853,6 +1400,43 @@ function loadModels(markId) {
     .catch(error => console.error('Error:', error));
 }
 
+function applyMobileFilters() {
+  const mobileForm = document.getElementById('mobileFiltersForm');
+  const desktopForm = document.getElementById('filtersForm');
+  
+  // Копируем значения из мобильной формы в десктопную
+  const mobileInputs = mobileForm.querySelectorAll('input, select');
+  mobileInputs.forEach(mobileInput => {
+    const name = mobileInput.name;
+    if (name) {
+      // Для множественных select
+      if (mobileInput.multiple) {
+        const desktopInput = desktopForm.querySelector(`select[name="${name}"]`);
+        if (desktopInput) {
+          const selectedValues = Array.from(mobileInput.selectedOptions).map(opt => opt.value);
+          Array.from(desktopInput.options).forEach(opt => {
+            opt.selected = selectedValues.includes(opt.value);
+          });
+        }
+      } else {
+        const desktopInput = desktopForm.querySelector(`[name="${name}"]`);
+        if (desktopInput) {
+          desktopInput.value = mobileInput.value;
+        }
+      }
+    }
+  });
+  
+  // Закрываем модальное окно
+  const modal = bootstrap.Modal.getInstance(document.getElementById('mobileFiltersModal'));
+  if (modal) {
+    modal.hide();
+  }
+  
+  // Отправляем форму
+  desktopForm.submit();
+}
+
 // Инициализация Select2 и обработка дополнительных фильтров
 document.addEventListener('DOMContentLoaded', function() {
   // Проверяем наличие jQuery и Select2
@@ -861,7 +1445,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   
-  // Одиночный выбор для марки
+  // Одиночный выбор для марки (десктоп)
   $('#mark').select2({
     placeholder: 'Выберите марку',
     allowClear: true,
@@ -873,8 +1457,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Множественный выбор для модели
+  // Множественный выбор для модели (десктоп)
   $('#model').select2({
+    placeholder: 'Выберите модели',
+    allowClear: true,
+    width: '100%',
+    language: {
+      noResults: function() {
+        return "Результаты не найдены";
+      }
+    }
+  });
+
+  // Одиночный выбор для марки (мобильный)
+  $('#mobile_mark').select2({
+    placeholder: 'Выберите марку',
+    allowClear: true,
+    width: '100%',
+    language: {
+      noResults: function() {
+        return "Результаты не найдены";
+      }
+    }
+  });
+  
+  // Множественный выбор для модели (мобильный)
+  $('#mobile_model').select2({
     placeholder: 'Выберите модели',
     allowClear: true,
     width: '100%',
@@ -899,7 +1507,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Функция инициализации множественного выбора для дополнительных фильтров
-  function initMultiSelectFields() {
+  function initMultiSelectFields(isMobile = false) {
     const multiSelectFields = [
       'body_type',
       'gear_type', 
@@ -911,7 +1519,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     multiSelectFields.forEach(function(fieldId) {
       const fieldLabel = getFieldLabel(fieldId);
-      $(`#${fieldId}`).select2({
+      const selector = isMobile ? `#mobile_${fieldId}` : `#${fieldId}`;
+      $(selector).select2({
         placeholder: `Выберите ${fieldLabel}`,
         allowClear: true,
         width: '100%',
@@ -924,10 +1533,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Инициализируем множественный выбор
-  initMultiSelectFields();
+  // Инициализируем множественный выбор (десктоп)
+  initMultiSelectFields(false);
   
-  // Обработка иконки раскрытия/сворачивания дополнительных фильтров
+  // Инициализируем множественный выбор для мобильных фильтров
+  initMultiSelectFields(true);
+  
+  // Обработка иконки раскрытия/сворачивания дополнительных фильтров (десктоп)
   const additionalFiltersToggle = document.getElementById('additionalFiltersToggle');
   const additionalFiltersIcon = document.getElementById('additionalFiltersIcon');
   const additionalFilters = document.getElementById('additionalFilters');
@@ -943,12 +1555,30 @@ document.addEventListener('DOMContentLoaded', function() {
       additionalFiltersIcon.style.transform = 'rotate(180deg)';
       // Обновляем размер Select2 после раскрытия (небольшая задержка для корректного рендеринга)
       setTimeout(function() {
-        initMultiSelectFields();
+        initMultiSelectFields(false);
       }, 100);
     });
     
     additionalFilters.addEventListener('hide.bs.collapse', function() {
       additionalFiltersIcon.style.transform = 'rotate(0deg)';
+    });
+  }
+
+  // Обработка иконки раскрытия/сворачивания дополнительных фильтров (мобильный)
+  const mobileAdditionalFiltersIcon = document.getElementById('mobileAdditionalFiltersIcon');
+  const mobileAdditionalFilters = document.getElementById('mobileAdditionalFilters');
+  
+  if (mobileAdditionalFiltersIcon && mobileAdditionalFilters) {
+    mobileAdditionalFilters.addEventListener('show.bs.collapse', function() {
+      mobileAdditionalFiltersIcon.style.transform = 'rotate(180deg)';
+      // Обновляем размер Select2 после раскрытия
+      setTimeout(function() {
+        initMultiSelectFields(true);
+      }, 100);
+    });
+    
+    mobileAdditionalFilters.addEventListener('hide.bs.collapse', function() {
+      mobileAdditionalFiltersIcon.style.transform = 'rotate(0deg)';
     });
   }
 });
