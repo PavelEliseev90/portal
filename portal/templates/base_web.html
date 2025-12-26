@@ -2260,6 +2260,38 @@
             $('.nav-link-collapse').not(this).removeClass('nav-link-show');
             $(this).toggleClass('nav-link-show');
         });
+
+        // Управление классами has-value и has-focus для search-select-wrapper с Select2
+        function updateSelect2Label($select) {
+            var $wrapper = $select.closest('.search-select-wrapper.select2-wrapper');
+            if ($wrapper.length) {
+                var hasValue = $select.val() && $select.val() !== '';
+                var $container = $select.next('.select2-container');
+                var hasFocus = $container.hasClass('select2-container--focus') || $container.hasClass('select2-container--open');
+                
+                $wrapper.toggleClass('has-value', hasValue);
+                $wrapper.toggleClass('has-focus', hasFocus);
+            }
+        }
+
+        // Обработка событий Select2 для управления label
+        $(document).on('select2:open', '.search-select-wrapper.select2-wrapper .search-select', function() {
+            var $wrapper = $(this).closest('.search-select-wrapper.select2-wrapper');
+            $wrapper.addClass('has-focus');
+        }).on('select2:close', '.search-select-wrapper.select2-wrapper .search-select', function() {
+            var $wrapper = $(this).closest('.search-select-wrapper.select2-wrapper');
+            $wrapper.removeClass('has-focus');
+            updateSelect2Label($(this));
+        }).on('select2:select select2:unselect change', '.search-select-wrapper.select2-wrapper .search-select', function() {
+            updateSelect2Label($(this));
+        });
+
+        // Инициализация состояния при загрузке страницы (после инициализации Select2)
+        setTimeout(function() {
+            $('.search-select-wrapper.select2-wrapper .search-select').each(function() {
+                updateSelect2Label($(this));
+            });
+        }, 100);
     });
 
 </script>
