@@ -8009,28 +8009,77 @@ def refresh_estimation_balance_unit(id_estimation):
                                         kf                  = 100
                                         
                                         if zg.name == '200':
-                                            # if stage.pk == 1:
-                                            #     kf = unit.correction_txt_200 or unit.ratio_avtohub_txt_200
-                                            # elif stage.pk == 2:
-                                            #     kf = unit.correction_rdo_200 or unit.ratio_avtohub_rdo_200
-                                            # elif stage.pk == 3:
-                                            #     kf = unit.correction_kor_200 or unit.ratio_avtohub_kor_200
-                                            # elif stage.pk == 4:
-                                            kf = unit.correction_test_1c_200
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_200
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_200
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_200
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_200
                                         elif zg.name == '400':
-                                            kf = unit.correction_test_1c_400  
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_400
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_400
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_400
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_400  
                                         elif zg.name == '700':
-                                           kf = unit.correction_test_1c_700
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_700
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_700
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_700
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_700 
                                         elif zg.name == '1200' or zg.name == '1 200':
-                                            kf = unit.correction_test_1c_1200
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_1200
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_1200
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_1200
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_1200
                                         elif zg.name == '2000' or zg.name == '2 000':
-                                            kf = unit.correction_test_1c_2000
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_2000
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_2000
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_2000
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_2000 
                                         elif zg.name == '3000' or zg.name == '3 000' or zg.name == '3 001+':
-                                            kf = unit.correction_test_1c_3000
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_3000
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_3000
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_3000
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_3000
                                         elif zg.name == '5000' or zg.name == '5 000':
-                                           kf = unit.correction_test_1c_5001
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_5000
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_5000
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_5000
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_5000
                                         elif zg.name == '5 000' or zg.name == '5 000+':
-                                            kf = unit.correction_test_1c_5001
+                                            if stage.pk == 1:
+                                                kf = unit.correction_txt_1c_5001
+                                            elif stage.pk == 2:
+                                                kf = unit.correction_rdo_1c_5001
+                                            elif stage.pk == 3:
+                                                kf = unit.correction_kor_1c_5001
+                                            elif stage.pk == 4:
+                                                kf = unit.correction_test_1c_5001
 
                                         if estimation != None:
                                             
@@ -8061,30 +8110,16 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     
                                                     cm_r            = price_sale - cost_price_r
 
-                                                    cm_f            = agreement.amount - agreement.cost_price - agreement.outlay
+                                                    cm_f            = agreement.amount - agreement.cost_price
 
                                                     val_itog             = cm_f - cm_r
 
-                                                    vr_int      = price_info['amount_sum'] 
-                                                    var_sum     = vr_int - agreement.cost_price
-                                                    iznos       = price_info['iznos_price']
-                                                    t           = zna - (zna - zna * kf / 100) - (zak + agreement.outlay + iznos + fin_prim - fin_fact) 
-                                                    
-                                                    #val_itog      = agreement.amount - agreement.cost_price - agreement.outlay  - t - manager_effency
-                                                    #val_itog_1        = cum - (t + kso_fact + bu_wheels_fact) - manager_effency
-
-                                                    kso         = ", КСО: " + str(kso_fact)
-                                                    wheels      = ", БУРезина: " + str(bu_wheels_fact)
-                                                    iznos   = ", Износ: " + str(price_info['iznos_price']) 
-                                                    vr      = ", ВР: " + str(price_info['amount_sum']) 
-                                                    fin_r   = ", Финансирование расчетное: " + str(price_info['finance_price']) 
-                                                    fin_f   = ", Финансирование факт: " + str(fin_fact) 
-                                                    day_f   = ", Дней на складе: " + str(car_organization.days_in_stok) 
-                                                    str_mef = ", МЭФ: {:,.2f}".format(manager_effency).replace(',', ' ')
                                                     new_record.shipment     = doc
                                                     new_record.amount_out   = val_itog
                                                     
-                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + iznos  + str_mef + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
+                                                    new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', БЦП: ' + str(bcp) + ', Цена продажи рекомендуемая: ' + str(price_sale) + ", Фактическая цена продажи: " + str(agreement.amount) 
+                                                    
+                                                    #new_record.comment_2    = "ЦГ:" + str(zg) + ', Этап продажи: ' + str(stage) + ', ИРЦ: ' + str(kf) + ', ЦНА: ' + str(zna) + ', РекЦенаЗакупки: ' + str(zak) + iznos  + str_mef + vr + fin_r + fin_f + day_f +  kso +  wheels +  ', КМ: ' + str(cum)
                                                     
                                                     new_record.save()                                
                 else:
@@ -8858,55 +8893,55 @@ def sb_lo(request):
 
 def test(request):
     
-    from register.models import RegInteractivOcenkaRLK
-    date_start = DT.datetime.now().replace(day=22, hour = 1)
-    count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
-    s = 0
-    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
-    for estimation_id in estimations_id:
-        try:
-            estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-            estimation.save()
-            reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
+    # from register.models import RegInteractivOcenkaRLK
+    # date_start = DT.datetime.now().replace(day=22, hour = 1)
+    # count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
+    # s = 0
+    # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
+    # for estimation_id in estimations_id:
+    #     try:
+    #         estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+    #         estimation.save()
+    #         reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
 
-            if estimation.page_documents != None:
-                reg_interactiv.type_reception   = estimation.page_documents.type_reception
-                reg_interactiv.organization     = estimation.page_documents.organization
-                reg_interactiv.filial           = estimation.page_documents.filial
-                reg_interactiv.unit             = estimation.page_documents.unit
-                reg_interactiv.store            = estimation.page_documents.store
+    #         if estimation.page_documents != None:
+    #             reg_interactiv.type_reception   = estimation.page_documents.type_reception
+    #             reg_interactiv.organization     = estimation.page_documents.organization
+    #             reg_interactiv.filial           = estimation.page_documents.filial
+    #             reg_interactiv.unit             = estimation.page_documents.unit
+    #             reg_interactiv.store            = estimation.page_documents.store
 
-            reg_interactiv.staff_rlk            = estimation.staff
-            reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
-            reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
+    #         reg_interactiv.staff_rlk            = estimation.staff
+    #         reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
+    #         reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
             
-            reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
+    #         reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
             
-            reg_interactiv.status              = estimation.status
-            for uss in estimation.access_user.all():
-                reg_interactiv.access_user.add(uss)
+    #         reg_interactiv.status              = estimation.status
+    #         for uss in estimation.access_user.all():
+    #             reg_interactiv.access_user.add(uss)
             
-            reg_interactiv.save()
+    #         reg_interactiv.save()
             
 
-            if reg_interactiv.page_soglasovanie != None:
-                if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
-                    price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
-                    if price_autohub != None:
-                        reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
-                        reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                        reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-                        reg_interactiv_ocenka_soglasovanie.save()
+    #         if reg_interactiv.page_soglasovanie != None:
+    #             if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
+    #                 price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+    #                 if price_autohub != None:
+    #                     reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+    #                     reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+    #                     reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+    #                     reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+    #                     reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+    #                     reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+    #                     reg_interactiv_ocenka_soglasovanie.save()
 
-            estimation.save()
-        except:
-            ss = 1
+    #         estimation.save()
+    #     except:
+    #         ss = 1
 
-        s = s + 1 
-        print(' ' + str(s) + ' ' + str(count))
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count))
 
     # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
     # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
