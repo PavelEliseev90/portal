@@ -385,9 +385,12 @@ def disposition(request):
     if mark_id:
         cars = cars.filter(modification_autoru__model__mark__id=mark_id)
     
-    model_id = request.GET.get('model', '')
-    if model_id:
-        cars = cars.filter(modification_autoru__model__id=model_id)
+    model_ids = request.GET.getlist('model[]')
+    if model_ids:
+        try:
+            cars = cars.filter(modification_autoru__model__id__in=[int(mid) for mid in model_ids])
+        except ValueError:
+            pass
     
     year_start = request.GET.get('year_start', '')
     if year_start:
@@ -430,6 +433,99 @@ def disposition(request):
         # Фильтр по акции (можно настроить по полю stage_price или другому)
         cars = cars.filter(stage_price__name__icontains='акция')
     
+    # Дополнительные фильтры - множественный выбор
+    body_type_ids = request.GET.getlist('body_type[]')
+    if body_type_ids:
+        try:
+            cars = cars.filter(modification_autoru__typeBody__id__in=[int(btid) for btid in body_type_ids])
+        except ValueError:
+            pass
+    
+    gear_type_ids = request.GET.getlist('gear_type[]')
+    if gear_type_ids:
+        try:
+            cars = cars.filter(modification_autoru__typeGear__id__in=[int(gtid) for gtid in gear_type_ids])
+        except ValueError:
+            pass
+    
+    drive_type_ids = request.GET.getlist('drive_type[]')
+    if drive_type_ids:
+        try:
+            cars = cars.filter(type_drive__id__in=[int(dtid) for dtid in drive_type_ids])
+        except ValueError:
+            pass
+    
+    evaluation_type_ids = request.GET.getlist('evaluation_type[]')
+    if evaluation_type_ids:
+        try:
+            cars = cars.filter(evaluation__id__in=[int(etid) for etid in evaluation_type_ids])
+        except ValueError:
+            pass
+    
+    unit_ids = request.GET.getlist('unit[]')
+    if unit_ids:
+        try:
+            cars = cars.filter(unit__id__in=[int(uid) for uid in unit_ids])
+        except ValueError:
+            pass
+    
+    store_ids = request.GET.getlist('store[]')
+    if store_ids:
+        try:
+            cars = cars.filter(store__id__in=[int(sid) for sid in store_ids])
+        except ValueError:
+            pass
+    
+    color = request.GET.get('color', '').strip()
+    if color:
+        cars = cars.filter(color__icontains=color)
+    
+    run_start = request.GET.get('run_start', '')
+    if run_start:
+        try:
+            cars = cars.filter(run__gte=int(run_start))
+        except ValueError:
+            pass
+    
+    run_end = request.GET.get('run_end', '')
+    if run_end:
+        try:
+            cars = cars.filter(run__lte=int(run_end))
+        except ValueError:
+            pass
+    
+    engine_volume_start = request.GET.get('engine_volume_start', '')
+    if engine_volume_start:
+        try:
+            cars = cars.filter(modification_autoru__engineVolume__gte=float(engine_volume_start))
+        except (ValueError, AttributeError):
+            pass
+    
+    engine_volume_end = request.GET.get('engine_volume_end', '')
+    if engine_volume_end:
+        try:
+            cars = cars.filter(modification_autoru__engineVolume__lte=float(engine_volume_end))
+        except (ValueError, AttributeError):
+            pass
+    
+    days_in_stock_start = request.GET.get('days_in_stock_start', '')
+    if days_in_stock_start:
+        try:
+            days = int(days_in_stock_start)
+            target_date = datetime.now().date() - timedelta(days=days)
+            cars = cars.filter(date_create__lte=target_date)
+        except ValueError:
+            pass
+    
+    days_in_stock_end = request.GET.get('days_in_stock_end', '')
+    if days_in_stock_end:
+        try:
+            days = int(days_in_stock_end)
+            target_date = datetime.now().date() - timedelta(days=days)
+            cars = cars.filter(date_create__gte=target_date)
+        except ValueError:
+            pass
+    
     # Сортировка
     order_by = request.GET.get('order_by', '-date_create')
     if order_by:
@@ -437,10 +533,24 @@ def disposition(request):
     else:
         cars = cars.order_by('-date_create')
     
+    # Подсчет общего количества отфильтрованных автомобилей
+    total_cars_count = cars.count()
+    
     # Пагинация
     page_number = request.GET.get('page', 1)
     paginator = Paginator(cars, select_count)
     page_obj = paginator.get_page(page_number)
+    
+    # Проверка, есть ли активные фильтры (исключая статус, так как он всегда есть)
+    has_filters = bool(
+        vin or mark_id or model_ids or year_start or year_end or 
+        price_start or price_end or stock_number or (no_photo == 'on') or 
+        (promotion == 'on') or body_type_ids or gear_type_ids or 
+        drive_type_ids or evaluation_type_ids or unit_ids or 
+        store_ids or color or run_start or run_end or 
+        engine_volume_start or engine_volume_end or 
+        days_in_stock_start or days_in_stock_end
+    )
     
     # Данные для фильтров
     selected = {
@@ -448,18 +558,31 @@ def disposition(request):
         'statuses': RefStatusCarsOrganization.objects.all().order_by('name'),
         'stores': RefStore.objects.all().order_by('name'),
         'units': RefUnit.objects.filter(buauto=True).order_by('name'),
+        'body_types': RefTypeBody.objects.all().order_by('name'),
+        'gear_types': RefTypeKpp.objects.all().order_by('name'),
+        'drive_types': RefTypeDrive.objects.all().order_by('name'),
+        'evaluation_types': RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
     }
     
-    # Если выбрана марка, загружаем модели
-    models_list = []
+    # Загружаем модели (все для множественного выбора, или отфильтрованные по марке)
+    models_list = AutoruModel.objects.all().order_by('name')
     if mark_id:
-        models_list = AutoruModel.objects.filter(mark__id=mark_id).order_by('name')
+        models_list = models_list.filter(mark__id=mark_id)
+    
+    # Преобразуем списки в строки для шаблона (для удобства проверки selected)
+    model_ids_str = [str(mid) for mid in model_ids]
+    body_type_ids_str = [str(btid) for btid in body_type_ids]
+    gear_type_ids_str = [str(gtid) for gtid in gear_type_ids]
+    drive_type_ids_str = [str(dtid) for dtid in drive_type_ids]
+    evaluation_type_ids_str = [str(etid) for etid in evaluation_type_ids]
+    unit_ids_str = [str(uid) for uid in unit_ids]
+    store_ids_str = [str(sid) for sid in store_ids]
     
     filtr = {
         'status': status_type,
         'vin': vin,
         'mark': mark_id,
-        'model': model_id,
+        'model': model_ids_str,
         'year_start': year_start,
         'year_end': year_end,
         'price_start': price_start,
@@ -469,6 +592,19 @@ def disposition(request):
         'promotion': promotion,
         'select_count': select_count,
         'order_by': order_by,
+        'body_type': body_type_ids_str,
+        'gear_type': gear_type_ids_str,
+        'drive_type': drive_type_ids_str,
+        'evaluation_type': evaluation_type_ids_str,
+        'unit': unit_ids_str,
+        'store': store_ids_str,
+        'color': color,
+        'run_start': run_start,
+        'run_end': run_end,
+        'engine_volume_start': engine_volume_start,
+        'engine_volume_end': engine_volume_end,
+        'days_in_stock_start': days_in_stock_start,
+        'days_in_stock_end': days_in_stock_end,
     }
     
     params = {
@@ -478,6 +614,9 @@ def disposition(request):
         'selected': selected,
         'filtr': filtr,
         'models_list': models_list,
+        'all_models': AutoruModel.objects.all().order_by('name'),  # Все модели для множественного выбора
+        'total_cars_count': total_cars_count,
+        'has_filters': has_filters,
     }
     
     return render(request, "avtosalon/disposition.html", {'params': params})

@@ -8009,77 +8009,28 @@ def refresh_estimation_balance_unit(id_estimation):
                                         kf                  = 100
                                         
                                         if zg.name == '200':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_200 or unit.ratio_avtohub_txt_200
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_200 or unit.ratio_avtohub_rdo_200
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_200 or unit.ratio_avtohub_kor_200
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_200 or unit.ratio_avtohub_test_price_200
+                                            # if stage.pk == 1:
+                                            #     kf = unit.correction_txt_200 or unit.ratio_avtohub_txt_200
+                                            # elif stage.pk == 2:
+                                            #     kf = unit.correction_rdo_200 or unit.ratio_avtohub_rdo_200
+                                            # elif stage.pk == 3:
+                                            #     kf = unit.correction_kor_200 or unit.ratio_avtohub_kor_200
+                                            # elif stage.pk == 4:
+                                            kf = unit.correction_test_1c_200
                                         elif zg.name == '400':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_400 or unit.ratio_avtohub_txt_400
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_400 or unit.ratio_avtohub_rdo_400
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_400 or unit.ratio_avtohub_kor_400
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_400 or unit.ratio_avtohub_test_price_400   
+                                            kf = unit.correction_test_1c_400  
                                         elif zg.name == '700':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_700 or unit.ratio_avtohub_txt_700
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_700 or unit.ratio_avtohub_rdo_700
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_700 or unit.ratio_avtohub_kor_700
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_700 or unit.ratio_avtohub_test_price_700 
+                                           kf = unit.correction_test_1c_700
                                         elif zg.name == '1200' or zg.name == '1 200':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1200 or unit.ratio_avtohub_txt_1200
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1200 or unit.ratio_avtohub_rdo_1200
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1200 or unit.ratio_avtohub_kor_1200
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1200 or unit.ratio_avtohub_test_price_1200
+                                            kf = unit.correction_test_1c_1200
                                         elif zg.name == '2000' or zg.name == '2 000':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_2000 or unit.ratio_avtohub_txt_2000
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_2000 or unit.ratio_avtohub_rdo_2000
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_2000 or unit.ratio_avtohub_kor_2000
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_2000 or unit.ratio_avtohub_test_price_2000 
+                                            kf = unit.correction_test_1c_2000
                                         elif zg.name == '3000' or zg.name == '3 000' or zg.name == '3 001+':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_3000 or unit.ratio_avtohub_txt_3000
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_3000 or unit.ratio_avtohub_rdo_3000
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_3000 or unit.ratio_avtohub_kor_3000
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_3000 or unit.ratio_avtohub_test_price_3000
+                                            kf = unit.correction_test_1c_3000
                                         elif zg.name == '5000' or zg.name == '5 000':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_5000 or unit.ratio_avtohub_txt_5000
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_5000 or unit.ratio_avtohub_rdo_5000
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_5000 or unit.ratio_avtohub_kor_5000
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_5000 or unit.ratio_avtohub_test_price_5000
+                                           kf = unit.correction_test_1c_5001
                                         elif zg.name == '5 000' or zg.name == '5 000+':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_5001 or unit.ratio_avtohub_txt_5001
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_5001 or unit.ratio_avtohub_rdo_5001
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_5001 or unit.ratio_avtohub_kor_5001
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_5001 or unit.ratio_avtohub_test_price_5001
+                                            kf = unit.correction_test_1c_5001
 
                                         if estimation != None:
                                             
@@ -8104,14 +8055,23 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     
                                                     #if price_info['amount_sum'] > zna:
                                                     #   manager_effency = agreement.amount - zna
-                                                       
+                                                    bcp             = price_info['cna_expenses']     
+                                                    cost_price_r    = price_info['estimation_price'] 
+                                                    price_sale      = bcp * kf / 100
+                                                    
+                                                    cm_r            = price_sale - cost_price_r
+
+                                                    cm_f            = agreement.amount - agreement.cost_price - agreement.outlay
+
+                                                    val_itog             = cm_f - cm_r
+
                                                     vr_int      = price_info['amount_sum'] 
-                                                    var_sum     = vr_int - agreement.outlay
+                                                    var_sum     = vr_int - agreement.cost_price
                                                     iznos       = price_info['iznos_price']
                                                     t           = zna - (zna - zna * kf / 100) - (zak + agreement.outlay + iznos + fin_prim - fin_fact) 
                                                     
-                                                    val_itog      = agreement.amount - agreement.cost_price - agreement.outlay  - t - manager_effency
-                                                    val_itog_1        = cum - (t + kso_fact + bu_wheels_fact) - manager_effency
+                                                    #val_itog      = agreement.amount - agreement.cost_price - agreement.outlay  - t - manager_effency
+                                                    #val_itog_1        = cum - (t + kso_fact + bu_wheels_fact) - manager_effency
 
                                                     kso         = ", КСО: " + str(kso_fact)
                                                     wheels      = ", БУРезина: " + str(bu_wheels_fact)

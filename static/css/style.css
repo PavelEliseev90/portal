@@ -3380,18 +3380,7 @@ hr[style*="width: 75%"] {
 	padding: 0 0.75rem;
 }
 
-/* CSS ограничения для количества карточек в разделе "Может заинтересовать" - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ */
-/* Ограничение для всех размеров экрана - максимум 5 карточек */
-.row.g-3:has(.card.bg-white.bg-opacity-50) .col-12.col-sm-6:nth-child(n+6) {
-	display: none !important;
-}
 
-
-
-/* Альтернативный способ для браузеров без поддержки :has() */
-.row.g-3 .col-12.col-sm-6:nth-child(n+6) {
-	display: none !important;
-}
 
 /* Стили для кнопки "Показать еще" */
 .show-more-cars-btn {
