@@ -95,35 +95,11 @@
             <label for="stock_number">Ск. №</label>
           </div>
         </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-check form-switch mt-3">
-            <input class="form-check-input" type="checkbox" id="no_photo" name="no_photo" {% if params.filtr.no_photo == 'on' %}checked{% endif %}>
-            <label class="form-check-label" for="no_photo">Без фото</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-check form-switch mt-3">
-            <input class="form-check-input" type="checkbox" id="promotion" name="promotion" {% if params.filtr.promotion == 'on' %}checked{% endif %}>
-            <label class="form-check-label" for="promotion">Акция</label>
-          </div>
-        </div>
-        
+       
       </div>
       
-      {% if params.has_filters %}
-      <div class="mt-3">
-        <div class="alert alert-info mb-0 d-flex align-items-center justify-content-between">
-          <div>
-            <strong><span class="icon-mbri-search me-1"></span>Найдено автомобилей: {{ params.total_cars_count }}</strong>
-          </div>
-          <small class="text-muted">По текущим фильтрам</small>
-        </div>
-      </div>
-      {% endif %}
       
-      <div class="mt-2">
+      <div class="mt-2" style="padding-bottom: 0.5rem;">
         <a href="#" class="text-decoration-none small d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false" id="additionalFiltersToggle">
           <span>Дополнительные фильтры</span>
           <span class="icon-mbri-down" id="additionalFiltersIcon" style="transition: transform 0.3s ease;"></span>
@@ -249,149 +225,150 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-6 col-lg-3">
-        <div class="d-flex gap-2">
+      <div class="row g-1">
+        
+        <div class="col-auto">
           <button type="submit" class="btn btn-primary flex-fill">
             <span class="icon-mbri-search me-1"></span>Применить
           </button>
+        </div>
+
+        <div class="col-auto">
           <a href="/cars/disposition/?status={{ params.filtr.status }}" class="btn btn-outline-secondary">
             <span class="icon-mbri-close me-1"></span>Сбросить
           </a>
         </div>
+
+        <div class="col">
+          {% if params.has_filters %}
+            <div class="alert alert-info mb-0 d-flex align-items-center justify-content-between" style="padding: 0.5rem;">
+              <div>
+                <strong><span class="icon-mbri-search me-1"></span>Найдено автомобилей: {{ params.total_cars_count }}</strong>
+              </div>
+              <small class="text-muted">По текущим фильтрам</small>
+            </div>
+          {% endif %}            
+        </div>
+
       </div>
+      
 
     </form>
   </div>
 
-  <!-- Таблица автомобилей -->
+  <!-- Карточки автомобилей -->
   <div class="portal-panel">
-    <!-- Десктопная версия -->
-    <div class="table-responsive d-none d-lg-block">
-      <table class="table table-hover table-sm align-middle mb-0">
-        <thead class="table-light sticky-top">
-          <tr>
-            <th style="width: 80px;">Фото</th>
-            <th style="min-width: 100px;">ВИН</th>
-            <th style="min-width: 180px;">Модель</th>
-            <th style="min-width: 120px;">Комплектация</th>
-            <th style="min-width: 100px;">Год</th>
-            <th style="min-width: 80px;">Пробег</th>
-            <th style="min-width: 100px;">Филиал</th>
-            <th style="min-width: 100px;">Стоянка</th>
-            <th style="min-width: 80px;">На складе, дн</th>
-            <th style="min-width: 100px;">Код заказа</th>
-            <th style="min-width: 100px;">Статус</th>
-            <th style="min-width: 100px;">Тип оценки</th>
-            <th style="min-width: 80px;">Кузов</th>
-            <th style="min-width: 80px;">Двигатель</th>
-            <th style="min-width: 60px;">КПП</th>
-            <th style="min-width: 80px;">PPU</th>
-            <th style="min-width: 100px;">Цвет</th>
-            <th style="min-width: 120px;">Примечание</th>
-            <th style="min-width: 120px;">Цена продажи</th>
-            <th style="min-width: 120px;">Цена закупки</th>
-            <th style="min-width: 100px;">Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for car in params.page_obj %}
-            <tr>
-              <td>
-                {% if car.slug %}
-                  <a href="/cars/{{ car.slug }}/" target="_blank">
-                    <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 120px; height: 90px; object-fit: cover; cursor: pointer;">
-                  </a>
-                {% else %}
-                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 120px; height: 90px; object-fit: cover;">
-                {% endif %}
-              </td>
-              <td>
-                <strong>
-                  {% if car.modification_autoru %}
-                    {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }}
-                  {% else %}
-                    {{ car.mark }} {{ car.model }}
-                  {% endif %}
-                </strong>
-                {% if car.group_price %}
-                  <br><small class="text-muted">{{ car.group_price.name }}</small>
-                {% endif %}
-              </td>
-              <td>
-                <small class="text-muted d-block">{{ car.vin|default:"—" }}</small>
-                {% if car.plate_number %}
-                  <small class="text-muted">{{ car.plate_number }}</small>
-                {% endif %}
-              </td>
-              <td>
-                <small>
+    <!-- Десктопная версия - Вариант 1: Горизонтальные карточки -->
+    <div class="d-none d-lg-block">
+      <div class="disposition-cards-horizontal">
+        {% for car in params.page_obj %}
+          <div class="disposition-card-horizontal">
+            <div class="disposition-card-horizontal__photo-wrapper">
+              {% if car.slug %}
+                <a href="/cars/{{ car.slug }}/" target="_blank" class="disposition-card-horizontal__photo-link">
+                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="disposition-card-horizontal__photo">
+                  <span class="disposition-card-horizontal__badge">{{ car.status.name|default:"—" }}</span>
+                </a>
+              {% else %}
+                <div class="disposition-card-horizontal__photo-link">
+                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="disposition-card-horizontal__photo">
+                  <span class="disposition-card-horizontal__badge">{{ car.status.name|default:"—" }}</span>
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="disposition-card-horizontal__content">
+              <div class="disposition-card-horizontal__header">
+                <div>
+                  <h5 class="disposition-card-horizontal__title">
+                    {% if car.modification_autoru %}
+                      {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }} {{ car.modification_autoru.name }}
+                    {% else %}
+                      {{ car.mark }} {{ car.model }}
+                    {% endif %}
+                  </h5>
                   {% if car.complectation_autoru %}
-                    {{ car.complectation_autoru.name|truncatewords:3 }}
-                  {% else %}
-                    {{ car.modification|default:"—"|truncatewords:3 }}
+                    <p class="disposition-card-horizontal__subtitle mb-0">{{ car.complectation_autoru.name }}</p>
                   {% endif %}
-                </small>
-              </td>
-              <td>{{ car.year|default:"—" }}</td>
-              <td>{{ car.run|floatformat:"0g"|default:"—" }} км</td>
-              <td><small>{{ car.unit.name|default:"—" }}</small></td>
-              <td><small>{{ car.store.name|default:"—" }}</small></td>
-              <td>{{ car.days_in_stok|default:0 }}</td>
-              <td><small>{{ car.lo_link_number|default:"—" }}</small></td>
-              <td>
-                <span class="badge bg-secondary">{{ car.status.name|default:"—" }}</span>
-              </td>
-              <td><small>{{ car.evaluation.name|default:"—" }}</small></td>
-              <td><small>{{ car.type_body.name|default:"—" }}</small></td>
-              <td>
-                <small>
-                  {% if car.type_engine %}
-                    {{ car.type_engine.name }}
-                  {% elif car.modification_autoru %}
-                    {{ car.modification_autoru.engineVolume|default:"—" }} л
-                  {% else %}
-                    —
+                </div>
+                <div class="disposition-card-horizontal__price">
+                  <strong class="text-secondary">{{ car.price|floatformat:"2g"|default:"—" }} ₽</strong>
+                </div>
+              </div>
+              
+              <div class="disposition-card-horizontal__details">
+                <div class="disposition-card-horizontal__details-grid">
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Год:</span>
+                    <span class="detail-value">{{ car.year|default:"—" }}</span>
+                  </div>
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Пробег:</span>
+                    <span class="detail-value">{{ car.run|floatformat:"0g"|default:"—" }} км</span>
+                  </div>
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">ВИН:</span>
+                    <span class="detail-value">{{ car.vin|default:"—" }}</span>
+                  </div>
+                  {% if car.plate_number %}
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Гос. номер:</span>
+                    <span class="detail-value">{{ car.plate_number }}</span>
+                  </div>
                   {% endif %}
-                </small>
-              </td>
-              <td><small>{{ car.type_gear.name|default:"—" }}</small></td>
-              <td><small>{{ car.plate_number|default:"—" }}</small></td>
-              <td><small>{{ car.color|default:"—" }}</small></td>
-              <td>
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Кузов:</span>
+                    <span class="detail-value">{{ car.modification_autoru.typeBody.name}}</span>
+                  </div>
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Стоянка:</span>
+                    <span class="detail-value">{{ car.store.name|default:"—" }}</span>
+                  </div>
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Лист оценки:</span>
+                    <span class="detail-value">{{ car.lo_link_number|default:"—" }}</span>
+                  </div>
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">На складе:</span>
+                    <span class="detail-value">{{ car.days_in_stok|default:0 }} дн.</span>
+                  </div>
+                </div>
+                
                 {% if car.description_op %}
-                  <small class="text-truncate d-inline-block" style="max-width: 120px;" title="{{ car.description_op }}">
-                    {{ car.description_op|truncatewords:8 }}
-                  </small>
-                {% else %}
-                  <small>—</small>
+                <div class="disposition-card-horizontal__note mt-2">
+                  <small class="text-muted">{{ car.description_op|truncatewords:20 }}</small>
+                </div>
                 {% endif %}
-              </td>
-              <td class="text-end">
-                <strong>{{ car.price|floatformat:"2g"|default:"—" }} ₽</strong>
-              </td>
-              <td class="text-end">
-                <small>{{ car.cost_price|floatformat:"2g"|default:"—" }} ₽</small>
-              </td>
-              <td>
+              </div>
+              
+              <div class="disposition-card-horizontal__footer">
+                <div class="disposition-card-horizontal__meta">
+                  {% if car.evaluation.name %}
+                    <span class="badge bg-light text-dark me-2">{{ car.evaluation.name }}</span>
+                  {% endif %}
+                  {% if car.modification_autoru.type_body.name %}
+                    <span class="badge bg-light text-dark me-2">{{ car.modification_autoru.type_body.name }}</span>
+                  {% endif %}
+                  {% if car.color %}
+                    <span class="badge bg-light text-dark">{{ car.color }}</span>
+                  {% endif %}
+                </div>
                 {% if car.slug %}
-                  <a href="/cars/{{ car.slug }}/" target="_blank" class="btn btn-sm btn-outline-primary" title="Открыть карточку">
-                    <span class="icon-mbri-file"></span>
-                  </a>
-                {% else %}
-                  <span class="text-muted">—</span>
+                <a href="/cars/{{ car.slug }}/" target="_blank" class="btn btn-secondary btn-sm">
+                  <span class="icon-mbri-file me-1"></span>Открыть
+                </a>
                 {% endif %}
-              </td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="21" class="text-center py-4 text-muted">
-                Нет автомобилей для отображения
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="text-center py-5 text-muted">
+            Нет автомобилей для отображения
+          </div>
+        {% endfor %}
+      </div>
     </div>
+
     
     <!-- Мобильная версия -->
     <div class="d-lg-none">
@@ -402,16 +379,16 @@
               <div style="flex-shrink: 0;">
                 {% if car.slug %}
                   <a href="/cars/{{ car.slug }}/" target="_blank">
-                    <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 100px; height: 75px; object-fit: cover; cursor: pointer;">
+                    <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 160px; height: 120px; object-fit: cover; cursor: pointer;">
                   </a>
                 {% else %}
-                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 100px; height: 75px; object-fit: cover;">
+                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="img-thumbnail" style="width: 160px; height: 120px; object-fit: cover;">
                 {% endif %}
               </div>
               <div class="flex-grow-1">
                 <h6 class="mb-1">
                   {% if car.modification_autoru %}
-                    {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }}
+                    {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }} {{ car.modification_autoru.name }}
                   {% else %}
                     {{ car.mark }} {{ car.model }}
                   {% endif %}
@@ -520,58 +497,310 @@
 </div>
 
 <style>
-  /* Адаптивные стили для мобильных устройств */
-  @media (max-width: 768px) {
-    .table-responsive {
-      font-size: 0.85rem;
-    }
-    
-    .table th,
-    .table td {
-      padding: 0.5rem 0.25rem;
-      white-space: nowrap;
-    }
-    
-    .portal-panel {
-      padding: 1rem;
-    }
-    
-    .btn-sm {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-    }
+  /* ===== ВАРИАНТ 1: Горизонтальные карточки ===== */
+  .disposition-cards-horizontal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
   
-  /* Стики заголовок таблицы */
-  .table thead th {
-    position: sticky;
-    top: 0;
-    background-color: #f8f9fa;
-    z-index: 10;
-    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  .disposition-card-horizontal {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+    display: flex;
+    overflow: hidden;
+    transition: all 0.3s ease;
   }
   
-  /* Оптимизация таблицы - компактные ячейки */
-  .table td {
-    padding: 0.5rem 0.4rem;
+  .disposition-card-horizontal:hover {
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+    transform: translateY(-2px);
+    border-color: rgba(0, 42, 90, 0.2);
+  }
+  
+  .disposition-card-horizontal__photo-wrapper {
+    flex-shrink: 0;
+    width: 280px;
+    max-height: 300px;
+    position: relative;
+    background: #f8f9fa;
+  }
+  
+  .disposition-card-horizontal__photo-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+  }
+  
+  .disposition-card-horizontal__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+  
+  .disposition-card-horizontal__photo-link:hover .disposition-card-horizontal__photo {
+    transform: scale(1.05);
+  }
+  
+  .disposition-card-horizontal__badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+  }
+  
+  .disposition-card-horizontal__content {
+    flex: 1;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .disposition-card-horizontal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .disposition-card-horizontal__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0;
+    line-height: 1.3;
+  }
+  
+  .disposition-card-horizontal__subtitle {
     font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
   }
   
-  .table th {
-    padding: 0.75rem 0.4rem;
-    font-size: 0.8rem;
+  .disposition-card-horizontal__price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #00509d;
+    white-space: nowrap;
+  }
+  
+  .disposition-card-horizontal__details {
+    flex: 1;
+  }
+  
+  .disposition-card-horizontal__details-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem 1.5rem;
+  }
+  
+  .disposition-card-horizontal__detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .disposition-card-horizontal__detail-item .detail-label {
+    font-size: 0.75rem;
+    color: #8ea1ba;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     font-weight: 600;
   }
   
-  /* Фото автомобиля */
-  .table img.img-thumbnail {
-    border-radius: 0.375rem;
-    transition: transform 0.2s ease;
+  .disposition-card-horizontal__detail-item .detail-value {
+    font-size: 0.95rem;
+    color: #002a5a;
+    font-weight: 500;
   }
   
-  .table img.img-thumbnail:hover {
+  .disposition-card-horizontal__note {
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+  
+  .disposition-card-horizontal__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+  
+  .disposition-card-horizontal__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* ===== ВАРИАНТ 2: Карточки в сетке ===== */
+  .disposition-card-grid {
+    background: #fff;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 23, 61, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .disposition-card-grid:hover {
+    box-shadow: 0 12px 32px rgba(0, 23, 61, 0.15);
+    transform: translateY(-4px);
+    border-color: rgba(0, 42, 90, 0.2);
+  }
+  
+  .disposition-card-grid__photo {
+    position: relative;
+    width: 100%;
+    height: 240px;
+    overflow: hidden;
+    background: #f8f9fa;
+  }
+  
+  .disposition-card-grid__photo a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  
+  .disposition-card-grid__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  
+  .disposition-card-grid:hover .disposition-card-grid__image {
     transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .disposition-card-grid__badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+  }
+  
+  .disposition-card-grid__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 42, 90, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+  }
+  
+  .disposition-card-grid__overlay span {
+    font-size: 2rem;
+    color: #fff;
+  }
+  
+  .disposition-card-grid__photo:hover .disposition-card-grid__overlay {
+    opacity: 1;
+  }
+  
+  .disposition-card-grid__body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .disposition-card-grid__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0;
+    line-height: 1.3;
+  }
+  
+  .disposition-card-grid__subtitle {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: -0.5rem 0 0 0;
+  }
+  
+  .disposition-card-grid__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  
+  .disposition-card-grid__info-row {
+    font-size: 0.9rem;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .disposition-card-grid__price {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #00509d;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+  
+  .disposition-card-grid__footer {
+    margin-top: auto;
+  }
+  
+  /* Адаптивность */
+  @media (max-width: 1199px) {
+    .disposition-card-horizontal__details-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  @media (max-width: 991px) {
+    .disposition-card-horizontal__photo-wrapper {
+      width: 220px;
+    }
+    
+    .disposition-card-horizontal__details-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .portal-panel {
+      padding: 1rem;
+    }
   }
 </style>
 
