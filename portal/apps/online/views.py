@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 import datetime
-from online.models import Online_doc, Records_online_doc
+from online.models import Online_doc, Records_online_doc, PersonalDataConsent
 from refs.models import RefCity, RefUnit
 from django.conf import settings
 import json
@@ -168,3 +168,145 @@ def send_messages_unit(request, doc):
     msg = EmailMultiAlternatives(subject, text_content, from_email, to)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
+
+@csrf_exempt
+def personal_data_consent(request, token):
+    """
+    Отображение и обработка формы подтверждения обработки персональных данных
+    """
+    try:
+        consent = PersonalDataConsent.objects.get(token=token)
+    except PersonalDataConsent.DoesNotExist:
+        return render(request, 'online/personal_data_consent_404.html')
+    
+    # Если уже подтверждено, показываем страницу успеха
+    if consent.confirmed:
+        params = {
+            'consent': consent,
+            'confirmed': True
+        }
+        return render(request, 'online/personal_data_consent_success.html', {'params': params})
+    
+    # Если отозвано, показываем соответствующую страницу
+    if consent.revoked:
+        params = {
+            'consent': consent,
+            'revoked': True
+        }
+        return render(request, 'online/personal_data_consent_revoked.html', {'params': params})
+    
+    # Получаем IP адрес и User Agent
+    ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+    if ',' in ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    
+    # Если это первое открытие, сохраняем дату открытия
+    if not consent.date_opened:
+        consent.date_opened = datetime.datetime.now()
+        consent.ip_address = ip_address
+        consent.user_agent = user_agent
+        consent.save()
+    
+    # Обработка POST запроса (подтверждение)
+    if request.method == "POST":
+        if 'confirm' in request.POST:
+            # Валидация данных
+            last_name = request.POST.get('last_name', '').strip()
+            first_name = request.POST.get('first_name', '').strip()
+            middle_name = request.POST.get('middle_name', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            email = request.POST.get('email', '').strip()
+            agreement = request.POST.get('agreement', '')
+            
+            errors = []
+            
+            if not last_name:
+                errors.append("Необходимо указать фамилию")
+            if not first_name:
+                errors.append("Необходимо указать имя")
+            if not phone:
+                errors.append("Необходимо указать номер телефона")
+            if email and '@' not in email:
+                errors.append("Указан некорректный email адрес")
+            if agreement != 'on':
+                errors.append("Необходимо дать согласие на обработку персональных данных")
+            
+            if errors:
+                params = {
+                    'consent': consent,
+                    'errors': errors,
+                    'form_data': {
+                        'last_name': last_name,
+                        'first_name': first_name,
+                        'middle_name': middle_name,
+                        'phone': phone,
+                        'email': email
+                    }
+                }
+                return render(request, 'online/personal_data_consent.html', {'params': params})
+            
+            # Сохраняем данные и подтверждаем
+            consent.last_name = last_name
+            consent.first_name = first_name
+            consent.middle_name = middle_name
+            consent.phone = phone
+            consent.email = email
+            consent.confirmed = True
+            consent.date_confirmed = datetime.datetime.now()
+            consent.ip_address = ip_address
+            consent.user_agent = user_agent
+            
+            # Сохраняем текст согласия (версия на момент подтверждения)
+            consent.consent_text = get_consent_text()
+            
+            consent.save()
+            
+            # Перенаправляем на страницу успеха
+            return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Отображение формы
+    params = {
+        'consent': consent,
+        'form_data': {
+            'last_name': consent.last_name or '',
+            'first_name': consent.first_name or '',
+            'middle_name': consent.middle_name or '',
+            'phone': consent.phone or '',
+            'email': consent.email or ''
+        }
+    }
+    return render(request, 'online/personal_data_consent.html', {'params': params})
+
+
+def get_consent_text():
+    """
+    Возвращает актуальный текст согласия на обработку персональных данных
+    """
+    return """Я, действуя своей волей и в своем интересе, даю свое согласие на обработку моих персональных данных в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» на следующих условиях:
+
+1. Согласие дается на обработку следующих персональных данных:
+   - Фамилия, имя, отчество
+   - Номер телефона
+   - Email адрес (при указании)
+   - Иные данные, предоставленные мной в процессе взаимодействия
+
+2. Цели обработки персональных данных:
+   - Обработка заявок и запросов
+   - Предоставление услуг
+   - Информирование о предоставляемых услугах
+   - Ведение клиентской базы
+   - Иные цели, связанные с предоставлением услуг
+
+3. Способы обработки персональных данных:
+   - Сбор, запись, систематизация, накопление, хранение
+   - Уточнение (обновление, изменение), извлечение
+   - Использование, передача (распространение, предоставление, доступ)
+   - Обезличивание, блокирование, удаление, уничтожение
+
+4. Согласие действует до момента его отзыва путем направления соответствующего уведомления.
+
+5. Я подтверждаю, что предоставленные мной персональные данные являются достоверными.
+
+6. Я понимаю, что в случае отзыва согласия обработка персональных данных должна быть прекращена, а мои персональные данные уничтожены в срок, не превышающий 30 дней с даты поступления указанного отзыва."""

@@ -1,0 +1,175 @@
+{% extends 'base_web.html' %}
+
+{% block title %} Согласие на обработку персональных данных {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="container" style="max-width: 800px;">
+    <div class="portal-panel">
+      <div class="portal-header text-center mb-4">
+        <h2>Согласие на обработку персональных данных</h2>
+        <p class="text-muted">Пожалуйста, заполните форму для подтверждения согласия</p>
+      </div>
+
+      {% if params.errors %}
+        <div class="alert alert-danger" role="alert">
+          <strong>Ошибки при заполнении формы:</strong>
+          <ul class="mb-0 mt-2">
+            {% for error in params.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <form method="post" id="consentForm">
+        {% csrf_token %}
+        
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-md-4">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="last_name" name="last_name" 
+                     value="{{ params.form_data.last_name }}" 
+                     placeholder="Фамилия" required>
+              <label for="last_name">Фамилия <span class="text-danger">*</span></label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-4">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="first_name" name="first_name" 
+                     value="{{ params.form_data.first_name }}" 
+                     placeholder="Имя" required>
+              <label for="first_name">Имя <span class="text-danger">*</span></label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-4">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="middle_name" name="middle_name" 
+                     value="{{ params.form_data.middle_name }}" 
+                     placeholder="Отчество">
+              <label for="middle_name">Отчество</label>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-6">
+            <div class="form-floating">
+              <input type="tel" class="form-control" id="phone" name="phone" 
+                     value="{{ params.form_data.phone }}" 
+                     placeholder="+7 (999) 123-45-67" 
+                     pattern="[\+]?[0-9\s\-\(\)]+" required>
+              <label for="phone">Номер телефона <span class="text-danger">*</span></label>
+            </div>
+            <small class="text-muted">Формат: +7 (999) 123-45-67</small>
+          </div>
+          
+          <div class="col-12 col-md-6">
+            <div class="form-floating">
+              <input type="email" class="form-control" id="email" name="email" 
+                     value="{{ params.form_data.email }}" 
+                     placeholder="example@mail.ru">
+              <label for="email">Email (необязательно)</label>
+            </div>
+            <small class="text-muted">Укажите email для получения уведомлений</small>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="card border-primary">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">Текст согласия на обработку персональных данных</h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+              <div class="consent-text">
+                <p><strong>Я, действуя своей волей и в своем интересе, даю свое согласие на обработку моих персональных данных</strong> в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» на следующих условиях:</p>
+                
+                <p><strong>1. Согласие дается на обработку следующих персональных данных:</strong></p>
+                <ul>
+                  <li>Фамилия, имя, отчество</li>
+                  <li>Номер телефона</li>
+                  <li>Email адрес (при указании)</li>
+                  <li>Иные данные, предоставленные мной в процессе взаимодействия</li>
+                </ul>
+                
+                <p><strong>2. Цели обработки персональных данных:</strong></p>
+                <ul>
+                  <li>Обработка заявок и запросов</li>
+                  <li>Предоставление услуг</li>
+                  <li>Информирование о предоставляемых услугах</li>
+                  <li>Ведение клиентской базы</li>
+                  <li>Иные цели, связанные с предоставлением услуг</li>
+                </ul>
+                
+                <p><strong>3. Способы обработки персональных данных:</strong></p>
+                <ul>
+                  <li>Сбор, запись, систематизация, накопление, хранение</li>
+                  <li>Уточнение (обновление, изменение), извлечение</li>
+                  <li>Использование, передача (распространение, предоставление, доступ)</li>
+                  <li>Обезличивание, блокирование, удаление, уничтожение</li>
+                </ul>
+                
+                <p><strong>4. Согласие действует до момента его отзыва</strong> путем направления соответствующего уведомления.</p>
+                
+                <p><strong>5. Я подтверждаю, что предоставленные мной персональные данные являются достоверными.</strong></p>
+                
+                <p><strong>6. Я понимаю, что в случае отзыва согласия</strong> обработка персональных данных должна быть прекращена, а мои персональные данные уничтожены в срок, не превышающий 30 дней с даты поступления указанного отзыва.</p>
+                
+                <p class="text-muted small mt-3">
+                  <strong>Дата и время создания ссылки:</strong> {{ params.consent.date_created|date:"d.m.Y H:i" }}<br>
+                  {% if params.consent.date_opened %}
+                    <strong>Дата и время открытия:</strong> {{ params.consent.date_opened|date:"d.m.Y H:i" }}
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="agreement" name="agreement" required>
+            <label class="form-check-label" for="agreement">
+              <strong>Я подтверждаю, что ознакомился(ась) с текстом согласия на обработку персональных данных и даю свое согласие на обработку указанных выше персональных данных</strong>
+              <span class="text-danger">*</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2">
+          <button type="submit" name="confirm" class="btn btn-primary btn-lg">
+            <span class="icon-mbri-check me-2"></span>Подтвердить согласие
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .consent-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  
+  .consent-text ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .consent-text li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-check-label {
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .form-check-input:checked {
+    background-color: #00509d;
+    border-color: #00509d;
+  }
+</style>
+{% endblock %}
+
