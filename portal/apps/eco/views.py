@@ -3555,9 +3555,11 @@ def estimations_price_calculation(estimation, type_calculation):
     #        list_info_price.append(inf_price)
 
     # расчеты ремонта
+    autodex = 0
     if estimation.avtoteka_car_autodex > 0:
         price           = price - (estimation.avtoteka_car_autodex / 2)
         diff            = estimation.avtoteka_car_autodex / 2
+        autodex         = diff
         inf_price = {
             'price'     : price,
             'dif'       : diff,
@@ -5122,7 +5124,8 @@ def estimations_price_calculation(estimation, type_calculation):
             if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
                 difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price
 
-    cna_expenses = zna + difference_sum - amount_sum
+    #cna_expenses = zna + difference_sum - amount_sum
+    cna_expenses = zna - amount_sum - autodex
     
     if estimation_price < 1000:
         estimation_price = 1000

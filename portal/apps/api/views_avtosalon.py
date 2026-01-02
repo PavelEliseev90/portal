@@ -246,6 +246,10 @@ def refresh_cars(request):
     unit_json   = data['Unit']
     unit        = get_unit(unit_json)
     
+    one_car = False
+    if 'One' in data:
+        one_car = data['One'] 
+
     count_add   = 0
     count_del   = 0
     count_stock = 0
@@ -378,12 +382,13 @@ def refresh_cars(request):
         }
         list_load_photo.append(info_car)
     
-    cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0).exclude(pk__in = list_cars_id)    
-    for car in cars_update:
-        car.quantity = 0
-        car.save()
-        list_del.append(car.pk)
-    
+    if one_car == False:
+        cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0).exclude(pk__in = list_cars_id)    
+        for car in cars_update:
+            car.quantity = 0
+            car.save()
+            list_del.append(car.pk)
+        
     count_del   = len(list_del)
     count_stock = len(cars_json)
 
@@ -415,6 +420,7 @@ def refresh_cars(request):
     info = {
         'list_cars' : list_cars
     }
+
     return JsonResponse(info, status=status.HTTP_200_OK)
 
 
@@ -444,6 +450,9 @@ def load_photos(car, photos):
             photo_object.url_mini           = photo['UrlMini']
             photo_object.main               = photo['Main']
             
+            if 'Date' in photo:
+                photo_object.date = photo['Date']
+
             image_url   = photo['Url']
             response    = requests.get(image_url, stream=True)
             if response.status_code != requests.codes.ok:
