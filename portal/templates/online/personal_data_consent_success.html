@@ -1,0 +1,42 @@
+{% extends 'base_web.html' %}
+
+{% block title %} Согласие подтверждено {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="container" style="max-width: 600px;">
+    <div class="portal-panel text-center">
+      <div class="mb-4">
+        <div class="mb-3" style="font-size: 4rem; color: #22c55e;">
+          <span class="icon-mbri-success"></span>
+        </div>
+        <h2 class="text-success">Согласие успешно подтверждено!</h2>
+        <p class="text-muted">Ваше согласие на обработку персональных данных было успешно зарегистрировано.</p>
+      </div>
+
+      <div class="card border-success mb-4">
+        <div class="card-body text-start">
+          <h5 class="card-title">Информация о подтверждении:</h5>
+          <hr>
+          <p class="mb-2"><strong>ФИО:</strong> {{ params.consent.get_full_name }}</p>
+          <p class="mb-2"><strong>Телефон:</strong> {{ params.consent.phone }}</p>
+          {% if params.consent.email %}
+            <p class="mb-2"><strong>Email:</strong> {{ params.consent.email }}</p>
+          {% endif %}
+          <p class="mb-2"><strong>Дата и время подтверждения:</strong> {{ params.consent.date_confirmed|date:"d.m.Y H:i" }}</p>
+          {% if params.consent.unit %}
+            <p class="mb-0"><strong>Подразделение:</strong> {{ params.consent.unit.name }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <p class="mb-0">
+          <strong>Важно:</strong> Вы можете отозвать свое согласие в любое время, обратившись в нашу компанию.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

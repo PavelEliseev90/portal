@@ -1,0 +1,26 @@
+{% extends 'base_web.html' %}
+
+{% block title %} Ссылка не найдена {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="container" style="max-width: 600px;">
+    <div class="portal-panel text-center">
+      <div class="mb-4">
+        <div class="mb-3" style="font-size: 4rem; color: #ef4444;">
+          <span class="icon-mbri-close"></span>
+        </div>
+        <h2>Ссылка не найдена</h2>
+        <p class="text-muted">Запрошенная ссылка для подтверждения согласия на обработку персональных данных не существует или была удалена.</p>
+      </div>
+      
+      <div class="alert alert-warning">
+        <p class="mb-0">
+          Если вы считаете, что это ошибка, пожалуйста, свяжитесь с нами для получения новой ссылки.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -64,3 +64,69 @@ class Records_online_doc(models.Model):
         db_table = 'records_online_doc'
         verbose_name = "Подтверждение записи на сервис"
         verbose_name_plural = "Подтверждения записи на сервис"
+
+
+class PersonalDataConsent(models.Model):
+    """
+    Модель для хранения согласий на обработку персональных данных клиентов
+    """
+    # Уникальный токен для ссылки подтверждения
+    token = models.CharField("Уникальный токен", max_length=64, unique=True, db_index=True, blank=True)
+    
+    # Данные клиента
+    last_name = models.CharField("Фамилия", max_length=100, default='', blank=False)
+    first_name = models.CharField("Имя", max_length=100, default='', blank=False)
+    middle_name = models.CharField("Отчество", max_length=100, default='', blank=True)
+    phone = models.CharField("Номер телефона", max_length=20, default='', blank=False)
+    email = models.EmailField("Email", max_length=254, default='', blank=True)
+    
+    # Связи
+    customer = models.ForeignKey(RefCustomer, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Клиент")
+    unit = models.ForeignKey(RefUnit, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Подразделение")
+    
+    # Даты и время
+    date_created = models.DateTimeField("Дата и время создания ссылки", default=datetime.now, blank=False)
+    date_opened = models.DateTimeField("Дата и время открытия ссылки", null=True, blank=True)
+    date_confirmed = models.DateTimeField("Дата и время подтверждения", null=True, blank=True)
+    
+    # Техническая информация
+    ip_address = models.GenericIPAddressField("IP адрес", null=True, blank=True)
+    user_agent = models.TextField("User Agent", default='', blank=True)
+    
+    # Статус
+    confirmed = models.BooleanField("Подтверждено", default=False)
+    revoked = models.BooleanField("Отозвано", default=False)
+    date_revoked = models.DateTimeField("Дата и время отзыва", null=True, blank=True)
+    
+    # Юридический текст согласия (для хранения версии на момент подтверждения)
+    consent_text = models.TextField("Текст согласия", default='', blank=True)
+    
+    # Дополнительная информация
+    comment = models.TextField("Комментарий", default='', blank=True)
+    
+    def get_full_name(self):
+        """Получить полное ФИО"""
+        parts = [self.last_name, self.first_name]
+        if self.middle_name:
+            parts.append(self.middle_name)
+        return ' '.join(parts).strip()
+    
+    def save(self, *args, **kwargs):
+        """Автоматическая генерация токена при создании"""
+        if not self.token:
+            while True:
+                # Генерируем токен из безопасных символов
+                chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+                self.token = ''.join(random.choices(chars, k=32))
+                if not PersonalDataConsent.objects.filter(token=self.token).exists():
+                    break
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.get_full_name()} ({self.phone}) - {'Подтверждено' if self.confirmed else 'Не подтверждено'}"
+    
+    class Meta:
+        db_table = 'personal_data_consent'
+        verbose_name = "Согласие на обработку персональных данных"
+        verbose_name_plural = "Согласия на обработку персональных данных"
+        ordering = ['-date_created']
