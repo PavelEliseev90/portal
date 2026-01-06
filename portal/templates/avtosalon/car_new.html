@@ -358,21 +358,28 @@
 
 				</div>
 
-				{% if params.object.quantity > 0 and params.object.price > 0 %}
-					<div class="car-price-block mt-3">
-						<div class="car-price-value">
-							{% if params.object.reserve == 0 %}
-								{{params.object.price|floatformat:"2g"}} ₽
-							{% else %}	
-								В резерве
-							{% endif %}
-						</div>
-						<div class="d-flex justify-content-center gap-3" style="font-size: 0.85rem; opacity: 0.9;">
-							<span><span class="icon-mbri-preview"></span> {{params.object.view_card_cars}}</span>
-							<span><span class="icon-mbri-update"></span> {{params.object.date_refresh}}</span>
-						</div>
+			{% if params.object.quantity > 0 and params.object.price > 0 %}
+				<div class="car-price-block mt-3">
+					<div class="car-price-value">
+						{% if params.object.reserve == 0 %}
+							{{params.object.price|floatformat:"2g"}} ₽
+						{% else %}	
+							В резерве
+						{% endif %}
 					</div>
-				{% endif %}
+					<div class="d-flex justify-content-center gap-3" style="font-size: 0.85rem; opacity: 0.9;">
+						<span><span class="icon-mbri-preview"></span> {{params.object.view_card_cars}}</span>
+						<span><span class="icon-mbri-update"></span> {{params.object.date_refresh}}</span>
+					</div>
+					{% if request.user.is_authenticated %}
+						<div class="d-flex justify-content-center mt-3">
+							<button type="button" class="btn btn-primary" onclick="printPriceTag()">
+								<span class="icon-mbri-print"></span> Печать ценника
+							</button>
+						</div>
+					{% endif %}
+				</div>
+			{% endif %}
 			</div>
 				
 
@@ -2100,4 +2107,534 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 }
 </style>
+
+<!-- Блок для печати ценника (скрыт на экране) -->
+{% if request.user.is_authenticated and params.object.quantity > 0 and params.object.price > 0 %}
+<div id="priceTagContent" class="price-tag-print" style="display: none;">
+	<div class="price-tag-container">
+		<!-- Шапка с логотипами -->
+		<div class="price-tag-header">
+			<div class="price-tag-logo-left">
+				<div class="kors-logo-text">корс</div>
+				<div class="kors-logo-badge">авто</div>
+			</div>
+			<div class="price-tag-logo-right">
+				<div class="kors-group-logo">
+					<span class="kors-group-k">K</span>
+					<div class="kors-group-text">
+						<div class="kors-group-name">КорсГрупп</div>
+						<div class="kors-group-subtitle">автомобильный холдинг</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Название автомобиля -->
+		<div class="price-tag-title">
+			{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
+		</div>
+
+		<!-- Цена -->
+		{% if params.object.reserve == 0 %}
+		<div class="price-tag-price">
+			{{params.object.price|floatformat:"2g"}} ₽
+		</div>
+		{% else %}
+		<div class="price-tag-price price-tag-price-reserved">
+			В резерве
+		</div>
+		{% endif %}
+
+		<!-- Основной контент -->
+		<div class="price-tag-main">
+			<!-- Левая часть: логотип марки и номер -->
+			<div class="price-tag-left">
+				<div class="price-tag-brand-logo">
+					<img src="{{params.object.logo}}" alt="{{params.object.modification_autoru.model.mark.name}}" class="brand-logo-img">
+				</div>
+				<div class="price-tag-number">
+					{% if params.object.id %}{{params.object.id}}{% else %}{{params.object.slug|slice:":6"}}{% endif %}
+				</div>
+			</div>
+
+			<!-- Правая часть: характеристики -->
+			<div class="price-tag-specs">
+				<div class="spec-row">
+					<div class="spec-item">
+						<span class="spec-label">Год выпуска:</span>
+						<span class="spec-value">{{params.object.year}}</span>
+					</div>
+					<div class="spec-item">
+						<span class="spec-label">Пробег:</span>
+						<span class="spec-value">{{params.object.run|floatformat:"0g"|default_if_none:"---"}} км</span>
+					</div>
+				</div>
+				<div class="spec-row">
+					<div class="spec-item">
+						<span class="spec-label">Объем двигателя:</span>
+						<span class="spec-value">{{params.object.modification_autoru.engine_volume}} см³</span>
+					</div>
+					<div class="spec-item">
+						<span class="spec-label">Мощность:</span>
+						<span class="spec-value">{{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.с.</span>
+					</div>
+				</div>
+				<div class="spec-row">
+					<div class="spec-item">
+						<span class="spec-label">Коробка передач:</span>
+						<span class="spec-value">{{params.object.modification_autoru.typeGear.name}}</span>
+					</div>
+					<div class="spec-item">
+						<span class="spec-label">Привод:</span>
+						<span class="spec-value">{{params.object.type_drive.name}}</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Услуги -->
+		<div class="price-tag-services">
+			<div class="service-item">
+				<div class="service-icon">
+					<span class="icon-mbri-file"></span>
+				</div>
+				<div class="service-text">Юридическая гарантия</div>
+			</div>
+			<div class="service-item">
+				<div class="service-icon service-icon-percent">
+					<span>0%</span>
+				</div>
+				<div class="service-text">Кредит без первоначального взноса</div>
+			</div>
+			<div class="service-item">
+				<div class="service-icon service-icon-exchange">
+					<span class="icon-mbri-refresh"></span>
+				</div>
+				<div class="service-text">Обмен автомобиля на этот со скидкой</div>
+			</div>
+			<div class="service-item">
+				<div class="service-icon service-icon-casco">
+					<span>КАСКО</span>
+				</div>
+				<div class="service-text">Все виды страхования</div>
+			</div>
+		</div>
+
+		<!-- Нижняя часть: QR код и сайт -->
+		<div class="price-tag-footer">
+			<div class="price-tag-qr-section">
+				<div class="qr-label">Отсканируйте смартфоном</div>
+				<div class="qr-code-wrapper">
+					<div id="qrCodeContainer" class="qr-code-container"></div>
+				</div>
+				<div class="qr-label-bottom">онлайн каталог</div>
+			</div>
+			<div class="price-tag-website">
+				www.korsavto.ru
+			</div>
+		</div>
+
+		<!-- Изображение автомобиля (если есть) -->
+		{% if params.object.get_photo_mini %}
+		<div class="price-tag-car-image">
+			<img src="{{params.object.get_photo_mini}}" alt="{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}" class="car-image-print">
+		</div>
+		{% endif %}
+
+		<!-- Дополнительная информация -->
+		<div class="price-tag-additional">
+			<div class="price-tag-id">
+				{% if params.object.id %}{{params.object.id}}{% else %}{{params.object.slug|slice:":6"}}{% endif %}
+			</div>
+			{% if params.object.unit %}
+			<div class="price-tag-unit">
+				<span class="icon-mbri-home"></span> {{params.object.unit.name}}
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<style>
+/* Стили для печати ценника */
+.price-tag-print {
+	display: none;
+}
+
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	
+	.price-tag-print,
+	.price-tag-print * {
+		visibility: visible;
+	}
+	
+	.price-tag-print {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		display: block !important;
+	}
+	
+	.price-tag-container {
+		width: 210mm;
+		height: 297mm;
+		margin: 0;
+		padding: 15mm;
+		background: #fff;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		font-family: 'Arial', 'Helvetica', sans-serif;
+		page-break-after: always;
+	}
+	
+	.price-tag-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 20px;
+		padding-bottom: 15px;
+		border-bottom: 2px solid #002a5a;
+	}
+	
+	.price-tag-logo-left {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	
+	.kors-logo-text {
+		font-size: 24px;
+		font-weight: bold;
+		color: #000;
+		letter-spacing: 1px;
+	}
+	
+	.kors-logo-badge {
+		background: #ffd500;
+		color: #000;
+		padding: 4px 12px;
+		border-radius: 15px;
+		font-size: 14px;
+		font-weight: bold;
+	}
+	
+	.kors-group-logo {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	
+	.kors-group-k {
+		font-size: 32px;
+		font-weight: bold;
+		color: #002a5a;
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 3px solid #002a5a;
+		border-radius: 8px;
+	}
+	
+	.kors-group-name {
+		font-size: 18px;
+		font-weight: bold;
+		color: #002a5a;
+		line-height: 1.2;
+	}
+	
+	.kors-group-subtitle {
+		font-size: 11px;
+		color: #666;
+		line-height: 1.2;
+	}
+	
+	.price-tag-title {
+		font-size: 42px;
+		font-weight: bold;
+		color: #000;
+		text-align: center;
+		margin: 20px 0 10px 0;
+		text-transform: uppercase;
+		letter-spacing: 2px;
+	}
+	
+	.price-tag-price {
+		font-size: 48px;
+		font-weight: bold;
+		color: #e74c3c;
+		text-align: center;
+		margin: 0 0 25px 0;
+		letter-spacing: 1px;
+	}
+	
+	.price-tag-price-reserved {
+		color: #f59e0b;
+		font-size: 36px;
+	}
+	
+	.price-tag-main {
+		display: flex;
+		gap: 30px;
+		margin: 25px 0;
+		flex: 1;
+	}
+	
+	.price-tag-left {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+		min-width: 120px;
+	}
+	
+	.price-tag-brand-logo {
+		margin-bottom: 15px;
+	}
+	
+	.brand-logo-img {
+		max-width: 80px;
+		max-height: 80px;
+		object-fit: contain;
+	}
+	
+	.price-tag-number {
+		font-size: 36px;
+		font-weight: bold;
+		color: #000;
+	}
+	
+	.price-tag-specs {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	
+	.spec-row {
+		display: flex;
+		gap: 30px;
+	}
+	
+	.spec-item {
+		flex: 1;
+		display: flex;
+		justify-content: space-between;
+		padding: 8px 0;
+		border-bottom: 1px solid #e0e0e0;
+	}
+	
+	.spec-label {
+		font-size: 14px;
+		color: #666;
+		font-weight: 500;
+	}
+	
+	.spec-value {
+		font-size: 14px;
+		color: #000;
+		font-weight: bold;
+	}
+	
+	.price-tag-services {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 15px;
+		margin: 25px 0;
+		padding: 20px;
+		background: #f8f9fa;
+		border-radius: 8px;
+	}
+	
+	.service-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+	
+	.service-icon {
+		width: 60px;
+		height: 60px;
+		border-radius: 50%;
+		background: #002a5a;
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 24px;
+		font-weight: bold;
+		margin-bottom: 8px;
+	}
+	
+	.service-icon-percent {
+		background: linear-gradient(135deg, #22c55e, #16a34a);
+		font-size: 20px;
+	}
+	
+	.service-icon-exchange {
+		background: linear-gradient(135deg, #f59e0b, #d97706);
+	}
+	
+	.service-icon-casco {
+		background: linear-gradient(135deg, #3b82f6, #2563eb);
+		font-size: 12px;
+		padding: 5px;
+	}
+	
+	.service-text {
+		font-size: 11px;
+		color: #333;
+		font-weight: 500;
+		line-height: 1.3;
+	}
+	
+	.price-tag-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 20px;
+		padding-top: 20px;
+		border-top: 2px solid #002a5a;
+	}
+	
+	.price-tag-qr-section {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+	}
+	
+	.qr-label {
+		font-size: 12px;
+		color: #666;
+		font-weight: 500;
+		text-align: center;
+	}
+	
+	.qr-code-wrapper {
+		width: 100px;
+		height: 100px;
+		padding: 8px;
+		background: #fff;
+		border: 2px solid #002a5a;
+		border-radius: 8px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.qr-code-container {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.qr-code-container canvas,
+	.qr-code-container img {
+		max-width: 100%;
+		max-height: 100%;
+	}
+	
+	.price-tag-website {
+		font-size: 28px;
+		font-weight: bold;
+		color: #002a5a;
+		letter-spacing: 1px;
+	}
+	
+	.price-tag-car-image {
+		margin: 20px 0;
+		text-align: center;
+	}
+	
+	.car-image-print {
+		max-width: 100%;
+		max-height: 150px;
+		object-fit: contain;
+		border-radius: 8px;
+	}
+	
+	.price-tag-additional {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 15px;
+		padding-top: 15px;
+		border-top: 1px solid #e0e0e0;
+		font-size: 12px;
+		color: #666;
+	}
+	
+	.price-tag-id {
+		font-weight: bold;
+		font-size: 14px;
+	}
+	
+	.price-tag-unit {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+	}
+	
+	@page {
+		size: A4;
+		margin: 0;
+	}
+}
+
+/* Стили для предпросмотра (не для печати) */
+@media screen {
+	.price-tag-print {
+		display: none;
+	}
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+function printPriceTag() {
+	// Генерируем QR код
+	const carUrl = window.location.origin + '/cars/{{params.object.slug}}/';
+	const qrContainer = document.getElementById('qrCodeContainer');
+	
+	if (qrContainer && typeof QRCode !== 'undefined') {
+		qrContainer.innerHTML = '';
+		QRCode.toCanvas(qrContainer, carUrl, {
+			width: 84,
+			margin: 1,
+			color: {
+				dark: '#002a5a',
+				light: '#ffffff'
+			}
+		}, function (error) {
+			if (error) {
+				console.error('Ошибка генерации QR кода:', error);
+				qrContainer.innerHTML = '<div style="width: 84px; height: 84px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; padding: 5px;">QR код</div>';
+			}
+		});
+	}
+	
+	// Показываем блок для печати
+	const printContent = document.getElementById('priceTagContent');
+	if (printContent) {
+		printContent.style.display = 'block';
+		
+		// Небольшая задержка для генерации QR кода
+		setTimeout(function() {
+			window.print();
+			printContent.style.display = 'none';
+		}, 500);
+	}
+}
+</script>
+{% endif %}
 {% endblock %}
