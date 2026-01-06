@@ -2258,11 +2258,17 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
 /* Стили для печати ценника */
 .price-tag-print {
-	display: none;
+	display: none !important;
 }
 
 @media print {
-	body * {
+	@page {
+		size: A4 portrait;
+		margin: 0;
+	}
+	
+	/* Скрываем все элементы страницы кроме ценника */
+	* {
 		visibility: hidden;
 	}
 	
@@ -2271,44 +2277,57 @@ document.addEventListener('DOMContentLoaded', function() {
 		visibility: visible;
 	}
 	
+	html, body {
+		width: 210mm;
+		height: 297mm;
+		margin: 0;
+		padding: 0;
+		background: #fff;
+		overflow: hidden;
+	}
+	
 	.price-tag-print {
 		position: absolute;
 		left: 0;
 		top: 0;
-		width: 100%;
-		display: block !important;
+		width: 210mm;
+		height: 297mm;
+		background: #fff;
+		margin: 0;
+		padding: 0;
 	}
 	
 	.price-tag-container {
 		width: 210mm;
 		height: 297mm;
 		margin: 0;
-		padding: 15mm;
+		padding: 10mm;
 		background: #fff;
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		font-family: 'Arial', 'Helvetica', sans-serif;
-		page-break-after: always;
+		overflow: hidden;
 	}
 	
 	.price-tag-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
-		margin-bottom: 20px;
-		padding-bottom: 15px;
+		margin-bottom: 8px;
+		padding-bottom: 8px;
 		border-bottom: 2px solid #002a5a;
+		flex-shrink: 0;
 	}
 	
 	.price-tag-logo-left {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 6px;
 	}
 	
 	.kors-logo-text {
-		font-size: 24px;
+		font-size: 18px;
 		font-weight: bold;
 		color: #000;
 		letter-spacing: 1px;
@@ -2317,73 +2336,77 @@ document.addEventListener('DOMContentLoaded', function() {
 	.kors-logo-badge {
 		background: #ffd500;
 		color: #000;
-		padding: 4px 12px;
-		border-radius: 15px;
-		font-size: 14px;
+		padding: 3px 10px;
+		border-radius: 12px;
+		font-size: 11px;
 		font-weight: bold;
 	}
 	
 	.kors-group-logo {
 		display: flex;
 		align-items: center;
-		gap: 10px;
+		gap: 8px;
 	}
 	
 	.kors-group-k {
-		font-size: 32px;
+		font-size: 24px;
 		font-weight: bold;
 		color: #002a5a;
-		width: 40px;
-		height: 40px;
+		width: 32px;
+		height: 32px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border: 3px solid #002a5a;
-		border-radius: 8px;
+		border: 2px solid #002a5a;
+		border-radius: 6px;
 	}
 	
 	.kors-group-name {
-		font-size: 18px;
+		font-size: 14px;
 		font-weight: bold;
 		color: #002a5a;
 		line-height: 1.2;
 	}
 	
 	.kors-group-subtitle {
-		font-size: 11px;
+		font-size: 9px;
 		color: #666;
 		line-height: 1.2;
 	}
 	
 	.price-tag-title {
-		font-size: 42px;
+		font-size: 28px;
 		font-weight: bold;
 		color: #000;
 		text-align: center;
-		margin: 20px 0 10px 0;
+		margin: 8px 0 4px 0;
 		text-transform: uppercase;
-		letter-spacing: 2px;
+		letter-spacing: 1px;
+		line-height: 1.2;
+		flex-shrink: 0;
 	}
 	
 	.price-tag-price {
-		font-size: 48px;
+		font-size: 32px;
 		font-weight: bold;
 		color: #e74c3c;
 		text-align: center;
-		margin: 0 0 25px 0;
+		margin: 0 0 10px 0;
 		letter-spacing: 1px;
+		flex-shrink: 0;
 	}
 	
 	.price-tag-price-reserved {
 		color: #f59e0b;
-		font-size: 36px;
+		font-size: 28px;
 	}
 	
 	.price-tag-main {
 		display: flex;
-		gap: 30px;
-		margin: 25px 0;
-		flex: 1;
+		gap: 20px;
+		margin: 10px 0;
+		flex: 0 1 auto;
+		min-height: 0;
 	}
 	
 	.price-tag-left {
@@ -2391,21 +2414,22 @@ document.addEventListener('DOMContentLoaded', function() {
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-start;
-		min-width: 120px;
+		min-width: 90px;
+		flex-shrink: 0;
 	}
 	
 	.price-tag-brand-logo {
-		margin-bottom: 15px;
+		margin-bottom: 8px;
 	}
 	
 	.brand-logo-img {
-		max-width: 80px;
-		max-height: 80px;
+		max-width: 60px;
+		max-height: 60px;
 		object-fit: contain;
 	}
 	
 	.price-tag-number {
-		font-size: 36px;
+		font-size: 24px;
 		font-weight: bold;
 		color: #000;
 	}
@@ -2414,30 +2438,31 @@ document.addEventListener('DOMContentLoaded', function() {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 6px;
+		min-width: 0;
 	}
 	
 	.spec-row {
 		display: flex;
-		gap: 30px;
+		gap: 15px;
 	}
 	
 	.spec-item {
 		flex: 1;
 		display: flex;
 		justify-content: space-between;
-		padding: 8px 0;
+		padding: 4px 0;
 		border-bottom: 1px solid #e0e0e0;
 	}
 	
 	.spec-label {
-		font-size: 14px;
+		font-size: 11px;
 		color: #666;
 		font-weight: 500;
 	}
 	
 	.spec-value {
-		font-size: 14px;
+		font-size: 11px;
 		color: #000;
 		font-weight: bold;
 	}
@@ -2445,11 +2470,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	.price-tag-services {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 15px;
-		margin: 25px 0;
-		padding: 20px;
+		gap: 8px;
+		margin: 10px 0;
+		padding: 12px;
 		background: #f8f9fa;
-		border-radius: 8px;
+		border-radius: 6px;
+		flex-shrink: 0;
 	}
 	
 	.service-item {
@@ -2460,22 +2486,22 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 	
 	.service-icon {
-		width: 60px;
-		height: 60px;
+		width: 45px;
+		height: 45px;
 		border-radius: 50%;
 		background: #002a5a;
 		color: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 24px;
+		font-size: 18px;
 		font-weight: bold;
-		margin-bottom: 8px;
+		margin-bottom: 4px;
 	}
 	
 	.service-icon-percent {
 		background: linear-gradient(135deg, #22c55e, #16a34a);
-		font-size: 20px;
+		font-size: 16px;
 	}
 	
 	.service-icon-exchange {
@@ -2484,47 +2510,48 @@ document.addEventListener('DOMContentLoaded', function() {
 	
 	.service-icon-casco {
 		background: linear-gradient(135deg, #3b82f6, #2563eb);
-		font-size: 12px;
-		padding: 5px;
+		font-size: 10px;
+		padding: 4px;
 	}
 	
 	.service-text {
-		font-size: 11px;
+		font-size: 9px;
 		color: #333;
 		font-weight: 500;
-		line-height: 1.3;
+		line-height: 1.2;
 	}
 	
 	.price-tag-footer {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-top: 20px;
-		padding-top: 20px;
+		margin-top: 10px;
+		padding-top: 10px;
 		border-top: 2px solid #002a5a;
+		flex-shrink: 0;
 	}
 	
 	.price-tag-qr-section {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
+		gap: 4px;
 	}
 	
 	.qr-label {
-		font-size: 12px;
+		font-size: 9px;
 		color: #666;
 		font-weight: 500;
 		text-align: center;
 	}
 	
 	.qr-code-wrapper {
-		width: 100px;
-		height: 100px;
-		padding: 8px;
+		width: 70px;
+		height: 70px;
+		padding: 5px;
 		background: #fff;
 		border: 2px solid #002a5a;
-		border-radius: 8px;
+		border-radius: 6px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -2544,95 +2571,130 @@ document.addEventListener('DOMContentLoaded', function() {
 		max-height: 100%;
 	}
 	
+	.qr-label-bottom {
+		font-size: 9px;
+		color: #666;
+		font-weight: 500;
+		text-align: center;
+	}
+	
 	.price-tag-website {
-		font-size: 28px;
+		font-size: 20px;
 		font-weight: bold;
 		color: #002a5a;
 		letter-spacing: 1px;
 	}
 	
 	.price-tag-car-image {
-		margin: 20px 0;
+		margin: 8px 0;
 		text-align: center;
+		flex-shrink: 0;
 	}
 	
 	.car-image-print {
 		max-width: 100%;
-		max-height: 150px;
+		max-height: 100px;
 		object-fit: contain;
-		border-radius: 8px;
+		border-radius: 6px;
 	}
 	
 	.price-tag-additional {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-top: 15px;
-		padding-top: 15px;
+		margin-top: 8px;
+		padding-top: 8px;
 		border-top: 1px solid #e0e0e0;
-		font-size: 12px;
+		font-size: 10px;
 		color: #666;
+		flex-shrink: 0;
 	}
 	
 	.price-tag-id {
 		font-weight: bold;
-		font-size: 14px;
+		font-size: 12px;
 	}
 	
 	.price-tag-unit {
 		display: flex;
 		align-items: center;
-		gap: 5px;
-	}
-	
-	@page {
-		size: A4;
-		margin: 0;
+		gap: 4px;
+		font-size: 10px;
 	}
 }
 
 /* Стили для предпросмотра (не для печати) */
 @media screen {
 	.price-tag-print {
-		display: none;
+		display: none !important;
 	}
 }
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 function printPriceTag() {
+	const printContent = document.getElementById('priceTagContent');
+	if (!printContent) {
+		alert('Ошибка: блок ценника не найден');
+		return;
+	}
+	
 	// Генерируем QR код
 	const carUrl = window.location.origin + '/cars/{{params.object.slug}}/';
 	const qrContainer = document.getElementById('qrCodeContainer');
 	
-	if (qrContainer && typeof QRCode !== 'undefined') {
+	// Генерируем QR код синхронно перед показом
+	if (qrContainer) {
 		qrContainer.innerHTML = '';
-		QRCode.toCanvas(qrContainer, carUrl, {
-			width: 84,
-			margin: 1,
-			color: {
-				dark: '#002a5a',
-				light: '#ffffff'
-			}
-		}, function (error) {
-			if (error) {
-				console.error('Ошибка генерации QR кода:', error);
-				qrContainer.innerHTML = '<div style="width: 84px; height: 84px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; padding: 5px;">QR код</div>';
-			}
-		});
-	}
-	
-	// Показываем блок для печати
-	const printContent = document.getElementById('priceTagContent');
-	if (printContent) {
-		printContent.style.display = 'block';
 		
-		// Небольшая задержка для генерации QR кода
+		if (typeof QRCode !== 'undefined') {
+			QRCode.toCanvas(qrContainer, carUrl, {
+				width: 60,
+				margin: 1,
+				color: {
+					dark: '#002a5a',
+					light: '#ffffff'
+				}
+			}, function (error) {
+				if (error) {
+					console.error('Ошибка генерации QR кода:', error);
+					qrContainer.innerHTML = '<div style="width: 60px; height: 60px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8px; text-align: center; padding: 3px;">QR</div>';
+				}
+				
+				// Показываем блок и печатаем
+				printContent.style.display = 'block';
+				
+				// Небольшая задержка для рендеринга
+				setTimeout(function() {
+					window.print();
+					// Скрываем блок после печати
+					setTimeout(function() {
+						printContent.style.display = 'none';
+					}, 500);
+				}, 200);
+			});
+		} else {
+			// Если библиотека не загрузилась
+			qrContainer.innerHTML = '<div style="width: 60px; height: 60px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8px; text-align: center; padding: 3px;">QR</div>';
+			printContent.style.display = 'block';
+			setTimeout(function() {
+				window.print();
+				setTimeout(function() {
+					printContent.style.display = 'none';
+				}, 500);
+			}, 200);
+		}
+	} else {
+		// Если контейнер QR не найден
+		printContent.style.display = 'block';
 		setTimeout(function() {
 			window.print();
-			printContent.style.display = 'none';
-		}, 500);
+			setTimeout(function() {
+				printContent.style.display = 'none';
+			}, 500);
+		}, 200);
 	}
 }
 </script>
