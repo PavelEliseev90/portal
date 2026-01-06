@@ -2263,34 +2263,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @media print {
 	@page {
-		size: A4;
+		size: A4 portrait;
 		margin: 0;
 	}
 	
-	body * {
+	/* Скрываем все элементы страницы кроме ценника */
+	* {
 		visibility: hidden;
 	}
 	
-	.price-tag-print {
-		visibility: visible !important;
-		display: block !important;
-		position: fixed;
-		left: 0;
-		top: 0;
-		width: 100%;
-		height: 100%;
-		z-index: 9999;
-		background: #fff;
-	}
-	
+	.price-tag-print,
 	.price-tag-print * {
 		visibility: visible;
+	}
+	
+	html, body {
+		width: 210mm;
+		height: 297mm;
+		margin: 0;
+		padding: 0;
+		background: #fff;
+		overflow: hidden;
+	}
+	
+	.price-tag-print {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 210mm;
+		height: 297mm;
+		background: #fff;
+		margin: 0;
+		padding: 0;
 	}
 	
 	.price-tag-container {
 		width: 210mm;
 		height: 297mm;
-		margin: 0 auto;
+		margin: 0;
 		padding: 10mm;
 		background: #fff;
 		box-sizing: border-box;
@@ -2298,8 +2308,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		flex-direction: column;
 		font-family: 'Arial', 'Helvetica', sans-serif;
 		overflow: hidden;
-		page-break-after: avoid;
-		page-break-inside: avoid;
 	}
 	
 	.price-tag-header {
@@ -2618,9 +2626,10 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Стили для предпросмотра (не для печати) */
 @media screen {
 	.price-tag-print {
-		display: none;
+		display: none !important;
 	}
 }
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -2636,10 +2645,7 @@ function printPriceTag() {
 	const carUrl = window.location.origin + '/cars/{{params.object.slug}}/';
 	const qrContainer = document.getElementById('qrCodeContainer');
 	
-	// Показываем блок для печати сначала
-	printContent.style.display = 'block';
-	
-	// Генерируем QR код
+	// Генерируем QR код синхронно перед показом
 	if (qrContainer) {
 		qrContainer.innerHTML = '';
 		
@@ -2657,33 +2663,38 @@ function printPriceTag() {
 					qrContainer.innerHTML = '<div style="width: 60px; height: 60px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8px; text-align: center; padding: 3px;">QR</div>';
 				}
 				
-				// Запускаем печать после генерации QR кода
+				// Показываем блок и печатаем
+				printContent.style.display = 'block';
+				
+				// Небольшая задержка для рендеринга
 				setTimeout(function() {
 					window.print();
 					// Скрываем блок после печати
 					setTimeout(function() {
 						printContent.style.display = 'none';
-					}, 100);
-				}, 300);
+					}, 500);
+				}, 200);
 			});
 		} else {
-			// Если библиотека не загрузилась, все равно печатаем
+			// Если библиотека не загрузилась
 			qrContainer.innerHTML = '<div style="width: 60px; height: 60px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8px; text-align: center; padding: 3px;">QR</div>';
+			printContent.style.display = 'block';
 			setTimeout(function() {
 				window.print();
 				setTimeout(function() {
 					printContent.style.display = 'none';
-				}, 100);
-			}, 100);
+				}, 500);
+			}, 200);
 		}
 	} else {
-		// Если контейнер QR не найден, все равно печатаем
+		// Если контейнер QR не найден
+		printContent.style.display = 'block';
 		setTimeout(function() {
 			window.print();
 			setTimeout(function() {
 				printContent.style.display = 'none';
-			}, 100);
-		}, 100);
+			}, 500);
+		}, 200);
 	}
 }
 </script>
