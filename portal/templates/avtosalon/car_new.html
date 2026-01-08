@@ -2284,10 +2284,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		background: #fff;
 		margin: 0;
 		padding: 0;
+		z-index: 99999;
 	}
 	
+	/* Явно показываем все элементы внутри ценника */
 	.price-tag-print * {
-		display: revert !important;
 		visibility: visible !important;
 	}
 	
@@ -2302,6 +2303,92 @@ document.addEventListener('DOMContentLoaded', function() {
 		flex-direction: column !important;
 		font-family: 'Arial', 'Helvetica', sans-serif;
 		overflow: hidden;
+	}
+	
+	.price-tag-header {
+		display: flex !important;
+		justify-content: space-between !important;
+		align-items: flex-start !important;
+	}
+	
+	.price-tag-logo-left,
+	.price-tag-logo-right,
+	.kors-group-logo {
+		display: flex !important;
+		align-items: center !important;
+	}
+	
+	.price-tag-main {
+		display: flex !important;
+		gap: 20px !important;
+	}
+	
+	.price-tag-services {
+		display: grid !important;
+		grid-template-columns: repeat(4, 1fr) !important;
+	}
+	
+	.price-tag-footer,
+	.price-tag-additional {
+		display: flex !important;
+		justify-content: center !important;
+		align-items: center !important;
+	}
+	
+	.spec-row {
+		display: flex !important;
+		gap: 15px !important;
+	}
+	
+	.service-item {
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
+	}
+	
+	.price-tag-title,
+	.price-tag-price,
+	.price-tag-left,
+	.price-tag-specs,
+	.price-tag-brand-logo,
+	.price-tag-number,
+	.price-tag-id,
+	.price-tag-unit,
+	.price-tag-website,
+	.price-tag-car-image {
+		display: block !important;
+	}
+	
+	.price-tag-print img {
+		display: block !important;
+		max-width: 100% !important;
+		height: auto !important;
+	}
+	
+	.spec-item {
+		display: flex !important;
+		justify-content: space-between !important;
+	}
+	
+	.service-text,
+	.kors-logo-text,
+	.kors-logo-badge,
+	.kors-group-name,
+	.kors-group-subtitle,
+	.spec-label,
+	.spec-value {
+		display: block !important;
+	}
+	
+	.service-icon {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+	
+	.kors-group-text {
+		display: flex !important;
+		flex-direction: column !important;
 	}
 	
 	.price-tag-header {
