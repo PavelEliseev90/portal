@@ -39,29 +39,6 @@
         </div>
         
         <div class="col-12 col-md-6 col-lg-3">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="mark" name="mark" onchange="loadModels(this.value, false)">
-              <option value="">Выберите марку</option>
-              {% for mark in params.selected.marks %}
-                <option value="{{ mark.id }}" {% if params.filtr.mark == mark.id|stringformat:"s" %}selected{% endif %}>{{ mark.name }}</option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="mark">Марка</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="model" name="model[]" multiple>
-              {% for model in params.all_models %}
-                <option value="{{ model.id }}" {% if model.id|stringformat:"s" in params.filtr.model %}selected{% endif %}>{{ model.name }}</option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="model">Модель</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
           <div class="form-floating">
             <input type="number" class="form-control" id="year_start" name="year_start" value="{{ params.filtr.year_start }}" placeholder="Год от">
             <label for="year_start">Год выпуска от</label>
@@ -569,29 +546,6 @@
               <div class="form-floating">
                 <input type="text" class="form-control" id="mobile_vin" name="vin" value="{{ params.filtr.vin }}" placeholder="ВИН">
                 <label for="mobile_vin">ВИН</label>
-              </div>
-            </div>
-            
-            <div class="col-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="mobile_mark" name="mark" onchange="loadModels(this.value, true)">
-                  <option value="">Выберите марку</option>
-                  {% for mark in params.selected.marks %}
-                    <option value="{{ mark.id }}" {% if params.filtr.mark == mark.id|stringformat:"s" %}selected{% endif %}>{{ mark.name }}</option>
-                  {% endfor %}
-                </select>
-                <label class="fs-6" for="mobile_mark">Марка</label>
-              </div>
-            </div>
-            
-            <div class="col-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="mobile_model" name="model[]" multiple>
-                  {% for model in params.all_models %}
-                    <option value="{{ model.id }}" {% if model.id|stringformat:"s" in params.filtr.model %}selected{% endif %}>{{ model.name }}</option>
-                  {% endfor %}
-                </select>
-                <label class="fs-6" for="mobile_model">Модель</label>
               </div>
             </div>
             
@@ -1359,47 +1313,6 @@ function changeStatus(status) {
   form.submit();
 }
 
-function loadModels(markId, isMobile = false) {
-  if (typeof $ === 'undefined' || !$.fn.select2) {
-    console.error('jQuery or Select2 not loaded');
-    return;
-  }
-  
-  const modelSelect = isMobile ? $('#mobile_model') : $('#model');
-  
-  if (!markId) {
-    // Очищаем выбор и показываем все модели (опции уже загружены в шаблоне)
-    modelSelect.val(null).trigger('change');
-    return;
-  }
-  
-  fetch(`/cars/disposition/get_models/?mark_id=${markId}`)
-    .then(response => response.json())
-    .then(data => {
-      // Сохраняем выбранные значения
-      const selectedValues = modelSelect.val() || [];
-      
-      // Очищаем и заполняем новыми опциями
-      modelSelect.empty();
-      
-      data.models.forEach(model => {
-        const option = new Option(model.name, model.id, false, false);
-        modelSelect.append(option);
-      });
-      
-      // Восстанавливаем выбранные значения, если они есть в новых опциях
-      const availableValues = data.models.map(m => String(m.id));
-      const validSelectedValues = selectedValues.filter(val => availableValues.includes(String(val)));
-      
-      if (validSelectedValues.length > 0) {
-        modelSelect.val(validSelectedValues).trigger('change');
-      } else {
-        modelSelect.val(null).trigger('change');
-      }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
 function applyMobileFilters() {
   const mobileForm = document.getElementById('mobileFiltersForm');
   const desktopForm = document.getElementById('filtersForm');
@@ -1469,30 +1382,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Одиночный выбор для марки (мобильный)
-  $('#mobile_mark').select2({
-    placeholder: 'Выберите марку',
-    allowClear: true,
-    width: '100%',
-    language: {
-      noResults: function() {
-        return "Результаты не найдены";
-      }
-    }
-  });
-  
-  // Множественный выбор для модели (мобильный)
-  $('#mobile_model').select2({
-    placeholder: 'Выберите модели',
-    allowClear: true,
-    width: '100%',
-    language: {
-      noResults: function() {
-        return "Результаты не найдены";
-      }
-    }
-  });
-  
   // Функция для получения метки поля
   function getFieldLabel(fieldId) {
     const labels = {

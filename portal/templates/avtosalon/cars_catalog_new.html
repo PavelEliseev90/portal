@@ -43,14 +43,14 @@
 			<div class="d-flex flex-wrap align-items-center">
 				<a href="/cars/">На главную</a>
 				<span class="separator">/</span>
-				<a href="/cars/catalog/">Каталог</a>
+				<a href="/cars/catalog/">Каталог{% if params.total_count %} <span class="breadcrumb-count">({{params.total_count}})</span>{% endif %}</a>
 				{% if params.mark_name_en %}
 					<span class="separator">/</span>
-					<a href="/cars/catalog/{{params.mark_name_en}}/">{{params.mark_name_en|lower|capfirst}}</a>
+					<a href="/cars/catalog/{{params.mark_name_en}}/">{{params.mark_name_en|lower|capfirst}}{% if params.mark_count %} <span class="breadcrumb-count">({{params.mark_count}})</span>{% endif %}</a>
 				{% endif %}
 				{% for mark_info in params.catalog %}
 					<span class="separator">/</span>
-					<a href="/cars/catalog/{{params.mark_name_en}}/{{mark_info.nameEn}}/">{{mark_info.nameHuman}}</a>
+					<a href="/cars/catalog/{{params.mark_name_en}}/{{mark_info.nameEn}}/">{{mark_info.nameHuman}}{% if mark_info.cars_count %} <span class="breadcrumb-count">({{mark_info.cars_count}})</span>{% endif %}</a>
 				{% endfor %}
 			</div>
 		</div>
