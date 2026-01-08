@@ -1867,10 +1867,14 @@ def refresh_catalog_auto_ru():
                             while countComplectation < len(complectations):
                                 complectationName   = complectations[countComplectation].text
                                 complectationID     = complectations[countComplectation].get('id')
-                                try:
-                                    newAutoruComplectation = AutoruComplectation.objects.get(idSite = complectationID, modification = newAutoruModification)
-                                except:
-                                    newAutoruComplectation = AutoruComplectation()
+                                
+                                newAutoruComplectation, created = AutoruComplectation.objects.filter(
+                                    Q(idSite = complectationID) and Q(modification = newAutoruModification)).get_or_create(
+                                        idSite = complectationID, modification = newAutoruModification)
+                                #try:
+                                #    newAutoruComplectation = AutoruComplectation.objects.get(idSite = complectationID, modification = newAutoruModification)
+                                #except:
+                                #    newAutoruComplectation = AutoruComplectation()
                                 newAutoruComplectation.name         = complectationName
                                 newAutoruComplectation.idSite       = complectationID
                                 newAutoruComplectation.modification = newAutoruModification
