@@ -85,14 +85,12 @@ def catalog_mark(request, mark_name_en):
         'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
     }
     
-    params = {
-        'type'          : 'cars',
-        'page_number'   : page_number,
-        'paginator'     : page_obj,
-        'selected'      : selected,
-        'filtr'         : filtr,
-        'catalog'       : catalog
-    } 
+    # Подсчет общего количества автомобилей в каталоге
+    total_count = get_cars_organization(request.user, filter='').count()
+    
+    # Подсчет количества автомобилей для данной марки
+    mark_count = get_cars_organization(request.user, filter='').filter(modification_autoru__model__mark__nameEn=mark_name_en).count()
+    
     params = {
         'type'          : 'cars',
         'mark_name_en'  : mark_name_en,
@@ -100,7 +98,9 @@ def catalog_mark(request, mark_name_en):
         'paginator'     : page_obj,
         'selected'      : selected,
         'filtr'         : filtr,
-        'catalog'       : catalog
+        'catalog'       : catalog,
+        'total_count'   : total_count,
+        'mark_count'    : mark_count
     }
     
     return render(request, "avtosalon/cars_catalog_new.html", {'params': params})  
@@ -137,14 +137,12 @@ def catalog_model(request, mark_name_en, model_name):
         'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
     }
     
-    params = {
-        'type'          : 'cars',
-        'page_number'   : page_number,
-        'paginator'     : page_obj,
-        'selected'      : selected,
-        'filtr'         : filtr,
-        'catalog'       : catalog
-    } 
+    # Подсчет общего количества автомобилей в каталоге
+    total_count = get_cars_organization(request.user, filter='').count()
+    
+    # Подсчет количества автомобилей для данной марки
+    mark_count = get_cars_organization(request.user, filter='').filter(modification_autoru__model__mark__nameEn=mark_name_en).count()
+    
     params = {
         'type'          : 'cars',
         'mark_name_en'  : mark_name_en,
@@ -152,7 +150,9 @@ def catalog_model(request, mark_name_en, model_name):
         'paginator'     : page_obj,
         'selected'      : selected,
         'filtr'         : filtr,
-        'catalog'       : catalog
+        'catalog'       : catalog,
+        'total_count'   : total_count,
+        'mark_count'    : mark_count
     }
     
     return render(request, "avtosalon/cars_catalog_new.html", {'params': params})  
@@ -161,12 +161,15 @@ def catalog_model(request, mark_name_en, model_name):
 def cars_catalog(request):
 
     catalog         = get_catalog() 
+    
+    # Подсчет общего количества автомобилей в каталоге
+    total_count = get_cars_organization(request.user, filter='').count()
 
     params = {
         'type'          : 'cars',
         'catalog'       : catalog,
-        'glav'          : True
-
+        'glav'          : True,
+        'total_count'   : total_count
     }
     
     return render(request, "avtosalon/cars_catalog_new.html", {'params': params})
