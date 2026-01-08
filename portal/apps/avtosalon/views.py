@@ -46,18 +46,12 @@ def get_catalog_mark(mark):
     
     autoru = AutoruModel.objects.filter(mark__nameEn = mark).order_by('name').distinct()
 
-    # Подсчитываем количество автомобилей для каждой модели
-    # Используем правильный путь через modification_autoru
-    autoru = autoru.annotate(
-        cars_count = Count(
-            'modification_autoru__cars_organization',
-            filter=Q(modification_autoru__cars_organization__quantity__gt=0),
-            distinct=True
-        )
-    )
+    # Подсчитываем количество автомобилей для каждой модели через Subquery (как в get_catalog)
+    # Используем правильный путь от RefCarsOrganization к модели
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(modification_autoru__model__id = OuterRef(name='id')).annotate(count=Func(F('id'), function='Count')).values('count')
     
-    # Исключаем модели без автомобилей и группируем по nameEn
-    autoru = autoru.exclude(cars_count=0).order_by('nameEn')
+    autoru = autoru.annotate(cars_count = Subquery(cars))
+    autoru = autoru.exclude(cars_count = 0).distinct()
     
     # Группируем по nameEn и суммируем cars_count
     seen_names = {}
@@ -70,6 +64,7 @@ def get_catalog_mark(mark):
                 'nameHuman': name_human,
                 'cars_count': 0
             }
+        # Subquery возвращает значение напрямую
         seen_names[name_en]['cars_count'] += model.cars_count or 0
     
     return list(seen_names.values())
