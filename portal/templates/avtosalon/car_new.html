@@ -2261,8 +2261,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 	
 	/* Скрываем все элементы страницы кроме ценника */
-	body > *:not(.price-tag-print) {
-		display: none !important;
+	* {
+		visibility: hidden;
+	}
+	
+	.price-tag-print,
+	.price-tag-print * {
+		visibility: visible !important;
 	}
 	
 	html, body {
@@ -2285,11 +2290,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		margin: 0;
 		padding: 0;
 		z-index: 99999;
-	}
-	
-	/* Явно показываем все элементы внутри ценника */
-	.price-tag-print * {
-		visibility: visible !important;
 	}
 	
 	.price-tag-container {
@@ -2378,6 +2378,29 @@ document.addEventListener('DOMContentLoaded', function() {
 	.spec-label,
 	.spec-value {
 		display: block !important;
+	}
+	
+	.service-icon {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+	
+	.kors-group-text {
+		display: flex !important;
+		flex-direction: column !important;
+	}
+	
+	.kors-group-k {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+	
+	.price-tag-left {
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
 	}
 	
 	.service-icon {
