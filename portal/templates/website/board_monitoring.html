@@ -9,11 +9,6 @@
     
 {% block content %}
 
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
-<script src="https://code.highcharts.com/modules/export-data.js"></script>
-<script src="https://code.highcharts.com/modules/accessibility.js"></script>
-
 <style>
   .kors-monitoring-page {
     padding: 1rem 1.5rem 3rem;
@@ -204,6 +199,146 @@
     background: #fee2e2;
   }
 
+  .kors-refresh-card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 23, 61, 0.06);
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .kors-refresh-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 23, 61, 0.12);
+    border-color: rgba(0, 42, 90, 0.15);
+  }
+
+  .kors-refresh-card__header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .kors-refresh-card__date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+  }
+
+  .kors-refresh-card__date .icon-mbri-calendar {
+    font-size: 1.1rem;
+    color: #6c7a92;
+  }
+
+  .kors-refresh-card__unit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #6c7a92;
+  }
+
+  .kors-refresh-card__unit .icon-mbri-home {
+    font-size: 1rem;
+    color: #8ea1ba;
+  }
+
+  .kors-refresh-card__body {
+    flex: 1;
+  }
+
+  .kors-refresh-card__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .kors-refresh-card__stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(0, 42, 90, 0.02);
+    transition: all 0.2s ease;
+  }
+
+  .kors-refresh-card__stat-item:hover {
+    background: rgba(0, 42, 90, 0.05);
+  }
+
+  .kors-refresh-card__stat-item--success {
+    border-left: 3px solid #22c55e;
+  }
+
+  .kors-refresh-card__stat-item--danger {
+    border-left: 3px solid #ef4444;
+  }
+
+  .kors-refresh-card__stat-item--info {
+    border-left: 3px solid #3b82f6;
+  }
+
+  .kors-refresh-card__stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .kors-refresh-card__stat-item--success .kors-refresh-card__stat-icon {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
+  .kors-refresh-card__stat-item--danger .kors-refresh-card__stat-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .kors-refresh-card__stat-item--info .kors-refresh-card__stat-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+
+  .kors-refresh-card__stat-icon .icon-mbri-plus,
+  .kors-refresh-card__stat-icon .icon-mbri-minus,
+  .kors-refresh-card__stat-icon .icon-mbri-play {
+    font-size: 1.2rem;
+  }
+
+  .kors-refresh-card__stat-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .kors-refresh-card__stat-label {
+    font-size: 0.75rem;
+    color: #6c7a92;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+  .kors-refresh-card__stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #002a5a;
+    line-height: 1.2;
+  }
+  }
+
   .kors-btn-toggle.success {
     border-color: #22c55e;
     color: #22c55e;
@@ -350,14 +485,6 @@
       </div>
     </div>
 
-    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-      <div class="kors-metric-card {% if params.now|date:'d' == params.signal_last_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
-        <h3>Сигнал</h3>
-        <div class="metric-value">{{params.signal_last_date|date:'d.m.Y'}}</div>
-        <div class="metric-label">Последнее обновление</div>
-      </div>
-    </div>
-
     {% for catalog in params.info_refresh_catalogs %}
       <div class="col-12 col-sm-6 col-md-4 col-lg-2">
         <div class="kors-metric-card {% if params.now|date:'d' == catalog.max_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
@@ -463,28 +590,55 @@
           <h3>Обновление автомобилей корсавто</h3>
         </div>
         <div class="kors-panel__body">
-          <table class="kors-table">
-            <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Подразделение</th>
-                <th>Добавлено</th>
-                <th>Удалено</th>
-                <th>В наличии</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for log_cars in params.list_log_refresh_cars %}
-                <tr>
-                  <td>{{log_cars.date}}</td>
-                  <td>{{log_cars.unit.name}}</td>
-                  <td><span class="icon-mbri-plus text-success"></span> {{log_cars.add}}</td>
-                  <td><span class="icon-mbri-minus text-danger"></span> {{log_cars.del}}</td>
-                  <td><span class="icon-mbri-play text-danger"></span> {{log_cars.stock}}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          <div class="row g-3">
+            {% for log_cars in params.list_log_refresh_cars %}
+              <div class="col-12 col-md-6 col-lg-4">
+                <div class="kors-refresh-card">
+                  <div class="kors-refresh-card__header">
+                    <div class="kors-refresh-card__date">
+                      <span class="icon-mbri-calendar"></span>
+                      {{log_cars.date}}
+                    </div>
+                    <div class="kors-refresh-card__unit">
+                      <span class="icon-mbri-home"></span>
+                      {{log_cars.unit.name}}
+                    </div>
+                  </div>
+                  <div class="kors-refresh-card__body">
+                    <div class="kors-refresh-card__stat">
+                      <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--success">
+                        <span class="kors-refresh-card__stat-icon">
+                          <span class="icon-mbri-plus"></span>
+                        </span>
+                        <div class="kors-refresh-card__stat-content">
+                          <div class="kors-refresh-card__stat-label">Добавлено</div>
+                          <div class="kors-refresh-card__stat-value">{{log_cars.add}}</div>
+                        </div>
+                      </div>
+                      <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--danger">
+                        <span class="kors-refresh-card__stat-icon">
+                          <span class="icon-mbri-minus"></span>
+                        </span>
+                        <div class="kors-refresh-card__stat-content">
+                          <div class="kors-refresh-card__stat-label">Удалено</div>
+                          <div class="kors-refresh-card__stat-value">{{log_cars.del}}</div>
+                        </div>
+                      </div>
+                      <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--info">
+                        <span class="kors-refresh-card__stat-icon">
+                          <span class="icon-mbri-play"></span>
+                        </span>
+                        <div class="kors-refresh-card__stat-content">
+                          <div class="kors-refresh-card__stat-label">В наличии</div>
+                          <div class="kors-refresh-card__stat-value">{{log_cars.stock}}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>
