@@ -1968,6 +1968,7 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
                 reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
                 reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
                 reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
                 reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
                 reg_interactiv_ocenka_soglasovanie.save()
@@ -1978,6 +1979,7 @@ def doc(request, id):
                     reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
                     reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
                     reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                    reg_interactiv_ocenka_soglasovanie.discount_torg        = price_avito['discount_torg']
                     reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
                     reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
                     reg_interactiv_ocenka_soglasovanie.save()
@@ -2007,44 +2009,8 @@ def doc(request, id):
 
                 price_info = estimations_price_calculation(estimation= reg_interactiv_ocenka, type_calculation = 'custom')
                 #Сохраняем данные по планированию восстановительного ремонта
-                RegEstimationPodgotovka.objects.filter(estimation = reg_interactiv_ocenka).delete()
-                RegEstimationSS.objects.filter(estimation = reg_interactiv_ocenka).delete()
-                RegEstimationMCU.objects.filter(estimation = reg_interactiv_ocenka).delete()
-                for podgotovka in price_info['list_work_podgotovka']:
-                    new_record = RegEstimationPodgotovka()
-                    new_record.estimation       = reg_interactiv_ocenka
-                    new_record.name             = podgotovka['name']
-                    new_record.normo            = podgotovka['quantity']
-                    new_record.price_podrad     = podgotovka['amount_pod']
-                    new_record.price_kors       = podgotovka['amount']
-                    new_record.save()
-                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
-                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
-                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
-                for podgotovka in price_info['list_work_service']:
-                    new_record                  = RegEstimationSS()
-                    new_record.estimation       = reg_interactiv_ocenka
-                    new_record.name             = podgotovka['name']
-                    new_record.normo            = podgotovka['quantity']
-                    new_record.price_podrad     = podgotovka['amount_pod']
-                    new_record.price_kors       = podgotovka['amount']
-                    new_record.save()
-                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
-                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
-                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
-                for podgotovka in price_info['list_work_mcu']:
-                    new_record                  = RegEstimationMCU()
-                    new_record.estimation       = reg_interactiv_ocenka
-                    new_record.name             = podgotovka['name']
-                    new_record.normo            = podgotovka['quantity']
-                    new_record.price_podrad     = podgotovka['amount_pod']
-                    new_record.price_kors       = podgotovka['amount']
-                    new_record.save()
-                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
-                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
-                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)    
-                #
-                    
+                save_recovery_estimations(reg_interactiv_ocenka)
+
                 estimation_price_do_kd  = float(request.POST.get('estimation_price_do_kd', '0')) 
                 price_before_kd_comment = request.POST.get('price_before_kd_comment', '')
                 
@@ -2102,6 +2068,7 @@ def doc(request, id):
                         reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
                         reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
                         reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
                         reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
                         reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
                         reg_interactiv_ocenka_soglasovanie.save()
@@ -2112,6 +2079,7 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
                             reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
                             reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.discount_torg        = price_avito['discount_torg']
                             reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
                             reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
                             reg_interactiv_ocenka_soglasovanie.save()
@@ -2148,47 +2116,7 @@ def doc(request, id):
                 custom_estimation_price             = float(request.POST.get('custom_estimation_price', '0'))
 
                 price_info = estimations_price_calculation(estimation= reg_interactiv_ocenka, type_calculation = 'custom')
-                
-                RegEstimationPodgotovka.objects.filter(estimation = reg_interactiv_ocenka).delete()
-                RegEstimationSS.objects.filter(estimation = reg_interactiv_ocenka).delete()
-                RegEstimationMCU.objects.filter(estimation = reg_interactiv_ocenka).delete()
-
-                
-                for podgotovka in price_info['list_work_podgotovka']:
-                    new_record = RegEstimationPodgotovka()
-                    new_record.estimation   = reg_interactiv_ocenka
-                    new_record.name         = podgotovka['name']
-                    new_record.normo            = podgotovka['quantity']
-                    new_record.price_podrad     = podgotovka['amount_pod']
-                    new_record.price_kors       = podgotovka['amount']
-                    new_record.save()
-                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
-                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
-                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
-
-                for podgotovka in price_info['list_work_service']:
-                    new_record = RegEstimationSS()
-                    new_record.estimation       = reg_interactiv_ocenka
-                    new_record.name         = podgotovka['name']
-                    new_record.normo            = podgotovka['quantity']
-                    new_record.price_podrad     = podgotovka['amount_pod']
-                    new_record.price_kors       = podgotovka['amount']
-                    new_record.save()
-                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
-                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
-                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
-
-                for podgotovka in price_info['list_work_mcu']:
-                    new_record = RegEstimationMCU()
-                    new_record.estimation       = reg_interactiv_ocenka
-                    new_record.name         = podgotovka['name']
-                    new_record.normo            = podgotovka['quantity']
-                    new_record.price_podrad     = podgotovka['amount_pod']
-                    new_record.price_kors       = podgotovka['amount']
-                    new_record.save()
-                    #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
-                    #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
-                    #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)    
+                save_recovery_estimations(reg_interactiv_ocenka)
                 
                 if custom_estimation_price_do_kd > 0:
                     reg_interactiv_ocenka_soglasovanie.price_before_kd = custom_estimation_price_do_kd
@@ -2244,6 +2172,7 @@ def doc(request, id):
                         reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
                         reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
                         reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
                         reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
                         reg_interactiv_ocenka_soglasovanie.save()
                     else:
@@ -2253,6 +2182,7 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
                             reg_interactiv_ocenka_soglasovanie.price_auto_bcp_3     = price_avito['cna_expenses']
                             reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_avito['zachita_ot_ubitka']
+                            reg_interactiv_ocenka_soglasovanie.discount_torg        = price_avito['discount_torg']
                             reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
                             reg_interactiv_ocenka_soglasovanie.save()
 
@@ -2274,6 +2204,47 @@ def doc(request, id):
     else:
         return render(request, 'lo/lo.html', {'params': params}) 
 
+def save_recovery_estimations(reg_interactiv_ocenka):
+    price_info = estimations_price_calculation(estimation = reg_interactiv_ocenka, type_calculation = 'custom')
+    if price_info != None:
+        RegEstimationPodgotovka.objects.filter(estimation = reg_interactiv_ocenka).delete()
+        RegEstimationSS.objects.filter(estimation = reg_interactiv_ocenka).delete()
+        RegEstimationMCU.objects.filter(estimation = reg_interactiv_ocenka).delete()
+        for podgotovka in price_info['list_work_podgotovka']:
+            new_record = RegEstimationPodgotovka()
+            new_record.estimation       = reg_interactiv_ocenka
+            new_record.name             = podgotovka['name']
+            new_record.normo            = podgotovka['quantity']
+            new_record.price_podrad     = podgotovka['amount_pod']
+            new_record.price_kors       = podgotovka['amount']
+            new_record.save()
+            #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
+            #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
+            #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
+        for podgotovka in price_info['list_work_service']:
+            new_record                  = RegEstimationSS()
+            new_record.estimation       = reg_interactiv_ocenka
+            new_record.name             = podgotovka['name']
+            new_record.normo            = podgotovka['quantity']
+            new_record.price_podrad     = podgotovka['amount_pod']
+            new_record.price_kors       = podgotovka['amount']
+            new_record.save()
+            #materials_kf            = models.FloatField("Материалы коэфицент", default=0.0, null=False, blank=True)
+            #materials_price         = models.FloatField("Материалы цена", default=0.0, null=False, blank=True)
+            #materials_amount        = models.FloatField("Материалы сумма", default=0.0, null=False, blank=True)
+        for podgotovka in price_info['list_work_mcu']:
+            new_record                  = RegEstimationMCU()
+            new_record.estimation       = reg_interactiv_ocenka
+            new_record.name             = podgotovka['name']
+            new_record.normo            = podgotovka['quantity']
+            new_record.price_podrad     = podgotovka['amount_pod']
+            new_record.price_kors       = podgotovka['amount']
+            new_record.save()
+        if reg_interactiv_ocenka.page_soglasovanie != None:
+            reg_interactiv_ocenka.page_soglasovanie.amount_podgotovka    = price_info['amount_podgotovka']
+            reg_interactiv_ocenka.page_soglasovanie.amount_ss            = price_info['amount_ss']
+            reg_interactiv_ocenka.page_soglasovanie.amount_mcu           = price_info['amount_mcu']
+            reg_interactiv_ocenka.page_soglasovanie.save()            
 
 def list_expenses(estimation):
     list_info = list()
@@ -3536,8 +3507,9 @@ def estimations_price_calculation(estimation, type_calculation):
         'comment'   : "Цена с учетом защиты скидки торг " + str(percent_torg) + " %",
         'name'      : "скидка торг"  
     }
+    discount_torg    = diff
     list_info_price.append(inf_price)
-
+    
     
     # продажи и статистика корсавто
     # пока убрали
@@ -3555,9 +3527,11 @@ def estimations_price_calculation(estimation, type_calculation):
     #        list_info_price.append(inf_price)
 
     # расчеты ремонта
+    autodex = 0
     if estimation.avtoteka_car_autodex > 0:
         price           = price - (estimation.avtoteka_car_autodex / 2)
         diff            = estimation.avtoteka_car_autodex / 2
+        autodex         = diff
         inf_price = {
             'price'     : price,
             'dif'       : diff,
@@ -4463,12 +4437,16 @@ def estimations_price_calculation(estimation, type_calculation):
             elif info['perecras'] > 0:
                 diff_sum    = 0
                 work        = RegPodgotovkaWork.objects.get(pk = 130)
-                diff_sum    = work.price_kors
+                if work.price_kors == 0:
+                    price_kors = work.price_podrad
+                else:
+                    price_kors = work.price_kors               
+                diff_sum    = price_kors
                 dop = {
                     'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo * info['dirka'],
-                    'amount_pod': work.price_podrad * info['dirka'], 
-                    'amount'    : work.price_kors * info['dirka']
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad, 
+                    'amount'    : price_kors
                 }
                 list_work_podgotovka.append(dop)
                 amount_podgotovka = amount_podgotovka + diff_sum   
@@ -5122,7 +5100,8 @@ def estimations_price_calculation(estimation, type_calculation):
             if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
                 difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price
 
-    cna_expenses = zna + difference_sum - amount_sum
+    #cna_expenses = zna + difference_sum - amount_sum
+    cna_expenses = zna - amount_sum - autodex
     
     if estimation_price < 1000:
         estimation_price = 1000
@@ -5228,6 +5207,7 @@ def estimations_price_calculation(estimation, type_calculation):
         'finance_price'                 : finance_price,
         'run_sum'                       : run_sum,
         'iznos_price'                   : iznos_price,
+        'discount_torg'                 : discount_torg,
         'estimation_settings'           : estimation_settings
     }
 
@@ -5311,7 +5291,7 @@ def eco_efficiency_analysis(request):
 
     now = DT.datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    default_start = default_end.replace(day=1, hour=0, minute=1, second=1, microsecond=0)
 
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
@@ -5332,13 +5312,13 @@ def eco_efficiency_analysis(request):
     if staff_id:
         pricing_qs = pricing_qs.filter(staff_id=staff_id)
     if analyst_id:
-        pricing_qs = pricing_qs.filter(Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id))
+        pricing_qs = pricing_qs.filter(analyst_id=analyst_id)
     if type_id:
         pricing_qs = pricing_qs.filter(type_reception_id=type_id)
     if status_id:
         pricing_qs = pricing_qs.filter(status_id=status_id)
 
-    total_count = pricing_qs.count()
+    total_count = pricing_qs.values('estimation_id').order_by('estimation_id').distinct().count()#pricing_qs.count()
     # Согласовано до КД (role='before' и has_soglasovanie=True)
     with_soglasovanie_before_count = pricing_qs.filter(role='before', has_soglasovanie=True).count()
     # Согласовано после КД (role='after' и has_soglasovanie=True)
@@ -5362,34 +5342,42 @@ def eco_efficiency_analysis(request):
     price_diffs = []
     price_percent_diffs = []
     higher_count_after = lower_count_after = equal_count_after = 0
-    for price_after, auto_price in pricing_qs.filter(role='after', has_soglasovanie=True).values_list('price_after_kd', 'price_auto_selected')[:2000]:
-        if price_after and auto_price:
-            diff = float(price_after) - float(auto_price)
-            price_diffs.append(diff)
-            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
-            price_percent_diffs.append(diff_percent)
-            if diff_percent > 5:  # Выше на 5% и более
-                higher_count_after += 1
-            elif diff_percent < 0:  # Ниже на 5% и более
-                lower_count_after += 1
-            else:  # В пределах ±5%
-                equal_count_after += 1
+    # for price_after, auto_price in pricing_qs.filter(role='after', has_soglasovanie=True).values_list('price_after_kd', 'price_auto_selected')[:2000]:
+    #     if price_after and auto_price:
+    #         diff = float(price_after) - float(auto_price)
+    #         price_diffs.append(diff)
+    #         diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+    #         price_percent_diffs.append(diff_percent)
+    #         if diff_percent > 5:  # Выше на 5% и более
+    #             higher_count_after += 1
+    #         elif diff_percent < 0:  # Ниже на 5% и более
+    #             lower_count_after += 1
+    #         else:  # В пределах ±5%
+    #             equal_count_after += 1
+    
+    higher_count_after = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = 1).count()
+    lower_count_after  = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = -1).count()
+    equal_count_after  = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = 0).count()
 
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
 
+    higher_count_before = pricing_qs.filter(role='before', comparison = 1).count()
+    lower_count_before  = pricing_qs.filter(role='before', comparison = -1).count()
+    equal_count_before  = pricing_qs.filter(role='before', comparison = 0).count()
+
     # Маркеры по согласованиям до диагностики
-    higher_count_before = lower_count_before = equal_count_before = 0
-    for price_before, auto_price in pricing_qs.filter(role='before', has_soglasovanie=True).values_list('price_before_kd', 'price_auto_selected')[:2000]:
-        if price_before and auto_price:
-            diff = float(price_before) - float(auto_price)
-            diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
-            if diff_percent > 5:  # Выше на 5% и более
-                higher_count_before += 1
-            elif diff_percent < 0:  # Ниже на 5% и более
-                lower_count_before += 1
-            else:  # В пределах ±5%
-                equal_count_before += 1
+    # higher_count_before = lower_count_before = equal_count_before = 0
+    # for price_before, auto_price in pricing_qs.filter(role='before', has_soglasovanie=True).values_list('price_before_kd', 'price_auto_selected')[:2000]:
+    #     if price_before and auto_price:
+    #         diff = float(price_before) - float(auto_price)
+    #         diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+    #         if diff_percent > 5:  # Выше на 5% и более
+    #             higher_count_before += 1
+    #         elif diff_percent < 0:  # Ниже на 5% и более
+    #             lower_count_before += 1
+    #         else:  # В пределах ±5%
+    #             equal_count_before += 1
 
     task_aggregate = pricing_qs.aggregate(
         total_tasks=Coalesce(Sum('tasks_total'), 0),
@@ -5448,39 +5436,46 @@ def eco_efficiency_analysis(request):
         }
         
         # Маркеры по согласованиям для аналитика
-        analyst_id = row['analyst_id']
-        analyst_before_qs = analyst_qs.filter(analyst_id=analyst_id, role='before', has_soglasovanie=True)
-        analyst_after_qs = analyst_qs.filter(analyst_id=analyst_id, role='after', has_soglasovanie=True)
+        analyst_id_st = row['analyst_id']
+        analyst_before_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='before', has_soglasovanie=True)
+        analyst_after_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='after', has_soglasovanie=True)
         
         # До диагностики
         higher_before = lower_before = equal_before = 0
-        for price_before, auto_price in analyst_before_qs.values_list('price_before_kd', 'price_auto_selected'):
-            if price_before and auto_price:
-                diff = float(price_before) - float(auto_price)
-                diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
-                if diff_percent > 5:
-                    higher_before += 1
-                elif diff_percent < -5:
-                    lower_before += 1
-                else:
-                    equal_before += 1
+        higher_before = analyst_before_qs.filter(comparison = 1).count()
+        lower_before = analyst_before_qs.filter(comparison = -1).count()
+        equal_before = analyst_before_qs.filter(comparison = 0).count()
+        # for price_before, auto_price in analyst_before_qs.values_list('price_before_kd', 'price_auto_selected'):
+        #     if price_before and auto_price:
+        #         diff = float(price_before) - float(auto_price)
+        #         diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+        #         if diff_percent > 5:
+        #             higher_before += 1
+        #         elif diff_percent < -5:
+        #             lower_before += 1
+        #         else:
+        #             equal_before += 1
         
         # После диагностики
         higher_after = lower_after = equal_after = 0
-        for price_after, auto_price in analyst_after_qs.values_list('price_after_kd', 'price_auto_selected'):
-            if price_after and auto_price:
-                diff = float(price_after) - float(auto_price)
-                diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
-                if diff_percent > 5:
-                    higher_after += 1
-                elif diff_percent < -5:
-                    lower_after += 1
-                else:
-                    equal_after += 1
+        higher_after = analyst_after_qs.filter(comparison = 1).count()
+        lower_after = analyst_after_qs.filter(comparison = -1).count()
+        equal_after = analyst_after_qs.filter(comparison = 0).count()
+        
+        # for price_after, auto_price in analyst_after_qs.values_list('price_after_kd', 'price_auto_selected'):
+        #     if price_after and auto_price:
+        #         diff = float(price_after) - float(auto_price)
+        #         diff_percent = round((diff / float(auto_price)) * 100, 1) if auto_price else 0
+        #         if diff_percent > 5:
+        #             higher_after += 1
+        #         elif diff_percent < -5:
+        #             lower_after += 1
+        #         else:
+        #             equal_after += 1
         
         analyst_stats.append(
             {
-                'analyst_id': analyst_id,
+                'analyst_id': analyst_id_st,
                 'name': row['analyst_name'] or '—',
                 'total': count,
                 'with_soglasovanie_count' : with_soglasovanie_before_count,
@@ -5549,7 +5544,7 @@ def eco_efficiency_analysis(request):
     }
 
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False, default=str)
-
+    
     # Вычисляем проценты для маркеров
     total_compared_after = higher_count_after + lower_count_after + equal_count_after
     total_compared_before = higher_count_before + lower_count_before + equal_count_before

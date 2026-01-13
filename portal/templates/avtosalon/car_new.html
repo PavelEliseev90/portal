@@ -426,205 +426,204 @@
 						</div>
 					</div>
 				</div>
+
+				
 			{% endif %}
 
 
 			{% if request.user.is_authenticated %}
 				<div class="portal-panel">
 							
-							<div class="row g-2">
-								
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="type_reception" name="type_reception" value="{{params.object.type_reception}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Тип приема автомобиля</label>
-									</div>	
-								</div>
+					<div class="row g-2">
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="type_reception" name="type_reception" value="{{params.object.type_reception}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Тип приема автомобиля</label>
+							</div>	
+						</div>
 
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										{% if params.object.quantity == 0 %}
-											<input type="text" class="form-control  text-dark" id="status" name="status" value="Продан" placeholder="" readonly autocomplete="off">
-											<label for="floatingInput" class="text-dark">Статус автомобиля</label>
-										{% else %}
-											<input type="text" class="form-control  text-dark" id="status" name="status" value="{{params.object.status}}" placeholder="" readonly autocomplete="off">
-											<label for="floatingInput" class="text-dark">Статус автомобиля</label>
-										{% endif %}
-									</div>	
-								</div>
-								
-								<div class="col-sm ">
-									<div class="form-floating mb-3  border-dark">
-										<input type="text" class="form-control  text-dark" id="type_sale" name="type_sale" value="{{params.object.type_sale}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Тип продажи автомобиля</label>
-									</div>	
-								</div>
-								
-							</div> 
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								{% if params.object.quantity == 0 %}
+									<input type="text" class="form-control  text-dark" id="status" name="status" value="Продан" placeholder="" readonly autocomplete="off">
+									<label for="floatingInput" class="text-dark">Статус автомобиля</label>
+								{% else %}
+									<input type="text" class="form-control  text-dark" id="status" name="status" value="{{params.object.status}}" placeholder="" readonly autocomplete="off">
+									<label for="floatingInput" class="text-dark">Статус автомобиля</label>
+								{% endif %}
+							</div>	
+						</div>
+						
+						<div class="col-sm ">
+							<div class="form-floating mb-3  border-dark">
+								<input type="text" class="form-control  text-dark" id="type_sale" name="type_sale" value="{{params.object.type_sale}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Тип продажи автомобиля</label>
+							</div>	
+						</div>
+						
+					</div> 
 
-							<div class="row g-2">
-								
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="vin" name="vin" value="{{params.object.vin}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">VIN</label>
-									</div>	
-								</div>
+					<div class="row g-2">
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="vin" name="vin" value="{{params.object.vin}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">VIN</label>
+							</div>	
+						</div>
 
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="vin" name="vin" value="{{params.object.vin2}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">VIN 2</label>
-									</div>	
-								</div>
-								
-								<div class="col-sm ">
-									<div class="form-floating mb-3  border-dark">
-										<input type="text" class="form-control  text-dark" id="plate_number" name="plate_number" value="{{params.object.plate_number}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Регистрационный знак</label>
-									</div>	
-								</div>
-								
-							</div> 
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="vin" name="vin" value="{{params.object.vin2}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">VIN 2</label>
+							</div>	
+						</div>
+						
+						<div class="col-sm ">
+							<div class="form-floating mb-3  border-dark">
+								<input type="text" class="form-control  text-dark" id="plate_number" name="plate_number" value="{{params.object.plate_number}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Регистрационный знак</label>
+							</div>	
+						</div>
+						
+					</div> 
 
-							<div class="row g-2">
-								
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="days_in_stok" name="days_in_stok" value="{{params.object.days_in_stok}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Дней на складе</label>
-									</div>	
-								</div>
+					<div class="row g-2">
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="days_in_stok" name="days_in_stok" value="{{params.object.days_in_stok}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Дней на складе</label>
+							</div>	
+						</div>
 
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="outlay" name="outlay" value="{{params.object.outlay|floatformat:"2g"}} &#8381;" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Расходы на АМ</label>
-									</div>	
-								</div>
-								
-								<div class="col-sm ">
-									<div class="form-floating mb-3  border-dark">
-										<input type="text" class="form-control  text-dark" id="lo_link_number" name="lo_link_number" value="{{params.object.lo_link_number}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Лист оценки</label>
-									</div>	
-								</div>
-								
-							</div>
-							<div class="row g-2">
-								<div class="col-sm ">
-								<div class="mb-3">
-									<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела подготовки</label>
-									<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.description_podgotovka}}</textarea>
-								</div>
-								</div>
-								<div class="col-sm ">
-								<div class="mb-3">
-									<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела продаж</label>
-									<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.description_op}}</textarea>
-								</div>
-								</div>
-							</div> 
-
-							<div class="row g-2">
-								<div class="form-floating mb-3  border-dark">
-									<input type="text" class="form-control  text-dark" id="link_avtoteka_web" name="link_avtoteka_web" value="{{params.object.link_avtoteka_web}}" placeholder="" readonly autocomplete="off">
-									<label for="floatingInput" class="text-dark">Автотека</label>
-								</div>
-							</div> 
-
-						</div>	
-
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="outlay" name="outlay" value="{{params.object.outlay|floatformat:"2g"}} &#8381;" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Расходы на АМ</label>
+							</div>	
+						</div>
+						
+						<div class="col-sm ">
+							<div class="form-floating mb-3  border-dark">
+								<input type="text" class="form-control  text-dark" id="lo_link_number" name="lo_link_number" value="{{params.object.lo_link_number}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Лист оценки</label>
+							</div>	
+						</div>
+						
 					</div>
+					
+					<div class="row g-2">
+						<div class="col-sm ">
+						<div class="mb-3">
+							<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела подготовки</label>
+							<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.description_podgotovka}}</textarea>
+						</div>
+						</div>
+						<div class="col-sm ">
+						<div class="mb-3">
+							<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела продаж</label>
+							<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.description_op}}</textarea>
+						</div>
+						</div>
+					</div> 
+
+					<div class="row g-2">
+						<div class="form-floating mb-3  border-dark">
+							<input type="text" class="form-control  text-dark" id="link_avtoteka_web" name="link_avtoteka_web" value="{{params.object.link_avtoteka_web}}" placeholder="" readonly autocomplete="off">
+							<label for="floatingInput" class="text-dark">Автотека</label>
+						</div>
+					</div> 
+
+				</div>	
 
 				<div class="portal-panel">
 							
-							<div class="row g-2">
-								
-								<div class="col-sm">
-									<div class="form-floating mb-3">							
-										<select class="form-select bg-white" id="unit_group_id" name="unit_group_id" placeholder="" disabled>
-											<option></option>
-											{% for evaluation in params.selected.evaluations %}
-												<option value="{{evaluation.id}}" {% if params.object.evaluation.id == evaluation.id %} selected {% endif %}> {{evaluation.name}} </option>
-											{% endfor %}
-										</select>
-										<label for="floatingInput" class="text-dark">Вариант управления ценой</label>
+					<div class="row g-2">
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3">							
+								<select class="form-select bg-white" id="unit_group_id" name="unit_group_id" placeholder="" disabled>
+									<option></option>
+									{% for evaluation in params.selected.evaluations %}
+										<option value="{{evaluation.id}}" {% if params.object.evaluation.id == evaluation.id %} selected {% endif %}> {{evaluation.name}} </option>
+									{% endfor %}
+								</select>
+								<label for="floatingInput" class="text-dark">Вариант управления ценой</label>
+							</div>
+						</div>
+
+						<div class="col-sm">
+							<div class="form-floating mb-3">							
+								<select class="form-select bg-white" id="groupprices_id" name="groupprices_id" placeholder="" disabled>
+									<option></option>
+									{% for groupprice in params.selected.groupprices %}
+										<option value="{{groupprice.id}}" {% if params.object.group_price.id == groupprice.id %} selected {% endif %}> {{groupprice.name}} </option>
+									{% endfor %}
+								</select>
+								<label for="floatingInput" class="text-dark">Ценовая группа</label>
+							</div>
+						</div>
+
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3">							
+								<select class="form-select bg-white" id="stageprices_id" name="stageprices_id" placeholder="" disabled>
+									<option></option>
+									{% for stageprice in params.selected.stageprices %}
+										<option value="{{stageprice.id}}" {% if params.object.stage_price.id == stageprice.id %} selected {% endif %}> {{stageprice.name}} </option>
+									{% endfor %}
+								</select>
+								<label for="floatingInput" class="text-dark">Этап установки цены</label>
+							</div>
+						</div>
+
+					</div> 
+
+					<div class="row g-2">
+						
+						<div class="col-sm">
+							<div class="form-floating mb-3 ">							
+								<select class="form-select bg-white" id="ratings_id" name="ratings_id" placeholder="" disabled>
+									<option></option>
+									{% for rating in params.selected.ratings %}
+										<option value="{{rating.id}}" {% if params.object.rating.id == rating.id %} selected {% endif %}> {{rating.name}} </option>
+									{% endfor %}
+								</select>
+								<label for="floatingInput" class="text-dark">Привлекательность</label>
+							</div>
+						</div>
+
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="days_next_stage" name="days_next_stage" value="{{params.object.days_next_stage}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Дней до следующего этапа</label>
+							</div>	
+						</div>
+
+						<div class="col-sm">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control  text-dark" id="task" name="task" value="{{params.object.task}}" placeholder="" readonly autocomplete="off">
+								<label for="floatingInput" class="text-dark">Задач по автомобилю</label>
+							</div>	
+						</div>
+						
+					</div> 
+
+					{% if request.user.profiles.korsavto_settings %}
+					
+						<div class="row">
+							<div class="col-12 col-sm-auto text-center" >
+								<a href="price_edit/" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
+										<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Управление<br>ценообразованием
 									</div>
-								</div>
+								</a>
+							</div>
+						</div>
 
-								<div class="col-sm">
-									<div class="form-floating mb-3">							
-										<select class="form-select bg-white" id="groupprices_id" name="groupprices_id" placeholder="" disabled>
-											<option></option>
-											{% for groupprice in params.selected.groupprices %}
-												<option value="{{groupprice.id}}" {% if params.object.group_price.id == groupprice.id %} selected {% endif %}> {{groupprice.name}} </option>
-											{% endfor %}
-										</select>
-										<label for="floatingInput" class="text-dark">Ценовая группа</label>
-									</div>
-								</div>
-
-								
-								<div class="col-sm">
-									<div class="form-floating mb-3">							
-										<select class="form-select bg-white" id="stageprices_id" name="stageprices_id" placeholder="" disabled>
-											<option></option>
-											{% for stageprice in params.selected.stageprices %}
-												<option value="{{stageprice.id}}" {% if params.object.stage_price.id == stageprice.id %} selected {% endif %}> {{stageprice.name}} </option>
-											{% endfor %}
-										</select>
-										<label for="floatingInput" class="text-dark">Этап установки цены</label>
-									</div>
-								</div>
-
-							</div> 
-
-							<div class="row g-2">
-								
-								<div class="col-sm">
-									<div class="form-floating mb-3 ">							
-										<select class="form-select bg-white" id="ratings_id" name="ratings_id" placeholder="" disabled>
-											<option></option>
-											{% for rating in params.selected.ratings %}
-												<option value="{{rating.id}}" {% if params.object.rating.id == rating.id %} selected {% endif %}> {{rating.name}} </option>
-											{% endfor %}
-										</select>
-										<label for="floatingInput" class="text-dark">Привлекательность</label>
-									</div>
-								</div>
-
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="days_next_stage" name="days_next_stage" value="{{params.object.days_next_stage}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Дней до следующего этапа</label>
-									</div>	
-								</div>
-
-								<div class="col-sm">
-									<div class="form-floating mb-3">
-										<input type="text" class="form-control  text-dark" id="task" name="task" value="{{params.object.task}}" placeholder="" readonly autocomplete="off">
-										<label for="floatingInput" class="text-dark">Задач по автомобилю</label>
-									</div>	
-								</div>
-								
-							</div> 
-
-							{% if request.user.profiles.korsavto_settings %}
-							
-								<div class="row">
-									<div class="col-12 col-sm-auto text-center" >
-										<a href="price_edit/" class="text-dark">
-											<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-												<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Управление<br>ценообразованием
-											</div>
-										</a>
-									</div>
-								</div>
-
-
-							
-							{% endif %}
+					{% endif %}
 
 					</div>
 				</div>

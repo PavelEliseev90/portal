@@ -3328,10 +3328,9 @@ def upload_auto_ru_post(request):
                     while countComplectation < len(complectations):
                         complectationName   = complectations[countComplectation].text
                         complectationID     = complectations[countComplectation].get('id')
-                        try:
-                            newAutoruComplectation = AutoruComplectation.objects.get(idSite = complectationID)
-                        except:
-                            newAutoruComplectation = AutoruComplectation()
+                        newAutoruComplectation, created = AutoruComplectation.objects.filter(
+                                    Q(idSite = complectationID) and Q(modification = newAutoruModification)).get_or_create(
+                                        idSite = complectationID, modification = newAutoruModification)
                         newAutoruComplectation.name         = complectationName
                         newAutoruComplectation.idSite       = complectationID
                         newAutoruComplectation.modification = newAutoruModification
@@ -8107,7 +8106,7 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     bcp             = price_info['cna_expenses']     
                                                     cost_price_r    = price_info['estimation_price'] 
                                                     price_sale      = bcp * kf / 100
-                                                    
+
                                                     cm_r            = price_sale - cost_price_r
 
                                                     cm_f            = agreement.amount - agreement.cost_price
@@ -8893,55 +8892,58 @@ def sb_lo(request):
 
 def test(request):
     
-    # from register.models import RegInteractivOcenkaRLK
-    # date_start = DT.datetime.now().replace(day=22, hour = 1)
-    # count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
-    # s = 0
-    # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
-    # for estimation_id in estimations_id:
-    #     try:
-    #         estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-    #         estimation.save()
-    #         reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
+    #AutoruComplectation.objects.all().delete()
+    
+    from register.models import RegInteractivOcenkaRLK
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
+    s = 0
+    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
+    for estimation_id in estimations_id:
+        try:
+            estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+            estimation.save()
+            reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
 
-    #         if estimation.page_documents != None:
-    #             reg_interactiv.type_reception   = estimation.page_documents.type_reception
-    #             reg_interactiv.organization     = estimation.page_documents.organization
-    #             reg_interactiv.filial           = estimation.page_documents.filial
-    #             reg_interactiv.unit             = estimation.page_documents.unit
-    #             reg_interactiv.store            = estimation.page_documents.store
+            if estimation.page_documents != None:
+                reg_interactiv.type_reception   = estimation.page_documents.type_reception
+                reg_interactiv.organization     = estimation.page_documents.organization
+                reg_interactiv.filial           = estimation.page_documents.filial
+                reg_interactiv.unit             = estimation.page_documents.unit
+                reg_interactiv.store            = estimation.page_documents.store
 
-    #         reg_interactiv.staff_rlk            = estimation.staff
-    #         reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
-    #         reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
+            reg_interactiv.staff_rlk            = estimation.staff
+            reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
+            reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
             
-    #         reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
+            reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
             
-    #         reg_interactiv.status              = estimation.status
-    #         for uss in estimation.access_user.all():
-    #             reg_interactiv.access_user.add(uss)
+            reg_interactiv.status              = estimation.status
+            for uss in estimation.access_user.all():
+                reg_interactiv.access_user.add(uss)
             
-    #         reg_interactiv.save()
+            reg_interactiv.save()
             
 
-    #         if reg_interactiv.page_soglasovanie != None:
-    #             if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0:
-    #                 price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
-    #                 if price_autohub != None:
-    #                     reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
-    #                     reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-    #                     reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-    #                     reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-    #                     reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-    #                     reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-    #                     reg_interactiv_ocenka_soglasovanie.save()
+            if reg_interactiv.page_soglasovanie != None:
+                if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0 or reg_interactiv.page_soglasovanie.discount_torg == 0:
+                    price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+                    if price_autohub != None:
+                        reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+                        reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+                        reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
+                        reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+                        reg_interactiv_ocenka_soglasovanie.save()
 
-    #         estimation.save()
-    #     except:
-    #         ss = 1
+            estimation.save()
+        except:
+            ss = 1
 
-    #     s = s + 1 
-    #     print(' ' + str(s) + ' ' + str(count))
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count))
 
     # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
     # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
@@ -9075,14 +9077,14 @@ def test(request):
     #refresh_estimation_cars_organization()
     
     
-    object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 10, 1)).order_by('-start_estimation')
-    s = 0
-    count = object_estimations.count()
-    object_estimations = object_estimations.values('rlk__pk')
-    for object_estimation in object_estimations:
-        refresh_estimation_balance_unit(object_estimation['rlk__pk'])     
-        s = s + 1
-        print(str(s) + '/' + str(count))
+    # object_estimations = RegInteractivOcenka.objects.filter(status__pk = 8).exclude(start_estimation__lte = DT.date(2025, 10, 1)).order_by('-start_estimation')
+    # s = 0
+    # count = object_estimations.count()
+    # object_estimations = object_estimations.values('rlk__pk')
+    # for object_estimation in object_estimations:
+    #     refresh_estimation_balance_unit(object_estimation['rlk__pk'])     
+    #     s = s + 1
+    #     print(str(s) + '/' + str(count))
     
 
     return render(request, "website/test.html")

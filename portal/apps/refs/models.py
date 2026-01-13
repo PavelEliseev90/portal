@@ -2604,6 +2604,7 @@ class RefCarsOrganizationFiles(models.Model):
     name        = models.CharField("Наименование", max_length=512, default='', blank=True)
     car         = models.BooleanField('Автомобиль', default=False) 
     processed   = models.BooleanField('Обработан', default=False) 
+    date        = models.DateTimeField('Дата', default=datetime.now, blank=False, null=True)
 
     def is_video(self):
         list_world_name = self.file.name.lower().split('.')

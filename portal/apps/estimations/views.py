@@ -23,7 +23,7 @@ import re
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
 from django.conf import settings
-from eco.views import repair_history, estimation_lo_history
+from eco.views import repair_history, estimation_lo_history, save_recovery_estimations
 from register.models import RegSwapKors, RegInfoBody
 from refs.models import RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
 
@@ -1843,6 +1843,7 @@ def osmotr(request, rlk_id, type):
                 new_estimation_files.save()
 
         if return_page == 'eco':
+            save_recovery_estimations(reg_interactiv_ocenka)
             return HttpResponseRedirect('/eco/' + rlk_id + '/?page=21')    
         return HttpResponseRedirect('/estimations/' + rlk_id + '/?page=3')
     else:
@@ -2027,6 +2028,7 @@ def osmotr_salon(request, rlk_id, type):
                 new_estimation_files.save()
 
         if return_page == 'eco':
+            save_recovery_estimations(reg_interactiv_ocenka)
             return HttpResponseRedirect('/eco/' + rlk_id + '/?page=21')    
         return HttpResponseRedirect('/estimations/' + rlk_id + '/?page=2')
     else:

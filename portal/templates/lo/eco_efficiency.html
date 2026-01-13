@@ -230,7 +230,7 @@
       <div class="col-md-2">
         <label class="form-label text-uppercase">Аналитик</label>
         <select class="form-select" name="analyst_id">
-          <option value="">Любой</option>
+          <option value="" selected>Любой</option>
           {% for analyst in params.analysts %}
             <option value="{{ analyst.id }}" {% if analyst.id|stringformat:"s" == params.filters.analyst_id|stringformat:"s" %}selected{% endif %}>
               {{ analyst.profiles.eco_name|default:analyst.get_full_name|default:analyst.username }}
