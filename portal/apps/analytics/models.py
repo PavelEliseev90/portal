@@ -127,6 +127,8 @@ class EcoAnalystSnapshot(models.Model):
     price_sale = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     cost_total = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
 
+    comparison = models.IntegerField(null=True, blank=True)
+
     duration_estimation_sec = models.IntegerField(null=True, blank=True)
     duration_sogl_before_sec = models.IntegerField(null=True, blank=True)
     duration_diagnostics_sec = models.IntegerField(null=True, blank=True)
@@ -151,6 +153,7 @@ class EcoAnalystSnapshot(models.Model):
             models.Index(fields=['role']),
             models.Index(fields=['status_id']),
             models.Index(fields=['type_reception_id']),
+            models.Index(fields=['comparison']),
         ]
 
     def __str__(self):

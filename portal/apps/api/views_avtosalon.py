@@ -351,29 +351,33 @@ def refresh_cars(request):
         if 'Prices_list' in car:
             #RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()
             for car_price in car['Prices_list']:
-                data_info, created = RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) 
-                                                                 and Q(date = car_price['Date']) 
-                                                                                        ).get_or_create(car = car_object,
-                                                                                                                date = car_price['Date']
-                                                                                                            )
-                if created:
-                    data_info.price = car_price['Price']
-                    data_info.save()  
+                if RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) and Q(date = car_price['Date'])).count() < 2:
+                    data_info, created = RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) 
+                                                                    and Q(date = car_price['Date']) 
+                                                                                            ).get_or_create(car = car_object,
+                                                                                                                    date = car_price['Date']
+                                                                                                                )
+                    if created:
+                        data_info.price = car_price['Price']
+                        data_info.save()  
 
         if 'Prices_calculation_list' in car:
             #RegRefCarsOrganizationsCalculationPrice.objects.filter(car= car_object).delete()
             for car_price in car['Prices_calculation_list']:
                 evaluation = get_model_object('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
-                data_info, created = RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
+                if RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
                                                                  and Q(date = car_price['Date']) 
-                                                                 and Q(evaluation = evaluation),).get_or_create(car = car_object,
-                                                                                                                date = car_price['Date'],
-                                                                                                                evaluation = evaluation
-                                                                                                            )
-                if created:
-                    data_info.price         = car_price['Price']
-                    data_info.rule          = car_price['Rule']
-                    data_info.save()     
+                                                                 and Q(evaluation = evaluation),).count() < 2:
+                    data_info, created = RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
+                                                                    and Q(date = car_price['Date']) 
+                                                                    and Q(evaluation = evaluation),).get_or_create(car = car_object,
+                                                                                                                    date = car_price['Date'],
+                                                                                                                    evaluation = evaluation
+                                                                                                                )
+                    if created:
+                        data_info.price         = car_price['Price']
+                        data_info.rule          = car_price['Rule']
+                        data_info.save()     
 
         info_car = {
             'Car_object'        : car_object,

@@ -1950,7 +1950,7 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
     
     zachita_ot_ubitka               = models.FloatField('Защита от убытка', default=0.00, null=True, blank=True)
     finance_price                   = models.FloatField('Финансирование', default=0.00, null=True, blank=True)
-    
+    discount_torg                   = models.FloatField('Скидка торг', default=0.00, null=True, blank=True)
     amount_recovery                 = models.FloatField('Затраты на восстановительный ремонт', default=0.00, null=True, blank=True)
 
     settings                        = models.ForeignKey(RegEstimationsSettings, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Настройка ценообразования" ) 
@@ -2841,7 +2841,7 @@ def update_eco_analyst_snapshots(estimation):
     def _upsert(role, analyst):
         if not analyst:
             return
-
+        diff = 0
         if role == 'before':
             price = sogl.price_before_kd if sogl else None
             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
@@ -2859,6 +2859,18 @@ def update_eco_analyst_snapshots(estimation):
             duration_diagnostics_sec = None
             if sogl:
                 cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
+        
+        comparison = 0
+        try: 
+            diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
+            if diff < 0:
+                comparison = -1
+            elif diff > 0 and diff < diff_summ:
+                comparison = 0
+            else:
+                comparison = 1
+        except:
+            comparison = 0
 
         EcoAnalystSnapshot.objects.update_or_create(
             estimation_id=estimation.id,
@@ -2879,7 +2891,7 @@ def update_eco_analyst_snapshots(estimation):
                 'status_name': status_name,
                 'has_soglasovanie': bool(sogl),
                 'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
-                'accepted': bool(estimation.status_id in [4, 8]),
+                'accepted': bool(estimation.status_id in [8]),
                 'price_auto_selected': auto_price,
                 'price_before_kd': price if role == 'before' else None,
                 'price_after_kd': price if role == 'after' else None,
@@ -2894,6 +2906,7 @@ def update_eco_analyst_snapshots(estimation):
                 'duration_diagnostics_sec': duration_diagnostics_sec,
                 'tasks_total': 0,
                 'tasks_closed': 0,
+                'comparison': comparison
             }
         )
 
