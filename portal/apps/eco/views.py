@@ -1993,15 +1993,15 @@ def doc(request, id):
             
             type_post = request.POST.get('type_post', '')
             if type_post == 'price_remote':
-                price_remote = float(request.POST.get('price_remote', '0'))
-                page_remote = reg_interactiv_ocenka.page_remote
+                price_remote    = float(request.POST.get('price_remote', '0'))
+                page_remote     = reg_interactiv_ocenka.page_remote
                 price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
                 if price_autohub != None:            
                     page_remote.price_auto          = price_autohub['estimation_price']
-                    page_remote.price_auto_bcp     = price_autohub['cna_expenses']
-                    page_remote.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                    page_remote.discount_torg        = price_autohub['discount_torg']
-                    page_remote.finance_price        = price_autohub['finance_price']
+                    page_remote.price_auto_bcp      = price_autohub['cna_expenses']
+                    page_remote.zachita_ot_ubitka   = price_autohub['zachita_ot_ubitka']
+                    page_remote.discount_torg       = price_autohub['discount_torg']
+                    page_remote.finance_price       = price_autohub['finance_price']
                     page_remote.price_zna           = price_autohub['zna']
                 
                 page_remote.price_eco       = price_remote
@@ -2677,7 +2677,7 @@ def estimation_lo_history(estimation, count = False):
     return list()
 
 
-def estimations_price_calculation(estimation, type_calculation):
+def estimations_price_calculation(estimation, type_calculation, remote = False):
 
 
     estimation_settings     = RegEstimationsSettings.objects.all().last()
@@ -2723,6 +2723,9 @@ def estimations_price_calculation(estimation, type_calculation):
             zna = estimation.page_remote.hub_avg
         else:
             zna         = estimation.hub_avg
+        if remote:
+            if estimation.page_remote != None:
+                zna = estimation.page_remote.hub_avg    
         zna_type    = 'Автохаб'
     elif type_calculation == 'avito':
         zna = estimation.avito_price_avg_market_price
