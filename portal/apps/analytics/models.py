@@ -90,11 +90,12 @@ class EcoAnalystSnapshot(models.Model):
     ROLE_CHOICES = (
         ('before', 'До диагностики'),
         ('after', 'После диагностики'),
+        ('remote', 'Дистанционная'), 
     )
 
     estimation_id = models.PositiveIntegerField(help_text='ID RegInteractivOcenka')
     rlk_id = models.PositiveIntegerField(null=True, blank=True, help_text='ID DocRLK')
-    role = models.CharField(max_length=8, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
     start_estimation = models.DateTimeField()
     end_estimation = models.DateTimeField(null=True, blank=True)
