@@ -1995,7 +1995,15 @@ def doc(request, id):
             if type_post == 'price_remote':
                 price_remote = float(request.POST.get('price_remote', '0'))
                 page_remote = reg_interactiv_ocenka.page_remote
-
+                price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+                if price_autohub != None:            
+                    page_remote.price_auto          = price_autohub['estimation_price']
+                    page_remote.price_auto_bcp     = price_autohub['cna_expenses']
+                    page_remote.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+                    page_remote.discount_torg        = price_autohub['discount_torg']
+                    page_remote.finance_price        = price_autohub['finance_price']
+                    page_remote.price_zna           = price_autohub['zna']
+                
                 page_remote.price_eco       = price_remote
                 page_remote.price_eco_user  = request.user
                 page_remote.save()

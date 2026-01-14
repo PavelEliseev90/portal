@@ -1565,7 +1565,7 @@ class RegDashboardError(models.Model):
         verbose_name_plural = "Ошибки приборной панели"
 
 
-#Страница документы интерактивной оценки
+#Страница дистанционной интерактивной оценки
 class RegInteractivOcenkaRemote(ChangeloggableMixin, models.Model):
     start_estimation    = models.DateTimeField('Дата начала', blank=True, null=True)
     end_estimation      = models.DateTimeField('Дата окончания', blank=True, null=True)
@@ -1597,6 +1597,14 @@ class RegInteractivOcenkaRemote(ChangeloggableMixin, models.Model):
     car_sale_price          = models.CharField("Стоимость приобритаемого автомобиля", max_length=512, default='', null=True, blank=True) 
     comment                 = models.CharField("Комментарий", max_length=2048, default='', null=True, blank=True) 
     
+    price_auto                      = models.IntegerField('Автоматическая', default=0, null=False, blank=True)
+    price_zna                       = models.IntegerField('ЦНА Автоматическая', default=0, null=False, blank=True)
+    price_auto_bcp                  = models.IntegerField('БЦП', default=0, null=False, blank=True)
+    zachita_ot_ubitka               = models.FloatField('Защита от убытка', default=0.00, null=True, blank=True)
+    finance_price                   = models.FloatField('Финансирование', default=0.00, null=True, blank=True)
+    discount_torg                   = models.FloatField('Скидка торг', default=0.00, null=True, blank=True)
+    amount_recovery                 = models.FloatField('Затраты на восстановительный ремонт', default=0.00, null=True, blank=True)
+
     k_i                     = models.FloatField("Коэфицент износа", default=0.0, blank=True)
     iznos                   = models.BooleanField("Повышенный износ", default = False, null=True, blank=True)
     
@@ -2842,6 +2850,7 @@ def update_eco_analyst_snapshots(estimation):
         if not analyst:
             return
         diff = 0
+        
         if role == 'before':
             price = sogl.price_before_kd if sogl else None
             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
@@ -2851,7 +2860,7 @@ def update_eco_analyst_snapshots(estimation):
             if sogl:
                 cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
 
-        else:
+        elif role == 'after':
             price = sogl.price_after_kd if sogl else None
             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
             duration_sogl_before_sec = None
@@ -2860,6 +2869,19 @@ def update_eco_analyst_snapshots(estimation):
             if sogl:
                 cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
         
+        elif role == 'remote':  # ДОБАВЛЕНО
+            if sogl and sogl.price_after_kd:
+                price = sogl.price_after_kd
+            elif sogl and sogl.price_before_kd:
+                price = sogl.price_before_kd
+            else:
+                price = None
+            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+            duration_sogl_before_sec = None
+            duration_sogl_after_sec = None
+            duration_diagnostics_sec = None
+            if sogl:
+                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
         comparison = 0
         try: 
             diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
