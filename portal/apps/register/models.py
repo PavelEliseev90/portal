@@ -2801,6 +2801,13 @@ def update_eco_analyst_snapshots(estimation):
         from analytics.models import EcoAnalystSnapshot
     except Exception:
         return
+    
+    #Дистанционные оценки
+    remote = None
+    auto_price_remote = 0
+    if estimation.page_remote != None:
+        remote              = estimation.page_remote  
+        auto_price_remote   = remote.price_auto
 
     try:
         sogl = estimation.page_soglasovanie
@@ -2847,9 +2854,13 @@ def update_eco_analyst_snapshots(estimation):
     duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
 
     def _upsert(role, analyst):
+        
         if not analyst:
             return
         diff = 0
+        duration_sogl_before_sec = 0
+        duration_sogl_after_sec = None
+        duration_diagnostics_sec = None
         
         if role == 'before':
             price = sogl.price_before_kd if sogl else None
@@ -2870,29 +2881,56 @@ def update_eco_analyst_snapshots(estimation):
                 cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
         
         elif role == 'remote':  # ДОБАВЛЕНО
-            if sogl and sogl.price_after_kd:
-                price = sogl.price_after_kd
-            elif sogl and sogl.price_before_kd:
-                price = sogl.price_before_kd
+            if remote and remote.price_eco:
+                price = remote.price_eco
             else:
                 price = None
-            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
-            duration_sogl_before_sec = None
-            duration_sogl_after_sec = None
-            duration_diagnostics_sec = None
-            if sogl:
-                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
-        comparison = 0
-        try: 
-            diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
-            if diff < 0:
-                comparison = -1
-            elif diff > 0 and diff < diff_summ:
-                comparison = 0
-            else:
-                comparison = 1
-        except:
+            diff = (price - auto_price_remote) if (price is not None and auto_price_remote is not None) else None
             comparison = 0
+            unit = getattr(getattr(estimation, 'page_remote', None), 'unit', None)
+            if unit is None and estimation.rlk:
+                unit = getattr(estimation.rlk, 'unit', None)
+
+            unit_id = unit.id if unit else None
+            unit_name = unit.name if unit else ''
+            
+            if estimation.rlk.unit_dc != None:
+                unit_source = estimation.rlk.unit_dc.name
+            elif estimation.rlk.unit != None:
+                unit_source = estimation.rlk.unit.name 
+            else:
+                unit_source = estimation.page_remote.unit.name
+
+            type_reception_id = None
+            if getattr(estimation, 'page_remote', None):
+                type_reception_id = getattr(estimation.page_remote, 'type_reception_id', None)
+
+            price_reception = estimation.page_remote.price_reception if remote else None
+            price_sale = estimation.page_remote.price_sale if remote else None
+            cost_total = None
+
+        if role == 'remote':
+            try: 
+                diff_summ = remote.discount_torg + remote.zachita_ot_ubitka
+                if diff < 0:
+                    comparison = -1
+                elif diff > 0 and diff < diff_summ:
+                    comparison = 0
+                else:
+                    comparison = 1
+            except:
+                comparison = 0
+        else: 
+            try: 
+                diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
+                if diff < 0:
+                    comparison = -1
+                elif diff > 0 and diff < diff_summ:
+                    comparison = 0
+                else:
+                    comparison = 1
+            except:
+                comparison = 0
 
         EcoAnalystSnapshot.objects.update_or_create(
             estimation_id=estimation.id,
@@ -2914,11 +2952,11 @@ def update_eco_analyst_snapshots(estimation):
                 'has_soglasovanie': bool(sogl),
                 'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
                 'accepted': bool(estimation.status_id in [8]),
-                'price_auto_selected': auto_price,
+                'price_auto_selected': auto_price_remote if role == 'remote' else auto_price,
                 'price_before_kd': price if role == 'before' else None,
-                'price_after_kd': price if role == 'after' else None,
+                'price_after_kd': price if role in ['after', 'remote'] else None,  # ИЗМЕНЕНО: добавлен 'remote'
                 'diff_before': diff if role == 'before' else None,
-                'diff_after': diff if role == 'after' else None,
+                'diff_after': diff if role in ['after', 'remote'] else None,  # ИЗМЕНЕНО: добавлен 'remote'
                 'price_reception': price_reception,
                 'price_sale': price_sale,
                 'cost_total': cost_total,
@@ -2932,8 +2970,10 @@ def update_eco_analyst_snapshots(estimation):
             }
         )
 
-    _upsert('before', getattr(estimation, 'staff_eco_1', None))
-    _upsert('after', getattr(estimation, 'staff_eco_2', None))
+    _upsert('before', getattr(estimation,   'staff_eco_1', None))
+    _upsert('after', getattr(estimation,    'staff_eco_2', None))
+    if estimation.page_remote != None:
+        _upsert('remote', getattr(estimation.page_remote, 'price_eco_user', None))
 
 
 def update_pricing_snapshot(estimation):
