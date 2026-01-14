@@ -286,6 +286,13 @@
     </div>
     <div class="col-xl-3 col-md-6">
       <article class="kors-metric-card">
+        <h3>Согласовано дистанционно</h3>
+        <div class="metric-value">{{ params.with_soglasovanie_remote_count }}</div>
+        <div class="metric-label">{{ params.soglasovanie_remote_percent }}% от общего числа</div>
+      </article>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <article class="kors-metric-card">
         <h3>Принято</h3>
         <div class="metric-value">{{ params.with_accepted_count }}</div>
         <div class="metric-label">{{ params.accepted_percent }}% от согласований после КД</div>
@@ -378,6 +385,48 @@
     </div>
   </div>
 
+  <div class="row g-3 mb-3">
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card price-marker-higher">
+        <h3>Выше авторасчета дистанционно</h3>
+        <div class="metric-value">{{ params.price_comparison.higher_count_remote }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_remote > 0 %}
+            {{ params.price_comparison.higher_percent_remote }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
+      </article>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card price-marker-equal">
+        <h3>Примерно равно авторасчету дистанционно</h3>
+        <div class="metric-value">{{ params.price_comparison.equal_count_remote }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_remote > 0 %}
+            {{ params.price_comparison.equal_percent_remote }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
+      </article>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <article class="kors-metric-card price-marker-lower">
+        <h3>Ниже авторасчета дистанционно</h3>
+        <div class="metric-value">{{ params.price_comparison.lower_count_remote }}</div>
+        <div class="metric-label">
+          {% if params.price_comparison.total_compared_remote > 0 %}
+            {{ params.price_comparison.lower_percent_remote }}% от согласований
+          {% else %}
+            Нет данных
+          {% endif %}
+        </div>
+      </article>
+    </div>
+  </div>
+
   <!-- Блок метрик по чатам временно отключён -->
 
 
@@ -446,6 +495,9 @@
                 <th class="text-end" style="color: #16a34a;">После КД: Выше</th>
                 <th class="text-end" style="color: #2563eb;">После КД: Равно</th>
                 <th class="text-end" style="color: #dc2626;">После КД: Ниже</th>
+                <th class="text-end" style="color: #16a34a;">Дистанционно: Выше</th>
+                <th class="text-end" style="color: #2563eb;">Дистанционно: Равно</th>
+                <th class="text-end" style="color: #dc2626;">Дистанционно: Ниже</th>
               </tr>
             </thead>
             <tbody>
@@ -543,6 +595,27 @@
                 <td class="text-end" data-label="После КД: Ниже">
                   {% if analyst.price_markers_after.total > 0 %}
                     <span class="text-danger">{{ analyst.price_markers_after.lower }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Дистанционно: Выше">
+                  {% if analyst.price_markers_remote.total > 0 %}
+                    <span class="text-success">{{ analyst.price_markers_remote.higher }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Дистанционно: Равно">
+                  {% if analyst.price_markers_remote.total > 0 %}
+                    <span class="text-info">{{ analyst.price_markers_remote.equal }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end" data-label="Дистанционно: Ниже">
+                  {% if analyst.price_markers_remote.total > 0 %}
+                    <span class="text-danger">{{ analyst.price_markers_remote.lower }}</span>
                   {% else %}
                     —
                   {% endif %}

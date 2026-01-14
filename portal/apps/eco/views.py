@@ -5334,11 +5334,14 @@ def eco_efficiency_analysis(request):
     with_soglasovanie_before_count = pricing_qs.filter(role='before', has_soglasovanie=True).count()
     # Согласовано после КД (role='after' и has_soglasovanie=True)
     with_soglasovanie_after_count = pricing_qs.filter(role='after', has_soglasovanie=True).count()
+    # Согласовано дистанционно (role='remote' и has_soglasovanie=True)
+    with_soglasovanie_remote_count = pricing_qs.filter(role='remote', has_soglasovanie=True).count()
     # Принято (только среди согласованных после КД: role='after', has_soglasovanie=True и accepted=True)
     with_accepted_count = pricing_qs.filter(role='after', has_soglasovanie=True, accepted=True).count()
     
     soglasovanie_percent = round((with_soglasovanie_before_count / total_count * 100), 1) if total_count > 0 else 0
     soglasovanie_after_percent = round((with_soglasovanie_after_count / with_soglasovanie_before_count * 100), 1) if with_soglasovanie_before_count > 0 else 0
+    soglasovanie_remote_percent = round((with_soglasovanie_remote_count / total_count * 100), 1) if total_count > 0 else 0
     accepted_percent = round((with_accepted_count / with_soglasovanie_after_count * 100), 1) if with_soglasovanie_after_count > 0 else 0
     
     avg_time_total = pricing_qs.aggregate(avg=Avg('duration_estimation_sec'))['avg']
@@ -5369,6 +5372,10 @@ def eco_efficiency_analysis(request):
     higher_count_after = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = 1).count()
     lower_count_after  = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = -1).count()
     equal_count_after  = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = 0).count()
+
+    higher_count_remote = pricing_qs.filter(role='remote', has_soglasovanie=True, comparison = 1).count()
+    lower_count_remote  = pricing_qs.filter(role='remote', has_soglasovanie=True, comparison = -1).count()
+    equal_count_remote  = pricing_qs.filter(role='remote', has_soglasovanie=True, comparison = 0).count()
 
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
@@ -5450,6 +5457,7 @@ def eco_efficiency_analysis(request):
         analyst_id_st = row['analyst_id']
         analyst_before_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='before', has_soglasovanie=True)
         analyst_after_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='after', has_soglasovanie=True)
+        analyst_remote_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='remote', has_soglasovanie=True)
         
         # До диагностики
         higher_before = lower_before = equal_before = 0
@@ -5472,6 +5480,12 @@ def eco_efficiency_analysis(request):
         higher_after = analyst_after_qs.filter(comparison = 1).count()
         lower_after = analyst_after_qs.filter(comparison = -1).count()
         equal_after = analyst_after_qs.filter(comparison = 0).count()
+        
+        # Дистанционная
+        higher_remote = lower_remote = equal_remote = 0
+        higher_remote = analyst_remote_qs.filter(comparison = 1).count()
+        lower_remote = analyst_remote_qs.filter(comparison = -1).count()
+        equal_remote = analyst_remote_qs.filter(comparison = 0).count()
         
         # for price_after, auto_price in analyst_after_qs.values_list('price_after_kd', 'price_auto_selected'):
         #     if price_after and auto_price:
@@ -5508,6 +5522,12 @@ def eco_efficiency_analysis(request):
                     'equal': equal_after,
                     'lower': lower_after,
                     'total': higher_after + equal_after + lower_after,
+                },
+                'price_markers_remote': {
+                    'higher': higher_remote,
+                    'equal': equal_remote,
+                    'lower': lower_remote,
+                    'total': higher_remote + equal_remote + lower_remote,
                 },
             }
         )
@@ -5559,6 +5579,7 @@ def eco_efficiency_analysis(request):
     # Вычисляем проценты для маркеров
     total_compared_after = higher_count_after + lower_count_after + equal_count_after
     total_compared_before = higher_count_before + lower_count_before + equal_count_before
+    total_compared_remote = higher_count_remote + lower_count_remote + equal_count_remote
 
     params = {
         'type': 'eco_efficiency',
@@ -5570,6 +5591,8 @@ def eco_efficiency_analysis(request):
         'soglasovanie_percent': soglasovanie_percent,
         'with_soglasovanie_after_count': with_soglasovanie_after_count,
         'soglasovanie_after_percent': soglasovanie_after_percent,
+        'with_soglasovanie_remote_count': with_soglasovanie_remote_count,
+        'soglasovanie_remote_percent': soglasovanie_remote_percent,
         'with_accepted_count': with_accepted_count,
         'accepted_percent': accepted_percent,
         'avg_time_total': avg_time_total,
@@ -5591,6 +5614,13 @@ def eco_efficiency_analysis(request):
             'higher_percent_before': round((higher_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
             'lower_percent_before': round((lower_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
             'equal_percent_before': round((equal_count_before / total_compared_before * 100), 1) if total_compared_before > 0 else 0,
+            'higher_count_remote': higher_count_remote,
+            'lower_count_remote': lower_count_remote,
+            'equal_count_remote': equal_count_remote,
+            'total_compared_remote': total_compared_remote,
+            'higher_percent_remote': round((higher_count_remote / total_compared_remote * 100), 1) if total_compared_remote > 0 else 0,
+            'lower_percent_remote': round((lower_count_remote / total_compared_remote * 100), 1) if total_compared_remote > 0 else 0,
+            'equal_percent_remote': round((equal_count_remote / total_compared_remote * 100), 1) if total_compared_remote > 0 else 0,
         },
         'task_stats': {
             'total_tasks': all_tasks_total,
