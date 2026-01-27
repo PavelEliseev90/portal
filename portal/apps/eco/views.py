@@ -1,4 +1,5 @@
 from tkinter.tix import Tree
+from collections import defaultdict
 from django.shortcuts import redirect, render
 from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
@@ -849,64 +850,32 @@ def tradein_funnel_new(request):
                 count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
                 count_success_p = _conversion(count_success, count_price_after_kd)
     
-    # Статистика по типам приема
+    # Статистика по типам приема и ценовым категориям
+    # Получаем общие данные один раз для оптимизации
     type_reception_stats = []
-    if type_report_id == 3:
-        # Для варианта 3 нужно получить данные через оценки с аннотациями
-        if rlk_ids:
-            est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
-            if type_reception_ids:
-                est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
-            
-            # Получаем ID принятых через DocLO
+    accepted_rlk_ids = set()
+    
+    if rlk_ids:
+        # Получаем оценки один раз для всех вариантов
+        est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+        if type_reception_ids:
+            est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+        
+        # Получаем ID принятых через DocLO (один запрос, используется для обеих статистик)
+        if type_report_id == 3:
             accepted_rlk_ids = set(DocLO.objects.filter(
                 rlk_id__in=rlk_ids,
                 active=True,
                 dataTime__gte=date_start,
                 dataTime__lte=date_end
             ).values_list('rlk_id', flat=True))
-            
-            type_reception_data = est_qs.values(
-                'page_documents__type_reception__id',
-                'page_documents__type_reception__name'
-            ).annotate(
-                total=Count('id', distinct=True),
-                before_kd=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0), distinct=True),
-                after_kd=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0), distinct=True),
-            ).order_by('-total')
-            
-            # Подсчитываем принятые для каждого типа
-            for item in type_reception_data:
-                type_id = item.get('page_documents__type_reception__id')
-                est_with_type = est_qs.filter(
-                    page_documents__type_reception__id=type_id
-                ).values_list('rlk_id', flat=True)
-                success_count = len([rlk_id for rlk_id in est_with_type if rlk_id in accepted_rlk_ids])
-                
-                type_reception_stats.append({
-                    'id': type_id,
-                    'name': item.get('page_documents__type_reception__name') or 'Не указан',
-                    'total': item['total'],
-                    'before_kd': item['before_kd'],
-                    'after_kd': item['after_kd'],
-                    'success': success_count,
-                    'conv_before': _conversion(item['before_kd'], item['total']),
-                    'conv_after': _conversion(item['after_kd'], item['before_kd']),
-                    'conv_success': _conversion(success_count, item['after_kd']),
-                })
-    else:
-        # Для вариантов 1 и 2 получаем статистику через оценки
-        if rlk_ids:
-            est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
-            if type_reception_ids:
-                est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
-            
-            # Получаем ID принятых через DocLO
+        else:
             accepted_rlk_ids = set(DocLO.objects.filter(
                 rlk_id__in=rlk_ids,
                 active=True
             ).values_list('rlk_id', flat=True))
         
+        # Получаем статистику по типам приема через агрегацию
         type_reception_data = est_qs.values(
             'page_documents__type_reception__id',
             'page_documents__type_reception__name'
@@ -916,14 +885,27 @@ def tradein_funnel_new(request):
             after_kd=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0), distinct=True),
         ).order_by('-total')
         
+        # Получаем все rlk_id по типам приема одним запросом (оптимизация N+1)
+        # Получаем все пары (type_id, rlk_id) одним запросом
+        type_rlk_pairs = est_qs.values_list(
+            'page_documents__type_reception__id',
+            'rlk_id'
+        ).distinct()
+        
+        # Группируем rlk_id по типам приема
+        type_to_rlk_ids = defaultdict(set)
+        for type_id, rlk_id in type_rlk_pairs:
+            if type_id:
+                type_to_rlk_ids[type_id].add(rlk_id)
+        
         # Подсчитываем принятые для каждого типа
         for item in type_reception_data:
             type_id = item.get('page_documents__type_reception__id')
-            # Получаем оценки этого типа и проверяем, какие приняты
-            est_with_type = est_qs.filter(
-                page_documents__type_reception__id=type_id
-            ).values_list('rlk_id', flat=True)
-            success_count = len([rlk_id for rlk_id in est_with_type if rlk_id in accepted_rlk_ids])
+            if type_id:
+                rlk_ids_for_type = type_to_rlk_ids.get(type_id, set())
+                success_count = len(rlk_ids_for_type & accepted_rlk_ids)
+            else:
+                success_count = 0
             
             type_reception_stats.append({
                 'id': type_id,
@@ -940,40 +922,48 @@ def tradein_funnel_new(request):
     # Статистика по ценовым категориям
     price_category_stats = []
     if rlk_ids:
-        # Получаем оценки для всех вариантов
-        est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
-        if type_reception_ids:
-            est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+        # Используем уже полученные est_qs и accepted_rlk_ids из статистики по типам приема
+        # Если est_qs не определен, создаем его
+        if 'est_qs' not in locals():
+            est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+            if type_reception_ids:
+                est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
         
-        # Получаем ID принятых для варианта 3
-        if type_report_id == 3:
-            accepted_rlk_ids = set(DocLO.objects.filter(
-                rlk_id__in=rlk_ids,
-                active=True,
-                dataTime__gte=date_start,
-                dataTime__lte=date_end
-            ).values_list('rlk_id', flat=True))
-        else:
-            accepted_rlk_ids = set(DocLO.objects.filter(
-                rlk_id__in=rlk_ids,
-                active=True
-            ).values_list('rlk_id', flat=True))
+        if not accepted_rlk_ids:
+            # Получаем ID принятых если еще не получены
+            if type_report_id == 3:
+                accepted_rlk_ids = set(DocLO.objects.filter(
+                    rlk_id__in=rlk_ids,
+                    active=True,
+                    dataTime__gte=date_start,
+                    dataTime__lte=date_end
+                ).values_list('rlk_id', flat=True))
+            else:
+                accepted_rlk_ids = set(DocLO.objects.filter(
+                    rlk_id__in=rlk_ids,
+                    active=True
+                ).values_list('rlk_id', flat=True))
+        
+        # Получаем только нужные поля через values для оптимизации
+        price_data = est_qs.values('rlk_id', 'page_soglasovanie__price_after_kd', 'page_soglasovanie__price_before_kd').filter(
+            page_soglasovanie__price_after_kd__gt=0
+        )
         
         price_categories = defaultdict(lambda: {'total': 0, 'before_kd': 0, 'after_kd': 0, 'success': 0})
         
-        # Получаем данные через select_related для оптимизации
-        for est in est_qs.select_related('page_soglasovanie'):
-            price_after = getattr(est.page_soglasovanie, 'price_after_kd', None) if est.page_soglasovanie else None
-            price_before = getattr(est.page_soglasovanie, 'price_before_kd', None) if est.page_soglasovanie else None
+        # Обрабатываем данные из values (быстрее чем select_related)
+        for item in price_data:
+            price_after = item.get('page_soglasovanie__price_after_kd') or 0
+            price_before = item.get('page_soglasovanie__price_before_kd') or 0
+            rlk_id = item.get('rlk_id')
             
-            if price_after and price_after > 0:
+            if price_after > 0:
                 category = _get_price_category(price_after)
                 price_categories[category]['total'] += 1
-                if price_before and price_before > 0:
+                if price_before > 0:
                     price_categories[category]['before_kd'] += 1
-                if price_after > 0:
-                    price_categories[category]['after_kd'] += 1
-                if est.rlk_id in accepted_rlk_ids:
+                price_categories[category]['after_kd'] += 1
+                if rlk_id in accepted_rlk_ids:
                     price_categories[category]['success'] += 1
         
         for category, stats in sorted(price_categories.items(), key=lambda x: _get_price_category_order(x[0])):
