@@ -608,166 +608,243 @@ def tradein_funnel_new(request):
     
     # Вариант 1: Данные по периоду (по датам создания DocRLK)
     if type_report_id == 1:
-        docs = DocRLK.objects.filter(
+        # Базовый запрос DocRLK
+        docs_base = DocRLK.objects.filter(
             dataTime__gte=date_start,
             dataTime__lte=date_end
-        ).filter(base_rlk_q).order_by('-dataTime')
+        ).filter(base_rlk_q)
         
         # Применяем фильтры
         if unit_ids:
-            docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
-        if staff_id:
-            docs = docs.filter(staff__id=staff_id)
-        if analyst_id:
-            docs = docs.filter(
-                Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
-                Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+            docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if source_unit_ids:
+            docs_base = docs_base.filter(
+                Q(unit_dc__id__in=source_unit_ids) |
+                Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
             )
+        if staff_id:
+            docs_base = docs_base.filter(staff__id=staff_id)
         
-        # Подключаем оценки для получения данных
-        subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
-        subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
+        # Получаем ID документов для дальнейшей работы
+        rlk_ids = list(docs_base.values_list('id', flat=True))
         
-        docs = docs.annotate(
-            price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
-            price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
-            lo_active=Subquery(subquery_lo.values('active')[:1]),
-            type_reception_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
-            type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
-        )
-        
-        # Фильтр по типам приема
-        if type_reception_ids:
-            docs = docs.filter(type_reception_id__in=type_reception_ids)
-        
-        rlk_count = docs.count()
-        count_price_before_kd = docs.filter(price_before_kd__gt=0).count()
-        count_price_after_kd = docs.filter(price_after_kd__gt=0).count()
-        count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
-        count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
-        count_success = docs.filter(lo_active=True).count()
-        count_success_p = _conversion(count_success, count_price_after_kd)
+        if not rlk_ids:
+            rlk_count = 0
+            count_price_before_kd = 0
+            count_price_after_kd = 0
+            count_price_before_kd_p = 0
+            count_price_after_kd_p = 0
+            count_success = 0
+            count_success_p = 0
+        else:
+            # Работаем с оценками напрямую для оптимизации
+            est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+            
+            # Фильтры по аналитику и типу приема
+            if analyst_id:
+                est_qs = est_qs.filter(
+                    Q(staff_eco_1__id=analyst_id) |
+                    Q(staff_eco_2__id=analyst_id)
+                )
+            if type_reception_ids:
+                est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+            
+            # Получаем ID оценок
+            est_ids = list(est_qs.values_list('id', flat=True))
+            
+            # Подсчитываем через агрегацию для оптимизации
+            rlk_count = len(rlk_ids)
+            
+            # Подсчет цен через агрегацию оценок
+            price_stats = est_qs.aggregate(
+                before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
+                after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
+            )
+            
+            count_price_before_kd = price_stats['before_kd_count'] or 0
+            count_price_after_kd = price_stats['after_kd_count'] or 0
+            
+            # Подсчет принятых через DocLO
+            accepted_count = DocLO.objects.filter(
+                rlk_id__in=rlk_ids,
+                active=True
+            ).count()
+            
+            count_success = accepted_count
+            count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
+            count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
+            count_success_p = _conversion(count_success, count_price_after_kd)
     
     # Вариант 2: Данные по датам рабочих листов (фильтр по dataTime DocRLK)
     elif type_report_id == 2:
-        docs = DocRLK.objects.filter(
+        # Базовый запрос DocRLK (аналогично варианту 1)
+        docs_base = DocRLK.objects.filter(
             dataTime__gte=date_start,
             dataTime__lte=date_end
-        ).filter(base_rlk_q).order_by('-dataTime')
+        ).filter(base_rlk_q)
         
         # Применяем фильтры
         if unit_ids:
-            docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+            docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
         if source_unit_ids:
-            # Фильтр по источнику поступления: unit_dc если заполнен, иначе unit
-            docs = docs.filter(
+            docs_base = docs_base.filter(
                 Q(unit_dc__id__in=source_unit_ids) |
                 Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
             )
         if staff_id:
-            docs = docs.filter(staff__id=staff_id)
-        if analyst_id:
-            docs = docs.filter(
-                Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
-                Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+            docs_base = docs_base.filter(staff__id=staff_id)
+        
+        # Получаем ID документов
+        rlk_ids = list(docs_base.values_list('id', flat=True))
+        
+        if not rlk_ids:
+            rlk_count = 0
+            count_price_before_kd = 0
+            count_price_after_kd = 0
+            count_price_before_kd_p = 0
+            count_price_after_kd_p = 0
+            count_success = 0
+            count_success_p = 0
+        else:
+            # Работаем с оценками напрямую
+            est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+            
+            # Фильтры по аналитику и типу приема
+            if analyst_id:
+                est_qs = est_qs.filter(
+                    Q(staff_eco_1__id=analyst_id) |
+                    Q(staff_eco_2__id=analyst_id)
+                )
+            if type_reception_ids:
+                est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+            
+            # Подсчитываем через агрегацию
+            rlk_count = len(rlk_ids)
+            
+            # Подсчет цен через агрегацию
+            price_stats = est_qs.aggregate(
+                before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
+                after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
             )
-        
-        # Подключаем оценки
-        subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
-        subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
-        
-        docs = docs.annotate(
-            price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
-            price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
-            lo_active=Subquery(subquery_lo.values('active')[:1]),
-            type_reception_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
-            type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
-        )
-        
-        # Фильтр по типам приема
-        if type_reception_ids:
-            docs = docs.filter(type_reception_id__in=type_reception_ids)
-        
-        rlk_count = docs.count()
-        count_price_before_kd = docs.filter(price_before_kd__gt=0).count()
-        count_price_after_kd = docs.filter(price_after_kd__gt=0).count()
-        count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
-        count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
-        count_success = docs.filter(lo_active=True).count()
-        count_success_p = _conversion(count_success, count_price_after_kd)
+            
+            count_price_before_kd = price_stats['before_kd_count'] or 0
+            count_price_after_kd = price_stats['after_kd_count'] or 0
+            
+            # Подсчет принятых через DocLO
+            accepted_count = DocLO.objects.filter(
+                rlk_id__in=rlk_ids,
+                active=True
+            ).count()
+            
+            count_success = accepted_count
+            count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
+            count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
+            count_success_p = _conversion(count_success, count_price_after_kd)
     
     # Вариант 3: Данные по листам оценки (фильтр по датам DocLO)
     else:
-        # Сначала получаем все DocRLK без фильтра по дате
-        docs = DocRLK.objects.filter(base_rlk_q)
-        
-        # Применяем фильтры по подразделениям и сотрудникам
-        if unit_ids:
-            docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
-        if source_unit_ids:
-            # Фильтр по источнику поступления: unit_dc если заполнен, иначе unit
-            docs = docs.filter(
-                Q(unit_dc__id__in=source_unit_ids) |
-                Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
-            )
-        if staff_id:
-            docs = docs.filter(staff__id=staff_id)
-        if analyst_id:
-            docs = docs.filter(
-                Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
-                Q(reginteractivocenka__staff_eco_2__id=analyst_id)
-            )
-        
-        # Подключаем оценки и листы оценки
-        subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
-        subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
-        
-        docs = docs.annotate(
-            unit_name=Subquery(subquery_est.values('page_documents__unit__name')[:1]),
-            status_estimation=Subquery(subquery_est.values('status__name')[:1]),
-            status_estimation_id=Subquery(subquery_est.values('status__id')[:1]),
-            start_estimation=Subquery(subquery_est.values('start_estimation')[:1]),
-            end_estimation=Subquery(subquery_est.values('end_estimation')[:1]),
-            staff_estimation=Subquery(subquery_est.values('staff')[:1]),
-            remote_price=Subquery(subquery_est.values('page_remote__price_sale')[:1]),
-            mark=Subquery(subquery_est.values('modification__model__mark__name')[:1]),
-            model=Subquery(subquery_est.values('modification__model__name')[:1]),
-            modification=Subquery(subquery_est.values('modification__name')[:1]),
-            type_estimation_ocenka=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
-            type_estimation_ocenka_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
-            year=Subquery(subquery_est.values('year')[:1]),
-            vin=Subquery(subquery_est.values('vin')[:1]),
-            price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
-            price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
-            lo_pk=Subquery(subquery_est.values('id')[:1]),
-            lo_date_time=Subquery(subquery_lo.values('dataTime')[:1]),
-            lo_nomer=Subquery(subquery_lo.values('nomer')[:1]),
-            lo_active=Subquery(subquery_lo.values('active')[:1]),
+        # Сначала получаем DocLO в периоде для оптимизации
+        lo_qs = DocLO.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
         )
         
-        # Фильтр по датам листов оценки
-        docs = docs.filter(lo_date_time__gte=date_start, lo_date_time__lte=date_end)
+        # Получаем rlk_id из листов оценки
+        lo_rlk_ids = list(lo_qs.values_list('rlk_id', flat=True).distinct())
         
-        # Дополнительные фильтры
-        filtr_number_doc = request.GET.get('number_doc', '')
-        filtr_vin = request.GET.get('vin', '')
-        
-        if filtr_number_doc:
-            docs = docs.filter(nomer__icontains=filtr_number_doc)
-        if filtr_vin:
-            docs = docs.filter(vin__icontains=filtr_vin)
-        
-        # Фильтр по типам приема
-        if type_reception_ids:
-            docs = docs.filter(type_estimation_ocenka_id__in=type_reception_ids)
-        
-        rlk_count = docs.count()
-        count_price_before_kd = docs.filter(price_before_kd__gt=0).count()
-        count_price_after_kd = docs.filter(price_after_kd__gt=0).count()
-        count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
-        count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
-        count_success = docs.filter(lo_active=True).count()
-        count_success_p = _conversion(count_success, count_price_after_kd)
+        if not lo_rlk_ids:
+            rlk_count = 0
+            count_price_before_kd = 0
+            count_price_after_kd = 0
+            count_price_before_kd_p = 0
+            count_price_after_kd_p = 0
+            count_success = 0
+            count_success_p = 0
+        else:
+            # Получаем DocRLK по найденным ID
+            docs_base = DocRLK.objects.filter(id__in=lo_rlk_ids).filter(base_rlk_q)
+            
+            # Применяем фильтры
+            if unit_ids:
+                docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+            if source_unit_ids:
+                docs_base = docs_base.filter(
+                    Q(unit_dc__id__in=source_unit_ids) |
+                    Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+                )
+            if staff_id:
+                docs_base = docs_base.filter(staff__id=staff_id)
+            
+            # Дополнительные фильтры по номеру и VIN
+            filtr_number_doc = request.GET.get('number_doc', '')
+            filtr_vin = request.GET.get('vin', '')
+            
+            if filtr_number_doc:
+                docs_base = docs_base.filter(nomer__icontains=filtr_number_doc)
+            
+            # Получаем финальные ID документов
+            rlk_ids = list(docs_base.values_list('id', flat=True))
+            
+            if not rlk_ids:
+                rlk_count = 0
+                count_price_before_kd = 0
+                count_price_after_kd = 0
+                count_price_before_kd_p = 0
+                count_price_after_kd_p = 0
+                count_success = 0
+                count_success_p = 0
+            else:
+                # Работаем с оценками
+                est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+                
+                # Фильтр по VIN через оценки
+                if filtr_vin:
+                    est_qs = est_qs.filter(vin__icontains=filtr_vin)
+                    rlk_ids = list(est_qs.values_list('rlk_id', flat=True).distinct())
+                    if not rlk_ids:
+                        rlk_count = 0
+                        count_price_before_kd = 0
+                        count_price_after_kd = 0
+                        count_price_before_kd_p = 0
+                        count_price_after_kd_p = 0
+                        count_success = 0
+                        count_success_p = 0
+                    else:
+                        est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+                
+                # Фильтры по аналитику и типу приема
+                if analyst_id:
+                    est_qs = est_qs.filter(
+                        Q(staff_eco_1__id=analyst_id) |
+                        Q(staff_eco_2__id=analyst_id)
+                    )
+                if type_reception_ids:
+                    est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+                
+                # Подсчитываем через агрегацию
+                rlk_count = len(rlk_ids)
+                
+                # Подсчет цен через агрегацию
+                price_stats = est_qs.aggregate(
+                    before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
+                    after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
+                )
+                
+                count_price_before_kd = price_stats['before_kd_count'] or 0
+                count_price_after_kd = price_stats['after_kd_count'] or 0
+                
+                # Подсчет принятых через DocLO (только активные в периоде)
+                accepted_count = DocLO.objects.filter(
+                    rlk_id__in=rlk_ids,
+                    active=True,
+                    dataTime__gte=date_start,
+                    dataTime__lte=date_end
+                ).count()
+                
+                count_success = accepted_count
+                count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
+                count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
+                count_success_p = _conversion(count_success, count_price_after_kd)
     
     # Статистика по типам приема
     type_reception_stats = []
