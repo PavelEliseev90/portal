@@ -163,7 +163,6 @@ def _build_tradein_querysets(date_start, date_end, unit_id=None, staff_id=None, 
     tradein_rlk = (
         DocRLK.objects.filter(dataTime__gte=date_start)
         .filter(dataTime__lte=date_end)
-        .filter(type__id=7)
         .filter(eco=True)
         .filter(tradeInModel__isnull=False)
     )
@@ -467,6 +466,163 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
 
     return result_list, totals
 
+def tradein_funnel_new(request):
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    
+    default_end     = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start   = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+
+    date_start  = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end    = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    type_report_id = _get_int(request.GET.get('type_report_id'))
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(profiles__eco=True)
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+    
+    rlk_count                   = 0
+        
+    count_price_before_kd       = 0
+    count_price_after_kd        = 0
+    count_price_before_kd_p     = 0
+    count_price_after_kd_p      = 0
+    count_success               = 0
+    count_success_p             = 0
+    
+    if type_report_id == None:
+        type_report_id = 1
+
+    if type_report_id == 1:
+        docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime')     
+    
+    
+    elif type_report_id == 2:
+        docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+    
+    
+    else:
+    
+        docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
+    
+        subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+        subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
+        
+        docs        = docs.annotate(
+            unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
+            status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
+            status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
+            start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
+            end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
+            staff_estimation        = Subquery(subquery.values('staff')[:1])).annotate(
+            remote_price            = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
+            mark                    = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
+            model                   = Subquery(subquery.values('modification__model__name')[:1])).annotate(
+            modification            = Subquery(subquery.values('modification__name')[:1])).annotate(
+            type_estimation_ocenka      = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
+            type_estimation_ocenka_id   = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
+            year                        = Subquery(subquery.values('year')[:1])).annotate(
+            vin                         = Subquery(subquery.values('vin')[:1])).annotate(
+            price_before_kd             = Subquery(subquery.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
+            price_after_kd              = Subquery(subquery.values('page_soglasovanie__price_after_kd')[:1])).annotate(   
+            lo_pk                       = Subquery(subquery.values('id')[:1])).annotate(
+            lo_date_time                = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
+            lo_nomer                    = Subquery(subquery_lo.values('nomer')[:1])).annotate(
+            lo_active                   = Subquery(subquery_lo.values('active')[:1]))
+
+        filtr_number_doc    = request.GET.get('number_doc', '')
+        filtr_vin           = request.GET.get('vin', '')
+        
+        docs = docs.filter(lo_date_time__gte = date_start).filter(lo_date_time__lte = date_end)
+
+        if filtr_number_doc != '':
+            docs = docs.filter(nomer__icontains = filtr_number_doc)    
+    
+        #if type_receptions_id != '':
+        #    type_receptions_id = int(type_receptions_id)
+        #    docs = docs.filter(type_estimation_ocenka_id = type_receptions_id)    
+        
+        if filtr_vin != '':
+            docs = docs.filter(vin__icontains = filtr_vin)  
+        
+        # if filtr_unit_name != '':
+        #     docs = docs.filter(unit__name__icontains = filtr_unit_name) | docs.filter(unit_dc__name__icontains = filtr_unit_name)
+                
+        color_palette = ['#2563eb', '#f97316', '#22c55e', '#a855f7', '#f43f5e', '#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#d946ef']
+        
+        def _conversion(current, previous):
+            if not previous:
+                return 0
+            return round(current / previous * 100, 1)
+
+        rlk_count                   = docs.count()
+        
+        type_receptions             = docs.values('type_estimation_ocenka').annotate(count=Count('id')).values_list('type_estimation_ocenka', 'count')
+        
+        count_price_before_kd       = docs.filter(price_before_kd__gt = 0).count()
+        count_price_after_kd        = docs.filter(price_after_kd__gt = 0).count()
+        count_price_before_kd_p     = _conversion(count_price_before_kd, rlk_count)
+        count_price_after_kd_p      = _conversion(count_price_after_kd, count_price_before_kd)
+        count_success               = docs.filter(lo_active = True).count()
+        count_success_p             = _conversion(count_success, count_price_after_kd)
+
+    filters = {
+        'date_start'    : date_start.strftime('%Y-%m-%d') or '',
+        'date_end'      : date_end.strftime('%Y-%m-%d') or '',
+        'type_report_id' : type_report_id,
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+        'type_reception_id': type_reception_id or '',
+    }
+
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        # 'etimation_list_remote_all'         : etimation_list_remote_all,
+        # 'etimation_list_remote'             : etimation_list_remote,
+        # 'etimation_list_remote_before_kd'   : etimation_list_remote_before_kd,
+        # 'etimation_list_remote_after_kd'    : etimation_list_remote_after_kd,
+        # 'etimation_list_remote_success'     : etimation_list_remote_success,
+        'rlk_count' : rlk_count,
+        'count_price_before_kd': count_price_before_kd,
+        'count_price_after_kd': count_price_after_kd,
+        'count_price_before_kd_p': count_price_before_kd_p,
+        'count_price_after_kd_p': count_price_after_kd_p,
+        'count_success' : count_success,
+        'count_success_p': count_success_p,
+        'filters': filters,
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+        'type_receptions': type_receptions,
+        
+    }
+
+    return render(request, 'lo/tradein_funnel_new.html', {'params': params})
+
 
 def tradein_funnel(request):
     if not request.user.is_authenticated:
@@ -481,11 +637,18 @@ def tradein_funnel(request):
         return render(request, 'errors/403.html', {'params': params})
 
     now = DT.datetime.now()
-    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    #default_end     = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    #default_start   = default_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    now_null        = now.replace(year=1, month=1, day=1, hour=23, minute=59, second=59, microsecond=0)
 
-    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
-    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    default_end     = now.replace(year=1, month=1, day=1, hour=23, minute=59, second=59, microsecond=0)
+    default_start   = default_end
+
+    date_start  = _parse_date(request.GET.get('date_start', ''), now_null, is_end=False)
+    date_end    = _parse_date(request.GET.get('date_end', ''), now_null, is_end=True)
+
+    date_start_lo   = _parse_date(request.GET.get('date_start_lo', ''), now_null, is_end=False)
+    date_end_lo     = _parse_date(request.GET.get('date_end_lo', ''), now_null, is_end=True)
 
     unit_id = _get_int(request.GET.get('unit_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
@@ -496,9 +659,11 @@ def tradein_funnel(request):
     status_id = _get_int(request.GET.get('status_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
 
+    if date_start != now_null or date_start_lo != now_null:
+        s = 1
     type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
     color_palette = ['#2563eb', '#f97316', '#22c55e', '#a855f7', '#f43f5e', '#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#d946ef']
-
+    
     stage_counts_raw = _get_stage_counts(
         date_start,
         date_end,
@@ -749,14 +914,20 @@ def tradein_funnel(request):
         type_reception_id=type_reception_id,
     )
     
-    source_totals['conv_to_accepted'] = round(
-        (source_totals['accepted'] / source_totals['work_orders'] * 100) if source_totals['work_orders'] > 0 else 0,
-        1
-    )
+    source_totals['conv_to_accepted'] = round((source_totals['accepted'] / source_totals['work_orders'] * 100) if source_totals['work_orders'] > 0 else 0, 1)
+
+    #Воронка дистанционных оценок
+    etimation_list_remote_all   = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).count()
+    etimation_list_remote       = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).exclude(page_soglasovanie = None).count()
+    etimation_list_remote_before_kd     = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).filter(page_soglasovanie__price_before_kd__gte = 0).count()
+    etimation_list_remote_after_kd      = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).filter(page_soglasovanie__price_after_kd__gte = 0).count()
+    etimation_list_remote_success       = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).filter(page_soglasovanie__price_after_kd__gte = 0).filter(status__id = 8).count()
 
     filters = {
-        'date_start': date_start.strftime('%Y-%m-%d'),
-        'date_end': date_end.strftime('%Y-%m-%d'),
+        'date_start'    : date_start.strftime('%Y-%m-%d'),
+        'date_end'      : date_end.strftime('%Y-%m-%d'),
+        'date_start_lo' : date_start_lo.strftime('%Y-%m-%d'),
+        'date_end_lo'   : date_end_lo.strftime('%Y-%m-%d'),
         'unit_id': unit_id or '',
         'staff_id': staff_id or '',
         'analyst_id': analyst_id or '',
@@ -766,6 +937,12 @@ def tradein_funnel(request):
     params = {
         'type': 'eco_funnel',
         'nav_selected': 4,
+        'etimation_list_remote_all' : etimation_list_remote_all,
+        'etimation_list_remote'     : etimation_list_remote,
+        'etimation_list_remote_before_kd'     : etimation_list_remote_before_kd,
+        'etimation_list_remote_after_kd'     : etimation_list_remote_after_kd,
+        'etimation_list_remote_success'     : etimation_list_remote_success,
+
         'request': request,
         'filters': filters,
         'stages': stages,
@@ -3550,7 +3727,7 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
             'name'      : "расчеты ремонтов"   
         }
         list_info_price.append(inf_price)
-    
+    lob_add = False
     if estimation.page_vnesh != None:
         if estimation.page_vnesh.windshield_error_int == 1:
                 if estimation.page_vnesh.windshield_heat_int == 1:
@@ -3569,7 +3746,8 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
                     'amount'    : diff_sum
                 }
                 list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum  
+                amount_mcu = amount_mcu + diff_sum 
+                lob_add = True 
 
     if estimation.page_salon != None:        
         # Химчистка +
@@ -4562,24 +4740,24 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
                 list_work_mcu.append(dop)
                 amount_mcu = amount_mcu + diff_sum              
         elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
-            
-            if estimation.page_vnesh.windshield_heat_int == 1:
-                price_diff = windshield_heat
-                info_diff   = info['name'] + " c подогревом"
-            else:
-                price_diff = windshield
-                info_diff   = info['name']
+            if lob_add == False:
+                if estimation.page_vnesh.windshield_heat_int == 1:
+                    price_diff = windshield_heat
+                    info_diff   = info['name'] + " c подогревом"
+                else:
+                    price_diff = windshield
+                    info_diff   = info['name']
 
-            work        = info_diff.capitalize()
-            diff_sum    = price_diff
-            dop = {
-                'name'      : work,
-                'quantity'  : 1,
-                'amount_pod': diff_sum, 
-                'amount'    : diff_sum
-            }
-            list_work_mcu.append(dop)
-            amount_mcu = amount_mcu + diff_sum    
+                work        = info_diff.capitalize()
+                diff_sum    = price_diff
+                dop = {
+                    'name'      : work,
+                    'quantity'  : 1,
+                    'amount_pod': diff_sum, 
+                    'amount'    : diff_sum
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + diff_sum    
         else:
             if info['rzav_strong'] > 0:
                 elem_rzav = elem_rzav + 1
@@ -4706,7 +4884,7 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
                     }
                     list_work_mcu.append(dop)
                     amount_mcu = amount_mcu + diff_sum
-            if (info['vmyat_strong'] > 0 or info['carap_strong'] > 0 or info['rzav'] > 0 or info['tr'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
+            if (info['carap_strong'] > 0 or info['rzav'] > 0 or info['tr'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
                 if info['name'] == 'передний бампер':
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 14)
@@ -4948,18 +5126,31 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
                     }
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum
-            elif info['vmyat'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 131)
-                diff_sum    = work.price_kors * info['vmyat']
-                dop = {
-                    'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
-                    'quantity'  : work.normo * info['vmyat'],
-                    'amount_pod': work.price_podrad * info['vmyat'], 
-                    'amount'    : work.price_kors * info['vmyat']
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum                 
+            elif (info['vmyat_strong'] > 0 or info['vmyat'] > 0):
+                if info['vmyat_strong'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 131)
+                    diff_sum    = work.price_kors * info['vmyat_strong']
+                    dop = {
+                        'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name + " сильная " +  ' (' + str(info['vmyat_strong']) +')',
+                        'quantity'  : work.normo * info['vmyat_strong'],
+                        'amount_pod': work.price_podrad * info['vmyat_strong'], 
+                        'amount'    : work.price_kors * info['vmyat_strong']
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                if info['vmyat'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 131)
+                    diff_sum    = work.price_kors * info['vmyat']
+                    dop = {
+                        'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
+                        'quantity'  : work.normo * info['vmyat'],
+                        'amount_pod': work.price_podrad * info['vmyat'], 
+                        'amount'    : work.price_kors * info['vmyat']
+                    } 
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum                 
  
             if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
             
@@ -5287,6 +5478,99 @@ class Point:
         self.x = x
         self.y = y
 
+def eco_efficiency_analysis_new(request):
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_efficiency',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=0, minute=1, second=1, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+    status_id = _get_int(request.GET.get('status_id'))
+
+    docs_lo     = DocLO.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end)
+    docs_rlk    = DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(eco = True)
+    subqyery_est        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name = 'rlk__id'))
+    subqyery_eco_before = EcoAnalystSnapshot.objects.filter(role = 'before').filter(rlk_id = OuterRef(name = 'rlk__id'))
+    subqyery_eco_after  = EcoAnalystSnapshot.objects.filter(role = 'after').filter(rlk_id = OuterRef(name = 'rlk__id'))
+    
+    docs_lo = docs_lo.annotate(
+        price_after_kd          = Subquery(subqyery_est.values('page_soglasovanie__price_after_kd')[:1])).annotate(
+        price_before_kd         = Subquery(subqyery_est.values('page_soglasovanie__price_before_kd')[:1])).annotate(
+        before_kd               = Subquery(subqyery_eco_before.values('comparison')[:1])).annotate(
+        after_kd                = Subquery(subqyery_eco_after.values('comparison')[:1])    
+    )
+    est_success = docs_lo.filter(active = True).count()
+    est_kd      = docs_lo.filter(price_after_kd__gt = 0).count()
+    est_do_kd   = docs_lo.filter(price_before_kd__gt = 0).count()
+
+    est_success_percent = est_success / est_kd * 100
+    est_kd_percent = est_kd / est_do_kd * 100
+
+    count_before_higher = docs_lo.filter(before_kd = 1).count()
+    count_before_equal  = docs_lo.filter(before_kd = 0).count()
+    count_before_lower  = docs_lo.filter(before_kd = -1).count()
+
+    count_after_higher = docs_lo.filter(after_kd = 1).count()
+    count_after_equal  = docs_lo.filter(after_kd = 0).count()
+    count_after_lower  = docs_lo.filter(after_kd = -1).count()
+
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(profiles__eco=True)
+    types   = RefTypeReceptionCarsOrganization.objects.order_by('name')
+    statuses = RefStatusEstimation.objects.order_by('name')
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'staff_id': staff_id or '',
+        'analyst_id': analyst_id or '',
+        'type_id': type_id or '',
+        'status_id': status_id or '',
+    }
+
+    
+    params = {
+        'type': 'eco_efficiency',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'est_success'   : est_success,
+        'est_success_percent'   : est_success_percent,
+        'est_kd'        : est_kd,
+        'est_kd_percent'    : est_kd_percent,
+        'est_do_kd'     : est_do_kd,
+        'count_before_higher'   : count_before_higher,
+        'count_before_equal'    : count_before_equal,
+        'count_before_lower'    : count_before_lower,
+        'count_after_higher'    : count_after_higher,
+        'count_after_equal'     : count_after_equal,
+        'count_after_lower'     : count_after_lower,
+        
+        
+    }
+
+    return render(request, 'lo/eco_efficiency_new.html', {'params': params})
+
+
 def eco_efficiency_analysis(request):
     
     if not request.user.is_authenticated:
@@ -5335,7 +5619,7 @@ def eco_efficiency_analysis(request):
     # Согласовано после КД (role='after' и has_soglasovanie=True)
     with_soglasovanie_after_count = pricing_qs.filter(role='after', has_soglasovanie=True).count()
     # Согласовано дистанционно (role='remote' и has_soglasovanie=True)
-    with_soglasovanie_remote_count = pricing_qs.filter(role='remote', has_soglasovanie=True).count()
+    with_soglasovanie_remote_count = pricing_qs.filter(role='remote').count()
     # Принято (только среди согласованных после КД: role='after', has_soglasovanie=True и accepted=True)
     with_accepted_count = pricing_qs.filter(role='after', has_soglasovanie=True, accepted=True).count()
     
@@ -5373,9 +5657,9 @@ def eco_efficiency_analysis(request):
     lower_count_after  = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = -1).count()
     equal_count_after  = pricing_qs.filter(role='after', has_soglasovanie=True, comparison = 0).count()
 
-    higher_count_remote = pricing_qs.filter(role='remote', has_soglasovanie=True, comparison = 1).count()
-    lower_count_remote  = pricing_qs.filter(role='remote', has_soglasovanie=True, comparison = -1).count()
-    equal_count_remote  = pricing_qs.filter(role='remote', has_soglasovanie=True, comparison = 0).count()
+    higher_count_remote = pricing_qs.filter(role='remote',  comparison = 1).count()
+    lower_count_remote  = pricing_qs.filter(role='remote',  comparison = -1).count()
+    equal_count_remote  = pricing_qs.filter(role='remote',  comparison = 0).count()
 
     avg_price_diff = round(sum(price_diffs) / len(price_diffs), 0) if price_diffs else 0
     avg_price_diff_percent = round(sum(price_percent_diffs) / len(price_percent_diffs), 1) if price_percent_diffs else 0
@@ -5457,7 +5741,7 @@ def eco_efficiency_analysis(request):
         analyst_id_st = row['analyst_id']
         analyst_before_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='before', has_soglasovanie=True)
         analyst_after_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='after', has_soglasovanie=True)
-        analyst_remote_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='remote', has_soglasovanie=True)
+        analyst_remote_qs = analyst_qs.filter(analyst_id=analyst_id_st, role='remote')
         
         # До диагностики
         higher_before = lower_before = equal_before = 0
@@ -5670,6 +5954,7 @@ def eco_analyst_detail(request, analyst_id):
     type_id = _get_int(request.GET.get('type_id'))
     status_id = _get_int(request.GET.get('status_id'))
     role_filter = request.GET.get('role', '')
+    marker_filter = request.GET.get('marker', '')
 
     # Получаем аналитика
     try:
@@ -5695,6 +5980,13 @@ def eco_analyst_detail(request, analyst_id):
         evaluations_qs = evaluations_qs.filter(status_id=status_id)
     if role_filter:
         evaluations_qs = evaluations_qs.filter(role=role_filter)
+    if marker_filter:
+        if marker_filter == 'higher':
+            evaluations_qs = evaluations_qs.filter(comparison=1)
+        elif marker_filter == 'lower':
+            evaluations_qs = evaluations_qs.filter(comparison=-1)
+        else:
+            evaluations_qs = evaluations_qs.filter(comparison=0)
 
     # Пагинация
     paginator = Paginator(evaluations_qs.order_by('-start_estimation'), 50)
@@ -5707,30 +5999,53 @@ def eco_analyst_detail(request, analyst_id):
         # Определяем маркер цены
         price_marker = None
         price_marker_class = ''
-        if eval_snapshot.role == 'before' and eval_snapshot.price_before_kd and eval_snapshot.price_auto_selected:
-            diff = float(eval_snapshot.price_before_kd) - float(eval_snapshot.price_auto_selected)
-            diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
-            if diff_percent > 5:
-                price_marker = 'Выше'
-                price_marker_class = 'text-success'
-            elif diff_percent < -5:
-                price_marker = 'Ниже'
-                price_marker_class = 'text-danger'
-            else:
-                price_marker = 'Равно'
-                price_marker_class = 'text-info'
-        elif eval_snapshot.role == 'after' and eval_snapshot.price_after_kd and eval_snapshot.price_auto_selected:
-            diff = float(eval_snapshot.price_after_kd) - float(eval_snapshot.price_auto_selected)
-            diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
-            if diff_percent > 5:
-                price_marker = 'Выше'
-                price_marker_class = 'text-success'
-            elif diff_percent < -5:
-                price_marker = 'Ниже'
-                price_marker_class = 'text-danger'
-            else:
-                price_marker = 'Равно'
-                price_marker_class = 'text-info'
+        
+        if eval_snapshot.comparison == 1:
+            price_marker = 'Выше'
+            price_marker_class = 'text-success'
+        elif eval_snapshot.comparison == -1:
+            price_marker = 'Ниже'
+            price_marker_class = 'text-danger'
+        else:
+            price_marker = 'Равно'
+            price_marker_class = 'text-info'
+
+        # if eval_snapshot.role == 'before' and eval_snapshot.price_before_kd and eval_snapshot.price_auto_selected:
+        #     diff = float(eval_snapshot.price_before_kd) - float(eval_snapshot.price_auto_selected)
+        #     diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+        #     if diff_percent > 5:
+        #         price_marker = 'Выше'
+        #         price_marker_class = 'text-success'
+        #     elif diff_percent < -5:
+        #         price_marker = 'Ниже'
+        #         price_marker_class = 'text-danger'
+        #     else:
+        #         price_marker = 'Равно'
+        #         price_marker_class = 'text-info'
+        # elif eval_snapshot.role == 'after' and eval_snapshot.price_after_kd and eval_snapshot.price_auto_selected:
+        #     diff = float(eval_snapshot.price_after_kd) - float(eval_snapshot.price_auto_selected)
+        #     diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+        #     if diff_percent > 5:
+        #         price_marker = 'Выше'
+        #         price_marker_class = 'text-success'
+        #     elif diff_percent < -5:
+        #         price_marker = 'Ниже'
+        #         price_marker_class = 'text-danger'
+        #     else:
+        #         price_marker = 'Равно'
+        #         price_marker_class = 'text-info'
+        # elif eval_snapshot.role == 'remote' and eval_snapshot.price_before_kd and eval_snapshot.price_auto_selected:
+        #     diff = float(eval_snapshot.price_before_kd) - float(eval_snapshot.price_auto_selected)
+        #     diff_percent = round((diff / float(eval_snapshot.price_auto_selected)) * 100, 1) if eval_snapshot.price_auto_selected else 0
+        #     if diff_percent > 5:
+        #         price_marker = 'Выше'
+        #         price_marker_class = 'text-success'
+        #     elif diff_percent < -5:
+        #         price_marker = 'Ниже'
+        #         price_marker_class = 'text-danger'
+        #     else:
+        #         price_marker = 'Равно'
+        #         price_marker_class = 'text-info'
 
         # Вычисляем время в часах
         duration_estimation_hours = round((eval_snapshot.duration_estimation_sec or 0) / 3600, 1) if eval_snapshot.duration_estimation_sec else None
@@ -5739,12 +6054,17 @@ def eco_analyst_detail(request, analyst_id):
             duration_sogl_hours = round(eval_snapshot.duration_sogl_before_sec / 3600, 1)
         elif eval_snapshot.role == 'after' and eval_snapshot.duration_sogl_after_sec:
             duration_sogl_hours = round(eval_snapshot.duration_sogl_after_sec / 3600, 1)
+        role_display = 'До КД'
+        if eval_snapshot.role == 'after':
+            role_display = 'До КД'
+        elif eval_snapshot.role == 'remote':
+            role_display = 'Дистанционно'
 
         evaluations.append({
             'estimation_id': eval_snapshot.estimation_id,
             'rlk_id': eval_snapshot.rlk_id,
             'role': eval_snapshot.role,
-            'role_display': 'До КД' if eval_snapshot.role == 'before' else 'После КД',
+            'role_display': role_display,
             'start_estimation': eval_snapshot.start_estimation,
             'end_estimation': eval_snapshot.end_estimation,
             'unit_name': eval_snapshot.unit_name,
@@ -5777,6 +6097,7 @@ def eco_analyst_detail(request, analyst_id):
         'type_id': type_id or '',
         'status_id': status_id or '',
         'role': role_filter or '',
+        'marker': marker_filter or '',
     }
 
     params = {

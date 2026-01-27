@@ -190,8 +190,18 @@
         <label class="form-label text-uppercase">Роль</label>
         <select class="form-select" name="role">
           <option value="">Все</option>
+          <option value="remote" {% if params.filters.role == 'remote' %}selected{% endif %}>Дистанционно</option>
           <option value="before" {% if params.filters.role == 'before' %}selected{% endif %}>До КД</option>
           <option value="after" {% if params.filters.role == 'after' %}selected{% endif %}>После КД</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Маркер</label>
+        <select class="form-select" name="marker">
+          <option value="">Все</option>
+          <option value="higher" {% if params.filters.marker == 'higher' %}selected{% endif %}>Выше</option>
+          <option value="equal" {% if params.filters.marker == 'equal' %}selected{% endif %}>Равно</option>
+          <option value="lower" {% if params.filters.marker == 'lower' %}selected{% endif %}>Ниже</option>
         </select>
       </div>
       <div class="col-12 text-end">
@@ -219,12 +229,8 @@
                 <th>Подразделение</th>
                 <th>Сотрудник</th>
                 <th>Статус</th>
-                <th class="text-end">Согласование</th>
-                <th class="text-end">Диагностика</th>
-                <th class="text-end">Принято</th>
                 <th class="text-end">Цена авторасчета</th>
-                <th class="text-end">Цена до КД</th>
-                <th class="text-end">Цена после КД</th>
+                <th class="text-end">Цена ЕЦО</th>
                 <th class="text-end">Маркер</th>
                 <th class="text-end">Время оценки</th>
                 <th class="text-end">Время согласования</th>
@@ -239,7 +245,7 @@
                   <strong>#{{ eval.estimation_id }}</strong>
                 </td>
                 <td data-label="Роль">
-                  <span class="badge {% if eval.role == 'before' %}bg-info{% else %}bg-success{% endif %}">
+                  <span class="badge {% if eval.role == 'before' %}bg-info {% elif eval.role == 'remote' %} bg-secondary {% else %}bg-success{% endif %}">
                     {{ eval.role_display }}
                   </span>
                 </td>
@@ -255,28 +261,7 @@
                 </td>
                 <td data-label="Подразделение">{{ eval.unit_name|default:"—" }}</td>
                 <td data-label="Сотрудник">{{ eval.staff_name|default:"—" }}</td>
-                <td data-label="Статус">{{ eval.status_name|default:"—" }}</td>
-                <td class="text-end" data-label="Согласование">
-                  {% if eval.has_soglasovanie %}
-                    <span class="badge bg-success">Да</span>
-                  {% else %}
-                    <span class="badge bg-secondary">Нет</span>
-                  {% endif %}
-                </td>
-                <td class="text-end" data-label="Диагностика">
-                  {% if eval.has_diagnostics %}
-                    <span class="badge bg-success">Да</span>
-                  {% else %}
-                    <span class="badge bg-secondary">Нет</span>
-                  {% endif %}
-                </td>
-                <td class="text-end" data-label="Принято">
-                  {% if eval.accepted %}
-                    <span class="badge bg-success">Да</span>
-                  {% else %}
-                    <span class="badge bg-secondary">Нет</span>
-                  {% endif %}
-                </td>
+                <td data-label="Статус">{{ eval.status_name|default:"—" }}</td>              
                 <td class="text-end" data-label="Цена авторасчета">
                   {% if eval.price_auto_selected %}
                     {{ eval.price_auto_selected|floatformat:0 }} ₽
@@ -285,19 +270,13 @@
                   {% endif %}
                 </td>
                 <td class="text-end" data-label="Цена до КД">
-                  {% if eval.price_before_kd %}
+                  
+                  {% if eval.role == 'before'  %}
                     {{ eval.price_before_kd|floatformat:0 }} ₽
                   {% else %}
-                    —
-                  {% endif %}
-                </td>
-                <td class="text-end" data-label="Цена после КД">
-                  {% if eval.price_after_kd %}
                     {{ eval.price_after_kd|floatformat:0 }} ₽
-                  {% else %}
-                    —
                   {% endif %}
-                </td>
+                </td>                
                 <td class="text-end" data-label="Маркер">
                   {% if eval.price_marker %}
                     <span class="{{ eval.price_marker_class }} fw-bold">{{ eval.price_marker }}</span>

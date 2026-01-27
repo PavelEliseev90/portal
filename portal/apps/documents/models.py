@@ -1268,14 +1268,26 @@ class DocSMS(models.Model):
     phone           = models.CharField('Телефон', default='', null=True, max_length=250, blank=False)
     phoneNorm       = models.CharField('Телефон нормализованный', default='', null=True, max_length=250, blank=False)
     messageId       = models.CharField('Идентификатор сообщения', default='', null=True, max_length=250, blank=False)
-
+    model_pk        = models.IntegerField("ИД данных", default=0, blank=True)
+    
     def __str__(self):
         return "{} ({} - {})".format(self.dateTime, self.clientName, self.nomer)
 
 
+    
+    def save(self, *args, **kwargs):
+        
+        try:
+            self.model_pk = int(self.modelId)
+        except:
+            s = 1
+        super().save(*args, **kwargs)
+
     class Meta:
         indexes = [
-            models.Index(fields=['uin'])
+            models.Index(fields=['uin']),
+            models.Index(fields=['modelName']),
+            models.Index(fields=['model_pk']),
         ]
         db_table = 'docSMS'
         verbose_name = "Сообщение смс"

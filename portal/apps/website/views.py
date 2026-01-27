@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from openpyxl import Workbook, load_workbook
-from documents.models import DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning, DocZNKA
+from documents.models import DocSMS, DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning, DocZNKA
 import datetime as DT
 from dateutil.relativedelta import relativedelta
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
@@ -1322,6 +1322,12 @@ def sms_opros_service(request):
             else:
                 docs = docs.filter(v2__gte = 8)
             filter_count = filter_count + 1
+
+        subqyery_sms    = DocSMS.objects.filter(modelName = 'DocZN').filter(model_pk = OuterRef(name='zn__id'))
+    
+        docs        = docs.annotate(
+            phone                     = Subquery(subqyery_sms.values('phoneNorm')[:1])
+        )
 
         count   = len(docs)
         docs    = docs.select_related('zn')
@@ -4654,7 +4660,6 @@ def rlks_trade_in(request):
     staffID         = ""
     staffsSelect    = ""
     
-    #docs        = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).filter(staff__domain_login = request.user.username ).order_by('-dataTime')
     if date_start_lo == '':
         docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
     else:
@@ -4667,21 +4672,21 @@ def rlks_trade_in(request):
         unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-        start_estimation    = Subquery(subquery.values('start_estimation')[:1])).annotate(
-        end_estimation      = Subquery(subquery.values('end_estimation')[:1])).annotate(
-        staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
-        remote_price        = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-        mark                = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-        model = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-        modification = Subquery(subquery.values('modification__name')[:1])).annotate(
-        type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-        type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year    = Subquery(subquery.values('year')[:1])).annotate(
-        vin     = Subquery(subquery.values('vin')[:1])).annotate(
-        lo_pk   = Subquery(subquery.values('id')[:1])).annotate(
-        lo_date_time   = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
-        lo_nomer   = Subquery(subquery_lo.values('nomer')[:1])).annotate(
-        lo_active   = Subquery(subquery_lo.values('active')[:1]))
+        start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
+        end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
+        staff_estimation        = Subquery(subquery.values('staff')[:1])).annotate(
+        remote_price            = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
+        mark                    = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
+        model                   = Subquery(subquery.values('modification__model__name')[:1])).annotate(
+        modification            = Subquery(subquery.values('modification__name')[:1])).annotate(
+        type_estimation_ocenka      = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id   = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
+        year                        = Subquery(subquery.values('year')[:1])).annotate(
+        vin                         = Subquery(subquery.values('vin')[:1])).annotate(
+        lo_pk                       = Subquery(subquery.values('id')[:1])).annotate(
+        lo_date_time                = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
+        lo_nomer                    = Subquery(subquery_lo.values('nomer')[:1])).annotate(
+        lo_active                   = Subquery(subquery_lo.values('active')[:1]))
 
     filtr_number_doc    = request.GET.get('number_doc', '')
     filtr_vin           = request.GET.get('vin', '')
@@ -4708,7 +4713,7 @@ def rlks_trade_in(request):
     status_id = request.GET.get('status_id', '')
     if status_id != '':
         status_id = int(status_id)
-        docs = docs.filter(status_estimation_id = status_id)
+        docs = docs.filter(status_estimation_id = status_id) | docs.exclude(status_estimation_id = 8).filter(lo_active = True)
 
     if request.GET.get('unit_id', ""):
         unit_id         = request.GET['unit_id']
@@ -4897,7 +4902,10 @@ def rlks_trade_in_export(request):
     status_id = request.GET.get('status_id', '')
     if status_id != '':
         status_id = int(status_id)
-        docs = docs.filter(status_estimation_id = status_id)
+        if status_id == 8:
+            docs = docs.filter(status_estimation_id = status_id) | docs.exclude(status_estimation_id = 8).filter(lo_active = True)
+        else:
+            docs = docs.filter(status_estimation_id = status_id) 
 
     if request.GET.get('unit_id', ""):
         unit_id         = request.GET['unit_id']
@@ -4932,9 +4940,9 @@ def rlks_trade_in_export(request):
     dosc_val = docs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'unit_name', 'vin', 'lo_date_time', 'lo_nomer')
     for doc_val in dosc_val:
         unit_in = ''
-        if doc_val != doc_val['unit_dc__name']:
+        if doc_val['unit_dc__name'] != None:
             init_in = doc_val['unit_dc__name']
-        elif doc_val != doc_val['unit__name']:
+        elif doc_val['unit__name'] != None:
             init_in = doc_val['unit__name']
         else:
             init_in = doc_val['unit__name']
@@ -6392,7 +6400,7 @@ def korsavto_settings_dc(request):
             start_estimation    = Subquery(subquery.values('start_estimation')[:1])).annotate(
             end_estimation      = Subquery(subquery.values('end_estimation')[:1])).annotate(
             staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
-            estimation_id                               = Subquery(subquery.values('id')[:1])).annotate(
+            estimation_id_rl                            = Subquery(subquery.values('id')[:1])).annotate(
             estimation_avito_price_avg_market_price     = Subquery(subquery.values('avito_price_avg_market_price')[:1])).annotate(
             estimation_avito_price_avg_condition        = Subquery(subquery.values('avito_price_avg_condition')[:1])).annotate(
             estimation_avito_price_market_min           = Subquery(subquery.values('avito_price_market_min')[:1])).annotate(
@@ -8892,25 +8900,21 @@ def sb_lo(request):
 
 def test(request):
 
-    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=11, year=2025)
-    # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(page_remote = None).order_by('-id').values('id')
+    # ssms = DocSMS.objects.all().values('id')
+    # count = ssms.count()
+    # s = 0
+    # for sms in ssms:
+    #     sms_o = DocSMS.objects.get(id = sms['id'])
+    #     sms_o.save()
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' / ' + str(count))
+
+    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=1, year=2026)
+    # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
     # count = len(estimations_id)
     # s = 0
     # for estimation_id in estimations_id:
     #     estimation      = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-    #     page_remote     = estimation.page_remote
-    #     price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub', remote=True)
-    #     if price_autohub != None:            
-    #         page_remote.price_auto          = price_autohub['estimation_price']
-    #         page_remote.price_auto_bcp      = price_autohub['cna_expenses']
-    #         page_remote.zachita_ot_ubitka   = price_autohub['zachita_ot_ubitka']
-    #         page_remote.discount_torg       = price_autohub['discount_torg']
-    #         page_remote.finance_price       = price_autohub['finance_price']
-    #         page_remote.price_zna           = price_autohub['zna']
-        
-    #     #page_remote.price_eco       = price_remote
-    #     #page_remote.price_eco_user  = request.user
-    #     page_remote.save()
     #     estimation.save()
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count))
@@ -8923,9 +8927,11 @@ def test(request):
     # s = 0
     # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
     # for estimation_id in estimations_id:
-    #     try:
-    #         estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-    #         estimation.save()
+    #     #try:
+    #     estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+    #     estimation.save()
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count))
     #         reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
 
     #         if estimation.page_documents != None:
@@ -8964,8 +8970,8 @@ def test(request):
     #     except:
     #         ss = 1
 
-    #     s = s + 1 
-    #     print(' ' + str(s) + ' ' + str(count))
+        # s = s + 1 
+        # print(' ' + str(s) + ' ' + str(count))
 
     # date_start = DT.datetime.now().replace(month=10, day=1, hour=0)
     # interactivs = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(status_id = 8)
@@ -9045,11 +9051,11 @@ def test(request):
     #from task_manager.views import refresh_chat_data
     #refresh_chat_data()
     
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     #refresh_avtoteka_vin()
 
@@ -9073,8 +9079,8 @@ def test(request):
 
     #refresh_avtoteka_vin()
     
-    '''
-    estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 9, 1)).values('rlk__id').order_by('-start_estimation')
+    
+    estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 12, 1)).values('rlk__id').order_by('-start_estimation')
     count = estimations.count()
     s = 1
     for estimation in estimations:
@@ -9084,7 +9090,7 @@ def test(request):
         except:
             ss = 1
         print(str(s) + ' / ' + str(count))
-    '''
+    
 
     '''
     date_start = DT.datetime.now()

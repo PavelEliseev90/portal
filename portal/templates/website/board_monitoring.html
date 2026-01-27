@@ -585,62 +585,7 @@
         </div>
       </div>
 
-      <div class="kors-panel mt-3">
-        <div class="kors-panel__head">
-          <h3>Обновление автомобилей корсавто</h3>
-        </div>
-        <div class="kors-panel__body">
-          <div class="row g-3">
-            {% for log_cars in params.list_log_refresh_cars %}
-              <div class="col-12 col-md-6 col-lg-4">
-                <div class="kors-refresh-card">
-                  <div class="kors-refresh-card__header">
-                    <div class="kors-refresh-card__date">
-                      <span class="icon-mbri-calendar"></span>
-                      {{log_cars.date}}
-                    </div>
-                    <div class="kors-refresh-card__unit">
-                      <span class="icon-mbri-home"></span>
-                      {{log_cars.unit.name}}
-                    </div>
-                  </div>
-                  <div class="kors-refresh-card__body">
-                    <div class="kors-refresh-card__stat">
-                      <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--success">
-                        <span class="kors-refresh-card__stat-icon">
-                          <span class="icon-mbri-plus"></span>
-                        </span>
-                        <div class="kors-refresh-card__stat-content">
-                          <div class="kors-refresh-card__stat-label">Добавлено</div>
-                          <div class="kors-refresh-card__stat-value">{{log_cars.add}}</div>
-                        </div>
-                      </div>
-                      <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--danger">
-                        <span class="kors-refresh-card__stat-icon">
-                          <span class="icon-mbri-minus"></span>
-                        </span>
-                        <div class="kors-refresh-card__stat-content">
-                          <div class="kors-refresh-card__stat-label">Удалено</div>
-                          <div class="kors-refresh-card__stat-value">{{log_cars.del}}</div>
-                        </div>
-                      </div>
-                      <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--info">
-                        <span class="kors-refresh-card__stat-icon">
-                          <span class="icon-mbri-play"></span>
-                        </span>
-                        <div class="kors-refresh-card__stat-content">
-                          <div class="kors-refresh-card__stat-label">В наличии</div>
-                          <div class="kors-refresh-card__stat-value">{{log_cars.stock}}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
+      
     </div>
 
     <div class="col-12 col-lg-4">
@@ -733,26 +678,7 @@
                 <span class="kors-badge kors-badge-danger">{{params.record_convert}}</span>
               {% endif %}
             </div>
-            <div class="col-12">
-              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">Записи для распознавания</div>
-              {% if params.record_recognitions > 30 %}
-                <span class="kors-badge kors-badge-danger">{{params.record_recognitions}}</span>
-              {% elif params.record_recognitions > 10 %}
-                <span class="kors-badge kors-badge-warning">{{params.record_recognitions}}</span>
-              {% else %}
-                <span class="kors-badge kors-badge-success">{{params.record_recognitions}}</span>
-              {% endif %}
-            </div>
-            <div class="col-12">
-              <div style="font-size: 0.85rem; color: #8ea1ba; margin-bottom: 0.25rem;">Звонки для распознавания</div>
-              {% if params.op_queue_doc > 30 %}
-                <span class="kors-badge kors-badge-danger">{{params.op_queue_doc}} / {{params.op_queue}}</span>
-              {% elif params.op_queue_doc > 10 %}
-                <span class="kors-badge kors-badge-warning">{{params.op_queue_doc}} / {{params.op_queue}}</span>
-              {% else %}
-                <span class="kors-badge kors-badge-success">{{params.op_queue_doc}} / {{params.op_queue}}</span>
-              {% endif %}
-            </div>
+           
           </div>
         </div>
       </div>
@@ -831,7 +757,64 @@
         </div>
       </div>
     </div>
+
   </div>
 
+  <div class="kors-panel mt-3">
+    <div class="kors-panel__head">
+      <h3>Обновление автомобилей корсавто</h3>
+    </div>
+    <div class="kors-panel__body">
+      <div class="row g-3">
+        {% for log_cars in params.list_log_refresh_cars %}
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="kors-refresh-card">
+              <div class="kors-refresh-card__header">
+                <div class="kors-refresh-card__date">
+                  <span class="icon-mbri-calendar"></span>
+                  {{log_cars.date}}
+                </div>
+                <div class="kors-refresh-card__unit">
+                  <span class="icon-mbri-home"></span>
+                  {{log_cars.unit.name}}
+                </div>
+              </div>
+              <div class="kors-refresh-card__body">
+                <div class="kors-refresh-card__stat">
+                  <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--success">
+                    <span class="kors-refresh-card__stat-icon">
+                      <span class="icon-mbri-plus"></span>
+                    </span>
+                    <div class="kors-refresh-card__stat-content">
+                      <div class="kors-refresh-card__stat-label">Добавлено</div>
+                      <div class="kors-refresh-card__stat-value">{{log_cars.add}}</div>
+                    </div>
+                  </div>
+                  <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--danger">
+                    <span class="kors-refresh-card__stat-icon">
+                      <span class="icon-mbri-minus"></span>
+                    </span>
+                    <div class="kors-refresh-card__stat-content">
+                      <div class="kors-refresh-card__stat-label">Удалено</div>
+                      <div class="kors-refresh-card__stat-value">{{log_cars.del}}</div>
+                    </div>
+                  </div>
+                  <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--info">
+                    <span class="kors-refresh-card__stat-icon">
+                      <span class="icon-mbri-play"></span>
+                    </span>
+                    <div class="kors-refresh-card__stat-content">
+                      <div class="kors-refresh-card__stat-label">В наличии</div>
+                      <div class="kors-refresh-card__stat-value">{{log_cars.stock}}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 
 {% endblock %}

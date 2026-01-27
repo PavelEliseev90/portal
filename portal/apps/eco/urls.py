@@ -7,8 +7,8 @@ app_name = 'eco'
 urlpatterns = [
 
     path('',                                    views.list_eco_online),
-    path('funnel/',                             views.tradein_funnel, name='tradein_funnel'),
-    path('efficiency/',                         views.eco_efficiency_analysis, name='eco_efficiency'),
+    path('funnel/',                             views.tradein_funnel_new, name='tradein_funnel'),
+    path('efficiency/',                         views.eco_efficiency_analysis_new, name='eco_efficiency'),
     path('efficiency/analyst/<int:analyst_id>/', views.eco_analyst_detail, name='eco_analyst_detail'),
     path('staff-performance/',                  views.staff_performance_analysis, name='staff_performance'),
     path('pricing-report/',                     views.interactive_pricing_report, name='interactive_pricing_report'),

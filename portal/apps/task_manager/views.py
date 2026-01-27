@@ -1030,6 +1030,8 @@ def info_car_auction(slug):
     for car in data:
         car['url']                  = get_url_images(car['slug'])
         car['market_price']         = get_market_price(car)
+        if car['market_price'] == None:
+            car['market_price'] = 0
         zg      = car['group']
         matrix  = SettingsMatrixAuction.objects.get(id = 1)
         if zg == 1: #400

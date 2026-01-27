@@ -473,12 +473,20 @@
   <form class="kors-filter" method="get">
     <div class="row g-3 align-items-end">
       <div class="col-md-3">
-        <label class="form-label text-uppercase">Дата с</label>
+        <label class="form-label text-uppercase">Дата РЛК с</label>
         <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label text-uppercase">Дата по</label>
+        <label class="form-label text-uppercase">Дата РЛК по</label>
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата ЛО с</label>
+        <input type="date" class="form-control" name="date_start_lo" value="{{ params.filters.date_start_lo }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата ЛО по</label>
+        <input type="date" class="form-control" name="date_end_lo" value="{{ params.filters.date_end_lo }}">
       </div>
       <div class="col-md-2">
         <label class="form-label text-uppercase">Подразделение</label>
@@ -493,9 +501,11 @@
         <label class="form-label text-uppercase">Сотрудник</label>
         <select class="form-select" name="staff_id">
           <option value="">Любой</option>
+          <!--
           {% for staff in params.staffs %}
             <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
           {% endfor %}
+          -->
         </select>
       </div>
       <div class="col-md-2">
@@ -538,6 +548,41 @@
   </div>
 
   <div class="row g-3">
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Дистанционных оценок</h3>
+        <h2>{{ params.etimation_list_remote_all }}</h2>
+        <p class="kors-stage-desc">Всего дистанционных оценок</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Согласовано до КД</h3>
+        <h2>{{ params.etimation_list_remote_before_kd }}</h2>
+        <p class="kors-stage-desc">С согласованием цены до кд</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Согласовано после КД</h3>
+        <h2>{{ params.etimation_list_remote_after_kd }}</h2>
+        <p class="kors-stage-desc">С согласованием цены после кд</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Принято</h3>
+        <h2>{{ params.etimation_list_remote_success }}</h2>
+        <p class="kors-stage-desc">Принято</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+  </div>
+
+  <div class="row g-3">
     <div class="col-lg-5">
       <article class="kors-panel">
         <div class="kors-panel__head">
@@ -557,7 +602,7 @@
       </article>
     </div>
   </div>
-
+<!--
   {% if params.unit_trend_available %}
   <div class="row g-3 mt-3">
     <div class="col-12">
@@ -699,6 +744,7 @@
     </div>
   </div>
   {% endif %}
+-->
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
