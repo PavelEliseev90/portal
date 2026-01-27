@@ -50,6 +50,13 @@
     border-radius: 0.75rem;
     margin-bottom: 1rem;
     border-left: 4px solid #00509d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+  }
+
+  .unit-header:hover {
+    background: linear-gradient(to right, rgba(0, 80, 157, 0.15), #fff);
   }
 
   .unit-header h4 {
@@ -57,6 +64,23 @@
     font-weight: 600;
     color: #002a5a;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .unit-header .toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.9rem;
+    color: #00509d;
+  }
+
+  .unit-section.collapsed .unit-header .toggle-icon {
+    transform: rotate(-90deg);
+  }
+
+  .unit-section.collapsed .unit-table-wrapper {
+    display: none;
   }
 
   .unit-header .badge {
@@ -159,15 +183,19 @@
 
     {% if params.rejected_by_unit %}
       {% for unit_name, unit_data in params.rejected_by_unit.items %}
-        <div class="unit-section">
-          <div class="unit-header">
+        <div class="unit-section" data-unit-section>
+          <div class="unit-header" onclick="toggleUnitSection(this)">
             <div class="d-flex justify-content-between align-items-center">
-              <h4>{{ unit_name }}</h4>
+              <h4>
+                <span class="toggle-icon">▼</span>
+                {{ unit_name }}
+              </h4>
               <span class="badge bg-danger">{{ unit_data.items|length }} автомобилей</span>
             </div>
           </div>
 
-          <div class="table-responsive">
+          <div class="unit-table-wrapper">
+            <div class="table-responsive">
             <table class="table table-sm table-hover">
               <thead>
                 <tr>
@@ -180,6 +208,7 @@
                   <th>Оценщик</th>
                   <th>Цена до КД</th>
                   <th>Цена после КД</th>
+                  <th>Авторасчет</th>
                   <th>Статус</th>
                   <th>Причина архива</th>
                   <th>Дата архива</th>
@@ -215,6 +244,13 @@
                     <td class="price-cell">
                       {% if item.price_after_kd %}
                         {{ item.price_after_kd|floatformat:0 }} ₽
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td class="price-cell">
+                      {% if item.price_auto_2 %}
+                        {{ item.price_auto_2|floatformat:0 }} ₽
                       {% else %}
                         —
                       {% endif %}
@@ -261,6 +297,7 @@
               </tbody>
             </table>
           </div>
+          </div>
         </div>
       {% endfor %}
     {% else %}
@@ -270,5 +307,17 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+  function toggleUnitSection(header) {
+    const section = header.closest('.unit-section');
+    section.classList.toggle('collapsed');
+  }
+
+  // По умолчанию все секции развернуты
+  document.addEventListener('DOMContentLoaded', function() {
+    // Можно добавить логику для сохранения состояния в localStorage
+  });
+</script>
 {% endblock %}
 
