@@ -563,10 +563,34 @@
       </div>
     </div>
     
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-4">
+        <label class="form-label text-uppercase">Источник поступления</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="sourceUnitSearch" placeholder="Поиск по источникам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="sourceUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for source_unit in params.source_units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="source_unit_ids" value="{{ source_unit.id }}" 
+                  {% if source_unit.id in params.filters.source_unit_ids_list %}checked{% endif %}>
+                {{ source_unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedSourceUnits" class="mt-2"></div>
+      </div>
+    </div>
+    
     <div class="row g-3 mt-2">
-      <div class="col-12 text-end">
-        <button class="btn btn-primary px-4" type="submit">Применить</button>
-        <button class="btn btn-secondary px-4 ms-2" type="button" onclick="resetFilters()">Сбросить</button>
+      <div class="col-12 d-flex justify-content-between align-items-center">
+        <a href="/eco/funnel/rejected/?{{ request.GET.urlencode }}" class="btn btn-outline-warning px-4" target="_blank">
+          ⚠️ Непринятые автомобили
+        </a>
+        <div>
+          <button class="btn btn-primary px-4" type="submit">Применить</button>
+          <button class="btn btn-secondary px-4 ms-2" type="button" onclick="resetFilters()">Сбросить</button>
+        </div>
       </div>
     </div>
   </form>
@@ -973,11 +997,13 @@
         initMultiSelect('unitGroupSearch', 'unitGroupDropdown', 'selectedUnitGroups');
         initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
         initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+        initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
       });
     } else {
       initMultiSelect('unitGroupSearch', 'unitGroupDropdown', 'selectedUnitGroups');
       initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
       initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+      initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
     }
   })();
   
@@ -986,9 +1012,10 @@
     const unitGroupIds = Array.from(form.querySelectorAll('input[name="unit_group_ids"]:checked')).map(cb => cb.value);
     const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
     const typeReceptionIds = Array.from(form.querySelectorAll('input[name="type_reception_ids"]:checked')).map(cb => cb.value);
+    const sourceUnitIds = Array.from(form.querySelectorAll('input[name="source_unit_ids"]:checked')).map(cb => cb.value);
     
     // Удаляем старые скрытые поля
-    form.querySelectorAll('input[type="hidden"][name^="unit_group_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="type_reception_ids"]').forEach(el => el.remove());
+    form.querySelectorAll('input[type="hidden"][name^="unit_group_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="type_reception_ids"], input[type="hidden"][name^="source_unit_ids"]').forEach(el => el.remove());
     
     // Добавляем новые скрытые поля с объединенными значениями
     if (unitGroupIds.length > 0) {
@@ -1015,13 +1042,21 @@
       form.appendChild(hidden);
     }
     
+    if (sourceUnitIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'source_unit_ids';
+      hidden.value = sourceUnitIds.join(',');
+      form.appendChild(hidden);
+    }
+    
     return true;
   }
   
   function resetFilters() {
     document.getElementById('funnelFilterForm').reset();
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    const selectedDivs = ['selectedUnitGroups', 'selectedUnits', 'selectedTypeReceptions'];
+    const selectedDivs = ['selectedUnitGroups', 'selectedUnits', 'selectedTypeReceptions', 'selectedSourceUnits'];
     selectedDivs.forEach(id => {
       const div = document.getElementById(id);
       if (div) div.innerHTML = '';
