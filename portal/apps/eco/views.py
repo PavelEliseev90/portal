@@ -2,7 +2,7 @@ from tkinter.tix import Tree
 from django.shortcuts import redirect, render
 from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
-from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup
+from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
 from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
@@ -466,6 +466,38 @@ def _get_source_stats(date_start, date_end, unit_id=None, staff_id=None, analyst
 
     return result_list, totals
 
+def _get_price_category(price):
+    """Определяет ценовую категорию на основе цены"""
+    if not price or price <= 0:
+        return 'Без цены'
+    elif price < 200000:
+        return 'До 200 тыс.'
+    elif price < 400000:
+        return '200-400 тыс.'
+    elif price < 700000:
+        return '400-700 тыс.'
+    elif price < 1200000:
+        return '700 тыс. - 1.2 млн'
+    elif price < 2000000:
+        return '1.2-2 млн'
+    elif price < 3000000:
+        return '2-3 млн'
+    elif price < 5000000:
+        return '3-5 млн'
+    else:
+        return 'Свыше 5 млн'
+
+
+def _parse_multiple_ints(value):
+    """Парсит строку с множественными ID (через запятую)"""
+    if not value:
+        return []
+    try:
+        return [int(x.strip()) for x in value.split(',') if x.strip().isdigit()]
+    except (ValueError, AttributeError):
+        return []
+
+
 def tradein_funnel_new(request):
     
     if not request.user.is_authenticated:
@@ -487,138 +519,378 @@ def tradein_funnel_new(request):
     date_start  = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end    = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
 
-    type_report_id = _get_int(request.GET.get('type_report_id'))
+    type_report_id = _get_int(request.GET.get('type_report_id')) or 1
+    
+    # Множественный выбор фильтров
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    
+    # Одиночные фильтры (для обратной совместимости)
     unit_id = _get_int(request.GET.get('unit_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
-    type_id = _get_int(request.GET.get('type_id'))
-    status_id = _get_int(request.GET.get('status_id'))
-    type_id = _get_int(request.GET.get('type_id'))
-    status_id = _get_int(request.GET.get('status_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    
+    # Если передан одиночный фильтр, добавляем его в множественный
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    
+    # Получаем подразделения из групп, если выбраны группы
+    if unit_group_ids:
+        unit_groups = RefUnitGroup.objects.filter(id__in=unit_group_ids).prefetch_related('units')
+        for group in unit_groups:
+            for unit in group.units.all():
+                if unit.id not in unit_ids:
+                    unit_ids.append(unit.id)
+    
+    # Загружаем справочники
     type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
     units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    unit_groups = RefUnitGroup.objects.filter(active=True, bu_auto=True).order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(profiles__eco=True)
-    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
     statuses = RefStatusEstimation.objects.order_by('name')
     
-    rlk_count                   = 0
-        
-    count_price_before_kd       = 0
-    count_price_after_kd        = 0
-    count_price_before_kd_p     = 0
-    count_price_after_kd_p      = 0
-    count_success               = 0
-    count_success_p             = 0
+    # Инициализация переменных
+    rlk_count = 0
+    count_price_before_kd = 0
+    count_price_after_kd = 0
+    count_price_before_kd_p = 0
+    count_price_after_kd_p = 0
+    count_success = 0
+    count_success_p = 0
     
-    if type_report_id == None:
-        type_report_id = 1
-
+    # Функция для расчета конверсии
+    def _conversion(current, previous):
+        if not previous:
+            return 0
+        return round(current / previous * 100, 1)
+    
+    # Базовый Q объект для оптимизации запросов DocRLK
+    base_rlk_q = Q(
+        Q(type__id=2, unit_dc__buauto=True) |
+        Q(type__id=7, eco=True) |
+        Q(type__id=1, eco=True) |
+        Q(type__id=19, eco=True) |
+        Q(eco=True)
+    )
+    
+    # Вариант 1: Данные по периоду (по датам создания DocRLK)
     if type_report_id == 1:
-        docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime')     
+        docs = DocRLK.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        ).filter(base_rlk_q).order_by('-dataTime')
+        
+        # Применяем фильтры
+        if unit_ids:
+            docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if staff_id:
+            docs = docs.filter(staff__id=staff_id)
+        if analyst_id:
+            docs = docs.filter(
+                Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
+                Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+            )
+        
+        # Подключаем оценки для получения данных
+        subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
+        subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
+        
+        docs = docs.annotate(
+            price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
+            price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
+            lo_active=Subquery(subquery_lo.values('active')[:1]),
+            type_reception_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
+            type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
+        )
+        
+        # Фильтр по типам приема
+        if type_reception_ids:
+            docs = docs.filter(type_reception_id__in=type_reception_ids)
+        
+        rlk_count = docs.count()
+        count_price_before_kd = docs.filter(price_before_kd__gt=0).count()
+        count_price_after_kd = docs.filter(price_after_kd__gt=0).count()
+        count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
+        count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
+        count_success = docs.filter(lo_active=True).count()
+        count_success_p = _conversion(count_success, count_price_after_kd)
     
-    
+    # Вариант 2: Данные по датам рабочих листов (фильтр по dataTime DocRLK)
     elif type_report_id == 2:
-        docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(dataTime__gte = date_start).filter(eco = True).order_by('-dataTime') 
+        docs = DocRLK.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        ).filter(base_rlk_q).order_by('-dataTime')
+        
+        # Применяем фильтры
+        if unit_ids:
+            docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if staff_id:
+            docs = docs.filter(staff__id=staff_id)
+        if analyst_id:
+            docs = docs.filter(
+                Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
+                Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+            )
+        
+        # Подключаем оценки
+        subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
+        subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
+        
+        docs = docs.annotate(
+            price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
+            price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
+            lo_active=Subquery(subquery_lo.values('active')[:1]),
+            type_reception_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
+            type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
+        )
+        
+        # Фильтр по типам приема
+        if type_reception_ids:
+            docs = docs.filter(type_reception_id__in=type_reception_ids)
+        
+        rlk_count = docs.count()
+        count_price_before_kd = docs.filter(price_before_kd__gt=0).count()
+        count_price_after_kd = docs.filter(price_after_kd__gt=0).count()
+        count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
+        count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
+        count_success = docs.filter(lo_active=True).count()
+        count_success_p = _conversion(count_success, count_price_after_kd)
     
-    
+    # Вариант 3: Данные по листам оценки (фильтр по датам DocLO)
     else:
+        # Сначала получаем все DocRLK без фильтра по дате
+        docs = DocRLK.objects.filter(base_rlk_q)
+        
+        # Применяем фильтры по подразделениям и сотрудникам
+        if unit_ids:
+            docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if staff_id:
+            docs = docs.filter(staff__id=staff_id)
+        if analyst_id:
+            docs = docs.filter(
+                Q(reginteractivocenka__staff_eco_1__id=analyst_id) |
+                Q(reginteractivocenka__staff_eco_2__id=analyst_id)
+            )
+        
+        # Подключаем оценки и листы оценки
+        subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
+        subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
+        
+        docs = docs.annotate(
+            unit_name=Subquery(subquery_est.values('page_documents__unit__name')[:1]),
+            status_estimation=Subquery(subquery_est.values('status__name')[:1]),
+            status_estimation_id=Subquery(subquery_est.values('status__id')[:1]),
+            start_estimation=Subquery(subquery_est.values('start_estimation')[:1]),
+            end_estimation=Subquery(subquery_est.values('end_estimation')[:1]),
+            staff_estimation=Subquery(subquery_est.values('staff')[:1]),
+            remote_price=Subquery(subquery_est.values('page_remote__price_sale')[:1]),
+            mark=Subquery(subquery_est.values('modification__model__mark__name')[:1]),
+            model=Subquery(subquery_est.values('modification__model__name')[:1]),
+            modification=Subquery(subquery_est.values('modification__name')[:1]),
+            type_estimation_ocenka=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
+            type_estimation_ocenka_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
+            year=Subquery(subquery_est.values('year')[:1]),
+            vin=Subquery(subquery_est.values('vin')[:1]),
+            price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
+            price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
+            lo_pk=Subquery(subquery_est.values('id')[:1]),
+            lo_date_time=Subquery(subquery_lo.values('dataTime')[:1]),
+            lo_nomer=Subquery(subquery_lo.values('nomer')[:1]),
+            lo_active=Subquery(subquery_lo.values('active')[:1]),
+        )
+        
+        # Фильтр по датам листов оценки
+        docs = docs.filter(lo_date_time__gte=date_start, lo_date_time__lte=date_end)
+        
+        # Дополнительные фильтры
+        filtr_number_doc = request.GET.get('number_doc', '')
+        filtr_vin = request.GET.get('vin', '')
+        
+        if filtr_number_doc:
+            docs = docs.filter(nomer__icontains=filtr_number_doc)
+        if filtr_vin:
+            docs = docs.filter(vin__icontains=filtr_vin)
+        
+        # Фильтр по типам приема
+        if type_reception_ids:
+            docs = docs.filter(type_estimation_ocenka_id__in=type_reception_ids)
+        
+        rlk_count = docs.count()
+        count_price_before_kd = docs.filter(price_before_kd__gt=0).count()
+        count_price_after_kd = docs.filter(price_after_kd__gt=0).count()
+        count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
+        count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
+        count_success = docs.filter(lo_active=True).count()
+        count_success_p = _conversion(count_success, count_price_after_kd)
     
-        docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
+    # Статистика по типам приема
+    type_reception_stats = []
+    if type_report_id == 3:
+        type_reception_data = docs.values('type_estimation_ocenka', 'type_estimation_ocenka_id').annotate(
+            total=Count('id'),
+            before_kd=Count('id', filter=Q(price_before_kd__gt=0)),
+            after_kd=Count('id', filter=Q(price_after_kd__gt=0)),
+            success=Count('id', filter=Q(lo_active=True))
+        ).order_by('-total')
+        
+        for item in type_reception_data:
+            type_reception_stats.append({
+                'id': item.get('type_estimation_ocenka_id'),
+                'name': item.get('type_estimation_ocenka') or 'Не указан',
+                'total': item['total'],
+                'before_kd': item['before_kd'],
+                'after_kd': item['after_kd'],
+                'success': item['success'],
+                'conv_before': _conversion(item['before_kd'], item['total']),
+                'conv_after': _conversion(item['after_kd'], item['before_kd']),
+                'conv_success': _conversion(item['success'], item['after_kd']),
+            })
+    else:
+        # Для вариантов 1 и 2 получаем статистику через оценки
+        est_qs = RegInteractivOcenka.objects.filter(rlk__in=docs.values('id'))
+        if type_reception_ids:
+            est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+        
+        # Получаем ID принятых через DocLO
+        accepted_rlk_ids = set(DocLO.objects.filter(
+            rlk__in=docs.values('id'),
+            active=True
+        ).values_list('rlk_id', flat=True))
+        
+        type_reception_data = est_qs.values(
+            'page_documents__type_reception__id',
+            'page_documents__type_reception__name'
+        ).annotate(
+            total=Count('id', distinct=True),
+            before_kd=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0), distinct=True),
+            after_kd=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0), distinct=True),
+        ).order_by('-total')
+        
+        # Подсчитываем принятые для каждого типа
+        for item in type_reception_data:
+            type_id = item.get('page_documents__type_reception__id')
+            # Получаем оценки этого типа и проверяем, какие приняты
+            est_with_type = est_qs.filter(
+                page_documents__type_reception__id=type_id
+            ).values_list('rlk_id', flat=True)
+            success_count = len([rlk_id for rlk_id in est_with_type if rlk_id in accepted_rlk_ids])
+            
+            type_reception_stats.append({
+                'id': type_id,
+                'name': item.get('page_documents__type_reception__name') or 'Не указан',
+                'total': item['total'],
+                'before_kd': item['before_kd'],
+                'after_kd': item['after_kd'],
+                'success': success_count,
+                'conv_before': _conversion(item['before_kd'], item['total']),
+                'conv_after': _conversion(item['after_kd'], item['before_kd']),
+                'conv_success': _conversion(success_count, item['after_kd']),
+            })
     
-        subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
-        subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
+    # Статистика по ценовым категориям
+    price_category_stats = []
+    if type_report_id == 3:
+        # Получаем данные с ценами
+        price_data = docs.exclude(price_after_kd__isnull=True).exclude(price_after_kd=0).values('price_after_kd')
         
-        docs        = docs.annotate(
-            unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
-            status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
-            status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-            start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
-            end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
-            staff_estimation        = Subquery(subquery.values('staff')[:1])).annotate(
-            remote_price            = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-            mark                    = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-            model                   = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-            modification            = Subquery(subquery.values('modification__name')[:1])).annotate(
-            type_estimation_ocenka      = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-            type_estimation_ocenka_id   = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-            year                        = Subquery(subquery.values('year')[:1])).annotate(
-            vin                         = Subquery(subquery.values('vin')[:1])).annotate(
-            price_before_kd             = Subquery(subquery.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
-            price_after_kd              = Subquery(subquery.values('page_soglasovanie__price_after_kd')[:1])).annotate(   
-            lo_pk                       = Subquery(subquery.values('id')[:1])).annotate(
-            lo_date_time                = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
-            lo_nomer                    = Subquery(subquery_lo.values('nomer')[:1])).annotate(
-            lo_active                   = Subquery(subquery_lo.values('active')[:1]))
-
-        filtr_number_doc    = request.GET.get('number_doc', '')
-        filtr_vin           = request.GET.get('vin', '')
+        # Группируем по ценовым категориям
+        price_categories = defaultdict(lambda: {'total': 0, 'before_kd': 0, 'after_kd': 0, 'success': 0})
         
-        docs = docs.filter(lo_date_time__gte = date_start).filter(lo_date_time__lte = date_end)
-
-        if filtr_number_doc != '':
-            docs = docs.filter(nomer__icontains = filtr_number_doc)    
+        for doc in docs:
+            price_after = doc.price_after_kd or 0
+            price_before = doc.price_before_kd or 0
+            
+            if price_after > 0:
+                category = _get_price_category(price_after)
+                price_categories[category]['total'] += 1
+                if price_before > 0:
+                    price_categories[category]['before_kd'] += 1
+                if price_after > 0:
+                    price_categories[category]['after_kd'] += 1
+                if doc.lo_active:
+                    price_categories[category]['success'] += 1
+        
+        for category, stats in sorted(price_categories.items()):
+            price_category_stats.append({
+                'name': category,
+                'total': stats['total'],
+                'before_kd': stats['before_kd'],
+                'after_kd': stats['after_kd'],
+                'success': stats['success'],
+                'conv_before': _conversion(stats['before_kd'], stats['total']),
+                'conv_after': _conversion(stats['after_kd'], stats['before_kd']),
+                'conv_success': _conversion(stats['success'], stats['after_kd']),
+            })
+    else:
+        # Для вариантов 1 и 2 получаем через оценки
+        est_qs = RegInteractivOcenka.objects.filter(rlk__in=docs.values('id'))
+        price_categories = defaultdict(lambda: {'total': 0, 'before_kd': 0, 'after_kd': 0})
+        
+        for est in est_qs.select_related('page_soglasovanie'):
+            price_after = getattr(est.page_soglasovanie, 'price_after_kd', None) if est.page_soglasovanie else None
+            price_before = getattr(est.page_soglasovanie, 'price_before_kd', None) if est.page_soglasovanie else None
+            
+            if price_after and price_after > 0:
+                category = _get_price_category(price_after)
+                price_categories[category]['total'] += 1
+                if price_before and price_before > 0:
+                    price_categories[category]['before_kd'] += 1
+                if price_after > 0:
+                    price_categories[category]['after_kd'] += 1
+        
+        for category, stats in sorted(price_categories.items()):
+            price_category_stats.append({
+                'name': category,
+                'total': stats['total'],
+                'before_kd': stats['before_kd'],
+                'after_kd': stats['after_kd'],
+                'success': 0,
+                'conv_before': _conversion(stats['before_kd'], stats['total']),
+                'conv_after': _conversion(stats['after_kd'], stats['before_kd']),
+                'conv_success': 0,
+            })
     
-        #if type_receptions_id != '':
-        #    type_receptions_id = int(type_receptions_id)
-        #    docs = docs.filter(type_estimation_ocenka_id = type_receptions_id)    
-        
-        if filtr_vin != '':
-            docs = docs.filter(vin__icontains = filtr_vin)  
-        
-        # if filtr_unit_name != '':
-        #     docs = docs.filter(unit__name__icontains = filtr_unit_name) | docs.filter(unit_dc__name__icontains = filtr_unit_name)
-                
-        color_palette = ['#2563eb', '#f97316', '#22c55e', '#a855f7', '#f43f5e', '#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#d946ef']
-        
-        def _conversion(current, previous):
-            if not previous:
-                return 0
-            return round(current / previous * 100, 1)
-
-        rlk_count                   = docs.count()
-        
-        type_receptions             = docs.values('type_estimation_ocenka').annotate(count=Count('id')).values_list('type_estimation_ocenka', 'count')
-        
-        count_price_before_kd       = docs.filter(price_before_kd__gt = 0).count()
-        count_price_after_kd        = docs.filter(price_after_kd__gt = 0).count()
-        count_price_before_kd_p     = _conversion(count_price_before_kd, rlk_count)
-        count_price_after_kd_p      = _conversion(count_price_after_kd, count_price_before_kd)
-        count_success               = docs.filter(lo_active = True).count()
-        count_success_p             = _conversion(count_success, count_price_after_kd)
-
     filters = {
-        'date_start'    : date_start.strftime('%Y-%m-%d') or '',
-        'date_end'      : date_end.strftime('%Y-%m-%d') or '',
-        'type_report_id' : type_report_id,
+        'date_start': date_start.strftime('%Y-%m-%d') or '',
+        'date_end': date_end.strftime('%Y-%m-%d') or '',
+        'type_report_id': type_report_id,
         'unit_id': unit_id or '',
+        'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
+        'unit_ids_list': unit_ids,  # Список для проверки в шаблоне
+        'unit_group_ids': ','.join(map(str, unit_group_ids)) if unit_group_ids else '',
+        'unit_group_ids_list': unit_group_ids,  # Список для проверки в шаблоне
         'staff_id': staff_id or '',
         'analyst_id': analyst_id or '',
         'type_reception_id': type_reception_id or '',
+        'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
+        'type_reception_ids_list': type_reception_ids,  # Список для проверки в шаблоне
     }
 
     params = {
         'type': 'eco_funnel',
         'nav_selected': 4,
-        # 'etimation_list_remote_all'         : etimation_list_remote_all,
-        # 'etimation_list_remote'             : etimation_list_remote,
-        # 'etimation_list_remote_before_kd'   : etimation_list_remote_before_kd,
-        # 'etimation_list_remote_after_kd'    : etimation_list_remote_after_kd,
-        # 'etimation_list_remote_success'     : etimation_list_remote_success,
-        'rlk_count' : rlk_count,
+        'rlk_count': rlk_count,
         'count_price_before_kd': count_price_before_kd,
         'count_price_after_kd': count_price_after_kd,
         'count_price_before_kd_p': count_price_before_kd_p,
         'count_price_after_kd_p': count_price_after_kd_p,
-        'count_success' : count_success,
+        'count_success': count_success,
         'count_success_p': count_success_p,
         'filters': filters,
         'units': units,
+        'unit_groups': unit_groups,
         'staffs': staffs,
         'analysts': analysts,
         'type_receptions': type_receptions,
-        
+        'type_reception_stats': type_reception_stats,
+        'price_category_stats': price_category_stats,
+        'no_data': rlk_count == 0,
     }
 
     return render(request, 'lo/tradein_funnel_new.html', {'params': params})
