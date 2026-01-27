@@ -470,14 +470,14 @@
     <p>Сравниваем рабочие листы, интерактивные оценки и диагностику, чтобы увидеть, где пропадают автомобили.</p>
   </div>
 
-  <form class="kors-filter" method="get">
+  <form class="kors-filter" method="get" id="funnelFilterForm" onsubmit="return prepareFormData(this);">
     <div class="row g-3 align-items-end">
       <div class="col-md-2">
         <label class="form-label text-uppercase">Вариант</label>
         <select class="form-select" name="type_report_id">
-          <option value="1" selected>Данные периода </option>
-          <option value="2"  {% if params.filters.type_report_id|stringformat:"s" == "2" %}selected{% endif %}>Данные периода РЛ</option>
-          <option value="3" {% if params.filters.type_report_id|stringformat:"s" == "3" %}selected{% endif %} >Данные периода ЛО</option>
+          <option value="1" {% if params.filters.type_report_id == 1 %}selected{% endif %}>Данные периода</option>
+          <option value="2" {% if params.filters.type_report_id == 2 %}selected{% endif %}>Данные периода РЛ</option>
+          <option value="3" {% if params.filters.type_report_id == 3 %}selected{% endif %}>Данные периода ЛО</option>
         </select>
       </div>
       <div class="col-md-3">
@@ -489,23 +489,12 @@
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label text-uppercase">Подразделение</label>
-        <select class="form-select" name="unit_id">
-          <option value="">Все</option>
-          {% for unit in params.units %}
-            <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" == params.filters.unit_id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-2">
         <label class="form-label text-uppercase">Сотрудник</label>
         <select class="form-select" name="staff_id">
           <option value="">Любой</option>
-          <!--
           {% for staff in params.staffs %}
             <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
           {% endfor %}
-          -->
         </select>
       </div>
       <div class="col-md-2">
@@ -519,17 +508,65 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
-        <label class="form-label text-uppercase">Тип приёма</label>
-        <select class="form-select" name="type_reception_id">
-          <option value="">Все</option>
-          {% for type in params.type_receptions %}
-            <option value="{{ type.id }}" {% if type.id|stringformat:"s" == params.filters.type_reception_id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
-          {% endfor %}
-        </select>
+    </div>
+    
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-4">
+        <label class="form-label text-uppercase">Группы подразделений</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="unitGroupSearch" placeholder="Поиск по группам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitGroupDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for group in params.unit_groups %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_group_ids" value="{{ group.id }}" 
+                  {% if group.id in params.filters.unit_group_ids_list %}checked{% endif %}>
+                {{ group.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnitGroups" class="mt-2"></div>
       </div>
+      
+      <div class="col-md-4">
+        <label class="form-label text-uppercase">Подразделения</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-4">
+        <label class="form-label text-uppercase">Типы приёма</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="typeReceptionSearch" placeholder="Поиск по типам приёма..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="typeReceptionDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for type in params.type_receptions %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="type_reception_ids" value="{{ type.id }}" 
+                  {% if type.id in params.filters.type_reception_ids_list %}checked{% endif %}>
+                {{ type.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedTypeReceptions" class="mt-2"></div>
+      </div>
+    </div>
+    
+    <div class="row g-3 mt-2">
       <div class="col-12 text-end">
         <button class="btn btn-primary px-4" type="submit">Применить</button>
+        <button class="btn btn-secondary px-4 ms-2" type="button" onclick="resetFilters()">Сбросить</button>
       </div>
     </div>
   </form>
@@ -620,8 +657,94 @@
     </div>
   </div>
   {% endif %}
-
   
+  {% if params.type_reception_stats %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Статистика по типам приёма</h3>
+          <p class="text-muted mb-0">Детальная разбивка воронки по типам приёма автомобилей</p>
+        </div>
+        <div class="table-responsive mt-3">
+          <table class="table table-sm align-middle table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Тип приёма</th>
+                <th class="text-end">Всего</th>
+                <th class="text-end">До КД</th>
+                <th class="text-end">После КД</th>
+                <th class="text-end">Принято</th>
+                <th class="text-end">Конверсия до КД</th>
+                <th class="text-end">Конверсия после КД</th>
+                <th class="text-end">Конверсия принято</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stat in params.type_reception_stats %}
+              <tr>
+                <td><strong>{{ stat.name }}</strong></td>
+                <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.before_kd|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.after_kd|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.success|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+                <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+                <td class="text-end">{{ stat.conv_success|floatformat:"2g" }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+  
+  {% if params.price_category_stats %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Статистика по ценовым категориям</h3>
+          <p class="text-muted mb-0">Анализ воронки по ценовым категориям (на основе цены после КД)</p>
+        </div>
+        <div class="table-responsive mt-3">
+          <table class="table table-sm align-middle table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Ценовая категория</th>
+                <th class="text-end">Всего</th>
+                <th class="text-end">До КД</th>
+                <th class="text-end">После КД</th>
+                <th class="text-end">Принято</th>
+                <th class="text-end">Конверсия до КД</th>
+                <th class="text-end">Конверсия после КД</th>
+                <th class="text-end">Конверсия принято</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stat in params.price_category_stats %}
+              <tr>
+                <td><strong>{{ stat.name }}</strong></td>
+                <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.before_kd|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.after_kd|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.success|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+                <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+                <td class="text-end">{{ stat.conv_success|floatformat:"2g" }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+  
+
   
 <!--
   <div class="row g-3">
@@ -792,6 +915,119 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
+  // Функции для работы с множественным выбором фильтров
+  (function() {
+    function initMultiSelect(searchId, dropdownId, selectedId) {
+      const searchInput = document.getElementById(searchId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedDiv = document.getElementById(selectedId);
+      
+      if (!searchInput || !dropdown || !selectedDiv) return;
+      
+      function updateSelected() {
+        const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+        selectedDiv.innerHTML = '';
+        if (checked.length > 0) {
+          const badges = Array.from(checked).map(cb => {
+            const label = cb.closest('label');
+            const text = label ? label.textContent.trim() : '';
+            const value = cb.value;
+            return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedId}();"></button></span>`;
+          }).join('');
+          selectedDiv.innerHTML = badges;
+        }
+      }
+      
+      // Сохраняем функцию для глобального доступа
+      window['updateSelected_' + selectedId] = updateSelected;
+      
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const items = dropdown.querySelectorAll('label');
+        items.forEach(item => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+      });
+      
+      searchInput.addEventListener('focus', function() {
+        dropdown.style.display = 'block';
+      });
+      
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+      
+      dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateSelected);
+      });
+      
+      updateSelected();
+    }
+    
+    // Инициализация множественного выбора после загрузки DOM
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        initMultiSelect('unitGroupSearch', 'unitGroupDropdown', 'selectedUnitGroups');
+        initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+        initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+      });
+    } else {
+      initMultiSelect('unitGroupSearch', 'unitGroupDropdown', 'selectedUnitGroups');
+      initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+      initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+    }
+  })();
+  
+  function prepareFormData(form) {
+    // Собираем множественные значения в скрытые поля
+    const unitGroupIds = Array.from(form.querySelectorAll('input[name="unit_group_ids"]:checked')).map(cb => cb.value);
+    const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
+    const typeReceptionIds = Array.from(form.querySelectorAll('input[name="type_reception_ids"]:checked')).map(cb => cb.value);
+    
+    // Удаляем старые скрытые поля
+    form.querySelectorAll('input[type="hidden"][name^="unit_group_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="type_reception_ids"]').forEach(el => el.remove());
+    
+    // Добавляем новые скрытые поля с объединенными значениями
+    if (unitGroupIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'unit_group_ids';
+      hidden.value = unitGroupIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (unitIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'unit_ids';
+      hidden.value = unitIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (typeReceptionIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'type_reception_ids';
+      hidden.value = typeReceptionIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    return true;
+  }
+  
+  function resetFilters() {
+    document.getElementById('funnelFilterForm').reset();
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    const selectedDivs = ['selectedUnitGroups', 'selectedUnits', 'selectedTypeReceptions'];
+    selectedDivs.forEach(id => {
+      const div = document.getElementById(id);
+      if (div) div.innerHTML = '';
+    });
+  }
+  
   const chartPayload = JSON.parse('{{ params.chart_data|escapejs }}');
 
   document.querySelectorAll('[data-collapsible]').forEach((card) => {
