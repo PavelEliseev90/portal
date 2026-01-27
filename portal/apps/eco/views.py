@@ -1038,7 +1038,7 @@ def tradein_funnel_rejected(request):
         modification=Subquery(subquery_est.values('modification__name')[:1]),
         year=Subquery(subquery_est.values('year')[:1]),
         staff_name=Subquery(subquery_est.values('staff__name')[:1]),
-        estimation_id=Subquery(subquery_est.values('id')[:1]),
+        reg_estimation_id=Subquery(subquery_est.values('id')[:1]),
     )
     
     # Фильтруем: были осмотрены (start_estimation не пусто) ИЛИ прошли диагностику
@@ -1128,7 +1128,7 @@ def tradein_funnel_rejected(request):
             'dateArchive': doc.dateArchive,
             'rejection_reason': '; '.join(rejection_reason) if rejection_reason else 'Не указана',
             'failure_analysis': failure_analysis,
-            'estimation_id': doc.estimation_id,
+            'estimation_id': doc.reg_estimation_id,
             'has_diagnostics': bool(doc.has_diagnostics or doc.no_diagnostica),
         })
     
