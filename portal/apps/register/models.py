@@ -2857,12 +2857,32 @@ def update_eco_analyst_snapshots(estimation):
         
         if not analyst:
             return
+        
         diff = 0
         duration_sogl_before_sec = 0
         duration_sogl_after_sec = None
         duration_diagnostics_sec = None
         
+        if role == 'before' or role == 'after':
+            unit_name = estimation.page_documents.unit.name
+            if estimation.rlk.unit_dc != None:
+                unit_source = estimation.rlk.unit_dc.name
+                unit_id     = estimation.rlk.unit_dc.id
+            elif estimation.rlk.unit != None:
+                unit_source = estimation.rlk.unit.name
+                unit_id     = estimation.rlk.unit.id
+            else:
+                unit_source = estimation.page_documents.unit.name
+            type_reception_id = None
+            if getattr(estimation, 'page_documents', None):
+                type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+            
+            price_reception = estimation.page_soglasovanie.price_reception
+            price_sale = estimation.page_soglasovanie.price_sale
+            cost_total = None
+
         if role == 'before':
+            
             price = sogl.price_before_kd if sogl else None
             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
             duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
@@ -2914,7 +2934,7 @@ def update_eco_analyst_snapshots(estimation):
                 diff_summ = remote.discount_torg + remote.zachita_ot_ubitka
                 if diff < 0:
                     comparison = -1
-                elif diff > 0 and diff < diff_summ:
+                elif diff >= 0 and diff <= diff_summ:
                     comparison = 0
                 else:
                     comparison = 1
@@ -2925,7 +2945,7 @@ def update_eco_analyst_snapshots(estimation):
                 diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
                 if diff < 0:
                     comparison = -1
-                elif diff > 0 and diff < diff_summ:
+                elif diff >= 0 and diff <= diff_summ:
                     comparison = 0
                 else:
                     comparison = 1

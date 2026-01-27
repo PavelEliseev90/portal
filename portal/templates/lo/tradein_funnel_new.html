@@ -1,0 +1,1022 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Воронка поступлений TRADE-IN {% endblock %}
+
+{% block content %}
+<style>
+  .kors-funnel-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-funnel-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-funnel-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-filter .form-select,
+  .kors-filter .form-control {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+  }
+
+  .kors-stage-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .kors-stage-card h3 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-stage-card h2 {
+    font-size: 2.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .kors-stage-desc {
+    flex: 1;
+    color: #6c7a92;
+    font-size: 0.9rem;
+  }
+
+  .kors-stage-conv {
+    font-weight: 600;
+    color: #ff8a00;
+    font-size: 0.95rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+  }
+.kors-panel canvas {
+    max-height: 512px;
+}
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive.mobile-cards-wrapper {
+    overflow-x: visible;
+  }
+
+  /* Стили для таблицы источников */
+  .table-group-header {
+    background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff) !important;
+    border-left: 4px solid #00509d;
+    font-weight: 600;
+  }
+
+  .table-group-child {
+    background: rgba(0, 42, 90, 0.02) !important;
+  }
+
+  .table-group-header td {
+    border-top: 2px solid rgba(0, 42, 90, 0.15);
+    border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+    padding: 0.75rem 0.5rem;
+  }
+
+  .table-group-child td {
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
+
+  .table-group-header + .table-group-child td:first-child {
+    padding-left: 2rem;
+  }
+
+  .source-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    background: #22c55e;
+    color: #fff;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* На десктопе таблица должна отображаться нормально */
+  @media (min-width: 769px) {
+    .table-mobile-cards {
+      display: table;
+    }
+    
+    .table-mobile-cards thead {
+      display: table-header-group;
+    }
+    
+    .table-mobile-cards tbody {
+      display: table-row-group;
+    }
+    
+    .table-mobile-cards tbody tr {
+      display: table-row;
+      margin-bottom: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    
+    .table-mobile-cards tbody td {
+      display: table-cell;
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #dee2e6;
+      text-align: inherit;
+    }
+    
+    .table-mobile-cards tbody td:before {
+      display: none;
+    }
+    
+    .table-mobile-cards tbody td:first-child {
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #dee2e6;
+      margin-bottom: 0;
+    }
+    
+    .table-mobile-cards tfoot {
+      display: table-footer-group;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 2px solid rgba(0, 42, 90, 0.15);
+    }
+    
+    .table-mobile-cards tfoot tr {
+      display: table-row;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    
+    .table-mobile-cards tfoot th {
+      display: table-cell;
+      padding: 0.75rem 0.5rem;
+      border: 1px solid #dee2e6;
+      text-align: inherit;
+      font-weight: 600;
+    }
+    
+    .table-mobile-cards tfoot th:before {
+      display: none;
+    }
+  }
+
+  .collapsible-card {
+    padding: 0;
+    border-radius: 1.3rem;
+    overflow: hidden;
+  }
+
+  .collapsible-card__toggle {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .collapsible-card__toggle .kors-panel__head {
+    position: relative;
+    padding-right: 2.5rem;
+  }
+
+  .collapsible-card__icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s;
+    color: #6c7a92;
+    font-size: 0.875rem;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__icon {
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  .collapsible-card__body {
+    padding: 1.5rem;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .collapsible-card.is-collapsed .collapsible-card__body {
+    display: none;
+  }
+
+  /* Мобильная адаптация */
+  @media (max-width: 768px) {
+    .kors-funnel-page {
+      padding: 0.75rem 1rem 2rem;
+    }
+
+    .kors-funnel-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .kors-filter {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+
+    .kors-filter .row > div {
+      margin-bottom: 0.5rem;
+    }
+
+    .kors-stage-card {
+      margin-bottom: 1rem;
+    }
+
+    .kors-stage-card h2 {
+      font-size: 1.6rem;
+    }
+
+    .kors-panel {
+      padding: 1rem;
+      border-radius: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .kors-panel canvas {
+      max-height: 400px;
+      min-height: 350px;
+    }
+
+    .table-responsive.mobile-cards-wrapper {
+      overflow-x: visible;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: calc(100vh - 300px);
+      min-height: 400px;
+    }
+
+    .table-mobile-cards {
+      border: none;
+      width: 100%;
+    }
+
+    .table-mobile-cards thead {
+      display: none;
+    }
+
+    .table-mobile-cards tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      background: #fff;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+    }
+
+    .table-mobile-cards tbody tr.source-good {
+      border-left: 4px solid #22c55e;
+      background: linear-gradient(to right, rgba(34, 197, 94, 0.05), #fff);
+    }
+
+    .table-mobile-cards tbody tr.table-group-header {
+      background: linear-gradient(to right, rgba(0, 42, 90, 0.08), #fff);
+      border-left: 4px solid #00509d;
+    }
+
+    .table-mobile-cards tbody tr.table-group-child {
+      background: rgba(0, 42, 90, 0.02);
+    }
+
+    .table-mobile-cards tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+    }
+
+    .table-mobile-cards tbody td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #6c7a92;
+      text-align: left;
+      margin-right: 1rem;
+    }
+
+    .table-mobile-cards tbody td:first-child {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #002a5a;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
+      margin-bottom: 0.5rem;
+    }
+
+    .table-mobile-cards tbody td:first-child:before {
+      display: none;
+    }
+
+    .table-mobile-cards tfoot {
+      display: block;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 2px solid rgba(0, 42, 90, 0.15);
+    }
+
+    .table-mobile-cards tfoot tr {
+      display: block;
+      background: #f8f9fa;
+      border: 1px solid rgba(0, 42, 90, 0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+    }
+
+    .table-mobile-cards tfoot th {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border: none;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .table-mobile-cards tfoot th:before {
+      content: attr(data-label);
+      text-align: left;
+      margin-right: 1rem;
+    }
+  }
+
+    .source-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background: #22c55e;
+      color: #fff;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+  }
+
+  .collapsible-card__toggle {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+  }
+
+  .collapsible-card__toggle:focus {
+    outline: 2px solid rgba(0, 80, 157, 0.3);
+    outline-offset: 2px;
+  }
+
+  .collapsible-card__body {
+    padding: 0 1.5rem 1.5rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__body {
+    max-height: 15000px;
+    opacity: 1;
+  }
+
+  .collapsible-card__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: rgba(0, 42, 90, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #002a5a;
+    font-weight: 600;
+    transition: transform 0.25s ease, background 0.25s ease;
+  }
+
+  .collapsible-card:not(.is-collapsed) .collapsible-card__icon {
+    transform: rotate(180deg);
+    background: #002a5a;
+    color: #fff;
+  }
+</style>
+
+<div class="kors-funnel-page">
+  <div class="kors-funnel-header">
+    <h2>Воронка поступлений TRADE-IN</h2>
+    <p>Сравниваем рабочие листы, интерактивные оценки и диагностику, чтобы увидеть, где пропадают автомобили.</p>
+  </div>
+
+  <form class="kors-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Вариант</label>
+        <select class="form-select" name="type_report_id">
+          <option value="1" selected>Данные периода </option>
+          <option value="2"  {% if params.filters.type_report_id|stringformat:"s" == "2" %}selected{% endif %}>Данные периода РЛ</option>
+          <option value="3" {% if params.filters.type_report_id|stringformat:"s" == "3" %}selected{% endif %} >Данные периода ЛО</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" == params.filters.unit_id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Сотрудник</label>
+        <select class="form-select" name="staff_id">
+          <option value="">Любой</option>
+          <!--
+          {% for staff in params.staffs %}
+            <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == params.filters.staff_id|stringformat:"s" %}selected{% endif %}>{{ staff.name }}</option>
+          {% endfor %}
+          -->
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Аналитик</label>
+        <select class="form-select" name="analyst_id">
+          <option value="">Любой</option>
+          {% for analyst in params.analysts %}
+            <option value="{{ analyst.id }}" {% if analyst.id|stringformat:"s" == params.filters.analyst_id|stringformat:"s" %}selected{% endif %}>
+              {{ analyst.profiles.eco_name|default:analyst.get_full_name|default:analyst.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Тип приёма</label>
+        <select class="form-select" name="type_reception_id">
+          <option value="">Все</option>
+          {% for type in params.type_receptions %}
+            <option value="{{ type.id }}" {% if type.id|stringformat:"s" == params.filters.type_reception_id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+      </div>
+    </div>
+  </form>
+
+  {% if params.no_data == True %}
+    <div class="row text-center">
+     <div class="col-12">
+          <article class="kors-stage-card">
+            <h3>Нет данных</h3>
+            
+            <p class="kors-stage-desc">проверьте фильтры</p>
+          </article>
+        </div>    
+    </div>
+  {% else %}
+  <div class="row g-3 mb-3">
+    
+      <div class="col-xl-3 col-sm-6">
+        <article class="kors-stage-card">
+          <h3>Рабочие листы TRADE-IN</h3>
+          <h2>{{ params.rlk_count|floatformat:"0g" }}</h2>
+          <p class="kors-stage-desc">DocRLK с признаком TRADE-IN</p>
+          <span class="kors-stage-conv">Конверсия: 100%</span>
+        </article>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <article class="kors-stage-card">
+          <h3>До диагностики</h3>
+          <h2>{{ params.count_price_before_kd|floatformat:"0g" }}</h2>
+          <p class="kors-stage-desc">Осмотр АМ</p>
+          <span class="kors-stage-conv">Конверсия: {{params.count_price_before_kd_p|floatformat:"2g"}} %</span>
+        </article>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <article class="kors-stage-card">
+          <h3>После диагностики</h3>
+          <h2>{{ params.count_price_after_kd|floatformat:"0g" }}</h2>
+          <p class="kors-stage-desc">Прошли диагностику и прошли согласование</p>
+          <span class="kors-stage-conv">Конверсия: {{params.count_price_after_kd_p|floatformat:"2g"}} %</span>
+        </article>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <article class="kors-stage-card">
+          <h3>Принято</h3>
+          <h2>{{ params.count_success|floatformat:"0g" }}</h2>
+          <p class="kors-stage-desc">Принято</p>
+          <span class="kors-stage-conv">Конверсия: {{params.count_success_p|floatformat:"2g"}} %</span>
+        </article>
+      </div>
+    
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Дистанционных оценок</h3>
+        <h2>{{ params.etimation_list_remote_all }}</h2>
+        <p class="kors-stage-desc">Всего дистанционных оценок</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Согласовано до КД</h3>
+        <h2>{{ params.etimation_list_remote_before_kd }}</h2>
+        <p class="kors-stage-desc">С согласованием цены до кд</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Согласовано после КД</h3>
+        <h2>{{ params.etimation_list_remote_after_kd }}</h2>
+        <p class="kors-stage-desc">С согласованием цены после кд</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Принято</h3>
+        <h2>{{ params.etimation_list_remote_success }}</h2>
+        <p class="kors-stage-desc">Принято</p>
+        <span class="kors-stage-conv"></span>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+
+  
+  
+<!--
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Воронка</h3>
+          <p class="text-muted mb-0">Сравнение текущего периода</p>
+        </div>
+        <canvas id="funnelChart"></canvas>
+      </article>
+    </div>
+    <div class="col-lg-7">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Динамика за 3 месяца</h3>
+          <p class="text-muted mb-0">Показываем, как меняется каждая ступень</p>
+        </div>
+        <canvas id="trendChart"></canvas>
+      </article>
+    </div>
+  </div>
+
+  {% if params.unit_trend_available %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
+        <button type="button" class="collapsible-card__toggle" aria-expanded="false">
+          <div class="kors-panel__head mb-0">
+            <h3>Подразделения (3 месяца)</h3>
+            <p class="text-muted mb-0">Количество интерактивных оценок по каждому ДЦ</p>
+          </div>
+          <span class="collapsible-card__icon" aria-hidden="true">▼</span>
+        </button>
+        <div class="collapsible-card__body">
+          <canvas id="unitTrendChart"></canvas>
+        </div>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if params.type_monthly_available or params.type_pie_available %}
+  <div class="row g-3 mt-3">
+    {% if params.type_monthly_available %}
+    <div class="col-xl-7">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Типы приёмов · динамика</h3>
+          <p class="text-muted mb-0">Сравнение типов интерактивных оценок по месяцам</p>
+        </div>
+        <canvas id="typeComparisonChart"></canvas>
+      </article>
+    </div>
+    {% endif %}
+    {% if params.type_pie_available %}
+    <div class="col-xl-{% if params.type_monthly_available %}5{% else %}6{% endif %}">
+      <article class="kors-panel">
+        <div class="kors-panel__head">
+          <h3>Типы приёмов · структура</h3>
+          <p class="text-muted mb-0">Доли типов приёмов за выбранный период</p>
+        </div>
+        <canvas id="typePieChart"></canvas>
+      </article>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if params.source_stats %}
+  <div class="row g-3 mt-3">
+    <div class="col-12">
+      <article class="kors-panel collapsible-card is-collapsed" data-collapsible>
+        <button type="button" class="collapsible-card__toggle" aria-expanded="false">
+          <div class="kors-panel__head mb-0">
+            <h3>Источники поступлений</h3>
+            <p class="text-muted mb-0">Рабочие листы и статусы по подразделениям</p>
+            <div class="mt-2">
+              <div class="fw-bold text-primary">Рабочие листы: {{ params.source_totals.work_orders }}</div>
+              <div class="text-muted">Принято: {{ params.source_totals.accepted }}</div>
+            </div>
+          </div>
+          <span class="collapsible-card__icon" aria-hidden="true">▼</span>
+        </button>
+        <div class="collapsible-card__body">
+          <div class="table-responsive mobile-cards-wrapper mt-3">
+            <table class="table table-sm align-middle table-hover table-mobile-cards">
+              <thead class="table-light">
+                <tr>
+                  <th>Источник</th>
+                  <th class="text-end">Рабочие листы</th>
+                  <th class="text-end">Оценки</th>
+                  <th class="text-end">Диагностика</th>
+                  <th class="text-end">Принято</th>
+                  <th class="text-end">Конверсия от РЛ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for source in params.source_stats %}
+                  {% if source.type == 'group' %}
+                    <tr class="table-group-header {% if source.is_good %}source-good{% endif %}">
+                      <td data-label="Источник" class="fw-bold">
+                        <span class="text-primary">📊 {{ source.group_name }}</span>
+                        {% if source.is_good %}<span class="source-badge">✓ Лучший</span>{% endif %}
+                      </td>
+                      <td class="text-end fw-bold" data-label="Рабочие листы">{{ source.work_orders }}</td>
+                      <td class="text-end fw-bold" data-label="Оценки">{{ source.evaluations }}</td>
+                      <td class="text-end fw-bold" data-label="Диагностика">{{ source.diagnostics }}</td>
+                      <td class="text-end fw-bold" data-label="Принято">{{ source.accepted }}</td>
+                      <td class="text-end fw-bold" data-label="Конверсия от РЛ">
+                        {% if source.work_orders > 0 %}
+                          <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.overall_conv }}%</strong>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% else %}
+                    <tr class="{% if source.group_id %}table-group-child{% endif %} {% if source.is_good %}source-good{% endif %}">
+                      <td data-label="Источник" class="{% if source.group_id %}ps-4{% endif %}">
+                        {% if source.group_id %}
+                          <span class="text-muted">└─</span>
+                        {% endif %}
+                        {{ source.source }}
+                        {% if source.is_good %}<span class="source-badge">✓ Лучший</span>{% endif %}
+                      </td>
+                      <td class="text-end" data-label="Рабочие листы">{{ source.work_orders }}</td>
+                      <td class="text-end" data-label="Оценки">{{ source.evaluations }}</td>
+                      <td class="text-end" data-label="Диагностика">{{ source.diagnostics }}</td>
+                      <td class="text-end" data-label="Принято">{{ source.accepted }}</td>
+                      <td class="text-end" data-label="Конверсия от РЛ">
+                        {% if source.work_orders > 0 %}
+                          <strong class="{% if source.is_good %}text-success{% endif %}">{{ source.overall_conv }}%</strong>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <th data-label="Итого">Итого</th>
+                  <th class="text-end" data-label="Рабочие листы">{{ params.source_totals.work_orders }}</th>
+                  <th class="text-end" data-label="Оценки">{{ params.source_totals.evaluations }}</th>
+                  <th class="text-end" data-label="Диагностика">{{ params.source_totals.diagnostics }}</th>
+                  <th class="text-end" data-label="Принято">{{ params.source_totals.accepted }}</th>
+                  <th class="text-end" data-label="Конверсия от РЛ">
+                    {% if params.source_totals.work_orders > 0 %}
+                      <strong>{{ params.source_totals.overall_conv }}%</strong>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+-->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script>
+  const chartPayload = JSON.parse('{{ params.chart_data|escapejs }}');
+
+  document.querySelectorAll('[data-collapsible]').forEach((card) => {
+    const toggle = card.querySelector('.collapsible-card__toggle');
+    if (!toggle) return;
+    const updateState = () => {
+      const collapsed = card.classList.contains('is-collapsed');
+      toggle.setAttribute('aria-expanded', (!collapsed).toString());
+    };
+    toggle.addEventListener('click', () => {
+      card.classList.toggle('is-collapsed');
+      updateState();
+    });
+    updateState();
+  });
+
+  const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+  new Chart(funnelCtx, {
+    type: 'bar',
+    data: {
+      labels: chartPayload.funnel.labels,
+      datasets: [{
+        label: 'Кол-во',
+        data: chartPayload.funnel.values,
+        backgroundColor: ['#002c63', '#00509d', '#ff8a00', '#ffd500'],
+        borderRadius: 12,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'bottom',
+          formatter: (value) => value,
+          color: '#002a5a',
+          font: { weight: '600' },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 12 } }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+
+  const trendCtx = document.getElementById('trendChart').getContext('2d');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: chartPayload.trend.labels,
+      datasets: chartPayload.trend.series.map((serie, index) => ({
+        label: serie.label,
+        data: serie.data,
+        borderWidth: 2,
+        tension: 0.35,
+        fill: false,
+        borderColor: ['#002c63', '#00509d', '#ff8a00', '#ffd500'][index],
+        backgroundColor: 'transparent',
+        pointRadius: 4,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: ['#002c63', '#00509d', '#ff8a00', '#ffd500'][index],
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          formatter: (value) => value ? value.toFixed(1) + '%' : '',
+          color: '#555',
+          font: { size: 10 },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: function(value) {
+              return value + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+
+  const unitCanvas = document.getElementById('unitTrendChart');
+  if (
+    unitCanvas &&
+    chartPayload.unitTrend &&
+    chartPayload.unitTrend.units &&
+    chartPayload.unitTrend.datasets &&
+    chartPayload.unitTrend.datasets.length
+  ) {
+    const unitCtx = unitCanvas.getContext('2d');
+    new Chart(unitCtx, {
+      type: 'bar',
+      data: {
+        labels: chartPayload.unitTrend.units,
+        datasets: chartPayload.unitTrend.datasets.map(dataset => ({
+          label: dataset.label,
+          data: dataset.data,
+          backgroundColor: dataset.color,
+          borderRadius: 8,
+          maxBarThickness: 28,
+        })),
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        scales: {
+          x: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: { precision: 0 },
+          },
+          y: {
+            stacked: true,
+            ticks: {
+              autoSkip: false,
+            },
+          },
+        },
+        plugins: {
+          legend: { position: 'bottom' },
+          datalabels: {
+            anchor: 'center',
+            align: 'center',
+            formatter: (value) => (value ? value : ''),
+            color: '#fff',
+            font: { size: 10, weight: '600' },
+          },
+        },
+      },
+    });
+  }
+
+  const typeCanvas = document.getElementById('typeComparisonChart');
+  if (typeCanvas && chartPayload.typeMonthly && chartPayload.typeMonthly.datasets && chartPayload.typeMonthly.datasets.length) {
+    const typeCtx = typeCanvas.getContext('2d');
+    new Chart(typeCtx, {
+      type: 'line',
+      data: {
+        labels: chartPayload.typeMonthly.labels,
+        datasets: chartPayload.typeMonthly.datasets.map(dataset => ({
+          label: dataset.label,
+          data: dataset.data,
+          borderWidth: 2,
+          tension: 0.35,
+          fill: false,
+          borderColor: dataset.color,
+          pointRadius: 3,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: dataset.color,
+        })),
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            formatter: (value) => value || '',
+            color: '#555',
+            font: { size: 10 },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 },
+          }
+        }
+      }
+    });
+  }
+
+  const pieCanvas = document.getElementById('typePieChart');
+  if (pieCanvas && chartPayload.typePie && chartPayload.typePie.labels && chartPayload.typePie.labels.length) {
+    const pieCtx = pieCanvas.getContext('2d');
+    new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: chartPayload.typePie.labels,
+        datasets: [{
+          data: chartPayload.typePie.values,
+          backgroundColor: chartPayload.typePie.colors,
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          datalabels: {
+            formatter: (value, ctx) => {
+              const total = ctx.chart.data.datasets[0].data.reduce((acc, curr) => acc + curr, 0);
+              if (!total) return '';
+              const percent = Math.round((value / total) * 100);
+              return percent > 0 ? percent + '%' : '';
+            },
+            color: '#fff',
+            font: { weight: '600' },
+          },
+        },
+      }
+    });
+  }
+</script>
+{% endblock %}
+
