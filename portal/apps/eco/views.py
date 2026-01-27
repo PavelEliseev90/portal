@@ -9,7 +9,7 @@ from task_manager.views import send_message_socket, get_info_max, kors_estimatio
 import json
 from checklists.models import CheckListTradeIn
 from chats.models import Chat, ChatMessage
-from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField, FloatField
+from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Q, Value, IntegerField, Case, When, CharField, FloatField, Exists
 from django.db.models.functions import Extract, TruncDate, TruncMonth
 from django.db import models
 import datetime as DT
@@ -488,6 +488,22 @@ def _get_price_category(price):
         return 'Свыше 5 млн'
 
 
+def _get_price_category_order(category_name):
+    """Возвращает порядковый номер категории для сортировки по возрастанию цены"""
+    order_map = {
+        'Без цены': 0,
+        'До 200 тыс.': 1,
+        '200-400 тыс.': 2,
+        '400-700 тыс.': 3,
+        '700 тыс. - 1.2 млн': 4,
+        '1.2-2 млн': 5,
+        '2-3 млн': 6,
+        '3-5 млн': 7,
+        'Свыше 5 млн': 8,
+    }
+    return order_map.get(category_name, 999)
+
+
 def _parse_multiple_ints(value):
     """Парсит строку с множественными ID (через запятую)"""
     if not value:
@@ -525,6 +541,7 @@ def tradein_funnel_new(request):
     unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
     unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
     type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
     
     # Одиночные фильтры (для обратной совместимости)
     unit_id = _get_int(request.GET.get('unit_id'))
@@ -553,6 +570,17 @@ def tradein_funnel_new(request):
     staffs = RefStaff.objects.exclude(name='').order_by('name')
     analysts = User.objects.filter(profiles__eco=True)
     statuses = RefStatusEstimation.objects.order_by('name')
+    
+    # Получаем список источников поступления (unit_dc или unit из DocRLK с eco=True)
+    # Источник = unit_dc если заполнен, иначе unit
+    source_unit_ids_from_rlk = set()
+    source_unit_ids_from_rlk.update(
+        DocRLK.objects.filter(eco=True).exclude(unit_dc__isnull=True).values_list('unit_dc_id', flat=True).distinct()
+    )
+    source_unit_ids_from_rlk.update(
+        DocRLK.objects.filter(eco=True, unit_dc__isnull=True).exclude(unit__isnull=True).values_list('unit_id', flat=True).distinct()
+    )
+    source_units = RefUnit.objects.filter(id__in=source_unit_ids_from_rlk).exclude(name='').order_by('name')
     
     # Инициализация переменных
     rlk_count = 0
@@ -630,6 +658,12 @@ def tradein_funnel_new(request):
         # Применяем фильтры
         if unit_ids:
             docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if source_unit_ids:
+            # Фильтр по источнику поступления: unit_dc если заполнен, иначе unit
+            docs = docs.filter(
+                Q(unit_dc__id__in=source_unit_ids) |
+                Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+            )
         if staff_id:
             docs = docs.filter(staff__id=staff_id)
         if analyst_id:
@@ -670,6 +704,12 @@ def tradein_funnel_new(request):
         # Применяем фильтры по подразделениям и сотрудникам
         if unit_ids:
             docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if source_unit_ids:
+            # Фильтр по источнику поступления: unit_dc если заполнен, иначе unit
+            docs = docs.filter(
+                Q(unit_dc__id__in=source_unit_ids) |
+                Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+            )
         if staff_id:
             docs = docs.filter(staff__id=staff_id)
         if analyst_id:
@@ -816,7 +856,7 @@ def tradein_funnel_new(request):
                 if doc.lo_active:
                     price_categories[category]['success'] += 1
         
-        for category, stats in sorted(price_categories.items()):
+        for category, stats in sorted(price_categories.items(), key=lambda x: _get_price_category_order(x[0])):
             price_category_stats.append({
                 'name': category,
                 'total': stats['total'],
@@ -844,7 +884,7 @@ def tradein_funnel_new(request):
                 if price_after > 0:
                     price_categories[category]['after_kd'] += 1
         
-        for category, stats in sorted(price_categories.items()):
+        for category, stats in sorted(price_categories.items(), key=lambda x: _get_price_category_order(x[0])):
             price_category_stats.append({
                 'name': category,
                 'total': stats['total'],
@@ -865,6 +905,8 @@ def tradein_funnel_new(request):
         'unit_ids_list': unit_ids,  # Список для проверки в шаблоне
         'unit_group_ids': ','.join(map(str, unit_group_ids)) if unit_group_ids else '',
         'unit_group_ids_list': unit_group_ids,  # Список для проверки в шаблоне
+        'source_unit_ids': ','.join(map(str, source_unit_ids)) if source_unit_ids else '',
+        'source_unit_ids_list': source_unit_ids,  # Список для проверки в шаблоне
         'staff_id': staff_id or '',
         'analyst_id': analyst_id or '',
         'type_reception_id': type_reception_id or '',
@@ -885,6 +927,7 @@ def tradein_funnel_new(request):
         'filters': filters,
         'units': units,
         'unit_groups': unit_groups,
+        'source_units': source_units,
         'staffs': staffs,
         'analysts': analysts,
         'type_receptions': type_receptions,
@@ -894,6 +937,228 @@ def tradein_funnel_new(request):
     }
 
     return render(request, 'lo/tradein_funnel_new.html', {'params': params})
+
+
+def tradein_funnel_rejected(request):
+    """Отображение автомобилей, которые были осмотрены или прошли диагностику, но не приняты"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    
+    default_end     = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start   = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+
+    date_start  = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end    = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    # Множественный выбор фильтров
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
+    source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
+    
+    # Одиночные фильтры
+    unit_id = _get_int(request.GET.get('unit_id'))
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    
+    # Получаем подразделения из групп
+    if unit_group_ids:
+        unit_groups = RefUnitGroup.objects.filter(id__in=unit_group_ids).prefetch_related('units')
+        for group in unit_groups:
+            for unit in group.units.all():
+                if unit.id not in unit_ids:
+                    unit_ids.append(unit.id)
+    
+    # Загружаем справочники
+    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
+    unit_groups = RefUnitGroup.objects.filter(active=True, bu_auto=True).order_by('name')
+    
+    # Получаем список источников поступления
+    source_unit_ids_from_rlk = set()
+    source_unit_ids_from_rlk.update(
+        DocRLK.objects.filter(eco=True).exclude(unit_dc__isnull=True).values_list('unit_dc_id', flat=True).distinct()
+    )
+    source_unit_ids_from_rlk.update(
+        DocRLK.objects.filter(eco=True, unit_dc__isnull=True).exclude(unit__isnull=True).values_list('unit_id', flat=True).distinct()
+    )
+    source_units = RefUnit.objects.filter(id__in=source_unit_ids_from_rlk).exclude(name='').order_by('name')
+    
+    # Базовый Q объект для DocRLK
+    base_rlk_q = Q(
+        Q(type__id=2, unit_dc__buauto=True) |
+        Q(type__id=7, eco=True) |
+        Q(type__id=1, eco=True) |
+        Q(type__id=19, eco=True) |
+        Q(eco=True)
+    )
+    
+    # Получаем DocRLK в периоде
+    docs = DocRLK.objects.filter(
+        dataTime__gte=date_start,
+        dataTime__lte=date_end
+    ).filter(base_rlk_q)
+    
+    # Применяем фильтры
+    if unit_ids:
+        docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+    if source_unit_ids:
+        docs = docs.filter(
+            Q(unit_dc__id__in=source_unit_ids) |
+            Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+        )
+    
+    # Подключаем оценки и листы оценки
+    subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
+    subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
+    
+    docs = docs.annotate(
+        has_estimation=Exists(RegInteractivOcenka.objects.filter(rlk=OuterRef('id'))),
+        start_estimation=Subquery(subquery_est.values('start_estimation')[:1]),
+        has_diagnostics=Subquery(subquery_est.values('page_soglasovanie__comment_diagnostica')[:1]),
+        no_diagnostica=Subquery(subquery_est.values('page_soglasovanie__no_diagnostica')[:1]),
+        lo_active=Subquery(subquery_lo.values('active')[:1]),
+        lo_exists=Exists(DocLO.objects.filter(rlk=OuterRef('id'))),
+        status_name=Subquery(subquery_est.values('status__name')[:1]),
+        price_before_kd=Subquery(subquery_est.values('page_soglasovanie__price_before_kd')[:1]),
+        price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
+        type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
+        vin=Subquery(subquery_est.values('vin')[:1]),
+        mark=Subquery(subquery_est.values('modification__model__mark__name')[:1]),
+        model=Subquery(subquery_est.values('modification__model__name')[:1]),
+        modification=Subquery(subquery_est.values('modification__name')[:1]),
+        year=Subquery(subquery_est.values('year')[:1]),
+        staff_name=Subquery(subquery_est.values('staff__name')[:1]),
+        estimation_id=Subquery(subquery_est.values('id')[:1]),
+    )
+    
+    # Фильтруем: были осмотрены (start_estimation не пусто) ИЛИ прошли диагностику
+    # И НЕ приняты (lo_active != True)
+    # Проверяем диагностику через дополнительный подзапрос
+    est_with_diagnostics = RegInteractivOcenka.objects.filter(
+        rlk=OuterRef('id')
+    ).filter(
+        Q(page_soglasovanie__comment_diagnostica__isnull=False) |
+        Q(page_soglasovanie__no_diagnostica=True)
+    )
+    
+    docs = docs.annotate(
+        has_diagnostics_check=Exists(est_with_diagnostics)
+    ).filter(
+        Q(has_estimation=True) & (
+            Q(start_estimation__isnull=False) |
+            Q(has_diagnostics_check=True)
+        ) & (
+            Q(lo_active__isnull=True) |
+            Q(lo_active=False)
+        )
+    )
+    
+    # Группируем по ДЦ (источник поступления)
+    rejected_by_unit = {}
+    
+    for doc in docs.select_related('unit', 'unit_dc'):
+        # Определяем источник поступления
+        source_unit = doc.unit_dc if doc.unit_dc else doc.unit
+        if not source_unit:
+            continue
+        
+        source_unit_name = source_unit.name
+        
+        if source_unit_name not in rejected_by_unit:
+            rejected_by_unit[source_unit_name] = {
+                'unit': source_unit,
+                'items': []
+            }
+        
+        # Определяем причину срыва
+        rejection_reason = []
+        if doc.reasonArchive:
+            rejection_reason.append(f"Архив: {doc.reasonArchive}")
+        if doc.dateArchive:
+            rejection_reason.append(f"Дата архива: {doc.dateArchive.strftime('%d.%m.%Y %H:%M')}")
+        
+        # Анализ причин срыва
+        failure_analysis = []
+        if not doc.lo_exists:
+            failure_analysis.append("Не создан лист оценки")
+        elif doc.lo_active is False:
+            failure_analysis.append("Лист оценки не проведен")
+        
+        if doc.status_name and 'принят' not in doc.status_name.lower():
+            failure_analysis.append(f"Статус: {doc.status_name}")
+        
+        if doc.price_before_kd and doc.price_before_kd == 0:
+            failure_analysis.append("Не согласована цена до КД")
+        elif doc.price_after_kd and doc.price_after_kd == 0:
+            failure_analysis.append("Не согласована цена после КД")
+        
+        if not doc.start_estimation:
+            failure_analysis.append("Оценка не начата")
+        
+        if doc.archive:
+            failure_analysis.append("Документ в архиве")
+        
+        rejected_by_unit[source_unit_name]['items'].append({
+            'rlk': doc,
+            'nomer': doc.nomer,
+            'dataTime': doc.dataTime,
+            'clientName': doc.clientName,
+            'vin': doc.vin or doc.vin_trade_in or '',
+            'mark': doc.mark or '',
+            'model': doc.model or '',
+            'modification': doc.modification or '',
+            'year': doc.year or '',
+            'type_reception': doc.type_reception_name or '',
+            'staff': doc.staff_name or '',
+            'price_before_kd': doc.price_before_kd or 0,
+            'price_after_kd': doc.price_after_kd or 0,
+            'start_estimation': doc.start_estimation,
+            'status': doc.status_name or '',
+            'reasonArchive': doc.reasonArchive or '',
+            'dateArchive': doc.dateArchive,
+            'rejection_reason': '; '.join(rejection_reason) if rejection_reason else 'Не указана',
+            'failure_analysis': failure_analysis,
+            'estimation_id': doc.estimation_id,
+            'has_diagnostics': bool(doc.has_diagnostics or doc.no_diagnostica),
+        })
+    
+    # Сортируем по названию ДЦ
+    rejected_by_unit = dict(sorted(rejected_by_unit.items()))
+    
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d') or '',
+        'date_end': date_end.strftime('%Y-%m-%d') or '',
+        'unit_id': unit_id or '',
+        'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
+        'unit_ids_list': unit_ids,
+        'unit_group_ids': ','.join(map(str, unit_group_ids)) if unit_group_ids else '',
+        'unit_group_ids_list': unit_group_ids,
+        'source_unit_ids': ','.join(map(str, source_unit_ids)) if source_unit_ids else '',
+        'source_unit_ids_list': source_unit_ids,
+    }
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'filters': filters,
+        'units': units,
+        'unit_groups': unit_groups,
+        'source_units': source_units,
+        'rejected_by_unit': rejected_by_unit,
+        'total_count': sum(len(data['items']) for data in rejected_by_unit.values()),
+    }
+    
+    return render(request, 'lo/tradein_funnel_rejected.html', {'params': params})
 
 
 def tradein_funnel(request):
