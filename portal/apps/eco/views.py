@@ -658,17 +658,24 @@ def tradein_funnel_new(request):
             rlk_count = len(rlk_ids)
             
             # Подсчет цен через агрегацию оценок
-            price_stats = est_qs.aggregate(
-                before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
-                after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
-            )
+            #price_stats = est_qs.aggregate(
+            #    before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
+            #    after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
+            #)
             
-            count_price_before_kd = price_stats['before_kd_count'] or 0
-            count_price_after_kd = price_stats['after_kd_count'] or 0
+            count_price_before_kd = DocLO.objects.filter(
+                dataTime__gte=date_start,
+                dataTime__lte=date_end
+            ).count()
+            count_price_after_kd = RegInteractivOcenka.objects.filter(
+                date_diagnostic__gte=date_start,
+                date_diagnostic__lte=date_end
+            ).count()
             
             # Подсчет принятых через DocLO
             accepted_count = DocLO.objects.filter(
-                rlk_id__in=rlk_ids,
+                dataTime__gte=date_start,
+                dataTime__lte=date_end,
                 active=True
             ).count()
             
@@ -746,13 +753,17 @@ def tradein_funnel_new(request):
     # Вариант 3: Данные по листам оценки (фильтр по датам DocLO)
     else:
         # Сначала получаем DocLO в периоде для оптимизации
-        lo_qs = DocLO.objects.filter(
-            dataTime__gte=date_start,
-            dataTime__lte=date_end
-        )
+        lo_qs = RegInteractivOcenka.objects.filter(
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end
+            )
+        # lo_qs = DocLO.objects.filter(
+        #     dataTime__gte=date_start,
+        #     dataTime__lte=date_end
+        # )
         
         # Получаем rlk_id из листов оценки
-        lo_rlk_ids = list(lo_qs.values_list('rlk_id', flat=True).distinct())
+        lo_rlk_ids = list(lo_qs.values_list('rlk__id', flat=True).distinct())
         
         if not lo_rlk_ids:
             rlk_count = 0
