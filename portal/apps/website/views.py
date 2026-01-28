@@ -8900,6 +8900,24 @@ def sb_lo(request):
 
 def test(request):
 
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).filter(date_diagnostic = None).filter(page_soglasovanie__price_after_kd__gt = 0).order_by('-id').values('id')
+    count = len(estimations_id)
+    s = 0
+    for estimation_id in estimations_id:
+        estimation      = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+        slug_chat       = 'rlk_' + str(estimation.rlk.id)
+        messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
+        
+        for message in messages_list:
+            if message.content.startswith('Пройдена диагностика -'):
+                estimation.date_diagnostic = message.date 
+                estimation.save(update_fields=[
+                                       'date_diagnostic',
+                                                  ]) 
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count))
+
     # ssms = DocSMS.objects.all().values('id')
     # count = ssms.count()
     # s = 0
@@ -9051,11 +9069,11 @@ def test(request):
     #from task_manager.views import refresh_chat_data
     #refresh_chat_data()
     
-    from background_task.models import Task
-    task = Task.objects.all()
-    for ts in task:
-        ts.locked_by = ''
-        ts.save()
+    # from background_task.models import Task
+    # task = Task.objects.all()
+    # for ts in task:
+    #     ts.locked_by = ''
+    #     ts.save()
 
     #refresh_avtoteka_vin()
 
@@ -9080,16 +9098,16 @@ def test(request):
     #refresh_avtoteka_vin()
     
     
-    estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 12, 1)).values('rlk__id').order_by('-start_estimation')
-    count = estimations.count()
-    s = 1
-    for estimation in estimations:
-        try:
-            refresh_estimation_analitik(estimation['rlk__id'])
-            s  = s + 1
-        except:
-            ss = 1
-        print(str(s) + ' / ' + str(count))
+    # estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 12, 1)).values('rlk__id').order_by('-start_estimation')
+    # count = estimations.count()
+    # s = 1
+    # for estimation in estimations:
+    #     try:
+    #         refresh_estimation_analitik(estimation['rlk__id'])
+    #         s  = s + 1
+    #     except:
+    #         ss = 1
+    #     print(str(s) + ' / ' + str(count))
     
 
     '''
