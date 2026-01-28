@@ -1178,15 +1178,15 @@ def tradein_funnel_export(request):
     if type_reception_ids:
         est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
     
-    # Фильтруем по типу экспорта
+    # Фильтруем по типу экспорта (точно так же, как в tradein_funnel_new)
     if export_type == 'before_kd':
-        # VIN с price_before_kd > 0
+        # VIN с price_before_kd > 0 (как в основной функции - Count по оценкам)
         est_qs = est_qs.filter(page_soglasovanie__price_before_kd__gt=0)
     elif export_type == 'after_kd':
-        # VIN с price_after_kd > 0
+        # VIN с price_after_kd > 0 (как в основной функции - Count по оценкам)
         est_qs = est_qs.filter(page_soglasovanie__price_after_kd__gt=0)
     elif export_type == 'success':
-        # VIN с активными DocLO
+        # VIN с активными DocLO (как в основной функции)
         if type_report_id == 3:
             accepted_rlk_ids = set(DocLO.objects.filter(
                 rlk_id__in=rlk_ids,
@@ -1202,8 +1202,11 @@ def tradein_funnel_export(request):
         
         est_qs = est_qs.filter(rlk_id__in=accepted_rlk_ids)
     
-    # Получаем уникальные VIN номера
-    vin_list = list(est_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True).distinct())
+    # Получаем VIN номера
+    # В основной функции считается количество оценок (RegInteractivOcenka), а не уникальных VIN
+    # Поэтому убираем distinct, чтобы количество в экспорте соответствовало количеству в шаблоне
+    # Если у одного VIN несколько оценок, они все попадут в экспорт
+    vin_list = list(est_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True))
     
     # Создаем Excel файл
     wb = Workbook()
