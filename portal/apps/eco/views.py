@@ -1,6 +1,8 @@
 from tkinter.tix import Tree
 from collections import defaultdict
 from django.shortcuts import redirect, render
+from openpyxl import Workbook
+from django.http import HttpResponse
 from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
@@ -1030,6 +1032,207 @@ def tradein_funnel_new(request):
     }
 
     return render(request, 'lo/tradein_funnel_new.html', {'params': params})
+
+
+def tradein_funnel_export(request):
+    """Экспорт VIN номеров в Excel для блоков воронки"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        return HttpResponseRedirect('/')
+    
+    export_type = request.GET.get('export_type', '')  # before_kd, after_kd, success
+    
+    if export_type not in ['before_kd', 'after_kd', 'success']:
+        return HttpResponse('Неверный тип экспорта', status=400)
+    
+    # Парсим параметры фильтров (аналогично tradein_funnel_new)
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    type_report_id = _get_int(request.GET.get('type_report_id')) or 1
+    
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
+    
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    
+    # Получаем подразделения из групп
+    if unit_group_ids:
+        unit_groups = RefUnitGroup.objects.filter(id__in=unit_group_ids).prefetch_related('units')
+        for group in unit_groups:
+            for unit in group.units.all():
+                if unit.id not in unit_ids:
+                    unit_ids.append(unit.id)
+    
+    # Базовый Q объект
+    base_rlk_q = Q(
+        Q(type__id=2, unit_dc__buauto=True) |
+        Q(type__id=7, eco=True) |
+        Q(type__id=1, eco=True) |
+        Q(type__id=19, eco=True) |
+        Q(eco=True)
+    )
+    
+    # Получаем rlk_ids в зависимости от варианта отчета
+    if type_report_id == 1:
+        docs_base = DocRLK.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        ).filter(base_rlk_q)
+        
+        if unit_ids:
+            docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if source_unit_ids:
+            docs_base = docs_base.filter(
+                Q(unit_dc__id__in=source_unit_ids) |
+                Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+            )
+        if staff_id:
+            docs_base = docs_base.filter(staff__id=staff_id)
+        
+        rlk_ids = list(docs_base.values_list('id', flat=True))
+        
+    elif type_report_id == 2:
+        docs_base = DocRLK.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        ).filter(base_rlk_q)
+        
+        if unit_ids:
+            docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        if source_unit_ids:
+            docs_base = docs_base.filter(
+                Q(unit_dc__id__in=source_unit_ids) |
+                Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+            )
+        if staff_id:
+            docs_base = docs_base.filter(staff__id=staff_id)
+        
+        rlk_ids = list(docs_base.values_list('id', flat=True))
+        
+    else:  # type_report_id == 3
+        lo_qs = DocLO.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        )
+        
+        lo_rlk_ids = list(lo_qs.values_list('rlk_id', flat=True).distinct())
+        
+        if not lo_rlk_ids:
+            rlk_ids = []
+        else:
+            docs_base = DocRLK.objects.filter(id__in=lo_rlk_ids).filter(base_rlk_q)
+            
+            if unit_ids:
+                docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+            if source_unit_ids:
+                docs_base = docs_base.filter(
+                    Q(unit_dc__id__in=source_unit_ids) |
+                    Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
+                )
+            if staff_id:
+                docs_base = docs_base.filter(staff__id=staff_id)
+            
+            rlk_ids = list(docs_base.values_list('id', flat=True))
+    
+    if not rlk_ids:
+        # Нет данных - возвращаем пустой Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "VIN номера"
+        ws.append(['VIN'])
+        ws.append(['Нет данных'])
+        
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="vin_export_{export_type}.xlsx"'
+        wb.save(response)
+        return response
+    
+    # Получаем оценки
+    est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
+    
+    if analyst_id:
+        est_qs = est_qs.filter(
+            Q(staff_eco_1__id=analyst_id) |
+            Q(staff_eco_2__id=analyst_id)
+        )
+    if type_reception_ids:
+        est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
+    
+    # Фильтруем по типу экспорта
+    if export_type == 'before_kd':
+        # VIN с price_before_kd > 0
+        est_qs = est_qs.filter(page_soglasovanie__price_before_kd__gt=0)
+    elif export_type == 'after_kd':
+        # VIN с price_after_kd > 0
+        est_qs = est_qs.filter(page_soglasovanie__price_after_kd__gt=0)
+    elif export_type == 'success':
+        # VIN с активными DocLO
+        if type_report_id == 3:
+            accepted_rlk_ids = set(DocLO.objects.filter(
+                rlk_id__in=rlk_ids,
+                active=True,
+                dataTime__gte=date_start,
+                dataTime__lte=date_end
+            ).values_list('rlk_id', flat=True))
+        else:
+            accepted_rlk_ids = set(DocLO.objects.filter(
+                rlk_id__in=rlk_ids,
+                active=True
+            ).values_list('rlk_id', flat=True))
+        
+        est_qs = est_qs.filter(rlk_id__in=accepted_rlk_ids)
+    
+    # Получаем уникальные VIN номера
+    vin_list = list(est_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True).distinct())
+    
+    # Создаем Excel файл
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "VIN номера"
+    
+    # Заголовок
+    ws.append(['VIN'])
+    
+    # Данные
+    for vin in sorted(vin_list):
+        ws.append([vin])
+    
+    # Формируем ответ
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    export_names = {
+        'before_kd': 'До_диагностики',
+        'after_kd': 'После_диагностики',
+        'success': 'Принято'
+    }
+    
+    filename = f"vin_export_{export_names.get(export_type, export_type)}_{date_start.strftime('%Y%m%d')}_{date_end.strftime('%Y%m%d')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    wb.save(response)
+    return response
 
 
 def tradein_funnel_rejected(request):
