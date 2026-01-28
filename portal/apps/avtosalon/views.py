@@ -661,7 +661,7 @@ def disposition_get_models(request):
 
 def car(request, slug):
 
-    car = RefCarsOrganization.objects.filter(slug = slug)[0]
+    car = RefCarsOrganization.objects.get(slug = slug)
     
     add_statistic_cars_organization(cars=car, store=car.store, type=1)
     

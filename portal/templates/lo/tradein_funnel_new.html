@@ -623,6 +623,11 @@
           <h2>{{ params.count_price_before_kd|floatformat:"0g" }}</h2>
           <p class="kors-stage-desc">Осмотр АМ</p>
           <span class="kors-stage-conv">Конверсия: {{params.count_price_before_kd_p|floatformat:"2g"}} %</span>
+          <div class="mt-2">
+            <a href="{% url 'eco:tradein_funnel_export' %}?export_type=before_kd&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+              📥 Выгрузить VIN
+            </a>
+          </div>
         </article>
       </div>
 
@@ -632,6 +637,11 @@
           <h2>{{ params.count_price_after_kd|floatformat:"0g" }}</h2>
           <p class="kors-stage-desc">Прошли диагностику и прошли согласование</p>
           <span class="kors-stage-conv">Конверсия: {{params.count_price_after_kd_p|floatformat:"2g"}} %</span>
+          <div class="mt-2">
+            <a href="{% url 'eco:tradein_funnel_export' %}?export_type=after_kd&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+              📥 Выгрузить VIN
+            </a>
+          </div>
         </article>
       </div>
 
@@ -641,6 +651,11 @@
           <h2>{{ params.count_success|floatformat:"0g" }}</h2>
           <p class="kors-stage-desc">Принято</p>
           <span class="kors-stage-conv">Конверсия: {{params.count_success_p|floatformat:"2g"}} %</span>
+          <div class="mt-2">
+            <a href="{% url 'eco:tradein_funnel_export' %}?export_type=success&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+              📥 Выгрузить VIN
+            </a>
+          </div>
         </article>
       </div>
     

@@ -9,6 +9,7 @@ urlpatterns = [
     path('',                                    views.list_eco_online),
     path('funnel/',                             views.tradein_funnel_new, name='tradein_funnel'),
     path('funnel/rejected/',                    views.tradein_funnel_rejected, name='tradein_funnel_rejected'),
+    path('funnel/export/',                      views.tradein_funnel_export, name='tradein_funnel_export'),
     path('efficiency/',                         views.eco_efficiency_analysis_new, name='eco_efficiency'),
     path('efficiency/analyst/<int:analyst_id>/', views.eco_analyst_detail, name='eco_analyst_detail'),
     path('staff-performance/',                  views.staff_performance_analysis, name='staff_performance'),
