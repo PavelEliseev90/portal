@@ -231,7 +231,6 @@
               <th>Цена до КД</th>
               <th>Цена после КД</th>
               <th>Авторасчет</th>
-              <th>Цена ЕЦО</th>
               <th>Статус</th>
               <th>Причина архива</th>
               <th>Дата архива</th>
@@ -257,36 +256,45 @@
                     —
                   {% endif %}
                 </td>
-                <td>{{ item.type_reception|default:"—" }}</td>
+                <td>
+                  {% if item.type_reception %}
+                    {{ item.type_reception|default:"—" }}
+                  {% else %}
+                    {{ item.page_remote_type_reception|default:"—" }}
+                  {% endif %  }
+                </td>
+
                 <td>{{ item.staff|default:"—" }}</td>
                 <td class="price-cell">
                   {% if item.price_before_kd %}
-                    {{ item.price_before_kd|floatformat:0 }} ₽
+                    {{ item.price_before_kd|floatformat:"0g" }} ₽
                   {% else %}
-                    —
+                    {% if item.price_eco %}
+                      {{ item.price_eco|floatformat:"0g" }} ₽
+                    {% else %}
+                      —
+                    {% endif %}
                   {% endif %}
                 </td>
                 <td class="price-cell">
                   {% if item.price_after_kd %}
-                    {{ item.price_after_kd|floatformat:0 }} ₽
+                    {{ item.price_after_kd|floatformat:"0g" }} ₽
                   {% else %}
                     —
                   {% endif %}
                 </td>
                 <td class="price-cell">
                   {% if item.price_auto_2 %}
-                    {{ item.price_auto_2|floatformat:0 }} ₽
+                    {{ item.price_auto_2|floatformat:"0g" }} ₽
                   {% else %}
-                    —
+                    {% if item.page_remote_price_auto %}
+                      {{ item.page_remote_price_auto|floatformat:"0g" }} ₽
+                    {% else %}
+                      —
+                    {% endif %}
                   {% endif %}
                 </td>
-                <td class="price-cell">
-                  {% if item.price_eco %}
-                    {{ item.price_eco|floatformat:0 }} ₽
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
+                
                 <td>
                   {% if item.status %}
                     <span class="badge bg-secondary">{{ item.status }}</span>
