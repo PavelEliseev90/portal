@@ -1338,7 +1338,7 @@ def tradein_funnel_export(request):
             ws.append([vin])
 
     elif export_type == 'success':
-        # VIN с активными DocLO
+        # VIN с активными DocLO (как в основной функции)
         if type_report_id == 3:
             accepted_rlk_ids = set(DocLO.objects.filter(
                 rlk_id__in=rlk_ids,
