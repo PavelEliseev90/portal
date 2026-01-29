@@ -1526,7 +1526,7 @@ def tradein_funnel_rejected(request):
     reason_archive_stats = defaultdict(int)  # Статистика причин архива
     
     # Импортируем модели для анализа сделки
-    from documents.models import DocCarShipment, DocCarAgreement
+    from documents.models import DocRlk, DocCarShipment, DocCarAgreement
     
     for doc in docs.select_related('unit', 'unit_dc', 'footing').prefetch_related('footing'):
         # Определяем подразделение (источник поступления)
@@ -1555,21 +1555,23 @@ def tradein_funnel_rejected(request):
         footing_analysis = []
         if doc.footing:
             footing = doc.footing
+            footing_dop = DocRlk.objects.filter(uin = doc.footing.uin).values_list('uin', flat = True)
             # Проверяем отгрузку
-            shipment = DocCarShipment.objects.filter(rlk=footing, active=True).first()
+            shipment = DocCarShipment.objects.filter(rlk__uin__in=footing_dop, active=True).first()
             if shipment:
                 footing_analysis.append(f"Отгрузка: {shipment.nomer} от {shipment.dataTime.strftime('%d.%m.%Y')}")
             else:
                 # Проверяем соглашение
-                agreement = DocCarAgreement.objects.filter(rlk=footing, active=True).first()
+                agreement = DocCarAgreement.objects.filter(rlk__uin__in=footing_dop, active=True).first()
                 if agreement:
                     footing_analysis.append(f"Соглашение: {agreement.nomer} от {agreement.dataTime.strftime('%d.%m.%Y')}")
                 else:
-                    # Проверяем архив
-                    if footing.archive:
-                        footing_analysis.append(f"Основание в архиве: {footing.reasonArchive or 'Без причины'}")
-                    else:
-                        footing_analysis.append("Основание без сделки")
+                    dops = DocRlk.objects.filter(uin = doc.footing.uin)
+                    for dop in dops:
+                        if dop.archive:
+                            footing_analysis.append(f"Основание в архиве: {dop.reasonArchive or 'Без причины'}")
+                        else:
+                            footing_analysis.append("Основание без сделки")
         else:
             footing_analysis.append("Нет основания")
         
