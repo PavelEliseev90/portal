@@ -612,8 +612,13 @@
         <article class="kors-stage-card">
           <h3>Рабочие листы TRADE-IN</h3>
           <h2>{{ params.rlk_count|floatformat:"0g" }}</h2>
-          <p class="kors-stage-desc">DocRLK с признаком TRADE-IN</p>
+          <p class="kors-stage-desc">DocRLK с признаком TRADE-IN уникальные по VIN если указан</p>
           <span class="kors-stage-conv">Конверсия: 100%</span>
+          <div class="mt-2">
+            <a href="{% url 'eco:tradein_funnel_export' %}?export_type=rl&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
+              📥 Выгрузить РЛ
+            </a>
+          </div>
         </article>
       </div>
 
@@ -621,7 +626,7 @@
         <article class="kors-stage-card">
           <h3>До диагностики</h3>
           <h2>{{ params.count_price_before_kd|floatformat:"0g" }}</h2>
-          <p class="kors-stage-desc">Осмотр АМ</p>
+          <p class="kors-stage-desc">Уникальные = Осмотры АМ + Дистанционные </p>
           <span class="kors-stage-conv">Конверсия: {{params.count_price_before_kd_p|floatformat:"2g"}} %</span>
           <div class="mt-2">
             <a href="{% url 'eco:tradein_funnel_export' %}?export_type=before_kd&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
@@ -635,7 +640,7 @@
         <article class="kors-stage-card">
           <h3>После диагностики</h3>
           <h2>{{ params.count_price_after_kd|floatformat:"0g" }}</h2>
-          <p class="kors-stage-desc">Прошли диагностику и прошли согласование</p>
+          <p class="kors-stage-desc">Получена цена выкупа после КД</p>
           <span class="kors-stage-conv">Конверсия: {{params.count_price_after_kd_p|floatformat:"2g"}} %</span>
           <div class="mt-2">
             <a href="{% url 'eco:tradein_funnel_export' %}?export_type=after_kd&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">
@@ -649,7 +654,7 @@
         <article class="kors-stage-card">
           <h3>Принято</h3>
           <h2>{{ params.count_success|floatformat:"0g" }}</h2>
-          <p class="kors-stage-desc">Принято</p>
+          <p class="kors-stage-desc">Лист оценки проведен - автомобиль принят</p>
           <span class="kors-stage-conv">Конверсия: {{params.count_success_p|floatformat:"2g"}} %</span>
           <div class="mt-2">
             <a href="{% url 'eco:tradein_funnel_export' %}?export_type=success&{{ request.GET.urlencode }}" class="btn btn-sm btn-outline-success">

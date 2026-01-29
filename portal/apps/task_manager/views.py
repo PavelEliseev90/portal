@@ -2398,7 +2398,7 @@ def refresh_wash():
                     date_time_start = data_id_info[0].date_time
                 else:
                     date_time_start = DT.datetime(year=2023, month=8, day=1, hour=0, minute=0)
-                date_time_end = date_time_start + DT.timedelta(days=1)
+                date_time_end = date_time_start + DT.timedelta(days=2)
                 if date_time_end > DT.datetime.now():
                    date_time_end = DT.datetime.now() 
                 infos = get_wash(id_wash, header, date_time_start, date_time_end)
@@ -2427,7 +2427,7 @@ def get_wash(id_wash, header, time_start, time_end):
     unix_start  = str(int(time.mktime(time_start.timetuple())))
     unix_end    = str(int(time.mktime(time_end.timetuple())))
     offset_while = True
-    
+     
     while offset_while:
         url         = url_wash + 'finance?include_all=true&wash_id=' + str(id_wash) + '&start_time=' + unix_start + '&end_time=' + unix_end + '&limit=' + str(limit_wash) + '&offset=' + str(offset)
         response    = requests.get(url, headers=header)
