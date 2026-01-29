@@ -1466,6 +1466,9 @@ def tradein_funnel_rejected(request):
     subquery_est = RegInteractivOcenka.objects.filter(rlk__id=OuterRef('id'))
     subquery_lo = DocLO.objects.filter(rlk__id=OuterRef('id'))
     
+    # Фильтр по причине архива (если указан)
+    reason_archive_filter = request.GET.get('reason_archive', '').strip()
+    
     docs = docs.annotate(
         has_estimation=Exists(RegInteractivOcenka.objects.filter(rlk=OuterRef('id'))),
         start_estimation=Subquery(subquery_est.values('start_estimation')[:1]),
@@ -1478,6 +1481,11 @@ def tradein_funnel_rejected(request):
         price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
         price_auto_2=Subquery(subquery_est.values('page_soglasovanie__price_auto_2')[:1]),
         type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
+        # Для дистанционной оценки
+        page_remote_type_reception=Subquery(subquery_est.values('page_remote__type_reception__name')[:1]),
+        page_remote_price_auto=Subquery(subquery_est.values('page_remote__price_auto')[:1]),
+        page_remote_price_eco=Subquery(subquery_est.values('page_remote__price_eco')[:1]),
+        is_remote=Exists(RegInteractivOcenka.objects.filter(rlk=OuterRef('id')).exclude(page_remote__isnull=True)),
         vin=Subquery(subquery_est.values('vin')[:1]),
         mark=Subquery(subquery_est.values('modification__model__mark__name')[:1]),
         model=Subquery(subquery_est.values('modification__model__name')[:1]),
@@ -1509,29 +1517,61 @@ def tradein_funnel_rejected(request):
         )
     )
     
-    # Группируем по ДЦ (источник поступления)
-    rejected_by_unit = {}
+    # Фильтр по причине архива (если указан)
+    if reason_archive_filter:
+        docs = docs.filter(reasonArchive__istartswith=reason_archive_filter)
     
-    for doc in docs.select_related('unit', 'unit_dc'):
-        # Определяем источник поступления
+    # Собираем все документы в один список (без группировки)
+    rejected_items = []
+    reason_archive_stats = defaultdict(int)  # Статистика причин архива
+    
+    # Импортируем модели для анализа сделки
+    from documents.models import DocCarShipment, DocCarAgreement
+    
+    for doc in docs.select_related('unit', 'unit_dc', 'footing').prefetch_related('footing'):
+        # Определяем подразделение (источник поступления)
         source_unit = doc.unit_dc if doc.unit_dc else doc.unit
-        if not source_unit:
-            continue
+        source_unit_name = source_unit.name if source_unit else 'Не указано'
         
-        source_unit_name = source_unit.name
-        
-        if source_unit_name not in rejected_by_unit:
-            rejected_by_unit[source_unit_name] = {
-                'unit': source_unit,
-                'items': []
-            }
-        
-        # Определяем причину срыва
-        rejection_reason = []
+        # Определяем причину архива (первая часть до ":")
+        reason_archive_short = ''
         if doc.reasonArchive:
-            rejection_reason.append(f"Архив: {doc.reasonArchive}")
-        if doc.dateArchive:
-            rejection_reason.append(f"Дата архива: {doc.dateArchive.strftime('%d.%m.%Y %H:%M')}")
+            reason_archive_short = doc.reasonArchive.split(':')[0].strip()
+            if reason_archive_short:
+                reason_archive_stats[reason_archive_short] += 1
+        
+        # Определяем тип приема, авторасчет и цену ецо
+        # Для дистанционной оценки берем из page_remote
+        if doc.is_remote and doc.status_name and 'дистанционн' in doc.status_name.lower():
+            type_reception = doc.page_remote_type_reception or ''
+            price_auto_2 = doc.page_remote_price_auto or 0
+            price_eco = doc.page_remote_price_eco or 0
+        else:
+            type_reception = doc.type_reception_name or ''
+            price_auto_2 = doc.price_auto_2 or 0
+            price_eco = 0
+        
+        # Анализ сделки по документу основанию (footing)
+        footing_analysis = []
+        if doc.footing:
+            footing = doc.footing
+            # Проверяем отгрузку
+            shipment = DocCarShipment.objects.filter(rlk=footing, active=True).first()
+            if shipment:
+                footing_analysis.append(f"Отгрузка: {shipment.nomer} от {shipment.dataTime.strftime('%d.%m.%Y')}")
+            else:
+                # Проверяем соглашение
+                agreement = DocCarAgreement.objects.filter(rlk=footing, active=True).first()
+                if agreement:
+                    footing_analysis.append(f"Соглашение: {agreement.nomer} от {agreement.dataTime.strftime('%d.%m.%Y')}")
+                else:
+                    # Проверяем архив
+                    if footing.archive:
+                        footing_analysis.append(f"Основание в архиве: {footing.reasonArchive or 'Без причины'}")
+                    else:
+                        footing_analysis.append("Основание без сделки")
+        else:
+            footing_analysis.append("Нет основания")
         
         # Анализ причин срыва
         failure_analysis = []
@@ -1554,33 +1594,36 @@ def tradein_funnel_rejected(request):
         if doc.archive:
             failure_analysis.append("Документ в архиве")
         
-        rejected_by_unit[source_unit_name]['items'].append({
+        rejected_items.append({
             'rlk': doc,
             'nomer': doc.nomer,
             'dataTime': doc.dataTime,
+            'unit_name': source_unit_name,
             'clientName': doc.clientName,
             'vin': doc.vin or doc.vin_trade_in or '',
             'mark': doc.mark or '',
             'model': doc.model or '',
             'modification': doc.modification or '',
             'year': doc.year or '',
-            'type_reception': doc.type_reception_name or '',
+            'type_reception': type_reception,
             'staff': doc.staff_name or '',
             'price_before_kd': doc.price_before_kd or 0,
             'price_after_kd': doc.price_after_kd or 0,
-            'price_auto_2': doc.price_auto_2 or 0,
+            'price_auto_2': price_auto_2,
+            'price_eco': price_eco,
             'start_estimation': doc.start_estimation,
             'status': doc.status_name or '',
             'reasonArchive': doc.reasonArchive or '',
+            'reasonArchive_short': reason_archive_short,
             'dateArchive': doc.dateArchive,
-            'rejection_reason': '; '.join(rejection_reason) if rejection_reason else 'Не указана',
             'failure_analysis': failure_analysis,
+            'footing_analysis': footing_analysis,
             'estimation_id': doc.reg_estimation_id,
             'has_diagnostics': bool(doc.has_diagnostics or doc.no_diagnostica),
         })
     
-    # Сортируем по названию ДЦ
-    rejected_by_unit = dict(sorted(rejected_by_unit.items()))
+    # Сортируем по дате (новые сверху)
+    rejected_items.sort(key=lambda x: x['dataTime'], reverse=True)
     
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d') or '',
@@ -1592,7 +1635,11 @@ def tradein_funnel_rejected(request):
         'unit_group_ids_list': unit_group_ids,
         'source_unit_ids': ','.join(map(str, source_unit_ids)) if source_unit_ids else '',
         'source_unit_ids_list': source_unit_ids,
+        'reason_archive': reason_archive_filter,
     }
+    
+    # Сортируем статистику причин архива по количеству (по убыванию)
+    reason_archive_stats_sorted = sorted(reason_archive_stats.items(), key=lambda x: x[1], reverse=True)
     
     params = {
         'type': 'eco_funnel',
@@ -1601,8 +1648,9 @@ def tradein_funnel_rejected(request):
         'units': units,
         'unit_groups': unit_groups,
         'source_units': source_units,
-        'rejected_by_unit': rejected_by_unit,
-        'total_count': sum(len(data['items']) for data in rejected_by_unit.values()),
+        'rejected_items': rejected_items,
+        'total_count': len(rejected_items),
+        'reason_archive_stats': reason_archive_stats_sorted,
     }
     
     return render(request, 'lo/tradein_funnel_rejected.html', {'params': params})
