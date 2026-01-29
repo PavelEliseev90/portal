@@ -657,7 +657,7 @@ def tradein_funnel_new(request):
             est_ids = list(est_qs.values_list('id', flat=True))
             
             # Подсчитываем через агрегацию для оптимизации
-            rlk_count = len(rlk_ids)
+            rlk_count = docs_base.exclude(vin_trade_in = '').values('vin_trade_in').distinct().count() + docs_base.filter(vin_trade_in = '').values('vin_trade_in').count()
             
             # Подсчет цен через агрегацию оценок
             #price_stats = est_qs.aggregate(
@@ -665,14 +665,17 @@ def tradein_funnel_new(request):
             #    after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
             #)
             
-            count_price_before_kd = DocLO.objects.filter(
-                dataTime__gte=date_start,
-                dataTime__lte=date_end
-            ).count()
+            # count_price_before_kd = DocLO.objects.filter(
+            #     dataTime__gte=date_start,
+            #     dataTime__lte=date_end
+            # ).count()
+            
+            
+
             count_price_after_kd = RegInteractivOcenka.objects.filter(
-                date_diagnostic__gte=date_start,
-                date_diagnostic__lte=date_end
-            ).count()
+                date_s_diag__gte=date_start,
+                date_s_diag__lte=date_end
+            ).count() 
             
             # Подсчет принятых через DocLO
             accepted_count = DocLO.objects.filter(
@@ -681,6 +684,15 @@ def tradein_funnel_new(request):
                 active=True
             ).count()
             
+            count_price_before_kd_q = RegInteractivOcenka.objects.filter(
+                start_estimation__gte=date_start,
+                start_estimation__lte=date_end
+            ) | RegInteractivOcenka.objects.filter(
+                page_remote__start_estimation__gte=date_start,
+                page_remote__start_estimation__lte=date_end
+            )
+            count_price_before_kd = count_price_before_kd_q.values('vin').order_by('vin').distinct().count()
+
             count_success = accepted_count
             count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
             count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
@@ -737,8 +749,10 @@ def tradein_funnel_new(request):
                 before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
                 after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
             )
-            
-            count_price_before_kd = price_stats['before_kd_count'] or 0
+            price_stats_remote = est_qs.filter(page_soglasovanie = None).aggregate(
+                before_kd_count=Count('id', filter=Q(page_remote__price_eco__gt=0))
+            )
+            count_price_before_kd = price_stats['before_kd_count'] or 0 + price_stats_remote['before_kd_count'] or 0
             count_price_after_kd = price_stats['after_kd_count'] or 0
             
             # Подсчет принятых через DocLO
@@ -754,15 +768,10 @@ def tradein_funnel_new(request):
     
     # Вариант 3: Данные по листам оценки (фильтр по датам DocLO)
     else:
-        # Сначала получаем DocLO в периоде для оптимизации
         lo_qs = RegInteractivOcenka.objects.filter(
             start_estimation__gte=date_start,
             start_estimation__lte=date_end
-            )
-        # lo_qs = DocLO.objects.filter(
-        #     dataTime__gte=date_start,
-        #     dataTime__lte=date_end
-        # )
+        )
         
         # Получаем rlk_id из листов оценки
         lo_rlk_ids = list(lo_qs.values_list('rlk__id', flat=True).distinct())
@@ -838,24 +847,16 @@ def tradein_funnel_new(request):
                 if type_reception_ids:
                     est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
                 
+                
                 # Подсчитываем через агрегацию
-                rlk_count = len(rlk_ids)
-                
-                # Подсчет цен через агрегацию
-                price_stats = est_qs.aggregate(
-                    before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
-                    after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
-                )
-                
-                count_price_before_kd = price_stats['before_kd_count'] or 0
-                count_price_after_kd = price_stats['after_kd_count'] or 0
-                
+                rlk_count = lo_qs.values('vin').distinct().count()
+                count_price_before_kd = lo_qs.filter(page_soglasovanie__price_before_kd__gt = 0).values('vin').distinct().count() + lo_qs.filter(page_remote__price_eco__gt = 0).filter(page_soglasovanie = None).values('vin').distinct().count()
+                count_price_after_kd = lo_qs.filter(page_soglasovanie__price_after_kd__gt = 0).count()
+                rlk_ids = lo_qs.values_list('rlk_id', flat=True)
                 # Подсчет принятых через DocLO (только активные в периоде)
                 accepted_count = DocLO.objects.filter(
                     rlk_id__in=rlk_ids,
                     active=True,
-                    dataTime__gte=date_start,
-                    dataTime__lte=date_end
                 ).count()
                 
                 count_success = accepted_count
@@ -884,14 +885,19 @@ def tradein_funnel_new(request):
             ).values_list('rlk_id', flat=True))
         else:
             accepted_rlk_ids = set(DocLO.objects.filter(
-                rlk_id__in=rlk_ids,
-                active=True
+               active=True
             ).values_list('rlk_id', flat=True))
         
         # Получаем статистику по типам приема через агрегацию
         type_reception_data = est_qs.values(
-            'page_documents__type_reception__id',
-            'page_documents__type_reception__name'
+            type_reception_id=Coalesce(
+                'page_documents__type_reception__id',
+                'page_remote__type_reception__id'
+            ),
+            type_reception_name=Coalesce(
+                'page_documents__type_reception__name',
+                'page_remote__type_reception__name'
+            )
         ).annotate(
             total=Count('id', distinct=True),
             before_kd=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0), distinct=True),
@@ -902,18 +908,22 @@ def tradein_funnel_new(request):
         # Получаем все пары (type_id, rlk_id) одним запросом
         type_rlk_pairs = est_qs.values_list(
             'page_documents__type_reception__id',
+            'page_remote__type_reception__id',
             'rlk_id'
         ).distinct()
         
         # Группируем rlk_id по типам приема
         type_to_rlk_ids = defaultdict(set)
-        for type_id, rlk_id in type_rlk_pairs:
-            if type_id:
+        for type_id, remote_type_id, rlk_id in type_rlk_pairs:
+            if type_id != None:
                 type_to_rlk_ids[type_id].add(rlk_id)
+            else:
+                type_to_rlk_ids[remote_type_id].add(rlk_id)
         
         # Подсчитываем принятые для каждого типа
         for item in type_reception_data:
-            type_id = item.get('page_documents__type_reception__id')
+            type_id = item.get('type_reception_id')
+            
             if type_id:
                 rlk_ids_for_type = type_to_rlk_ids.get(type_id, set())
                 success_count = len(rlk_ids_for_type & accepted_rlk_ids)
@@ -922,7 +932,7 @@ def tradein_funnel_new(request):
             
             type_reception_stats.append({
                 'id': type_id,
-                'name': item.get('page_documents__type_reception__name') or 'Не указан',
+                'name': item.get('type_reception_name') or 'Не указан',
                 'total': item['total'],
                 'before_kd': item['before_kd'],
                 'after_kd': item['after_kd'],
@@ -1036,7 +1046,8 @@ def tradein_funnel_new(request):
 
 def tradein_funnel_export(request):
     """Экспорт VIN номеров в Excel для блоков воронки"""
-    
+    vin_list = None
+
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
@@ -1045,7 +1056,7 @@ def tradein_funnel_export(request):
     
     export_type = request.GET.get('export_type', '')  # before_kd, after_kd, success
     
-    if export_type not in ['before_kd', 'after_kd', 'success']:
+    if export_type not in ['before_kd', 'after_kd', 'success', 'rl']:
         return HttpResponse('Неверный тип экспорта', status=400)
     
     # Парсим параметры фильтров (аналогично tradein_funnel_new)
@@ -1108,7 +1119,28 @@ def tradein_funnel_export(request):
             docs_base = docs_base.filter(staff__id=staff_id)
         
         rlk_ids = list(docs_base.values_list('id', flat=True))
-        
+        # Фильтруем по типу экспорта
+        if export_type == 'before_kd':
+            count_price_before_kd_q = RegInteractivOcenka.objects.filter(
+                start_estimation__gte=date_start,
+                start_estimation__lte=date_end
+            ) | RegInteractivOcenka.objects.filter(
+                page_remote__start_estimation__gte=date_start,
+                page_remote__start_estimation__lte=date_end
+            )
+            vin_list = count_price_before_kd_q.values_list('vin', flat=True).distinct().order_by('vin')   
+        elif export_type == 'after_kd':
+            vin_list = RegInteractivOcenka.objects.filter(
+                date_s_diag__gte = date_start,
+                date_s_diag__lte = date_end
+            ).values_list('vin', flat=True) 
+        elif export_type == 'success':
+            vin_list = DocLO.objects.filter(
+                    dataTime__gte=date_start,
+                    dataTime__lte=date_end,
+                    active=True
+                ).values_list('vin', flat=True)
+            
     elif type_report_id == 2:
         docs_base = DocRLK.objects.filter(
             dataTime__gte=date_start,
@@ -1128,12 +1160,13 @@ def tradein_funnel_export(request):
         rlk_ids = list(docs_base.values_list('id', flat=True))
         
     else:  # type_report_id == 3
-        lo_qs = DocLO.objects.filter(
-            dataTime__gte=date_start,
-            dataTime__lte=date_end
+        lo_qs = RegInteractivOcenka.objects.filter(
+            start_estimation__gte=date_start,
+            start_estimation__lte=date_end
         )
         
-        lo_rlk_ids = list(lo_qs.values_list('rlk_id', flat=True).distinct())
+        # Получаем rlk_id из листов оценки
+        lo_rlk_ids = list(lo_qs.values_list('rlk__id', flat=True).distinct())
         
         if not lo_rlk_ids:
             rlk_ids = []
@@ -1150,7 +1183,83 @@ def tradein_funnel_export(request):
             if staff_id:
                 docs_base = docs_base.filter(staff__id=staff_id)
             
-            rlk_ids = list(docs_base.values_list('id', flat=True))
+        rlk_ids = list(docs_base.values_list('id', flat=True))
+        # Подсчитываем через агрегацию
+        rlk_count = lo_qs.values('vin').distinct().count()
+        count_price_before_kd = lo_qs.filter(page_soglasovanie__price_before_kd__gt = 0).values('vin').distinct() | lo_qs.filter(page_remote__price_eco__gt = 0).filter(page_soglasovanie = None).values('vin').distinct()
+        count_price_after_kd = lo_qs.filter(page_soglasovanie__price_after_kd__gt = 0).count()
+        rlk_ids = lo_qs.values_list('rlk_id', flat=True)
+        # Подсчет принятых через DocLO (только активные в периоде)
+        accepted_count = DocLO.objects.filter(
+            rlk_id__in=rlk_ids,
+            active=True,
+        ).count()
+        
+        if export_type == 'rl':
+            rl = lo_qs.values('rlk__dataTime', 'rlk__nomer', 'rlk__unit__name', 'rlk__unit_dc__name', 'rlk__vin_trade_in', 'rlk__reasonArchive',)
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "РЛ номера"
+            ws.append(['Дата', 'РЛ номера', 'Подразделение', 'VIN', 'Архив',])
+            for rl_data in rl:
+                unit_name = rl_data['rlk__unit__name']
+                if unit_name == None:
+                    unit_name = rl_data['rlk__unit_dc__name']
+                ws.append([rl_data['rlk__dataTime'], rl_data['rlk__nomer'], unit_name, rl_data['rlk__vin_trade_in'], rl_data['rlk__reasonArchive']])
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="vin_export_{export_type}.xlsx"'
+            wb.save(response)
+            return response
+        elif export_type == 'before_kd': 
+            vin_list = count_price_before_kd.values_list('vin', flat = True)
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "VIN номера"
+            ws.append(['VIN'])
+            for vin in sorted(vin_list):
+                ws.append([vin])
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="vin_export_{export_type}.xlsx"'
+            wb.save(response)
+            return response
+        elif export_type == 'after_kd':
+            vin_list = DocLO.objects.filter(
+                rlk_id__in=rlk_ids,
+                active=True,
+            ).values_list('vin', flat = True)
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "VIN номера"
+            ws.append(['VIN'])
+            for vin in sorted(vin_list):
+                ws.append([vin])
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="vin_export_{export_type}.xlsx"'
+            wb.save(response)
+            return response
+        elif export_type == 'success':
+            vin_list = DocLO.objects.filter(
+                rlk_id__in=rlk_ids,
+                active=True,
+            ).values_list('vin', flat = True)
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "VIN номера"
+            ws.append(['VIN'])
+            for vin in sorted(vin_list):
+                ws.append([vin])
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="vin_export_{export_type}.xlsx"'
+            wb.save(response)
+            return response
     
     if not rlk_ids:
         # Нет данных - возвращаем пустой Excel
@@ -1179,12 +1288,55 @@ def tradein_funnel_export(request):
         est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
     
     # Фильтруем по типу экспорта
-    if export_type == 'before_kd':
-        # VIN с price_before_kd > 0
-        est_qs = est_qs.filter(page_soglasovanie__price_before_kd__gt=0)
+    if export_type == 'rl':
+        
+        rl_qs = docs_base.exclude(vin_trade_in = '') | docs_base.filter(vin_trade_in = '')
+        rl = rl_qs.values('dataTime', 'nomer', 'unit__name', 'unit_dc__name', 'vin_trade_in', 'reasonArchive',)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "РЛ номера"
+        # Заголовок
+        ws.append(['Дата', 'РЛ номера', 'Подразделение', 'VIN', 'Архив',])
+        # Данные
+        for rl_data in rl:
+            unit_name = rl_data['unit__name']
+            if unit_name == None:
+                unit_name = rl_data['unit_dc__name']
+            ws.append([rl_data['dataTime'], rl_data['nomer'], unit_name, rl_data['vin_trade_in'], rl_data['reasonArchive']])
+
+    elif export_type == 'before_kd':
+        price_before_kd_q = RegInteractivOcenka.objects.filter(
+                start_estimation__gte=date_start,
+                start_estimation__lte=date_end
+            ) | RegInteractivOcenka.objects.filter(
+                page_remote__start_estimation__gte=date_start,
+                page_remote__start_estimation__lte=date_end
+            )
+        vin_list = price_before_kd_q.values_list('vin', flat=True).distinct()
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "VIN номера"
+        # Заголовок
+        ws.append(['VIN'])
+        # Данные
+        for vin in sorted(vin_list):
+            ws.append([vin])
     elif export_type == 'after_kd':
+        vin_list = RegInteractivOcenka.objects.filter(
+                date_s_diag__gte=date_start,
+                date_s_diag__lte=date_end
+            ).values('vin')
         # VIN с price_after_kd > 0
-        est_qs = est_qs.filter(page_soglasovanie__price_after_kd__gt=0)
+        # Создаем Excel файл
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "VIN номера"
+        # Заголовок
+        ws.append(['VIN'])
+        # Данные
+        for vin in sorted(vin_list):
+            ws.append([vin])
+
     elif export_type == 'success':
         # VIN с активными DocLO
         if type_report_id == 3:
@@ -1196,39 +1348,36 @@ def tradein_funnel_export(request):
             ).values_list('rlk_id', flat=True))
         else:
             accepted_rlk_ids = set(DocLO.objects.filter(
-                rlk_id__in=rlk_ids,
+                dataTime__gte=date_start,
+                dataTime__lte=date_end,
                 active=True
             ).values_list('rlk_id', flat=True))
         
-        est_qs = est_qs.filter(rlk_id__in=accepted_rlk_ids)
-    
-    # Получаем уникальные VIN номера
-    vin_list = list(est_qs.exclude(vin__isnull=True).exclude(vin='').values_list('vin', flat=True).distinct())
-    
-    # Создаем Excel файл
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "VIN номера"
-    
-    # Заголовок
-    ws.append(['VIN'])
-    
-    # Данные
-    for vin in sorted(vin_list):
-        ws.append([vin])
-    
+        vin_list = DocLO.objects.filter(
+                dataTime__gte=date_start,
+                dataTime__lte=date_end,
+                active=True
+            ).values_list('vin', flat=True)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "VIN номера"
+        ws.append(['VIN'])
+        for vin in sorted(vin_list):
+            ws.append([vin])
+
     # Формируем ответ
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     
     export_names = {
+        'рл': 'Рабочие_листы',
         'before_kd': 'До_диагностики',
         'after_kd': 'После_диагностики',
         'success': 'Принято'
     }
     
-    filename = f"vin_export_{export_names.get(export_type, export_type)}_{date_start.strftime('%Y%m%d')}_{date_end.strftime('%Y%m%d')}.xlsx"
+    filename = f"export_{export_names.get(export_type, export_type)}_{date_start.strftime('%Y%m%d')}_{date_end.strftime('%Y%m%d')}.xlsx"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     wb.save(response)
@@ -2872,6 +3021,7 @@ def doc(request, id):
             if no_diagnostica_comment != '':
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica_comment = no_diagnostica_comment
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica = True
+                reg_interactiv_ocenka.date_diagnostic = DT.datetime.now()
             else:
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica_comment = ''
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica = False
@@ -2890,7 +3040,9 @@ def doc(request, id):
                 new_estimation_files.user           = request.user
                 new_estimation_files.save()
                 send_diagnostic = True
+                reg_interactiv_ocenka.date_diagnostic = DT.datetime.now()
             if len(comment_diagnostica) > 0:
+                reg_interactiv_ocenka.date_diagnostic = DT.datetime.now()
                 send_diagnostic = True
 
             reg_interactiv_ocenka_soglasovanie.save()
@@ -2932,6 +3084,7 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
             reg_interactiv_ocenka_soglasovanie.price_before_kd = int(request.POST.get('price_before_kd', '0'))
             reg_interactiv_ocenka_soglasovanie.save()
+            reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
             reg_interactiv_ocenka.save() 
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())
@@ -2997,6 +3150,7 @@ def doc(request, id):
                     reg_interactiv_ocenka_soglasovanie.save()
             
             reg_interactiv_ocenka_soglasovanie.save()
+            reg_interactiv_ocenka.date_s_diag = DT.datetime.now()
             reg_interactiv_ocenka.save()
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())
@@ -3105,10 +3259,12 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.save()
 
                     reg_interactiv_ocenka.staff_eco_2 = request.user
+                    reg_interactiv_ocenka.date_s_diag = DT.datetime.now() 
                     reg_interactiv_ocenka.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
                 elif reg_interactiv_ocenka_soglasovanie.price_before_kd > 0:
                     reg_interactiv_ocenka.staff_eco_1 = request.user
+                    reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
                     reg_interactiv_ocenka.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
   
@@ -3207,10 +3363,12 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.save()
 
                     reg_interactiv_ocenka.staff_eco_2 = request.user
+                    reg_interactiv_ocenka.date_s_diag = DT.datetime.now()
                     reg_interactiv_ocenka.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
                 elif reg_interactiv_ocenka_soglasovanie.price_before_kd > 0:
                     reg_interactiv_ocenka.staff_eco_1 = request.user
+                    reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
                     reg_interactiv_ocenka.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
             

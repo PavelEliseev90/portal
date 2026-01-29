@@ -8900,21 +8900,25 @@ def sb_lo(request):
 
 def test(request):
 
-    date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
-    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).filter(date_diagnostic = None).filter(page_soglasovanie__price_after_kd__gt = 0).order_by('-id').values('id')
+    
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=11, year=2025)
+    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).filter(date_s_diag__lte = date_start).filter(page_soglasovanie__price_after_kd__gt = 0).order_by('-id').values('id')
     count = len(estimations_id)
     s = 0
     for estimation_id in estimations_id:
         estimation      = RegInteractivOcenka.objects.get(id = estimation_id['id'])
         slug_chat       = 'rlk_' + str(estimation.rlk.id)
         messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
-        
+        date_s_diag = None
         for message in messages_list:
-            if message.content.startswith('Пройдена диагностика -'):
-                estimation.date_diagnostic = message.date 
-                estimation.save(update_fields=[
-                                       'date_diagnostic',
-                                                  ]) 
+            if message.content.startswith('Согласована цена после диагностики -'):
+                status = 3
+                date_s_diag = message.date
+
+        if date_s_diag != None:
+            estimation.date_s_diag = date_s_diag
+            estimation.save(update_fields=['date_s_diag']) 
+        
         s = s + 1 
         print(' ' + str(s) + ' ' + str(count))
 
