@@ -34,60 +34,6 @@
     margin-bottom: 0.35rem;
   }
 
-  .unit-section {
-    margin-bottom: 2rem;
-    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
-    padding-bottom: 1.5rem;
-  }
-
-  .unit-section:last-child {
-    border-bottom: none;
-  }
-
-  .unit-header {
-    background: linear-gradient(to right, rgba(0, 80, 157, 0.1), #fff);
-    padding: 1rem;
-    border-radius: 0.75rem;
-    margin-bottom: 1rem;
-    border-left: 4px solid #00509d;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    user-select: none;
-  }
-
-  .unit-header:hover {
-    background: linear-gradient(to right, rgba(0, 80, 157, 0.15), #fff);
-  }
-
-  .unit-header h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .unit-header .toggle-icon {
-    transition: transform 0.3s ease;
-    font-size: 0.9rem;
-    color: #00509d;
-  }
-
-  .unit-section.collapsed .unit-header .toggle-icon {
-    transform: rotate(-90deg);
-  }
-
-  .unit-section.collapsed .unit-table-wrapper {
-    display: none;
-  }
-
-  .unit-header .badge {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-  }
-
   .table-responsive {
     overflow-x: auto;
   }
@@ -100,6 +46,7 @@
     letter-spacing: 0.05em;
     color: #6c7a92;
     border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
   }
 
   .table td {
@@ -113,10 +60,32 @@
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .badge-reason:hover {
+    opacity: 0.8;
+  }
+
+  .badge-reason.active {
+    background: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
   }
 
   .badge-analysis {
     background: #f97316;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+    display: inline-block;
+  }
+
+  .badge-footing {
+    background: #3b82f6;
     color: #fff;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
@@ -139,6 +108,48 @@
   .price-cell {
     font-weight: 600;
     color: #002a5a;
+  }
+
+  .reason-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .reason-stat-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .reason-stat-item:hover {
+    background: #e9ecef;
+    border-color: #00509d;
+  }
+
+  .reason-stat-item.active {
+    background: #00509d;
+    color: #fff;
+    border-color: #00509d;
+  }
+
+  .reason-stat-count {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .reason-stat-item.active .reason-stat-count {
+    background: rgba(255, 255, 255, 0.2);
   }
 </style>
 
@@ -176,130 +187,160 @@
     </form>
   </div>
 
+  {% if params.reason_archive_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Причины архива</h3>
+      <p class="text-muted mb-0">Нажмите на причину для фильтрации</p>
+    </div>
+    <div class="reason-stats">
+      {% for reason, count in params.reason_archive_stats %}
+        <div class="reason-stat-item {% if params.filters.reason_archive == reason %}active{% endif %}" 
+             onclick="filterByReason('{{ reason }}')">
+          <span>{{ reason }}</span>
+          <span class="reason-stat-count">{{ count }}</span>
+        </div>
+      {% endfor %}
+      {% if params.filters.reason_archive %}
+        <div class="reason-stat-item" onclick="clearReasonFilter()">
+          <span>Сбросить фильтр</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="kors-panel">
     <div class="kors-panel__head">
       <h3>Всего непринятых: <span class="text-danger">{{ params.total_count }}</span></h3>
     </div>
 
-    {% if params.rejected_by_unit %}
-      {% for unit_name, unit_data in params.rejected_by_unit.items %}
-        <div class="unit-section" data-unit-section>
-          <div class="unit-header" onclick="toggleUnitSection(this)">
-            <div class="d-flex justify-content-between align-items-center">
-              <h4>
-                <span class="toggle-icon">▼</span>
-                {{ unit_name }}
-              </h4>
-              <span class="badge bg-danger">{{ unit_data.items|length }} автомобилей</span>
-            </div>
-          </div>
-
-          <div class="unit-table-wrapper">
-            <div class="table-responsive">
-            <table class="table table-sm table-hover">
-              <thead>
-                <tr>
-                  <th>Дата РЛ</th>
-                  <th>Номер РЛ</th>
-                  <th>Клиент</th>
-                  <th>VIN</th>
-                  <th>Автомобиль</th>
-                  <th>Тип приёма</th>
-                  <th>Оценщик</th>
-                  <th>Цена до КД</th>
-                  <th>Цена после КД</th>
-                  <th>Авторасчет</th>
-                  <th>Статус</th>
-                  <th>Причина архива</th>
-                  <th>Дата архива</th>
-                  <th>Анализ причин</th>
-                  <th>Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in unit_data.items %}
-                  <tr>
-                    <td>{{ item.dataTime|date:"d.m.Y H:i" }}</td>
-                    <td><strong>{{ item.nomer }}</strong></td>
-                    <td>{{ item.clientName }}</td>
-                    <td><code>{{ item.vin|default:"—" }}</code></td>
-                    <td>
-                      {% if item.mark or item.model %}
-                        {{ item.mark }} {{ item.model }}
-                        {% if item.modification %}<br><small class="text-muted">{{ item.modification }}</small>{% endif %}
-                        {% if item.year %}<br><small class="text-muted">{{ item.year }} г.</small>{% endif %}
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>{{ item.type_reception|default:"—" }}</td>
-                    <td>{{ item.staff|default:"—" }}</td>
-                    <td class="price-cell">
-                      {% if item.price_before_kd %}
-                        {{ item.price_before_kd|floatformat:0 }} ₽
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td class="price-cell">
-                      {% if item.price_after_kd %}
-                        {{ item.price_after_kd|floatformat:0 }} ₽
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td class="price-cell">
-                      {% if item.price_auto_2 %}
-                        {{ item.price_auto_2|floatformat:0 }} ₽
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.status %}
-                        <span class="badge bg-secondary">{{ item.status }}</span>
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.reasonArchive %}
-                        <span class="badge-reason">{{ item.reasonArchive }}</span>
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.dateArchive %}
-                        {{ item.dateArchive|date:"d.m.Y H:i" }}
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.failure_analysis %}
-                        {% for analysis in item.failure_analysis %}
-                          <span class="badge-analysis">{{ analysis }}</span>
-                        {% endfor %}
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.estimation_id %}
-                        <a href="/eco/{{ item.estimation_id }}/" class="link-estimation" target="_blank">Открыть оценку</a>
-                      {% else %}
-                        —
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          </div>
-        </div>
-      {% endfor %}
+    {% if params.rejected_items %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Дата РЛ</th>
+              <th>Подразделение</th>
+              <th>Номер РЛ</th>
+              <th>Клиент</th>
+              <th>VIN</th>
+              <th>Автомобиль</th>
+              <th>Тип приёма</th>
+              <th>Оценщик</th>
+              <th>Цена до КД</th>
+              <th>Цена после КД</th>
+              <th>Авторасчет</th>
+              <th>Цена ЕЦО</th>
+              <th>Статус</th>
+              <th>Причина архива</th>
+              <th>Дата архива</th>
+              <th>Анализ причин</th>
+              <th>Анализ сделки</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in params.rejected_items %}
+              <tr>
+                <td>{{ item.dataTime|date:"d.m.Y H:i" }}</td>
+                <td>{{ item.unit_name }}</td>
+                <td><strong>{{ item.nomer }}</strong></td>
+                <td>{{ item.clientName }}</td>
+                <td><code>{{ item.vin|default:"—" }}</code></td>
+                <td>
+                  {% if item.mark or item.model %}
+                    {{ item.mark }} {{ item.model }}
+                    {% if item.modification %}<br><small class="text-muted">{{ item.modification }}</small>{% endif %}
+                    {% if item.year %}<br><small class="text-muted">{{ item.year }} г.</small>{% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>{{ item.type_reception|default:"—" }}</td>
+                <td>{{ item.staff|default:"—" }}</td>
+                <td class="price-cell">
+                  {% if item.price_before_kd %}
+                    {{ item.price_before_kd|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="price-cell">
+                  {% if item.price_after_kd %}
+                    {{ item.price_after_kd|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="price-cell">
+                  {% if item.price_auto_2 %}
+                    {{ item.price_auto_2|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="price-cell">
+                  {% if item.price_eco %}
+                    {{ item.price_eco|floatformat:0 }} ₽
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.status %}
+                    <span class="badge bg-secondary">{{ item.status }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.reasonArchive %}
+                    <span class="badge-reason {% if params.filters.reason_archive == item.reasonArchive_short %}active{% endif %}" 
+                          onclick="filterByReason('{{ item.reasonArchive_short }}')">
+                      {{ item.reasonArchive }}
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.dateArchive %}
+                    {{ item.dateArchive|date:"d.m.Y H:i" }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.failure_analysis %}
+                    {% for analysis in item.failure_analysis %}
+                      <span class="badge-analysis">{{ analysis }}</span>
+                    {% endfor %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.footing_analysis %}
+                    {% for analysis in item.footing_analysis %}
+                      <span class="badge-footing">{{ analysis }}</span>
+                    {% endfor %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.estimation_id %}
+                    <a href="/eco/{{ item.estimation_id }}/" class="link-estimation" target="_blank">Открыть оценку</a>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <div class="text-center py-5">
         <p class="text-muted">Нет данных по выбранным фильтрам</p>
@@ -309,15 +350,16 @@
 </div>
 
 <script>
-  function toggleUnitSection(header) {
-    const section = header.closest('.unit-section');
-    section.classList.toggle('collapsed');
+  function filterByReason(reason) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('reason_archive', reason);
+    window.location.href = url.toString();
   }
 
-  // По умолчанию все секции развернуты
-  document.addEventListener('DOMContentLoaded', function() {
-    // Можно добавить логику для сохранения состояния в localStorage
-  });
+  function clearReasonFilter() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('reason_archive');
+    window.location.href = url.toString();
+  }
 </script>
 {% endblock %}
-
