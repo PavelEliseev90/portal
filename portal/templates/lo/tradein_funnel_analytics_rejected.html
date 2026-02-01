@@ -1,0 +1,385 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Анализ не принятых Trade-In {% endblock %}
+
+{% block content %}
+<style>
+  .kors-funnel-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-funnel-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-funnel-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-stage-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .kors-stage-card h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6c7a92;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+
+  .kors-stage-card h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0.25rem 0;
+  }
+
+  .kors-stage-desc {
+    font-size: 0.85rem;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-stage-conv {
+    font-size: 0.9rem;
+    color: #dc2626;
+    font-weight: 600;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .badge-rejected {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+</style>
+
+<div class="kors-funnel-page">
+  <div class="kors-funnel-header">
+    <h2>Анализ не принятых автомобилей Trade-In</h2>
+    <p>Анализ автомобилей, которые отвалились на каждом этапе воронки</p>
+  </div>
+
+  <!-- Фильтры (копируем из основного шаблона) -->
+  <form class="kors-filter" method="get" id="funnelFilterForm" onsubmit="return prepareFormData(this);">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Вариант отчета</label>
+        <select class="form-select" name="report_type">
+          <option value="1" {% if params.filters.report_type == 1 %}selected{% endif %}>Сквозной</option>
+          <option value="2" {% if params.filters.report_type == 2 %}selected{% endif %}>По рабочим листам</option>
+          <option value="3" {% if params.filters.report_type == 3 %}selected{% endif %}>По принятым</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-secondary px-4" type="button" onclick="resetFilters()">Сбросить</button>
+      </div>
+    </div>
+    
+    <!-- Множественные фильтры (упрощенная версия) -->
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Источник приема</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="sourceUnitSearch" placeholder="Поиск по источникам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="sourceUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.source_units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_source_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_source_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedSourceUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Подразделения</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Города</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="citySearch" placeholder="Поиск по городам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="cityDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for city in params.cities %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="city_ids" value="{{ city.id }}" 
+                  {% if city.id in params.filters.city_ids_list %}checked{% endif %}>
+                {{ city.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedCities" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Бренды</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="brandSearch" placeholder="Поиск по брендам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="brandDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for brand in params.brands %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="brands" value="{{ brand }}" 
+                  {% if brand in params.filters.brands_list %}checked{% endif %}>
+                {{ brand }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedBrands" class="mt-2"></div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Блоки не принятых -->
+  <div class="row g-3 mb-3">
+    <div class="col-xl-4 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Не дошли до КД / Дистанционной оценки</h3>
+        <h2>{{ params.rejected.before.count|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Из {{ params.totals.rlk|floatformat:"0g" }} рабочих листов</p>
+        <span class="kors-stage-conv">Процент отвалившихся: {{ params.rejected.before.percent|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=rejected_before&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть детали
+          </a>
+        </div>
+      </article>
+    </div>
+
+    <div class="col-xl-4 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Не дошли до после КД</h3>
+        <h2>{{ params.rejected.after.count|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Из {{ params.totals.before|floatformat:"0g" }} до КД / дистанционно</p>
+        <span class="kors-stage-conv">Процент отвалившихся: {{ params.rejected.after.percent|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=rejected_after&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть детали
+          </a>
+        </div>
+      </article>
+    </div>
+
+    <div class="col-xl-4 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Не приняты</h3>
+        <h2>{{ params.rejected.reception.count|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Из {{ params.totals.after|floatformat:"0g" }} после КД</p>
+        <span class="kors-stage-conv">Процент отвалившихся: {{ params.rejected.reception.percent|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=rejected_reception&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть детали
+          </a>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <a href="{% url 'eco:tradein_funnel_analytics' %}?{{ request.GET.urlencode }}" 
+       class="btn btn-secondary">
+      ← Вернуться к воронке
+    </a>
+  </div>
+</div>
+
+<script>
+  // JavaScript для множественного выбора (копируем из основного шаблона)
+  (function() {
+    function initMultiSelect(searchId, dropdownId, selectedDivId) {
+      const searchInput = document.getElementById(searchId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedDiv = document.getElementById(selectedDivId);
+      
+      if (!searchInput || !dropdown) return;
+      
+      function updateSelected() {
+        const checked = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'));
+        selectedDiv.innerHTML = checked.map(cb => {
+          const label = cb.closest('label').textContent.trim();
+          return `<span class="badge bg-primary me-1 mb-1">${label} <span onclick="this.parentElement.previousElementSibling.checked=false; updateSelected();" style="cursor:pointer;">×</span></span>`;
+        }).join('');
+      }
+      
+      searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        Array.from(dropdown.querySelectorAll('label')).forEach(label => {
+          const text = label.textContent.toLowerCase();
+          label.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        });
+      });
+      
+      searchInput.addEventListener('focus', function() {
+        dropdown.style.display = 'block';
+      });
+      
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+      
+      dropdown.addEventListener('change', updateSelected);
+      updateSelected();
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+        initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+        initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
+        initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+      });
+    } else {
+      initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+      initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+      initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
+      initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+    }
+    
+    function prepareFormData(form) {
+      const unitSourceIds = Array.from(form.querySelectorAll('input[name="unit_source_ids"]:checked')).map(cb => cb.value);
+      const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
+      const cityIds = Array.from(form.querySelectorAll('input[name="city_ids"]:checked')).map(cb => cb.value);
+      const brands = Array.from(form.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
+      
+      form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="brands"]').forEach(el => el.remove());
+      
+      if (unitSourceIds.length > 0) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'unit_source_ids';
+        hidden.value = unitSourceIds.join(',');
+        form.appendChild(hidden);
+      }
+      
+      if (unitIds.length > 0) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'unit_ids';
+        hidden.value = unitIds.join(',');
+        form.appendChild(hidden);
+      }
+      
+      if (cityIds.length > 0) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'city_ids';
+        hidden.value = cityIds.join(',');
+        form.appendChild(hidden);
+      }
+      
+      if (brands.length > 0) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'brands';
+        hidden.value = brands.join(',');
+        form.appendChild(hidden);
+      }
+      
+      return true;
+    }
+    
+    window.prepareFormData = prepareFormData;
+    
+    function resetFilters() {
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+      const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedBrands'];
+      selectedDivs.forEach(id => {
+        const div = document.getElementById(id);
+        if (div) div.innerHTML = '';
+      });
+    }
+    
+    window.resetFilters = resetFilters;
+  })();
+</script>
+
+{% endblock %}
+

@@ -8699,6 +8699,388 @@ def tradein_funnel_analytics_export(request):
     return response
 
 
+def tradein_funnel_analytics_detail(request):
+    """Детальная страница с данными воронки Trade-In Analytics по выбранному критерию"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    # Тип фильтра для детальной страницы
+    filter_type = request.GET.get('filter_type', '')
+    
+    if not filter_type:
+        return HttpResponse('Не указан тип фильтра', status=400)
+    
+    # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    # Вариант отчета
+    report_type = _get_int(request.GET.get('report_type', 1)) or 1
+    
+    # Фильтры - множественный выбор
+    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    brands_str = request.GET.get('brands', '').strip()
+    brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
+    
+    # Обратная совместимость с одиночными фильтрами
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
+    unit_id = _get_int(request.GET.get('unit_id'))
+    city_id = _get_int(request.GET.get('city_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    brand = request.GET.get('brand', '').strip()
+    
+    if unit_source_id and unit_source_id not in unit_source_ids:
+        unit_source_ids.append(unit_source_id)
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if city_id and city_id not in city_ids:
+        city_ids.append(city_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    if brand and brand not in brand_list:
+        brand_list.append(brand)
+    
+    # Базовый QuerySet с фильтрами
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры
+    if unit_source_ids:
+        base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
+    if unit_ids:
+        base_qs = base_qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        base_qs = base_qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    if brand_list:
+        brand_q = Q()
+        for b in brand_list:
+            brand_q |= Q(brand__icontains=b)
+        base_qs = base_qs.filter(brand_q)
+    
+    # Определяем QuerySet в зависимости от варианта отчета
+    if report_type == 1:
+        qs = base_qs.filter(
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+    elif report_type == 2:
+        qs = base_qs.filter(
+            date_rlk__gte=date_start,
+            date_rlk__lte=date_end
+        )
+    else:  # report_type == 3
+        qs = base_qs.filter(
+            date_reception_success__gte=date_start,
+            date_reception_success__lte=date_end
+        )
+    
+    # Применяем дополнительный фильтр по типу
+    filter_title = ''
+    if filter_type == 'rlk':
+        qs = qs.filter(date_rlk__isnull=False)
+        filter_title = 'Рабочие листы'
+    elif filter_type == 'before':
+        qs = qs.filter(Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False))
+        filter_title = 'До КД / Дистанционно'
+    elif filter_type == 'after':
+        qs = qs.filter(date_after_success__isnull=False)
+        filter_title = 'После КД'
+    elif filter_type == 'reception':
+        qs = qs.filter(date_reception_success__isnull=False)
+        filter_title = 'Принято'
+    elif filter_type == 'taxi':
+        qs = qs.filter(taxi=True)
+        filter_title = 'Такси'
+    elif filter_type == 'carsharing':
+        qs = qs.filter(carsharing=True)
+        filter_title = 'Каршеринг'
+    elif filter_type == 'iznos':
+        qs = qs.filter(iznos=True)
+        filter_title = 'Повышенный износ'
+    elif filter_type == 'auction':
+        qs = qs.filter(auction=True)
+        filter_title = 'Аукцион'
+    elif filter_type == 'no_diag':
+        qs = qs.filter(diagostica=False)
+        filter_title = 'Без диагностики'
+    elif filter_type == 'remote_below':
+        qs = qs.filter(comparison_remote_type=-1)
+        filter_title = 'Дистанционная оценка - Ниже авторасчета'
+    elif filter_type == 'remote_equal':
+        qs = qs.filter(comparison_remote_type=0)
+        filter_title = 'Дистанционная оценка - Равно авторасчету'
+    elif filter_type == 'remote_above':
+        qs = qs.filter(comparison_remote_type=1)
+        filter_title = 'Дистанционная оценка - Выше авторасчета'
+    elif filter_type == 'before_below':
+        qs = qs.filter(comparison_before_type=-1)
+        filter_title = 'До КД - Ниже авторасчета'
+    elif filter_type == 'before_equal':
+        qs = qs.filter(comparison_before_type=0)
+        filter_title = 'До КД - Равно авторасчету'
+    elif filter_type == 'before_above':
+        qs = qs.filter(comparison_before_type=1)
+        filter_title = 'До КД - Выше авторасчета'
+    elif filter_type == 'after_below':
+        qs = qs.filter(comparison_after_type=-1)
+        filter_title = 'После КД - Ниже авторасчета'
+    elif filter_type == 'after_equal':
+        qs = qs.filter(comparison_after_type=0)
+        filter_title = 'После КД - Равно авторасчету'
+    elif filter_type == 'after_above':
+        qs = qs.filter(comparison_after_type=1)
+        filter_title = 'После КД - Выше авторасчета'
+    elif filter_type == 'rejected_before':
+        # Не дошли до КД/дистанционной оценки
+        qs = qs.filter(date_rlk__isnull=False).exclude(
+            Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        )
+        filter_title = 'Не дошли до КД / Дистанционной оценки'
+    elif filter_type == 'rejected_after':
+        # Не дошли до после КД
+        qs = qs.filter(
+            Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        ).exclude(date_after_success__isnull=False)
+        filter_title = 'Не дошли до после КД'
+    elif filter_type == 'rejected_reception':
+        # Не приняты
+        qs = qs.filter(date_after_success__isnull=False).exclude(
+            date_reception_success__isnull=False
+        )
+        filter_title = 'Не приняты'
+    else:
+        return HttpResponse('Неверный тип фильтра', status=400)
+    
+    # Получаем данные для таблицы
+    items = qs.order_by('-date_rlk', '-rlk_id')
+    
+    # Пагинация
+    from django.core.paginator import Paginator
+    paginator = Paginator(items, 50)
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except:
+        page_obj = paginator.get_page(1)
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'filter_type': filter_type,
+        'filter_title': filter_title,
+        'page_obj': page_obj,
+        'total_count': paginator.count,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'report_type': report_type,
+        },
+    }
+    
+    return render(request, 'lo/tradein_funnel_analytics_detail.html', {'params': params})
+
+
+def tradein_funnel_analytics_rejected(request):
+    """Анализ не принятых автомобилей на основе TradeInFunnel - отвалившиеся на каждом этапе"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    # Вариант отчета
+    report_type = _get_int(request.GET.get('report_type', 1)) or 1
+    
+    # Фильтры - множественный выбор
+    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    brands_str = request.GET.get('brands', '').strip()
+    brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
+    
+    # Обратная совместимость с одиночными фильтрами
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
+    unit_id = _get_int(request.GET.get('unit_id'))
+    city_id = _get_int(request.GET.get('city_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    brand = request.GET.get('brand', '').strip()
+    
+    if unit_source_id and unit_source_id not in unit_source_ids:
+        unit_source_ids.append(unit_source_id)
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if city_id and city_id not in city_ids:
+        city_ids.append(city_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    if brand and brand not in brand_list:
+        brand_list.append(brand)
+    
+    # Базовый QuerySet с фильтрами
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры
+    if unit_source_ids:
+        base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
+    if unit_ids:
+        base_qs = base_qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        base_qs = base_qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    if brand_list:
+        brand_q = Q()
+        for b in brand_list:
+            brand_q |= Q(brand__icontains=b)
+        base_qs = base_qs.filter(brand_q)
+    
+    # Определяем QuerySet в зависимости от варианта отчета
+    if report_type == 1:
+        qs = base_qs.filter(
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+    elif report_type == 2:
+        qs = base_qs.filter(
+            date_rlk__gte=date_start,
+            date_rlk__lte=date_end
+        )
+    else:  # report_type == 3
+        qs = base_qs.filter(
+            date_reception_success__gte=date_start,
+            date_reception_success__lte=date_end
+        )
+    
+    # Подсчитываем отвалившихся на каждом этапе
+    # 1. Не дошли до КД/дистанционной оценки - есть date_rlk, но нет date_before_success и date_remote_success
+    rejected_before = qs.filter(
+        date_rlk__isnull=False
+    ).exclude(
+        Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+    ).count()
+    
+    # 2. Не дошли до после КД - есть date_before_success или date_remote_success, но нет date_after_success
+    rejected_after = qs.filter(
+        Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+    ).exclude(
+        date_after_success__isnull=False
+    ).count()
+    
+    # 3. Не приняты - есть date_after_success, но нет date_reception_success
+    rejected_reception = qs.filter(
+        date_after_success__isnull=False
+    ).exclude(
+        date_reception_success__isnull=False
+    ).count()
+    
+    # Общее количество с рабочими листами
+    total_rlk = qs.filter(date_rlk__isnull=False).count()
+    total_before = qs.filter(
+        Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+    ).count()
+    total_after = qs.filter(date_after_success__isnull=False).count()
+    
+    # Проценты отвалившихся
+    pct_rejected_before = (rejected_before / total_rlk * 100) if total_rlk > 0 else 0
+    pct_rejected_after = (rejected_after / total_before * 100) if total_before > 0 else 0
+    pct_rejected_reception = (rejected_reception / total_after * 100) if total_after > 0 else 0
+    
+    # Загружаем справочники для фильтров
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    
+    source_unit_ids = list(qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+    source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
+    
+    from refs.models import RefCity
+    city_ids_from_funnel = list(qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
+    
+    brands_list = list(qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
+    
+    type_reception_ids_from_funnel = list(qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'report_type': report_type,
+            'unit_source_id': unit_source_id or '',
+            'unit_source_ids': ','.join(map(str, unit_source_ids)) if unit_source_ids else '',
+            'unit_source_ids_list': unit_source_ids,
+            'unit_id': unit_id or '',
+            'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
+            'unit_ids_list': unit_ids,
+            'city_id': city_id or '',
+            'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
+            'city_ids_list': city_ids,
+            'type_reception_id': type_reception_id or '',
+            'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
+            'type_reception_ids_list': type_reception_ids,
+            'brand': brand,
+            'brands': ','.join(brand_list) if brand_list else '',
+            'brands_list': brand_list,
+        },
+        'units': units,
+        'source_units': source_units,
+        'cities': cities,
+        'type_receptions': type_receptions,
+        'brands': brands_list,
+        'rejected': {
+            'before': {'count': rejected_before, 'percent': pct_rejected_before},
+            'after': {'count': rejected_after, 'percent': pct_rejected_after},
+            'reception': {'count': rejected_reception, 'percent': pct_rejected_reception},
+        },
+        'totals': {
+            'rlk': total_rlk,
+            'before': total_before,
+            'after': total_after,
+        },
+    }
+    
+    return render(request, 'lo/tradein_funnel_analytics_rejected.html', {'params': params})
+
+
 #История изменений
 def get_versions(table, id):
 	return ChangeLog.objects.filter(model = table).filter(record_id = id).order_by('changed')
