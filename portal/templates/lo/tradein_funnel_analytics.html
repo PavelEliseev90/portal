@@ -1,0 +1,486 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Воронка Trade-In Analytics {% endblock %}
+
+{% block content %}
+<style>
+  .kors-funnel-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-funnel-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-funnel-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .kors-stage-card {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .kors-stage-card h3 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8ea1ba;
+    margin: 0;
+  }
+
+  .kors-stage-card h2 {
+    font-size: 2.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .kors-stage-conv {
+    font-weight: 600;
+    color: #ff8a00;
+    font-size: 0.95rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .badge-special {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .badge-taxi {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+  }
+
+  .badge-carsharing {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #fff;
+  }
+
+  .badge-iznos {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: #fff;
+  }
+
+  .badge-auction {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #fff;
+  }
+
+  .badge-no-diag {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: #fff;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c7a92;
+    border-bottom: 2px solid #dee2e6;
+  }
+
+  .table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+</style>
+
+<div class="kors-funnel-page">
+  <div class="kors-funnel-header">
+    <h2>Воронка Trade-In Analytics</h2>
+    <p>Анализ воронки Trade-In на основе данных TradeInFunnel</p>
+  </div>
+
+  <form class="kors-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Вариант отчета</label>
+        <select class="form-select" name="report_type">
+          <option value="1" {% if params.filters.report_type == 1 %}selected{% endif %}>Сквозной</option>
+          <option value="2" {% if params.filters.report_type == 2 %}selected{% endif %}>По рабочим листам</option>
+          <option value="3" {% if params.filters.report_type == 3 %}selected{% endif %}>По принятым</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Источник приема</label>
+        <select class="form-select" name="unit_source_id">
+          <option value="">Все</option>
+          {% for unit in params.source_units %}
+            <option value="{{ unit.id }}" {% if unit.id == params.filters.unit_source_id %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label text-uppercase">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if unit.id == params.filters.unit_id %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-4">
+        <label class="form-label text-uppercase">Бренд</label>
+        <input type="text" class="form-control" name="brand" value="{{ params.filters.brand }}" placeholder="Введите бренд...">
+      </div>
+      <div class="col-md-8 d-flex align-items-end">
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
+        <button class="btn btn-secondary px-4 ms-2" type="button" onclick="resetFilters()">Сбросить</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Общие показатели -->
+  <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Рабочие листы</h3>
+        <h2>{{ params.totals.rlk|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Всего рабочих листов</p>
+        <span class="kors-stage-conv">Конверсия: 100%</span>
+      </article>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>До КД / Дистанционно</h3>
+        <h2>{{ params.totals.before|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Согласовано до КД или дистанционно</p>
+        <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_before|floatformat:"2g" }}%</span>
+      </article>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>После КД</h3>
+        <h2>{{ params.totals.after|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Согласовано после КД</p>
+        <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_after|floatformat:"2g" }}%</span>
+      </article>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Принято</h3>
+        <h2>{{ params.totals.reception|floatformat:"0g" }}</h2>
+        <p class="kors-stage-desc">Автомобилей принято</p>
+        <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%</span>
+      </article>
+    </div>
+  </div>
+
+  <!-- Специальные бейджи -->
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Специальные категории</h3>
+    </div>
+    <div class="mt-3">
+      <span class="badge-special badge-taxi">
+        🚕 Такси: {{ params.badges.taxi.count }} ({{ params.badges.taxi.percent|floatformat:"2g" }}%)
+      </span>
+      <span class="badge-special badge-carsharing">
+        🚗 Каршеринг: {{ params.badges.carsharing.count }} ({{ params.badges.carsharing.percent|floatformat:"2g" }}%)
+      </span>
+      <span class="badge-special badge-iznos">
+        ⚠️ Повышенный износ: {{ params.badges.iznos.count }} ({{ params.badges.iznos.percent|floatformat:"2g" }}%)
+      </span>
+      <span class="badge-special badge-auction">
+        🔨 Аукцион: {{ params.badges.auction.count }} ({{ params.badges.auction.percent|floatformat:"2g" }}%)
+      </span>
+      <span class="badge-special badge-no-diag">
+        ❌ Без диагностики: {{ params.badges.no_diag.count }} ({{ params.badges.no_diag.percent|floatformat:"2g" }}%)
+      </span>
+    </div>
+  </div>
+
+  <!-- График по дням -->
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>График событий по дням</h3>
+      <p class="text-muted mb-0">Динамика событий воронки по дням</p>
+    </div>
+    <div class="mt-3">
+      <canvas id="dailyChart" style="max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Статистика по типам приема -->
+  {% if params.type_reception_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Статистика по типам приёма</h3>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Тип приёма</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">До КД</th>
+            <th class="text-end">После КД</th>
+            <th class="text-end">Принято</th>
+            <th class="text-end">Конверсия до КД</th>
+            <th class="text-end">Конверсия после КД</th>
+            <th class="text-end">Конверсия принято</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in params.type_reception_stats %}
+          <tr>
+            <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
+            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Статистика по ценовым группам -->
+  {% if params.price_group_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Статистика по ценовым группам</h3>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Ценовая группа</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">До КД</th>
+            <th class="text-end">После КД</th>
+            <th class="text-end">Принято</th>
+            <th class="text-end">Конверсия до КД</th>
+            <th class="text-end">Конверсия после КД</th>
+            <th class="text-end">Конверсия принято</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in params.price_group_stats %}
+          <tr>
+            <td><strong>{{ stat.zg_name }}</strong></td>
+            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Статистика по городам -->
+  {% if params.city_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Статистика по городам</h3>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Город</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">До КД</th>
+            <th class="text-end">После КД</th>
+            <th class="text-end">Принято</th>
+            <th class="text-end">Конверсия до КД</th>
+            <th class="text-end">Конверсия после КД</th>
+            <th class="text-end">Конверсия принято</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in params.city_stats %}
+          <tr>
+            <td><strong>{{ stat.city_name }}</strong></td>
+            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Статистика по брендам -->
+  {% if params.brand_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Статистика по брендам</h3>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Бренд</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">До КД</th>
+            <th class="text-end">После КД</th>
+            <th class="text-end">Принято</th>
+            <th class="text-end">Конверсия до КД</th>
+            <th class="text-end">Конверсия после КД</th>
+            <th class="text-end">Конверсия принято</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in params.brand_stats %}
+          <tr>
+            <td><strong>{{ stat.brand }}</strong></td>
+            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  function resetFilters() {
+    document.querySelector('form').reset();
+    window.location.href = window.location.pathname;
+  }
+
+  // График по дням
+  const chartData = JSON.parse('{{ params.chart_data|escapejs }}');
+  const ctx = document.getElementById('dailyChart');
+  
+  if (ctx && chartData) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: chartData.datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          },
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
+
