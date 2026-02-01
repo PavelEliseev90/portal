@@ -287,6 +287,12 @@
         <h2>{{ params.totals.rlk|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Всего рабочих листов</p>
         <span class="kors-stage-conv">Конверсия: 100%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=rlk&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
 
@@ -296,6 +302,12 @@
         <h2>{{ params.totals.before|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Согласовано до КД или дистанционно</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_before|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=before&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
 
@@ -305,6 +317,12 @@
         <h2>{{ params.totals.after|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Согласовано после КД</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_after|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=after&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
 
@@ -314,6 +332,12 @@
         <h2>{{ params.totals.reception|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Автомобилей принято</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=reception&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
   </div>

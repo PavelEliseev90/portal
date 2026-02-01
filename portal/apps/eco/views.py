@@ -8529,6 +8529,176 @@ def tradein_funnel_analytics(request):
     return render(request, 'lo/tradein_funnel_analytics.html', {'params': params})
 
 
+def tradein_funnel_analytics_export(request):
+    """Экспорт данных в Excel для блоков воронки Trade-In Analytics"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        return HttpResponseRedirect('/')
+    
+    export_type = request.GET.get('export_type', '')  # rlk, before, after, reception
+    
+    if export_type not in ['rlk', 'before', 'after', 'reception']:
+        return HttpResponse('Неверный тип экспорта', status=400)
+    
+    # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    # Вариант отчета
+    report_type = _get_int(request.GET.get('report_type', 1)) or 1
+    
+    # Фильтры - множественный выбор
+    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    brands_str = request.GET.get('brands', '').strip()
+    brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
+    
+    # Обратная совместимость с одиночными фильтрами
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
+    unit_id = _get_int(request.GET.get('unit_id'))
+    city_id = _get_int(request.GET.get('city_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    brand = request.GET.get('brand', '').strip()
+    
+    if unit_source_id and unit_source_id not in unit_source_ids:
+        unit_source_ids.append(unit_source_id)
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if city_id and city_id not in city_ids:
+        city_ids.append(city_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    if brand and brand not in brand_list:
+        brand_list.append(brand)
+    
+    # Базовый QuerySet с фильтрами
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры
+    if unit_source_ids:
+        base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
+    if unit_ids:
+        base_qs = base_qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        base_qs = base_qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    if brand_list:
+        # Фильтр по списку брендов (строки)
+        brand_q = Q()
+        for b in brand_list:
+            brand_q |= Q(brand__icontains=b)
+        base_qs = base_qs.filter(brand_q)
+    
+    # Определяем QuerySet в зависимости от варианта отчета
+    if report_type == 1:
+        # Сквозной - отбор по датам событий
+        qs = base_qs.filter(
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+    elif report_type == 2:
+        # По рабочим листам
+        qs = base_qs.filter(
+            date_rlk__gte=date_start,
+            date_rlk__lte=date_end
+        )
+    else:  # report_type == 3
+        # По принятым
+        qs = base_qs.filter(
+            date_reception_success__gte=date_start,
+            date_reception_success__lte=date_end
+        )
+    
+    # Фильтруем по типу экспорта
+    if export_type == 'rlk':
+        # Рабочие листы
+        export_qs = qs.filter(date_rlk__isnull=False)
+    elif export_type == 'before':
+        # До КД / Дистанционно
+        export_qs = qs.filter(
+            Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        )
+    elif export_type == 'after':
+        # После КД
+        export_qs = qs.filter(date_after_success__isnull=False)
+    else:  # export_type == 'reception'
+        # Принято
+        export_qs = qs.filter(date_reception_success__isnull=False)
+    
+    # Получаем данные для экспорта
+    export_data = export_qs.values(
+        'rlk_number',
+        'date_rlk',
+        'vin_trade_in',
+        'vin',
+        'unit_id',
+        'unit_name',
+        'unit_source_id',
+        'unit_source_name'
+    ).order_by('date_rlk', 'rlk_number')
+    
+    # Создаем Excel файл
+    wb = Workbook()
+    ws = wb.active
+    
+    # Название листа в зависимости от типа экспорта
+    sheet_names = {
+        'rlk': 'Рабочие листы',
+        'before': 'До КД / Дистанционно',
+        'after': 'После КД',
+        'reception': 'Принято'
+    }
+    ws.title = sheet_names.get(export_type, 'Экспорт')
+    
+    # Заголовки
+    headers = ['Номер РЛ', 'Дата РЛ', 'VIN Trade-In', 'VIN', 'Подразделение ID', 'Подразделение', 'Источник ID', 'Источник']
+    ws.append(headers)
+    
+    # Данные
+    for item in export_data:
+        ws.append([
+            item.get('rlk_number', ''),
+            item.get('date_rlk', '') if item.get('date_rlk') else '',
+            item.get('vin_trade_in', ''),
+            item.get('vin', ''),
+            item.get('unit_id', '') if item.get('unit_id') else '',
+            item.get('unit_name', ''),
+            item.get('unit_source_id', '') if item.get('unit_source_id') else '',
+            item.get('unit_source_name', ''),
+        ])
+    
+    # Формируем ответ
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    export_names = {
+        'rlk': 'Рабочие_листы',
+        'before': 'До_КД_Дистанционно',
+        'after': 'После_КД',
+        'reception': 'Принято'
+    }
+    
+    filename = f"export_{export_names.get(export_type, export_type)}_{date_start.strftime('%Y%m%d')}_{date_end.strftime('%Y%m%d')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    wb.save(response)
+    return response
+
+
 #История изменений
 def get_versions(table, id):
 	return ChangeLog.objects.filter(model = table).filter(record_id = id).order_by('changed')
