@@ -8202,7 +8202,6 @@ def tradein_funnel_analytics(request):
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
     if brand_list:
         # Фильтр по списку брендов (строки)
-        from django.db.models import Q
         brand_q = Q()
         for b in brand_list:
             brand_q |= Q(brand__icontains=b)
