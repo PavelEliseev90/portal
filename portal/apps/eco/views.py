@@ -41,6 +41,7 @@ from analytics.models import (
     EcoAnalystSnapshot,
     AppraiserPerformanceSnapshot,
     TradeInFunnelSnapshot,
+    TradeInFunnel,
 )
 
 
@@ -8135,6 +8136,269 @@ def interactive_evaluations_report(request):
     }
 
     return render(request, 'lo/interactive_evaluations_report.html', {'params': params})
+
+
+def tradein_funnel_analytics(request):
+    """Новая воронка Trade-In на основе модели TradeInFunnel - оптимизированная версия"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    # Вариант отчета
+    report_type = _get_int(request.GET.get('report_type', 1)) or 1
+    
+    # Фильтры
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
+    unit_id = _get_int(request.GET.get('unit_id'))
+    brand = request.GET.get('brand', '').strip()
+    
+    # Базовый QuerySet с фильтрами
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры
+    if unit_source_id:
+        base_qs = base_qs.filter(unit_source_id=unit_source_id)
+    if unit_id:
+        base_qs = base_qs.filter(unit_id=unit_id)
+    if brand:
+        base_qs = base_qs.filter(brand__icontains=brand)
+    
+    # Определяем QuerySet в зависимости от варианта отчета
+    if report_type == 1:
+        # Сквозной - отбор по датам событий
+        qs = base_qs.filter(
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+    elif report_type == 2:
+        # По рабочим листам
+        qs = base_qs.filter(
+            date_rlk__gte=date_start,
+            date_rlk__lte=date_end
+        )
+    else:  # report_type == 3
+        # По принятым
+        qs = base_qs.filter(
+            date_reception_success__gte=date_start,
+            date_reception_success__lte=date_end
+        )
+    
+    # Оптимизированный подсчет общих показателей одним запросом
+    totals_agg = qs.aggregate(
+        total_rlk=Count('rlk_id', filter=Q(date_rlk__isnull=False)),
+        total_before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
+        total_after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
+        total_reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False)),
+        total_taxi=Count('rlk_id', filter=Q(taxi=True)),
+        total_carsharing=Count('rlk_id', filter=Q(carsharing=True)),
+        total_iznos=Count('rlk_id', filter=Q(iznos=True)),
+        total_auction=Count('rlk_id', filter=Q(auction=True)),
+        total_no_diag=Count('rlk_id', filter=Q(diagostica=False)),
+        total_all=Count('rlk_id'),
+    )
+    
+    total_rlk = totals_agg['total_rlk'] or 0
+    total_before = totals_agg['total_before'] or 0
+    total_after = totals_agg['total_after'] or 0
+    total_reception = totals_agg['total_reception'] or 0
+    total_taxi = totals_agg['total_taxi'] or 0
+    total_carsharing = totals_agg['total_carsharing'] or 0
+    total_iznos = totals_agg['total_iznos'] or 0
+    total_auction = totals_agg['total_auction'] or 0
+    total_no_diag = totals_agg['total_no_diag'] or 0
+    total_all = totals_agg['total_all'] or 0
+    
+    # Проценты
+    conv_before = (total_before / total_rlk * 100) if total_rlk > 0 else 0
+    conv_after = (total_after / total_before * 100) if total_before > 0 else 0
+    conv_reception = (total_reception / total_after * 100) if total_after > 0 else 0
+    
+    taxi_pct = (total_taxi / total_all * 100) if total_all > 0 else 0
+    carsharing_pct = (total_carsharing / total_all * 100) if total_all > 0 else 0
+    iznos_pct = (total_iznos / total_all * 100) if total_all > 0 else 0
+    auction_pct = (total_auction / total_all * 100) if total_all > 0 else 0
+    no_diag_pct = (total_no_diag / total_all * 100) if total_all > 0 else 0
+    
+    # Статистика по типам приема - один запрос
+    type_reception_stats = list(qs.values('type_reception_id', 'type_reception_name').annotate(
+        total=Count('rlk_id'),
+        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
+        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
+        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+    ).order_by('-total'))
+    
+    for stat in type_reception_stats:
+        stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
+        stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
+        stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+        if not stat['type_reception_name']:
+            stat['type_reception_name'] = 'Не указан'
+    
+    # Статистика по ценовым группам - один запрос
+    price_group_stats = list(qs.exclude(zg_name='').values('zg_name').annotate(
+        total=Count('rlk_id'),
+        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
+        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
+        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+    ).order_by('zg_name'))
+    
+    for stat in price_group_stats:
+        stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
+        stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
+        stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+    
+    # Статистика по городам - один запрос
+    city_stats = list(qs.exclude(city_name='').values('city_name').annotate(
+        total=Count('rlk_id'),
+        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
+        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
+        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+    ).order_by('city_name'))
+    
+    for stat in city_stats:
+        stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
+        stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
+        stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+    
+    # Статистика по брендам - один запрос
+    brand_stats = list(qs.exclude(brand='').values('brand').annotate(
+        total=Count('rlk_id'),
+        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
+        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
+        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+    ).order_by('brand'))
+    
+    for stat in brand_stats:
+        stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
+        stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
+        stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+    
+    # График по дням - оптимизированный запрос
+    from datetime import timedelta
+    date_list = []
+    current_date = date_start.date() if hasattr(date_start, 'date') else date_start
+    end_date = date_end.date() if hasattr(date_end, 'date') else date_end
+    
+    while current_date <= end_date:
+        date_list.append(current_date.strftime('%d.%m.%Y'))
+        current_date += timedelta(days=1)
+    
+    # Используем TruncDate для оптимизации
+    daily_data = {}
+    
+    # Собираем все данные по дням одним запросом для каждой даты
+    date_fields = [
+        ('date_rlk', 'rlk'),
+        ('date_start_estimation', 'estimation'),
+        ('date_remote_success', 'remote'),
+        ('date_before_success', 'before'),
+        ('date_diagnostic_success', 'diagnostic'),
+        ('date_after_success', 'after'),
+        ('date_reception_success', 'reception'),
+    ]
+    
+    chart_datasets = {
+        'rlk': [0] * len(date_list),
+        'estimation': [0] * len(date_list),
+        'remote': [0] * len(date_list),
+        'before': [0] * len(date_list),
+        'diagnostic': [0] * len(date_list),
+        'after': [0] * len(date_list),
+        'reception': [0] * len(date_list),
+    }
+    
+    # Оптимизированный подсчет по дням с использованием TruncDate
+    for field_name, key in date_fields:
+        daily_counts = qs.filter(**{f'{field_name}__isnull': False}).annotate(
+            day=TruncDate(field_name)
+        ).values('day').annotate(count=Count('rlk_id'))
+        
+        for item in daily_counts:
+            if item['day']:
+                day_str = item['day'].strftime('%d.%m.%Y') if hasattr(item['day'], 'strftime') else str(item['day'])
+                if day_str in date_list:
+                    idx = date_list.index(day_str)
+                    chart_datasets[key][idx] = item['count']
+    
+    chart_data_json = json.dumps({
+        'labels': date_list,
+        'datasets': [
+            {'label': 'РЛ', 'data': chart_datasets['rlk'], 'borderColor': '#002c63', 'backgroundColor': 'rgba(0, 44, 99, 0.1)'},
+            {'label': 'Оценка', 'data': chart_datasets['estimation'], 'borderColor': '#00509d', 'backgroundColor': 'rgba(0, 80, 157, 0.1)'},
+            {'label': 'Дистанционно', 'data': chart_datasets['remote'], 'borderColor': '#ff8a00', 'backgroundColor': 'rgba(255, 138, 0, 0.1)'},
+            {'label': 'До КД', 'data': chart_datasets['before'], 'borderColor': '#ffd500', 'backgroundColor': 'rgba(255, 213, 0, 0.1)'},
+            {'label': 'Диагностика', 'data': chart_datasets['diagnostic'], 'borderColor': '#22c55e', 'backgroundColor': 'rgba(34, 197, 94, 0.1)'},
+            {'label': 'После КД', 'data': chart_datasets['after'], 'borderColor': '#f97316', 'backgroundColor': 'rgba(249, 115, 22, 0.1)'},
+            {'label': 'Принято', 'data': chart_datasets['reception'], 'borderColor': '#dc2626', 'backgroundColor': 'rgba(220, 38, 38, 0.1)'},
+        ]
+    })
+    
+    # Загружаем справочники для фильтров - оптимизированно
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    
+    # Получаем уникальные source_unit_id из qs для оптимизации
+    source_unit_ids = list(qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+    source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
+    
+    # Получаем уникальные бренды
+    brands_list = list(qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'report_type': report_type,
+            'unit_source_id': unit_source_id or '',
+            'unit_id': unit_id or '',
+            'brand': brand,
+        },
+        'units': units,
+        'source_units': source_units,
+        'brands': brands_list,
+        'totals': {
+            'rlk': total_rlk,
+            'before': total_before,
+            'after': total_after,
+            'reception': total_reception,
+            'conv_before': conv_before,
+            'conv_after': conv_after,
+            'conv_reception': conv_reception,
+        },
+        'badges': {
+            'taxi': {'count': total_taxi, 'percent': taxi_pct},
+            'carsharing': {'count': total_carsharing, 'percent': carsharing_pct},
+            'iznos': {'count': total_iznos, 'percent': iznos_pct},
+            'auction': {'count': total_auction, 'percent': auction_pct},
+            'no_diag': {'count': total_no_diag, 'percent': no_diag_pct},
+        },
+        'type_reception_stats': type_reception_stats,
+        'price_group_stats': price_group_stats,
+        'city_stats': city_stats,
+        'brand_stats': brand_stats,
+        'chart_data': chart_data_json,
+    }
+    
+    return render(request, 'lo/tradein_funnel_analytics.html', {'params': params})
 
 
 #История изменений
