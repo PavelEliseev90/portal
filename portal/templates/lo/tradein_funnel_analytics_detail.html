@@ -1,0 +1,222 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Детали воронки Trade-In: {{ params.filter_title }} {% endblock %}
+
+{% block content %}
+<style>
+  .kors-funnel-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .kors-funnel-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .kors-funnel-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c7a92;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+  }
+
+  .table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+
+  .badge-info {
+    background: #3b82f6;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .link-rlk {
+    color: #00509d;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .link-rlk:hover {
+    text-decoration: underline;
+  }
+
+  .pagination {
+    margin-top: 1.5rem;
+  }
+
+  .pagination .page-link {
+    color: #00509d;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #00509d;
+    border-color: #00509d;
+  }
+</style>
+
+<div class="kors-funnel-page">
+  <div class="kors-funnel-header">
+    <h2>Детали воронки Trade-In: {{ params.filter_title }}</h2>
+    <p>Всего записей: {{ params.total_count }}</p>
+  </div>
+
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Данные</h3>
+    </div>
+    
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>№ РЛ</th>
+            <th>Дата РЛ</th>
+            <th>VIN Trade-In</th>
+            <th>VIN</th>
+            <th>Подразделение</th>
+            <th>Источник</th>
+            <th>Город</th>
+            <th>Бренд</th>
+            <th>Тип приёма</th>
+            <th>Дата до КД</th>
+            <th>Дата после КД</th>
+            <th>Дата принято</th>
+            <th>Ценовая группа</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr>
+            <td>
+              {% if item.rlk_id %}
+                <a href="/eco/{{ item.rlk_id }}/" class="link-rlk" target="_blank">
+                  {{ item.rlk_number|default:item.rlk_id }}
+                </a>
+              {% else %}
+                {{ item.rlk_number|default:"—" }}
+              {% endif %}
+            </td>
+            <td>{{ item.date_rlk|date:"d.m.Y"|default:"—" }}</td>
+            <td>{{ item.vin_trade_in|default:"—" }}</td>
+            <td>{{ item.vin|default:"—" }}</td>
+            <td>{{ item.unit_name|default:"—" }}</td>
+            <td>{{ item.unit_source_name|default:"—" }}</td>
+            <td>{{ item.city_name|default:"—" }}</td>
+            <td>{{ item.brand|default:"—" }}</td>
+            <td>{{ item.type_reception_name|default:"—" }}</td>
+            <td>
+              {% if item.date_before_success %}
+                {{ item.date_before_success|date:"d.m.Y" }}
+              {% elif item.date_remote_success %}
+                {{ item.date_remote_success|date:"d.m.Y" }} (дист.)
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ item.date_after_success|date:"d.m.Y"|default:"—" }}</td>
+            <td>{{ item.date_reception_success|date:"d.m.Y"|default:"—" }}</td>
+            <td>{{ item.zg_name|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="13" class="text-center text-muted py-4">
+              Нет данных для отображения
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Навигация по страницам">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?filter_type={{ params.filter_type }}&page=1{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Первая</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Предыдущая</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">Первая</span>
+          </li>
+          <li class="page-item disabled">
+            <span class="page-link">Предыдущая</span>
+          </li>
+        {% endif %}
+
+        <li class="page-item active">
+          <span class="page-link">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+          </span>
+        </li>
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Последняя</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">Следующая</span>
+          </li>
+          <li class="page-item disabled">
+            <span class="page-link">Последняя</span>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+
+  <div class="text-center">
+    <a href="{% url 'eco:tradein_funnel_analytics' %}?{% for key, value in request.GET.items %}{% if key != 'filter_type' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+       class="btn btn-primary">
+      ← Вернуться к воронке
+    </a>
+  </div>
+</div>
+
+{% endblock %}
+

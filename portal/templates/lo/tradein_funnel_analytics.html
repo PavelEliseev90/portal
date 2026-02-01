@@ -159,8 +159,18 @@
 
 <div class="kors-funnel-page">
   <div class="kors-funnel-header">
-    <h2>Воронка Trade-In Analytics</h2>
-    <p>Анализ воронки Trade-In на основе данных TradeInFunnel</p>
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2>Воронка Trade-In Analytics</h2>
+        <p>Анализ воронки Trade-In на основе данных TradeInFunnel</p>
+      </div>
+      <div>
+        <a href="{% url 'eco:tradein_funnel_analytics_rejected' %}?{{ request.GET.urlencode }}" 
+           class="btn btn-outline-danger">
+          📊 Анализ не принятых
+        </a>
+      </div>
+    </div>
   </div>
 
   <form class="kors-filter" method="get" id="funnelFilterForm" onsubmit="return prepareFormData(this);">
@@ -287,7 +297,11 @@
         <h2>{{ params.totals.rlk|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Всего рабочих листов</p>
         <span class="kors-stage-conv">Конверсия: 100%</span>
-        <div class="mt-2">
+        <div class="mt-2 d-flex gap-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=rlk&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть
+          </a>
           <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=rlk&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-outline-primary">
             📥 Выгрузить в Excel
@@ -302,7 +316,11 @@
         <h2>{{ params.totals.before|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Согласовано до КД или дистанционно</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_before|floatformat:"2g" }}%</span>
-        <div class="mt-2">
+        <div class="mt-2 d-flex gap-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть
+          </a>
           <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=before&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-outline-primary">
             📥 Выгрузить в Excel
@@ -317,7 +335,11 @@
         <h2>{{ params.totals.after|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Согласовано после КД</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_after|floatformat:"2g" }}%</span>
-        <div class="mt-2">
+        <div class="mt-2 d-flex gap-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть
+          </a>
           <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=after&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-outline-primary">
             📥 Выгрузить в Excel
@@ -332,7 +354,11 @@
         <h2>{{ params.totals.reception|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Автомобилей принято</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%</span>
-        <div class="mt-2">
+        <div class="mt-2 d-flex gap-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=reception&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть
+          </a>
           <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=reception&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-outline-primary">
             📥 Выгрузить в Excel
@@ -350,18 +376,28 @@
     <div class="mt-3">
       <span class="badge-special badge-taxi">
         🚕 Такси: {{ params.badges.taxi.count }} ({{ params.badges.taxi.percent|floatformat:"2g" }}%)
+        <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=taxi&{{ request.GET.urlencode }}" 
+           class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
       </span>
       <span class="badge-special badge-carsharing">
         🚗 Каршеринг: {{ params.badges.carsharing.count }} ({{ params.badges.carsharing.percent|floatformat:"2g" }}%)
+        <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=carsharing&{{ request.GET.urlencode }}" 
+           class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
       </span>
       <span class="badge-special badge-iznos">
         ⚠️ Повышенный износ: {{ params.badges.iznos.count }} ({{ params.badges.iznos.percent|floatformat:"2g" }}%)
+        <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=iznos&{{ request.GET.urlencode }}" 
+           class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
       </span>
       <span class="badge-special badge-auction">
         🔨 Аукцион: {{ params.badges.auction.count }} ({{ params.badges.auction.percent|floatformat:"2g" }}%)
+        <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=auction&{{ request.GET.urlencode }}" 
+           class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
       </span>
       <span class="badge-special badge-no-diag">
         ❌ Без диагностики: {{ params.badges.no_diag.count }} ({{ params.badges.no_diag.percent|floatformat:"2g" }}%)
+        <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=no_diag&{{ request.GET.urlencode }}" 
+           class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
       </span>
     </div>
   </div>
@@ -378,12 +414,18 @@
         <h5 class="mb-2">Дистанционная оценка (всего: {{ params.badges.remote_comparison.total }})</h5>
         <span class="badge-special badge-below">
           ⬇️ Ниже авторасчета: {{ params.badges.remote_comparison.below.count }} ({{ params.badges.remote_comparison.below.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_below&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
         <span class="badge-special badge-equal">
           ➡️ Равно авторасчету: {{ params.badges.remote_comparison.equal.count }} ({{ params.badges.remote_comparison.equal.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_equal&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
         <span class="badge-special badge-above">
           ⬆️ Выше авторасчета: {{ params.badges.remote_comparison.above.count }} ({{ params.badges.remote_comparison.above.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_above&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
       </div>
       {% endif %}
@@ -393,12 +435,18 @@
         <h5 class="mb-2">До КД (всего: {{ params.badges.before_comparison.total }})</h5>
         <span class="badge-special badge-below">
           ⬇️ Ниже авторасчета: {{ params.badges.before_comparison.below.count }} ({{ params.badges.before_comparison.below.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_below&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
         <span class="badge-special badge-equal">
           ➡️ Равно авторасчету: {{ params.badges.before_comparison.equal.count }} ({{ params.badges.before_comparison.equal.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_equal&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
         <span class="badge-special badge-above">
           ⬆️ Выше авторасчета: {{ params.badges.before_comparison.above.count }} ({{ params.badges.before_comparison.above.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_above&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
       </div>
       {% endif %}
@@ -408,12 +456,18 @@
         <h5 class="mb-2">После КД (всего: {{ params.badges.after_comparison.total }})</h5>
         <span class="badge-special badge-below">
           ⬇️ Ниже авторасчета: {{ params.badges.after_comparison.below.count }} ({{ params.badges.after_comparison.below.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_below&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
         <span class="badge-special badge-equal">
           ➡️ Равно авторасчету: {{ params.badges.after_comparison.equal.count }} ({{ params.badges.after_comparison.equal.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_equal&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
         <span class="badge-special badge-above">
           ⬆️ Выше авторасчета: {{ params.badges.after_comparison.above.count }} ({{ params.badges.after_comparison.above.percent|floatformat:"2g" }}%)
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_above&{{ request.GET.urlencode }}" 
+             class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
       </div>
       {% endif %}
