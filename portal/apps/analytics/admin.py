@@ -5,6 +5,7 @@ from .models import (
     EcoAnalystSnapshot,
     InteractivePricingSnapshot,
     TradeInFunnelSnapshot,
+    TradeInFunnel,
 )
 
 
@@ -80,3 +81,16 @@ class TradeInFunnelSnapshotAdmin(admin.ModelAdmin):
     list_filter = ('stage', 'unit_name')
     search_fields = ('rlk_id', 'staff_name', 'unit_name', 'worksheet_number')
 
+
+@admin.register(TradeInFunnel)
+class TradeInFunnelAdmin(admin.ModelAdmin):
+    list_display = (
+        'rlk_id',
+        'vin',
+        'unit_name',
+        'brand',
+        'unit_source_name',
+        'staff_name',
+        'stage',        
+    )
+    search_fields = ('rlk_id', 'vin', 'staff_name', 'unit_name', )

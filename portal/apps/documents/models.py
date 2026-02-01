@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from refs.models import RefTypeItemServiceRepair, RefTypeDocService, RefService, RefReasonArchiveRLK, RefStatusRLK, RefFilial, AutoruModification, AutoruComplectation, RefTypeReceptionCarsOrganization, RefStore, RefTypeItemRepair, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefTypeCanceledSMS, RefTypeResourcePlanning, RefTypeCategoryNegative, RefTypeCategoryCustomer, RefSMSStatusBase, RefSMSStatusProvider
+from refs.models import RefUnitGroup, RefTypeItemServiceRepair, RefTypeDocService, RefService, RefReasonArchiveRLK, RefStatusRLK, RefFilial, AutoruModification, AutoruComplectation, RefTypeReceptionCarsOrganization, RefStore, RefTypeItemRepair, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefTypeCanceledSMS, RefTypeResourcePlanning, RefTypeCategoryNegative, RefTypeCategoryCustomer, RefSMSStatusBase, RefSMSStatusProvider
 from django.db.models import Avg, Max, Min, Sum, F
 from datetime import datetime, timedelta
 import uuid
@@ -607,6 +607,136 @@ class DocRLK(models.Model):
             return self.reginteractivocenka.year
         return 0
 
+    def save(self, *args, **kwargs):
+        
+        super().save(*args, **kwargs)
+
+        # Q(
+        # Q(type__id=2, unit_dc__buauto=True) |
+        # Q(type__id=7, eco=True) |
+        # Q(type__id=1, eco=True) |
+        # Q(type__id=19, eco=True) |
+        # Q(eco=True)
+
+        try:
+            from analytics.models import TradeInFunnel
+            
+            def _get_brand(name, city_name):
+                try:
+                    if name.find('КорсАвто') > -1:
+                        return 'КорсАвто'
+                    name = name.replace('Тула', '').replace('Калуга', '').replace('Обнинск', '').replace('Курск (50 лет Октября)', '').replace('Курск', '').replace('Новомосковск', '').replace('Серпухов', '').replace('Коломна', '').replace('Ногинск', '').replace('Орел', '').replace('Ярославль', '')
+                    return name.replace('ОП ', '').replace('ДЦ ', '').replace('Техцентр  ', '').replace(city_name, '').strip()
+                except: 
+                    return name  
+                return ''
+            
+            def _get_info_unit(unit_source_id):
+                group = RefUnitGroup.objects.filter(
+                    units__id=unit_source_id,
+                    bu_auto=True,
+                    active=True
+                ).prefetch_related(
+                    'units'
+                ).first()
+                if not group:
+                    return None, None
+                for unit in group.units.all():
+                    if 'КорсАвто' in unit.name:
+                        return unit.name, unit.id
+                return None, None
+                
+            saves = False
+            if self.eco:
+                saves = True
+            if saves == False:
+                if self.unit_dc != None and self.unit_dc.buauto and self.type.id == 2:
+                    saves = True
+            if saves:
+                
+                rlk_number = self.nomer or ""
+                footing_rlk_id          = 0
+                footing_rlk_uin         = ''
+                footing_rlk_number      = ''
+                unit_id                 = 0
+                unit_name               = ''
+                unit_source_id          = 0
+                unit_source_name        = ''
+                city_id                 = 0
+                city_name               = ''
+                brand                   = ''
+
+                if self.footing != None:
+                    footing_rlk_id        = self.footing.id or 0
+                    footing_rlk_uin       = self.footing.uin or ""
+                    footing_rlk_number    = self.footing.nomer or ""
+                
+                if self.unit != None:
+                    unit_id   = self.unit.id
+                    unit_name = self.unit.name or ""
+                    if self.unit.city != None:
+                        city_id     = self.unit.city.id 
+                        city_name   = self.unit.city.name 
+
+                if self.unit_dc != None:
+                    unit_source_id   = self.unit_dc.id or 0
+                    unit_source_name = self.unit_dc.name or ""
+                    if city_id == 0 and self.unit_dc.city != None:
+                        city_id     = self.unit_dc.city.id 
+                        city_name   = self.unit_dc.city.name
+                elif self.unit != None:
+                    unit_source_id   = self.unit.id or 0
+                    unit_source_name = self.unit.name or ""
+
+                date_rlk      = self.dataTime
+                date_archive  = self.dateArchive
+                archive_name      = ''
+                archive_comment   = ''
+                
+                if unit_id == 0 and unit_source_id != 0:
+                    info = _get_info_unit(unit_source_id)
+                    unit_id     = 0 if info[1] == None else info[1] 
+                    unit_name   = '' if info[0] == None else info[0] 
+                
+                if self.reasonArchive != '':
+                    mas_data = self.reasonArchive.split(':')
+                    archive_name      = mas_data[0]
+                    archive_comment   = mas_data[1]
+                vin_trade_in = self.vin_trade_in
+
+                if unit_source_name != '':
+                    brand = _get_brand(unit_source_name, city_name)
+                elif unit_name != '':
+                    brand = _get_brand(unit_name, city_name)
+
+                TradeInFunnel.objects.update_or_create(
+                        rlk_id = self.id,
+                        defaults={
+                            'rlk_number'        : rlk_number,
+                            'footing_rlk_id'    : footing_rlk_id,
+                            'footing_rlk_uin'   : footing_rlk_uin,
+                            'footing_rlk_number': footing_rlk_number,
+                            'brand'             : brand,
+                            'city_id'           : city_id,
+                            'city_name'         : city_name,
+                            'unit_id'           : unit_id,
+                            'unit_name'         : unit_name,
+                            'unit_source_id'    : unit_source_id,
+                            'unit_source_name'  : unit_source_name,
+                            'unit_source_id'    : unit_source_id,
+                            'date_rlk'          : date_rlk,
+                            'date_archive'      : date_archive,
+                            'archive_name'      : archive_name,
+                            'archive_comment'   : archive_comment,
+                            'vin_trade_in'      : vin_trade_in,
+                        }
+                    )
+
+        except Exception as e:
+            error_text = ' - ' + str(self.id) + ' ' + str(e)  # Текст исключения
+            
+        
+        
     def __str__(self):
         return "{} ({} - {}) - {}".format(self.dataTime, self.clientName, self.nomer, self.unit)
 
@@ -674,6 +804,26 @@ class DocLO(models.Model):
             s = 1
         
         super().save(*args, **kwargs)
+
+        try:
+            from analytics.models import TradeInFunnel
+            
+            lo_number = self.nomer or ""
+            date_reception = None
+            if self.active:
+                date_reception = self.dataTime
+
+            TradeInFunnel.objects.update_or_create(
+                    rlk_id = self.rlk.id,
+                    defaults={
+                        'lo_number'                : lo_number,
+                        'date_reception_success'    : date_reception
+                    }
+                )
+        
+        except:
+            s = 1
+        
 
     class Meta:
         indexes = [

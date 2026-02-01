@@ -1,6 +1,148 @@
 from django.db import models
 
 
+class TradeInFunnel(models.Model):
+    
+    rlk_id      = models.PositiveIntegerField(primary_key=True, help_text='ID DocRLK')
+    rlk_number  = models.CharField(max_length=255, blank=True)
+    lo_number   = models.CharField(max_length=255, blank=True)
+    
+    footing_rlk_id          = models.PositiveIntegerField(null=True, blank=True, help_text='footing_ ID DocRLK')
+    footing_rlk_uin         = models.CharField(max_length=255, blank=True, default="")
+    footing_rlk_number      = models.CharField(max_length=255, blank=True, default="")
+
+    estimation_id = models.PositiveIntegerField(null=True, blank=True, help_text='ID RegInteractivOcenka')
+    
+    unit_id     = models.PositiveIntegerField(null=True, blank=True, help_text='ID подразделения приема')
+    unit_name   = models.CharField(max_length=255, blank=True)
+    
+    city_id     = models.PositiveIntegerField(null=True, blank=True, help_text='Город')
+    city_name   = models.CharField(max_length=255, blank=True)
+    
+    brand     = models.CharField(max_length=255, blank=True)
+
+    unit_source_id      = models.PositiveIntegerField(null=True, blank=True, help_text='ID подразделения источник')
+    unit_source_name    = models.CharField(max_length=255, blank=True)
+
+    staff_id    = models.PositiveIntegerField(null=True, blank=True)
+    staff_name  = models.CharField(max_length=255, blank=True)
+    
+    analyst_remote_id       = models.PositiveIntegerField(null=True, blank=True)
+    analyst_remote_name     = models.CharField(max_length=255, blank=True)
+    
+    analyst_before_id       = models.PositiveIntegerField(null=True, blank=True)
+    analyst_before_name     = models.CharField(max_length=255, blank=True)
+    
+    analyst_after_id        = models.PositiveIntegerField(null=True, blank=True)
+    analyst_after_name      = models.CharField(max_length=255, blank=True)
+
+    type_reception_id   = models.PositiveIntegerField(null=True, blank=True)
+    type_reception_name = models.CharField(max_length=255, blank=True)
+
+    vin_trade_in        = models.CharField(max_length=64, blank=True)
+    
+    mark_id             = models.PositiveIntegerField(null=True, blank=True)
+    mark_name           = models.CharField(max_length=255, blank=True)
+    model_id            = models.PositiveIntegerField(null=True, blank=True)
+    model_name          = models.CharField(max_length=255, blank=True)
+    modification_id     = models.PositiveIntegerField(null=True, blank=True)
+    modification_name   = models.CharField(max_length=255, blank=True)
+    complectation_id    = models.PositiveIntegerField(null=True, blank=True)
+    complectation_name  = models.CharField(max_length=255, blank=True)
+    
+    vin                 = models.CharField(max_length=64, blank=True)
+    year                = models.IntegerField("Год выпуска",  default=0, null=True, blank=True) 
+    run                 = models.IntegerField("Пробег",  default=0, null=True, blank=True)
+
+    date_rlk                    = models.DateTimeField(null=True, blank=True)
+    date_start_estimation       = models.DateTimeField(null=True, blank=True)
+    date_remote_success         = models.DateTimeField(null=True, blank=True)
+    date_before_success         = models.DateTimeField(null=True, blank=True)
+    date_diagnostic_success     = models.DateTimeField(null=True, blank=True)
+    date_after_success          = models.DateTimeField(null=True, blank=True)
+    date_reception_success      = models.DateTimeField(null=True, blank=True)
+    date_archive                = models.DateTimeField(null=True, blank=True)
+    date_sale                   = models.DateTimeField(null=True, blank=True)
+    
+    hours_stock      = models.IntegerField('Дней на стоке', default=0, null=True, blank=True)
+    hours_estimation = models.IntegerField('Дней оценки', default=0, null=True, blank=True)
+
+    remote              = models.BooleanField(default=False)
+    diagostica          = models.BooleanField(default=False)
+    auction             = models.BooleanField(default=False)
+    auction_auto        = models.BooleanField(default=False)
+    
+    owners              = models.IntegerField('Владельцев', default=0, null=True, blank=True)
+    count_dtp           = models.IntegerField('Количество ДТП', default=0, null=True, blank=True)
+    dtp_red             = models.BooleanField('Есть сильные повреждения при дтп', default = False, null=True, blank=True)
+    iznos               = models.BooleanField(default=False)
+    taxi                = models.BooleanField("Использование в такси", default = False, null=True, blank=True)
+    carsharing          = models.BooleanField("Использование в каршеринге", default = False, null=True, blank=True)
+    k_i                 = models.FloatField("Коэфицент износа", default=0.0, blank=True)
+    autodex             = models.FloatField('Автотека сумма расчетов ремонтов', default=0.00, null=True, blank=True)
+
+    price_reception_staff   = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_sale_staff        = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    price_remote        = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_before        = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_after         = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_sale          = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_auto_bcp      = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    price_auto_remote   = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_auto_before   = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    price_auto_after    = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    zna                 = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    zna_custom          = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    zg_id               = models.PositiveIntegerField(null=True, blank=True)
+    zg_name             = models.CharField(max_length=255, blank=True)
+
+
+    archive_name    = models.CharField(max_length=1024, blank=True)
+    archive_comment = models.CharField(max_length=5120, blank=True)
+
+    cost_plan               = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    cost_plan_ss            = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    cost_plan_mcu           = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    cost_plan_preparation   = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    count_task = models.IntegerField('Задач', default=0, null=True, blank=True)
+    
+    stage = models.CharField(max_length=64, blank=True, help_text='Текущая стадия воронки')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    comparison_remote   = models.IntegerField('Разница с авторасчетом дистанционно', default=0, null=True, blank=True)
+    comparison_before   = models.IntegerField('Разница с авторасчетом до кд', default=0, null=True, blank=True)
+    comparison_after    = models.IntegerField('Разница с авторасчетом после кд', default=0, null=True, blank=True)
+
+    comparison_remote_type   = models.IntegerField('Разница с авторасчетом дистанционно', default=0, null=True, blank=True)
+    comparison_before_type   = models.IntegerField('Разница с авторасчетом до кд', default=0, null=True, blank=True)
+    comparison_after_type    = models.IntegerField('Разница с авторасчетом после кд', default=0, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Воронки Trade-In'
+        verbose_name_plural = 'Воронки Trade-In'
+        indexes = [
+            models.Index(fields=['rlk_id']),
+            models.Index(fields=['estimation_id']),
+            models.Index(fields=['date_rlk']),
+            models.Index(fields=['date_start_estimation']),
+            models.Index(fields=['date_after_success']),
+            models.Index(fields=['unit_id']),
+            models.Index(fields=['staff_id']),
+            models.Index(fields=['stage']),
+        ]
+
+    def __str__(self):
+        return f'TradeInFunnel #{self.rlk_id}'
+
+
+
 class InteractivePricingSnapshot(models.Model):
     """Витрина для отчета по согласованию интерактивных оценок."""
 
