@@ -8870,7 +8870,11 @@ def tradein_funnel_analytics_detail(request):
     else:
         return HttpResponse('Неверный тип фильтра', status=400)
     
-    # Получаем данные для таблицы
+    # Получаем общее количество до пагинации
+    total_count = qs.count()
+    
+    # Получаем данные для таблицы с сортировкой
+    # Используем простую сортировку, NULL значения будут в конце
     items = qs.order_by('-date_rlk', '-rlk_id')
     
     # Пагинация
@@ -8879,7 +8883,8 @@ def tradein_funnel_analytics_detail(request):
     page_number = request.GET.get('page', 1)
     try:
         page_obj = paginator.get_page(page_number)
-    except:
+    except Exception as e:
+        # В случае ошибки возвращаем первую страницу
         page_obj = paginator.get_page(1)
     
     params = {
@@ -8888,7 +8893,7 @@ def tradein_funnel_analytics_detail(request):
         'filter_type': filter_type,
         'filter_title': filter_title,
         'page_obj': page_obj,
-        'total_count': paginator.count,
+        'total_count': total_count,
         'filters': {
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),
