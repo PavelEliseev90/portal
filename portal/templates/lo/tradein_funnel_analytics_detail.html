@@ -94,7 +94,7 @@
 <div class="kors-funnel-page">
   <div class="kors-funnel-header">
     <h2>Детали воронки Trade-In: {{ params.filter_title }}</h2>
-    <p>Всего записей: {{ params.total_count }}</p>
+    <p>Всего записей: {{ params.total_count }} | На странице: {{ page_obj|length }} | Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</p>
   </div>
 
   <div class="kors-panel">
