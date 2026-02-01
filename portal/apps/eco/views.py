@@ -540,6 +540,7 @@ def tradein_funnel_new(request):
 
     type_report_id = _get_int(request.GET.get('type_report_id')) or 1
     
+    type_reception_stats = []
     # Множественный выбор фильтров
     unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
     unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
@@ -547,11 +548,11 @@ def tradein_funnel_new(request):
     source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
     
     # Одиночные фильтры (для обратной совместимости)
-    unit_id = _get_int(request.GET.get('unit_id'))
-    staff_id = _get_int(request.GET.get('staff_id'))
-    analyst_id = _get_int(request.GET.get('analyst_id'))
-    type_reception_id = _get_int(request.GET.get('type_reception_id'))
-    
+    unit_id             = _get_int(request.GET.get('unit_id'))
+    staff_id            = _get_int(request.GET.get('staff_id'))
+    analyst_id          = _get_int(request.GET.get('analyst_id'))
+    type_reception_id   = _get_int(request.GET.get('type_reception_id'))
+    brand               =  request.GET.get('brand', None)
     # Если передан одиночный фильтр, добавляем его в множественный
     if unit_id and unit_id not in unit_ids:
         unit_ids.append(unit_id)
@@ -618,14 +619,19 @@ def tradein_funnel_new(request):
             dataTime__lte=date_end
         ).filter(base_rlk_q)
         
+        if brand:
+           docs_base = docs_base.filter(Q(unit__name__icontains = brand) | Q(unit_dc__name__icontains = brand))
+
         # Применяем фильтры
         if unit_ids:
             docs_base = docs_base.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+        
         if source_unit_ids:
             docs_base = docs_base.filter(
                 Q(unit_dc__id__in=source_unit_ids) |
                 Q(unit__id__in=source_unit_ids, unit_dc__isnull=True)
             )
+        
         if staff_id:
             docs_base = docs_base.filter(staff__id=staff_id)
         
@@ -641,49 +647,14 @@ def tradein_funnel_new(request):
             count_success = 0
             count_success_p = 0
         else:
-            # Работаем с оценками напрямую для оптимизации
-            est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
             
-            # Фильтры по аналитику и типу приема
-            if analyst_id:
-                est_qs = est_qs.filter(
-                    Q(staff_eco_1__id=analyst_id) |
-                    Q(staff_eco_2__id=analyst_id)
-                )
-            if type_reception_ids:
-                est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
-            
-            # Получаем ID оценок
-            est_ids = list(est_qs.values_list('id', flat=True))
-            
-            # Подсчитываем через агрегацию для оптимизации
             rlk_count = docs_base.exclude(vin_trade_in = '').values('vin_trade_in').distinct().count() + docs_base.filter(vin_trade_in = '').values('vin_trade_in').count()
             
-            # Подсчет цен через агрегацию оценок
-            #price_stats = est_qs.aggregate(
-            #    before_kd_count=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0)),
-            #    after_kd_count=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0)),
-            #)
-            
-            # count_price_before_kd = DocLO.objects.filter(
-            #     dataTime__gte=date_start,
-            #     dataTime__lte=date_end
-            # ).count()
-            
-            
-
-            count_price_after_kd = RegInteractivOcenka.objects.filter(
+            count_price_after_kd_q = RegInteractivOcenka.objects.filter(
                 date_s_diag__gte=date_start,
                 date_s_diag__lte=date_end
-            ).count() 
-            
-            # Подсчет принятых через DocLO
-            accepted_count = DocLO.objects.filter(
-                dataTime__gte=date_start,
-                dataTime__lte=date_end,
-                active=True
-            ).count()
-            
+            )
+
             count_price_before_kd_q = RegInteractivOcenka.objects.filter(
                 start_estimation__gte=date_start,
                 start_estimation__lte=date_end
@@ -691,13 +662,96 @@ def tradein_funnel_new(request):
                 page_remote__start_estimation__gte=date_start,
                 page_remote__start_estimation__lte=date_end
             )
-            count_price_before_kd = count_price_before_kd_q.values('vin').order_by('vin').distinct().count()
+            accepted_count_q = DocLO.objects.filter(
+                dataTime__gte=date_start,
+                dataTime__lte=date_end,
+                active=True
+            )
 
-            count_success = accepted_count
-            count_price_before_kd_p = _conversion(count_price_before_kd, rlk_count)
-            count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
-            count_success_p = _conversion(count_success, count_price_after_kd)
-    
+            if type_reception_ids:
+                count_price_after_kd_q  = count_price_after_kd_q.filter(page_documents__type_reception__id__in=type_reception_ids) | count_price_after_kd_q.filter(page_remote__type_reception__id__in=type_reception_ids)
+                count_price_before_kd_q = count_price_before_kd_q.filter(page_documents__type_reception__id__in=type_reception_ids) | count_price_before_kd_q.filter(page_remote__type_reception__id__in=type_reception_ids)    
+                accepted_count_q        = accepted_count_q.filter(type_reception__id__in = type_reception_ids)
+
+            if brand:
+                count_price_after_kd_q  = count_price_after_kd_q.filter(rlk__unit_dc__name__icontains = brand) | count_price_after_kd_q.filter(rlk__unit__name__icontains = brand) 
+                count_price_before_kd_q = count_price_before_kd_q.filter(rlk__unit_dc__name__icontains = brand) | count_price_before_kd_q.filter(rlk__unit__name__icontains = brand)   
+                accepted_count_q        = accepted_count_q.filter(rlk__unit_dc__name__icontains = brand) | accepted_count_q.filter(rlk__unit__name__icontains = brand)
+            
+            if unit_ids:
+                count_price_after_kd_q  = count_price_after_kd_q.filter(page_documents__unit__id__in = unit_ids) | count_price_after_kd_q.filter(page_remote__unit__id__in = unit_ids) 
+                count_price_before_kd_q = count_price_before_kd_q.filter(page_documents__unit__id__in = unit_ids) | count_price_before_kd_q.filter(page_remote__unit__id__in = unit_ids)   
+                accepted_count_q        = accepted_count_q.filter(unit__id__in = unit_ids)
+            
+            count_price_before_kd = count_price_before_kd_q.values('vin').order_by('vin').distinct().count()
+            count_price_after_kd = count_price_after_kd_q.count()
+
+            count_success               = accepted_count_q.count()
+            count_price_before_kd_p     = _conversion(count_price_before_kd, rlk_count)
+            count_price_after_kd_p      = _conversion(count_price_after_kd, count_price_before_kd)
+            count_success_p             = _conversion(count_success, count_price_after_kd)
+            
+            type_reception_stats = []
+            accepted_rlk_ids = set()
+            
+            types_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name')
+            if type_reception_ids:
+                types_receptions = types_receptions.filter(id__in = type_reception_ids)
+
+            for type_reception in types_receptions:
+                
+                accepted_count_q_type           = accepted_count_q.filter(type_reception__id = type_reception.id)
+                count_price_before_kd_q_type    = count_price_before_kd_q.filter(page_documents__type_reception__id = type_reception.id).values('vin').order_by('vin').distinct() | count_price_before_kd_q.filter(page_remote__type_reception__id = type_reception.id).values('vin').order_by('vin').distinct()
+                count_price_after_kd_q_type     = count_price_after_kd_q.filter(page_documents__type_reception__id = type_reception.id).values('vin').order_by('vin').distinct() | count_price_after_kd_q.filter(page_remote__type_reception__id = type_reception.id).values('vin').order_by('vin').distinct()
+                type_reception_stats.append({
+                    'id'            : type_reception.id,
+                    'name'          : type_reception.name,
+                    'total'         : 0,
+                    'before_kd'     : count_price_before_kd_q_type.count(),
+                    'after_kd'      : count_price_after_kd_q_type.count(),
+                    'success'       : accepted_count_q_type.count(),
+                    'conv_before'   : _conversion(count_price_before_kd_q_type.count(), 0),
+                    'conv_after'    : _conversion(count_price_after_kd_q_type.count(), count_price_before_kd_q_type.count()),
+                    'conv_success'  : _conversion(accepted_count_q_type.count(), count_price_after_kd_q_type.count()),
+                })
+            
+            # Статистика по ценовым категориям
+            # price_category_stats = []
+            
+            # price_data = est_qs.values('rlk_id', 'page_soglasovanie__price_after_kd', 'page_soglasovanie__price_before_kd').filter(
+            #     page_soglasovanie__price_after_kd__gt=0
+            # )
+            
+            # price_categories = defaultdict(lambda: {'total': 0, 'before_kd': 0, 'after_kd': 0, 'success': 0})
+            
+            # # Обрабатываем данные из values (быстрее чем select_related)
+            # for item in price_data:
+            #     price_after = item.get('page_soglasovanie__price_after_kd') or 0
+            #     price_before = item.get('page_soglasovanie__price_before_kd') or 0
+            #     rlk_id = item.get('rlk_id')
+                
+            #     if price_after > 0:
+            #         category = _get_price_category(price_after)
+            #         price_categories[category]['total'] += 1
+            #         if price_before > 0:
+            #             price_categories[category]['before_kd'] += 1
+            #         price_categories[category]['after_kd'] += 1
+            #         if rlk_id in accepted_rlk_ids:
+            #             price_categories[category]['success'] += 1
+            
+            # for category, stats in sorted(price_categories.items(), key=lambda x: _get_price_category_order(x[0])):
+            #     price_category_stats.append({
+            #         'name': category,
+            #         'total': stats['total'],
+            #         'before_kd': stats['before_kd'],
+            #         'after_kd': stats['after_kd'],
+            #         'success': stats['success'],
+            #         'conv_before': _conversion(stats['before_kd'], stats['total']),
+            #         'conv_after': _conversion(stats['after_kd'], stats['before_kd']),
+            #         'conv_success': _conversion(stats['success'], stats['after_kd']),
+            #     })
+            
+            
     # Вариант 2: Данные по датам рабочих листов (фильтр по dataTime DocRLK)
     elif type_report_id == 2:
         # Базовый запрос DocRLK (аналогично варианту 1)
@@ -864,84 +918,6 @@ def tradein_funnel_new(request):
                 count_price_after_kd_p = _conversion(count_price_after_kd, count_price_before_kd)
                 count_success_p = _conversion(count_success, count_price_after_kd)
     
-    # Статистика по типам приема и ценовым категориям
-    # Получаем общие данные один раз для оптимизации
-    type_reception_stats = []
-    accepted_rlk_ids = set()
-    
-    if rlk_ids:
-        # Получаем оценки один раз для всех вариантов
-        est_qs = RegInteractivOcenka.objects.filter(rlk_id__in=rlk_ids)
-        if type_reception_ids:
-            est_qs = est_qs.filter(page_documents__type_reception__id__in=type_reception_ids)
-        
-        # Получаем ID принятых через DocLO (один запрос, используется для обеих статистик)
-        if type_report_id == 3:
-            accepted_rlk_ids = set(DocLO.objects.filter(
-                rlk_id__in=rlk_ids,
-                active=True,
-                dataTime__gte=date_start,
-                dataTime__lte=date_end
-            ).values_list('rlk_id', flat=True))
-        else:
-            accepted_rlk_ids = set(DocLO.objects.filter(
-               active=True
-            ).values_list('rlk_id', flat=True))
-        
-        # Получаем статистику по типам приема через агрегацию
-        type_reception_data = est_qs.values(
-            type_reception_id=Coalesce(
-                'page_documents__type_reception__id',
-                'page_remote__type_reception__id'
-            ),
-            type_reception_name=Coalesce(
-                'page_documents__type_reception__name',
-                'page_remote__type_reception__name'
-            )
-        ).annotate(
-            total=Count('id', distinct=True),
-            before_kd=Count('id', filter=Q(page_soglasovanie__price_before_kd__gt=0), distinct=True),
-            after_kd=Count('id', filter=Q(page_soglasovanie__price_after_kd__gt=0), distinct=True),
-        ).order_by('-total')
-        
-        # Получаем все rlk_id по типам приема одним запросом (оптимизация N+1)
-        # Получаем все пары (type_id, rlk_id) одним запросом
-        type_rlk_pairs = est_qs.values_list(
-            'page_documents__type_reception__id',
-            'page_remote__type_reception__id',
-            'rlk_id'
-        ).distinct()
-        
-        # Группируем rlk_id по типам приема
-        type_to_rlk_ids = defaultdict(set)
-        for type_id, remote_type_id, rlk_id in type_rlk_pairs:
-            if type_id != None:
-                type_to_rlk_ids[type_id].add(rlk_id)
-            else:
-                type_to_rlk_ids[remote_type_id].add(rlk_id)
-        
-        # Подсчитываем принятые для каждого типа
-        for item in type_reception_data:
-            type_id = item.get('type_reception_id')
-            
-            if type_id:
-                rlk_ids_for_type = type_to_rlk_ids.get(type_id, set())
-                success_count = len(rlk_ids_for_type & accepted_rlk_ids)
-            else:
-                success_count = 0
-            
-            type_reception_stats.append({
-                'id': type_id,
-                'name': item.get('type_reception_name') or 'Не указан',
-                'total': item['total'],
-                'before_kd': item['before_kd'],
-                'after_kd': item['after_kd'],
-                'success': success_count,
-                'conv_before': _conversion(item['before_kd'], item['total']),
-                'conv_after': _conversion(item['after_kd'], item['before_kd']),
-                'conv_success': _conversion(success_count, item['after_kd']),
-            })
-    
     # Статистика по ценовым категориям
     price_category_stats = []
     if rlk_ids:
@@ -1017,6 +993,7 @@ def tradein_funnel_new(request):
         'type_reception_id': type_reception_id or '',
         'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
         'type_reception_ids_list': type_reception_ids,  # Список для проверки в шаблоне
+        'brand': brand or '',
     }
 
     params = {
@@ -1456,6 +1433,7 @@ def tradein_funnel_rejected(request):
     # Применяем фильтры
     if unit_ids:
         docs = docs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+
     if source_unit_ids:
         docs = docs.filter(
             Q(unit_dc__id__in=source_unit_ids) |
@@ -1526,7 +1504,7 @@ def tradein_funnel_rejected(request):
     reason_archive_stats = defaultdict(int)  # Статистика причин архива
     
     # Импортируем модели для анализа сделки
-    from documents.models import DocRlk, DocCarShipment, DocCarAgreement
+    from documents.models import DocCarShipment, DocCarAgreement
     
     for doc in docs.select_related('unit', 'unit_dc', 'footing').prefetch_related('footing'):
         # Определяем подразделение (источник поступления)
@@ -1553,27 +1531,21 @@ def tradein_funnel_rejected(request):
         
         # Анализ сделки по документу основанию (footing)
         footing_analysis = []
-        if doc.footing:
-            footing = doc.footing
-            footing_dop = DocRlk.objects.filter(uin = doc.footing.uin).values_list('uin', flat = True)
-            # Проверяем отгрузку
-            shipment = DocCarShipment.objects.filter(rlk__uin__in=footing_dop, active=True).first()
-            if shipment:
-                footing_analysis.append(f"Отгрузка: {shipment.nomer} от {shipment.dataTime.strftime('%d.%m.%Y')}")
-            else:
-                # Проверяем соглашение
-                agreement = DocCarAgreement.objects.filter(rlk__uin__in=footing_dop, active=True).first()
-                if agreement:
-                    footing_analysis.append(f"Соглашение: {agreement.nomer} от {agreement.dataTime.strftime('%d.%m.%Y')}")
-                else:
-                    dops = DocRlk.objects.filter(uin = doc.footing.uin)
-                    for dop in dops:
-                        if dop.archive:
-                            footing_analysis.append(f"Основание в архиве: {dop.reasonArchive or 'Без причины'}")
-                        else:
-                            footing_analysis.append("Основание без сделки")
-        else:
-            footing_analysis.append("Нет основания")
+        footing_dop = DocRLK.objects.filter(uin = doc.uin).exclude(footing = None).values_list('footing__uin', flat = True)
+        # Проверяем отгрузку
+        shipment = DocCarShipment.objects.filter(rlk__uin__in=footing_dop, active=True).first()
+        if shipment:
+            footing_analysis.append(f"Отгрузка: {shipment.nomer} от {shipment.dataTime.strftime('%d.%m.%Y')}")
+        
+        # Проверяем соглашение
+        agreement = DocCarAgreement.objects.filter(rlk__uin__in=footing_dop, active=True).first()
+        if agreement:
+            footing_analysis.append(f"Соглашение: {agreement.nomer} от {agreement.dataTime.strftime('%d.%m.%Y')}")
+        dops = DocRLK.objects.filter(uin__in = footing_dop)
+        for dop in dops:
+            if dop.archive:
+                footing_analysis.append(f"Основание в архиве: {dop.reasonArchive or 'Без причины'}")
+
         
         # Анализ причин срыва
         failure_analysis = []
@@ -3223,6 +3195,9 @@ def doc(request, id):
                 page_remote.price_eco       = price_remote
                 page_remote.price_eco_user  = request.user
                 page_remote.save()
+                
+                reg_interactiv_ocenka.date_s_remote = DT.datetime.now()
+                reg_interactiv_ocenka.save()
 
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до осмотра автомобиля - ' + '{:0,.2f}'.format(price_remote).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
                 return HttpResponseRedirect(request.build_absolute_uri()) 

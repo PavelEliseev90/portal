@@ -261,7 +261,7 @@
                     {{ item.type_reception|default:"—" }}
                   {% else %}
                     {{ item.page_remote_type_reception|default:"—" }}
-                  {% endif %  }
+                  {% endif %}
                 </td>
 
                 <td>{{ item.staff|default:"—" }}</td>
@@ -338,8 +338,8 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if item.estimation_id %}
-                    <a href="/eco/{{ item.estimation_id }}/" class="link-estimation" target="_blank">Открыть оценку</a>
+                  {% if item.rlk.id %}
+                    <a href="/eco/{{ item.rlk.id }}/" class="link-estimation" target="_blank">Открыть оценку</a>
                   {% else %}
                     —
                   {% endif %}

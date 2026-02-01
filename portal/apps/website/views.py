@@ -8899,28 +8899,63 @@ def sb_lo(request):
     
 
 def test(request):
-
     
-    date_start = DT.datetime.now().replace(day=1, hour = 1, month=11, year=2025)
-    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).filter(date_s_diag__lte = date_start).filter(page_soglasovanie__price_after_kd__gt = 0).order_by('-id').values('id')
+    #RegInteractivOcenka.objects.get(pk = 47119).save()
+    #DocRLK.objects.get(pk = 2607921).save()
+
+    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    # docs = DocRLK.objects.filter(eco = True).filter(dataTime__gt = date_start)
+    # count = len(docs)
+    # s = 0
+    # for doc in docs:
+    #     doc.save()
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
     count = len(estimations_id)
     s = 0
     for estimation_id in estimations_id:
         estimation      = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-        slug_chat       = 'rlk_' + str(estimation.rlk.id)
-        messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
-        date_s_diag = None
-        for message in messages_list:
-            if message.content.startswith('Согласована цена после диагностики -'):
-                status = 3
-                date_s_diag = message.date
+        estimation.save()
 
-        if date_s_diag != None:
-            estimation.date_s_diag = date_s_diag
-            estimation.save(update_fields=['date_s_diag']) 
+        # slug_chat       = 'rlk_' + str(estimation.rlk.id)
+        # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
+        # date_s_remote = None
+        # for message in messages_list:
+        #     if message.content.startswith('Согласована цена до осмотра автомобиля -'):
+        #         status = 3
+        #         date_s_remote = message.date
+
+        # if date_s_remote != None:
+        #     estimation.date_s_remote = date_s_remote
+        #     estimation.save(update_fields=['date_s_remote']) 
         
         s = s + 1 
-        print(' ' + str(s) + ' ' + str(count))
+        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+
+    estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
+    count = len(estimations_id)
+    s = 0
+    for estimation_id in estimations_id:
+        estimation      = DocLO.objects.get(id = estimation_id['id'])
+        estimation.save()
+
+        # slug_chat       = 'rlk_' + str(estimation.rlk.id)
+        # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
+        # date_s_remote = None
+        # for message in messages_list:
+        #     if message.content.startswith('Согласована цена до осмотра автомобиля -'):
+        #         status = 3
+        #         date_s_remote = message.date
+
+        # if date_s_remote != None:
+        #     estimation.date_s_remote = date_s_remote
+        #     estimation.save(update_fields=['date_s_remote']) 
+        
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
     # ssms = DocSMS.objects.all().values('id')
     # count = ssms.count()

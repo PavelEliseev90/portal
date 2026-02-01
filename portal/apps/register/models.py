@@ -2126,6 +2126,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     users_no_eco            = models.IntegerField('Сотрудников не ецо в чате', default=0, null=True, blank=True)
     users_dop               = models.IntegerField('Сотрудников доп согласования', default=0, null=True, blank=True)
 
+    date_s_remote   = models.DateTimeField('Дата согласования дистанционной', blank=True, null=True)
     date_s_do_diag  = models.DateTimeField('Дата согласования до диагностики', blank=True, null=True)
     date_diagnostic = models.DateTimeField('Дата диагностики', blank=True, null=True)
     date_s_diag     = models.DateTimeField('Дата согласования после диагностики', blank=True, null=True)
@@ -2754,28 +2755,11 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
         # Обновляем витрину аналитиков
         try:
-            update_eco_analyst_snapshots(self)
+            if self.start_estimation != None:
+                update_trade_in_funnel(self)
         except Exception:
             pass
         
-        # Обновляем витрину интерактивных согласований
-        try:
-            update_pricing_snapshot(self)
-        except Exception:
-            pass
-        
-        # Обновляем витрину оценщиков
-        try:
-            update_appraiser_snapshot(self)
-        except Exception:
-            pass
-        
-        # Обновляем витрину воронки Trade-In
-        try:
-            update_tradein_snapshot(self)
-        except Exception:
-            pass
-
 
     def __str__(self):
         return "{} / {}".format(self.rlk, self.type_estimation)
@@ -2791,591 +2775,849 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
 
-# --- Вспомогательная функция для витрины аналитиков ---
-def update_eco_analyst_snapshots(estimation):
-    """
-    Обновляет витрину EcoAnalystSnapshot при изменении RegInteractivOcenka.
-    Создает/обновляет записи для ролей 'before' и 'after' при наличии аналитиков.
-    """
+def update_trade_in_funnel(estimation):
     try:
-        from analytics.models import EcoAnalystSnapshot
+        from analytics.models import TradeInFunnel
     except Exception:
         return
     
-    #Дистанционные оценки
-    remote = None
-    auto_price_remote = 0
-    if estimation.page_remote != None:
-        remote              = estimation.page_remote  
-        auto_price_remote   = remote.price_auto
+    rlk_id = estimation.rlk.id
 
-    try:
-        sogl = estimation.page_soglasovanie
-    except Exception:
-        sogl = None
+    mark_id     = 0
+    mark_name   = ''
+    model_id    = 0
+    model_name  = 0
+    modification_id     = 0
+    modification_name   = ''
+    vin                 = ''
+    year                = 0
+    run                 = 0
+    type_reception_id   = 0
+    type_reception_name = ''
+    unit_id     = 0
+    unit_name   = ''
+    staff_id    = 0
+    staff_name  = ''
+    analyst_remote_id = 0
+    analyst_remote_name = ''
+    analyst_before_id       = 0
+    analyst_before_name     = ''
+    analyst_after_id        = 0
+    analyst_after_name      = ''
+    city_id = 0
+    city_name = ''
+    owners = 0
+    price_reception_staff = 0
+    price_sale_staff = 0
+    cost_plan               = 0
+    cost_plan_ss            = 0
+    cost_plan_mcu           = 0
+    cost_plan_preparation   = 0
 
-    auto_price = None
-    if sogl:
-        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+    price_remote        = 0
+    price_before        = 0
+    price_after         = 0
+    price_sale          = 0
+    price_auto_bcp      = 0
 
-    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
-    if unit is None and estimation.rlk:
-        unit = getattr(estimation.rlk, 'unit', None)
+    price_auto_remote   = 0
+    price_auto_before   = 0
+    price_auto_after    = 0
+    price_auto_bcp      = 0
+    zna                 = 0
+    zna_custom          = 0
 
-    unit_id = unit.id if unit else None
-    unit_name = unit.name if unit else ''
-    
-    if estimation.rlk.unit_dc != None:
-        unit_source = estimation.rlk.unit_dc.name
-    elif estimation.rlk.unit != None:
-        unit_source = estimation.rlk.unit.name 
-    else:
-        unit_source = estimation.page_documents.unit.name
+    comparison_remote   = 0
+    comparison_before   = 0
+    comparison_after    = 0
+    comparison_remote_type   = 0
+    comparison_before_type   = 0
+    comparison_after_type    = 0
+    diagostica          = False 
+    diff_summ           = 0
 
-    type_reception_id = None
-    if getattr(estimation, 'page_documents', None):
-        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+    date_start_estimation = estimation.start_estimation
 
-    status_id = estimation.status_id if estimation.status_id else None
-    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
-
-    price_reception = sogl.price_reception if sogl else None
-    price_sale = sogl.price_sale if sogl else None
-    cost_total = None
-    
-    def _duration_sec(start, end):
-        if start and end:
-            try:
-                return int((end - start).total_seconds())
-            except Exception:
-                return None
-        return None
-
-    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
-
-    def _upsert(role, analyst):
+    remote = False if not estimation.page_remote else True
+    if remote and estimation.page_remote != None:
         
-        if not analyst:
-            return
-        
-        diff = 0
-        duration_sogl_before_sec = 0
-        duration_sogl_after_sec = None
-        duration_diagnostics_sec = None
-        
-        if role == 'before' or role == 'after':
+        run = estimation.page_remote.run
+        type_reception_id   = estimation.page_remote.type_reception.id
+        type_reception_name = estimation.page_remote.type_reception.name
+        unit_id   = estimation.page_remote.unit.id
+        unit_name = estimation.page_remote.unit.name
+        if estimation.page_remote.price_eco > 0:
+            analyst_remote_id       = estimation.page_remote.price_eco_user.profiles.id
+            analyst_remote_name     = estimation.page_remote.price_eco_user.profiles.eco_name
+        city_id     = estimation.page_remote.unit.city.id
+        city_name   = estimation.page_remote.unit.city.name
+        owners      = estimation.page_remote.count_owners
+        price_reception_staff   = estimation.page_remote.price_reception
+        price_sale_staff        = estimation.page_remote.price_sale
+        price_remote            = estimation.page_remote.price_eco
+        price_auto_remote       = estimation.page_remote.price_auto
+        zna             = estimation.page_remote.price_zna 
+        price_auto_bcp  = estimation.page_remote.price_auto_bcp
+        diff            = estimation.page_remote.discount_torg + estimation.page_remote.zachita_ot_ubitka
+        diff_summ = estimation.page_remote.price_eco - estimation.page_remote.price_auto
+        if diff < 0:
+            comparison_remote_type = -1
+        elif diff >= 0 and diff <= diff_summ:
+            comparison_remote_type = 0
+        else:
+            comparison_remote_type = 1
+        comparison_remote = estimation.page_remote.price_eco - estimation.page_remote.price_auto
+
+    if estimation.page_soglasovanie != None:
+        if estimation.page_salon != None:
+            run = estimation.page_salon.run
+        if estimation.page_documents != None: 
+            type_reception_id   = estimation.page_documents.type_reception.id
+            type_reception_name = estimation.page_documents.type_reception.name
+            unit_id   = estimation.page_documents.unit.id
             unit_name = estimation.page_documents.unit.name
-            if estimation.rlk.unit_dc != None:
-                unit_source = estimation.rlk.unit_dc.name
-                unit_id     = estimation.rlk.unit_dc.id
-            elif estimation.rlk.unit != None:
-                unit_source = estimation.rlk.unit.name
-                unit_id     = estimation.rlk.unit.id
-            else:
-                unit_source = estimation.page_documents.unit.name
-            type_reception_id = None
-            if getattr(estimation, 'page_documents', None):
-                type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
-            
-            price_reception = estimation.page_soglasovanie.price_reception
-            price_sale = estimation.page_soglasovanie.price_sale
-            cost_total = None
+            city_id     = estimation.page_documents.unit.city.id
+            city_name   = estimation.page_documents.unit.city.name
+            owners      = estimation.page_documents.count_owners
+        if estimation.page_soglasovanie != None:
+            price_reception_staff   = estimation.page_soglasovanie.price_reception
+            price_sale_staff        = estimation.page_soglasovanie.price_sale
+            cost_plan               = estimation.page_soglasovanie.amount_podgotovka + estimation.page_soglasovanie.amount_ss + estimation.page_soglasovanie.amount_mcu  
+            cost_plan_ss            = estimation.page_soglasovanie.amount_ss
+            cost_plan_mcu           = estimation.page_soglasovanie.amount_mcu
+            cost_plan_preparation   = estimation.page_soglasovanie.amount_podgotovka
+            price_before            = estimation.page_soglasovanie.price_before_kd
+            price_after             = estimation.page_soglasovanie.price_after_kd
+            if estimation.page_soglasovanie.price_before_kd > 0:
+                price_auto_before       = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.amount_ss
+                comparison_before       = price_before - estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.amount_ss
+                diff            = estimation.page_soglasovanie.discount_torg + estimation.page_soglasovanie.zachita_ot_ubitka
+                diff_summ       = price_before - estimation.page_soglasovanie.price_auto_2
+                if diff < 0:
+                    comparison_before_type = -1
+                elif diff >= 0 and diff <= diff_summ:
+                    comparison_before_type = 0
+                else:
+                    comparison_before_type = 1
+            if price_after> 0: 
+                price_auto_after        = estimation.page_soglasovanie.price_auto_2
+                comparison_after        = price_after - estimation.page_soglasovanie.price_auto_2
+                diff            = estimation.page_soglasovanie.discount_torg + estimation.page_soglasovanie.zachita_ot_ubitka
+                diff_summ       = price_after - estimation.page_soglasovanie.price_auto_2
+                if diff < 0:
+                    comparison_after_type = -1
+                elif diff >= 0 and diff <= diff_summ:
+                    comparison_after_type = 0
+                else:
+                    comparison_after_type = 1
 
-        if role == 'before':
-            
-            price = sogl.price_before_kd if sogl else None
-            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
-            duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
-            duration_sogl_after_sec = None
-            duration_diagnostics_sec = None
-            if sogl:
-                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+            price_auto_bcp = estimation.page_soglasovanie.price_auto_bcp_2
+            zna = estimation.page_soglasovanie.price_zna_2 
+            diagostica = not estimation.page_soglasovanie.no_diagnostica
+    
+    year    = estimation.year
+    vin     = estimation.vin 
+    if estimation.staff != None:
+        staff_id    = estimation.staff.id
+        staff_name  = estimation.staff.name
 
-        elif role == 'after':
-            price = sogl.price_after_kd if sogl else None
-            diff = (price - auto_price) if (price is not None and auto_price is not None) else None
-            duration_sogl_before_sec = None
-            duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
-            duration_diagnostics_sec = None
-            if sogl:
-                cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
+    if estimation.staff_eco_1 != None:
+        analyst_before_id       = estimation.staff_eco_1.profiles.id
+        analyst_before_name     = estimation.staff_eco_1.profiles.eco_name
+
+    if estimation.staff_eco_2 != None:    
+        analyst_after_id        = estimation.staff_eco_2.profiles.id
+        analyst_after_name      = estimation.staff_eco_2.profiles.eco_name
+   
+    if estimation.modification != None:
+        mark_id             = estimation.modification.model.mark.idSite
+        mark_name           = estimation.modification.model.mark.name
+        model_id            = estimation.modification.model.idSite
+        model_name          = estimation.modification.model.name
+        modification_id     = estimation.modification.idSite
+        modification_name   = estimation.modification.name
+    
+    zg_id = 0
+    zg_name = ''
+    if zna <= 200000:
+        zg_id = 7
+        zg_name = '200'
+    elif zna <= 400000:
+        zg_id = 1
+        zg_name = '400'
+    elif zna <= 700000:
+        zg_id = 6
+        zg_name = '700'
+    elif zna <= 1200000:
+        zg_id = 2
+        zg_name = '1 200'
+    elif zna <= 2000000:
+        zg_id = 3
+        zg_name = '2 000'
+    elif zna <= 3000000:
+        zg_id = 4
+        zg_name = '3 000'
+    elif zna <= 5000000:
+        zg_id = 11
+        zg_name = '5 000'
+    elif zna > 5000000:
+        zg_id = 12
+        zg_name = '5 000+'
+
+    TradeInFunnel.objects.update_or_create(
+                        rlk_id = rlk_id,
+                        defaults={
+                            'estimation_id' : estimation.id,
+                            'unit_id'       : unit_id,
+                            'unit_name'     : unit_name,
+                            'staff_id'      : staff_id,
+                            'staff_name'    : staff_name,
+                            'city_id'       : city_id,
+                            'city_name'     : city_name,
+                            'analyst_remote_id'     : analyst_remote_id,
+                            'analyst_remote_name'   : analyst_remote_name,
+                            'analyst_before_id'     : analyst_before_id,
+                            'analyst_before_name'   : analyst_before_name,
+                            'analyst_after_id'      : analyst_after_id,
+                            'analyst_after_name'    : analyst_after_name,
+                            'type_reception_id'     : type_reception_id,
+                            'type_reception_name'   : type_reception_name,
+                            'vin'       : vin,
+                            'year'      : year,
+                            'run'       : run,
+                            'mark_id'       : mark_id,
+                            'mark_name'     : mark_name,
+                            'model_id'      : model_id,
+                            'model_name'        : model_name,
+                            'modification_id'   : modification_id,
+                            'modification_name' : modification_name,
+                            'date_start_estimation' : date_start_estimation,
+                            'remote'    : remote,
+                            'owners'    : owners,
+                            'count_dtp' : estimation.count_dtp,
+                            'dtp_red'   : estimation.dtp_red,
+                            'iznos'     : estimation.iznos,
+                            'taxi'      : estimation.taxi,
+                            'carsharing'    : estimation.carsharing,
+                            'k_i'           : estimation.k_i,
+                            'autodex'       : estimation.avtoteka_car_autodex,
+                            'date_before_success'       : estimation.date_s_do_diag,
+                            'date_diagnostic_success'   : estimation.date_diagnostic,
+                            'date_after_success'        : estimation.date_s_diag,
+                            'date_remote_success'       : estimation.date_s_remote,
+                            'price_reception_staff'     : price_reception_staff,
+                            'price_sale_staff'          : price_sale_staff,                       
+                            'auction'                   : estimation.auction,
+                            'cost_plan'                 : cost_plan,
+                            'cost_plan_ss'              : cost_plan_ss,
+                            'cost_plan_mcu'             : cost_plan_mcu,
+                            'cost_plan_preparation'     : cost_plan_preparation,
+                            'price_remote'              : price_remote,
+                            'price_before'              : price_before,
+                            'price_after'               : price_after,
+                            'price_auto_remote'         : price_auto_remote,
+                            'price_auto_before'         : price_auto_before,
+                            'price_auto_after'          : price_auto_after,
+                            'price_sale'                : price_auto_bcp,
+                            'price_auto_bcp'            : price_auto_bcp,
+                            'stage'                     : estimation.status.name,
+                            'diagostica'                : diagostica,
+                            'zna'                       : zna,
+                            'zna_custom'                : estimation.custom_zna,
+                            'comparison_after'          : comparison_after,
+                            'comparison_before'         : comparison_before,
+                            'comparison_remote'         : comparison_remote,
+                            'comparison_after_type'          : comparison_after_type,
+                            'comparison_before_type'         : comparison_before_type,
+                            'comparison_remote_type'         : comparison_remote_type,
+                            'zg_id'     : zg_id,
+                            'zg_name'   : zg_name,
+                        }
+                    )
+
+# # --- Вспомогательная функция для витрины аналитиков ---
+# def update_eco_analyst_snapshots(estimation):
+#     """
+#     Обновляет витрину EcoAnalystSnapshot при изменении RegInteractivOcenka.
+#     Создает/обновляет записи для ролей 'before' и 'after' при наличии аналитиков.
+#     """
+#     try:
+#         from analytics.models import EcoAnalystSnapshot
+#     except Exception:
+#         return
+    
+#     #Дистанционные оценки
+#     remote = None
+#     auto_price_remote = 0
+#     if estimation.page_remote != None:
+#         remote              = estimation.page_remote  
+#         auto_price_remote   = remote.price_auto
+
+#     try:
+#         sogl = estimation.page_soglasovanie
+#     except Exception:
+#         sogl = None
+
+#     auto_price = None
+#     if sogl:
+#         auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+
+#     unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+#     if unit is None and estimation.rlk:
+#         unit = getattr(estimation.rlk, 'unit', None)
+
+#     unit_id = unit.id if unit else None
+#     unit_name = unit.name if unit else ''
+    
+#     if estimation.rlk.unit_dc != None:
+#         unit_source = estimation.rlk.unit_dc.name
+#     elif estimation.rlk.unit != None:
+#         unit_source = estimation.rlk.unit.name 
+#     else:
+#         unit_source = estimation.page_documents.unit.name
+
+#     type_reception_id = None
+#     if getattr(estimation, 'page_documents', None):
+#         type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+
+#     status_id = estimation.status_id if estimation.status_id else None
+#     status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+
+#     price_reception = sogl.price_reception if sogl else None
+#     price_sale = sogl.price_sale if sogl else None
+#     cost_total = None
+    
+#     def _duration_sec(start, end):
+#         if start and end:
+#             try:
+#                 return int((end - start).total_seconds())
+#             except Exception:
+#                 return None
+#         return None
+
+#     duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+
+#     def _upsert(role, analyst):
         
-        elif role == 'remote':  # ДОБАВЛЕНО
-            if remote and remote.price_eco:
-                price = remote.price_eco
-            else:
-                price = None
-            diff = (price - auto_price_remote) if (price is not None and auto_price_remote is not None) else None
-            comparison = 0
-            unit = getattr(getattr(estimation, 'page_remote', None), 'unit', None)
-            if unit is None and estimation.rlk:
-                unit = getattr(estimation.rlk, 'unit', None)
-
-            unit_id = unit.id if unit else None
-            unit_name = unit.name if unit else ''
+#         if not analyst:
+#             return
+        
+#         diff = 0
+#         duration_sogl_before_sec = 0
+#         duration_sogl_after_sec = None
+#         duration_diagnostics_sec = None
+        
+#         if role == 'before' or role == 'after':
+#             unit_name = estimation.page_documents.unit.name
+#             if estimation.rlk.unit_dc != None:
+#                 unit_source = estimation.rlk.unit_dc.name
+#                 unit_id     = estimation.rlk.unit_dc.id
+#             elif estimation.rlk.unit != None:
+#                 unit_source = estimation.rlk.unit.name
+#                 unit_id     = estimation.rlk.unit.id
+#             else:
+#                 unit_source = estimation.page_documents.unit.name
+#             type_reception_id = None
+#             if getattr(estimation, 'page_documents', None):
+#                 type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
             
-            if estimation.rlk.unit_dc != None:
-                unit_source = estimation.rlk.unit_dc.name
-            elif estimation.rlk.unit != None:
-                unit_source = estimation.rlk.unit.name 
-            else:
-                unit_source = estimation.page_remote.unit.name
+#             price_reception = estimation.page_soglasovanie.price_reception
+#             price_sale = estimation.page_soglasovanie.price_sale
+#             cost_total = None
 
-            type_reception_id = None
-            if getattr(estimation, 'page_remote', None):
-                type_reception_id = getattr(estimation.page_remote, 'type_reception_id', None)
+#         if role == 'before':
+            
+#             price = sogl.price_before_kd if sogl else None
+#             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+#             duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
+#             duration_sogl_after_sec = None
+#             duration_diagnostics_sec = None
+#             if sogl:
+#                 cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
 
-            price_reception = estimation.page_remote.price_reception if remote else None
-            price_sale = estimation.page_remote.price_sale if remote else None
-            cost_total = None
+#         elif role == 'after':
+#             price = sogl.price_after_kd if sogl else None
+#             diff = (price - auto_price) if (price is not None and auto_price is not None) else None
+#             duration_sogl_before_sec = None
+#             duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation if sogl else None)
+#             duration_diagnostics_sec = None
+#             if sogl:
+#                 cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_mcu or 0)
+        
+#         elif role == 'remote':  # ДОБАВЛЕНО
+#             if remote and remote.price_eco:
+#                 price = remote.price_eco
+#             else:
+#                 price = None
+#             diff = (price - auto_price_remote) if (price is not None and auto_price_remote is not None) else None
+#             comparison = 0
+#             unit = getattr(getattr(estimation, 'page_remote', None), 'unit', None)
+#             if unit is None and estimation.rlk:
+#                 unit = getattr(estimation.rlk, 'unit', None)
 
-        if role == 'remote':
-            try: 
-                diff_summ = remote.discount_torg + remote.zachita_ot_ubitka
-                if diff < 0:
-                    comparison = -1
-                elif diff >= 0 and diff <= diff_summ:
-                    comparison = 0
-                else:
-                    comparison = 1
-            except:
-                comparison = 0
-        else: 
-            try: 
-                diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
-                if diff < 0:
-                    comparison = -1
-                elif diff >= 0 and diff <= diff_summ:
-                    comparison = 0
-                else:
-                    comparison = 1
-            except:
-                comparison = 0
+#             unit_id = unit.id if unit else None
+#             unit_name = unit.name if unit else ''
+            
+#             if estimation.rlk.unit_dc != None:
+#                 unit_source = estimation.rlk.unit_dc.name
+#             elif estimation.rlk.unit != None:
+#                 unit_source = estimation.rlk.unit.name 
+#             else:
+#                 unit_source = estimation.page_remote.unit.name
 
-        EcoAnalystSnapshot.objects.update_or_create(
-            estimation_id=estimation.id,
-            role=role,
-            defaults={
-                'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
-                'start_estimation': estimation.start_estimation,
-                'end_estimation': estimation.end_estimation,
-                'unit_id': unit_id,
-                'unit_name': unit_name,
-                'unit_source': unit_source,
-                'staff_id': estimation.staff_id if estimation.staff_id else None,
-                'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
-                'analyst_id': analyst.id,
-                'analyst_name': analyst.profiles.eco_name,
-                'type_reception_id': type_reception_id,
-                'status_id': status_id,
-                'status_name': status_name,
-                'has_soglasovanie': bool(sogl),
-                'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
-                'accepted': bool(estimation.status_id in [8]),
-                'price_auto_selected': auto_price_remote if role == 'remote' else auto_price,
-                'price_before_kd': price if role == 'before' else None,
-                'price_after_kd': price if role in ['after', 'remote'] else None,  # ИЗМЕНЕНО: добавлен 'remote'
-                'diff_before': diff if role == 'before' else None,
-                'diff_after': diff if role in ['after', 'remote'] else None,  # ИЗМЕНЕНО: добавлен 'remote'
-                'price_reception': price_reception,
-                'price_sale': price_sale,
-                'cost_total': cost_total,
-                'duration_estimation_sec': duration_estimation_sec,
-                'duration_sogl_before_sec': duration_sogl_before_sec,
-                'duration_sogl_after_sec': duration_sogl_after_sec,
-                'duration_diagnostics_sec': duration_diagnostics_sec,
-                'tasks_total': 0,
-                'tasks_closed': 0,
-                'comparison': comparison
-            }
-        )
+#             type_reception_id = None
+#             if getattr(estimation, 'page_remote', None):
+#                 type_reception_id = getattr(estimation.page_remote, 'type_reception_id', None)
 
-    _upsert('before', getattr(estimation,   'staff_eco_1', None))
-    _upsert('after', getattr(estimation,    'staff_eco_2', None))
-    if estimation.page_remote != None:
-        _upsert('remote', getattr(estimation.page_remote, 'price_eco_user', None))
+#             price_reception = estimation.page_remote.price_reception if remote else None
+#             price_sale = estimation.page_remote.price_sale if remote else None
+#             cost_total = None
+
+#         if role == 'remote':
+#             try: 
+#                 diff_summ = remote.discount_torg + remote.zachita_ot_ubitka
+#                 if diff < 0:
+#                     comparison = -1
+#                 elif diff >= 0 and diff <= diff_summ:
+#                     comparison = 0
+#                 else:
+#                     comparison = 1
+#             except:
+#                 comparison = 0
+#         else: 
+#             try: 
+#                 diff_summ = sogl.discount_torg + sogl.zachita_ot_ubitka
+#                 if diff < 0:
+#                     comparison = -1
+#                 elif diff >= 0 and diff <= diff_summ:
+#                     comparison = 0
+#                 else:
+#                     comparison = 1
+#             except:
+#                 comparison = 0
+
+#         EcoAnalystSnapshot.objects.update_or_create(
+#             estimation_id=estimation.id,
+#             role=role,
+#             defaults={
+#                 'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+#                 'start_estimation': estimation.start_estimation,
+#                 'end_estimation': estimation.end_estimation,
+#                 'unit_id': unit_id,
+#                 'unit_name': unit_name,
+#                 'unit_source': unit_source,
+#                 'staff_id': estimation.staff_id if estimation.staff_id else None,
+#                 'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+#                 'analyst_id': analyst.id,
+#                 'analyst_name': analyst.profiles.eco_name,
+#                 'type_reception_id': type_reception_id,
+#                 'status_id': status_id,
+#                 'status_name': status_name,
+#                 'has_soglasovanie': bool(sogl),
+#                 'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+#                 'accepted': bool(estimation.status_id in [8]),
+#                 'price_auto_selected': auto_price_remote if role == 'remote' else auto_price,
+#                 'price_before_kd': price if role == 'before' else None,
+#                 'price_after_kd': price if role in ['after', 'remote'] else None,  # ИЗМЕНЕНО: добавлен 'remote'
+#                 'diff_before': diff if role == 'before' else None,
+#                 'diff_after': diff if role in ['after', 'remote'] else None,  # ИЗМЕНЕНО: добавлен 'remote'
+#                 'price_reception': price_reception,
+#                 'price_sale': price_sale,
+#                 'cost_total': cost_total,
+#                 'duration_estimation_sec': duration_estimation_sec,
+#                 'duration_sogl_before_sec': duration_sogl_before_sec,
+#                 'duration_sogl_after_sec': duration_sogl_after_sec,
+#                 'duration_diagnostics_sec': duration_diagnostics_sec,
+#                 'tasks_total': 0,
+#                 'tasks_closed': 0,
+#                 'comparison': comparison
+#             }
+#         )
+
+#     _upsert('before', getattr(estimation,   'staff_eco_1', None))
+#     _upsert('after', getattr(estimation,    'staff_eco_2', None))
+#     if estimation.page_remote != None:
+#         _upsert('remote', getattr(estimation.page_remote, 'price_eco_user', None))
 
 
-def update_pricing_snapshot(estimation):
-    """
-    Обновляет витрину InteractivePricingSnapshot при изменении RegInteractivOcenka.
-    """
-    try:
-        from analytics.models import InteractivePricingSnapshot
-    except Exception:
-        return
+# def update_pricing_snapshot(estimation):
+#     """
+#     Обновляет витрину InteractivePricingSnapshot при изменении RegInteractivOcenka.
+#     """
+#     try:
+#         from analytics.models import InteractivePricingSnapshot
+#     except Exception:
+#         return
 
-    try:
-        sogl = estimation.page_soglasovanie
-    except Exception:
-        sogl = None
+#     try:
+#         sogl = estimation.page_soglasovanie
+#     except Exception:
+#         sogl = None
 
-    auto_price = None
-    if sogl:
-        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+#     auto_price = None
+#     if sogl:
+#         auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
 
-    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
-    if unit is None and estimation.rlk:
-        unit = getattr(estimation.rlk, 'unit', None)
+#     unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+#     if unit is None and estimation.rlk:
+#         unit = getattr(estimation.rlk, 'unit', None)
 
-    unit_id = unit.id if unit else None
-    unit_name = unit.name if unit else ''
+#     unit_id = unit.id if unit else None
+#     unit_name = unit.name if unit else ''
     
-    if estimation.rlk and estimation.rlk.unit_dc:
-        unit_source = estimation.rlk.unit_dc.name
-    elif estimation.rlk and estimation.rlk.unit:
-        unit_source = estimation.rlk.unit.name 
-    elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
-        unit_source = estimation.page_documents.unit.name
-    else:
-        unit_source = ''
+#     if estimation.rlk and estimation.rlk.unit_dc:
+#         unit_source = estimation.rlk.unit_dc.name
+#     elif estimation.rlk and estimation.rlk.unit:
+#         unit_source = estimation.rlk.unit.name 
+#     elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
+#         unit_source = estimation.page_documents.unit.name
+#     else:
+#         unit_source = ''
 
-    type_reception_id = None
-    if getattr(estimation, 'page_documents', None):
-        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+#     type_reception_id = None
+#     if getattr(estimation, 'page_documents', None):
+#         type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
 
-    status_id = estimation.status_id if estimation.status_id else None
-    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+#     status_id = estimation.status_id if estimation.status_id else None
+#     status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
 
-    model_name = ''
-    if estimation.modification:
-        if estimation.modification.model:
-            model_name = estimation.modification.model.name
-            if estimation.modification.model.mark:
-                model_name = f"{estimation.modification.model.mark.name} {model_name}"
+#     model_name = ''
+#     if estimation.modification:
+#         if estimation.modification.model:
+#             model_name = estimation.modification.model.name
+#             if estimation.modification.model.mark:
+#                 model_name = f"{estimation.modification.model.mark.name} {model_name}"
 
-    def _duration_sec(start, end):
-        if start and end:
-            try:
-                return int((end - start).total_seconds())
-            except Exception:
-                return None
-        return None
+#     def _duration_sec(start, end):
+#         if start and end:
+#             try:
+#                 return int((end - start).total_seconds())
+#             except Exception:
+#                 return None
+#         return None
 
-    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
-    duration_sogl_before_sec = None
-    duration_sogl_after_sec = None
-    duration_diagnostics_sec = None
+#     duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+#     duration_sogl_before_sec = None
+#     duration_sogl_after_sec = None
+#     duration_diagnostics_sec = None
     
-    if sogl:
-        if estimation.start_estimation:
-            duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation)
-        duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation) if estimation.start_estimation else None
-        duration_diagnostics_sec = None  # Можно добавить логику для диагностики
+#     if sogl:
+#         if estimation.start_estimation:
+#             duration_sogl_before_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation)
+#         duration_sogl_after_sec = _duration_sec(estimation.start_estimation, sogl.end_estimation) if estimation.start_estimation else None
+#         duration_diagnostics_sec = None  # Можно добавить логику для диагностики
 
-    # Подсчет задач
-    tasks_total = 0
-    tasks_closed = 0
-    try:
-        tasks = RegInteractivOcenkaTask.objects.filter(estimation=estimation)
-        tasks_total = tasks.count()
-        tasks_closed = tasks.exclude(date_close__isnull=True).count()
-    except Exception:
-        pass
+#     # Подсчет задач
+#     tasks_total = 0
+#     tasks_closed = 0
+#     try:
+#         tasks = RegInteractivOcenkaTask.objects.filter(estimation=estimation)
+#         tasks_total = tasks.count()
+#         tasks_closed = tasks.exclude(date_close__isnull=True).count()
+#     except Exception:
+#         pass
 
-    analyst_before_id = None
-    analyst_before_name = ''
-    if estimation.staff_eco_1:
-        analyst_before_id = estimation.staff_eco_1.id
-        analyst_before_name = getattr(estimation.staff_eco_1.profiles, 'eco_name', '') if hasattr(estimation.staff_eco_1, 'profiles') else ''
+#     analyst_before_id = None
+#     analyst_before_name = ''
+#     if estimation.staff_eco_1:
+#         analyst_before_id = estimation.staff_eco_1.id
+#         analyst_before_name = getattr(estimation.staff_eco_1.profiles, 'eco_name', '') if hasattr(estimation.staff_eco_1, 'profiles') else ''
 
-    analyst_after_id = None
-    analyst_after_name = ''
-    if estimation.staff_eco_2:
-        analyst_after_id = estimation.staff_eco_2.id
-        analyst_after_name = getattr(estimation.staff_eco_2.profiles, 'eco_name', '') if hasattr(estimation.staff_eco_2, 'profiles') else ''
+#     analyst_after_id = None
+#     analyst_after_name = ''
+#     if estimation.staff_eco_2:
+#         analyst_after_id = estimation.staff_eco_2.id
+#         analyst_after_name = getattr(estimation.staff_eco_2.profiles, 'eco_name', '') if hasattr(estimation.staff_eco_2, 'profiles') else ''
 
-    cost_total = None
-    if sogl:
-        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+#     cost_total = None
+#     if sogl:
+#         cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
 
-    InteractivePricingSnapshot.objects.update_or_create(
-        estimation_id=estimation.id,
-        defaults={
-            'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
-            'start_estimation': estimation.start_estimation,
-            'end_estimation': estimation.end_estimation,
-            'unit_id': unit_id,
-            'unit_name': unit_name,
-            'unit_source': unit_source,
-            'staff_id': estimation.staff_id if estimation.staff_id else None,
-            'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
-            'analyst_before_id': analyst_before_id,
-            'analyst_before_name': analyst_before_name,
-            'analyst_after_id': analyst_after_id,
-            'analyst_after_name': analyst_after_name,
-            'type_reception_id': type_reception_id,
-            'status_id': status_id,
-            'status_name': status_name,
-            'model_name': model_name,
-            'vin': estimation.vin or '',
-            'price_auto_1': sogl.price_auto_1 if sogl else None,
-            'price_auto_2': sogl.price_auto_2 if sogl else None,
-            'price_auto_3': sogl.price_auto_3 if sogl else None,
-            'price_auto_selected': auto_price,
-            'price_before_kd': sogl.price_before_kd if sogl else None,
-            'price_after_kd': sogl.price_after_kd if sogl else None,
-            'diff_before': (sogl.price_before_kd - auto_price) if (sogl and sogl.price_before_kd is not None and auto_price is not None) else None,
-            'diff_after': (sogl.price_after_kd - auto_price) if (sogl and sogl.price_after_kd is not None and auto_price is not None) else None,
-            'price_auto_bcp': None,  # Можно добавить логику для BCP
-            'price_bcp': None,  # Можно добавить логику для BCP
-            'price_reception': sogl.price_reception if sogl else None,
-            'price_sale': sogl.price_sale if sogl else None,
-            'cost_podgotovka': sogl.amount_podgotovka if sogl else None,
-            'cost_ss': sogl.amount_ss if sogl else None,
-            'cost_mcu': sogl.amount_mcu if sogl else None,
-            'cost_recovery': None,  # Можно добавить логику для recovery
-            'cost_total': cost_total,
-            'tasks_total': tasks_total,
-            'tasks_closed': tasks_closed,
-            'has_soglasovanie': bool(sogl),
-            'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
-            'accepted': bool(estimation.status_id in [4, 8]),
-            'duration_estimation_sec': duration_estimation_sec,
-            'duration_sogl_before_sec': duration_sogl_before_sec,
-            'duration_diagnostics_sec': duration_diagnostics_sec,
-            'duration_sogl_after_sec': duration_sogl_after_sec,
-        }
-    )
+#     InteractivePricingSnapshot.objects.update_or_create(
+#         estimation_id=estimation.id,
+#         defaults={
+#             'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+#             'start_estimation': estimation.start_estimation,
+#             'end_estimation': estimation.end_estimation,
+#             'unit_id': unit_id,
+#             'unit_name': unit_name,
+#             'unit_source': unit_source,
+#             'staff_id': estimation.staff_id if estimation.staff_id else None,
+#             'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+#             'analyst_before_id': analyst_before_id,
+#             'analyst_before_name': analyst_before_name,
+#             'analyst_after_id': analyst_after_id,
+#             'analyst_after_name': analyst_after_name,
+#             'type_reception_id': type_reception_id,
+#             'status_id': status_id,
+#             'status_name': status_name,
+#             'model_name': model_name,
+#             'vin': estimation.vin or '',
+#             'price_auto_1': sogl.price_auto_1 if sogl else None,
+#             'price_auto_2': sogl.price_auto_2 if sogl else None,
+#             'price_auto_3': sogl.price_auto_3 if sogl else None,
+#             'price_auto_selected': auto_price,
+#             'price_before_kd': sogl.price_before_kd if sogl else None,
+#             'price_after_kd': sogl.price_after_kd if sogl else None,
+#             'diff_before': (sogl.price_before_kd - auto_price) if (sogl and sogl.price_before_kd is not None and auto_price is not None) else None,
+#             'diff_after': (sogl.price_after_kd - auto_price) if (sogl and sogl.price_after_kd is not None and auto_price is not None) else None,
+#             'price_auto_bcp': None,  # Можно добавить логику для BCP
+#             'price_bcp': None,  # Можно добавить логику для BCP
+#             'price_reception': sogl.price_reception if sogl else None,
+#             'price_sale': sogl.price_sale if sogl else None,
+#             'cost_podgotovka': sogl.amount_podgotovka if sogl else None,
+#             'cost_ss': sogl.amount_ss if sogl else None,
+#             'cost_mcu': sogl.amount_mcu if sogl else None,
+#             'cost_recovery': None,  # Можно добавить логику для recovery
+#             'cost_total': cost_total,
+#             'tasks_total': tasks_total,
+#             'tasks_closed': tasks_closed,
+#             'has_soglasovanie': bool(sogl),
+#             'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+#             'accepted': bool(estimation.status_id in [4, 8]),
+#             'duration_estimation_sec': duration_estimation_sec,
+#             'duration_sogl_before_sec': duration_sogl_before_sec,
+#             'duration_diagnostics_sec': duration_diagnostics_sec,
+#             'duration_sogl_after_sec': duration_sogl_after_sec,
+#         }
+#     )
 
 
-def update_appraiser_snapshot(estimation):
-    """
-    Обновляет витрину AppraiserPerformanceSnapshot при изменении RegInteractivOcenka.
-    """
-    try:
-        from analytics.models import AppraiserPerformanceSnapshot
-    except Exception:
-        return
+# def update_appraiser_snapshot(estimation):
+#     """
+#     Обновляет витрину AppraiserPerformanceSnapshot при изменении RegInteractivOcenka.
+#     """
+#     try:
+#         from analytics.models import AppraiserPerformanceSnapshot
+#     except Exception:
+#         return
 
-    try:
-        sogl = estimation.page_soglasovanie
-    except Exception:
-        sogl = None
+#     try:
+#         sogl = estimation.page_soglasovanie
+#     except Exception:
+#         sogl = None
 
-    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
-    if unit is None and estimation.rlk:
-        unit = getattr(estimation.rlk, 'unit', None)
+#     unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+#     if unit is None and estimation.rlk:
+#         unit = getattr(estimation.rlk, 'unit', None)
 
-    unit_id = unit.id if unit else None
-    unit_name = unit.name if unit else ''
+#     unit_id = unit.id if unit else None
+#     unit_name = unit.name if unit else ''
     
-    if estimation.rlk and estimation.rlk.unit_dc:
-        unit_source = estimation.rlk.unit_dc.name
-    elif estimation.rlk and estimation.rlk.unit:
-        unit_source = estimation.rlk.unit.name 
-    elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
-        unit_source = estimation.page_documents.unit.name
-    else:
-        unit_source = ''
+#     if estimation.rlk and estimation.rlk.unit_dc:
+#         unit_source = estimation.rlk.unit_dc.name
+#     elif estimation.rlk and estimation.rlk.unit:
+#         unit_source = estimation.rlk.unit.name 
+#     elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
+#         unit_source = estimation.page_documents.unit.name
+#     else:
+#         unit_source = ''
 
-    status_id = estimation.status_id if estimation.status_id else None
-    status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
+#     status_id = estimation.status_id if estimation.status_id else None
+#     status_name = estimation.status.name if getattr(estimation, 'status', None) else ''
 
-    source_type = ''
-    if getattr(estimation, 'page_documents', None) and estimation.page_documents.type_reception:
-        source_type = estimation.page_documents.type_reception.name
+#     source_type = ''
+#     if getattr(estimation, 'page_documents', None) and estimation.page_documents.type_reception:
+#         source_type = estimation.page_documents.type_reception.name
 
-    auto_price = None
-    if sogl:
-        auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
+#     auto_price = None
+#     if sogl:
+#         auto_price = next((p for p in [sogl.price_auto_1, sogl.price_auto_2, sogl.price_auto_3] if p and p > 0), None)
 
-    def _duration_sec(start, end):
-        if start and end:
-            try:
-                return int((end - start).total_seconds())
-            except Exception:
-                return None
-        return None
+#     def _duration_sec(start, end):
+#         if start and end:
+#             try:
+#                 return int((end - start).total_seconds())
+#             except Exception:
+#                 return None
+#         return None
 
-    worksheet_created_at = None
-    if estimation.rlk:
-        worksheet_created_at = estimation.rlk.dataTime
+#     worksheet_created_at = None
+#     if estimation.rlk:
+#         worksheet_created_at = estimation.rlk.dataTime
 
-    duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
-    duration_to_accept_sec = None
-    duration_to_sale_sec = None
-    days_in_stock = None
+#     duration_estimation_sec = _duration_sec(estimation.start_estimation, estimation.end_estimation)
+#     duration_to_accept_sec = None
+#     duration_to_sale_sec = None
+#     days_in_stock = None
 
-    # Подсчет задач
-    tasks_total = 0
-    tasks_closed = 0
-    try:
-        tasks = RegInteractivOcenkaTask.objects.filter(estimation=estimation)
-        tasks_total = tasks.count()
-        tasks_closed = tasks.exclude(date_close__isnull=True).count()
-    except Exception:
-        pass
+#     # Подсчет задач
+#     tasks_total = 0
+#     tasks_closed = 0
+#     try:
+#         tasks = RegInteractivOcenkaTask.objects.filter(estimation=estimation)
+#         tasks_total = tasks.count()
+#         tasks_closed = tasks.exclude(date_close__isnull=True).count()
+#     except Exception:
+#         pass
 
-    cost_total = None
-    if sogl:
-        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+#     cost_total = None
+#     if sogl:
+#         cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
 
-    AppraiserPerformanceSnapshot.objects.update_or_create(
-        estimation_id=estimation.id,
-        defaults={
-            'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
-            'worksheet_created_at': worksheet_created_at,
-            'start_estimation': estimation.start_estimation,
-            'end_estimation': estimation.end_estimation,
-            'unit_id': unit_id,
-            'unit_name': unit_name,
-            'unit_source': unit_source,
-            'staff_id': estimation.staff_id if estimation.staff_id else None,
-            'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
-            'source_type': source_type,
-            'status_id': status_id,
-            'status_name': status_name,
-            'has_soglasovanie': bool(sogl),
-            'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
-            'accepted': bool(estimation.status_id in [4, 8]),
-            'price_offer': sogl.price_before_kd if sogl else None,
-            'price_agreed': sogl.price_after_kd if sogl else None,
-            'price_reception': sogl.price_reception if sogl else None,
-            'price_sale': sogl.price_sale if sogl else None,
-            'price_auto_selected': auto_price,
-            'diff_vs_auto': (sogl.price_after_kd - auto_price) if (sogl and sogl.price_after_kd is not None and auto_price is not None) else None,
-            'cost_total': cost_total,
-            'duration_estimation_sec': duration_estimation_sec,
-            'duration_to_accept_sec': duration_to_accept_sec,
-            'duration_to_sale_sec': duration_to_sale_sec,
-            'days_in_stock': days_in_stock,
-            'tasks_total': tasks_total,
-            'tasks_closed': tasks_closed,
-        }
-    )
+#     AppraiserPerformanceSnapshot.objects.update_or_create(
+#         estimation_id=estimation.id,
+#         defaults={
+#             'rlk_id': estimation.rlk_id if estimation.rlk_id else None,
+#             'worksheet_created_at': worksheet_created_at,
+#             'start_estimation': estimation.start_estimation,
+#             'end_estimation': estimation.end_estimation,
+#             'unit_id': unit_id,
+#             'unit_name': unit_name,
+#             'unit_source': unit_source,
+#             'staff_id': estimation.staff_id if estimation.staff_id else None,
+#             'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+#             'source_type': source_type,
+#             'status_id': status_id,
+#             'status_name': status_name,
+#             'has_soglasovanie': bool(sogl),
+#             'has_diagnostics': False if not sogl else not bool(sogl.no_diagnostica),
+#             'accepted': bool(estimation.status_id in [4, 8]),
+#             'price_offer': sogl.price_before_kd if sogl else None,
+#             'price_agreed': sogl.price_after_kd if sogl else None,
+#             'price_reception': sogl.price_reception if sogl else None,
+#             'price_sale': sogl.price_sale if sogl else None,
+#             'price_auto_selected': auto_price,
+#             'diff_vs_auto': (sogl.price_after_kd - auto_price) if (sogl and sogl.price_after_kd is not None and auto_price is not None) else None,
+#             'cost_total': cost_total,
+#             'duration_estimation_sec': duration_estimation_sec,
+#             'duration_to_accept_sec': duration_to_accept_sec,
+#             'duration_to_sale_sec': duration_to_sale_sec,
+#             'days_in_stock': days_in_stock,
+#             'tasks_total': tasks_total,
+#             'tasks_closed': tasks_closed,
+#         }
+#     )
 
 
-def update_tradein_snapshot(estimation):
-    """
-    Обновляет витрину TradeInFunnelSnapshot при изменении RegInteractivOcenka.
-    """
-    try:
-        from analytics.models import TradeInFunnelSnapshot
-    except Exception:
-        return
+# def update_tradein_snapshot(estimation):
+#     """
+#     Обновляет витрину TradeInFunnelSnapshot при изменении RegInteractivOcenka.
+#     """
+#     try:
+#         from analytics.models import TradeInFunnelSnapshot
+#     except Exception:
+#         return
 
-    if not estimation.rlk:
-        return
+#     if not estimation.rlk:
+#         return
 
-    try:
-        sogl = estimation.page_soglasovanie
-    except Exception:
-        sogl = None
+#     try:
+#         sogl = estimation.page_soglasovanie
+#     except Exception:
+#         sogl = None
 
-    unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
-    if unit is None and estimation.rlk:
-        unit = getattr(estimation.rlk, 'unit', None)
+#     unit = getattr(getattr(estimation, 'page_documents', None), 'unit', None)
+#     if unit is None and estimation.rlk:
+#         unit = getattr(estimation.rlk, 'unit', None)
 
-    unit_id = unit.id if unit else None
-    unit_name = unit.name if unit else ''
+#     unit_id = unit.id if unit else None
+#     unit_name = unit.name if unit else ''
     
-    if estimation.rlk.unit_dc:
-        unit_source = estimation.rlk.unit_dc.name
-    elif estimation.rlk.unit:
-        unit_source = estimation.rlk.unit.name 
-    elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
-        unit_source = estimation.page_documents.unit.name
-    else:
-        unit_source = ''
+#     if estimation.rlk.unit_dc:
+#         unit_source = estimation.rlk.unit_dc.name
+#     elif estimation.rlk.unit:
+#         unit_source = estimation.rlk.unit.name 
+#     elif getattr(estimation, 'page_documents', None) and estimation.page_documents.unit:
+#         unit_source = estimation.page_documents.unit.name
+#     else:
+#         unit_source = ''
 
-    source_type = ''
-    if getattr(estimation, 'page_documents', None) and estimation.page_documents.type_reception:
-        source_type = estimation.page_documents.type_reception.name
+#     source_type = ''
+#     if getattr(estimation, 'page_documents', None) and estimation.page_documents.type_reception:
+#         source_type = estimation.page_documents.type_reception.name
 
-    type_reception_id = None
-    if getattr(estimation, 'page_documents', None):
-        type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
+#     type_reception_id = None
+#     if getattr(estimation, 'page_documents', None):
+#         type_reception_id = getattr(estimation.page_documents, 'type_reception_id', None)
 
-    analyst_before_id = None
-    if estimation.staff_eco_1:
-        analyst_before_id = estimation.staff_eco_1.id
+#     analyst_before_id = None
+#     if estimation.staff_eco_1:
+#         analyst_before_id = estimation.staff_eco_1.id
 
-    analyst_after_id = None
-    if estimation.staff_eco_2:
-        analyst_after_id = estimation.staff_eco_2.id
+#     analyst_after_id = None
+#     if estimation.staff_eco_2:
+#         analyst_after_id = estimation.staff_eco_2.id
 
-    def _duration_sec(start, end):
-        if start and end:
-            try:
-                return int((end - start).total_seconds())
-            except Exception:
-                return None
-        return None
+#     def _duration_sec(start, end):
+#         if start and end:
+#             try:
+#                 return int((end - start).total_seconds())
+#             except Exception:
+#                 return None
+#         return None
 
-    date_work_order = estimation.rlk.dataTime if estimation.rlk else None
-    date_evaluation = estimation.start_estimation
-    date_diagnostic = None
-    date_acceptance = None
-    date_sale = None
-    date_market = None
+#     date_work_order = estimation.rlk.dataTime if estimation.rlk else None
+#     date_evaluation = estimation.start_estimation
+#     date_diagnostic = None
+#     date_acceptance = None
+#     date_sale = None
+#     date_market = None
 
-    if sogl:
-        if sogl.end_estimation:
-            date_diagnostic = sogl.end_estimation
-        if estimation.status_id in [4, 8]:
-            date_acceptance = estimation.end_estimation
+#     if sogl:
+#         if sogl.end_estimation:
+#             date_diagnostic = sogl.end_estimation
+#         if estimation.status_id in [4, 8]:
+#             date_acceptance = estimation.end_estimation
 
-    duration_to_evaluation_sec = _duration_sec(date_work_order, date_evaluation)
-    duration_to_diagnostic_sec = _duration_sec(date_evaluation, date_diagnostic)
-    duration_to_acceptance_sec = _duration_sec(date_evaluation, date_acceptance)
-    duration_to_sale_sec = _duration_sec(date_acceptance, date_sale)
+#     duration_to_evaluation_sec = _duration_sec(date_work_order, date_evaluation)
+#     duration_to_diagnostic_sec = _duration_sec(date_evaluation, date_diagnostic)
+#     duration_to_acceptance_sec = _duration_sec(date_evaluation, date_acceptance)
+#     duration_to_sale_sec = _duration_sec(date_acceptance, date_sale)
 
-    cost_total = None
-    if sogl:
-        cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
+#     cost_total = None
+#     if sogl:
+#         cost_total = (sogl.amount_podgotovka or 0) + (sogl.amount_ss or 0) + (sogl.amount_mcu or 0)
 
-    # Определяем текущую стадию
-    stage = 'work_order'
-    if date_evaluation:
-        stage = 'evaluation'
-    if date_diagnostic:
-        stage = 'diagnostic'
-    if date_acceptance:
-        stage = 'acceptance'
-    if date_sale:
-        stage = 'sale'
-    if date_market:
-        stage = 'market'
+#     # Определяем текущую стадию
+#     stage = 'work_order'
+#     if date_evaluation:
+#         stage = 'evaluation'
+#     if date_diagnostic:
+#         stage = 'diagnostic'
+#     if date_acceptance:
+#         stage = 'acceptance'
+#     if date_sale:
+#         stage = 'sale'
+#     if date_market:
+#         stage = 'market'
 
-    TradeInFunnelSnapshot.objects.update_or_create(
-        rlk_id=estimation.rlk.id,
-        defaults={
-            'worksheet_number': estimation.rlk.nomer if estimation.rlk else '',
-            'unit_id': unit_id,
-            'unit_name': unit_name,
-            'unit_source': unit_source,
-            'staff_id': estimation.staff_id if estimation.staff_id else None,
-            'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
-            'analyst_before_id': analyst_before_id,
-            'analyst_after_id': analyst_after_id,
-            'source_type': source_type,
-            'type_reception_id': type_reception_id,
-            'date_work_order': date_work_order,
-            'date_evaluation': date_evaluation,
-            'date_diagnostic': date_diagnostic,
-            'date_acceptance': date_acceptance,
-            'date_sale': date_sale,
-            'date_market': date_market,
-            'price_offer': sogl.price_before_kd if sogl else None,
-            'price_agreed_before': sogl.price_before_kd if sogl else None,
-            'price_agreed_after': sogl.price_after_kd if sogl else None,
-            'price_reception': sogl.price_reception if sogl else None,
-            'price_sale': sogl.price_sale if sogl else None,
-            'price_market': None,  # Можно добавить логику для market price
-            'cost_total': cost_total,
-            'duration_to_evaluation_sec': duration_to_evaluation_sec,
-            'duration_to_diagnostic_sec': duration_to_diagnostic_sec,
-            'duration_to_acceptance_sec': duration_to_acceptance_sec,
-            'duration_to_sale_sec': duration_to_sale_sec,
-            'accepted': bool(estimation.status_id in [4, 8]),
-            'sold': bool(date_sale),
-            'went_to_market': bool(date_market),
-            'stage': stage,
-        }
-    )
-
-
+#     TradeInFunnelSnapshot.objects.update_or_create(
+#         rlk_id=estimation.rlk.id,
+#         defaults={
+#             'worksheet_number': estimation.rlk.nomer if estimation.rlk else '',
+#             'unit_id': unit_id,
+#             'unit_name': unit_name,
+#             'unit_source': unit_source,
+#             'staff_id': estimation.staff_id if estimation.staff_id else None,
+#             'staff_name': estimation.staff.name if getattr(estimation, 'staff', None) else '',
+#             'analyst_before_id': analyst_before_id,
+#             'analyst_after_id': analyst_after_id,
+#             'source_type': source_type,
+#             'type_reception_id': type_reception_id,
+#             'date_work_order': date_work_order,
+#             'date_evaluation': date_evaluation,
+#             'date_diagnostic': date_diagnostic,
+#             'date_acceptance': date_acceptance,
+#             'date_sale': date_sale,
+#             'date_market': date_market,
+#             'price_offer': sogl.price_before_kd if sogl else None,
+#             'price_agreed_before': sogl.price_before_kd if sogl else None,
+#             'price_agreed_after': sogl.price_after_kd if sogl else None,
+#             'price_reception': sogl.price_reception if sogl else None,
+#             'price_sale': sogl.price_sale if sogl else None,
+#             'price_market': None,  # Можно добавить логику для market price
+#             'cost_total': cost_total,
+#             'duration_to_evaluation_sec': duration_to_evaluation_sec,
+#             'duration_to_diagnostic_sec': duration_to_diagnostic_sec,
+#             'duration_to_acceptance_sec': duration_to_acceptance_sec,
+#             'duration_to_sale_sec': duration_to_sale_sec,
+#             'accepted': bool(estimation.status_id in [4, 8]),
+#             'sold': bool(date_sale),
+#             'went_to_market': bool(date_market),
+#             'stage': stage,
+#         }
+#     )
 
 
 class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
