@@ -122,6 +122,21 @@
     color: #fff;
   }
 
+  .badge-below {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+  }
+
+  .badge-equal {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+  }
+
+  .badge-above {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+  }
+
   .table-responsive {
     overflow-x: auto;
   }
@@ -148,7 +163,7 @@
     <p>Анализ воронки Trade-In на основе данных TradeInFunnel</p>
   </div>
 
-  <form class="kors-filter" method="get">
+  <form class="kors-filter" method="get" id="funnelFilterForm" onsubmit="return prepareFormData(this);">
     <div class="row g-3 align-items-end">
       <div class="col-md-2">
         <label class="form-label text-uppercase">Вариант отчета</label>
@@ -167,33 +182,99 @@
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label text-uppercase">Источник приема</label>
-        <select class="form-select" name="unit_source_id">
-          <option value="">Все</option>
-          {% for unit in params.source_units %}
-            <option value="{{ unit.id }}" {% if unit.id == params.filters.unit_source_id %}selected{% endif %}>{{ unit.name }}</option>
-          {% endfor %}
-        </select>
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
       </div>
       <div class="col-md-2">
-        <label class="form-label text-uppercase">Подразделение</label>
-        <select class="form-select" name="unit_id">
-          <option value="">Все</option>
-          {% for unit in params.units %}
-            <option value="{{ unit.id }}" {% if unit.id == params.filters.unit_id %}selected{% endif %}>{{ unit.name }}</option>
-          {% endfor %}
-        </select>
+        <button class="btn btn-secondary px-4" type="button" onclick="resetFilters()">Сбросить</button>
       </div>
     </div>
     
     <div class="row g-3 align-items-end mt-2">
-      <div class="col-md-4">
-        <label class="form-label text-uppercase">Бренд</label>
-        <input type="text" class="form-control" name="brand" value="{{ params.filters.brand }}" placeholder="Введите бренд...">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Источник приема</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="sourceUnitSearch" placeholder="Поиск по источникам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="sourceUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.source_units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_source_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_source_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedSourceUnits" class="mt-2"></div>
       </div>
-      <div class="col-md-8 d-flex align-items-end">
-        <button class="btn btn-primary px-4" type="submit">Применить</button>
-        <button class="btn btn-secondary px-4 ms-2" type="button" onclick="resetFilters()">Сбросить</button>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Подразделения</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Города</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="citySearch" placeholder="Поиск по городам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="cityDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for city in params.cities %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="city_ids" value="{{ city.id }}" 
+                  {% if city.id in params.filters.city_ids_list %}checked{% endif %}>
+                {{ city.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedCities" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Бренды</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="brandSearch" placeholder="Поиск по брендам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="brandDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for brand in params.brands %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="brands" value="{{ brand }}" 
+                  {% if brand in params.filters.brands_list %}checked{% endif %}>
+                {{ brand }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedBrands" class="mt-2"></div>
+      </div>
+    </div>
+    
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Типы приёма</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="typeReceptionSearch" placeholder="Поиск по типам приёма..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="typeReceptionDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for type in params.type_receptions %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="type_reception_ids" value="{{ type.id }}" 
+                  {% if type.id in params.filters.type_reception_ids_list %}checked{% endif %}>
+                {{ type.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedTypeReceptions" class="mt-2"></div>
       </div>
     </div>
   </form>
@@ -206,6 +287,12 @@
         <h2>{{ params.totals.rlk|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Всего рабочих листов</p>
         <span class="kors-stage-conv">Конверсия: 100%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=rlk&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
 
@@ -215,6 +302,12 @@
         <h2>{{ params.totals.before|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Согласовано до КД или дистанционно</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_before|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=before&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
 
@@ -224,6 +317,12 @@
         <h2>{{ params.totals.after|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Согласовано после КД</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_after|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=after&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
 
@@ -233,6 +332,12 @@
         <h2>{{ params.totals.reception|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Автомобилей принято</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%</span>
+        <div class="mt-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=reception&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
       </article>
     </div>
   </div>
@@ -260,6 +365,61 @@
       </span>
     </div>
   </div>
+
+  <!-- Сравнение с авторасчетом -->
+  {% if params.badges.remote_comparison.total > 0 or params.badges.before_comparison.total > 0 or params.badges.after_comparison.total > 0 %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Сравнение с авторасчетом</h3>
+    </div>
+    <div class="mt-3">
+      {% if params.badges.remote_comparison.total > 0 %}
+      <div class="mb-3">
+        <h5 class="mb-2">Дистанционная оценка (всего: {{ params.badges.remote_comparison.total }})</h5>
+        <span class="badge-special badge-below">
+          ⬇️ Ниже авторасчета: {{ params.badges.remote_comparison.below.count }} ({{ params.badges.remote_comparison.below.percent|floatformat:"2g" }}%)
+        </span>
+        <span class="badge-special badge-equal">
+          ➡️ Равно авторасчету: {{ params.badges.remote_comparison.equal.count }} ({{ params.badges.remote_comparison.equal.percent|floatformat:"2g" }}%)
+        </span>
+        <span class="badge-special badge-above">
+          ⬆️ Выше авторасчета: {{ params.badges.remote_comparison.above.count }} ({{ params.badges.remote_comparison.above.percent|floatformat:"2g" }}%)
+        </span>
+      </div>
+      {% endif %}
+      
+      {% if params.badges.before_comparison.total > 0 %}
+      <div class="mb-3">
+        <h5 class="mb-2">До КД (всего: {{ params.badges.before_comparison.total }})</h5>
+        <span class="badge-special badge-below">
+          ⬇️ Ниже авторасчета: {{ params.badges.before_comparison.below.count }} ({{ params.badges.before_comparison.below.percent|floatformat:"2g" }}%)
+        </span>
+        <span class="badge-special badge-equal">
+          ➡️ Равно авторасчету: {{ params.badges.before_comparison.equal.count }} ({{ params.badges.before_comparison.equal.percent|floatformat:"2g" }}%)
+        </span>
+        <span class="badge-special badge-above">
+          ⬆️ Выше авторасчета: {{ params.badges.before_comparison.above.count }} ({{ params.badges.before_comparison.above.percent|floatformat:"2g" }}%)
+        </span>
+      </div>
+      {% endif %}
+      
+      {% if params.badges.after_comparison.total > 0 %}
+      <div class="mb-3">
+        <h5 class="mb-2">После КД (всего: {{ params.badges.after_comparison.total }})</h5>
+        <span class="badge-special badge-below">
+          ⬇️ Ниже авторасчета: {{ params.badges.after_comparison.below.count }} ({{ params.badges.after_comparison.below.percent|floatformat:"2g" }}%)
+        </span>
+        <span class="badge-special badge-equal">
+          ➡️ Равно авторасчету: {{ params.badges.after_comparison.equal.count }} ({{ params.badges.after_comparison.equal.percent|floatformat:"2g" }}%)
+        </span>
+        <span class="badge-special badge-above">
+          ⬆️ Выше авторасчета: {{ params.badges.after_comparison.above.count }} ({{ params.badges.after_comparison.above.percent|floatformat:"2g" }}%)
+        </span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- График по дням -->
   <div class="kors-panel">
@@ -431,9 +591,139 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  // Функции для работы с множественным выбором фильтров
+  (function() {
+    function initMultiSelect(searchId, dropdownId, selectedId) {
+      const searchInput = document.getElementById(searchId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedDiv = document.getElementById(selectedId);
+      
+      if (!searchInput || !dropdown || !selectedDiv) return;
+      
+      function updateSelected() {
+        const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+        selectedDiv.innerHTML = '';
+        if (checked.length > 0) {
+          const badges = Array.from(checked).map(cb => {
+            const label = cb.closest('label');
+            const text = label ? label.textContent.trim() : '';
+            const value = cb.value;
+            return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedId}();"></button></span>`;
+          }).join('');
+          selectedDiv.innerHTML = badges;
+        }
+      }
+      
+      // Сохраняем функцию для глобального доступа
+      window['updateSelected_' + selectedId] = updateSelected;
+      
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const items = dropdown.querySelectorAll('label');
+        items.forEach(item => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+      });
+      
+      searchInput.addEventListener('focus', function() {
+        dropdown.style.display = 'block';
+      });
+      
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+      
+      dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateSelected);
+      });
+      
+      updateSelected();
+    }
+    
+    // Инициализация множественного выбора после загрузки DOM
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+        initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+        initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
+        initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+        initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+      });
+    } else {
+      initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+      initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+      initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
+      initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+      initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+    }
+  })();
+  
+  function prepareFormData(form) {
+    // Собираем множественные значения в скрытые поля
+    const unitSourceIds = Array.from(form.querySelectorAll('input[name="unit_source_ids"]:checked')).map(cb => cb.value);
+    const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
+    const cityIds = Array.from(form.querySelectorAll('input[name="city_ids"]:checked')).map(cb => cb.value);
+    const typeReceptionIds = Array.from(form.querySelectorAll('input[name="type_reception_ids"]:checked')).map(cb => cb.value);
+    const brands = Array.from(form.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
+    
+    // Удаляем старые скрытые поля
+    form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="type_reception_ids"], input[type="hidden"][name^="brands"]').forEach(el => el.remove());
+    
+    // Добавляем новые скрытые поля с объединенными значениями
+    if (unitSourceIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'unit_source_ids';
+      hidden.value = unitSourceIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (unitIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'unit_ids';
+      hidden.value = unitIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (cityIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'city_ids';
+      hidden.value = cityIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (typeReceptionIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'type_reception_ids';
+      hidden.value = typeReceptionIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (brands.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'brands';
+      hidden.value = brands.join(',');
+      form.appendChild(hidden);
+    }
+    
+    return true;
+  }
+  
   function resetFilters() {
-    document.querySelector('form').reset();
-    window.location.href = window.location.pathname;
+    document.getElementById('funnelFilterForm').reset();
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedTypeReceptions', 'selectedBrands'];
+    selectedDivs.forEach(id => {
+      const div = document.getElementById(id);
+      if (div) div.innerHTML = '';
+    });
   }
 
   // График по дням
