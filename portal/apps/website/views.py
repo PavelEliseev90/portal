@@ -8913,27 +8913,32 @@ def test(request):
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
     date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
-    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
-    count = len(estimations_id)
-    s = 0
-    for estimation_id in estimations_id:
-        estimation      = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-        estimation.save()
+    # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
+    # count = len(estimations_id)
+    # s = 0
+    # for estimation_id in estimations_id:
+    #     estimation      = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+    #     estimation.save()
 
-        # slug_chat       = 'rlk_' + str(estimation.rlk.id)
-        # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
-        # date_s_remote = None
-        # for message in messages_list:
-        #     if message.content.startswith('Согласована цена до осмотра автомобиля -'):
-        #         status = 3
-        #         date_s_remote = message.date
+    #     # slug_chat       = 'rlk_' + str(estimation.rlk.id)
+    #     # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
+    #     # date_s_remote = None
+    #     # for message in messages_list:
+    #     #     if message.content.startswith('Согласована цена до осмотра автомобиля -'):
+    #     #         status = 3
+    #     #         date_s_remote = message.date
 
-        # if date_s_remote != None:
-        #     estimation.date_s_remote = date_s_remote
-        #     estimation.save(update_fields=['date_s_remote']) 
+    #     # if date_s_remote != None:
+    #     #     estimation.date_s_remote = date_s_remote
+    #     #     estimation.save(update_fields=['date_s_remote']) 
         
-        s = s + 1 
-        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+    # from analytics.models import TradeInFunnel
+    # alls = TradeInFunnel.objects.all()
+    # for all in alls:
+    #     all.brand = all.brand.lower()
+    #     all.save()
 
     estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
     count = len(estimations_id)

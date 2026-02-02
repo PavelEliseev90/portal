@@ -813,15 +813,31 @@ class DocLO(models.Model):
             date_reception = None
             if self.active:
                 date_reception = self.dataTime
-                
-            TradeInFunnel.objects.update_or_create(
-                    rlk_id = self.rlk.id,
-                    defaults={
-                        'lo_number'                : lo_number,
-                        'date_reception_success'    : date_reception
-                    }
-                )
-        
+                unit_id                 = self.unit.id
+                unit_name               = self.unit.name
+                type_reception_id       = self.type_reception.id
+                type_reception_name     = self.type_reception.name
+
+                TradeInFunnel.objects.update_or_create(
+                        rlk_id = self.rlk.id,
+                        defaults={
+                            'lo_number'                : lo_number,
+                            'date_reception_success'    : date_reception,
+                            'unit_id'   : unit_id,
+                            'unit_name' : unit_name,
+                            'vin'       : self.vin,
+                            'type_reception_id'     : type_reception_id,
+                            'type_reception_name'   : type_reception_name,
+                        }
+                    )
+            else:
+                TradeInFunnel.objects.update_or_create(
+                        rlk_id = self.rlk.id,
+                        defaults={
+                            'lo_number'                : lo_number,
+                            'date_reception_success'    : None,
+                        }
+                    )
         except:
             s = 1
         
