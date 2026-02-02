@@ -367,7 +367,7 @@
         <h2>{{ params.totals.reception|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Автомобилей принято</p>
         <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%</span>
-        <div class="mt-2 d-flex gap-2">
+        <div class="mt-2 d-flex gap-2 flex-wrap">
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=reception&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-primary">
             👁️ Посмотреть
@@ -375,6 +375,10 @@
           <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=reception&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-outline-primary">
             📥 Выгрузить в Excel
+          </a>
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=reception_price_list&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-success">
+            💰 Выгрузка ЗП
           </a>
         </div>
       </article>

@@ -8644,9 +8644,9 @@ def tradein_funnel_analytics_export(request):
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
         return HttpResponseRedirect('/')
     
-    export_type = request.GET.get('export_type', '')  # rlk, before, after, reception
+    export_type = request.GET.get('export_type', '')  # rlk, before, after, reception, reception_price_list
     
-    if export_type not in ['rlk', 'before', 'after', 'reception']:
+    if export_type not in ['rlk', 'before', 'after', 'reception', 'reception_price_list']:
         return HttpResponse('Неверный тип экспорта', status=400)
     
     # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
@@ -8748,21 +8748,12 @@ def tradein_funnel_analytics_export(request):
     elif export_type == 'after':
         # После КД
         export_qs = qs.filter(valid_date_after)
+    elif export_type == 'reception_price_list':
+        # Прайс-лист для принятых (специальный формат)
+        export_qs = qs.filter(valid_date_reception)
     else:  # export_type == 'reception'
         # Принято
         export_qs = qs.filter(valid_date_reception)
-    
-    # Получаем данные для экспорта
-    export_data = export_qs.values(
-        'rlk_number',
-        'date_rlk',
-        'vin_trade_in',
-        'vin',
-        'unit_id',
-        'unit_name',
-        'unit_source_id',
-        'unit_source_name'
-    ).order_by('date_rlk', 'rlk_number')
     
     # Создаем Excel файл
     wb = Workbook()
@@ -8773,26 +8764,79 @@ def tradein_funnel_analytics_export(request):
         'rlk': 'Рабочие листы',
         'before': 'До КД / Дистанционно',
         'after': 'После КД',
-        'reception': 'Принято'
+        'reception': 'Принято',
+        'reception_price_list': 'Прайс лист'
     }
     ws.title = sheet_names.get(export_type, 'Экспорт')
     
-    # Заголовки
-    headers = ['Номер РЛ', 'Дата РЛ', 'VIN Trade-In', 'VIN', 'Подразделение ID', 'Подразделение', 'Источник ID', 'Источник']
-    ws.append(headers)
-    
-    # Данные
-    for item in export_data:
-        ws.append([
-            item.get('rlk_number', ''),
-            item.get('date_rlk', '') if item.get('date_rlk') else '',
-            item.get('vin_trade_in', ''),
-            item.get('vin', ''),
-            item.get('unit_id', '') if item.get('unit_id') else '',
-            item.get('unit_name', ''),
-            item.get('unit_source_id', '') if item.get('unit_source_id') else '',
-            item.get('unit_source_name', ''),
-        ])
+    # Специальная обработка для прайс-листа
+    if export_type == 'reception_price_list':
+        # Получаем данные для прайс-листа
+        export_data = export_qs.values(
+            'date_rlk',
+            'rlk_number',
+            'unit_source_name',
+            'unit_source_name',
+            'vin',
+            'vin_trade_in',
+            'date_reception_success',
+            'lo_number'
+        ).order_by('date_reception_success', 'rlk_number')
+        
+        # Заголовки для прайс-листа
+        headers = [
+            'Дата',
+            'Номер',
+            'Подразделение ДЦ',
+            'Источник',
+            'VIN',
+            'Дата принятия',
+            'Номер листа оценки'
+        ]
+        ws.append(headers)
+        
+        # Данные для прайс-листа
+        for item in export_data:
+            # Используем vin, если есть, иначе vin_trade_in
+            vin_value = item.get('vin', '') or item.get('vin_trade_in', '')
+            ws.append([
+                item.get('date_rlk', '') if item.get('date_rlk') else '',
+                item.get('rlk_number', ''),
+                item.get('unit_name', ''),
+                item.get('unit_source_name', ''),
+                vin_value,
+                item.get('date_reception_success', '') if item.get('date_reception_success') else '',
+                item.get('lo_number', ''),
+            ])
+    else:
+        # Стандартный экспорт для других типов
+        export_data = export_qs.values(
+            'rlk_number',
+            'date_rlk',
+            'vin_trade_in',
+            'vin',
+            'unit_id',
+            'unit_name',
+            'unit_source_id',
+            'unit_source_name'
+        ).order_by('date_rlk', 'rlk_number')
+        
+        # Заголовки
+        headers = ['Номер РЛ', 'Дата РЛ', 'VIN Trade-In', 'VIN', 'Подразделение ID', 'Подразделение', 'Источник ID', 'Источник']
+        ws.append(headers)
+        
+        # Данные
+        for item in export_data:
+            ws.append([
+                item.get('rlk_number', ''),
+                item.get('date_rlk', '') if item.get('date_rlk') else '',
+                item.get('vin_trade_in', ''),
+                item.get('vin', ''),
+                item.get('unit_id', '') if item.get('unit_id') else '',
+                item.get('unit_name', ''),
+                item.get('unit_source_id', '') if item.get('unit_source_id') else '',
+                item.get('unit_source_name', ''),
+            ])
     
     # Формируем ответ
     response = HttpResponse(
@@ -8803,7 +8847,8 @@ def tradein_funnel_analytics_export(request):
         'rlk': 'Рабочие_листы',
         'before': 'До_КД_Дистанционно',
         'after': 'После_КД',
-        'reception': 'Принято'
+        'reception': 'Принято',
+        'reception_price_list': 'Прайс_лист'
     }
     
     filename = f"export_{export_names.get(export_type, export_type)}_{date_start.strftime('%Y%m%d')}_{date_end.strftime('%Y%m%d')}.xlsx"
