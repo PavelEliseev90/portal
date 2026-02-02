@@ -8775,7 +8775,7 @@ def tradein_funnel_analytics_export(request):
         export_data = export_qs.values(
             'date_rlk',
             'rlk_number',
-            'unit_source_name',
+            'unit_name',
             'unit_source_name',
             'vin',
             'vin_trade_in',
@@ -8799,11 +8799,13 @@ def tradein_funnel_analytics_export(request):
         for item in export_data:
             # Используем vin, если есть, иначе vin_trade_in
             vin_value = item.get('vin', '') or item.get('vin_trade_in', '')
+            # Для источника: если unit_source_name пустое, берем unit_name
+            unit_source_value = item.get('unit_source_name', '') or item.get('unit_name', '')
             ws.append([
                 item.get('date_rlk', '') if item.get('date_rlk') else '',
                 item.get('rlk_number', ''),
-                item.get('unit_name', ''),
-                item.get('unit_source_name', ''),
+                unit_source_value,
+                unit_source_value,
                 vin_value,
                 item.get('date_reception_success', '') if item.get('date_reception_success') else '',
                 item.get('lo_number', ''),
