@@ -155,6 +155,19 @@
     vertical-align: middle;
     font-size: 0.9rem;
   }
+
+  .kors-panel__head {
+    user-select: none;
+  }
+
+  .kors-panel__head span[id$="Icon"] {
+    transition: transform 0.3s ease;
+    display: inline-block;
+  }
+
+  .kors-panel__head.collapsed span[id$="Icon"] {
+    transform: rotate(-90deg);
+  }
 </style>
 
 <div class="kors-funnel-page">
@@ -643,6 +656,92 @@
     </div>
   </div>
   {% endif %}
+
+  <!-- Статистика по оценщикам -->
+  {% if params.staff_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="toggleCollapse('staffStats')">
+      <h3>Статистика по оценщикам</h3>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-secondary" id="staffStatsBadge">{{ params.staff_stats|length }}</span>
+        <span id="staffStatsIcon" style="font-size: 1.2rem;">▼</span>
+      </div>
+    </div>
+    <div class="table-responsive mt-3 collapse show" id="staffStats">
+      <table class="table table-sm align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Оценщик</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">До КД</th>
+            <th class="text-end">После КД</th>
+            <th class="text-end">Принято</th>
+            <th class="text-end">Конверсия до КД</th>
+            <th class="text-end">Конверсия после КД</th>
+            <th class="text-end">Конверсия принято</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in params.staff_stats %}
+          <tr>
+            <td><strong>{{ stat.staff_name|default:"Не указан" }}</strong></td>
+            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Статистика по аналитикам -->
+  {% if params.analyst_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="toggleCollapse('analystStats')">
+      <h3>Статистика по аналитикам</h3>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-secondary" id="analystStatsBadge">{{ params.analyst_stats|length }}</span>
+        <span id="analystStatsIcon" style="font-size: 1.2rem;">▼</span>
+      </div>
+    </div>
+    <div class="table-responsive mt-3 collapse show" id="analystStats">
+      <table class="table table-sm align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Аналитик</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">До КД</th>
+            <th class="text-end">После КД</th>
+            <th class="text-end">Принято</th>
+            <th class="text-end">Конверсия до КД</th>
+            <th class="text-end">Конверсия после КД</th>
+            <th class="text-end">Конверсия принято</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in params.analyst_stats %}
+          <tr>
+            <td><strong>{{ stat.analyst_name|default:"Не указан" }}</strong></td>
+            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -781,6 +880,31 @@
       if (div) div.innerHTML = '';
     });
   }
+
+  // Функция для сворачивания/разворачивания блоков
+  function toggleCollapse(elementId) {
+    const element = document.getElementById(elementId);
+    const icon = document.getElementById(elementId + 'Icon');
+    const header = icon ? icon.closest('.kors-panel__head') : null;
+    
+    if (element) {
+      if (element.classList.contains('show')) {
+        element.classList.remove('show');
+        if (header) header.classList.add('collapsed');
+      } else {
+        element.classList.add('show');
+        if (header) header.classList.remove('collapsed');
+      }
+    }
+  }
+  
+  // Инициализация: сворачиваем блоки по умолчанию
+  document.addEventListener('DOMContentLoaded', function() {
+    // Можно оставить развернутыми по умолчанию или свернуть
+    // Для сворачивания по умолчанию раскомментируйте:
+    // toggleCollapse('staffStats');
+    // toggleCollapse('analystStats');
+  });
 
   // График по дням
   const chartData = JSON.parse('{{ params.chart_data|escapejs }}');

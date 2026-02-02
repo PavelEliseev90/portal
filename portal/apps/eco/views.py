@@ -8229,18 +8229,27 @@ def tradein_funnel_analytics(request):
             date_reception_success__gte=date_start,
             date_reception_success__lte=date_end
         )
-    date_now = DT.date(1, 1, 1)
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат (не null и не 1.1.1)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
+    
     # Оптимизированный подсчет общих показателей одним запросом
     totals_agg = qs.aggregate(
-        total_rlk=Count('rlk_id', filter=Q(date_rlk__isnull=False)),
-        total_before=Count('rlk_id', filter=Q(date_before_success__gt=date_now) | Q(date_remote_success__gt=date_now)),
-        total_after=Count('rlk_id', filter=Q(date_after_success__isnull=False) and Q(date_after_success__gt=date_now) ),
-        total_reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False)),
+        total_rlk=Count('rlk_id', filter=valid_date_rlk),
+        total_before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
+        total_after=Count('rlk_id', filter=valid_date_after),
+        total_reception=Count('rlk_id', filter=valid_date_reception),
         total_taxi=Count('rlk_id', filter=Q(taxi=True)),
         total_carsharing=Count('rlk_id', filter=Q(carsharing=True)),
         total_iznos=Count('rlk_id', filter=Q(iznos=True)),
         total_auction=Count('rlk_id', filter=Q(auction=True)),
-        total_no_diag=Count('rlk_id', filter=Q(diagostica=False) & Q(date_after_success__gt=date_now)),
+        total_no_diag=Count('rlk_id', filter=Q(diagostica=False) & valid_date_after),
         total_all=Count('rlk_id'),
         # Сравнение с авторасчетом - дистанционная оценка
         remote_below=Count('rlk_id', filter=Q(comparison_remote_type=-1)),
@@ -8308,9 +8317,9 @@ def tradein_funnel_analytics(request):
     # Статистика по типам приема - один запрос, сортировка по наименованию
     type_reception_stats = list(qs.values('type_reception_id', 'type_reception_name').annotate(
         total=Count('rlk_id'),
-        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
-        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
-        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+        before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
+        after=Count('rlk_id', filter=valid_date_after),
+        reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('type_reception_name'))
     
     for stat in type_reception_stats:
@@ -8323,9 +8332,9 @@ def tradein_funnel_analytics(request):
     # Статистика по ценовым группам - один запрос
     price_group_stats_raw = list(qs.exclude(zg_name='').values('zg_name').annotate(
         total=Count('rlk_id'),
-        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
-        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
-        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+        before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
+        after=Count('rlk_id', filter=valid_date_after),
+        reception=Count('rlk_id', filter=valid_date_reception)
     ))
     
     # Функция для извлечения числового значения из названия ценовой группы
@@ -8354,9 +8363,9 @@ def tradein_funnel_analytics(request):
     # Статистика по городам - один запрос
     city_stats = list(qs.exclude(city_name='').values('city_name').annotate(
         total=Count('rlk_id'),
-        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
-        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
-        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+        before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
+        after=Count('rlk_id', filter=valid_date_after),
+        reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('city_name'))
     
     for stat in city_stats:
@@ -8367,15 +8376,106 @@ def tradein_funnel_analytics(request):
     # Статистика по брендам - один запрос
     brand_stats = list(qs.exclude(brand='').values('brand').annotate(
         total=Count('rlk_id'),
-        before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
-        after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
-        reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False))
+        before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
+        after=Count('rlk_id', filter=valid_date_after),
+        reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('brand'))
     
     for stat in brand_stats:
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+    
+    # Статистика по оценщикам - один запрос
+    staff_stats = list(qs.exclude(staff_id__isnull=True).values('staff_id', 'staff_name').annotate(
+        total=Count('rlk_id'),
+        before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
+        after=Count('rlk_id', filter=valid_date_after),
+        reception=Count('rlk_id', filter=valid_date_reception)
+    ).order_by('staff_name'))
+    
+    for stat in staff_stats:
+        stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
+        stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
+        stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+        if not stat['staff_name']:
+            stat['staff_name'] = 'Не указан'
+    
+    # Статистика по аналитикам - суммирование по analyst_remote_id, analyst_before_id, analyst_after_id
+    # Собираем все уникальные ID аналитиков из трех полей
+    analyst_ids_remote = set(qs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
+    analyst_ids_before = set(qs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
+    analyst_ids_after = set(qs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
+    all_analyst_ids = analyst_ids_remote | analyst_ids_before | analyst_ids_after
+    
+    # Создаем словарь для хранения статистики по аналитикам
+    analyst_stats_dict = {}
+    
+    # Для каждого аналитика собираем статистику
+    for analyst_id in all_analyst_ids:
+        if analyst_id is None:
+            continue
+        
+        # Получаем имя аналитика из любого из полей
+        analyst_name = None
+        analyst_name_obj = qs.filter(
+            Q(analyst_remote_id=analyst_id) | Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id)
+        ).exclude(
+            Q(analyst_remote_name='') & Q(analyst_before_name='') & Q(analyst_after_name='')
+        ).first()
+        
+        if analyst_name_obj:
+            if analyst_name_obj.analyst_remote_id == analyst_id and analyst_name_obj.analyst_remote_name:
+                analyst_name = analyst_name_obj.analyst_remote_name
+            elif analyst_name_obj.analyst_before_id == analyst_id and analyst_name_obj.analyst_before_name:
+                analyst_name = analyst_name_obj.analyst_before_name
+            elif analyst_name_obj.analyst_after_id == analyst_id and analyst_name_obj.analyst_after_name:
+                analyst_name = analyst_name_obj.analyst_after_name
+        
+        if not analyst_name:
+            analyst_name = f'Аналитик #{analyst_id}'
+        
+        # Подсчитываем статистику для этого аналитика
+        # Total: уникальные записи (rlk_id), где аналитик участвовал в любом из этапов
+        analyst_qs = qs.filter(
+            Q(analyst_remote_id=analyst_id) | Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id)
+        )
+        
+        total = analyst_qs.values('rlk_id').distinct().count()
+        
+        # Before: уникальные записи, где аналитик был в remote или before, и есть валидная успешная дата
+        before_qs = analyst_qs.filter(
+            (Q(analyst_remote_id=analyst_id) & valid_date_remote) |
+            (Q(analyst_before_id=analyst_id) & valid_date_before)
+        )
+        before = before_qs.values('rlk_id').distinct().count()
+        
+        # After: уникальные записи, где аналитик был в after, и есть валидная успешная дата
+        after_qs = analyst_qs.filter(
+            Q(analyst_after_id=analyst_id) & valid_date_after
+        )
+        after = after_qs.values('rlk_id').distinct().count()
+        
+        # Reception: уникальные записи, где аналитик участвовал и есть валидная дата принятия
+        reception_qs = analyst_qs.filter(
+            valid_date_reception
+        )
+        reception = reception_qs.values('rlk_id').distinct().count()
+        
+        analyst_stats_dict[analyst_id] = {
+            'analyst_id': analyst_id,
+            'analyst_name': analyst_name,
+            'total': total,
+            'before': before,
+            'after': after,
+            'reception': reception,
+            'conv_before': (before / total * 100) if total > 0 else 0,
+            'conv_after': (after / before * 100) if before > 0 else 0,
+            'conv_reception': (reception / after * 100) if after > 0 else 0,
+        }
+    
+    # Преобразуем словарь в список и сортируем по имени
+    analyst_stats = sorted(analyst_stats_dict.values(), key=lambda x: x['analyst_name'])
     
     # График по дням - оптимизированный запрос
     from datetime import timedelta
@@ -8412,8 +8512,13 @@ def tradein_funnel_analytics(request):
     }
     
     # Оптимизированный подсчет по дням с использованием TruncDate
+    date_invalid_chart = DT.date(1, 1, 1)
     for field_name, key in date_fields:
-        daily_counts = qs.filter(**{f'{field_name}__isnull': False}).annotate(
+        daily_counts = qs.filter(
+            **{f'{field_name}__isnull': False}
+        ).exclude(
+            **{field_name: date_invalid_chart}
+        ).annotate(
             day=TruncDate(field_name)
         ).values('day').annotate(count=Count('rlk_id'))
         
@@ -8522,6 +8627,8 @@ def tradein_funnel_analytics(request):
         'price_group_stats': price_group_stats,
         'city_stats': city_stats,
         'brand_stats': brand_stats,
+        'staff_stats': staff_stats,
+        'analyst_stats': analyst_stats,
         'chart_data': chart_data_json,
     }
     
@@ -8621,21 +8728,29 @@ def tradein_funnel_analytics_export(request):
             date_reception_success__lte=date_end
         )
     
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат (не null и не 1.1.1)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
+    
     # Фильтруем по типу экспорта
     if export_type == 'rlk':
         # Рабочие листы
-        export_qs = qs.filter(date_rlk__isnull=False)
+        export_qs = qs.filter(valid_date_rlk)
     elif export_type == 'before':
         # До КД / Дистанционно
-        export_qs = qs.filter(
-            Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
-        )
+        export_qs = qs.filter(valid_date_before | valid_date_remote)
     elif export_type == 'after':
         # После КД
-        export_qs = qs.filter(date_after_success__isnull=False)
+        export_qs = qs.filter(valid_date_after)
     else:  # export_type == 'reception'
         # Принято
-        export_qs = qs.filter(date_reception_success__isnull=False)
+        export_qs = qs.filter(valid_date_reception)
     
     # Получаем данные для экспорта
     export_data = export_qs.values(
@@ -8792,20 +8907,29 @@ def tradein_funnel_analytics_detail(request):
             date_reception_success__gte=date_start,
             date_reception_success__lte=date_end
         )
-    dt_now = DT.date(1,1,1)
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат (не null и не 1.1.1)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
+    
     # Применяем дополнительный фильтр по типу
     filter_title = ''
     if filter_type == 'rlk':
-        qs = qs.filter(date_rlk__isnull=False)
+        qs = qs.filter(valid_date_rlk)
         filter_title = 'Рабочие листы'
     elif filter_type == 'before':
-        qs = qs.filter(Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False))
+        qs = qs.filter(valid_date_before | valid_date_remote)
         filter_title = 'До КД / Дистанционно'
     elif filter_type == 'after':
-        qs = qs.filter(date_after_success__isnull=False)
+        qs = qs.filter(valid_date_after)
         filter_title = 'После КД'
     elif filter_type == 'reception':
-        qs = qs.filter(date_reception_success__isnull=False)
+        qs = qs.filter(valid_date_reception)
         filter_title = 'Принято'
     elif filter_type == 'taxi':
         qs = qs.filter(taxi=True)
@@ -8820,7 +8944,7 @@ def tradein_funnel_analytics_detail(request):
         qs = qs.filter(auction=True)
         filter_title = 'Аукцион'
     elif filter_type == 'no_diag':
-        qs = qs.filter(Q(diagostica=False) & Q(date_after_success__gt=dt_now)) 
+        qs = qs.filter(Q(diagostica=False) & valid_date_after) 
         filter_title = 'Без диагностики'
     elif filter_type == 'remote_below':
         qs = qs.filter(comparison_remote_type=-1)
@@ -8851,20 +8975,20 @@ def tradein_funnel_analytics_detail(request):
         filter_title = 'После КД - Выше авторасчета'
     elif filter_type == 'rejected_before':
         # Не дошли до КД/дистанционной оценки
-        qs = qs.filter(date_rlk__isnull=False).exclude(
-            Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        qs = qs.filter(valid_date_rlk).exclude(
+            valid_date_before | valid_date_remote
         )
         filter_title = 'Не дошли до КД / Дистанционной оценки'
     elif filter_type == 'rejected_after':
         # Не дошли до после КД
         qs = qs.filter(
-            Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
-        ).exclude(date_after_success__isnull=False)
+            valid_date_before | valid_date_remote
+        ).exclude(valid_date_after)
         filter_title = 'Не дошли до после КД'
     elif filter_type == 'rejected_reception':
         # Не приняты
-        qs = qs.filter(date_after_success__isnull=False).exclude(
-            date_reception_success__isnull=False
+        qs = qs.filter(valid_date_after).exclude(
+            valid_date_reception
         )
         filter_title = 'Не приняты'
     else:
@@ -9018,34 +9142,44 @@ def tradein_funnel_analytics_rejected(request):
             date_reception_success__lte=date_end
         )
     
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат (не null и не 1.1.1)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
+    
     # Подсчитываем отвалившихся на каждом этапе
     # 1. Не дошли до КД/дистанционной оценки - есть date_rlk, но нет date_before_success и date_remote_success
     rejected_before = qs.filter(
-        date_rlk__isnull=False
+        valid_date_rlk
     ).exclude(
-        Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        valid_date_before | valid_date_remote
     ).count()
     
     # 2. Не дошли до после КД - есть date_before_success или date_remote_success, но нет date_after_success
     rejected_after = qs.filter(
-        Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        valid_date_before | valid_date_remote
     ).exclude(
-        date_after_success__isnull=False
+        valid_date_after
     ).count()
     
     # 3. Не приняты - есть date_after_success, но нет date_reception_success
     rejected_reception = qs.filter(
-        date_after_success__isnull=False
+        valid_date_after
     ).exclude(
-        date_reception_success__isnull=False
+        valid_date_reception
     ).count()
     
     # Общее количество с рабочими листами
-    total_rlk = qs.filter(date_rlk__isnull=False).count()
+    total_rlk = qs.filter(valid_date_rlk).count()
     total_before = qs.filter(
-        Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)
+        valid_date_before | valid_date_remote
     ).count()
-    total_after = qs.filter(date_after_success__isnull=False).count()
+    total_after = qs.filter(valid_date_after).count()
     
     # Проценты отвалившихся
     pct_rejected_before = (rejected_before / total_rlk * 100) if total_rlk > 0 else 0
