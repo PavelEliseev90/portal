@@ -508,16 +508,18 @@
         </thead>
         <tbody>
           {% for stat in params.type_reception_stats %}
-          <tr>
-            <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
-            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
-          </tr>
+            {% if stat.type_reception_name != '' %}
+              <tr>
+                <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
+                <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
+                <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
+                <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
+                <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+              </tr>
+            {% endif %}
           {% endfor %}
         </tbody>
       </table>

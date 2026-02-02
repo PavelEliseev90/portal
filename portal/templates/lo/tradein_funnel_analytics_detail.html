@@ -94,7 +94,7 @@
 <div class="kors-funnel-page">
   <div class="kors-funnel-header">
     <h2>Детали воронки Trade-In: {{ params.filter_title }}</h2>
-    <p>Всего записей: {{ params.total_count }} | На странице: {{ page_obj|length }} | Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</p>
+    <p>Всего записей: {{ params.total_count }} | На странице: {{ params.page_obj|length }} | Страница {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}</p>
     {% if page_obj.paginator.count > 0 and page_obj|length == 0 %}
       <div class="alert alert-warning mt-2">
         <strong>Внимание:</strong> Обнаружена проблема с отображением данных. Попробуйте перейти на первую страницу или обновить фильтры.
@@ -127,7 +127,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for item in page_obj %}
+          {% for item in params.page_obj %}
           <tr>
             <td>
               {% if item.rlk_id %}
@@ -170,10 +170,10 @@
       </table>
     </div>
 
-    {% if page_obj.has_other_pages %}
+    {% if params.page_obj.has_other_pages %}
     <nav aria-label="Навигация по страницам">
       <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
+        {% if params.page_obj.has_previous %}
           <li class="page-item">
             <a class="page-link" href="?filter_type={{ params.filter_type }}&page=1{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Первая</a>
           </li>
@@ -191,16 +191,16 @@
 
         <li class="page-item active">
           <span class="page-link">
-            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            Страница {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}
           </span>
         </li>
 
-        {% if page_obj.has_next %}
+        {% if params.page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
+            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ params.page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
           </li>
           <li class="page-item">
-            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Последняя</a>
+            <a class="page-link" href="?filter_type={{ params.filter_type }}&page={{ params.page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'filter_type' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Последняя</a>
           </li>
         {% else %}
           <li class="page-item disabled">

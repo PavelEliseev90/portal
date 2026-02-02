@@ -8229,18 +8229,18 @@ def tradein_funnel_analytics(request):
             date_reception_success__gte=date_start,
             date_reception_success__lte=date_end
         )
-    
+    date_now = DT.date(1, 1, 1)
     # Оптимизированный подсчет общих показателей одним запросом
     totals_agg = qs.aggregate(
         total_rlk=Count('rlk_id', filter=Q(date_rlk__isnull=False)),
-        total_before=Count('rlk_id', filter=Q(date_before_success__isnull=False) | Q(date_remote_success__isnull=False)),
-        total_after=Count('rlk_id', filter=Q(date_after_success__isnull=False)),
+        total_before=Count('rlk_id', filter=Q(date_before_success__gt=date_now) | Q(date_remote_success__gt=date_now)),
+        total_after=Count('rlk_id', filter=Q(date_after_success__isnull=False) and Q(date_after_success__gt=date_now) ),
         total_reception=Count('rlk_id', filter=Q(date_reception_success__isnull=False)),
         total_taxi=Count('rlk_id', filter=Q(taxi=True)),
         total_carsharing=Count('rlk_id', filter=Q(carsharing=True)),
         total_iznos=Count('rlk_id', filter=Q(iznos=True)),
         total_auction=Count('rlk_id', filter=Q(auction=True)),
-        total_no_diag=Count('rlk_id', filter=Q(diagostica=False)),
+        total_no_diag=Count('rlk_id', filter=Q(diagostica=False) & Q(date_after_success__gt=date_now)),
         total_all=Count('rlk_id'),
         # Сравнение с авторасчетом - дистанционная оценка
         remote_below=Count('rlk_id', filter=Q(comparison_remote_type=-1)),
@@ -8333,10 +8333,10 @@ def tradein_funnel_analytics(request):
         if not zg_name:
             return 9999
         # Извлекаем числа из строки
-        numbers = re.findall(r'\d+', zg_name)
+        numbers = zg_name.replace(' ', '').replace('+', '1')
         if numbers:
             # Берем первое число
-            num = int(numbers[0])
+            num = int(numbers)
             # Специальная обработка для "5000+"
             if '5000+' in zg_name or '5000 +' in zg_name:
                 return 5001  # Больше 5000
@@ -8792,7 +8792,7 @@ def tradein_funnel_analytics_detail(request):
             date_reception_success__gte=date_start,
             date_reception_success__lte=date_end
         )
-    
+    dt_now = DT.date(1,1,1)
     # Применяем дополнительный фильтр по типу
     filter_title = ''
     if filter_type == 'rlk':
@@ -8820,7 +8820,7 @@ def tradein_funnel_analytics_detail(request):
         qs = qs.filter(auction=True)
         filter_title = 'Аукцион'
     elif filter_type == 'no_diag':
-        qs = qs.filter(diagostica=False)
+        qs = qs.filter(Q(diagostica=False) & Q(date_after_success__gt=dt_now)) 
         filter_title = 'Без диагностики'
     elif filter_type == 'remote_below':
         qs = qs.filter(comparison_remote_type=-1)
