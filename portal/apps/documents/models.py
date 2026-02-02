@@ -626,7 +626,8 @@ class DocRLK(models.Model):
                     if name.find('КорсАвто') > -1:
                         return 'КорсАвто'
                     name = name.replace('Тула', '').replace('Калуга', '').replace('Обнинск', '').replace('Курск (50 лет Октября)', '').replace('Курск', '').replace('Новомосковск', '').replace('Серпухов', '').replace('Коломна', '').replace('Ногинск', '').replace('Орел', '').replace('Ярославль', '')
-                    return name.replace('ОП ', '').replace('ДЦ ', '').replace('Техцентр  ', '').replace(city_name, '').strip()
+                    name = name.replace('ОП ', '').replace('ДЦ ', '').replace('Техцентр  ', '').replace(city_name, '').strip()
+                    return name.lower()
                 except: 
                     return name  
                 return ''
@@ -812,7 +813,7 @@ class DocLO(models.Model):
             date_reception = None
             if self.active:
                 date_reception = self.dataTime
-
+                
             TradeInFunnel.objects.update_or_create(
                     rlk_id = self.rlk.id,
                     defaults={
