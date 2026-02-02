@@ -8874,18 +8874,43 @@ def tradein_funnel_analytics_detail(request):
     total_count = qs.count()
     
     # Получаем данные для таблицы с сортировкой
-    # Используем простую сортировку, NULL значения будут в конце
-    items = qs.order_by('-date_rlk', '-rlk_id')
+    # Сортируем по rlk_id (всегда есть) в обратном порядке
+    # Используем values() для получения всех нужных полей
+    items = qs.order_by('-rlk_id')
     
     # Пагинация
-    from django.core.paginator import Paginator
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    try:
+        page_number = int(request.GET.get('page', 1))
+        if page_number < 1:
+            page_number = 1
+    except (ValueError, TypeError):
+        page_number = 1
+    
     paginator = Paginator(items, 50)
-    page_number = request.GET.get('page', 1)
+    
     try:
         page_obj = paginator.get_page(page_number)
-    except Exception as e:
-        # В случае ошибки возвращаем первую страницу
+    except PageNotAnInteger:
+        # Если page не является целым числом, показываем первую страницу
         page_obj = paginator.get_page(1)
+    except EmptyPage:
+        # Если page вне диапазона, показываем последнюю страницу
+        page_obj = paginator.get_page(paginator.num_pages)
+    except Exception as e:
+        # В случае другой ошибки возвращаем первую страницу
+        page_obj = paginator.get_page(1)
+    
+    # Проверяем, что page_obj содержит данные
+    # Если нет, пытаемся получить данные напрямую
+    if total_count > 0 and len(page_obj) == 0:
+        # Пробуем получить данные без пагинации для отладки
+        test_items = list(items[:5])
+        # Если тестовые данные есть, значит проблема в пагинации
+        # В этом случае создаем пагинатор заново
+        if test_items:
+            paginator = Paginator(items, 50)
+            page_obj = paginator.get_page(1)
     
     params = {
         'type': 'eco_funnel',
