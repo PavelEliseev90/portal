@@ -8804,7 +8804,7 @@ def tradein_funnel_analytics_export(request):
             ws.append([
                 item.get('date_rlk', '') if item.get('date_rlk') else '',
                 item.get('rlk_number', ''),
-                item.get('unit_name', ''),
+                unit_source_value,
                 unit_source_value,
                 vin_value,
                 item.get('date_reception_success', '') if item.get('date_reception_success') else '',
