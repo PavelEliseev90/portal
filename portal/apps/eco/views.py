@@ -8329,6 +8329,18 @@ def tradein_funnel_analytics(request):
         if not stat['type_reception_name']:
             stat['type_reception_name'] = 'Не указан'
     
+    # Итоги для статистики по типам приема
+    type_reception_totals = {
+        'type_reception_name': 'Итого',
+        'total': sum(s['total'] for s in type_reception_stats),
+        'before': sum(s['before'] for s in type_reception_stats),
+        'after': sum(s['after'] for s in type_reception_stats),
+        'reception': sum(s['reception'] for s in type_reception_stats),
+    }
+    type_reception_totals['conv_before'] = (type_reception_totals['before'] / type_reception_totals['total'] * 100) if type_reception_totals['total'] > 0 else 0
+    type_reception_totals['conv_after'] = (type_reception_totals['after'] / type_reception_totals['before'] * 100) if type_reception_totals['before'] > 0 else 0
+    type_reception_totals['conv_reception'] = (type_reception_totals['reception'] / type_reception_totals['after'] * 100) if type_reception_totals['after'] > 0 else 0
+    
     # Статистика по ценовым группам - один запрос
     price_group_stats_raw = list(qs.exclude(zg_name='').values('zg_name').annotate(
         total=Count('rlk_id'),
@@ -8360,6 +8372,18 @@ def tradein_funnel_analytics(request):
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
     
+    # Итоги для статистики по ценовым группам
+    price_group_totals = {
+        'zg_name': 'Итого',
+        'total': sum(s['total'] for s in price_group_stats),
+        'before': sum(s['before'] for s in price_group_stats),
+        'after': sum(s['after'] for s in price_group_stats),
+        'reception': sum(s['reception'] for s in price_group_stats),
+    }
+    price_group_totals['conv_before'] = (price_group_totals['before'] / price_group_totals['total'] * 100) if price_group_totals['total'] > 0 else 0
+    price_group_totals['conv_after'] = (price_group_totals['after'] / price_group_totals['before'] * 100) if price_group_totals['before'] > 0 else 0
+    price_group_totals['conv_reception'] = (price_group_totals['reception'] / price_group_totals['after'] * 100) if price_group_totals['after'] > 0 else 0
+    
     # Статистика по городам - один запрос
     city_stats = list(qs.exclude(city_name='').values('city_name').annotate(
         total=Count('rlk_id'),
@@ -8373,6 +8397,18 @@ def tradein_funnel_analytics(request):
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
     
+    # Итоги для статистики по городам
+    city_totals = {
+        'city_name': 'Итого',
+        'total': sum(s['total'] for s in city_stats),
+        'before': sum(s['before'] for s in city_stats),
+        'after': sum(s['after'] for s in city_stats),
+        'reception': sum(s['reception'] for s in city_stats),
+    }
+    city_totals['conv_before'] = (city_totals['before'] / city_totals['total'] * 100) if city_totals['total'] > 0 else 0
+    city_totals['conv_after'] = (city_totals['after'] / city_totals['before'] * 100) if city_totals['before'] > 0 else 0
+    city_totals['conv_reception'] = (city_totals['reception'] / city_totals['after'] * 100) if city_totals['after'] > 0 else 0
+    
     # Статистика по брендам - один запрос
     brand_stats = list(qs.exclude(brand='').values('brand').annotate(
         total=Count('rlk_id'),
@@ -8385,6 +8421,18 @@ def tradein_funnel_analytics(request):
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
+    
+    # Итоги для статистики по брендам
+    brand_totals = {
+        'brand': 'Итого',
+        'total': sum(s['total'] for s in brand_stats),
+        'before': sum(s['before'] for s in brand_stats),
+        'after': sum(s['after'] for s in brand_stats),
+        'reception': sum(s['reception'] for s in brand_stats),
+    }
+    brand_totals['conv_before'] = (brand_totals['before'] / brand_totals['total'] * 100) if brand_totals['total'] > 0 else 0
+    brand_totals['conv_after'] = (brand_totals['after'] / brand_totals['before'] * 100) if brand_totals['before'] > 0 else 0
+    brand_totals['conv_reception'] = (brand_totals['reception'] / brand_totals['after'] * 100) if brand_totals['after'] > 0 else 0
     
     # Статистика по оценщикам - один запрос
     staff_stats = list(qs.exclude(staff_id__isnull=True).values('staff_id', 'staff_name').annotate(
@@ -8400,6 +8448,18 @@ def tradein_funnel_analytics(request):
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
         if not stat['staff_name']:
             stat['staff_name'] = 'Не указан'
+    
+    # Итоги для статистики по оценщикам
+    staff_totals = {
+        'staff_name': 'Итого',
+        'total': sum(s['total'] for s in staff_stats),
+        'before': sum(s['before'] for s in staff_stats),
+        'after': sum(s['after'] for s in staff_stats),
+        'reception': sum(s['reception'] for s in staff_stats),
+    }
+    staff_totals['conv_before'] = (staff_totals['before'] / staff_totals['total'] * 100) if staff_totals['total'] > 0 else 0
+    staff_totals['conv_after'] = (staff_totals['after'] / staff_totals['before'] * 100) if staff_totals['before'] > 0 else 0
+    staff_totals['conv_reception'] = (staff_totals['reception'] / staff_totals['after'] * 100) if staff_totals['after'] > 0 else 0
     
     # Статистика по аналитикам - суммирование по analyst_remote_id, analyst_before_id, analyst_after_id
     # Собираем все уникальные ID аналитиков из трех полей
@@ -8476,6 +8536,18 @@ def tradein_funnel_analytics(request):
     
     # Преобразуем словарь в список и сортируем по имени
     analyst_stats = sorted(analyst_stats_dict.values(), key=lambda x: x['analyst_name'])
+    
+    # Итоги для статистики по аналитикам
+    analyst_totals = {
+        'analyst_name': 'Итого',
+        'total': sum(s['total'] for s in analyst_stats),
+        'before': sum(s['before'] for s in analyst_stats),
+        'after': sum(s['after'] for s in analyst_stats),
+        'reception': sum(s['reception'] for s in analyst_stats),
+    }
+    analyst_totals['conv_before'] = (analyst_totals['before'] / analyst_totals['total'] * 100) if analyst_totals['total'] > 0 else 0
+    analyst_totals['conv_after'] = (analyst_totals['after'] / analyst_totals['before'] * 100) if analyst_totals['before'] > 0 else 0
+    analyst_totals['conv_reception'] = (analyst_totals['reception'] / analyst_totals['after'] * 100) if analyst_totals['after'] > 0 else 0
     
     # График по дням - оптимизированный запрос
     from datetime import timedelta
@@ -8660,11 +8732,17 @@ def tradein_funnel_analytics(request):
             },
         },
         'type_reception_stats': type_reception_stats,
+        'type_reception_totals': type_reception_totals,
         'price_group_stats': price_group_stats,
+        'price_group_totals': price_group_totals,
         'city_stats': city_stats,
+        'city_totals': city_totals,
         'brand_stats': brand_stats,
+        'brand_totals': brand_totals,
         'staff_stats': staff_stats,
+        'staff_totals': staff_totals,
         'analyst_stats': analyst_stats,
+        'analyst_totals': analyst_totals,
         'chart_data': chart_data_json,
     }
     

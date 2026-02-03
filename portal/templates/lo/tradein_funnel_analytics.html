@@ -538,6 +538,18 @@
               </tr>
             {% endif %}
           {% endfor %}
+          {% if params.type_reception_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.type_reception_totals.type_reception_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -577,6 +589,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.price_group_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.price_group_totals.zg_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -616,6 +640,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.city_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.city_totals.city_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -659,6 +695,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.brand_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.brand_totals.brand }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -702,6 +750,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.staff_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.staff_totals.staff_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -745,6 +805,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.analyst_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.analyst_totals.analyst_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
