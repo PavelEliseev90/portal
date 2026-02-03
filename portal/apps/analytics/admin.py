@@ -86,6 +86,15 @@ class TradeInFunnelSnapshotAdmin(admin.ModelAdmin):
 class TradeInFunnelAdmin(admin.ModelAdmin):
     list_display = (
         'rlk_id',
+        'date_rlk',
+        'date_start_estimation',
+        'date_remote_success',
+        'date_before_success',
+        'date_diagnostic_success',
+        'date_after_success',
+        'date_reception_success',
+        'date_archive',
+        'date_sale',
         'vin',
         'unit_name',
         'brand',
