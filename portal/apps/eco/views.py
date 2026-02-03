@@ -8543,11 +8543,22 @@ def tradein_funnel_analytics(request):
     })
     
     # Загружаем справочники для фильтров - оптимизированно
-    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
-    
-    # Получаем уникальные source_unit_id из qs для оптимизации
-    source_unit_ids = list(qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
-    source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
+    # Если выбраны города, фильтруем подразделения и источники по этим городам
+    if city_ids:
+        # Фильтруем подразделения по выбранным городам
+        unit_ids_from_cities = list(qs.filter(city_id__in=city_ids).exclude(unit_id__isnull=True).values_list('unit_id', flat=True).distinct())
+        units = RefUnit.objects.filter(id__in=unit_ids_from_cities, buauto=True, active_eco=True).exclude(name='').order_by('name') if unit_ids_from_cities else RefUnit.objects.none()
+        
+        # Фильтруем источники по выбранным городам
+        source_unit_ids = list(qs.filter(city_id__in=city_ids).exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+        source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
+    else:
+        # Если города не выбраны, показываем все доступные подразделения
+        units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+        
+        # Получаем уникальные source_unit_id из qs для оптимизации
+        source_unit_ids = list(qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+        source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
     
     # Получаем уникальные города из TradeInFunnel
     city_ids_from_funnel = list(qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
@@ -8560,6 +8571,29 @@ def tradein_funnel_analytics(request):
     # Получаем уникальные типы приема из TradeInFunnel
     type_reception_ids_from_funnel = list(qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
+    
+    # Создаем словари для связи городов с подразделениями и источниками (для JavaScript фильтрации)
+    city_unit_map = {}  # {city_id: [unit_id1, unit_id2, ...]}
+    city_source_unit_map = {}  # {city_id: [source_unit_id1, source_unit_id2, ...]}
+    
+    # Получаем все связи из qs
+    city_unit_data = qs.exclude(city_id__isnull=True, unit_id__isnull=True).values('city_id', 'unit_id').distinct()
+    for item in city_unit_data:
+        city_id = item['city_id']
+        unit_id = item['unit_id']
+        if city_id not in city_unit_map:
+            city_unit_map[city_id] = []
+        if unit_id not in city_unit_map[city_id]:
+            city_unit_map[city_id].append(unit_id)
+    
+    city_source_unit_data = qs.exclude(city_id__isnull=True, unit_source_id__isnull=True).values('city_id', 'unit_source_id').distinct()
+    for item in city_source_unit_data:
+        city_id = item['city_id']
+        source_unit_id = item['unit_source_id']
+        if city_id not in city_source_unit_map:
+            city_source_unit_map[city_id] = []
+        if source_unit_id not in city_source_unit_map[city_id]:
+            city_source_unit_map[city_id].append(source_unit_id)
     
     params = {
         'type': 'eco_funnel',
@@ -8589,6 +8623,8 @@ def tradein_funnel_analytics(request):
         'cities': cities,
         'type_receptions': type_receptions,
         'brands': brands_list,
+        'city_unit_map': city_unit_map,
+        'city_source_unit_map': city_source_unit_map,
         'totals': {
             'rlk': total_rlk,
             'before': total_before,
