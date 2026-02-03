@@ -685,38 +685,53 @@
       <p class="text-muted mb-0">Динамика событий воронки по дням</p>
     </div>
     <div class="mt-3">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <h5 class="mb-2">Рабочие листы ОП</h5>
-          <canvas id="chartOpRlk" style="max-height: 250px;"></canvas>
+      <!-- Общий график по всем событиям -->
+      <div class="mb-4">
+        <h4 class="mb-3">Общий график всех событий</h4>
+        <canvas id="chartAll" style="max-height: 400px;"></canvas>
+      </div>
+      
+      <!-- Отдельные графики по событиям (сворачиваемые) -->
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3" style="cursor: pointer;" onclick="toggleCollapse('individualCharts')">
+          <h4 class="mb-0">Отдельные графики по событиям</h4>
+          <span id="individualChartsIcon" style="font-size: 1.2rem;">▼</span>
         </div>
-        <div class="col-md-6">
-          <h5 class="mb-2">Рабочие листы Trade-in</h5>
-          <canvas id="chartRlk" style="max-height: 250px;"></canvas>
-        </div>
-        <div class="col-md-6">
-          <h5 class="mb-2">Оценка</h5>
-          <canvas id="chartEstimation" style="max-height: 250px;"></canvas>
-        </div>
-        <div class="col-md-6">
-          <h5 class="mb-2">Дистанционно</h5>
-          <canvas id="chartRemote" style="max-height: 250px;"></canvas>
-        </div>
-        <div class="col-md-6">
-          <h5 class="mb-2">До КД</h5>
-          <canvas id="chartBefore" style="max-height: 250px;"></canvas>
-        </div>
-        <div class="col-md-6">
-          <h5 class="mb-2">Диагностика</h5>
-          <canvas id="chartDiagnostic" style="max-height: 250px;"></canvas>
-        </div>
-        <div class="col-md-6">
-          <h5 class="mb-2">После КД</h5>
-          <canvas id="chartAfter" style="max-height: 250px;"></canvas>
-        </div>
-        <div class="col-md-12">
-          <h5 class="mb-2">Принято</h5>
-          <canvas id="chartReception" style="max-height: 250px;"></canvas>
+        <div class="collapse show" id="individualCharts">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <h5 class="mb-2">Рабочие листы ОП</h5>
+              <canvas id="chartOpRlk" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-2">Рабочие листы Trade-in</h5>
+              <canvas id="chartRlk" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-2">Оценка</h5>
+              <canvas id="chartEstimation" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-2">Дистанционно</h5>
+              <canvas id="chartRemote" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-2">До КД</h5>
+              <canvas id="chartBefore" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-2">Диагностика</h5>
+              <canvas id="chartDiagnostic" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-2">После КД</h5>
+              <canvas id="chartAfter" style="max-height: 250px;"></canvas>
+            </div>
+            <div class="col-md-12">
+              <h5 class="mb-2">Принято</h5>
+              <canvas id="chartReception" style="max-height: 250px;"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -733,6 +748,8 @@
         <thead class="table-light">
           <tr>
             <th>Тип приёма</th>
+            <th class="text-end">РЛ ОП{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия ОП → Trade-in{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
             <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
             <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
             <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
@@ -747,6 +764,26 @@
             {% if stat.type_reception_name != '' %}
               <tr>
                 <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
+                <td class="text-end">
+                  {{ stat.op_rlk|floatformat:"0g" }}
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.op_rlk|floatformat:"0g" }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.conv_op_to_tradein|floatformat:"2g" }}%
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.conv_op_to_tradein|floatformat:"2g" }}%</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
                 <td class="text-end">
                   {{ stat.total|floatformat:"0g" }}
                   {% if params.compare_mode and params.compare_data %}
@@ -823,6 +860,18 @@
           {% if params.type_reception_totals %}
           <tr class="table-info">
             <td><strong>{{ params.type_reception_totals.type_reception_name }}</strong></td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.op_rlk|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.op_rlk|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.conv_op_to_tradein|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.conv_op_to_tradein|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
             <td class="text-end">
               <strong>{{ params.type_reception_totals.total|floatformat:"0g" }}</strong>
               {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
@@ -1834,15 +1883,14 @@
   function toggleCollapse(elementId) {
     const element = document.getElementById(elementId);
     const icon = document.getElementById(elementId + 'Icon');
-    const header = icon ? icon.closest('.kors-panel__head') : null;
     
     if (element) {
       if (element.classList.contains('show')) {
         element.classList.remove('show');
-        if (header) header.classList.add('collapsed');
+        if (icon) icon.textContent = '▶';
       } else {
         element.classList.add('show');
-        if (header) header.classList.remove('collapsed');
+        if (icon) icon.textContent = '▼';
       }
     }
   }
@@ -1943,9 +1991,83 @@
     });
   });
 
-  // Графики по дням - создаем 7 отдельных графиков
+  // Графики по дням - создаем общий график и отдельные графики
   const chartData = JSON.parse('{{ params.chart_data|escapejs }}');
   const compareChartData = {% if params.compare_mode and params.compare_data %}JSON.parse('{{ params.compare_data.chart_data|escapejs }}'){% else %}null{% endif %};
+  
+  // Создаем общий график со всеми событиями
+  const chartAllCtx = document.getElementById('chartAll');
+  if (chartAllCtx && chartData) {
+    const allDatasets = [];
+    
+    // Добавляем все датасеты из основного графика
+    chartData.datasets.forEach(dataset => {
+      allDatasets.push({
+        label: dataset.label + ' (основной)',
+        data: dataset.data,
+        borderColor: dataset.borderColor,
+        backgroundColor: dataset.backgroundColor,
+        tension: 0.1
+      });
+    });
+    
+    // Добавляем датасеты из графика сравнения, если есть
+    if (compareChartData) {
+      compareChartData.datasets.forEach(dataset => {
+        allDatasets.push({
+          label: dataset.label + ' (сравнение)',
+          data: dataset.data,
+          borderColor: dataset.borderColor,
+          backgroundColor: 'transparent',
+          borderDash: [5, 5],
+          tension: 0.1
+        });
+      });
+    }
+    
+    if (allDatasets.length > 0) {
+      new Chart(chartAllCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels,
+          datasets: allDatasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              display: true
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          }
+        }
+      });
+    }
+  }
   
   const chartConfigs = [
     { id: 'chartOpRlk', key: 'op_rlk', label: 'РЛ ОП', color: '#6366f1' },

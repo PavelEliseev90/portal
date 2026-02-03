@@ -8344,7 +8344,10 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('type_reception_name'))
     
+    # Для типов приема op_rlk будет 0, так как в DocRLK нет type_reception_id
     for stat in type_reception_stats:
+        stat['op_rlk'] = 0  # В DocRLK нет type_reception_id
+        stat['conv_op_to_tradein'] = 0
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
@@ -8354,11 +8357,13 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Итоги для статистики по типам приема
     type_reception_totals = {
         'type_reception_name': 'Итого',
+        'op_rlk': total_op_rlk,  # Общее количество ОП для всех типов приема
         'total': sum(s['total'] for s in type_reception_stats),
         'before': sum(s['before'] for s in type_reception_stats),
         'after': sum(s['after'] for s in type_reception_stats),
         'reception': sum(s['reception'] for s in type_reception_stats),
     }
+    type_reception_totals['conv_op_to_tradein'] = (type_reception_totals['total'] / type_reception_totals['op_rlk'] * 100) if type_reception_totals['op_rlk'] > 0 else 0
     type_reception_totals['conv_before'] = (type_reception_totals['before'] / type_reception_totals['total'] * 100) if type_reception_totals['total'] > 0 else 0
     type_reception_totals['conv_after'] = (type_reception_totals['after'] / type_reception_totals['before'] * 100) if type_reception_totals['before'] > 0 else 0
     type_reception_totals['conv_reception'] = (type_reception_totals['reception'] / type_reception_totals['after'] * 100) if type_reception_totals['after'] > 0 else 0
@@ -8386,7 +8391,10 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Сортируем по числовому значению
     price_group_stats = sorted(price_group_stats_raw, key=lambda x: get_price_group_order(x['zg_name']))
     
+    # Для ценовых групп op_rlk будет 0, так как в DocRLK нет zg_name
     for stat in price_group_stats:
+        stat['op_rlk'] = 0  # В DocRLK нет zg_name
+        stat['conv_op_to_tradein'] = 0
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
@@ -8394,24 +8402,46 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Итоги для статистики по ценовым группам
     price_group_totals = {
         'zg_name': 'Итого',
+        'op_rlk': total_op_rlk,  # Общее количество ОП для всех ценовых групп
         'total': sum(s['total'] for s in price_group_stats),
         'before': sum(s['before'] for s in price_group_stats),
         'after': sum(s['after'] for s in price_group_stats),
         'reception': sum(s['reception'] for s in price_group_stats),
     }
+    price_group_totals['conv_op_to_tradein'] = (price_group_totals['total'] / price_group_totals['op_rlk'] * 100) if price_group_totals['op_rlk'] > 0 else 0
     price_group_totals['conv_before'] = (price_group_totals['before'] / price_group_totals['total'] * 100) if price_group_totals['total'] > 0 else 0
     price_group_totals['conv_after'] = (price_group_totals['after'] / price_group_totals['before'] * 100) if price_group_totals['before'] > 0 else 0
     price_group_totals['conv_reception'] = (price_group_totals['reception'] / price_group_totals['after'] * 100) if price_group_totals['after'] > 0 else 0
     
     # Статистика по городам
-    city_stats = list(qs.exclude(city_name='').values('city_name').annotate(
+    city_stats = list(qs.exclude(city_name='').values('city_name', 'city_id').annotate(
         total=Count('rlk_id'),
         before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
         after=Count('rlk_id', filter=valid_date_after),
         reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('city_name'))
     
+    # Получаем статистику по городам для op_rlk из DocRLK
+    from refs.models import RefCity
+    op_rlk_city_stats = {}
+    
+    # Группируем op_rlk по городам через unit__city и unit_dc__city
+    op_rlk_city_data = op_rlk_qs.values('unit__city_id', 'unit_dc__city_id').annotate(
+        count=Count('id')
+    )
+    
+    for city_stat in op_rlk_city_data:
+        city_id = city_stat.get('unit__city_id') or city_stat.get('unit_dc__city_id')
+        if city_id:
+            if city_id not in op_rlk_city_stats:
+                op_rlk_city_stats[city_id] = 0
+            op_rlk_city_stats[city_id] += city_stat['count']
+    
+    # Добавляем op_rlk к статистике по городам
     for stat in city_stats:
+        city_id = stat.get('city_id')
+        stat['op_rlk'] = op_rlk_city_stats.get(city_id, 0) if city_id else 0
+        stat['conv_op_to_tradein'] = (stat['total'] / stat['op_rlk'] * 100) if stat['op_rlk'] > 0 else 0
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
@@ -8419,11 +8449,13 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Итоги для статистики по городам
     city_totals = {
         'city_name': 'Итого',
+        'op_rlk': total_op_rlk,
         'total': sum(s['total'] for s in city_stats),
         'before': sum(s['before'] for s in city_stats),
         'after': sum(s['after'] for s in city_stats),
         'reception': sum(s['reception'] for s in city_stats),
     }
+    city_totals['conv_op_to_tradein'] = (city_totals['total'] / city_totals['op_rlk'] * 100) if city_totals['op_rlk'] > 0 else 0
     city_totals['conv_before'] = (city_totals['before'] / city_totals['total'] * 100) if city_totals['total'] > 0 else 0
     city_totals['conv_after'] = (city_totals['after'] / city_totals['before'] * 100) if city_totals['before'] > 0 else 0
     city_totals['conv_reception'] = (city_totals['reception'] / city_totals['after'] * 100) if city_totals['after'] > 0 else 0
@@ -8436,7 +8468,10 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('brand'))
     
+    # Для брендов op_rlk будет 0, так как в DocRLK нет brand
     for stat in brand_stats:
+        stat['op_rlk'] = 0  # В DocRLK нет brand
+        stat['conv_op_to_tradein'] = 0
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
@@ -8444,11 +8479,13 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Итоги для статистики по брендам
     brand_totals = {
         'brand': 'Итого',
+        'op_rlk': total_op_rlk,  # Общее количество ОП для всех брендов
         'total': sum(s['total'] for s in brand_stats),
         'before': sum(s['before'] for s in brand_stats),
         'after': sum(s['after'] for s in brand_stats),
         'reception': sum(s['reception'] for s in brand_stats),
     }
+    brand_totals['conv_op_to_tradein'] = (brand_totals['total'] / brand_totals['op_rlk'] * 100) if brand_totals['op_rlk'] > 0 else 0
     brand_totals['conv_before'] = (brand_totals['before'] / brand_totals['total'] * 100) if brand_totals['total'] > 0 else 0
     brand_totals['conv_after'] = (brand_totals['after'] / brand_totals['before'] * 100) if brand_totals['before'] > 0 else 0
     brand_totals['conv_reception'] = (brand_totals['reception'] / brand_totals['after'] * 100) if brand_totals['after'] > 0 else 0
@@ -8461,7 +8498,10 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         reception=Count('rlk_id', filter=valid_date_reception)
     ).order_by('staff_name'))
     
+    # Для оценщиков op_rlk будет 0, так как в DocRLK нет staff_id
     for stat in staff_stats:
+        stat['op_rlk'] = 0  # В DocRLK нет staff_id
+        stat['conv_op_to_tradein'] = 0
         stat['conv_before'] = (stat['before'] / stat['total'] * 100) if stat['total'] > 0 else 0
         stat['conv_after'] = (stat['after'] / stat['before'] * 100) if stat['before'] > 0 else 0
         stat['conv_reception'] = (stat['reception'] / stat['after'] * 100) if stat['after'] > 0 else 0
@@ -8471,11 +8511,13 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Итоги для статистики по оценщикам
     staff_totals = {
         'staff_name': 'Итого',
+        'op_rlk': total_op_rlk,  # Общее количество ОП для всех оценщиков
         'total': sum(s['total'] for s in staff_stats),
         'before': sum(s['before'] for s in staff_stats),
         'after': sum(s['after'] for s in staff_stats),
         'reception': sum(s['reception'] for s in staff_stats),
     }
+    staff_totals['conv_op_to_tradein'] = (staff_totals['total'] / staff_totals['op_rlk'] * 100) if staff_totals['op_rlk'] > 0 else 0
     staff_totals['conv_before'] = (staff_totals['before'] / staff_totals['total'] * 100) if staff_totals['total'] > 0 else 0
     staff_totals['conv_after'] = (staff_totals['after'] / staff_totals['before'] * 100) if staff_totals['before'] > 0 else 0
     staff_totals['conv_reception'] = (staff_totals['reception'] / staff_totals['after'] * 100) if staff_totals['after'] > 0 else 0
@@ -8535,10 +8577,12 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         analyst_stats_dict[analyst_id] = {
             'analyst_id': analyst_id,
             'analyst_name': analyst_name,
+            'op_rlk': 0,  # В DocRLK нет analyst_id
             'total': total,
             'before': before,
             'after': after,
             'reception': reception,
+            'conv_op_to_tradein': 0,
             'conv_before': (before / total * 100) if total > 0 else 0,
             'conv_after': (after / before * 100) if before > 0 else 0,
             'conv_reception': (reception / after * 100) if after > 0 else 0,
@@ -8549,11 +8593,13 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Итоги для статистики по аналитикам
     analyst_totals = {
         'analyst_name': 'Итого',
+        'op_rlk': total_op_rlk,  # Общее количество ОП для всех аналитиков
         'total': sum(s['total'] for s in analyst_stats),
         'before': sum(s['before'] for s in analyst_stats),
         'after': sum(s['after'] for s in analyst_stats),
         'reception': sum(s['reception'] for s in analyst_stats),
     }
+    analyst_totals['conv_op_to_tradein'] = (analyst_totals['total'] / analyst_totals['op_rlk'] * 100) if analyst_totals['op_rlk'] > 0 else 0
     analyst_totals['conv_before'] = (analyst_totals['before'] / analyst_totals['total'] * 100) if analyst_totals['total'] > 0 else 0
     analyst_totals['conv_after'] = (analyst_totals['after'] / analyst_totals['before'] * 100) if analyst_totals['before'] > 0 else 0
     analyst_totals['conv_reception'] = (analyst_totals['reception'] / analyst_totals['after'] * 100) if analyst_totals['after'] > 0 else 0
@@ -8878,9 +8924,9 @@ def tradein_funnel_analytics_export(request):
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
         return HttpResponseRedirect('/')
     
-    export_type = request.GET.get('export_type', '')  # rlk, before, after, reception, reception_price_list
+    export_type = request.GET.get('export_type', '')  # op_rlk, rlk, before, after, reception, reception_price_list
     
-    if export_type not in ['rlk', 'before', 'after', 'reception', 'reception_price_list']:
+    if export_type not in ['op_rlk', 'rlk', 'before', 'after', 'reception', 'reception_price_list']:
         return HttpResponse('Неверный тип экспорта', status=400)
     
     # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
@@ -9551,9 +9597,9 @@ def tradein_funnel_analytics_export(request):
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
         return HttpResponseRedirect('/')
     
-    export_type = request.GET.get('export_type', '')  # rlk, before, after, reception, reception_price_list
+    export_type = request.GET.get('export_type', '')  # op_rlk, rlk, before, after, reception, reception_price_list
     
-    if export_type not in ['rlk', 'before', 'after', 'reception', 'reception_price_list']:
+    if export_type not in ['op_rlk', 'rlk', 'before', 'after', 'reception', 'reception_price_list']:
         return HttpResponse('Неверный тип экспорта', status=400)
     
     # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
