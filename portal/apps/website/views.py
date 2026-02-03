@@ -8934,18 +8934,26 @@ def test(request):
         
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
-    # from analytics.models import TradeInFunnel
-    # alls = TradeInFunnel.objects.all()
-    # for all in alls:
-    #     all.brand = all.brand.lower()
-    #     all.save()
+    from analytics.models import TradeInFunnel
+    alls = TradeInFunnel.objects.filter(brand__icontains = 'энгельса')
+    count = len(alls)
+    s=0
+    for all in alls:
+        all.brand = all.brand.lower()
+        if all.unit_name == 'КорсАвто Обнинск':
+            all.city_id     = 16
+            all.city_name   = 'Обнинск' 
+        all.brand = 'lada'
+        all.save()
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
-    estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
-    count = len(estimations_id)
-    s = 0
-    for estimation_id in estimations_id:
-        estimation      = DocLO.objects.get(id = estimation_id['id'])
-        estimation.save()
+    # estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
+    # count = len(estimations_id)
+    # s = 0
+    # for estimation_id in estimations_id:
+    #     estimation      = DocLO.objects.get(id = estimation_id['id'])
+    #     estimation.save()
 
         # slug_chat       = 'rlk_' + str(estimation.rlk.id)
         # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
@@ -8959,8 +8967,8 @@ def test(request):
         #     estimation.date_s_remote = date_s_remote
         #     estimation.save(update_fields=['date_s_remote']) 
         
-        s = s + 1 
-        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+        # s = s + 1 
+        # print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
     # ssms = DocSMS.objects.all().values('id')
     # count = ssms.count()
