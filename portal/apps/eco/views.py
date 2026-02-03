@@ -8138,6 +8138,50 @@ def interactive_evaluations_report(request):
     return render(request, 'lo/interactive_evaluations_report.html', {'params': params})
 
 
+def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids):
+    """
+    Вспомогательная функция для получения QuerySet рабочих листов ОП из DocRLK.
+    Оптимизированная версия с применением фильтров и select_related для уменьшения количества запросов.
+    """
+    excluded_type_ids = [1, 4, 6, 7, 9, 10, 19]
+    op_rlk_qs = DocRLK.objects.exclude(type__id__in=excluded_type_ids).select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city')
+    
+    # Применяем фильтры по датам в зависимости от варианта отчета
+    if report_type == 1:
+        # Сквозной - отбор по датам событий
+        op_rlk_qs = op_rlk_qs.filter(
+            Q(dataTime__gte=date_start, dataTime__lte=date_end)
+        )
+    elif report_type == 2:
+        # По рабочим листам
+        op_rlk_qs = op_rlk_qs.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        )
+    else:  # report_type == 3
+        # По принятым - для ОП не применимо, но оставляем фильтр по дате создания
+        op_rlk_qs = op_rlk_qs.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        )
+    
+    # Применяем фильтры по подразделениям, городам и источникам
+    if unit_ids:
+        op_rlk_qs = op_rlk_qs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
+    if unit_source_ids:
+        op_rlk_qs = op_rlk_qs.filter(
+            Q(unit_dc__id__in=unit_source_ids) |
+            Q(unit__id__in=unit_source_ids, unit_dc__isnull=True)
+        )
+    if city_ids:
+        # Фильтруем по городам подразделений
+        op_rlk_qs = op_rlk_qs.filter(
+            Q(unit__city_id__in=city_ids) | Q(unit_dc__city_id__in=city_ids)
+        )
+    
+    return op_rlk_qs
+
+
 def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, 
                             type_reception_ids, brand_list, unit_source_id=None, unit_id=None, 
                             city_id=None, type_reception_id=None, brand=None):
@@ -8201,6 +8245,10 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
             date_reception_success__lte=date_end
         )
     
+    # Получаем данные для "Рабочие листы ОП" из DocRLK (оптимизированно)
+    op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+    total_op_rlk = op_rlk_qs.count()
+    
     # Дата для исключения некорректных дат (1.1.1)
     date_invalid = DT.date(1, 1, 1)
     
@@ -8237,6 +8285,7 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         after_above=Count('rlk_id', filter=Q(comparison_after_type=1)),
     )
     
+    total_op_rlk = total_op_rlk or 0  # Уже вычислено выше
     total_rlk = totals_agg['total_rlk'] or 0
     total_before = totals_agg['total_before'] or 0
     total_after = totals_agg['total_after'] or 0
@@ -8265,6 +8314,7 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     total_after_comparison = after_below + after_equal + after_above
     
     # Проценты
+    conv_op_to_tradein = (total_rlk / total_op_rlk * 100) if total_op_rlk > 0 else 0
     conv_before = (total_before / total_rlk * 100) if total_rlk > 0 else 0
     conv_after = (total_after / total_before * 100) if total_before > 0 else 0
     conv_reception = (total_reception / total_after * 100) if total_after > 0 else 0
@@ -8529,6 +8579,7 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     ]
     
     chart_datasets = {
+        'op_rlk': [0] * len(date_list),
         'rlk': [0] * len(date_list),
         'estimation': [0] * len(date_list),
         'remote': [0] * len(date_list),
@@ -8538,7 +8589,20 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         'reception': [0] * len(date_list),
     }
     
+    # График для "Рабочие листы ОП" из DocRLK
     date_invalid_chart = DT.date(1, 1, 1)
+    op_rlk_daily_counts = op_rlk_qs.annotate(
+        day=TruncDate('dataTime')
+    ).values('day').annotate(count=Count('id'))
+    
+    for item in op_rlk_daily_counts:
+        if item['day']:
+            day_str = item['day'].strftime('%d.%m.%Y') if hasattr(item['day'], 'strftime') else str(item['day'])
+            if day_str in date_list:
+                idx = date_list.index(day_str)
+                chart_datasets['op_rlk'][idx] = item['count']
+    
+    # Графики для остальных этапов из TradeInFunnel
     for field_name, key in date_fields:
         daily_counts = qs.filter(
             **{f'{field_name}__isnull': False}
@@ -8558,7 +8622,8 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     chart_data_json = json.dumps({
         'labels': date_list,
         'datasets': [
-            {'label': 'РЛ', 'data': chart_datasets['rlk'], 'borderColor': '#002c63', 'backgroundColor': 'rgba(0, 44, 99, 0.1)'},
+            {'label': 'РЛ ОП', 'data': chart_datasets['op_rlk'], 'borderColor': '#6366f1', 'backgroundColor': 'rgba(99, 102, 241, 0.1)'},
+            {'label': 'РЛ Trade-in', 'data': chart_datasets['rlk'], 'borderColor': '#002c63', 'backgroundColor': 'rgba(0, 44, 99, 0.1)'},
             {'label': 'Оценка', 'data': chart_datasets['estimation'], 'borderColor': '#00509d', 'backgroundColor': 'rgba(0, 80, 157, 0.1)'},
             {'label': 'Дистанционно', 'data': chart_datasets['remote'], 'borderColor': '#ff8a00', 'backgroundColor': 'rgba(255, 138, 0, 0.1)'},
             {'label': 'До КД', 'data': chart_datasets['before'], 'borderColor': '#ffd500', 'backgroundColor': 'rgba(255, 213, 0, 0.1)'},
@@ -8571,10 +8636,12 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Возвращаем все данные
     return {
         'totals': {
+            'op_rlk': total_op_rlk,
             'rlk': total_rlk,
             'before': total_before,
             'after': total_after,
             'reception': total_reception,
+            'conv_op_to_tradein': conv_op_to_tradein,
             'conv_before': conv_before,
             'conv_after': conv_after,
             'conv_reception': conv_reception,
@@ -8904,21 +8971,84 @@ def tradein_funnel_analytics_export(request):
     valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
     
     # Фильтруем данные в зависимости от типа экспорта
-    if export_type == 'rlk':
+    if export_type == 'op_rlk':
+        # Рабочие листы ОП - данные из DocRLK (оптимизированно)
+        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+        export_data = op_rlk_qs.select_related('unit', 'unit_dc').annotate(
+            rlk_number=F('nomer'),
+            date_rlk=F('dataTime'),
+            unit_id=F('unit__id'),
+            unit_name=F('unit__name'),
+            unit_source_id=Case(
+                When(unit_dc__isnull=False, then=F('unit_dc__id')),
+                default=F('unit__id')
+            ),
+            unit_source_name=Case(
+                When(unit_dc__isnull=False, then=F('unit_dc__name')),
+                default=F('unit__name')
+            ),
+            vin_trade_in=F('vin_trade_in'),
+            vin=Value('', output_field=CharField()),  # Для ОП VIN может быть пустым
+        ).values(
+            'rlk_number',
+            'date_rlk',
+            'vin_trade_in',
+            'vin',
+            'unit_id',
+            'unit_name',
+            'unit_source_id',
+            'unit_source_name'
+        ).order_by('dataTime', 'nomer')
+    elif export_type == 'rlk':
         export_qs = qs.filter(valid_date_rlk)
+        export_data = export_qs.values(
+            'rlk_number',
+            'date_rlk',
+            'vin_trade_in',
+            'vin',
+            'unit_id',
+            'unit_name',
+            'unit_source_id',
+            'unit_source_name'
+        ).order_by('date_rlk', 'rlk_number')
     elif export_type == 'before':
         export_qs = qs.filter(valid_date_before | valid_date_remote)
+        export_data = export_qs.values(
+            'rlk_number',
+            'date_rlk',
+            'vin_trade_in',
+            'vin',
+            'unit_id',
+            'unit_name',
+            'unit_source_id',
+            'unit_source_name'
+        ).order_by('date_rlk', 'rlk_number')
     elif export_type == 'after':
         export_qs = qs.filter(valid_date_after)
+        export_data = export_qs.values(
+            'rlk_number',
+            'date_rlk',
+            'vin_trade_in',
+            'vin',
+            'unit_id',
+            'unit_name',
+            'unit_source_id',
+            'unit_source_name'
+        ).order_by('date_rlk', 'rlk_number')
     elif export_type == 'reception':
         export_qs = qs.filter(valid_date_reception)
+        export_data = export_qs.values(
+            'rlk_number',
+            'date_rlk',
+            'vin_trade_in',
+            'vin',
+            'unit_id',
+            'unit_name',
+            'unit_source_id',
+            'unit_source_name'
+        ).order_by('date_rlk', 'rlk_number')
     elif export_type == 'reception_price_list':
         export_qs = qs.filter(valid_date_reception)
-    else:
-        export_qs = qs.none()
-    
-    # Формируем данные для экспорта
-    if export_type == 'reception_price_list':
         export_data = export_qs.values(
             'date_rlk',
             'rlk_number',
@@ -8930,16 +9060,7 @@ def tradein_funnel_analytics_export(request):
             'lo_number'
         ).order_by('date_reception_success', 'rlk_number')
     else:
-        export_data = export_qs.values(
-            'rlk_number',
-            'date_rlk',
-            'vin_trade_in',
-            'vin',
-            'unit_id',
-            'unit_name',
-            'unit_source_id',
-            'unit_source_name'
-        ).order_by('date_rlk', 'rlk_number')
+        export_data = []
     
     # Создаем Excel файл
     from django.http import HttpResponse
@@ -8947,6 +9068,8 @@ def tradein_funnel_analytics_export(request):
     
     if export_type == 'reception_price_list':
         filename = 'Прайс_лист.xlsx'
+    elif export_type == 'op_rlk':
+        filename = 'export_op_rlk.xlsx'
     else:
         filename = f'export_{export_type}.xlsx'
     
@@ -8981,6 +9104,7 @@ def tradein_funnel_analytics_export(request):
                 item.get('lo_number', ''),
             ])
     else:
+        # Общие заголовки для op_rlk, rlk, before, after, reception
         headers = [
             'Номер рабочего листа',
             'Дата рабочего листа',
@@ -8997,12 +9121,12 @@ def tradein_funnel_analytics_export(request):
             ws.append([
                 item.get('rlk_number', ''),
                 item.get('date_rlk', '') if item.get('date_rlk') else '',
-                item.get('vin_trade_in', ''),
-                item.get('vin', ''),
-                item.get('unit_id', ''),
-                item.get('unit_name', ''),
-                item.get('unit_source_id', ''),
-                item.get('unit_source_name', ''),
+                item.get('vin_trade_in', '') or '',
+                item.get('vin', '') or '',
+                item.get('unit_id', '') or '',
+                item.get('unit_name', '') or '',
+                item.get('unit_source_id', '') or '',
+                item.get('unit_source_name', '') or '',
             ])
     
     wb.save(response)
@@ -9115,9 +9239,45 @@ def tradein_funnel_analytics_detail(request):
     valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
     
     # Применяем фильтр в зависимости от типа
-    if filter_type == 'rlk':
+    if filter_type == 'op_rlk':
+        # Рабочие листы ОП - данные из DocRLK (оптимизированно с пагинацией на уровне QuerySet)
+        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+        op_rlk_qs = op_rlk_qs.select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city').order_by('-dataTime', '-id')
+        
+        # Пагинация на уровне QuerySet (оптимально)
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        page = request.GET.get('page', 1)
+        paginator = Paginator(op_rlk_qs, 50)
+        
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        
+        filter_title = 'Рабочие листы ОП'
+        total_count = paginator.count
+        
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'filter_type': filter_type,
+            'filter_title': filter_title,
+            'total_count': total_count,
+            'page_obj': page_obj,
+            'op_rlk_data': True,  # Флаг для шаблона
+            'filters': {
+                'date_start': date_start.strftime('%Y-%m-%d'),
+                'date_end': date_end.strftime('%Y-%m-%d'),
+                'report_type': report_type,
+            },
+        }
+        
+        return render(request, 'lo/tradein_funnel_analytics_detail.html', {'params': params})
+    elif filter_type == 'rlk':
         qs = qs.filter(valid_date_rlk)
-        filter_title = 'Рабочие листы'
+        filter_title = 'Рабочие листы Trade-in'
     elif filter_type == 'before':
         qs = qs.filter(valid_date_before | valid_date_remote)
         filter_title = 'До КД / Дистанционно'

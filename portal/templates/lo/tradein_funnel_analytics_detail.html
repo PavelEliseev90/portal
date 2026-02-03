@@ -130,34 +130,126 @@
           {% for item in params.page_obj %}
           <tr>
             <td>
-              {% if item.rlk_id %}
-                <a href="/eco/{{ item.rlk_id }}/" class="link-rlk" target="_blank">
-                  {{ item.rlk_number|default:item.rlk_id }}
-                </a>
+              {% if params.op_rlk_data %}
+                {# Данные из DocRLK #}
+                {% if item.id %}
+                  <a href="/eco/{{ item.id }}/" class="link-rlk" target="_blank">
+                    {{ item.nomer|default:item.id }}
+                  </a>
+                {% else %}
+                  {{ item.nomer|default:"—" }}
+                {% endif %}
               {% else %}
-                {{ item.rlk_number|default:"—" }}
+                {# Данные из TradeInFunnel #}
+                {% if item.rlk_id %}
+                  <a href="/eco/{{ item.rlk_id }}/" class="link-rlk" target="_blank">
+                    {{ item.rlk_number|default:item.rlk_id }}
+                  </a>
+                {% else %}
+                  {{ item.rlk_number|default:"—" }}
+                {% endif %}
               {% endif %}
             </td>
-            <td>{{ item.date_rlk|date:"d.m.Y"|default:"—" }}</td>
-            <td>{{ item.vin_trade_in|default:"—" }}</td>
-            <td>{{ item.vin|default:"—" }}</td>
-            <td>{{ item.unit_name|default:"—" }}</td>
-            <td>{{ item.unit_source_name|default:"—" }}</td>
-            <td>{{ item.city_name|default:"—" }}</td>
-            <td>{{ item.brand|default:"—" }}</td>
-            <td>{{ item.type_reception_name|default:"—" }}</td>
             <td>
-              {% if item.date_before_success %}
-                {{ item.date_before_success|date:"d.m.Y" }}
-              {% elif item.date_remote_success %}
-                {{ item.date_remote_success|date:"d.m.Y" }} (дист.)
+              {% if params.op_rlk_data %}
+                {{ item.dataTime|date:"d.m.Y"|default:"—" }}
               {% else %}
-                —
+                {{ item.date_rlk|date:"d.m.Y"|default:"—" }}
               {% endif %}
             </td>
-            <td>{{ item.date_after_success|date:"d.m.Y"|default:"—" }}</td>
-            <td>{{ item.date_reception_success|date:"d.m.Y"|default:"—" }}</td>
-            <td>{{ item.zg_name|default:"—" }}</td>
+            <td>
+              {% if params.op_rlk_data %}
+                {{ item.vin_trade_in|default:"—" }}
+              {% else %}
+                {{ item.vin_trade_in|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {{ item.vin|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                {{ item.unit.name|default:"—" }}
+              {% else %}
+                {{ item.unit_name|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                {% if item.unit_dc %}
+                  {{ item.unit_dc.name|default:"—" }}
+                {% else %}
+                  {{ item.unit.name|default:"—" }}
+                {% endif %}
+              {% else %}
+                {{ item.unit_source_name|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                {% if item.unit and item.unit.city %}
+                  {{ item.unit.city.name|default:"—" }}
+                {% elif item.unit_dc and item.unit_dc.city %}
+                  {{ item.unit_dc.city.name|default:"—" }}
+                {% else %}
+                  —
+                {% endif %}
+              {% else %}
+                {{ item.city_name|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {{ item.brand|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {{ item.type_reception_name|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {% if item.date_before_success %}
+                  {{ item.date_before_success|date:"d.m.Y" }}
+                {% elif item.date_remote_success %}
+                  {{ item.date_remote_success|date:"d.m.Y" }} (дист.)
+                {% else %}
+                  —
+                {% endif %}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {{ item.date_after_success|date:"d.m.Y"|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {{ item.date_reception_success|date:"d.m.Y"|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {{ item.zg_name|default:"—" }}
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
           <tr>
