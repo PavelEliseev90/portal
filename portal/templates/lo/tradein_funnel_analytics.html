@@ -300,6 +300,127 @@
         <div id="selectedTypeReceptions" class="mt-2"></div>
       </div>
     </div>
+    
+    <!-- Режим сравнения -->
+    <div class="row g-3 align-items-center mt-3">
+      <div class="col-md-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="compare" value="1" id="compareMode" 
+                 {% if params.compare_mode %}checked{% endif %} onchange="toggleCompareMode()">
+          <label class="form-check-label" for="compareMode">
+            <strong>Режим сравнения</strong> - сравнить с другим набором фильтров
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Секция для фильтра сравнения (скрыта по умолчанию) -->
+    <div id="compareFilterSection" style="display: {% if params.compare_mode %}block{% else %}none{% endif %}; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e0e7ef;">
+      <h5 class="mb-3" style="color: #002a5a;">Фильтр для сравнения:</h5>
+      
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата с</label>
+          <input type="date" class="form-control" name="compare_date_start" value="{{ params.filters.compare_date_start|default:params.filters.date_start }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата по</label>
+          <input type="date" class="form-control" name="compare_date_end" value="{{ params.filters.compare_date_end|default:params.filters.date_end }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Вариант отчета</label>
+          <select class="form-select" name="compare_report_type">
+            <option value="1" {% if params.filters.compare_report_type == 1 or not params.filters.compare_report_type %}selected{% endif %}>Сквозной</option>
+            <option value="2" {% if params.filters.compare_report_type == 2 %}selected{% endif %}>По рабочим листам</option>
+            <option value="3" {% if params.filters.compare_report_type == 3 %}selected{% endif %}>По принятым</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="row g-3 align-items-end mt-2">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Источник приема (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareSourceUnitSearch" placeholder="Поиск по источникам..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareSourceUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for unit in params.source_units %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_unit_source_ids" value="{{ unit.id }}">
+                  {{ unit.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareSourceUnits" class="mt-2"></div>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Подразделения (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareUnitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for unit in params.units %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_unit_ids" value="{{ unit.id }}">
+                  {{ unit.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareUnits" class="mt-2"></div>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Города (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareCitySearch" placeholder="Поиск по городам..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareCityDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for city in params.cities %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_city_ids" value="{{ city.id }}">
+                  {{ city.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareCities" class="mt-2"></div>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Бренды (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareBrandSearch" placeholder="Поиск по брендам..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareBrandDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for brand in params.brands %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_brands" value="{{ brand }}">
+                  {{ brand }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareBrands" class="mt-2"></div>
+        </div>
+      </div>
+      
+      <div class="row g-3 align-items-end mt-2">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Типы приёма (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareTypeReceptionSearch" placeholder="Поиск по типам приёма..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareTypeReceptionDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for type in params.type_receptions %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_type_reception_ids" value="{{ type.id }}">
+                  {{ type.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareTypeReceptions" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
   </form>
 
   <!-- Общие показатели -->
@@ -307,7 +428,12 @@
     <div class="col-xl-3 col-sm-6">
       <article class="kors-stage-card">
         <h3>Рабочие листы</h3>
-        <h2>{{ params.totals.rlk|floatformat:"0g" }}</h2>
+        <h2>
+          {{ params.totals.rlk|floatformat:"0g" }}
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 1.2rem;">/ {{ params.compare_data.totals.rlk|floatformat:"0g" }}</span>
+          {% endif %}
+        </h2>
         <p class="kors-stage-desc">Всего рабочих листов</p>
         <span class="kors-stage-conv">Конверсия: 100%</span>
         <div class="mt-2 d-flex gap-2">
@@ -326,9 +452,19 @@
     <div class="col-xl-3 col-sm-6">
       <article class="kors-stage-card">
         <h3>До КД / Дистанционно</h3>
-        <h2>{{ params.totals.before|floatformat:"0g" }}</h2>
+        <h2>
+          {{ params.totals.before|floatformat:"0g" }}
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 1.2rem;">/ {{ params.compare_data.totals.before|floatformat:"0g" }}</span>
+          {% endif %}
+        </h2>
         <p class="kors-stage-desc">Согласовано до КД или дистанционно</p>
-        <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_before|floatformat:"2g" }}%</span>
+        <span class="kors-stage-conv">
+          Конверсия: {{ params.totals.conv_before|floatformat:"2g" }}%
+          {% if params.compare_mode and params.compare_data %}
+            / {{ params.compare_data.totals.conv_before|floatformat:"2g" }}%
+          {% endif %}
+        </span>
         <div class="mt-2 d-flex gap-2">
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-primary">
@@ -345,9 +481,19 @@
     <div class="col-xl-3 col-sm-6">
       <article class="kors-stage-card">
         <h3>После КД</h3>
-        <h2>{{ params.totals.after|floatformat:"0g" }}</h2>
+        <h2>
+          {{ params.totals.after|floatformat:"0g" }}
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 1.2rem;">/ {{ params.compare_data.totals.after|floatformat:"0g" }}</span>
+          {% endif %}
+        </h2>
         <p class="kors-stage-desc">Согласовано после КД</p>
-        <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_after|floatformat:"2g" }}%</span>
+        <span class="kors-stage-conv">
+          Конверсия: {{ params.totals.conv_after|floatformat:"2g" }}%
+          {% if params.compare_mode and params.compare_data %}
+            / {{ params.compare_data.totals.conv_after|floatformat:"2g" }}%
+          {% endif %}
+        </span>
         <div class="mt-2 d-flex gap-2">
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-primary">
@@ -364,9 +510,19 @@
     <div class="col-xl-3 col-sm-6">
       <article class="kors-stage-card">
         <h3>Принято</h3>
-        <h2>{{ params.totals.reception|floatformat:"0g" }}</h2>
+        <h2>
+          {{ params.totals.reception|floatformat:"0g" }}
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 1.2rem;">/ {{ params.compare_data.totals.reception|floatformat:"0g" }}</span>
+          {% endif %}
+        </h2>
         <p class="kors-stage-desc">Автомобилей принято</p>
-        <span class="kors-stage-conv">Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%</span>
+        <span class="kors-stage-conv">
+          Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%
+          {% if params.compare_mode and params.compare_data %}
+            / {{ params.compare_data.totals.conv_reception|floatformat:"2g" }}%
+          {% endif %}
+        </span>
         <div class="mt-2 d-flex gap-2 flex-wrap">
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=reception&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-primary">
@@ -492,14 +648,43 @@
   </div>
   {% endif %}
 
-  <!-- График по дням -->
+  <!-- Графики по дням -->
   <div class="kors-panel">
     <div class="kors-panel__head">
-      <h3>График событий по дням</h3>
+      <h3>Графики событий по дням</h3>
       <p class="text-muted mb-0">Динамика событий воронки по дням</p>
     </div>
     <div class="mt-3">
-      <canvas id="dailyChart" style="max-height: 400px;"></canvas>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <h5 class="mb-2">Рабочие листы</h5>
+          <canvas id="chartRlk" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-2">Оценка</h5>
+          <canvas id="chartEstimation" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-2">Дистанционно</h5>
+          <canvas id="chartRemote" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-2">До КД</h5>
+          <canvas id="chartBefore" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-2">Диагностика</h5>
+          <canvas id="chartDiagnostic" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-2">После КД</h5>
+          <canvas id="chartAfter" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-12">
+          <h5 class="mb-2">Принято</h5>
+          <canvas id="chartReception" style="max-height: 250px;"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -514,13 +699,13 @@
         <thead class="table-light">
           <tr>
             <th>Тип приёма</th>
-            <th class="text-end">Всего</th>
-            <th class="text-end">До КД</th>
-            <th class="text-end">После КД</th>
-            <th class="text-end">Принято</th>
-            <th class="text-end">Конверсия до КД</th>
-            <th class="text-end">Конверсия после КД</th>
-            <th class="text-end">Конверсия принято</th>
+            <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия до КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия после КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
           </tr>
         </thead>
         <tbody>
@@ -528,26 +713,124 @@
             {% if stat.type_reception_name != '' %}
               <tr>
                 <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
-                <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-                <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-                <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-                <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-                <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-                <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-                <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+                <td class="text-end">
+                  {{ stat.total|floatformat:"0g" }}
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.total|floatformat:"0g" }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.before|floatformat:"0g" }}
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.before|floatformat:"0g" }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.after|floatformat:"0g" }}
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.after|floatformat:"0g" }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.reception|floatformat:"0g" }}
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.reception|floatformat:"0g" }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.conv_before|floatformat:"2g" }}%
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.conv_before|floatformat:"2g" }}%</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.conv_after|floatformat:"2g" }}%
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.conv_after|floatformat:"2g" }}%</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {{ stat.conv_reception|floatformat:"2g" }}%
+                  {% if params.compare_mode and params.compare_data %}
+                    {% for compare_stat in params.compare_data.type_reception_stats %}
+                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
+                        <span style="color: #6c7a92;">/ {{ compare_stat.conv_reception|floatformat:"2g" }}%</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
               </tr>
             {% endif %}
           {% endfor %}
           {% if params.type_reception_totals %}
           <tr class="table-info">
             <td><strong>{{ params.type_reception_totals.type_reception_name }}</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.total|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.before|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.after|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.reception|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.conv_before|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.conv_after|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.type_reception_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.total|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.total|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.before|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.before|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.after|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.after|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.reception|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.reception|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.conv_before|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.conv_before|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.conv_after|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.conv_after|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.type_reception_totals.conv_reception|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.conv_reception|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
           </tr>
           {% endif %}
         </tbody>
@@ -567,38 +850,136 @@
         <thead class="table-light">
           <tr>
             <th>Ценовая группа</th>
-            <th class="text-end">Всего</th>
-            <th class="text-end">До КД</th>
-            <th class="text-end">После КД</th>
-            <th class="text-end">Принято</th>
-            <th class="text-end">Конверсия до КД</th>
-            <th class="text-end">Конверсия после КД</th>
-            <th class="text-end">Конверсия принято</th>
+            <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия до КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия после КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
           </tr>
         </thead>
         <tbody>
           {% for stat in params.price_group_stats %}
           <tr>
             <td><strong>{{ stat.zg_name }}</strong></td>
-            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+            <td class="text-end">
+              {{ stat.total|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.total|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.before|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.before|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.after|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.after|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.reception|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.reception|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_before|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_before|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_after|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_after|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_reception|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.price_group_stats %}
+                  {% if compare_stat.zg_name == stat.zg_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_reception|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
           {% if params.price_group_totals %}
           <tr class="table-info">
             <td><strong>{{ params.price_group_totals.zg_name }}</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.total|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.before|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.after|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.reception|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.conv_before|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.conv_after|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.price_group_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.total|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.total|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.before|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.before|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.after|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.after|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.reception|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.reception|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.conv_before|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.conv_before|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.conv_after|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.conv_after|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.price_group_totals.conv_reception|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.price_group_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.price_group_totals.conv_reception|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
           </tr>
           {% endif %}
         </tbody>
@@ -618,38 +999,136 @@
         <thead class="table-light">
           <tr>
             <th>Город</th>
-            <th class="text-end">Всего</th>
-            <th class="text-end">До КД</th>
-            <th class="text-end">После КД</th>
-            <th class="text-end">Принято</th>
-            <th class="text-end">Конверсия до КД</th>
-            <th class="text-end">Конверсия после КД</th>
-            <th class="text-end">Конверсия принято</th>
+            <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия до КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия после КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
           </tr>
         </thead>
         <tbody>
           {% for stat in params.city_stats %}
           <tr>
             <td><strong>{{ stat.city_name }}</strong></td>
-            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+            <td class="text-end">
+              {{ stat.total|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.total|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.before|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.before|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.after|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.after|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.reception|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.reception|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_before|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_before|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_after|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_after|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_reception|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.city_stats %}
+                  {% if compare_stat.city_name == stat.city_name %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_reception|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
           {% if params.city_totals %}
           <tr class="table-info">
             <td><strong>{{ params.city_totals.city_name }}</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.total|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.before|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.after|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.reception|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.conv_before|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.conv_after|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.city_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.total|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.total|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.before|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.before|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.after|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.after|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.reception|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.reception|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.conv_before|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.conv_before|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.conv_after|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.conv_after|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.city_totals.conv_reception|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.city_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.city_totals.conv_reception|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
           </tr>
           {% endif %}
         </tbody>
@@ -673,38 +1152,136 @@
         <thead class="table-light">
           <tr>
             <th>Бренд</th>
-            <th class="text-end">Всего</th>
-            <th class="text-end">До КД</th>
-            <th class="text-end">После КД</th>
-            <th class="text-end">Принято</th>
-            <th class="text-end">Конверсия до КД</th>
-            <th class="text-end">Конверсия после КД</th>
-            <th class="text-end">Конверсия принято</th>
+            <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия до КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия после КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
           </tr>
         </thead>
         <tbody>
           {% for stat in params.brand_stats %}
           <tr>
             <td><strong>{{ stat.brand }}</strong></td>
-            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+            <td class="text-end">
+              {{ stat.total|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.total|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.before|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.before|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.after|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.after|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.reception|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.reception|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_before|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_before|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_after|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_after|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_reception|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.brand_stats %}
+                  {% if compare_stat.brand == stat.brand %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_reception|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
           {% if params.brand_totals %}
           <tr class="table-info">
             <td><strong>{{ params.brand_totals.brand }}</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.total|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.before|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.after|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.reception|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.conv_before|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.conv_after|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.brand_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.total|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.total|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.before|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.before|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.after|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.after|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.reception|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.reception|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.conv_before|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.conv_before|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.conv_after|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.conv_after|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.brand_totals.conv_reception|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.brand_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.brand_totals.conv_reception|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
           </tr>
           {% endif %}
         </tbody>
@@ -728,38 +1305,136 @@
         <thead class="table-light">
           <tr>
             <th>Оценщик</th>
-            <th class="text-end">Всего</th>
-            <th class="text-end">До КД</th>
-            <th class="text-end">После КД</th>
-            <th class="text-end">Принято</th>
-            <th class="text-end">Конверсия до КД</th>
-            <th class="text-end">Конверсия после КД</th>
-            <th class="text-end">Конверсия принято</th>
+            <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия до КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия после КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
           </tr>
         </thead>
         <tbody>
           {% for stat in params.staff_stats %}
           <tr>
             <td><strong>{{ stat.staff_name|default:"Не указан" }}</strong></td>
-            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+            <td class="text-end">
+              {{ stat.total|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.total|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.before|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.before|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.after|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.after|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.reception|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.reception|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_before|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_before|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_after|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_after|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_reception|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.staff_stats %}
+                  {% if compare_stat.staff_id == stat.staff_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_reception|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
           {% if params.staff_totals %}
           <tr class="table-info">
             <td><strong>{{ params.staff_totals.staff_name }}</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.total|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.before|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.after|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.reception|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.conv_before|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.conv_after|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.staff_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.total|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.total|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.before|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.before|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.after|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.after|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.reception|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.reception|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.conv_before|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.conv_before|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.conv_after|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.conv_after|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.staff_totals.conv_reception|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.staff_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.staff_totals.conv_reception|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
           </tr>
           {% endif %}
         </tbody>
@@ -783,38 +1458,136 @@
         <thead class="table-light">
           <tr>
             <th>Аналитик</th>
-            <th class="text-end">Всего</th>
-            <th class="text-end">До КД</th>
-            <th class="text-end">После КД</th>
-            <th class="text-end">Принято</th>
-            <th class="text-end">Конверсия до КД</th>
-            <th class="text-end">Конверсия после КД</th>
-            <th class="text-end">Конверсия принято</th>
+            <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия до КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия после КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
+            <th class="text-end">Конверсия принято{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
           </tr>
         </thead>
         <tbody>
           {% for stat in params.analyst_stats %}
           <tr>
             <td><strong>{{ stat.analyst_name|default:"Не указан" }}</strong></td>
-            <td class="text-end">{{ stat.total|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.before|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.after|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.reception|floatformat:"0g" }}</td>
-            <td class="text-end">{{ stat.conv_before|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_after|floatformat:"2g" }}%</td>
-            <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
+            <td class="text-end">
+              {{ stat.total|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.total|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.before|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.before|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.after|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.after|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.reception|floatformat:"0g" }}
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.reception|floatformat:"0g" }}</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_before|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_before|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_after|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_after|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {{ stat.conv_reception|floatformat:"2g" }}%
+              {% if params.compare_mode and params.compare_data %}
+                {% for compare_stat in params.compare_data.analyst_stats %}
+                  {% if compare_stat.analyst_id == stat.analyst_id %}
+                    <span style="color: #6c7a92;">/ {{ compare_stat.conv_reception|floatformat:"2g" }}%</span>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
           {% if params.analyst_totals %}
           <tr class="table-info">
             <td><strong>{{ params.analyst_totals.analyst_name }}</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.total|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.before|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.after|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.reception|floatformat:"0g" }}</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.conv_before|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.conv_after|floatformat:"2g" }}%</strong></td>
-            <td class="text-end"><strong>{{ params.analyst_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.total|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.total|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.before|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.before|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.after|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.after|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.reception|floatformat:"0g" }}</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.reception|floatformat:"0g" }}</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.conv_before|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.conv_before|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.conv_after|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.conv_after|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <strong>{{ params.analyst_totals.conv_reception|floatformat:"2g" }}%</strong>
+              {% if params.compare_mode and params.compare_data and params.compare_data.analyst_totals %}
+                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.analyst_totals.conv_reception|floatformat:"2g" }}%</strong></span>
+              {% endif %}
+            </td>
           </tr>
           {% endif %}
         </tbody>
@@ -1080,51 +1853,122 @@
     });
   });
 
-  // График по дням
+  // Графики по дням - создаем 7 отдельных графиков
   const chartData = JSON.parse('{{ params.chart_data|escapejs }}');
-  const ctx = document.getElementById('dailyChart');
+  const compareChartData = {% if params.compare_mode and params.compare_data %}JSON.parse('{{ params.compare_data.chart_data|escapejs }}'){% else %}null{% endif %};
   
-  if (ctx && chartData) {
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: chartData.labels,
-        datasets: chartData.datasets
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            position: 'bottom'
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              precision: 0
-            }
-          },
-          x: {
-            ticks: {
-              maxRotation: 45,
-              minRotation: 45
-            }
-          }
-        },
-        interaction: {
-          mode: 'nearest',
-          axis: 'x',
-          intersect: false
+  const chartConfigs = [
+    { id: 'chartRlk', key: 'rlk', label: 'РЛ', color: '#002c63' },
+    { id: 'chartEstimation', key: 'estimation', label: 'Оценка', color: '#00509d' },
+    { id: 'chartRemote', key: 'remote', label: 'Дистанционно', color: '#ff8a00' },
+    { id: 'chartBefore', key: 'before', label: 'До КД', color: '#ffd500' },
+    { id: 'chartDiagnostic', key: 'diagnostic', label: 'Диагностика', color: '#22c55e' },
+    { id: 'chartAfter', key: 'after', label: 'После КД', color: '#f97316' },
+    { id: 'chartReception', key: 'reception', label: 'Принято', color: '#dc2626' },
+  ];
+  
+  chartConfigs.forEach(config => {
+    const ctx = document.getElementById(config.id);
+    if (ctx && chartData) {
+      const mainDataset = chartData.datasets.find(d => d.label === config.label);
+      const datasets = [];
+      
+      if (mainDataset) {
+        datasets.push({
+          label: config.label + ' (основной)',
+          data: mainDataset.data,
+          borderColor: config.color,
+          backgroundColor: mainDataset.backgroundColor,
+          tension: 0.1
+        });
+      }
+      
+      if (compareChartData) {
+        const compareDataset = compareChartData.datasets.find(d => d.label === config.label);
+        if (compareDataset) {
+          datasets.push({
+            label: config.label + ' (сравнение)',
+            data: compareDataset.data,
+            borderColor: config.color,
+            backgroundColor: 'transparent',
+            borderDash: [5, 5],
+            tension: 0.1
+          });
         }
       }
-    });
+      
+      if (datasets.length > 0) {
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: chartData.labels,
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0
+                }
+              },
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45
+                }
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            }
+          }
+        });
+      }
+    }
+  });
+  
+  // Функция для переключения режима сравнения
+  function toggleCompareMode() {
+    const checkbox = document.getElementById('compareMode');
+    const section = document.getElementById('compareFilterSection');
+    if (checkbox && section) {
+      section.style.display = checkbox.checked ? 'block' : 'none';
+    }
   }
+  
+  // Инициализация multi-select для фильтров сравнения
+  document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация для фильтров сравнения (аналогично основным фильтрам)
+    if (document.getElementById('compareSourceUnitSearch')) {
+      initMultiSelect('compareSourceUnitSearch', 'compareSourceUnitDropdown', 'compare_unit_source_ids', 'selectedCompareSourceUnits', 'updateSelected_selectedCompareSourceUnits');
+    }
+    if (document.getElementById('compareUnitSearch')) {
+      initMultiSelect('compareUnitSearch', 'compareUnitDropdown', 'compare_unit_ids', 'selectedCompareUnits', 'updateSelected_selectedCompareUnits');
+    }
+    if (document.getElementById('compareCitySearch')) {
+      initMultiSelect('compareCitySearch', 'compareCityDropdown', 'compare_city_ids', 'selectedCompareCities', 'updateSelected_selectedCompareCities');
+    }
+    if (document.getElementById('compareBrandSearch')) {
+      initMultiSelect('compareBrandSearch', 'compareBrandDropdown', 'compare_brands', 'selectedCompareBrands', 'updateSelected_selectedCompareBrands');
+    }
+    if (document.getElementById('compareTypeReceptionSearch')) {
+      initMultiSelect('compareTypeReceptionSearch', 'compareTypeReceptionDropdown', 'compare_type_reception_ids', 'selectedCompareTypeReceptions', 'updateSelected_selectedCompareTypeReceptions');
+    }
+  });
 </script>
 {% endblock %}
 

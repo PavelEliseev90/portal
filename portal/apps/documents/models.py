@@ -624,8 +624,8 @@ class DocRLK(models.Model):
             def _get_brand(name, city_name):
                 try:
                     if name.find('КорсАвто') > -1:
-                        return 'КорсАвто'
-                    name = name.replace('Тула', '').replace('Калуга', '').replace('Обнинск', '').replace('Курск (50 лет Октября)', '').replace('Курск', '').replace('Новомосковск', '').replace('Серпухов', '').replace('Коломна', '').replace('Ногинск', '').replace('Орел', '').replace('Ярославль', '')
+                        return 'корсавто'
+                    name = name.replace('Тула', '').replace('Калуга', '').replace('Обнинск', '').replace('Курск (50 лет Октября)', '').replace('(энгельса 173)', '').replace('Курск', '').replace('Новомосковск', '').replace('Серпухов', '').replace('Коломна', '').replace('Ногинск', '').replace('Орел', '').replace('Ярославль', '')
                     name = name.replace('ОП ', '').replace('ДЦ ', '').replace('Техцентр  ', '').replace(city_name, '').strip()
                     return name.lower()
                 except: 
