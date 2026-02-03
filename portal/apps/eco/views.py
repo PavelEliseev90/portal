@@ -9920,9 +9920,45 @@ def tradein_funnel_analytics_detail(request):
     
     # Применяем дополнительный фильтр по типу
     filter_title = ''
-    if filter_type == 'rlk':
+    if filter_type == 'op_rlk':
+        # Рабочие листы ОП - данные из DocRLK (оптимизированно с пагинацией на уровне QuerySet)
+        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+        op_rlk_qs = op_rlk_qs.select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city').order_by('-dataTime', '-id')
+        
+        # Пагинация на уровне QuerySet (оптимально)
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        page = request.GET.get('page', 1)
+        paginator = Paginator(op_rlk_qs, 50)
+        
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        
+        filter_title = 'Рабочие листы ОП'
+        total_count = paginator.count
+        
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'filter_type': filter_type,
+            'filter_title': filter_title,
+            'total_count': total_count,
+            'page_obj': page_obj,
+            'op_rlk_data': True,  # Флаг для шаблона
+            'filters': {
+                'date_start': date_start.strftime('%Y-%m-%d'),
+                'date_end': date_end.strftime('%Y-%m-%d'),
+                'report_type': report_type,
+            },
+        }
+        
+        return render(request, 'lo/tradein_funnel_analytics_detail.html', {'params': params})
+    elif filter_type == 'rlk':
         qs = qs.filter(valid_date_rlk)
-        filter_title = 'Рабочие листы'
+        filter_title = 'Рабочие листы Trade-in'
     elif filter_type == 'before':
         qs = qs.filter(valid_date_before | valid_date_remote)
         filter_title = 'До КД / Дистанционно'
