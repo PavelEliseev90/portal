@@ -697,7 +697,7 @@
           <h4 class="mb-0">Отдельные графики по событиям</h4>
           <span id="individualChartsIcon" style="font-size: 1.2rem;">▼</span>
         </div>
-        <div class="collapse show" id="individualCharts">
+        <div class="collapse" id="individualCharts">
           <div class="row g-3">
             <div class="col-md-6">
               <h5 class="mb-2">Рабочие листы ОП</h5>
@@ -748,8 +748,6 @@
         <thead class="table-light">
           <tr>
             <th>Тип приёма</th>
-            <th class="text-end">РЛ ОП{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
-            <th class="text-end">Конверсия ОП → Trade-in{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
             <th class="text-end">Всего{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
             <th class="text-end">До КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
             <th class="text-end">После КД{% if params.compare_mode and params.compare_data %} <span style="color: #6c7a92; font-size: 0.85rem;">(сравнение)</span>{% endif %}</th>
@@ -764,26 +762,7 @@
             {% if stat.type_reception_name != '' %}
               <tr>
                 <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
-                <td class="text-end">
-                  {{ stat.op_rlk|floatformat:"0g" }}
-                  {% if params.compare_mode and params.compare_data %}
-                    {% for compare_stat in params.compare_data.type_reception_stats %}
-                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
-                        <span style="color: #6c7a92;">/ {{ compare_stat.op_rlk|floatformat:"0g" }}</span>
-                      {% endif %}
-                    {% endfor %}
-                  {% endif %}
-                </td>
-                <td class="text-end">
-                  {{ stat.conv_op_to_tradein|floatformat:"2g" }}%
-                  {% if params.compare_mode and params.compare_data %}
-                    {% for compare_stat in params.compare_data.type_reception_stats %}
-                      {% if compare_stat.type_reception_id == stat.type_reception_id %}
-                        <span style="color: #6c7a92;">/ {{ compare_stat.conv_op_to_tradein|floatformat:"2g" }}%</span>
-                      {% endif %}
-                    {% endfor %}
-                  {% endif %}
-                </td>
+                
                 <td class="text-end">
                   {{ stat.total|floatformat:"0g" }}
                   {% if params.compare_mode and params.compare_data %}
@@ -1895,6 +1874,17 @@
     }
   }
   
+  // Функция для сворачивания блока (без переключения)
+  function collapseElement(elementId) {
+    const element = document.getElementById(elementId);
+    const icon = document.getElementById(elementId + 'Icon');
+    
+    if (element) {
+      element.classList.remove('show');
+      if (icon) icon.textContent = '▶';
+    }
+  }
+  
   // Фильтрация источников и подразделений по выбранным городам
   const cityUnitMap = JSON.parse(document.getElementById('cityUnitMap').textContent);
   const citySourceUnitMap = JSON.parse(document.getElementById('citySourceUnitMap').textContent);
@@ -1972,9 +1962,9 @@
   // Инициализация: сворачиваем блоки по умолчанию
   document.addEventListener('DOMContentLoaded', function() {
     // Сворачиваем статистику по оценщикам, аналитикам и брендам по умолчанию
-    toggleCollapse('staffStats');
-    toggleCollapse('analystStats');
-    toggleCollapse('brandStats');
+    collapseElement('staffStats');
+    collapseElement('analystStats');
+    collapseElement('brandStats');
     
     // Применяем фильтрацию по городам при загрузке
     filterUnitsByCities();

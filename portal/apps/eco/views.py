@@ -9106,7 +9106,8 @@ def tradein_funnel_analytics_export(request):
             'lo_number'
         ).order_by('date_reception_success', 'rlk_number')
     else:
-        export_data = []
+        # Если тип экспорта не распознан, возвращаем ошибку
+        return HttpResponse('Неверный тип экспорта', status=400)
     
     # Создаем Excel файл
     from django.http import HttpResponse
