@@ -320,14 +320,6 @@
       
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
-          <label class="form-label text-uppercase">Дата с</label>
-          <input type="date" class="form-control" name="compare_date_start" value="{{ params.filters.compare_date_start|default:params.filters.date_start }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label text-uppercase">Дата по</label>
-          <input type="date" class="form-control" name="compare_date_end" value="{{ params.filters.compare_date_end|default:params.filters.date_end }}">
-        </div>
-        <div class="col-md-3">
           <label class="form-label text-uppercase">Вариант отчета</label>
           <select class="form-select" name="compare_report_type">
             <option value="1" {% if params.filters.compare_report_type == 1 or not params.filters.compare_report_type %}selected{% endif %}>Сквозной</option>
@@ -335,6 +327,15 @@
             <option value="3" {% if params.filters.compare_report_type == 3 %}selected{% endif %}>По принятым</option>
           </select>
         </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата с</label>
+          <input type="date" class="form-control" name="compare_date_start" value="{{ params.filters.compare_date_start|default:params.filters.date_start }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата по</label>
+          <input type="date" class="form-control" name="compare_date_end" value="{{ params.filters.compare_date_end|default:params.filters.date_end }}">
+        </div>
+        
       </div>
       
       <div class="row g-3 align-items-end mt-2">
@@ -427,15 +428,44 @@
   <div class="row g-3 mb-3">
     <div class="col-xl-3 col-sm-6">
       <article class="kors-stage-card">
-        <h3>Рабочие листы</h3>
+        <h3>Рабочие листы ОП</h3>
+        <h2>
+          {{ params.totals.op_rlk|floatformat:"0g" }}
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 1.2rem;">/ {{ params.compare_data.totals.op_rlk|floatformat:"0g" }}</span>
+          {% endif %}
+        </h2>
+        <p class="kors-stage-desc">Всего рабочих листов ОП</p>
+        <span class="kors-stage-conv">Конверсия: 100%</span>
+        <div class="mt-2 d-flex gap-2">
+          <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=op_rlk&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-primary">
+            👁️ Посмотреть
+          </a>
+          <a href="{% url 'eco:tradein_funnel_analytics_export' %}?export_type=op_rlk&{{ request.GET.urlencode }}" 
+             class="btn btn-sm btn-outline-primary">
+            📥 Выгрузить в Excel
+          </a>
+        </div>
+      </article>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+      <article class="kors-stage-card">
+        <h3>Рабочие листы Trade-in</h3>
         <h2>
           {{ params.totals.rlk|floatformat:"0g" }}
           {% if params.compare_mode and params.compare_data %}
             <span style="color: #6c7a92; font-size: 1.2rem;">/ {{ params.compare_data.totals.rlk|floatformat:"0g" }}</span>
           {% endif %}
         </h2>
-        <p class="kors-stage-desc">Всего рабочих листов</p>
-        <span class="kors-stage-conv">Конверсия: 100%</span>
+        <p class="kors-stage-desc">Всего рабочих листов Trade-in</p>
+        <span class="kors-stage-conv">
+          Конверсия: {{ params.totals.conv_op_to_tradein|floatformat:"2g" }}%
+          {% if params.compare_mode and params.compare_data %}
+            / {{ params.compare_data.totals.conv_op_to_tradein|floatformat:"2g" }}%
+          {% endif %}
+        </span>
         <div class="mt-2 d-flex gap-2">
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=rlk&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-primary">
@@ -657,7 +687,11 @@
     <div class="mt-3">
       <div class="row g-3">
         <div class="col-md-6">
-          <h5 class="mb-2">Рабочие листы</h5>
+          <h5 class="mb-2">Рабочие листы ОП</h5>
+          <canvas id="chartOpRlk" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-2">Рабочие листы Trade-in</h5>
           <canvas id="chartRlk" style="max-height: 250px;"></canvas>
         </div>
         <div class="col-md-6">
@@ -1603,87 +1637,92 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // Функции для работы с множественным выбором фильтров
-  (function() {
-    function initMultiSelect(searchId, dropdownId, selectedId) {
-      const searchInput = document.getElementById(searchId);
-      const dropdown = document.getElementById(dropdownId);
-      const selectedDiv = document.getElementById(selectedId);
-      
-      if (!searchInput || !dropdown || !selectedDiv) return;
-      
-      function updateSelected() {
-        const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
-        selectedDiv.innerHTML = '';
-        if (checked.length > 0) {
-          const badges = Array.from(checked).map(cb => {
-            const label = cb.closest('label');
-            const text = label ? label.textContent.trim() : '';
-            const value = cb.value;
-            return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedId}();"></button></span>`;
-          }).join('');
-          selectedDiv.innerHTML = badges;
-        }
+  function initMultiSelect(searchId, dropdownId, selectedId) {
+    const searchInput = document.getElementById(searchId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedDiv = document.getElementById(selectedId);
+    
+    if (!searchInput || !dropdown || !selectedDiv) return;
+    
+    function updateSelected() {
+      const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+      selectedDiv.innerHTML = '';
+      if (checked.length > 0) {
+        const badges = Array.from(checked).map(cb => {
+          const label = cb.closest('label');
+          const text = label ? label.textContent.trim() : '';
+          const value = cb.value;
+          return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedId}();"></button></span>`;
+        }).join('');
+        selectedDiv.innerHTML = badges;
       }
-      
-      // Сохраняем функцию для глобального доступа
-      window['updateSelected_' + selectedId] = updateSelected;
-      
-      searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        const items = dropdown.querySelectorAll('label');
-        items.forEach(item => {
-          const text = item.textContent.toLowerCase();
-          item.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
-      });
-      
-      searchInput.addEventListener('focus', function() {
-        dropdown.style.display = 'block';
-      });
-      
-      document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.style.display = 'none';
-        }
-      });
-      
-      dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', updateSelected);
-      });
-      
-      updateSelected();
     }
     
-    // Инициализация множественного выбора после загрузки DOM
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
-        initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
-        initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
-        initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
-        initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+    // Сохраняем функцию для глобального доступа
+    window['updateSelected_' + selectedId] = updateSelected;
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const items = dropdown.querySelectorAll('label');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? '' : 'none';
       });
-    } else {
+    });
+    
+    searchInput.addEventListener('focus', function() {
+      dropdown.style.display = 'block';
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelected);
+    });
+    
+    updateSelected();
+  }
+  
+  // Инициализация множественного выбора после загрузки DOM
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
       initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
       initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
       initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
       initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
       initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
-    }
-  })();
+    });
+  } else {
+    initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+    initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+    initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
+    initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+    initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+  }
   
   function prepareFormData(form) {
-    // Собираем множественные значения в скрытые поля
+    // Собираем множественные значения в скрытые поля (основные фильтры)
     const unitSourceIds = Array.from(form.querySelectorAll('input[name="unit_source_ids"]:checked')).map(cb => cb.value);
     const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
     const cityIds = Array.from(form.querySelectorAll('input[name="city_ids"]:checked')).map(cb => cb.value);
     const typeReceptionIds = Array.from(form.querySelectorAll('input[name="type_reception_ids"]:checked')).map(cb => cb.value);
     const brands = Array.from(form.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
     
-    // Удаляем старые скрытые поля
-    form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="type_reception_ids"], input[type="hidden"][name^="brands"]').forEach(el => el.remove());
+    // Собираем множественные значения для фильтров сравнения
+    const compareUnitSourceIds = Array.from(form.querySelectorAll('input[name="compare_unit_source_ids"]:checked')).map(cb => cb.value);
+    const compareUnitIds = Array.from(form.querySelectorAll('input[name="compare_unit_ids"]:checked')).map(cb => cb.value);
+    const compareCityIds = Array.from(form.querySelectorAll('input[name="compare_city_ids"]:checked')).map(cb => cb.value);
+    const compareTypeReceptionIds = Array.from(form.querySelectorAll('input[name="compare_type_reception_ids"]:checked')).map(cb => cb.value);
+    const compareBrands = Array.from(form.querySelectorAll('input[name="compare_brands"]:checked')).map(cb => cb.value);
     
-    // Добавляем новые скрытые поля с объединенными значениями
+    // Удаляем старые скрытые поля
+    form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="type_reception_ids"], input[type="hidden"][name^="brands"], input[type="hidden"][name^="compare_unit_source_ids"], input[type="hidden"][name^="compare_unit_ids"], input[type="hidden"][name^="compare_city_ids"], input[type="hidden"][name^="compare_type_reception_ids"], input[type="hidden"][name^="compare_brands"]').forEach(el => el.remove());
+    
+    // Добавляем новые скрытые поля с объединенными значениями (основные фильтры)
     if (unitSourceIds.length > 0) {
       const hidden = document.createElement('input');
       hidden.type = 'hidden';
@@ -1721,6 +1760,57 @@
       hidden.type = 'hidden';
       hidden.name = 'brands';
       hidden.value = brands.join(',');
+      form.appendChild(hidden);
+    }
+    
+    // Добавляем скрытые поля для фильтров сравнения
+    if (compareUnitSourceIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_unit_source_ids';
+      hidden.value = compareUnitSourceIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (compareUnitIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_unit_ids';
+      hidden.value = compareUnitIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (compareCityIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_city_ids';
+      hidden.value = compareCityIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (compareTypeReceptionIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_type_reception_ids';
+      hidden.value = compareTypeReceptionIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (compareBrands.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_brands';
+      hidden.value = compareBrands.join(',');
+      form.appendChild(hidden);
+    }
+    
+    // Добавляем параметр compare_mode, если чекбокс отмечен
+    const compareCheckbox = form.querySelector('input[name="compare"]');
+    if (compareCheckbox && compareCheckbox.checked) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_mode';
+      hidden.value = '1';
       form.appendChild(hidden);
     }
     
@@ -1858,7 +1948,8 @@
   const compareChartData = {% if params.compare_mode and params.compare_data %}JSON.parse('{{ params.compare_data.chart_data|escapejs }}'){% else %}null{% endif %};
   
   const chartConfigs = [
-    { id: 'chartRlk', key: 'rlk', label: 'РЛ', color: '#002c63' },
+    { id: 'chartOpRlk', key: 'op_rlk', label: 'РЛ ОП', color: '#6366f1' },
+    { id: 'chartRlk', key: 'rlk', label: 'РЛ Trade-in', color: '#002c63' },
     { id: 'chartEstimation', key: 'estimation', label: 'Оценка', color: '#00509d' },
     { id: 'chartRemote', key: 'remote', label: 'Дистанционно', color: '#ff8a00' },
     { id: 'chartBefore', key: 'before', label: 'До КД', color: '#ffd500' },
@@ -1941,34 +2032,64 @@
     }
   });
   
+  // Инициализация multi-select для фильтров сравнения
+  function initCompareFilters() {
+    // Инициализация для фильтров сравнения (аналогично основным фильтрам)
+    if (document.getElementById('compareSourceUnitSearch')) {
+      initMultiSelect('compareSourceUnitSearch', 'compareSourceUnitDropdown', 'selectedCompareSourceUnits');
+    }
+    if (document.getElementById('compareUnitSearch')) {
+      initMultiSelect('compareUnitSearch', 'compareUnitDropdown', 'selectedCompareUnits');
+    }
+    if (document.getElementById('compareCitySearch')) {
+      initMultiSelect('compareCitySearch', 'compareCityDropdown', 'selectedCompareCities');
+    }
+    if (document.getElementById('compareBrandSearch')) {
+      initMultiSelect('compareBrandSearch', 'compareBrandDropdown', 'selectedCompareBrands');
+    }
+    if (document.getElementById('compareTypeReceptionSearch')) {
+      initMultiSelect('compareTypeReceptionSearch', 'compareTypeReceptionDropdown', 'selectedCompareTypeReceptions');
+    }
+  }
+  
   // Функция для переключения режима сравнения
   function toggleCompareMode() {
     const checkbox = document.getElementById('compareMode');
     const section = document.getElementById('compareFilterSection');
     if (checkbox && section) {
       section.style.display = checkbox.checked ? 'block' : 'none';
+      // Инициализируем фильтры сравнения при показе секции
+      if (checkbox.checked) {
+        setTimeout(initCompareFilters, 100);
+      }
     }
   }
   
-  // Инициализация multi-select для фильтров сравнения
-  document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация для фильтров сравнения (аналогично основным фильтрам)
-    if (document.getElementById('compareSourceUnitSearch')) {
-      initMultiSelect('compareSourceUnitSearch', 'compareSourceUnitDropdown', 'compare_unit_source_ids', 'selectedCompareSourceUnits', 'updateSelected_selectedCompareSourceUnits');
+  // Инициализация фильтров сравнения при загрузке страницы (если секция видима)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      if (document.getElementById('compareFilterSection') && document.getElementById('compareFilterSection').style.display !== 'none') {
+        initCompareFilters();
+      }
+    });
+  } else {
+    if (document.getElementById('compareFilterSection') && document.getElementById('compareFilterSection').style.display !== 'none') {
+      initCompareFilters();
     }
-    if (document.getElementById('compareUnitSearch')) {
-      initMultiSelect('compareUnitSearch', 'compareUnitDropdown', 'compare_unit_ids', 'selectedCompareUnits', 'updateSelected_selectedCompareUnits');
+  }
+  
+  // Инициализация при показе секции сравнения
+  function toggleCompareMode() {
+    const checkbox = document.getElementById('compareMode');
+    const section = document.getElementById('compareFilterSection');
+    if (checkbox && section) {
+      section.style.display = checkbox.checked ? 'block' : 'none';
+      // Инициализируем фильтры сравнения при показе секции
+      if (checkbox.checked) {
+        setTimeout(initCompareFilters, 100);
+      }
     }
-    if (document.getElementById('compareCitySearch')) {
-      initMultiSelect('compareCitySearch', 'compareCityDropdown', 'compare_city_ids', 'selectedCompareCities', 'updateSelected_selectedCompareCities');
-    }
-    if (document.getElementById('compareBrandSearch')) {
-      initMultiSelect('compareBrandSearch', 'compareBrandDropdown', 'compare_brands', 'selectedCompareBrands', 'updateSelected_selectedCompareBrands');
-    }
-    if (document.getElementById('compareTypeReceptionSearch')) {
-      initMultiSelect('compareTypeReceptionSearch', 'compareTypeReceptionDropdown', 'compare_type_reception_ids', 'selectedCompareTypeReceptions', 'updateSelected_selectedCompareTypeReceptions');
-    }
-  });
+  }
 </script>
 {% endblock %}
 
