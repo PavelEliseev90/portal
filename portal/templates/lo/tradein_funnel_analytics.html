@@ -538,6 +538,18 @@
               </tr>
             {% endif %}
           {% endfor %}
+          {% if params.type_reception_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.type_reception_totals.type_reception_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.type_reception_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -577,6 +589,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.price_group_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.price_group_totals.zg_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.price_group_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -616,6 +640,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.city_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.city_totals.city_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.city_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -625,10 +661,14 @@
   <!-- Статистика по брендам -->
   {% if params.brand_stats %}
   <div class="kors-panel">
-    <div class="kors-panel__head">
+    <div class="kors-panel__head d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="toggleCollapse('brandStats')">
       <h3>Статистика по брендам</h3>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-secondary" id="brandStatsBadge">{{ params.brand_stats|length }}</span>
+        <span id="brandStatsIcon" style="font-size: 1.2rem;">▼</span>
+      </div>
     </div>
-    <div class="table-responsive mt-3">
+    <div class="table-responsive mt-3 collapse" id="brandStats">
       <table class="table table-sm align-middle table-hover">
         <thead class="table-light">
           <tr>
@@ -655,6 +695,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.brand_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.brand_totals.brand }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.brand_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -671,7 +723,7 @@
         <span id="staffStatsIcon" style="font-size: 1.2rem;">▼</span>
       </div>
     </div>
-    <div class="table-responsive mt-3 collapse show" id="staffStats">
+    <div class="table-responsive mt-3 collapse" id="staffStats">
       <table class="table table-sm align-middle table-hover">
         <thead class="table-light">
           <tr>
@@ -698,6 +750,18 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.staff_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.staff_totals.staff_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.staff_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -714,7 +778,7 @@
         <span id="analystStatsIcon" style="font-size: 1.2rem;">▼</span>
       </div>
     </div>
-    <div class="table-responsive mt-3 collapse show" id="analystStats">
+    <div class="table-responsive mt-3 collapse" id="analystStats">
       <table class="table table-sm align-middle table-hover">
         <thead class="table-light">
           <tr>
@@ -741,12 +805,27 @@
             <td class="text-end">{{ stat.conv_reception|floatformat:"2g" }}%</td>
           </tr>
           {% endfor %}
+          {% if params.analyst_totals %}
+          <tr class="table-info">
+            <td><strong>{{ params.analyst_totals.analyst_name }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.total|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.before|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.after|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.reception|floatformat:"0g" }}</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.conv_before|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.conv_after|floatformat:"2g" }}%</strong></td>
+            <td class="text-end"><strong>{{ params.analyst_totals.conv_reception|floatformat:"2g" }}%</strong></td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
   </div>
   {% endif %}
 </div>
+
+{{ params.city_unit_map|json_script:"cityUnitMap" }}
+{{ params.city_source_unit_map|json_script:"citySourceUnitMap" }}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -876,13 +955,16 @@
   }
   
   function resetFilters() {
-    document.getElementById('funnelFilterForm').reset();
+    const form = document.getElementById('funnelFilterForm');
+    form.reset();
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedTypeReceptions', 'selectedBrands'];
     selectedDivs.forEach(id => {
       const div = document.getElementById(id);
       if (div) div.innerHTML = '';
     });
+    // Сразу применяем сброс - отправляем форму
+    form.submit();
   }
 
   // Функция для сворачивания/разворачивания блоков
@@ -902,12 +984,100 @@
     }
   }
   
+  // Фильтрация источников и подразделений по выбранным городам
+  const cityUnitMap = JSON.parse(document.getElementById('cityUnitMap').textContent);
+  const citySourceUnitMap = JSON.parse(document.getElementById('citySourceUnitMap').textContent);
+  
+  function filterUnitsByCities() {
+    const checkedCities = Array.from(document.querySelectorAll('input[name="city_ids"]:checked')).map(cb => parseInt(cb.value));
+    const unitDropdown = document.getElementById('unitDropdown');
+    const sourceUnitDropdown = document.getElementById('sourceUnitDropdown');
+    
+    if (checkedCities.length === 0) {
+      // Если города не выбраны, показываем все
+      if (unitDropdown) {
+        unitDropdown.querySelectorAll('label').forEach(label => label.style.display = '');
+      }
+      if (sourceUnitDropdown) {
+        sourceUnitDropdown.querySelectorAll('label').forEach(label => label.style.display = '');
+      }
+      return;
+    }
+    
+    // Собираем доступные unit_id и source_unit_id для выбранных городов
+    const availableUnitIds = new Set();
+    const availableSourceUnitIds = new Set();
+    
+    checkedCities.forEach(cityId => {
+      if (cityUnitMap[cityId]) {
+        cityUnitMap[cityId].forEach(unitId => availableUnitIds.add(unitId));
+      }
+      if (citySourceUnitMap[cityId]) {
+        citySourceUnitMap[cityId].forEach(sourceUnitId => availableSourceUnitIds.add(sourceUnitId));
+      }
+    });
+    
+    // Фильтруем подразделения
+    if (unitDropdown) {
+      unitDropdown.querySelectorAll('label').forEach(label => {
+        const checkbox = label.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const unitId = parseInt(checkbox.value);
+          if (availableUnitIds.has(unitId)) {
+            label.style.display = '';
+          } else {
+            label.style.display = 'none';
+            checkbox.checked = false; // Снимаем выбор с недоступных
+          }
+        }
+      });
+      // Обновляем отображение выбранных
+      if (window.updateSelected_selectedUnits) {
+        window.updateSelected_selectedUnits();
+      }
+    }
+    
+    // Фильтруем источники
+    if (sourceUnitDropdown) {
+      sourceUnitDropdown.querySelectorAll('label').forEach(label => {
+        const checkbox = label.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const sourceUnitId = parseInt(checkbox.value);
+          if (availableSourceUnitIds.has(sourceUnitId)) {
+            label.style.display = '';
+          } else {
+            label.style.display = 'none';
+            checkbox.checked = false; // Снимаем выбор с недоступных
+          }
+        }
+      });
+      // Обновляем отображение выбранных
+      if (window.updateSelected_selectedSourceUnits) {
+        window.updateSelected_selectedSourceUnits();
+      }
+    }
+  }
+  
   // Инициализация: сворачиваем блоки по умолчанию
   document.addEventListener('DOMContentLoaded', function() {
-    // Можно оставить развернутыми по умолчанию или свернуть
-    // Для сворачивания по умолчанию раскомментируйте:
-    // toggleCollapse('staffStats');
-    // toggleCollapse('analystStats');
+    // Сворачиваем статистику по оценщикам, аналитикам и брендам по умолчанию
+    toggleCollapse('staffStats');
+    toggleCollapse('analystStats');
+    toggleCollapse('brandStats');
+    
+    // Применяем фильтрацию по городам при загрузке
+    filterUnitsByCities();
+    
+    // Добавляем обработчики на изменение выбора городов
+    document.querySelectorAll('input[name="city_ids"]').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        filterUnitsByCities();
+        // Обновляем отображение выбранных городов
+        if (window.updateSelected_selectedCities) {
+          window.updateSelected_selectedCities();
+        }
+      });
+    });
   });
 
   // График по дням
