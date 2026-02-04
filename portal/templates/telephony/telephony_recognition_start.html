@@ -1,212 +1,280 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - речевая аналитика звонков {% endblock %}
-
-{% block title_navbar %} - речевая аналитика звонков {% endblock %}
-
+{% block title %} - Речевая аналитика звонков {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<div class="row g-1 align-items-center">
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-      <label for="floatingInput">С</label>
-    </div>
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .recognition-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-section__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recognition-section__title-icon {
+    font-size: 1.5rem;
+    color: #ff8a00;
+  }
+
+  .recognition-section__subtitle {
+    font-size: 0.9rem;
+    color: #6c7a92;
+    margin-bottom: 1.25rem;
+  }
+
+  .metric-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .metric-card h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #8ea1ba;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .metric-card .value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+
+  .metric-card .sub {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  .metric-card-icon {
+    font-size: 1.2rem;
+    color: #ff8a00;
+  }
+
+  .metric-card__complex {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .metric-card__complex-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #002a5a;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>Речевая аналитика звонков</h2>
+    <p>Анализ распознавания речи телефонных звонков</p>
   </div>
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-      <label for="floatingInput">По</label>
-    </div>
-  </div>
-  
-  <div class="col-sm-auto my-auto ">
-    <div class="form-floating mb-3">
-      <div class="d-grid gap-2 my-auto">
-        <button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Обновить </button>
-      </div>
-    </div>
-  </div>
 
-</div>
-
-<div class="card mb-3">
-  <div class="row g-0">
-    
-    <div class="col-md-1 my-auto text-center">
-      <h1><span class="icon-mbri-play"> </span> KG</h1>
-    </div>
-    <div class="col-md-11">
-      <div class="card-body">
-        <h5 class="card-title">ОП новых автомобилей</h5>
-        
-        <div class="row g-4">
-          
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href='success/?direction=1&date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}'>
-                <div class="card border-success mb-3 text-center">
-                  <div class="card-body">
-                    <h5 class="card-title"><span class="icon-mbri-play"></span></h5>
-                    Распознано
-                    <hr>
-                    {{params.op_queue_doc_succsecc}}
-                  </div>
-                </div>
-                </a>
-              </div>
-              
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="queue/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
-                      В очереди
-                      <hr>
-                      {% if params.op_queue == 0 %}
-                        - / -
-                      {% else %}
-                        {{params.op_queue_doc}} / {{params.op_queue}}
-                      {% endif %}
-                    </div>
-                  </div>
-                </a>
-              </div>
-    
-            </div>
-          </div>
-
-
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="questions/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-question"></span></h5>
-                      Вопросы
-                      <hr>
-                      {{params.questions_count}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-              
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="tematiks/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
-                      Тематики
-                      <hr>
-                      {{params.tematiks_count}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-            </div>
-          </div>
-
+  <!-- Фильтр по датам -->
+  <div class="recognition-filter">
+    <form method="get" id="dateFilterForm">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата с</label>
+          <input type="date" class="form-control" id="date_start" name="date_start" 
+                 value="{{ params.filtr.date_start|date:'Y-m-d' }}">
         </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата по</label>
+          <input type="date" class="form-control" id="date_end" name="date_end" 
+                 value="{{ params.filtr.date_end|date:'Y-m-d' }}">
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary px-4" type="button" onclick="change_link()">
+            <i class="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 
+  <!-- ОП новых автомобилей -->
+  <div class="recognition-section">
+    <div class="recognition-section__title">
+      <span class="recognition-section__title-icon">📞</span>
+      ОП новых автомобилей
+    </div>
+    <p class="recognition-section__subtitle">Распознавание речи для отдела продаж новых автомобилей</p>
+    
+    <div class="row g-3">
+      <div class="col-md-3 col-sm-6">
+        <a href='success/?direction=1&date_start={{ params.filtr.date_start|date:"Y-m-d" }}&date_end={{ params.filtr.date_end|date:"Y-m-d" }}' class="metric-card">
+          <h4>
+            <span class="metric-card-icon">✅</span>
+            Распознано
+          </h4>
+          <div class="value">{{ params.op_queue_doc_succsecc }}</div>
+        </a>
+      </div>
+      
+      <div class="col-md-3 col-sm-6">
+        <a href="queue/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">⏳</span>
+            В очереди
+          </h4>
+          <div class="metric-card__complex">
+            {% if params.op_queue == 0 %}
+              <span class="metric-card__complex-value">- / -</span>
+            {% else %}
+              <span class="metric-card__complex-value">{{ params.op_queue_doc }} / {{ params.op_queue }}</span>
+            {% endif %}
+          </div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="questions/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">❓</span>
+            Вопросы
+          </h4>
+          <div class="value">{{ params.questions_count }}</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="tematiks/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">📋</span>
+            Тематики
+          </h4>
+          <div class="value">{{ params.tematiks_count }}</div>
+        </a>
       </div>
     </div>
   </div>
-</div>
 
-<hr>
-
-<div class="card mb-3">
-  <div class="row g-0">
-    
-    <div class="col-md-1 my-auto text-center">
-      <h1><span class="icon-mbri-extension"> </span> KG</h1>
+  <!-- Справочники -->
+  <div class="recognition-section">
+    <div class="recognition-section__title">
+      <span class="recognition-section__title-icon">📚</span>
+      Справочники
     </div>
-    <div class="col-md-11">
-      <div class="card-body">
-        <h5 class="card-title">Справочники</h5>
-        
-        <div class="row g-4">
-          
-        
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="tematiks/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bold"></span></h5>
-                      Словари модели
-                      <hr>
-                      <span class="icon-mbri-menu text-success"></span>{{params.dictonary_model_count}} / <span class="icon-mbri-success text-success"></span> {{params.dictonary_model_count_success}} / <span class="icon-mbri-close text-danger"></span> {{params.dictonary_model_count_fail}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-              
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href='dictonarys/'>
-                <div class="card border-success mb-3 text-center">
-                  <div class="card-body">
-                    <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
-                    Словари автозамены
-                    <hr>
-                    {{params.dictonary_count}}
-                  </div>
-                </div>
-                </a>
-              </div>
-              
+    <p class="recognition-section__subtitle">Управление словарями и моделями распознавания</p>
     
+    <div class="row g-3">
+      <div class="col-md-4 col-sm-6">
+        <a href="dictonarys/" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">📖</span>
+            Словари автозамены
+          </h4>
+          <div class="value">{{ params.dictonary_count }}</div>
+        </a>
+      </div>
+      
+      <div class="col-md-4 col-sm-6">
+        <a href="tematiks/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">🤖</span>
+            Словари модели
+          </h4>
+          <div class="metric-card__complex">
+            <span class="metric-card__complex-value">
+              Всего: {{ params.dictonary_model_count }}
+            </span>
+            <div class="sub">
+              <span style="color: #10b981;">✓ {{ params.dictonary_model_count_success }}</span> / 
+              <span style="color: #ef4444;">✗ {{ params.dictonary_model_count_fail }}</span>
             </div>
           </div>
-
-        </div>
-
-
-        
-
+        </a>
       </div>
     </div>
   </div>
 </div>
 
+<script>
+  function change_link() {
+    var url = new URL(document.location.href);
+    
+    var find_date = document.getElementById('date_start').value;
+    if (find_date.length > 0) {
+      url.searchParams.set('date_start', find_date);
+    } else {
+      url.searchParams.delete('date_start');
+    }
+    
+    var find_date_end = document.getElementById('date_end').value;
+    if (find_date_end.length > 0) {
+      url.searchParams.set('date_end', find_date_end);
+    } else {
+      url.searchParams.delete('date_end');
+    }
 
-
-
-<script language="JavaScript">
-	
-	function change_link(){
-		
-    var url 	= new URL(document.location.href);
-		
-		find_date = document.getElementById('date_start').value;
-		if (find_date.length > 0){
-			url.searchParams.set('date_start', find_date);
-		}else{
-			url.searchParams.delete('date_start')
-		}
-		find_date_end = document.getElementById('date_end').value;
-		if (find_date_end.length > 0){
-			url.searchParams.set('date_end', find_date_end);
-		}else{
-			url.searchParams.delete('date_end')
-		}
-
-		document.location.href  = url.href;
-
-	}
-
+    document.location.href = url.href;
+  }
 </script>
 
-
 {% endblock %}
-
