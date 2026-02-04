@@ -1,235 +1,388 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - CVC 
-  {% if params.filtr.direction == 1 %}
-    ОП новых автомобилей 
-  {% elif params.filtr.direction == 5 %}
-    ОП КорсАвто автомобили с пробегом
-  {% endif %}
-{% endblock %}
-
-{% block title_navbar %} - CVC 
-  {% if params.filtr.direction == 1 %}
-    ОП новых автомобилей 
-  {% elif params.filtr.direction == 5 %}
-    ОП КорсАвто автомобили с пробегом
-  {% endif %}
-{% endblock %}
+{% block title %} - CVC {% if params.filtr.direction == 1 %}ОП новых автомобилей{% elif params.filtr.direction == 5 %}ОП КорсАвто автомобили с пробегом{% endif %} {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<div class="row g-1 align-items-center">
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <select class="form-select" id="direction" name="direction" aria-label="Направление">
-        <option selected></option>
-        <option value="1" {% if params.filtr.direction == 1 %} selected {% endif %}>ОП новых автомобилей</option>
-        <option value="5" {% if params.filtr.direction == 5 %} selected {% endif %}>ОП КорсАвто автомобили с пробегом</option>
-      </select><label for="floatingInput">Направление</label>
-    </div>
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .recognition-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-section__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recognition-section__title-icon {
+    font-size: 1.3rem;
+    color: #ff8a00;
+  }
+
+  .recognition-section__stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .recognition-section__stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .recognition-section__stat-label {
+    color: #6c7a92;
+    font-weight: 500;
+  }
+
+  .recognition-section__stat-value {
+    color: #002a5a;
+    font-weight: 600;
+  }
+
+  .unit-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+  }
+
+  .unit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .unit-card__name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .unit-card__name-icon {
+    font-size: 1.1rem;
+    color: #ff8a00;
+  }
+
+  .unit-card__stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .unit-card__stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .unit-card__stat:last-child {
+    border-bottom: none;
+  }
+
+  .unit-card__stat-label {
+    font-size: 0.85rem;
+    color: #6c7a92;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .unit-card__stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+  }
+
+  .total-card {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    color: #fff;
+    box-shadow: 0 25px 45px rgba(16, 185, 129, 0.2);
+    margin-bottom: 1.5rem;
+  }
+
+  .total-card__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .total-card__stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .total-card__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .total-card__stat-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .total-card__stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .empty-state {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 3rem;
+    text-align: center;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+  }
+
+  .empty-state__icon {
+    font-size: 3rem;
+    color: #8ea1ba;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state__text {
+    font-size: 1.1rem;
+    color: #6c7a92;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>CVC {% if params.filtr.direction == 1 %}ОП новых автомобилей{% elif params.filtr.direction == 5 %}ОП КорсАвто автомобили с пробегом{% endif %}</h2>
+    <p>Распознанные записи по подразделениям</p>
   </div>
-  
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-      <label for="floatingInput">С</label>
-    </div>
-  </div>
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-      <label for="floatingInput">По</label>
-    </div>
-  </div>
-  
-  <div class="col-sm-auto my-auto ">
-    <div class="form-floating mb-3">
-      <div class="d-grid gap-2 my-auto">
-        <button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Обновить </button>
+
+  <!-- Фильтр по датам -->
+  <div class="recognition-filter">
+    <form method="get" id="dateFilterForm">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label text-uppercase">Направление</label>
+          <select class="form-select" id="direction" name="direction" onchange="change_link()">
+            <option value="1" {% if params.filtr.direction == 1 %}selected{% endif %}>ОП новых автомобилей</option>
+            <option value="5" {% if params.filtr.direction == 5 %}selected{% endif %}>ОП КорсАвто автомобили с пробегом</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата с</label>
+          <input type="date" class="form-control" id="date_start" name="date_start" 
+                 value="{{ params.filtr.date_start|date:'Y-m-d' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата по</label>
+          <input type="date" class="form-control" id="date_end" name="date_end" 
+                 value="{{ params.filtr.date_end|date:'Y-m-d' }}">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary px-4" type="button" onclick="change_link()">
+            <i class="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+        </div>
       </div>
-    </div>
+    </form>
   </div>
-
-</div>
-  
 
   {% if params.data|length == 0 %}
-    <div class="row g-1">
-              
-            
-      <div class="col-sm">
-        <div class="card mb-3 border-danger">
-            <div class="card-body">
-                
-                <div style="text-align: center;" class="row g-1">
-                  <p class="fs-5 fw-normal">ХМ... данные не найдены, проверьте правильность выбора периода вывода данных.</p>
-                </div>
-        
-            </div>
-        </div>
-      </div>
-
+    <div class="empty-state">
+      <div class="empty-state__icon">📭</div>
+      <p class="empty-state__text">
+        Данные не найдены, проверьте правильность выбора периода вывода данных.
+      </p>
     </div>
-  {% else%}
-    
+  {% else %}
+    <!-- Общие показатели -->
     {% if params.cvc_count > 0 %}
-    <div class="row g-1">
-                        
-      <div class="col-sm-auto">
-        <a class="nav-link text-dark" href='{{unit.unit__id}}/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}'>
-        <div class="card border-success mb-3">
-          <div class="card-body">
-            <div class="card-title"><span class="icon-mbri-edit"></span><b>Общие показатели за период </b></div>
-            <hr>
-            <div class="book">
-              <p><span>Количество</span><span>{{params.cvc_count}}</span></p>
-              <p><span>Продолжительность</span><span>{{params.cvc_duration}}</span></p>
-            </div>
+      <div class="total-card">
+        <div class="total-card__title">
+          <span>📊</span>
+          Общие показатели за период
+        </div>
+        <div class="total-card__stats">
+          <div class="total-card__stat">
+            <span class="total-card__stat-label">Количество</span>
+            <span class="total-card__stat-value">{{ params.cvc_count }}</span>
+          </div>
+          <div class="total-card__stat">
+            <span class="total-card__stat-label">Продолжительность</span>
+            <span class="total-card__stat-value">{{ params.cvc_duration }}</span>
           </div>
         </div>
-        </a>
       </div>
-
-
-    </div>
     {% endif %}
 
     {% for city_info in params.data %}
       {% if city_info.city__name|length > 0 %}
-        <div class="card mb-3">
-          <div class="row g-0">
+        <div class="recognition-section">
+          <div class="recognition-section__title">
+            <span class="recognition-section__title-icon">🏢</span>
+            {{ city_info.city__name }}
+            <span style="font-size: 0.9rem; color: #6c7a92; font-weight: normal; margin-left: auto;">
+              Всего: {{ city_info.count_city }} записей, {{ city_info.duration_city }}
+            </span>
+          </div>
           
-          <div class="col-sm">
-            <div class="card-body">
-              <h5 class="card-title"> <span class="icon-mbri-home"> </span> {{city_info.city__name}}</h5>
-              <p class="fs-6 fw-bold font-monospace">
-                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-50">
-                  <span class="icon-mbri-chat"> </span> {{city_info.count_city}}
-                  <span class="icon-mbri-clock"> </span> {{city_info.duration_city}}
-                  <span class="visually-hidden"></span>
-                </span>
-              <div class="row g-4">
-                
-                {% for unit in city_info.units %}
-                  
-                  <div class="col-sm-auto">
-                    <div class="row g-1">
-                          
-                      <div class="col-sm-auto">
-                        <a class="nav-link text-dark" href='{{unit.unit__id}}/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}'>
-                        <div class="card border-success mb-3">
-                          <div class="card-body">
-                            <div class="card-title"><span class="icon-mbri-edit"></span><b>{{unit.unit__name}} </b></div>
-                            <hr>
-                            <div class="book">
-                              <p><span>Количество</span><span>{{unit.count}}</span></p>
-                              <p><span>Продолжительность</span><span>{{unit.duration}}</span></p>
-                            </div>
-                          </div>
-                        </div>
-                        </a>
-                      </div>
-            
-              
+          <div class="row g-3">
+            {% for unit in city_info.units %}
+              <div class="col-md-4 col-sm-6">
+                <a href='{{ unit.unit__id }}/?date_start={{ params.filtr.date_start|date:"Y-m-d" }}&date_end={{ params.filtr.date_end|date:"Y-m-d" }}' 
+                   class="unit-card">
+                  <div class="unit-card__name">
+                    <span class="unit-card__name-icon">🏪</span>
+                    {{ unit.unit__name }}
+                  </div>
+                  <div class="unit-card__stats">
+                    <div class="unit-card__stat">
+                      <span class="unit-card__stat-label">Количество</span>
+                      <span class="unit-card__stat-value">{{ unit.count }}</span>
+                    </div>
+                    <div class="unit-card__stat">
+                      <span class="unit-card__stat-label">Продолжительность</span>
+                      <span class="unit-card__stat-value">{{ unit.duration }}</span>
                     </div>
                   </div>
-                  
-                {% endfor %}
-          
+                </a>
               </div>
-              
-            </div>
-          </div>
+            {% endfor %}
           </div>
         </div>
       {% else %}
-        <div class="card mb-3">
-          <div class="row g-0">
+        <div class="recognition-section">
+          <div class="recognition-section__title">
+            <span class="recognition-section__title-icon">🏢</span>
+            Не указан город в 1С
+            <span style="font-size: 0.9rem; color: #6c7a92; font-weight: normal; margin-left: auto;">
+              Всего: {{ city_info.count_city }} записей, {{ city_info.duration_city }}
+            </span>
+          </div>
           
-          <div class="col-sm">
-            <div class="card-body">
-              <h5 class="card-title"> <span class="icon-mbri-home"> </span> Не указан город в 1С</h5>
-              <p class="fs-6 fw-bold font-monospace">
-                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-50">
-                  <span class="icon-mbri-chat"> </span> {{city_info.count_city}}
-                  <span class="icon-mbri-clock"> </span> {{city_info.duration_city}}
-                  <span class="visually-hidden"></span>
-                </span>
-              <div class="row g-4">
-                
-                {% for unit in city_info.units %}
-                  
-                  <div class="col-sm-auto">
-                    <div class="row g-1">
-                          
-                      <div class="col-sm-auto">
-                        <a class="nav-link text-dark" href='{{unit.unit__id}}/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}'>
-                        <div class="card border-success mb-3">
-                          <div class="card-body">
-                            <div class="card-title"><span class="icon-mbri-edit"></span><b>{{unit.unit__name}} </b></div>
-                            <hr>
-                            <div class="book">
-                              <p><span>Количество</span><span>{{unit.count}}</span></p>
-                              <p><span>Продолжительность</span><span>{{unit.duration}}</span></p>
-                            </div>
-                          </div>
-                        </div>
-                        </a>
-                      </div>
-            
-              
+          <div class="row g-3">
+            {% for unit in city_info.units %}
+              <div class="col-md-4 col-sm-6">
+                <a href='{{ unit.unit__id }}/?date_start={{ params.filtr.date_start|date:"Y-m-d" }}&date_end={{ params.filtr.date_end|date:"Y-m-d" }}' 
+                   class="unit-card">
+                  <div class="unit-card__name">
+                    <span class="unit-card__name-icon">🏪</span>
+                    {{ unit.unit__name }}
+                  </div>
+                  <div class="unit-card__stats">
+                    <div class="unit-card__stat">
+                      <span class="unit-card__stat-label">Количество</span>
+                      <span class="unit-card__stat-value">{{ unit.count }}</span>
+                    </div>
+                    <div class="unit-card__stat">
+                      <span class="unit-card__stat-label">Продолжительность</span>
+                      <span class="unit-card__stat-value">{{ unit.duration }}</span>
                     </div>
                   </div>
-                  
-                {% endfor %}
-          
+                </a>
               </div>
-              
-            </div>
-          </div>
+            {% endfor %}
           </div>
         </div>
       {% endif %}
     {% endfor %}
   {% endif %}
+</div>
 
-  
-<script language="JavaScript">
-	
-	function change_link(){
-		
-    var url 	= new URL(document.location.href);
-		
-		find_date = document.getElementById('date_start').value;
-		if (find_date.length > 0){
-			url.searchParams.set('date_start', find_date);
-		}else{
-			url.searchParams.delete('date_start')
-		}
-		find_date_end = document.getElementById('date_end').value;
-		if (find_date_end.length > 0){
-			url.searchParams.set('date_end', find_date_end);
-		}else{
-			url.searchParams.delete('date_end')
-		}
+<script>
+  function change_link() {
+    var url = new URL(document.location.href);
+    
+    var find_date = document.getElementById('date_start').value;
+    if (find_date.length > 0) {
+      url.searchParams.set('date_start', find_date);
+    } else {
+      url.searchParams.delete('date_start');
+    }
+    
+    var find_date_end = document.getElementById('date_end').value;
+    if (find_date_end.length > 0) {
+      url.searchParams.set('date_end', find_date_end);
+    } else {
+      url.searchParams.delete('date_end');
+    }
 
-    find_direction = document.getElementById('direction').value;
-		if (find_direction.length > 0){
-			url.searchParams.set('direction', find_direction);
-		}else{
-			url.searchParams.delete('direction')
-		}
+    var find_direction = document.getElementById('direction').value;
+    if (find_direction.length > 0) {
+      url.searchParams.set('direction', find_direction);
+    } else {
+      url.searchParams.delete('direction');
+    }
 
-		document.location.href  = url.href;
-
-	}
-
+    document.location.href = url.href;
+  }
 </script>
 
-
 {% endblock %}
-
