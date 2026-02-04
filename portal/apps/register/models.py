@@ -1877,6 +1877,111 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
         verbose_name = "Данные интерактивной оценки страница тест - драйв"
         verbose_name_plural = "Данные интерактивной оценки страницы тест - драйва"
 post_save.connect(journal_save_handler, sender=RegInteractivOcenkaTestDrive)
+
+
+# Справочник диагностики для интерактивной оценки
+class DiagnosticReferenceCategory(models.Model):
+    """
+    Категории справочника диагностики (Двигатель, КПП, Тормозная система и т.д.)
+    """
+    code = models.CharField('Код категории', max_length=50, unique=True, db_index=True)  # engine, gear, brake и т.д.
+    name = models.CharField('Наименование', max_length=200)
+    description = models.TextField('Описание', blank=True, null=True)
+    order = models.IntegerField('Порядок сортировки', default=0, db_index=True)
+    is_active = models.BooleanField('Активна', default=True, db_index=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        db_table = 'diagnostic_reference_category'
+        verbose_name = "Категория справочника диагностики"
+        verbose_name_plural = "Категории справочника диагностики"
+        ordering = ['order', 'name']
+        indexes = [
+            models.Index(fields=['code', 'is_active']),
+        ]
+
+
+class DiagnosticReferenceItem(models.Model):
+    """
+    Элементы справочника диагностики (конкретные признаки неисправностей)
+    """
+    category = models.ForeignKey(
+        DiagnosticReferenceCategory, 
+        on_delete=models.CASCADE, 
+        related_name='items',
+        verbose_name='Категория',
+        db_index=True
+    )
+    title = models.CharField('Заголовок', max_length=300)  # "Запотевание (тонкая масляная плёнка)"
+    description = models.TextField('Описание', blank=True, null=True)
+    
+    # Где наблюдается
+    observation_zones = models.TextField('Где наблюдается', blank=True, null=True)
+    
+    # Возможные причины
+    possible_causes = models.TextField('Возможные причины', blank=True, null=True)
+    
+    # Последствия при игнорировании
+    consequences = models.TextField('Последствия при игнорировании', blank=True, null=True)
+    
+    # Дополнительная информация
+    additional_info = models.TextField('Дополнительная информация', blank=True, null=True)
+    
+    # Метаданные
+    order = models.IntegerField('Порядок сортировки', default=0, db_index=True)
+    is_active = models.BooleanField('Активна', default=True, db_index=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    
+    def __str__(self):
+        return f"{self.category.name}: {self.title}"
+    
+    class Meta:
+        db_table = 'diagnostic_reference_item'
+        verbose_name = "Элемент справочника диагностики"
+        verbose_name_plural = "Элементы справочника диагностики"
+        ordering = ['category', 'order', 'title']
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['is_active', 'order']),
+        ]
+
+
+class DiagnosticReferenceSelection(models.Model):
+    """
+    Связь выбранных элементов справочника с оценкой (альтернативный вариант)
+    """
+    test_drive = models.ForeignKey(
+        RegInteractivOcenkaTestDrive,
+        on_delete=models.CASCADE,
+        related_name='reference_selections',
+        verbose_name='Тест-драйв',
+        db_index=True
+    )
+    category_code = models.CharField('Код категории', max_length=50, db_index=True)  # engine, gear, brake
+    reference_item = models.ForeignKey(
+        DiagnosticReferenceItem,
+        on_delete=models.CASCADE,
+        related_name='selections',
+        verbose_name='Элемент справочника'
+    )
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.test_drive} - {self.category_code} - {self.reference_item.title}"
+    
+    class Meta:
+        db_table = 'diagnostic_reference_selection'
+        verbose_name = "Выбор элемента справочника"
+        verbose_name_plural = "Выборы элементов справочника"
+        unique_together = ['test_drive', 'category_code', 'reference_item']
+        indexes = [
+            models.Index(fields=['test_drive', 'category_code']),
+        ]
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenkaTestDrive)
 
 #Страница проверки интерактивной оценки

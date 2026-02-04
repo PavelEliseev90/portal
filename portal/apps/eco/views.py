@@ -2875,6 +2875,19 @@ def doc(request, id):
         list_work_ss            = RegEstimationSS.objects.filter(estimation = estimation)
         list_work_mcu           = RegEstimationMCU.objects.filter(estimation = estimation)
 
+        # Загрузка выбранных элементов справочника диагностики
+        selected_references = {}
+        if estimation.page_test_drive:
+            from register.models import DiagnosticReferenceSelection
+            selections = DiagnosticReferenceSelection.objects.filter(
+                test_drive=estimation.page_test_drive
+            ).select_related('reference_item')
+            
+            for selection in selections:
+                if selection.category_code not in selected_references:
+                    selected_references[selection.category_code] = []
+                selected_references[selection.category_code].append(selection.reference_item.id)
+        
         params = {
                 
                 'type'                  : 'eco',
@@ -2897,6 +2910,7 @@ def doc(request, id):
                 'users'                 : users,
                 'store_info'            : list_store_info,
                 'versions'              : versions,
+                'selected_references'   : selected_references,
                 'body'                  : body,
                 'salon'                 : salon,
                 'list_work_podgotovka'  : list_work_podgotovka,
@@ -3021,6 +3035,37 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.comment            = request.POST.get('comment', '')
             reg_interactiv_ocenka_test_drive.end_estimation     = DT.datetime.now()
             reg_interactiv_ocenka_test_drive.save()
+            
+            # Обработка выбранных элементов справочника диагностики
+            from register.models import DiagnosticReferenceSelection, DiagnosticReferenceItem
+            # Удаляем старые выборы для этого test_drive
+            DiagnosticReferenceSelection.objects.filter(test_drive=reg_interactiv_ocenka_test_drive).delete()
+            
+            # Обрабатываем выбранные элементы для каждой категории
+            category_codes = ['engine', 'gear', 'brake', 'suspension', 'system_og', 'wheel', 
+                            'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag']
+            
+            for category_code in category_codes:
+                selected_items_key = f'selected_reference_items_{category_code}'
+                if selected_items_key in request.POST:
+                    selected_ids_str = request.POST.get(selected_items_key, '')
+                    if selected_ids_str:
+                        try:
+                            selected_ids = [int(id.strip()) for id in selected_ids_str.split(',') if id.strip().isdigit()]
+                            if selected_ids:
+                                items = DiagnosticReferenceItem.objects.filter(
+                                    id__in=selected_ids,
+                                    category__code=category_code,
+                                    is_active=True
+                                )
+                                for item in items:
+                                    DiagnosticReferenceSelection.objects.get_or_create(
+                                        test_drive=reg_interactiv_ocenka_test_drive,
+                                        category_code=category_code,
+                                        reference_item=item
+                                    )
+                        except (ValueError, DiagnosticReferenceItem.DoesNotExist):
+                            pass  # Игнорируем ошибки при обработке
             
             comment_diagnostica = request.POST.get('comment_diagnostica', '')
             if reg_interactiv_ocenka.page_soglasovanie == None:

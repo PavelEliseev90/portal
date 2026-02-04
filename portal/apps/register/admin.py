@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection
 
 
 @admin.register(RegInfoRefreshEstimationCarsExpress)
@@ -184,4 +184,41 @@ class RegInteractivOcenkaRLKAdmin(admin.ModelAdmin):
     list_filter = ('status', 'date_diagnostic', 'unit', 'organization')
     search_fields = ('rlk__nomer', 'rlk__vin', 'estimation__vin')
     filter_horizontal = ('access_user',)
+
+
+@admin.register(DiagnosticReferenceCategory)
+class DiagnosticReferenceCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name', 'code', 'description']
+    ordering = ['order', 'name']
+    list_editable = ['order', 'is_active']
+
+
+@admin.register(DiagnosticReferenceItem)
+class DiagnosticReferenceItemAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category', 'order', 'is_active', 'created_at']
+    list_filter = ['category', 'is_active', 'created_at']
+    search_fields = ['title', 'description', 'observation_zones', 'possible_causes', 'consequences']
+    ordering = ['category', 'order', 'title']
+    list_editable = ['order', 'is_active']
+    raw_id_fields = ['category']
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('category', 'title', 'description', 'order', 'is_active')
+        }),
+        ('Детальная информация', {
+            'fields': ('observation_zones', 'possible_causes', 'consequences', 'additional_info'),
+            'classes': ('wide',)
+        }),
+    )
+
+
+@admin.register(DiagnosticReferenceSelection)
+class DiagnosticReferenceSelectionAdmin(admin.ModelAdmin):
+    list_display = ['test_drive', 'category_code', 'reference_item', 'created_at']
+    list_filter = ['category_code', 'created_at']
+    search_fields = ['test_drive__id', 'category_code', 'reference_item__title']
+    raw_id_fields = ['test_drive', 'reference_item']
+    readonly_fields = ['created_at']
     

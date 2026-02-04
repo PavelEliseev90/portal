@@ -38,6 +38,7 @@ urlpatterns = [
 
     #АПИ
     path('api/',        include('api.urls')),
+    path('register/',   include('register.urls')),
     path('chats/',      include('chats.urls')),
     #PowerBI
     path('powerbi/',    include('powerbi.urls')),
