@@ -1,0 +1,350 @@
+<!-- Модальное окно справочника диагностики -->
+<div class="modal fade" id="diagnosticReferenceModal" tabindex="-1" aria-labelledby="diagnosticReferenceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius: 1.25rem; border: none; box-shadow: 0 25px 45px rgba(0, 23, 61, 0.15);">
+      <div class="modal-header" style="border-bottom: 2px solid #f4f7fb; padding: 1.25rem 1.5rem;">
+        <h5 class="modal-title" id="diagnosticReferenceModalLabel" style="font-size: 1.2rem; font-weight: 600; color: #002a5a;">
+          <i class="bi bi-book"></i> Справочник диагностики: <span id="referenceCategoryName"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <!-- Поиск -->
+        <div class="mb-3">
+          <input 
+            type="text" 
+            class="form-control" 
+            id="referenceSearch" 
+            placeholder="Поиск по справочнику..."
+            style="border-radius: 0.75rem;"
+          >
+        </div>
+        
+        <!-- Список элементов справочника -->
+        <div id="referenceItemsList">
+          <!-- Загружается через AJAX -->
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top: 2px solid #f4f7fb; padding: 1rem 1.5rem;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">Закрыть</button>
+        <button type="button" class="btn btn-primary" id="selectReferenceItems" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem; background: #002a5a; border-color: #002a5a;">
+          <i class="bi bi-check-circle"></i> Применить выбранные
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .diagnostic-reference-icon {
+    color: #002a5a;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-left: 0.5rem;
+    transition: color 0.2s;
+    vertical-align: middle;
+  }
+  
+  .diagnostic-reference-icon:hover {
+    color: #00509d;
+  }
+  
+  .reference-item {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+  }
+  
+  .reference-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);
+    border-color: rgba(0, 42, 90, 0.15);
+  }
+  
+  .reference-item.selected {
+    background: rgba(0, 42, 90, 0.02);
+    border-color: #002a5a;
+  }
+  
+  .reference-item .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+    padding: 1rem;
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+  
+  .reference-item .card-body {
+    padding: 1rem;
+  }
+  
+  .reference-item .card-body strong {
+    color: #002a5a;
+    font-size: 0.9rem;
+    display: block;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .reference-item .card-body strong:first-child {
+    margin-top: 0;
+  }
+  
+  .reference-item .card-body div {
+    color: #6c7a92;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-left: 0.5rem;
+    white-space: pre-line;
+  }
+  
+  .reference-item .alert-info {
+    background: rgba(0, 42, 90, 0.05);
+    border: none;
+    color: #002a5a;
+    border-radius: 0.5rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+  
+  let currentCategory = '';
+  let selectedItems = {};
+  
+  // Загрузка справочника при открытии модального окна
+  $('#diagnosticReferenceModal').on('show.bs.modal', function (event) {
+    const button = $(event.relatedTarget);
+    currentCategory = button.data('category');
+    selectedItems = {};
+    
+    // Сброс поиска
+    $('#referenceSearch').val('');
+    
+    // Загрузка данных через AJAX
+    $.ajax({
+      url: '/register/diagnostic_reference/',
+      data: { category: currentCategory },
+      success: function(data) {
+        $('#referenceCategoryName').text(data.category.name);
+        renderReferenceItems(data.items);
+        
+        // Загружаем уже выбранные элементы для этой категории после рендеринга
+        setTimeout(function() {
+          loadSelectedItems(currentCategory);
+        }, 200);
+      },
+      error: function(xhr, status, error) {
+        $('#referenceItemsList').html(
+          '<div class="alert alert-danger">Ошибка загрузки справочника: ' + 
+          (xhr.responseJSON?.error || error) + '</div>'
+        );
+      }
+    });
+  });
+  
+  // Рендеринг элементов справочника
+  function renderReferenceItems(items) {
+    const container = $('#referenceItemsList');
+    if (!container.length) {
+      console.error('Container #referenceItemsList not found');
+      return;
+    }
+    container.empty();
+    
+    if (items.length === 0) {
+      container.html('<div class="alert alert-info">Элементы справочника не найдены</div>');
+      return;
+    }
+    
+    items.forEach(function(item) {
+      const itemHtml = `
+        <div class="card reference-item" data-item-id="${item.id}">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0" style="font-weight: 600; color: #002a5a;">
+              <i class="bi bi-file-text"></i> ${escapeHtml(item.title)}
+            </h6>
+            <div class="form-check form-switch">
+              <input class="form-check-input reference-item-checkbox" type="checkbox" 
+                     value="${item.id}" id="ref_${item.id}" 
+                     data-item-id="${item.id}">
+              <label class="form-check-label" for="ref_${item.id}" style="cursor: pointer;">Выбрать</label>
+            </div>
+          </div>
+          <div class="card-body">
+            ${item.description ? `<p class="text-muted mb-2">${escapeHtml(item.description)}</p>` : ''}
+            
+            ${item.observation_zones ? `
+              <strong><i class="bi bi-geo-alt"></i> Где наблюдается:</strong>
+              <div>${formatText(item.observation_zones)}</div>
+            ` : ''}
+            
+            ${item.possible_causes ? `
+              <strong><i class="bi bi-exclamation-triangle"></i> Возможные причины:</strong>
+              <div>${formatText(item.possible_causes)}</div>
+            ` : ''}
+            
+            ${item.consequences ? `
+              <strong><i class="bi bi-x-circle text-danger"></i> Последствия при игнорировании:</strong>
+              <div class="text-danger">${formatText(item.consequences)}</div>
+            ` : ''}
+            
+            ${item.additional_info ? `
+              <div class="alert alert-info mt-2 mb-0">
+                <strong>Важно:</strong> ${escapeHtml(item.additional_info)}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      container.append(itemHtml);
+    });
+    
+    // Обработчики для чекбоксов
+    $('.reference-item-checkbox').on('change', function() {
+      const itemId = $(this).data('item-id');
+      const itemCard = $(this).closest('.reference-item');
+      
+      if ($(this).is(':checked')) {
+        selectedItems[itemId] = true;
+        itemCard.addClass('selected');
+      } else {
+        delete selectedItems[itemId];
+        itemCard.removeClass('selected');
+      }
+    });
+  }
+  
+  // Форматирование текста (замена переносов строк на HTML)
+  function formatText(text) {
+    if (!text) return '';
+    return escapeHtml(text)
+      .replace(/\n/g, '<br>')
+      .replace(/^[\s•\-]/gm, '• ')
+      .replace(/\n• /g, '<br>• ');
+  }
+  
+  // Экранирование HTML
+  function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+  }
+  
+  // Поиск по справочнику
+  $('#referenceSearch').on('input', function() {
+    const searchTerm = $(this).val().toLowerCase();
+    $('.reference-item').each(function() {
+      const text = $(this).text().toLowerCase();
+      $(this).toggle(text.includes(searchTerm));
+    });
+  });
+  
+  // Загрузка уже выбранных элементов
+  function loadSelectedItems(categoryCode) {
+    // Получаем текущие выбранные элементы из скрытого поля формы
+    const hiddenField = $(`input[name="selected_reference_items_${categoryCode}"]`);
+    if (hiddenField.length && hiddenField.val()) {
+      const selectedIds = hiddenField.val().split(',').filter(id => id.trim());
+      selectedIds.forEach(function(id) {
+        const itemId = id.trim();
+        if (itemId) {
+          selectedItems[itemId] = true;
+          // Устанавливаем чекбокс после рендеринга
+          setTimeout(function() {
+            const checkbox = $(`#ref_${itemId}`);
+            if (checkbox.length) {
+              checkbox.prop('checked', true).trigger('change');
+            }
+          }, 100);
+        }
+      });
+    }
+  }
+  
+  // Применение выбранных элементов
+  $('#selectReferenceItems').on('click', function() {
+    const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+    
+    // Сохранение выбранных элементов в скрытое поле формы
+    const hiddenField = $(`input[name="selected_reference_items_${currentCategory}"]`);
+    if (hiddenField.length === 0) {
+      // Создаем скрытое поле, если его нет
+      $('<input>').attr({
+        type: 'hidden',
+        name: `selected_reference_items_${currentCategory}`,
+        value: selectedIds.join(',')
+      }).appendTo('form');
+    } else {
+      hiddenField.val(selectedIds.join(','));
+    }
+    
+    // Опционально: обновление комментария (можно добавить названия выбранных элементов)
+    updateCommentWithSelectedItems(currentCategory, selectedIds);
+    
+    $('#diagnosticReferenceModal').modal('hide');
+    
+    // Показываем уведомление
+    showNotification(`Выбрано элементов: ${selectedIds.length}`, 'success');
+  });
+  
+  // Обновление комментария с выбранными элементами (опционально)
+  function updateCommentWithSelectedItems(categoryCode, selectedIds) {
+    if (selectedIds.length === 0) return;
+    
+    // Получаем названия выбранных элементов
+    const selectedTitles = [];
+    $(`.reference-item-checkbox:checked`).each(function() {
+      const itemCard = $(this).closest('.reference-item');
+      const title = itemCard.find('h6').text().replace(/^.*? /, ''); // Убираем иконку
+      selectedTitles.push(title);
+    });
+    
+    // Можно добавить в комментарий или показать отдельно
+    // Например, добавить подсказку под полем комментария
+    const commentField = $(`#comment_${categoryCode}`);
+    if (commentField.length) {
+      let existingComment = commentField.val();
+      const referenceNote = '\n[Справочник: ' + selectedTitles.join(', ') + ']';
+      
+      // Добавляем только если еще не добавлено
+      if (!existingComment.includes('[Справочник:')) {
+        commentField.val(existingComment + referenceNote);
+      }
+    }
+  }
+  
+  // Показ уведомления
+  function showNotification(message, type) {
+    type = type || 'info';
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+    const notification = $(`
+      <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+           style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    `);
+    $('body').append(notification);
+    setTimeout(function() {
+      notification.fadeOut(function() {
+        $(this).remove();
+      });
+    }, 3000);
+  }
+})();
+</script>
+

@@ -1,0 +1,200 @@
+<!-- 
+  ПРИМЕР ИНТЕГРАЦИИ СПРАВОЧНИКА ДИАГНОСТИКИ В lo_v3.html
+  
+  Этот файл содержит примеры кода для добавления иконок подсказок
+  к каждому разделу диагностики.
+  
+  Скопируйте соответствующий блок кода для каждого раздела.
+-->
+
+<!-- ============================================ -->
+<!-- ПРИМЕР 1: Раздел "Двигатель" -->
+<!-- ============================================ -->
+<!-- Найдите в lo_v3.html заголовок раздела "Двигатель" и замените на: -->
+
+<div class="card">
+  <div class="card-body">
+    <h6>
+      <span class="icon-mbri-credit-card"></span> Двигатель
+      <button 
+        type="button" 
+        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+        data-bs-toggle="modal" 
+        data-bs-target="#diagnosticReferenceModal"
+        data-category="engine"
+        title="Открыть справочник диагностики"
+        style="color: #002a5a; text-decoration: none;"
+      >
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </h6>
+    <hr style="width: 75%;">
+    
+    <!-- Существующие radio buttons и комментарий -->
+    <!-- ... -->
+    
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="comment_engine" name="comment_engine" 
+             value="{{params.estimation.page_test_drive.comment_engine}}" 
+             placeholder="" autocomplete="off">
+      <label for="floatingInput">Комментарий</label>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ПРИМЕР 2: Раздел "Коробка передач" -->
+<!-- ============================================ -->
+
+<div class="card">
+  <div class="card-body">
+    <h6>
+      <span class="icon-mbri-credit-card"></span> Коробка передач
+      <button 
+        type="button" 
+        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+        data-bs-toggle="modal" 
+        data-bs-target="#diagnosticReferenceModal"
+        data-category="gear"
+        title="Открыть справочник диагностики"
+        style="color: #002a5a; text-decoration: none;"
+      >
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </h6>
+    <hr style="width: 75%;">
+    
+    <!-- Существующие radio buttons и комментарий -->
+    <!-- ... -->
+    
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="comment_gear" name="comment_gear" 
+             value="{{params.estimation.page_test_drive.comment_gear}}" 
+             placeholder="" autocomplete="off">
+      <label for="floatingInput">Комментарий</label>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ПРИМЕР 3: Раздел "Тормозная система" -->
+<!-- ============================================ -->
+
+<div class="card">
+  <div class="card-body">
+    <h6>
+      <span class="icon-mbri-credit-card"></span> Тормозная система
+      <button 
+        type="button" 
+        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+        data-bs-toggle="modal" 
+        data-bs-target="#diagnosticReferenceModal"
+        data-category="brake"
+        title="Открыть справочник диагностики"
+        style="color: #002a5a; text-decoration: none;"
+      >
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </h6>
+    <hr style="width: 75%;">
+    
+    <!-- Существующие radio buttons и комментарий -->
+    <!-- ... -->
+    
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="comment_brake" name="comment_brake" 
+             value="{{params.estimation.page_test_drive.comment_brake}}" 
+             placeholder="" autocomplete="off">
+      <label for="floatingInput">Комментарий</label>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ПРИМЕР 4: Раздел "Подвеска" -->
+<!-- ============================================ -->
+
+<div class="card">
+  <div class="card-body">
+    <h6>
+      <span class="icon-mbri-credit-card"></span> Подвеска
+      <button 
+        type="button" 
+        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+        data-bs-toggle="modal" 
+        data-bs-target="#diagnosticReferenceModal"
+        data-category="suspension"
+        title="Открыть справочник диагностики"
+        style="color: #002a5a; text-decoration: none;"
+      >
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </h6>
+    <hr style="width: 75%;">
+    
+    <!-- Существующие radio buttons и комментарий -->
+    <!-- ... -->
+    
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="comment_suspension" name="comment_suspension" 
+             value="{{params.estimation.page_test_drive.comment_suspension}}" 
+             placeholder="" autocomplete="off">
+      <label for="floatingInput">Комментарий</label>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ОСТАЛЬНЫЕ РАЗДЕЛЫ (аналогично) -->
+<!-- ============================================ -->
+
+<!-- Система выпуска ОГ: data-category="system_og" -->
+<!-- Рулевое управление: data-category="wheel" -->
+<!-- Кондиционер: data-category="conditioner" -->
+<!-- Турбина: data-category="turbo" -->
+<!-- Полный привод: data-category="drive" -->
+<!-- ТО: data-category="to" -->
+<!-- Подрамник: data-category="subframe" -->
+<!-- Подушка безопасности: data-category="airbag" -->
+
+<!-- ============================================ -->
+<!-- СКРЫТЫЕ ПОЛЯ ДЛЯ ФОРМЫ -->
+<!-- ============================================ -->
+<!-- Добавьте эти поля в форму сохранения диагностики (где name="save_test_drive"): -->
+
+<input type="hidden" name="selected_reference_items_engine" id="selected_reference_items_engine" value="">
+<input type="hidden" name="selected_reference_items_gear" id="selected_reference_items_gear" value="">
+<input type="hidden" name="selected_reference_items_brake" id="selected_reference_items_brake" value="">
+<input type="hidden" name="selected_reference_items_suspension" id="selected_reference_items_suspension" value="">
+<input type="hidden" name="selected_reference_items_system_og" id="selected_reference_items_system_og" value="">
+<input type="hidden" name="selected_reference_items_wheel" id="selected_reference_items_wheel" value="">
+<input type="hidden" name="selected_reference_items_conditioner" id="selected_reference_items_conditioner" value="">
+<input type="hidden" name="selected_reference_items_turbo" id="selected_reference_items_turbo" value="">
+<input type="hidden" name="selected_reference_items_drive" id="selected_reference_items_drive" value="">
+<input type="hidden" name="selected_reference_items_to" id="selected_reference_items_to" value="">
+<input type="hidden" name="selected_reference_items_subframe" id="selected_reference_items_subframe" value="">
+<input type="hidden" name="selected_reference_items_airbag" id="selected_reference_items_airbag" value="">
+
+<!-- ============================================ -->
+<!-- ПОДКЛЮЧЕНИЕ МОДАЛЬНОГО ОКНА -->
+<!-- ============================================ -->
+<!-- В конце файла lo_v3.html (перед {% endblock %}) добавьте: -->
+
+{% include 'lo/diagnostic_reference_modal.html' %}
+
+<!-- ============================================ -->
+<!-- ИНИЦИАЛИЗАЦИЯ ВЫБРАННЫХ ЭЛЕМЕНТОВ -->
+<!-- ============================================ -->
+<!-- Добавьте в конец страницы (после подключения модального окна): -->
+
+<script>
+$(document).ready(function() {
+  // Загружаем уже выбранные элементы из params
+  {% if params.selected_references %}
+    {% for category_code, item_ids in params.selected_references.items %}
+      $('#selected_reference_items_{{ category_code }}').val('{{ item_ids|join:"," }}');
+    {% endfor %}
+  {% endif %}
+});
+</script>
+
