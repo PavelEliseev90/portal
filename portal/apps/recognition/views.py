@@ -1613,6 +1613,11 @@ def cvc_op(request):
                 }
             
             duration_sum = item['duration_sum'] or 0
+            # Убеждаемся, что duration_sum - это число
+            if not isinstance(duration_sum, (int, float)):
+                duration_sum = 0
+            duration_sum = int(duration_sum)
+            
             data_dict[city_id]['units'].append({
                 'unit__id': item['rlk__unit'],
                 'unit__name': item['rlk__unit__name'] or 'Не указано',
@@ -1627,12 +1632,17 @@ def cvc_op(request):
         data_list = []
         cvc_duration_raw = 0
         for city_data in data_dict.values():
-            cvc_duration_raw += city_data['duration_city']
-            city_data['duration_city'] = time_human(city_data['duration_city'])
+            # Убеждаемся, что duration_city - это число
+            duration_city_raw = city_data['duration_city']
+            if not isinstance(duration_city_raw, (int, float)):
+                duration_city_raw = 0
+            
+            cvc_duration_raw += int(duration_city_raw)
+            city_data['duration_city'] = time_human(int(duration_city_raw))
             data_list.append(city_data)
             cvc_count += city_data['count_city']
         
-        cvc_duration = time_human(cvc_duration_raw)
+        cvc_duration = time_human(int(cvc_duration_raw))
 
         params = {
             'type'              : 'recognitions',
