@@ -1,77 +1,302 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - {% if params.new == True %} добавление тематики {% else %} тематика / {{params.tematika.name}} {% endif %} {% endblock %}
-
-{% block title_navbar %} - {% if params.new == True %} добавление тематики {% else %} тематика / {{params.tematika.name}} {% endif %} {% endblock %}
+{% block title %} - {% if params.new == True %}Добавление тематики{% else %}Тематика / {{ params.tematika.name }}{% endif %} {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<form method="POST" id="form_save" name="form">
-  
-  {% csrf_token %}
- 
-  <button type="submit" class="btn btn-outline-success" name="save_button" id="save_button"><span class="icon-mbri-refresh"> </span> Сохранить </button>
-  
-  <div class="row g-1">
-    
-    <div class="row g-3">
-          
-      <div class="col-sm my-auto">
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.tematika.name}}" readonly autocomplete="off">
-          <label for="floatingInput">Наименование</label>
-        </div>
-      </div>
-      
-      <div class="col-sm-auto my-auto">
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="id_cvc" name="id_cvc" placeholder="" value="{{params.tematika.id_cvc}}" readonly autocomplete="off">
-            <label for="floatingInput">ID CVC</label>
-        </div>
-      </div>
+  .recognition-header {
+    margin-bottom: 1.5rem;
+  }
 
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-    </div>
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 0;
+  }
 
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-              
-          <div class="col-sm-auto my-auto">
-            <div class="form-floating mb-3">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" name="status" id="status" {% if params.tematika.activated == True %} checked {% endif %} >
-                <label class="form-check-label" for="status">Активна</label>
-              </div>
-            </div>
-          </div>
+  .recognition-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-          <div class="col-sm-auto my-auto">
-            <div class="form-floating mb-3">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" name="canceled" id="canceled" {% if params.tematika.canceled == True %} checked {% endif %} >
-                <label class="form-check-label" for="canceled">Не создавать чек лист если найдена</label>
-              </div>
-            </div>
-          </div>
+  .recognition-section__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-          <div class="col-sm-auto my-auto">
-            <div class="form-floating mb-3">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" name="company" id="company" {% if params.tematika.company == True %} checked {% endif %} >
-                <label class="form-check-label" for="company">ЮрЛицо</label>
-              </div>
-            </div>
-          </div>
+  .recognition-section__title-icon {
+    font-size: 1.3rem;
+    color: #ff8a00;
+  }
 
-        </div>
-      </div>
-    </div>
+  .info-field {
+    margin-bottom: 1rem;
+  }
 
+  .info-field label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .info-field .form-control {
+    font-size: 1rem;
+    color: #002a5a;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    border-radius: 0.5rem;
+  }
+
+  .info-field .form-control:read-only {
+    background: #f8f9fa;
+  }
+
+  .switch-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.75rem;
+  }
+
+  .switch-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .switch-item label {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #002a5a;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .form-check-input:checked {
+    background-color: #10b981;
+    border-color: #10b981;
+  }
+
+  .fields-section {
+    margin-top: 1.5rem;
+  }
+
+  .field-group {
+    margin-bottom: 2rem;
+  }
+
+  .field-group__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+  }
+
+  .field-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    transition: background 0.2s;
+  }
+
+  .field-item:hover {
+    background: #e9ecef;
+  }
+
+  .field-item__checkbox {
+    flex-shrink: 0;
+  }
+
+  .field-item__name {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #002a5a;
+    font-weight: 500;
+  }
+
+  .field-item__value {
+    width: 100px;
+  }
+
+  .field-item__value input {
+    text-align: center;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>{% if params.new == True %}Добавление тематики{% else %}Тематика: {{ params.tematika.name }}{% endif %}</h2>
+    <p>{% if params.new == True %}Создание новой тематики CVC{% else %}Редактирование тематики CVC{% endif %}</p>
   </div>
 
-</form>
+  <form method="POST" id="form_save" name="form">
+    {% csrf_token %}
+
+    <!-- Основная информация -->
+    <div class="recognition-section">
+      <div class="recognition-section__title">
+        <span class="recognition-section__title-icon">📋</span>
+        Основная информация
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-8">
+          <div class="info-field">
+            <label>Наименование</label>
+            <input type="text" class="form-control" id="name" name="name" 
+                   value="{{ params.tematika.name }}" readonly autocomplete="off">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="info-field">
+            <label>ID CVC</label>
+            <input type="text" class="form-control" id="id_cvc" name="id_cvc" 
+                   value="{{ params.tematika.id_cvc }}" readonly autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Настройки -->
+    <div class="recognition-section">
+      <div class="recognition-section__title">
+        <span class="recognition-section__title-icon">⚙️</span>
+        Настройки
+      </div>
+
+      <div class="switch-group">
+        <div class="switch-item">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" name="status" id="status" 
+                   {% if params.tematika.activated == True %}checked{% endif %}>
+            <label class="form-check-label" for="status">Активна</label>
+          </div>
+        </div>
+
+        <div class="switch-item">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" name="canceled" id="canceled" 
+                   {% if params.tematika.canceled == True %}checked{% endif %}>
+            <label class="form-check-label" for="canceled">Не создавать чек-лист если найдена</label>
+          </div>
+        </div>
+
+        <div class="switch-item">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" name="company" id="company" 
+                   {% if params.tematika.company == True %}checked{% endif %}>
+            <label class="form-check-label" for="company">ЮрЛицо</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Поля чек-листа -->
+    {% if params.fields %}
+      <div class="recognition-section fields-section">
+        <div class="recognition-section__title">
+          <span class="recognition-section__title-icon">📝</span>
+          Поля чек-листа
+        </div>
+
+        {% for field_check in params.fields %}
+          <div class="field-group">
+            <div class="field-group__title">
+              Раздел {{ field_check.razdel }}: {{ field_check.fields.0.chapter_name|default:"Без названия" }}
+            </div>
+            
+            {% for field in field_check.fields %}
+              <div class="field-item">
+                <div class="field-item__checkbox">
+                  <input type="checkbox" class="form-check-input" 
+                         name="field_check_{{ field.id }}" id="field_check_{{ field.id }}" 
+                         {% if field.check %}checked{% endif %}
+                         onchange="toggleFieldValue('{{ field.id }}')">
+                </div>
+                <div class="field-item__name">
+                  <label for="field_check_{{ field.id }}" style="cursor: pointer; margin: 0;">
+                    {{ field.name }} ({{ field.name_human }})
+                  </label>
+                </div>
+                <div class="field-item__value">
+                  <input type="number" class="form-control form-control-sm" 
+                         name="field_value_{{ field.id }}" id="field_value_{{ field.id }}" 
+                         value="{{ field.value }}" min="0" max="100"
+                         {% if not field.check %}disabled{% endif %}>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Кнопки действий -->
+    <div class="action-buttons">
+      <button type="submit" class="btn btn-success px-4" name="save_button" id="save_button">
+        <i class="bi bi-check-circle"></i> Сохранить
+      </button>
+      <a href="{% url 'recognition:tematiks_op' %}" class="btn btn-outline-secondary px-4">
+        <i class="bi bi-arrow-left"></i> Назад
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function toggleFieldValue(fieldId) {
+    const checkbox = document.getElementById('field_check_' + fieldId);
+    const valueInput = document.getElementById('field_value_' + fieldId);
+    
+    if (checkbox.checked) {
+      valueInput.disabled = false;
+      if (valueInput.value == 0) {
+        valueInput.value = 1;
+      }
+    } else {
+      valueInput.disabled = true;
+      valueInput.value = 0;
+    }
+  }
+</script>
 
 {% endblock %}
-
