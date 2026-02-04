@@ -191,7 +191,7 @@
       <div class="col-md-2">
         <label class="form-label text-uppercase">Вариант отчета</label>
         <select class="form-select" name="report_type">
-          <option value="1" {% if params.filters.report_type == 1 %}selected{% endif %}>Сквозной</option>
+          <option value="1" {% if params.filters.report_type == 1 %}selected{% endif %}>Базовый</option>
           <option value="2" {% if params.filters.report_type == 2 %}selected{% endif %}>По рабочим листам</option>
           <option value="3" {% if params.filters.report_type == 3 %}selected{% endif %}>По принятым</option>
         </select>
@@ -299,6 +299,49 @@
         </div>
         <div id="selectedTypeReceptions" class="mt-2"></div>
       </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Оценщики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="staffSearch" placeholder="Поиск по оценщикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="staffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for staff in params.staffs %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="staff_ids" value="{{ staff.id }}" 
+                  {% if staff.id in params.filters.staff_ids_list %}checked{% endif %}>
+                {{ staff.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedStaffs" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Аналитики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="analystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="analystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for analyst in params.analysts %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
+                  {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
+                {{ analyst.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedAnalysts" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Дистанционная оценка</label>
+        <select class="form-select" name="remote_filter">
+          <option value="" {% if not params.filters.remote_filter %}selected{% endif %}>Все</option>
+          <option value="with" {% if params.filters.remote_filter == 'with' %}selected{% endif %}>С дистанционной оценкой</option>
+          <option value="without" {% if params.filters.remote_filter == 'without' %}selected{% endif %}>Без дистанционной оценки</option>
+        </select>
+      </div>
     </div>
     
     <!-- Режим сравнения -->
@@ -322,7 +365,7 @@
         <div class="col-md-3">
           <label class="form-label text-uppercase">Вариант отчета</label>
           <select class="form-select" name="compare_report_type">
-            <option value="1" {% if params.filters.compare_report_type == 1 or not params.filters.compare_report_type %}selected{% endif %}>Сквозной</option>
+            <option value="1" {% if params.filters.compare_report_type == 1 or not params.filters.compare_report_type %}selected{% endif %}>Базовый</option>
             <option value="2" {% if params.filters.compare_report_type == 2 %}selected{% endif %}>По рабочим листам</option>
             <option value="3" {% if params.filters.compare_report_type == 3 %}selected{% endif %}>По принятым</option>
           </select>
