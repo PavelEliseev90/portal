@@ -426,7 +426,7 @@
 
   <!-- Общие показатели -->
   <div class="row g-3 mb-3">
-    <div class="col-xl-3 col-sm-6">
+    <div class="col-xl-4 col-sm-6">
       <article class="kors-stage-card">
         <h3>Рабочие листы ОП</h3>
         <h2>
@@ -450,7 +450,7 @@
       </article>
     </div>
 
-    <div class="col-xl-3 col-sm-6">
+    <div class="col-xl-4 col-sm-6">
       <article class="kors-stage-card">
         <h3>Рабочие листы Trade-in</h3>
         <h2>
@@ -479,7 +479,7 @@
       </article>
     </div>
 
-    <div class="col-xl-3 col-sm-6">
+    <div class="col-xl-4 col-sm-6">
       <article class="kors-stage-card">
         <h3>До КД / Дистанционно</h3>
         <h2>
@@ -508,7 +508,7 @@
       </article>
     </div>
 
-    <div class="col-xl-3 col-sm-6">
+    <div class="col-xl-6 col-sm-12">
       <article class="kors-stage-card">
         <h3>После КД</h3>
         <h2>
@@ -537,7 +537,7 @@
       </article>
     </div>
 
-    <div class="col-xl-3 col-sm-6">
+    <div class="col-xl-6 col-sm-12">
       <article class="kors-stage-card">
         <h3>Принято</h3>
         <h2>
@@ -605,7 +605,7 @@
     </div>
   </div>
 
-  <!-- Сравнение с авторасчетом -->
+  <!-- Сравнение с авторасчетом 
   {% if params.badges.remote_comparison.total > 0 or params.badges.before_comparison.total > 0 or params.badges.after_comparison.total > 0 %}
   <div class="kors-panel">
     <div class="kors-panel__head">
@@ -677,6 +677,7 @@
     </div>
   </div>
   {% endif %}
+  -->
 
   <!-- Графики по дням -->
   <div class="kors-panel">
@@ -759,7 +760,7 @@
         </thead>
         <tbody>
           {% for stat in params.type_reception_stats %}
-            {% if stat.type_reception_name != '' %}
+            {% if stat.type_reception_name != None %}
               <tr>
                 <td><strong>{{ stat.type_reception_name|default:"Не указан" }}</strong></td>
                 
@@ -839,18 +840,6 @@
           {% if params.type_reception_totals %}
           <tr class="table-info">
             <td><strong>{{ params.type_reception_totals.type_reception_name }}</strong></td>
-            <td class="text-end">
-              <strong>{{ params.type_reception_totals.op_rlk|floatformat:"0g" }}</strong>
-              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
-                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.op_rlk|floatformat:"0g" }}</strong></span>
-              {% endif %}
-            </td>
-            <td class="text-end">
-              <strong>{{ params.type_reception_totals.conv_op_to_tradein|floatformat:"2g" }}%</strong>
-              {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
-                <span style="color: #6c7a92;">/ <strong>{{ params.compare_data.type_reception_totals.conv_op_to_tradein|floatformat:"2g" }}%</strong></span>
-              {% endif %}
-            </td>
             <td class="text-end">
               <strong>{{ params.type_reception_totals.total|floatformat:"0g" }}</strong>
               {% if params.compare_mode and params.compare_data and params.compare_data.type_reception_totals %}
