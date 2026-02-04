@@ -260,9 +260,10 @@ def check_lists(request):
                 check_settings_list    = check_settings_list.filter(name__icontains=name)
             
             # Оптимизация: добавляем annotate для подсчета вопросов одним запросом
+            # Используем правильное related_name из модели
             from django.db.models import Count
             check_settings_list = check_settings_list.annotate(
-                questions_count=Count('records_questions')
+                questions_count=Count('records_questions_сheck_settings')
             )
 
             filtr = {
@@ -1649,7 +1650,7 @@ def cvc_op(request):
             'filtr'             : filtr,
             'data'              : data_list,
             'cvc_count'         : cvc_count,
-            'cvc_duration'      : time_human(cvc_duration)
+            'cvc_duration'      : cvc_duration  # Уже отформатировано выше
         }
         return render(request, "recognition/recognition_success_cvc.html", {'params': params})    
     else:
@@ -1863,16 +1864,25 @@ def cvc_tematiks_op_edit(request, id):
             
             return HttpResponseRedirect(request.build_absolute_uri())
         
-        fields_list = list()
-
+        # Оптимизация: загружаем все поля тематики одним запросом
         fields_check = get_fields(1)
+        
+        # Получаем все поля тематики одним запросом
+        tematics_fields_dict = {}
+        tematics_fields = Records_voice_recorder_cvc_tematics_fields.objects.filter(
+            tematics_cvc=tematika
+        ).values('field', 'value')
+        
+        for tf in tematics_fields:
+            tematics_fields_dict[tf['field']] = tf['value']
+        
+        # Заполняем поля данными
         for field_check in fields_check:
             fields = field_check['fields']
             for field in fields:
-                count = Records_voice_recorder_cvc_tematics_fields.objects.filter(tematics_cvc = tematika).filter(field = field['id']).count()
-                if count > 0:
+                if field['id'] in tematics_fields_dict:
                     field['check'] = True
-                    field['value'] = Records_voice_recorder_cvc_tematics_fields.objects.filter(tematics_cvc = tematika).filter(field = field['id'])[0].value
+                    field['value'] = tematics_fields_dict[field['id']]
                 else:
                     field['check'] = False
                     field['value'] = 0   
@@ -1897,13 +1907,18 @@ def cvc_tematiks_op_quequ(request):
         if 'select_count' in request.GET:
             select_count = int(request.GET.get('select_count'))
         
-        direction       = int(request.GET.get('direction', '1'))
+        direction = int(request.GET.get('direction', '1'))
         
-        lists = Records_voice_recorder_cvc_checklist.objects.filter(direction = direction).filter(success = False).order_by('rlk__dataTime')   
+        # Оптимизация: добавляем select_related для связанных объектов
+        lists = Records_voice_recorder_cvc_checklist.objects.filter(
+            direction=direction,
+            success=False
+        ).select_related('rlk', 'rlk__unit', 'rlk__staff').order_by('rlk__dataTime')
+        
         page_number = request.GET.get('page')
         
-        paginator   = Paginator(lists, select_count)
-        page_obj    = paginator.get_page(page_number)
+        paginator = Paginator(lists, select_count)
+        page_obj = paginator.get_page(page_number)
         filtr = {
             'direction' : direction
         }
@@ -2104,22 +2119,46 @@ def report_cvc_kg_op(request):
         else:
             date_end  = DT.datetime.strptime(date_end, '%Y-%m-%d')
         
+        # Оптимизация: добавляем select_related для связанных объектов
         if direction == 1:
-            docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(Q(contacType__id= 7) | Q(contacType__id = 42)).filter(unit__buauto = False).exclude(type__id = 19)
-            subquery_check 	= Subquery(CheckList.objects.filter(rlk_id = OuterRef(name='id')).values('result')[:1])
+            docs = DocRLK.objects.filter(
+                dataTime__gte=date_start,
+                dataTime__lte=date_end
+            ).filter(
+                Q(contacType__id=7) | Q(contacType__id=42)
+            ).filter(
+                unit__buauto=False
+            ).exclude(
+                type__id=19
+            ).select_related('unit', 'unit__city', 'type', 'contacType')
+            subquery_check = Subquery(CheckList.objects.filter(rlk_id=OuterRef(name='id')).values('result')[:1])
         elif direction == 5:
-            docs            = DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(Q(contacType__id= 7) | Q(contacType__id = 42)).filter(unit__buauto = True)
-            subquery_check 	= Subquery(CheckList_op_kors.objects.filter(rlk_id = OuterRef(name='id')).values('result')[:1])
+            docs = DocRLK.objects.filter(
+                dataTime__gte=date_start,
+                dataTime__lte=date_end
+            ).filter(
+                Q(contacType__id=7) | Q(contacType__id=42)
+            ).filter(
+                unit__buauto=True
+            ).select_related('unit', 'unit__city', 'type', 'contacType')
+            subquery_check = Subquery(CheckList_op_kors.objects.filter(rlk_id=OuterRef(name='id')).values('result')[:1])
 
         if number != '':
-            docs = docs.filter(nomer__icontains = number)
+            docs = docs.filter(nomer__icontains=number)
 
-        subquery        = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(success = True).filter(rlk_id = OuterRef(name='id')).values('result')[:1])        
-        docs 		= docs.annotate(result = Coalesce(subquery_check, 0)).order_by('dataTime')
-        docs 		= docs.annotate(cheklist_cvc = Coalesce(subquery, 0)).order_by('dataTime')
-        docs 		= docs.annotate(difference = Coalesce(F('result'), 0) - Coalesce(F('cheklist_cvc'), 0)) 
+        # Оптимизация: объединяем все annotate в один запрос, убираем дублирующиеся order_by
+        subquery = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(
+            success=True,
+            rlk_id=OuterRef(name='id')
+        ).values('result')[:1])
         
-        list_docs   = docs
+        docs = docs.annotate(
+            result=Coalesce(subquery_check, 0),
+            cheklist_cvc=Coalesce(subquery, 0),
+            difference=Coalesce(F('result'), 0) - Coalesce(F('cheklist_cvc'), 0)
+        ).order_by('dataTime')
+        
+        list_docs = docs
         '''
         for doc in docs:
             if doc.result != None or doc.cheklist_cvc != None:
