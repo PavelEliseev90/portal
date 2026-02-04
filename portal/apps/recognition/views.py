@@ -1020,7 +1020,7 @@ def control(request):
         }
 
         # Оптимизация: устраняем N+1 проблему - используем annotate для группировки
-        from django.db.models import Case, When, Value, IntegerField
+        from django.db.models import Case, When, Value, IntegerField, Exists, OuterRef
         
         base_qs = DocRLK.objects.filter(
             dataTime__gte=date_start,
@@ -1036,24 +1036,29 @@ def control(request):
         if len(number) > 0:
             base_qs = base_qs.filter(nomer__icontains=number)
         
-        # Добавляем аннотацию для подсчета success_cheklist_cvc
-        subquery_success = Subquery(
-            Records_voice_recorder_cvc_checklist.objects.filter(
-                rlk__id=OuterRef(name='id')
-            ).values('result')[:1]
-        )
-        base_qs = base_qs.annotate(success_cheklist_cvc=Count(subquery_success))
-        
         # Группируем по городам и подразделениям с агрегацией
-        city_unit_stats = base_qs.values(
+        # Используем подзапрос для проверки наличия success_cheklist_cvc
+        # Сначала аннотируем каждый документ наличием CVC чеклиста
+        base_qs_annotated = base_qs.annotate(
+            has_cvc_success=Exists(
+                Records_voice_recorder_cvc_checklist.objects.filter(
+                    rlk_id=OuterRef('pk')
+                ).filter(result__gt=0)
+            )
+        )
+        
+        # Теперь группируем и считаем
+        city_unit_stats = base_qs_annotated.values(
             'unit__city',
             'unit__city__name',
             'unit',
             'unit__name'
         ).annotate(
             total_count=Count('id'),
-            cvc_ok_count=Count('id', filter=Q(success_cheklist_cvc__gt=0)),
-            cvc_no_count=Count('id', filter=Q(success_cheklist_cvc=0))
+            # Подсчитываем документы с успешным CVC чеклистом
+            cvc_ok_count=Count('id', filter=Q(has_cvc_success=True)),
+            # Подсчитываем документы без успешного CVC чеклиста
+            cvc_no_count=Count('id', filter=Q(has_cvc_success=False))
         ).order_by('unit__city__name', 'unit__name')
         
         # Группируем данные по городам
