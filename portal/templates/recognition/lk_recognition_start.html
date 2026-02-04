@@ -1,532 +1,320 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - речевая аналитика {% endblock %}
-
-{% block title_navbar %} - речевая аналитика {% endblock %}
-
+{% block title %} - Речевая аналитика {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<div class="row g-1 align-items-center">
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-      <label for="floatingInput">С</label>
-    </div>
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .recognition-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-section__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recognition-section__title-icon {
+    font-size: 1.5rem;
+    color: #ff8a00;
+  }
+
+  .recognition-section__subtitle {
+    font-size: 0.9rem;
+    color: #6c7a92;
+    margin-bottom: 1.25rem;
+  }
+
+  .metric-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .metric-card h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #8ea1ba;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .metric-card .value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+
+  .metric-card .sub {
+    color: #6c7a92;
+    font-size: 0.85rem;
+  }
+
+  .metric-card-icon {
+    font-size: 1.2rem;
+    color: #ff8a00;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>Речевая аналитика</h2>
+    <p>Анализ распознавания речи и обработки записей</p>
   </div>
-  
-  <div class="col-sm-auto my-auto">
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-      <label for="floatingInput">По</label>
-    </div>
-  </div>
-  
-  <div class="col-sm-auto my-auto ">
-    <div class="form-floating mb-3">
-      <div class="d-grid gap-2 my-auto">
-        <button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Обновить </button>
-      </div>
-    </div>
-  </div>
 
-</div>
-
-
-
-<div class="card mb-3">
-  <div class="row g-0">
-    
-    <div class="col-md-2 my-auto text-center">
-      <h1><span class="icon-mbri-play"> </span> CVC</h1>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">ОП новых автомобилей</h5>
-        
-        <div class="row g-4">
-          
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href='cvc_op/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}&direction=1'>
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-play"></span></h5>
-                      Распознано
-                      <hr>
-                      {{params.cvc_op_success}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-              
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="cvc_tematiks_op_quequ/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-layers"></span></h5>
-                      В очереди
-                      <hr>
-                      {{params.cvc_op_queue}} / {{params.cvc_op_queue_duration}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="control/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
-                      Проверка данных
-                      <hr>
-                      -
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="col-sm-auto">
-            <div class="row g-1">
-              
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="check_lists/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
-                      Настройки чек листа
-                      <hr>
-                      {{params.check_settings_1.check_settings.name}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-             
-
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="cvc_tematiks_op/">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bootstrap"></span></h5>
-                      Тематики
-                      <hr>
-                      {{params.cvc_op_tematiks}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-    
-              
-
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="report_cvc_kg_op/?direction=1">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-left-right"></span></h5>
-                      Сравнение CVC и ручной оценки
-                      <hr>
-                      Отчет сравнения
-                    </div>
-                  </div>
-                </a>
-              </div>
-    
-            </div>
-          </div>
-
+  <!-- Фильтр по датам -->
+  <div class="recognition-filter">
+    <form method="get" id="dateFilterForm">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата с</label>
+          <input type="date" class="form-control" id="date_start" name="date_start" 
+                 value="{{ params.filtr.date_start|date:'Y-m-d' }}">
         </div>
-
-
-        
-
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-
-<div class="card mb-3">
-  <div class="row g-0">
-    
-    <div class="col-md-2 my-auto text-center">
-      <h1><span class="icon-mbri-play"> </span> CVC</h1>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">ОП КорсАвто автомобили с пробегом</h5>
-        
-        <div class="row g-4">
-          
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href='cvc_op/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}&direction=5'>
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-play"></span></h5>
-                      Распознано
-                      <hr>
-                      {{params.cvc_op_kors_success}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-              
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="cvc_tematiks_op_quequ/?direction=5">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
-                      В очереди
-                      <hr>
-                      {{params.cvc_op_kors_queue}}/{{params.cvc_op_kors_queue_duration}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="control/?direction=5">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
-                      Проверка данных
-                      <hr>
-                      -
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="check_lists/?direction=5">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
-                      Настройки чек листа
-                      <hr>
-                      {{params.check_settings_5.check_settings.name}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="cvc_tematiks_op/?direction=5">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
-                      Тематики
-                      <hr>
-                      {{params.cvc_op_tematiks}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-    
-              
-
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="report_cvc_kg_op/?direction=5">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
-                      Сравнение CVC и ручной оценки
-                      <hr>
-                      Отчет сравнения
-                    </div>
-                  </div>
-                </a>
-              </div>
-    
-            </div>
-          </div>
-
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дата по</label>
+          <input type="date" class="form-control" id="date_end" name="date_end" 
+                 value="{{ params.filtr.date_end|date:'Y-m-d' }}">
         </div>
-
-
-        
-
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<!--
-<div class="card mb-3">
-  <div class="row g-0">
-    
-    <div class="col-md-2 my-auto text-center">
-      <h1><span class="icon-mbri-play"> </span> KG</h1>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">ОП новых автомобилей</h5>
-        
-        <div class="row g-4">
-          
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="op/?date_start={{params.filtr.date_start|date:"Y-m-d"}}&date_end={{params.filtr.date_end|date:"Y-m-d"}}">
-                <div class="card border-success mb-3 text-center">
-                  <div class="card-body">
-                    <h5 class="card-title"><span class="icon-mbri-play"></span></h5>
-                    Распознано
-                    <hr>
-                    {{params.op_chek_count}}
-                  </div>
-                </div>
-                </a>
-              </div>
-              
-              <div class="col-sm-auto">
-                <div class="card border-success mb-3 text-center">
-                  <div class="card-body">
-                    <h5 class="card-title"><span class="icon-mbri-timer"></span></h5>
-                    В очереди
-                    <hr>
-                    {{params.op_queue}} / {{params.op_queue_duration}}
-                  </div>
-                </div>
-              </div>
-    
-            </div>
-          </div>
-
-          <div class="col-sm-auto">
-            <div class="row g-1">
-                  
-              <div class="col-sm-auto">
-                <a class="nav-link text-dark" href="tematiks_op/">
-                  <div class="card border-success mb-3 text-center">
-                    <div class="card-body">
-                      <h5 class="card-title"><span class="icon-mbri-bookmark"></span></h5>
-                      Тематики
-                      <hr>
-                      {{params.op_tematiks}}
-                    </div>
-                  </div>
-                </a>
-              </div>
-    
-              
-    
-            </div>
-          </div>
-
-        </div>
-
-
-        
-
-      </div>
-    </div>
-  </div>
-</div>
--->
-
-<!--
-<div class="card mb-3">
-  <div class="row g-0">
-    <div class="col-md-2 my-auto text-center">
-      <span class="icon-mbri-play"></span>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">Сервис - прием авто</h5>
-        <div class="row g-1">
-          <div class="col-sm">
-            <div class="card border-danger mb-3 text-center text-danger">
-              <div class="card-body">
-                <h5 class="card-title"><span class="icon-mbri-idea">В разработке </span></h5>
-              </div>
-            </div>
-            </div>
-          </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="card mb-3">
-  <div class="row g-0">
-    <div class="col-md-2 my-auto text-center">
-      <span class="icon-mbri-play"></span>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">Сервис - выдача авто</h5>
-        <div class="row g-1">
-          <div class="col-sm">
-            <div class="card border-danger mb-3 text-center text-danger">
-              <div class="card-body">
-                <h5 class="card-title"><span class="icon-mbri-idea">В разработке </span></h5>
-              </div>
-            </div>
-            </div>
-          </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="card mb-3">
-  <div class="row g-0">
-    <div class="col-md-2 my-auto text-center">
-      <span class="icon-mbri-play"></span>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">Отдел оценки Корс-авто</h5>
-        <div class="row g-1">
-          <div class="col-sm">
-            <div class="card border-danger mb-3 text-center text-danger">
-              <div class="card-body">
-                <h5 class="card-title"><span class="icon-mbri-idea">В разработке </span></h5>
-              </div>
-            </div>
-            </div>
-          </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="card mb-3">
-  <div class="row g-0">
-    <div class="col-md-2 my-auto text-center">
-      <span class="icon-mbri-play"></span>
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">ОП Корс-авто</h5>
-        <div class="row g-1">
-          <div class="col-sm">
-            <div class="card border-danger mb-3 text-center text-danger">
-              <div class="card-body">
-                <h5 class="card-title"><span class="icon-mbri-idea">В разработке </span></h5>
-              </div>
-            </div>
-            </div>
-          </div>
-      </div>
-    </div>
-  </div>
-</div>
-
--->
-
-<!--<div class="row g-1">
-
-  <ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active text-secondary" id="direction_1-tab" data-bs-toggle="tab" data-bs-target="#direction_1" type="button" role="tab" aria-controls="direction_1" aria-selected="true"> <span class="icon-mbri-play"></span> ОП новых автомобилей</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link text-secondary" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false"> <span class="icon-mbri-edit"></span> Сервис - прием авто</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link text-secondary" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false"> <span class="icon-mbri-users"></span> Сервис - выдача авто</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link text-secondary" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false"> <span class="icon-mbri-paperclip"></span> Отдел оценки корс - авто</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link text-secondary" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false"> <span class="icon-mbri-paperclip"></span> ОП корс - авто</button>
-    </li>
-  </ul>
-
-  <div class="tab-content" id="myTabContent">
-  
-    <div class="tab-pane fade show active" id="direction_1" role="tabpanel" aria-labelledby="direction_1-tab">
-      <div class="card">
-        
-        <div class="card-body">
-          
-          <div class="row g-1">
-              <div class="col-sm-auto">
-                <a href="tematiks/" class="link-dark">
-                <div class="card text-center">
-                  <div class="card-body">
-                    <h5><span class="icon-mbri-growing-chart"></span> Тематики </h5>
-                  </div>
-                </div>
-                </a>
-              </div>
-          </div>
-
-
+        <div class="col-md-3">
+          <button class="btn btn-primary px-4" type="button" onclick="change_link()">
+            <i class="bi bi-arrow-clockwise"></i> Обновить
+          </button>
         </div>
       </div>
-      
-    </div>
-
-    <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-      
-    </div>
-
-    <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
-      
-        
-      
-    </div>
-    
-    <div class="tab-pane fade" id="files" role="tabpanel" aria-labelledby="files-tab">
-      
-    
-
-    </div>
-
+    </form>
   </div>
-		
+
+  <!-- CVC ОП новых автомобилей -->
+  <div class="recognition-section">
+    <div class="recognition-section__title">
+      <span class="recognition-section__title-icon">🎙️</span>
+      CVC - ОП новых автомобилей
+    </div>
+    <p class="recognition-section__subtitle">Распознавание речи для отдела продаж новых автомобилей</p>
+    
+    <div class="row g-3">
+      <div class="col-md-3 col-sm-6">
+        <a href='cvc_op/?date_start={{ params.filtr.date_start|date:"Y-m-d" }}&date_end={{ params.filtr.date_end|date:"Y-m-d" }}&direction=1' class="metric-card">
+          <h4>
+            <span class="metric-card-icon">✅</span>
+            Распознано
+          </h4>
+          <div class="value">{{ params.cvc_op_success }}</div>
+        </a>
+      </div>
+      
+      <div class="col-md-3 col-sm-6">
+        <a href="cvc_tematiks_op_quequ/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">⏳</span>
+            В очереди
+          </h4>
+          <div class="value">{{ params.cvc_op_queue }}</div>
+          <div class="sub">{{ params.cvc_op_queue_duration }}</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="check_lists/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">⚙️</span>
+            Настройки чек-листа
+          </h4>
+          <div class="value">{{ params.check_settings_1.check_settings.name|default:"Не настроено" }}</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="cvc_tematiks_op/" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">📋</span>
+            Тематики
+          </h4>
+          <div class="value">{{ params.cvc_op_tematiks }}</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-3 col-sm-6">
+        <a href="control/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">🔍</span>
+            Проверка данных
+          </h4>
+          <div class="value">-</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="report_cvc_kg_op/?direction=1" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">📊</span>
+            Сравнение CVC и ручной оценки
+          </h4>
+          <div class="value">Отчет</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CVC ОП КорсАвто автомобили с пробегом -->
+  <div class="recognition-section">
+    <div class="recognition-section__title">
+      <span class="recognition-section__title-icon">🎙️</span>
+      CVC - ОП КорсАвто автомобили с пробегом
+    </div>
+    <p class="recognition-section__subtitle">Распознавание речи для отдела продаж автомобилей с пробегом</p>
+    
+    <div class="row g-3">
+      <div class="col-md-3 col-sm-6">
+        <a href='cvc_op/?date_start={{ params.filtr.date_start|date:"Y-m-d" }}&date_end={{ params.filtr.date_end|date:"Y-m-d" }}&direction=5' class="metric-card">
+          <h4>
+            <span class="metric-card-icon">✅</span>
+            Распознано
+          </h4>
+          <div class="value">{{ params.cvc_op_kors_success }}</div>
+        </a>
+      </div>
+      
+      <div class="col-md-3 col-sm-6">
+        <a href="cvc_tematiks_op_quequ/?direction=5" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">⏳</span>
+            В очереди
+          </h4>
+          <div class="value">{{ params.cvc_op_kors_queue }}</div>
+          <div class="sub">{{ params.cvc_op_kors_queue_duration }}</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="check_lists/?direction=5" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">⚙️</span>
+            Настройки чек-листа
+          </h4>
+          <div class="value">{{ params.check_settings_5.check_settings.name|default:"Не настроено" }}</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="cvc_tematiks_op/?direction=5" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">📋</span>
+            Тематики
+          </h4>
+          <div class="value">{{ params.cvc_op_tematiks }}</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-3 col-sm-6">
+        <a href="control/?direction=5" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">🔍</span>
+            Проверка данных
+          </h4>
+          <div class="value">-</div>
+        </a>
+      </div>
+
+      <div class="col-md-3 col-sm-6">
+        <a href="report_cvc_kg_op/?direction=5" class="metric-card">
+          <h4>
+            <span class="metric-card-icon">📊</span>
+            Сравнение CVC и ручной оценки
+          </h4>
+          <div class="value">Отчет</div>
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
--->
 
-<script language="JavaScript">
-	
-	function change_link(){
-		
-    var url 	= new URL(document.location.href);
-		
-		find_date = document.getElementById('date_start').value;
-		if (find_date.length > 0){
-			url.searchParams.set('date_start', find_date);
-		}else{
-			url.searchParams.delete('date_start')
-		}
-		find_date_end = document.getElementById('date_end').value;
-		if (find_date_end.length > 0){
-			url.searchParams.set('date_end', find_date_end);
-		}else{
-			url.searchParams.delete('date_end')
-		}
+<script>
+  function change_link() {
+    var url = new URL(document.location.href);
+    
+    var find_date = document.getElementById('date_start').value;
+    if (find_date.length > 0) {
+      url.searchParams.set('date_start', find_date);
+    } else {
+      url.searchParams.delete('date_start');
+    }
+    
+    var find_date_end = document.getElementById('date_end').value;
+    if (find_date_end.length > 0) {
+      url.searchParams.set('date_end', find_date_end);
+    } else {
+      url.searchParams.delete('date_end');
+    }
 
-		document.location.href  = url.href;
-
-	}
-
+    document.location.href = url.href;
+  }
 </script>
 
-
 {% endblock %}
-
