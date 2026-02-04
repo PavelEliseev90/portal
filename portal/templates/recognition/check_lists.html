@@ -1,175 +1,275 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - чек листы  {% if params.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %} {% endblock %}
-
-{% block title_navbar %} - чек листы {% if params.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %} {% endblock %}
+{% block title %} - Чек-листы {% if params.filtr.direction == 1 %}ОП новых автомобилей{% else %}ОП КорсАвто{% endif %} {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<form method="GET" id="form" name="form">
-  
-  <div class="row g-1">
-    
-    <div class="col-sm-auto my-auto">
-      <div class="form-floating mb-3">
-        <select class="form-select" id="direction" name="direction" aria-label="Направление">
-          <option value="1" {% if params.filtr.direction == 1 %} selected {% endif %}>ОП новых автомобилей</option>
-          <option value="5" {% if params.filtr.direction == 5 %} selected {% endif %}>ОП КорсАвто автомобили с пробегом</option>
-        </select>
-        <label for="floatingInput">Направление</label>
-      </div>
-    </div>
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-    <div class="col-sm">
-      <div class="form-floating mb-3">
-        <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
-          <label for="floatingInput">Наименование</label>
-      </div>
-    </div>
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 1.5rem;
+  }
 
-    <div class="col-sm-auto my-auto">
-      <div class="form-floating mb-3">
-          <button class="btn btn-outline-success" title="Отобрать чек листы"><span class="icon-mbri-search"> </span></button>
-      </div>
-    </div>
+  .recognition-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
+  .recognition-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .recognition-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-section__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .checklist-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .checklist-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .checklist-card.active {
+    border: 2px solid #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  }
+
+  .checklist-card.inactive {
+    border: 2px solid #ef4444;
+    opacity: 0.8;
+  }
+
+  .checklist-card__name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .checklist-card__name-icon {
+    font-size: 1.1rem;
+    color: #ff8a00;
+  }
+
+  .checklist-card__cvc {
+    font-size: 0.85rem;
+    color: #6c7a92;
+    margin-bottom: 0.5rem;
+  }
+
+  .checklist-card__cvc-label {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    color: #8ea1ba;
+  }
+
+  .checklist-card__stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+    margin-top: 0.75rem;
+  }
+
+  .checklist-card__stat-label {
+    font-size: 0.85rem;
+    color: #6c7a92;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .checklist-card__stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c7a92;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>Чек-листы {% if params.filtr.direction == 1 %}ОП новых автомобилей{% else %}ОП КорсАвто{% endif %}</h2>
+    <p>Настройка чек-листов для распознавания речи</p>
   </div>
-</form>
 
-<form method="POST" id="save_check" name="save_check">
-  {% csrf_token %}
-  <input type="hidden" name='direction_id' value="{{params.filtr.direction}}">
-  <div class="row g-1">
-    <div class="col-sm my-auto">
-      <div class="form-floating mb-3">
-        <select class="form-select" id="check_id" name="check_id" aria-label="Чек лист">
-          <option selected> Не указан</option>
-          {% for check in params.check_settings_list %}
-            <option value="{{check.pk}}" {% if params.filtr.settings_check_records == check.pk %} selected {% endif %}>{{check.name}}</option>
-          {% endfor %}
-        </select>
-        <label for="floatingInput">Текущий чек лист для записей диктофонов {% if params.filtr.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %}</label>
-      </div>
-    </div>
-    <div class="col-sm-auto my-auto">
-      <div class="col-sm-auto my-auto">
-        <div class="form-floating mb-3">
-            <button type="submit" name='save_check' class="btn btn-outline-success" title="Сохранить изменения активного чек листа по направлению"><span class="icon-mbri-success"> </span></button>
+  <!-- Фильтр -->
+  <div class="recognition-filter">
+    <form method="GET" id="form" name="form">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Направление</label>
+          <select class="form-select" id="direction" name="direction" onchange="this.form.submit()">
+            <option value="1" {% if params.filtr.direction == 1 %}selected{% endif %}>ОП новых автомобилей</option>
+            <option value="5" {% if params.filtr.direction == 5 %}selected{% endif %}>ОП КорсАвто автомобили с пробегом</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label text-uppercase">Наименование</label>
+          <input type="text" class="form-control" id="name" name="name" 
+                 placeholder="Поиск по наименованию..." value="{{ params.filtr.name }}" autocomplete="off">
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary px-4" type="submit">
+            <i class="bi bi-search"></i> Найти
+          </button>
         </div>
       </div>
-    </div>
+    </form>
   </div>
-</form>      
 
-
-  <div class="card mb-3">
-    
-    <div class="row g-0">
-    
-    <div class="col-sm">
-      <div class="card-body">
-        <h5 class="card-title"> <span class="icon-mbri-home"> </span> Настройки чек листов {% if params.filtr.direction == 1 %} ОП новых автомобилей {% else %} ОП КорсАвто {% endif %} <a href="0?direction={{params.filtr.direction}}" class="link-success"><span class="icon-mbri-plus"></span></a></h5>
-        
-        <div class="row g-4">
-          
-          {% if params.check_settings_list|length > 0 %}
-
+  <!-- Текущий чек-лист -->
+  <div class="recognition-section">
+    <div class="recognition-section__title">
+      <span>⚙️</span>
+      Текущий чек-лист для записей диктофонов {% if params.filtr.direction == 1 %}ОП новых автомобилей{% else %}ОП КорсАвто{% endif %}
+    </div>
+    <form method="POST" id="save_check" name="save_check">
+      {% csrf_token %}
+      <input type="hidden" name="direction_id" value="{{ params.filtr.direction }}">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-9">
+          <label class="form-label text-uppercase">Чек-лист</label>
+          <select class="form-select" id="check_id" name="check_id">
+            <option value="">Не указан</option>
             {% for check in params.check_settings_list %}
-              {% if params.filtr.settings_check_records == check.pk %} 
-                <div class="col-sm-auto">
-                  <div class="row g-1">
-                    {% if check.estimation > 0 %}    
-                        <div class="col-sm-auto">
-                          <a class="nav-link" href='{{check.pk}}'>
-                          <div class="card border-success mb-3" style="max-width: 22rem;">
-                            <div class="card-body">
-                              <div class="card-title"><span class="icon-mbri-close"></span><b>{{check.name}} </b></div>
-                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
-                              <hr>
-                              <div class="book">
-                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
-                              </div>
-                            </div>
-                          </div>
-                          </a>
-                        </div>
-                      {% else %}
-                        <div class="col-sm-auto">
-                          <a class="nav-link text-success" href='{{check.pk}}'>
-                          <div class="card border-success mb-3">
-                            <div class="card-body">
-                              <div class="card-title"><span class="icon-mbri-play"></span><b>{{check.name}} </b></div>
-                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
-                              <hr>
-                              <div class="book">
-                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
-                              </div>
-                            </div>
-                          </div>
-                          </a>
-                        </div>
-                      {% endif %}
-            
-                  </div>
-                </div>
-              {% endif %}    
+              <option value="{{ check.pk }}" {% if params.filtr.settings_check_records == check.pk %}selected{% endif %}>
+                {{ check.name }}
+              </option>
             {% endfor %}
-            
-            {% for check in params.check_settings_list %}
-              {% if params.filtr.settings_check_records != check.pk %} 
-                <div class="col-sm-auto">
-                  <div class="row g-1">
-                    {% if check.estimation > 0 %}    
-                        <div class="col-sm-auto">
-                          <a class="nav-link" href='{{check.pk}}'>
-                          <div class="card border-danger mb-3" style="max-width: 20rem;">
-                            <div class="card-body">
-                              <div class="card-title"><span class="icon-mbri-close"></span><b>{{check.name}} </b></div>
-                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
-                              <hr>
-                              <div class="book">
-                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
-                              </div>
-                            </div>
-                          </div>
-                          </a>
-                        </div>
-                      {% else %}
-                        <div class="col-sm-auto">
-                          <a class="nav-link text-danger" href='{{check.pk}}'>
-                          <div class="card border-danger mb-3">
-                            <div class="card-body">
-                              <div class="card-title"><span class="icon-mbri-close"></span><b>{{check.name}} </b></div>
-                              <p><span>CVC - чек</span><br><span>{{check.check_settings_cvc.name}}</span></p>
-                              <hr>
-                              <div class="book">
-                                <p><span>Вопросов</span><span>{{check.questions_count}}</span></p>
-                              </div>
-                            </div>
-                          </div>
-                          </a>
-                        </div>
-                      {% endif %}
-            
-                  </div>
-                </div>
-              {% endif %}               
-            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" name="save_check" class="btn btn-success px-4 w-100">
+            <i class="bi bi-check-circle"></i> Сохранить
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 
-          {% else %}
-              <div style="text-align: center;" class="row g-1">
-                <p class="fs-5 fw-normal">Пока нет чек листов.</p>
-              </div>
+  <!-- Список чек-листов -->
+  <div class="recognition-section">
+    <div class="recognition-section__title">
+      <span>📋</span>
+      Настройки чек-листов {% if params.filtr.direction == 1 %}ОП новых автомобилей{% else %}ОП КорсАвто{% endif %}
+      <a href="0?direction={{ params.filtr.direction }}" class="btn btn-sm btn-success ms-auto">
+        <i class="bi bi-plus-circle"></i> Добавить
+      </a>
+    </div>
+    
+    {% if params.check_settings_list|length > 0 %}
+      <div class="row g-3">
+        <!-- Активный чек-лист -->
+        {% for check in params.check_settings_list %}
+          {% if params.filtr.settings_check_records == check.pk %}
+            <div class="col-md-4 col-sm-6">
+              <a href="{{ check.pk }}" class="checklist-card active">
+                <div class="checklist-card__name">
+                  <span class="checklist-card__name-icon">✅</span>
+                  {{ check.name }}
+                </div>
+                <div class="checklist-card__cvc">
+                  <span class="checklist-card__cvc-label">CVC - чек:</span><br>
+                  {{ check.check_settings_cvc.name|default:"Не указан" }}
+                </div>
+                <div class="checklist-card__stats">
+                  <span class="checklist-card__stat-label">Вопросов</span>
+                  <span class="checklist-card__stat-value">{{ check.questions_count|default:"0" }}</span>
+                </div>
+              </a>
+            </div>
           {% endif %}
-        </div>
+        {% endfor %}
         
+        <!-- Неактивные чек-листы -->
+        {% for check in params.check_settings_list %}
+          {% if params.filtr.settings_check_records != check.pk %}
+            <div class="col-md-4 col-sm-6">
+              <a href="{{ check.pk }}" class="checklist-card {% if check.estimation > 0 %}inactive{% endif %}">
+                <div class="checklist-card__name">
+                  <span class="checklist-card__name-icon">{% if check.estimation > 0 %}❌{% else %}📝{% endif %}</span>
+                  {{ check.name }}
+                </div>
+                <div class="checklist-card__cvc">
+                  <span class="checklist-card__cvc-label">CVC - чек:</span><br>
+                  {{ check.check_settings_cvc.name|default:"Не указан" }}
+                </div>
+                <div class="checklist-card__stats">
+                  <span class="checklist-card__stat-label">Вопросов</span>
+                  <span class="checklist-card__stat-value">{{ check.questions_count|default:"0" }}</span>
+                </div>
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
       </div>
-    </div>
-    </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Пока нет чек-листов.</p>
+        <a href="0?direction={{ params.filtr.direction }}" class="btn btn-success">
+          <i class="bi bi-plus-circle"></i> Создать первый чек-лист
+        </a>
+      </div>
+    {% endif %}
   </div>
-
-
+</div>
 
 {% endblock %}
-

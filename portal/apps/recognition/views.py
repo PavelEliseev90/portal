@@ -242,20 +242,28 @@ def check_lists(request):
     if request.user.is_authenticated:
         
         if request.method == "GET":
-            check_settings_list     = Check_settings.objects.all().order_by('name')
+            # Оптимизация: добавляем select_related для check_settings_cvc
+            check_settings_list = Check_settings.objects.all().select_related('check_settings_cvc').order_by('name')
             
             name        = ''
             direction               = int(request.GET.get('direction', '1'))
-            check_settings_list     = check_settings_list.filter(direction = direction)
-            count_settings          = Settings_check_records.objects.filter(direction = direction).count()
+            check_settings_list     = check_settings_list.filter(direction=direction)
             
+            # Оптимизация: используем first() вместо [0] и select_related
+            settings_check_records_obj = Settings_check_records.objects.filter(direction=direction).select_related('check_settings').first()
             settings_check_records  = ''
-            if count_settings > 0:
-                settings_check_records = Settings_check_records.objects.filter(direction = direction)[0].check_settings.pk
+            if settings_check_records_obj:
+                settings_check_records = settings_check_records_obj.check_settings.pk
             
             if 'name' in request.GET:
                 name                   = request.GET.get('name')
-                check_settings_list    = check_settings_list.filter(name__icontains = name)
+                check_settings_list    = check_settings_list.filter(name__icontains=name)
+            
+            # Оптимизация: добавляем annotate для подсчета вопросов одним запросом
+            from django.db.models import Count
+            check_settings_list = check_settings_list.annotate(
+                questions_count=Count('records_questions')
+            )
 
             filtr = {
                 'name'      : name,
@@ -274,11 +282,10 @@ def check_lists(request):
             if 'save_check' in request.POST:
                 direction               = int(request.POST.get('direction_id', '1'))
                 
-                count_settings = Settings_check_records.objects.filter(direction = direction).count()
-                if count_settings == 0:
+                # Оптимизация: используем get_or_create или first()
+                settings_check_records = Settings_check_records.objects.filter(direction=direction).first()
+                if not settings_check_records:
                     settings_check_records = Settings_check_records()
-                else:
-                    settings_check_records = Settings_check_records.objects.filter(direction = direction)[0]
                 settings_check_records.direction        = direction
                 settings_check_records.check_settings   = Check_settings.objects.get(pk = request.POST.get('check_id', '1'))
                 settings_check_records.save()
@@ -508,39 +515,60 @@ def op(request):
             'date_end'      : date_end
         }
 
-        data_list = list()
+        # Оптимизация: используем annotate для группировки вместо циклов с запросами
+        # Один запрос вместо N+1 запросов
+        base_qs = Records_voice_recorder_queue.objects.filter(
+            direction=1,
+            error=False
+        ).exclude(
+            data_json=''
+        ).filter(
+            rlk__dataTime__gte=date_start,
+            rlk__dataTime__lte=date_end
+        ).select_related('rlk', 'rlk__unit', 'rlk__unit__city')
         
-        citys       = Records_voice_recorder_queue.objects.filter(direction = 1).filter(error = False).exclude(data_json = '').values('rlk__unit__city', 'rlk__unit__city__name').distinct().order_by('rlk__unit__city__name')
-        citys       = citys.filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end)
-
-        for city in citys:
-            units           = Records_voice_recorder_queue.objects.filter(direction = 1).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).filter(rlk__unit__city__id = city['rlk__unit__city']).filter(error = False).exclude(data_json = '').values('rlk__unit', 'rlk__unit__name').distinct().order_by('rlk__unit__name')
-            units_list      = list()
-            count_city      = 0
-            duration_city   = 0
-
-            for unit in units:
-                count       = Records_voice_recorder_queue.objects.filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).filter(rlk__unit__id = unit['rlk__unit']).filter(direction = 1).filter(error = False).exclude(data_json = '').count()
-                duration    = Records_voice_recorder_queue.objects.filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).filter(rlk__unit__id = unit['rlk__unit']).filter(direction = 1).filter(error = False).exclude(data_json = '').aggregate(Sum('duration'))
-                
-                count_city          = count_city + count
-                duration_city       = duration_city + duration['duration__sum'] 
-                unit_params = {
-                    'unit__id'      : unit['rlk__unit'],
-                    'unit__name'    : unit['rlk__unit__name'],
-                    'count'         : count,
-                    'duration'      : time_human(duration['duration__sum'])
-                }
-                units_list.append(unit_params)
+        # Группируем по городам и подразделениям с агрегацией
+        city_unit_stats = base_qs.values(
+            'rlk__unit__city',
+            'rlk__unit__city__name',
+            'rlk__unit',
+            'rlk__unit__name'
+        ).annotate(
+            count=Count('id'),
+            duration_sum=Sum('duration')
+        ).order_by('rlk__unit__city__name', 'rlk__unit__name')
+        
+        # Группируем данные по городам
+        data_dict = {}
+        for item in city_unit_stats:
+            city_id = item['rlk__unit__city']
+            city_name = item['rlk__unit__city__name'] or 'Не указан'
             
-            params_city = {
-               'city__id'       : city['rlk__unit__city'],
-               'city__name'     : city['rlk__unit__city__name'],
-               'units'          : units_list,
-               'count_city'     : count_city,
-               'duration_city'  : duration_city
-            }
-            data_list.append(params_city)
+            if city_id not in data_dict:
+                data_dict[city_id] = {
+                    'city__id': city_id,
+                    'city__name': city_name,
+                    'units': [],
+                    'count_city': 0,
+                    'duration_city': 0
+                }
+            
+            duration_sum = item['duration_sum'] or 0
+            data_dict[city_id]['units'].append({
+                'unit__id': item['rlk__unit'],
+                'unit__name': item['rlk__unit__name'] or 'Не указано',
+                'count': item['count'],
+                'duration': time_human(duration_sum)
+            })
+            
+            data_dict[city_id]['count_city'] += item['count']
+            data_dict[city_id]['duration_city'] += duration_sum
+        
+        # Преобразуем в список и форматируем duration_city
+        data_list = []
+        for city_data in data_dict.values():
+            city_data['duration_city'] = time_human(city_data['duration_city'])
+            data_list.append(city_data)
 
         params = {
             'type'              : 'recognitions',
@@ -701,23 +729,27 @@ def tematiks_op(request):
         if 'select_count' in request.GET:
             select_count = int(request.GET.get('select_count'))
 
-        tematics_list = Recognition_Tematika.objects.filter(anketa__id = 1).order_by('name')
+        # Оптимизация: добавляем select_related для anketa
+        tematics_list = Recognition_Tematika.objects.filter(anketa__id=1).select_related('anketa').order_by('name')
         
         name    = ''
         status  = 0
 
         if 'name' in request.GET:
             name = request.GET.get('name')
-            tematics_list = tematics_list.filter(name__icontains = name)
+            tematics_list = tematics_list.filter(name__icontains=name)
 
         if 'status' in request.GET:
             status = request.GET.get('status')
             if len(status) > 0:
                 if status == '1':
-                    tematics_list = tematics_list.filter(enabled = True)
+                    tematics_list = tematics_list.filter(enabled=True)
                 elif status == '2':
-                    tematics_list = tematics_list.filter(enabled = False)
-            
+                    tematics_list = tematics_list.filter(enabled=False)
+        
+        # Оптимизация: добавляем annotate для подсчета фраз (если нужно)
+        # Пока оставляем как есть, так как worlds_count может быть полем модели
+        
         page_number = request.GET.get('page')
         
         paginator   = Paginator(tematics_list, select_count)
@@ -858,7 +890,8 @@ def recognitions(request):
             recognitions_list = recognitions_list.filter(name__contains = name)
         page_number = request.GET.get('page')
         
-        paginator = Paginator(list(recognitions_list), countListRecord)
+        # Оптимизация: убираем list() - передаем QuerySet напрямую в Paginator
+        paginator = Paginator(recognitions_list, countListRecord)
         page_obj = paginator.get_page(page_number)
         filtr = {
             'name': name

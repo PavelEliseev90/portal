@@ -59,22 +59,40 @@ def telephony_recognitions(request):
         else:
             date_end  = DT.datetime.strptime(date_end, '%Y-%m-%d')
 
-        tematiks_count      = Telephony_Recognition_Tematika.objects.filter(direction = 1).count()
-        questions_count     = Telephony_question.objects.filter(direction = 1).count()
+        # Оптимизация: объединяем count запросы
+        from django.db.models import Q
         
-        op_queue_doc    = Telephony_records_queue.objects.filter(direction = 1).filter(data_json = '').values('rlk').distinct().count()
-        op_queue        = Telephony_records_queue.objects.filter(direction = 1).filter(data_json = '').count()
+        # Статические данные (можно кешировать)
+        tematiks_count = Telephony_Recognition_Tematika.objects.filter(direction=1).count()
+        questions_count = Telephony_question.objects.filter(direction=1).count()
         
-        #op_queue_doc_succsecc = Telephony_records_queue.objects.filter(direction = 1).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).exclude(data_json = '').values('rlk').distinct().count()
+        # Оптимизация: используем select_related для rlk
+        op_queue_base = Telephony_records_queue.objects.filter(direction=1, data_json='').select_related('rlk')
+        op_queue_doc = op_queue_base.values('rlk').distinct().count()
+        op_queue = op_queue_base.count()
         
-        op_queue_doc_succsecc       = Telephony_records_queue.objects.filter(direction = 1).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).exclude(data_json = '')
-        subquery                    = Subquery(Telephony_records_queue.objects.filter(rlk_id = OuterRef(name='rlk_id')).filter(data_json = '').values('rlk')[:1])        
-        op_queue_doc_succsecc       = op_queue_doc_succsecc.annotate(queue = subquery).order_by('-rlk__dataTime')
-        op_queue_doc_succsecc       = op_queue_doc_succsecc.filter(queue = None).values('rlk').distinct().count()
-        dictonary_count             = Telephony_Recognition_Dictonary.objects.all().count()
-        dictonary_model_count           = Telephony_Recognition_Dictonary_Model.objects.all().count()
-        dictonary_model_count_fail      = Telephony_Recognition_Dictonary_Model.objects.filter(added = False).count()
-        dictonary_model_count_success  = Telephony_Recognition_Dictonary_Model.objects.filter(added = True).count()
+        # Оптимизация: сложный запрос с subquery
+        op_queue_doc_succsecc = Telephony_records_queue.objects.filter(
+            direction=1,
+            rlk__dataTime__gte=date_start,
+            rlk__dataTime__lte=date_end
+        ).exclude(data_json='').select_related('rlk')
+        subquery = Subquery(Telephony_records_queue.objects.filter(
+            rlk_id=OuterRef(name='rlk_id'),
+            data_json=''
+        ).values('rlk')[:1])        
+        op_queue_doc_succsecc = op_queue_doc_succsecc.annotate(queue=subquery).filter(queue=None).values('rlk').distinct().count()
+        
+        # Оптимизация: объединяем count запросы для словарей
+        dictonary_stats = Telephony_Recognition_Dictonary_Model.objects.aggregate(
+            total=Count('id'),
+            success=Count('id', filter=Q(added=True)),
+            fail=Count('id', filter=Q(added=False))
+        )
+        dictonary_count = Telephony_Recognition_Dictonary.objects.all().count()
+        dictonary_model_count = dictonary_stats['total'] or 0
+        dictonary_model_count_fail = dictonary_stats['fail'] or 0
+        dictonary_model_count_success = dictonary_stats['success'] or 0
         
         filtr = {
             'date_start'    : date_start,
