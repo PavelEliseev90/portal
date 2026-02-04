@@ -1575,44 +1575,64 @@ def cvc_op(request):
             'direction'     : direction
         }
 
-        data_list = list()
+        # Оптимизация: устраняем N+1 проблему - используем annotate для группировки
+        base_qs = Records_voice_recorder_cvc_checklist.objects.filter(
+            direction=direction,
+            success=True,
+            rlk__dataTime__gte=date_start,
+            rlk__dataTime__lte=date_end
+        ).select_related('rlk', 'rlk__unit', 'rlk__unit__city')
         
-        citys       = Records_voice_recorder_cvc_checklist.objects.filter(direction = direction).filter(success = True).values('rlk__unit__city', 'rlk__unit__city__name').distinct().order_by('rlk__unit__city__name')
-        citys       = citys.filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end)
-
-        cvc_count       = 0
-        cvc_duration    = 0
-
-        for city in citys:
-            units       = Records_voice_recorder_cvc_checklist.objects.filter(direction = direction).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).filter(rlk__unit__city__id = city['rlk__unit__city']).filter(success = True).values('rlk__unit', 'rlk__unit__name').distinct().order_by('rlk__unit__name')
-            units_list  = list()
-            count_city  = 0   
-            duration_city = 0 
-            for unit in units:
-                count       = Records_voice_recorder_cvc_checklist.objects.filter(direction = direction).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).filter(rlk__unit__id = unit['rlk__unit']).filter(success = True).count()
-                duration    = Records_voice_recorder_cvc_checklist.objects.filter(direction = direction).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).filter(rlk__unit__id = unit['rlk__unit']).filter(success = True).aggregate(Sum('duration'))
-                
-                count_city          = count_city + count
-                duration_city       = duration_city + duration['duration__sum'] 
+        # Группируем по городам и подразделениям с агрегацией
+        city_unit_stats = base_qs.values(
+            'rlk__unit__city',
+            'rlk__unit__city__name',
+            'rlk__unit',
+            'rlk__unit__name'
+        ).annotate(
+            count=Count('id'),
+            duration_sum=Sum('duration')
+        ).order_by('rlk__unit__city__name', 'rlk__unit__name')
+        
+        # Группируем данные по городам
+        data_dict = {}
+        cvc_count = 0
+        cvc_duration = 0
+        
+        for item in city_unit_stats:
+            city_id = item['rlk__unit__city']
+            city_name = item['rlk__unit__city__name'] or 'Не указан'
             
-                unit_params = {
-                    'unit__id'      : unit['rlk__unit'],
-                    'unit__name'    : unit['rlk__unit__name'],
-                    'count'         : count,
-                    'duration'      : time_human(duration['duration__sum'])
+            if city_id not in data_dict:
+                data_dict[city_id] = {
+                    'city__id': city_id,
+                    'city__name': city_name,
+                    'units': [],
+                    'count_city': 0,
+                    'duration_city': 0
                 }
-                units_list.append(unit_params)
-                
-            params_city = {
-               'city__id'       : city['rlk__unit__city'],
-               'city__name'     : city['rlk__unit__city__name'],
-               'count_city'     : count_city,
-               'duration_city'  : time_human(duration_city),
-               'units'          : units_list
-            }
-            data_list.append(params_city)
-            cvc_count       = cvc_count + count_city
-            cvc_duration    = cvc_duration + duration_city
+            
+            duration_sum = item['duration_sum'] or 0
+            data_dict[city_id]['units'].append({
+                'unit__id': item['rlk__unit'],
+                'unit__name': item['rlk__unit__name'] or 'Не указано',
+                'count': item['count'],
+                'duration': time_human(duration_sum)
+            })
+            
+            data_dict[city_id]['count_city'] += item['count']
+            data_dict[city_id]['duration_city'] += duration_sum
+        
+        # Преобразуем в список и форматируем duration_city
+        data_list = []
+        cvc_duration_raw = 0
+        for city_data in data_dict.values():
+            cvc_duration_raw += city_data['duration_city']
+            city_data['duration_city'] = time_human(city_data['duration_city'])
+            data_list.append(city_data)
+            cvc_count += city_data['count_city']
+        
+        cvc_duration = time_human(cvc_duration_raw)
 
         params = {
             'type'              : 'recognitions',
