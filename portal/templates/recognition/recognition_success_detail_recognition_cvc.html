@@ -1,236 +1,469 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - запись к рлк № {{params.recognition.rlk.nomer}} от {{params.recognition.rlk.dataTime}} {% endblock %}
-
-{% block title_navbar %} - запись к рлк № {{params.recognition.rlk.nomer}} от {{params.recognition.rlk.dataTime}}  {% endblock %}
-
+{% block title %} - Запись к РЛК № {{ params.recognition.rlk.nomer }} от {{ params.recognition.rlk.dataTime|date:"d.m.Y" }} {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .recognition-header {
+    margin-bottom: 1.5rem;
+  }
 
-<form method="GET" id="form" name="form">
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-  <div class="row"> 
-    
-    <div class="col-sm">
-      
-      <div class="row g-1">
-        
-        <div class="card"> 
-            <div class="card-body text-success">
-              <p> ИД рабочего листа - {{params.recognition.rlk.id}}</p>
-              <div class="row">
-                  <div class="col-sm-auto"> 
-                    <span class="icon-mbri-laptop"></span>
-                  </div>
-                  
-                  <div class="col-sm my-auto">
-                    {% if params.recognition.result > 70 %}
-                      <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{params.recognition.result}}" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-bar bg-success" style="width: {{params.recognition.result}}%">{{params.recognition.result}} %</div>
-                      </div>
-                    {% elif params.recognition.result > 59 %}
-                      <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{params.recognition.result}}" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-bar bg-warning" style="width: {{params.recognition.result}}%">{{params.recognition.result}} %</div>
-                      </div>
-                    {% else %}
-                      <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{params.recognition.result}}" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-bar bg-danger" style="width: {{params.recognition.result}}%">{{params.recognition.result}} %</div>
-                      </div>
-                    {% endif %} 
-                  </div>
-              </div>
-            </div>          
-      
-            <div class="card-body text-success">
-              <div class="row">
-                <div class="col-sm-auto"> 
-                  <span class="icon-mbri-user"></span>
-                </div>
-                <div class="col-sm my-auto">
-                  {% if params.checklist.result > 70 %}
-                    <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{params.checklist.result}}" aria-valuemin="0" aria-valuemax="100">
-                      <div class="progress-bar bg-success" style="width: {{params.checklist.result}}%">{{params.checklist.result}} %</div>
-                    </div>
-                  {% elif params.checklist.result > 59 %}
-                    <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{params.checklist.result}}" aria-valuemin="0" aria-valuemax="100">
-                      <div class="progress-bar bg-warning" style="width: {{params.checklist.result}}%">{{params.checklist.result}} %</div>
-                    </div>
-                  {% else %}
-                    <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{params.checklist.result}}" aria-valuemin="0" aria-valuemax="100">
-                      <div class="progress-bar bg-danger" style="width: {{params.checklist.result}}%">{{params.checklist.result}} %</div>
-                    </div>
-                  {% endif %}
-                </div>
-              </div>
-              
-            </div> 
-            <div class="col-sm-auto my-auto">
-              <div class="d-grid gap-2">
-                {% if params.checklist != '' %}
-                  <button type="submit" class="btn btn-outline-success" name="open_checkList" id="open_checkList"><span class="icon-mbri-right"> </span> Открыть чек лист № {{params.checklist.rlk.id}}</button>
-                {% else %}
-                  <button type="submit" class="btn btn-outline-success" name="new_checklist" id="new_checklist"><span class="icon-mbri-right"> </span> Создать чек лист </button>
-                {% endif %}
-              </div>
-            </div>         
-        </div>
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 0;
+  }
 
-        <div class="card"> 
-          <h5 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"><span class="icon-mbri-right"></span> Данные записи </h5>
-          <div class="collapse" id="collapseExample">
-            <div class="card-body text-success">
-            
-              <table class="table">
-                <tbody>
-                  <tr>
-                    <td>Дата </td>
-                    <td>{{params.recognition.records.date}}</td>
-                  </tr>
-                  <tr>
-                    <td>Наименование </td>
-                    <td>{{params.recognition.records.name}} </td>
-                  </tr>
-                  <tr>
-                    <td>Продолжительность </td>
-                    <td>{{params.recognition.records.time_human}} </td>
-                  </tr>
-                  <tr>
-                    <td>Сотрудник </td>
-                    <td>{{params.recognition.records.user.last_name}} {{params.recognition.records.user.first_name}}</td>
-                  </tr>
-                </tbody>
-              </table>
+  .recognition-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-             
-            </div>
-          </div>
-        </div>
+  .metric-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+  }
 
-        <div class="card"> 
-          <h5 class="card-header"   data-bs-toggle="collapse" data-bs-target="#collapse_data_recognition" aria-expanded="false" aria-controls="collapse_data_recognition"><span class="icon-mbri-right"></span> Данные документа </h5>
-          <div class="collapse" id="collapse_data_recognition">
-            <div class="card-body text-success">
-              <table class="table">
-                <tbody>
-                  <tr>
-                    <td>Дата </td>
-                    <td>{{params.recognition.rlk.dataTime}}</td>
-                  </tr>
-                  <tr>
-                    <td>Номер </td>
-                    <td>{{params.recognition.rlk.nomer}} </td>
-                  </tr>
-                  <tr>
-                    <td>Начало записи </td>
-                    <td>{{params.recognition.time_start}} </td>
-                  </tr>
-                  <tr>
-                    <td>Окончание записи </td>
-                    <td>{{params.recognition.time_end}}</td>
-                  </tr>
-                  <tr>
-                    <td>Продолжительность </td>
-                    <td>{{params.recognition.duration_human}}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+  .metric-card-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-        <div class="card"> 
-          <h5 class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseExampleSearch" aria-expanded="false" aria-controls="collapseExample"><span class="icon-mbri-right"></span> Тематики </h5>
-          <div class="collapse" id="collapseExampleSearch">
-            <div class="card-body text-success">
-              <table class="table">
-                <tbody>
-                  {% for tematik in params.tematiks %}
-                    <tr {% if tematik.confirmed %} class="text-success" {% else %} class="text-danger" {% endif %}>
-                      <td> <span {% if tematik.confirmed %} class="icon-mbri-success" {% else %} class="icon-mbri-close" {% endif %} > </span></td>
-                      <td> {{tematik.tematic.name}} </td>
-                      <!--<td> {{tematik.value}} </td>-->
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>    
-            </div>
-          </div>
-        </div>
-      </div>
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+  }
 
-    </div>
+  .progress-custom {
+    height: 2rem;
+    border-radius: 0.75rem;
+    background: #f4f7fb;
+    overflow: hidden;
+    position: relative;
+  }
 
-    <div class="col-sm-9">
-      
-      <div class="card">
-        <div class="card-body">
-      
-          <div class="card border-success" >
-            <div class="card-body">
-              <div class="card-title"><span class="icon-mbri-close"></span><b>{{params.recognition.сheck_settings.name}} </b></div>
-              <p><span>CVC - чек</span><br><span>{{params.recognition.сheck_settings.check_settings_cvc.name}}</span></p>
-              <hr>
-              <div class="book">
-                <p><span>Вопросов</span><span>{{params.recognition.сheck_settings.questions_count}}</span></p>
-              </div>
-            </div>
-          </div>
-        
-          <div class="row g-2">
-            
-            {% for checklist_kg in params.checklist_kg %}
+  .progress-bar-custom {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #fff;
+    transition: width 0.3s ease;
+  }
 
-              <div class="card border-success" >
-                <div class="card-body">
-                  <div class="card-title"><span class="icon-mbri-close"></span><b>{{checklist_kg}} </b></div>
-                    {{checklist_kg.questions_kg.chapter}}
-                    {{checklist_kg.questions_kg.field}}
-                  <p><span></span><br><span>{{checklist_kg.questions_kg.estimation}}</span></p>
-                  <hr>
-                  <div class="book">
-                    <p><span>Оценка</span><span>{{checklist_kg.value}}</span></p>
-                  </div>
-                </div>
-              </div>
+  .info-table {
+    width: 100%;
+  }
 
+  .info-table td {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f4f7fb;
+    font-size: 0.9rem;
+  }
 
-            {% endfor %}
-            
-            <div class="table-wrapper-scroll-y my-custom-scrollbar">
-              <div class="table-responsive-sm">
-                <table class="table table-striped table-hover fixed-header">
-                  
-                  <tbody>
+  .info-table td:first-child {
+    color: #6c7a92;
+    font-weight: 500;
+    width: 40%;
+  }
 
-                    {% for data_json in params.data_list %}
-                      <tr>
-                        {% if data_json.operator == 0%}
-                          <td>{{data_json.time}}</td> 
-                          <td>{{data_json.text}}</td> 
-                          <td>{{data_json.words}}</td>  
-                        {% else %}
-                          <td>{{data_json.time}}</td> 
-                          <td>{{data_json.text}}</td> 
-                          <td>{{data_json.words}}</td> 
-                        {% endif %}
-                      </tr>
-                    {% endfor %}
-                      
-                  </tbody>
-                  
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  .info-table td:last-child {
+    color: #002a5a;
+    font-weight: 600;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #f4f7fb;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-header h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-header i {
+    transition: transform 0.2s;
+  }
+
+  .section-header[aria-expanded="true"] i {
+    transform: rotate(90deg);
+  }
+
+  .question-card {
+    background: rgba(16, 185, 129, 0.05);
+    border: 2px solid #10b981;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .question-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+  }
+
+  .question-card-info {
+    font-size: 0.85rem;
+    color: #6c7a92;
+    margin-bottom: 0.25rem;
+  }
+
+  .question-card-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #10b981;
+    margin-top: 0.5rem;
+  }
+
+  .tematik-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+  }
+
+  .tematik-item.confirmed {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 3px solid #10b981;
+  }
+
+  .tematik-item.not-confirmed {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid #ef4444;
+  }
+
+  .transcript-table {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .transcript-table table {
+    margin-bottom: 0;
+  }
+
+  .transcript-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 10;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c7a92;
+    border-bottom: 2px solid #dee2e6;
+  }
+
+  .transcript-table tbody td {
+    font-size: 0.9rem;
+    color: #002a5a;
+    padding: 0.75rem;
+    vertical-align: top;
+  }
+
+  .transcript-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+  }
+
+  .btn-portal {
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-portal-success {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+  }
+
+  .btn-portal-success:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #fff;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>Запись к РЛК № {{ params.recognition.rlk.nomer }}</h2>
+    <p>Детальная информация о распознавании CVC</p>
   </div>
 
-</form>
+  <div class="row g-3">
+    <!-- Левая колонка -->
+    <div class="col-lg-4">
+      <!-- Метрики CVC -->
+      <div class="recognition-section">
+        <div class="metric-card">
+          <div class="metric-card-title">
+            <i class="bi bi-graph-up"></i>
+            CVC Оценка
+          </div>
+          <div class="metric-value">{{ params.recognition.result }}%</div>
+          <div class="progress-custom">
+            {% if params.recognition.result > 70 %}
+              <div class="progress-bar-custom bg-success" style="width: {{ params.recognition.result }}%">
+                {{ params.recognition.result }}%
+              </div>
+            {% elif params.recognition.result > 59 %}
+              <div class="progress-bar-custom bg-warning" style="width: {{ params.recognition.result }}%">
+                {{ params.recognition.result }}%
+              </div>
+            {% else %}
+              <div class="progress-bar-custom bg-danger" style="width: {{ params.recognition.result }}%">
+                {{ params.recognition.result }}%
+              </div>
+            {% endif %}
+          </div>
+        </div>
 
+        {% if params.checklist %}
+          <div class="metric-card">
+            <div class="metric-card-title">
+              <i class="bi bi-check-circle"></i>
+              Ручная оценка
+            </div>
+            <div class="metric-value">{{ params.checklist.result }}%</div>
+            <div class="progress-custom">
+              {% if params.checklist.result > 70 %}
+                <div class="progress-bar-custom bg-success" style="width: {{ params.checklist.result }}%">
+                  {{ params.checklist.result }}%
+                </div>
+              {% elif params.checklist.result > 59 %}
+                <div class="progress-bar-custom bg-warning" style="width: {{ params.checklist.result }}%">
+                  {{ params.checklist.result }}%
+                </div>
+              {% else %}
+                <div class="progress-bar-custom bg-danger" style="width: {{ params.checklist.result }}%">
+                  {{ params.checklist.result }}%
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        <form method="GET">
+          {% if params.checklist %}
+            <button type="submit" class="btn btn-portal btn-portal-success w-100" name="open_checkList">
+              <i class="bi bi-file-earmark-text"></i> Открыть чек-лист № {{ params.checklist.rlk.id }}
+            </button>
+          {% else %}
+            <button type="submit" class="btn btn-portal btn-portal-success w-100" name="new_checklist">
+              <i class="bi bi-plus-circle"></i> Создать чек-лист
+            </button>
+          {% endif %}
+        </form>
+      </div>
+
+      <!-- Данные записи -->
+      <div class="recognition-section">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#collapse_record" aria-expanded="false">
+          <h5>
+            <i class="bi bi-chevron-right"></i>
+            Данные записи
+          </h5>
+        </div>
+        <div class="collapse" id="collapse_record">
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <td>Дата</td>
+                <td>{{ params.recognition.records.date|date:"d.m.Y H:i" }}</td>
+              </tr>
+              <tr>
+                <td>Наименование</td>
+                <td>{{ params.recognition.records.name|default:"Не указано" }}</td>
+              </tr>
+              <tr>
+                <td>Продолжительность</td>
+                <td>{{ params.recognition.records.time_human }}</td>
+              </tr>
+              <tr>
+                <td>Сотрудник</td>
+                <td>{{ params.recognition.records.user.last_name }} {{ params.recognition.records.user.first_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Данные документа -->
+      <div class="recognition-section">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#collapse_document" aria-expanded="false">
+          <h5>
+            <i class="bi bi-chevron-right"></i>
+            Данные документа
+          </h5>
+        </div>
+        <div class="collapse" id="collapse_document">
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <td>ID РЛК</td>
+                <td><strong>{{ params.recognition.rlk.id }}</strong></td>
+              </tr>
+              <tr>
+                <td>Дата</td>
+                <td>{{ params.recognition.rlk.dataTime|date:"d.m.Y H:i" }}</td>
+              </tr>
+              <tr>
+                <td>Номер</td>
+                <td><strong>{{ params.recognition.rlk.nomer }}</strong></td>
+              </tr>
+              <tr>
+                <td>Начало записи</td>
+                <td>{{ params.recognition.time_start|date:"d.m.Y H:i:s" }}</td>
+              </tr>
+              <tr>
+                <td>Окончание записи</td>
+                <td>{{ params.recognition.time_end|date:"d.m.Y H:i:s" }}</td>
+              </tr>
+              <tr>
+                <td>Продолжительность</td>
+                <td>{{ params.recognition.duration_human }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Тематики -->
+      <div class="recognition-section">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#collapse_tematiks" aria-expanded="false">
+          <h5>
+            <i class="bi bi-chevron-right"></i>
+            Тематики ({{ params.tematiks|length }})
+          </h5>
+        </div>
+        <div class="collapse" id="collapse_tematiks">
+          {% for tematik in params.tematiks %}
+            <div class="tematik-item {% if tematik.confirmed %}confirmed{% else %}not-confirmed{% endif %}">
+              <i class="bi {% if tematik.confirmed %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %}"></i>
+              <span style="flex: 1; font-weight: 500; color: #002a5a;">{{ tematik.tematic.name }}</span>
+            </div>
+          {% empty %}
+            <p style="color: #6c7a92; text-align: center; padding: 1rem;">Тематики не найдены</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Правая колонка -->
+    <div class="col-lg-8">
+      <!-- Чек-лист CVC -->
+      <div class="recognition-section">
+        <h5 style="font-size: 1.1rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem;">
+          <i class="bi bi-list-check"></i> {{ params.recognition.сheck_settings.name }}
+        </h5>
+        <p style="color: #6c7a92; margin-bottom: 1.5rem;">
+          <strong>CVC - чек:</strong> {{ params.recognition.сheck_settings.check_settings_cvc.name }}
+        </p>
+
+        {% if params.checklist_kg %}
+          <div class="row g-2">
+            {% for checklist_kg in params.checklist_kg %}
+              <div class="col-md-6">
+                <div class="question-card">
+                  <div class="question-card-title">
+                    <i class="bi bi-question-circle"></i> {{ checklist_kg.questions_kg.name }}
+                  </div>
+                  <div class="question-card-info">
+                    <strong>Глава:</strong> {{ checklist_kg.questions_kg.chapter }}
+                  </div>
+                  <div class="question-card-info">
+                    <strong>Поле:</strong> {{ checklist_kg.questions_kg.field }}
+                  </div>
+                  <div class="question-card-value">
+                    Оценка: {{ checklist_kg.value }}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="color: #6c7a92; text-align: center; padding: 2rem;">Вопросы не найдены</p>
+        {% endif %}
+      </div>
+
+      <!-- Транскрипция -->
+      {% if params.data_list %}
+        <div class="recognition-section">
+          <h5 style="font-size: 1.1rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem;">
+            <i class="bi bi-chat-left-text"></i> Транскрипция записи
+          </h5>
+          <div class="transcript-table">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 100px;">Время</th>
+                  <th>Текст</th>
+                  <th style="width: 150px;">Слова</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for data_json in params.data_list %}
+                  <tr>
+                    <td>{{ data_json.time }}</td>
+                    <td>{{ data_json.text }}</td>
+                    <td>{{ data_json.words }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
 
 {% endblock %}
-

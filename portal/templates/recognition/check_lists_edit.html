@@ -1,204 +1,348 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - {% if params.new == True %} добавление чек листа {% else %} чек лист / {{params.object.name}} {% endif %} {% endblock %}
-
-{% block title_navbar %} - {% if params.new == True %} добавление чек листа {% else %} чек лист / {{params.object.name}} {% endif %} {% endblock %}
+{% block title %} - {% if params.new == True %}Добавление чек-листа{% else %}Чек-лист / {{ params.object.name }}{% endif %} {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
-<form method="POST" id="form_save" name="form">
-  
-  {% csrf_token %}
+  .recognition-header {
+    margin-bottom: 1.5rem;
+  }
 
-  <div class="row">
-    <div class="col-sm-auto my-auto">
-      <div class="form-floating mb-3">
-        <button type="submit" class="btn btn-outline-success" name="save_button" id="save_button"><span class="icon-mbri-refresh"> </span> Сохранить </button>
-      </div>
-    </div>
-    <div class="col-sm-auto my-auto">
-      <div class="form-floating mb-3">
-        <button type="submit" class="btn btn-outline-success" name="refresh_check" id="refresh_check"><span class="icon-mbri-refresh"> </span> Обновить чек листы </button>
-      </div>
-    </div>
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
+
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 0;
+  }
+
+  .recognition-form {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .recognition-form .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
+
+  .btn-portal {
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-portal-primary {
+    background: #002a5a;
+    border-color: #002a5a;
+    color: #fff;
+  }
+
+  .btn-portal-primary:hover {
+    background: #003d7a;
+    border-color: #003d7a;
+    color: #fff;
+  }
+
+  .btn-portal-success {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+  }
+
+  .btn-portal-success:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #fff;
+  }
+
+  .questions-section {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .questions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f4f7fb;
+  }
+
+  .questions-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .questions-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .stat-badge-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  .stat-badge-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .question-card {
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: block;
+    border: 2px solid;
+  }
+
+  .question-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 23, 61, 0.15);
+    text-decoration: none;
+  }
+
+  .question-card-success {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+  }
+
+  .question-card-danger {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .question-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .question-card-body {
+    color: #6c7a92;
+    font-size: 0.9rem;
+  }
+
+  .question-card-body hr {
+    margin: 0.75rem 0;
+    border-color: rgba(0, 42, 90, 0.1);
+  }
+
+  .question-card-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+  }
+
+  .question-card-info p {
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .question-card-info span:first-child {
+    font-weight: 500;
+    color: #6c7a92;
+  }
+
+  .question-card-info span:last-child {
+    font-weight: 600;
+    color: #002a5a;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c7a92;
+  }
+
+  .empty-state p {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>{% if params.new == True %}Добавление чек-листа{% else %}{{ params.object.name }}{% endif %}</h2>
+    <p>{% if params.new == True %}Создание нового чек-листа{% else %}Редактирование чек-листа{% endif %}</p>
   </div>
 
-  <br>
+  <form method="POST" id="form_save" name="form">
+    {% csrf_token %}
 
-  <div class="row g-3">
-         
-    <div class="col-sm my-auto">
-      <div class="form-floating mb-3">
-        <input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.object.name}}" autocomplete="off">
-          <label for="floatingInput">Наименование</label>
+    <!-- Форма редактирования -->
+    <div class="recognition-form">
+      <div class="row g-3 mb-3">
+        <div class="col-md-12">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-portal btn-portal-primary" name="save_button" id="save_button">
+              <i class="bi bi-save"></i> Сохранить
+            </button>
+            {% if not params.new %}
+              <button type="submit" class="btn btn-portal btn-portal-success" name="refresh_check" id="refresh_check">
+                <i class="bi bi-arrow-clockwise"></i> Обновить чек-листы
+              </button>
+            {% endif %}
+          </div>
+        </div>
       </div>
-    </div>
 
-  </div>
-  
-  <br>
-  
-  <div class="row g-3">
-         
-    <div class="col-sm my-auto">
-      <div class="form-floating mb-3">
-        <select class="form-select" aria-label="" name="direction" >
-          <option selected>Выберите направление</option>
-          <option value="1" {% if params.object.direction == 1 or params.direction == 1 %} selected {% endif %}>ОП новых автомобилей</option>
-          <option value="5" {% if params.object.direction == 5 or params.direction == 5 %} selected {% endif %}>ОП КорсАвто автомобили с пробегом</option>
-        </select>  
-        <label for="floatingInput">Направление</label>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Наименование</label>
+          <input type="text" class="form-control" id="name" name="name" placeholder="Введите наименование" value="{% if params.object %}{{ params.object.name }}{% endif %}" autocomplete="off" required>
+        </div>
       </div>
-    </div>
-    
-    <div class="col-sm my-auto">
-      <div class="form-floating mb-3">
-        <select class="form-select" aria-label="" name="check_settings_cvc" >
-          <option selected>Выберите cvc - чек лист</option>
-          {% for check_cvc in params.checks_cvc %}
-            <option value="{{check_cvc.id}}" {% if params.object.check_settings_cvc == check_cvc %} selected {% endif %}>{{check_cvc.name}}</option>
-          {% endfor %}
-        </select>  
-        <label for="floatingInput">CVC - чек</label>
-      </div>
-    </div>
-  </div>
 
-
-  <div class="card mb-3">
-    <div class="row g-0">
-    
-    <div class="col-sm">
-      <div class="card-body">
-        <h5 class="card-title"> <span class="icon-mbri-home"> </span> Вопросы чек листа <a href="{{params.object.pk}}/question/0" class="link-success"><span class="icon-mbri-plus"></span></a></h5>
-        <p class="fs-5 fw-bold font-monospace">
-        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-secondary bg-opacity-10">
-          <span class="icon-mbri-success text-success"> {{params.records_questions_count_enabled}}</span> 
-          <span class="icon-mbri-close text-danger">{{params.records_questions_count_not_enabled}} </span> 
-          <span class="visually-hidden"></span>
-        </span>
-      </p>
-        <div class="row g-4">
-          
-          {% if params.paginator|length > 0 %}
-
-            {% for question in params.paginator %}
-              
-              <div class="col-sm-auto">
-                <div class="row g-1">
-                  {% if question.estimation > 0 %}    
-                      <div class="col-sm-auto">
-                        <a class="nav-link text-success" href='{{params.object.pk}}/question/{{question.pk}}'>
-                        <div class="card border-success" style="width: 20rem;">
-                          <div class="card-body">
-                            <div class="card-title"><span class="icon-mbri-success"></span><b>{{question.name}} </b></div>
-                            
-                            <hr>
-                            <div class="book">
-                              {{question.field}}
-                              <hr>
-                              <p><span>Оценка</span><span>{{question.estimation}}</span></p>
-                              <p><span>Тематик</span><span>{{question.tematics.all|length}}</span></p>
-                             </div>
-                          </div>
-                        </div>
-                        </a>
-                      </div>
-                    {% else %}
-                      <div class="col-sm-auto">
-                        <a class="nav-link text-danger" href='{{params.object.pk}}/question/{{question.pk}}'>
-                        <div class="card border-danger mb-3" style="width: 20rem;">
-                          <div class="card-body">
-                            <div class="card-title"><span class="icon-mbri-close"></span><b>{{question.name}} </b></div>
-                            <hr>
-                            <div class="book">
-                              <p><span>Оценка</span><span>{{question.estimation}}</span></p>
-                              <p><span>Тематик</span><span>{{question.tematics.all|length}}</span></p>
-                            </div>
-                          </div>
-                        </div>
-                        </a>
-                      </div>
-                    {% endif %}
-          
-                </div>
-              </div>
-              
-            {% endfor %}
-
-          {% else %}
-              <div style="text-align: center;" class="row g-1">
-                <p class="fs-5 fw-normal">Пока нет вопросов.</p>
-              </div>
-          {% endif %}
+      <div class="row g-3 mt-2">
+        <div class="col-md-6">
+          <label class="form-label">Направление</label>
+          <select class="form-select" name="direction" required>
+            <option value="">Выберите направление</option>
+            <option value="1" {% if params.object.direction == 1 or params.direction == 1 %}selected{% endif %}>ОП новых автомобилей</option>
+            <option value="5" {% if params.object.direction == 5 or params.direction == 5 %}selected{% endif %}>ОП КорсАвто автомобили с пробегом</option>
+          </select>
         </div>
         
+        <div class="col-md-6">
+          <label class="form-label">CVC - чек</label>
+          <select class="form-select" name="check_settings_cvc">
+            <option value="">Выберите CVC - чек-лист</option>
+            {% for check_cvc in params.checks_cvc %}
+              <option value="{{ check_cvc.id }}" {% if params.object.check_settings_cvc == check_cvc %}selected{% endif %}>{{ check_cvc.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     </div>
-    </div>
-  </div>
 
-</form>
+    <!-- Секция вопросов -->
+    {% if not params.new %}
+      <div class="questions-section">
+        <div class="questions-header">
+          <h3>
+            <i class="bi bi-list-check"></i> Вопросы чек-листа
+            {% if params.object.pk %}
+              <a href="{{ params.object.pk }}/question/0" class="btn btn-sm btn-portal-success ms-3" style="padding: 0.25rem 0.75rem;">
+                <i class="bi bi-plus"></i> Добавить
+              </a>
+            {% endif %}
+          </h3>
+          <div class="questions-stats">
+            <span class="stat-badge stat-badge-success">
+              <i class="bi bi-check-circle"></i>
+              {{ params.records_questions_count_enabled }}
+            </span>
+            <span class="stat-badge stat-badge-danger">
+              <i class="bi bi-x-circle"></i>
+              {{ params.records_questions_count_not_enabled }}
+            </span>
+          </div>
+        </div>
 
-
-
-
-
-
-
-
-
- <!--
-  <hr>
-
-  <div class="row g-1">
-    <div class="col justify-content-center">
-      <div class="form-floating mb-3">
-        <select class="form-select" name = "select_count" onchange="this.form.submit()">
-          <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
-          <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
-          <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
-          <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
-        </select>
-        <label for="floatingInput">Выводить</label>
-      </div>
-    </div>
-    <div class="col justify-content-center">
-      <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
-        
-        {% if  params.paginator.has_previous %}
-          <li class="page-num">
-              <a class="page-link text-secondary"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
-          </li>
-        {% endif %}
-    
-        {% for p in params.paginator.paginator.page_range %}
-          {% if  params.paginator.number == p %}
-          <li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
-              {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-          <li class="page-item">
-            <a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
-          </li>
+        <div class="row g-3">
+          {% if params.paginator|length > 0 %}
+            {% for question in params.paginator %}
+              <div class="col-md-6 col-lg-4">
+                {% if question.estimation > 0 %}
+                  <a href="{{ params.object.pk }}/question/{{ question.pk }}" class="question-card question-card-success">
+                    <div class="question-card-title">
+                      <i class="bi bi-check-circle-fill text-success"></i>
+                      <span>{{ question.name }}</span>
+                    </div>
+                    <div class="question-card-body">
+                      <div>{{ question.field }}</div>
+                      <hr>
+                      <div class="question-card-info">
+                        <p>
+                          <span>Оценка:</span>
+                          <span>{{ question.estimation }}</span>
+                        </p>
+                        <p>
+                          <span>Тематик:</span>
+                          <span>{{ question.tematics.all|length }}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+                {% else %}
+                  <a href="{{ params.object.pk }}/question/{{ question.pk }}" class="question-card question-card-danger">
+                    <div class="question-card-title">
+                      <i class="bi bi-x-circle-fill text-danger"></i>
+                      <span>{{ question.name }}</span>
+                    </div>
+                    <div class="question-card-body">
+                      <div class="question-card-info">
+                        <p>
+                          <span>Оценка:</span>
+                          <span>{{ question.estimation }}</span>
+                        </p>
+                        <p>
+                          <span>Тематик:</span>
+                          <span>{{ question.tematics.all|length }}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="col-12">
+              <div class="empty-state">
+                <p>Пока нет вопросов. <a href="{{ params.object.pk }}/question/0" class="text-decoration-none">Добавить первый вопрос</a></p>
+              </div>
+            </div>
           {% endif %}
-        {% endfor %}
-          
-        {% if params.paginator.has_next %}
-          <li class="page-num">
-            <a class="page-link text-secondary" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
-          </li>
-        {% endif %}
-    
-        </ul>
-      </nav>
-    </div>
-    <div class="col justify-content-center" >
-      Выведено : {{params.paginator.object_list|length}}
-    </div>
-  </div>
--->
-
+        </div>
+      </div>
+    {% endif %}
+  </form>
+</div>
 
 {% endblock %}
-
