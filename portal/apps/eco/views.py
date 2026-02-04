@@ -8184,11 +8184,15 @@ def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids,
 
 
 def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, 
-                            type_reception_ids, brand_list, unit_source_id=None, unit_id=None, 
-                            city_id=None, type_reception_id=None, brand=None):
+                            type_reception_ids, brand_list, staff_ids=None, analyst_ids=None, 
+                            remote_filter=None, unit_source_id=None, unit_id=None, 
+                            city_id=None, type_reception_id=None, brand=None, staff_id=None, analyst_id=None):
     """
     Вспомогательная функция для обработки одного набора фильтров воронки Trade-In.
     Возвращает все вычисленные данные для отображения.
+    
+    Параметры:
+    - remote_filter: None (все), 'with' (с дистанционной оценкой), 'without' (без дистанционной оценки)
     """
     from refs.models import RefCity
     
@@ -8203,6 +8207,14 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         type_reception_ids.append(type_reception_id)
     if brand and brand not in brand_list:
         brand_list.append(brand)
+    if staff_id and (not staff_ids or staff_id not in staff_ids):
+        if staff_ids is None:
+            staff_ids = []
+        staff_ids.append(staff_id)
+    if analyst_id and (not analyst_ids or analyst_id not in analyst_ids):
+        if analyst_ids is None:
+            analyst_ids = []
+        analyst_ids.append(analyst_id)
     
     # Базовый QuerySet с фильтрами
     base_qs = TradeInFunnel.objects.all()
@@ -8264,11 +8276,17 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
     
     # Оптимизированный подсчет общих показателей одним запросом
+    # Принятые без интерактивной оценки: date_reception_success валидна, но date_after_success отсутствует или равна 1.1.1
+    reception_without_interactive = Q(valid_date_reception) & (
+        Q(date_after_success__isnull=True) | Q(date_after_success=date_invalid)
+    )
+    
     totals_agg = qs.aggregate(
         total_rlk=Count('rlk_id', filter=valid_date_rlk),
         total_before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
         total_after=Count('rlk_id', filter=valid_date_after),
         total_reception=Count('rlk_id', filter=valid_date_reception),
+        total_reception_without_interactive=Count('rlk_id', filter=reception_without_interactive),
         total_taxi=Count('rlk_id', filter=Q(taxi=True)),
         total_carsharing=Count('rlk_id', filter=Q(carsharing=True)),
         total_iznos=Count('rlk_id', filter=Q(iznos=True)),
@@ -8294,6 +8312,7 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     total_before = totals_agg['total_before'] or 0
     total_after = totals_agg['total_after'] or 0
     total_reception = totals_agg['total_reception'] or 0
+    total_reception_without_interactive = totals_agg['total_reception_without_interactive'] or 0
     total_taxi = totals_agg['total_taxi'] or 0
     total_carsharing = totals_agg['total_carsharing'] or 0
     total_iznos = totals_agg['total_iznos'] or 0
@@ -8691,6 +8710,7 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
             'before': total_before,
             'after': total_after,
             'reception': total_reception,
+            'reception_without_interactive': total_reception_without_interactive,
             'conv_op_to_tradein': conv_op_to_tradein,
             'conv_before': conv_before,
             'conv_after': conv_after,
@@ -8775,11 +8795,23 @@ def tradein_funnel_analytics(request):
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
     brand = request.GET.get('brand', '').strip()
     
+    # Парсим новые фильтры
+    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
+    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
+    remote_filter = request.GET.get('remote_filter', '').strip()  # '', 'with', 'without'
+    if remote_filter not in ['with', 'without']:
+        remote_filter = None
+    
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    
     # Обрабатываем основной фильтр
     main_data = _process_funnel_filters(
         date_start, date_end, report_type,
         unit_source_ids, unit_ids, city_ids, type_reception_ids, brand_list,
-        unit_source_id, unit_id, city_id, type_reception_id, brand
+        staff_ids=staff_ids, analyst_ids=analyst_ids, remote_filter=remote_filter,
+        unit_source_id=unit_source_id, unit_id=unit_id, city_id=city_id, 
+        type_reception_id=type_reception_id, brand=brand, staff_id=staff_id, analyst_id=analyst_id
     )
     
     # Проверяем режим сравнения
@@ -8805,11 +8837,23 @@ def tradein_funnel_analytics(request):
         compare_type_reception_id = _get_int(request.GET.get('compare_type_reception_id'))
         compare_brand = request.GET.get('compare_brand', '').strip()
         
+        # Парсим новые фильтры для сравнения
+        compare_staff_ids = _parse_multiple_ints(request.GET.get('compare_staff_ids', ''))
+        compare_analyst_ids = _parse_multiple_ints(request.GET.get('compare_analyst_ids', ''))
+        compare_remote_filter = request.GET.get('compare_remote_filter', '').strip()  # '', 'with', 'without'
+        if compare_remote_filter not in ['with', 'without']:
+            compare_remote_filter = None
+        
+        compare_staff_id = _get_int(request.GET.get('compare_staff_id'))
+        compare_analyst_id = _get_int(request.GET.get('compare_analyst_id'))
+        
         # Обрабатываем фильтр для сравнения
         compare_data = _process_funnel_filters(
             compare_date_start, compare_date_end, compare_report_type,
             compare_unit_source_ids, compare_unit_ids, compare_city_ids, compare_type_reception_ids, compare_brand_list,
-            compare_unit_source_id, compare_unit_id, compare_city_id, compare_type_reception_id, compare_brand
+            staff_ids=compare_staff_ids, analyst_ids=compare_analyst_ids, remote_filter=compare_remote_filter,
+            unit_source_id=compare_unit_source_id, unit_id=compare_unit_id, city_id=compare_city_id, 
+            type_reception_id=compare_type_reception_id, brand=compare_brand, staff_id=compare_staff_id, analyst_id=compare_analyst_id
         )
     
     # Загружаем справочники для фильтров (используем основной QuerySet для получения доступных значений)
@@ -8840,6 +8884,18 @@ def tradein_funnel_analytics(request):
     # Получаем уникальные типы приема
     type_reception_ids_from_funnel = list(base_qs_for_refs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
+    
+    # Получаем уникальных оценщиков (staff)
+    from refs.models import RefStaff
+    staff_ids_from_funnel = list(base_qs_for_refs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
+    staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name') if staff_ids_from_funnel else RefStaff.objects.none()
+    
+    # Получаем уникальных аналитиков (из analyst_after_id, analyst_before_id, analyst_remote_id)
+    analyst_ids_from_funnel = set()
+    analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
+    analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
+    analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
+    analysts = RefStaff.objects.filter(id__in=list(analyst_ids_from_funnel)).exclude(name='').order_by('name') if analyst_ids_from_funnel else RefStaff.objects.none()
     
     # Создаем словари для связи городов с подразделениями и источниками (для JavaScript фильтрации)
     city_unit_map = {}
@@ -8912,6 +8968,11 @@ def tradein_funnel_analytics(request):
             'compare_city_ids': ','.join(map(str, compare_city_ids)) if compare_city_ids else '',
             'compare_type_reception_ids': ','.join(map(str, compare_type_reception_ids)) if compare_type_reception_ids else '',
             'compare_brands': ','.join(compare_brand_list) if compare_brand_list else '',
+            'compare_staff_ids': ','.join(map(str, compare_staff_ids)) if compare_staff_ids else '',
+            'compare_staff_ids_list': compare_staff_ids or [],
+            'compare_analyst_ids': ','.join(map(str, compare_analyst_ids)) if compare_analyst_ids else '',
+            'compare_analyst_ids_list': compare_analyst_ids or [],
+            'compare_remote_filter': compare_remote_filter or '',
         })
     
     # Все вычисления уже выполнены в _process_funnel_filters и добавлены в params через params.update(main_data)

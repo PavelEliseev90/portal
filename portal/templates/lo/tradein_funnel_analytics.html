@@ -420,6 +420,47 @@
           </div>
           <div id="selectedCompareTypeReceptions" class="mt-2"></div>
         </div>
+        
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Оценщики (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareStaffSearch" placeholder="Поиск по оценщикам..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareStaffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for staff in params.staffs %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_staff_ids" value="{{ staff.id }}">
+                  {{ staff.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareStaffs" class="mt-2"></div>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Аналитики (сравнение)</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="compareAnalystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
+            <div class="list-group position-absolute w-100 mt-1" id="compareAnalystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+              {% for analyst in params.analysts %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="compare_analyst_ids" value="{{ analyst.id }}">
+                  {{ analyst.name }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedCompareAnalysts" class="mt-2"></div>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Дистанционная оценка (сравнение)</label>
+          <select class="form-select" name="compare_remote_filter">
+            <option value="" {% if not params.filters.compare_remote_filter %}selected{% endif %}>Все</option>
+            <option value="with" {% if params.filters.compare_remote_filter == 'with' %}selected{% endif %}>С дистанционной оценкой</option>
+            <option value="without" {% if params.filters.compare_remote_filter == 'without' %}selected{% endif %}>Без дистанционной оценки</option>
+          </select>
+        </div>
       </div>
     </div>
   </form>
@@ -547,6 +588,12 @@
           {% endif %}
         </h2>
         <p class="kors-stage-desc">Автомобилей принято</p>
+        <p class="kors-stage-desc" style="font-size: 0.85rem; color: #6c7a92; margin-top: 0.25rem;">
+          Без интерактивной оценки: {{ params.totals.reception_without_interactive|floatformat:"0g" }}
+          {% if params.compare_mode and params.compare_data %}
+            / {{ params.compare_data.totals.reception_without_interactive|floatformat:"0g" }}
+          {% endif %}
+        </p>
         <span class="kors-stage-conv">
           Конверсия: {{ params.totals.conv_reception|floatformat:"2g" }}%
           {% if params.compare_mode and params.compare_data %}
@@ -1712,6 +1759,15 @@
       initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
       initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
       initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+      initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
+      initMultiSelect('analystSearch', 'analystDropdown', 'selectedAnalysts');
+      initMultiSelect('compareSourceUnitSearch', 'compareSourceUnitDropdown', 'selectedCompareSourceUnits');
+      initMultiSelect('compareUnitSearch', 'compareUnitDropdown', 'selectedCompareUnits');
+      initMultiSelect('compareCitySearch', 'compareCityDropdown', 'selectedCompareCities');
+      initMultiSelect('compareBrandSearch', 'compareBrandDropdown', 'selectedCompareBrands');
+      initMultiSelect('compareTypeReceptionSearch', 'compareTypeReceptionDropdown', 'selectedCompareTypeReceptions');
+      initMultiSelect('compareStaffSearch', 'compareStaffDropdown', 'selectedCompareStaffs');
+      initMultiSelect('compareAnalystSearch', 'compareAnalystDropdown', 'selectedCompareAnalysts');
     });
   } else {
     initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
@@ -1719,6 +1775,15 @@
     initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
     initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
     initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+    initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
+    initMultiSelect('analystSearch', 'analystDropdown', 'selectedAnalysts');
+    initMultiSelect('compareSourceUnitSearch', 'compareSourceUnitDropdown', 'selectedCompareSourceUnits');
+    initMultiSelect('compareUnitSearch', 'compareUnitDropdown', 'selectedCompareUnits');
+    initMultiSelect('compareCitySearch', 'compareCityDropdown', 'selectedCompareCities');
+    initMultiSelect('compareBrandSearch', 'compareBrandDropdown', 'selectedCompareBrands');
+    initMultiSelect('compareTypeReceptionSearch', 'compareTypeReceptionDropdown', 'selectedCompareTypeReceptions');
+    initMultiSelect('compareStaffSearch', 'compareStaffDropdown', 'selectedCompareStaffs');
+    initMultiSelect('compareAnalystSearch', 'compareAnalystDropdown', 'selectedCompareAnalysts');
   }
   
   function prepareFormData(form) {
@@ -1728,6 +1793,8 @@
     const cityIds = Array.from(form.querySelectorAll('input[name="city_ids"]:checked')).map(cb => cb.value);
     const typeReceptionIds = Array.from(form.querySelectorAll('input[name="type_reception_ids"]:checked')).map(cb => cb.value);
     const brands = Array.from(form.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
+    const staffIds = Array.from(form.querySelectorAll('input[name="staff_ids"]:checked')).map(cb => cb.value);
+    const analystIds = Array.from(form.querySelectorAll('input[name="analyst_ids"]:checked')).map(cb => cb.value);
     
     // Собираем множественные значения для фильтров сравнения
     const compareUnitSourceIds = Array.from(form.querySelectorAll('input[name="compare_unit_source_ids"]:checked')).map(cb => cb.value);
@@ -1735,9 +1802,11 @@
     const compareCityIds = Array.from(form.querySelectorAll('input[name="compare_city_ids"]:checked')).map(cb => cb.value);
     const compareTypeReceptionIds = Array.from(form.querySelectorAll('input[name="compare_type_reception_ids"]:checked')).map(cb => cb.value);
     const compareBrands = Array.from(form.querySelectorAll('input[name="compare_brands"]:checked')).map(cb => cb.value);
+    const compareStaffIds = Array.from(form.querySelectorAll('input[name="compare_staff_ids"]:checked')).map(cb => cb.value);
+    const compareAnalystIds = Array.from(form.querySelectorAll('input[name="compare_analyst_ids"]:checked')).map(cb => cb.value);
     
     // Удаляем старые скрытые поля
-    form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="type_reception_ids"], input[type="hidden"][name^="brands"], input[type="hidden"][name^="compare_unit_source_ids"], input[type="hidden"][name^="compare_unit_ids"], input[type="hidden"][name^="compare_city_ids"], input[type="hidden"][name^="compare_type_reception_ids"], input[type="hidden"][name^="compare_brands"]').forEach(el => el.remove());
+    form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="type_reception_ids"], input[type="hidden"][name^="brands"], input[type="hidden"][name^="staff_ids"], input[type="hidden"][name^="analyst_ids"], input[type="hidden"][name^="compare_unit_source_ids"], input[type="hidden"][name^="compare_unit_ids"], input[type="hidden"][name^="compare_city_ids"], input[type="hidden"][name^="compare_type_reception_ids"], input[type="hidden"][name^="compare_brands"], input[type="hidden"][name^="compare_staff_ids"], input[type="hidden"][name^="compare_analyst_ids"]').forEach(el => el.remove());
     
     // Добавляем новые скрытые поля с объединенными значениями (основные фильтры)
     if (unitSourceIds.length > 0) {
@@ -1780,6 +1849,22 @@
       form.appendChild(hidden);
     }
     
+    if (staffIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'staff_ids';
+      hidden.value = staffIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (analystIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'analyst_ids';
+      hidden.value = analystIds.join(',');
+      form.appendChild(hidden);
+    }
+    
     // Добавляем скрытые поля для фильтров сравнения
     if (compareUnitSourceIds.length > 0) {
       const hidden = document.createElement('input');
@@ -1818,6 +1903,22 @@
       hidden.type = 'hidden';
       hidden.name = 'compare_brands';
       hidden.value = compareBrands.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (compareStaffIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_staff_ids';
+      hidden.value = compareStaffIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (compareAnalystIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'compare_analyst_ids';
+      hidden.value = compareAnalystIds.join(',');
       form.appendChild(hidden);
     }
     
