@@ -167,7 +167,7 @@ def start(request):
         cvc_op_queue_duration = cvc_queue_qs.filter(
             direction__lte=1,
             success=False
-        ).aggregate(duration_sum=Sum('duration'))['duration__sum'] or 0
+        ).aggregate(duration_sum=Sum('duration'))['duration_sum'] or 0
         
         # Объединяем count запросы для CVC КОРС
         cvc_kors_stats = cvc_checklist_qs.filter(
@@ -183,7 +183,7 @@ def start(request):
         cvc_kors_queue_duration = cvc_queue_qs.filter(
             direction=5,
             success=False
-        ).aggregate(duration_sum=Sum('duration'))['duration__sum'] or 0
+        ).aggregate(duration_sum=Sum('duration'))['duration_sum'] or 0
         
         # Объединяем count запросы для ОП
         op_stats = op_queue_qs.filter(
@@ -1019,61 +1019,82 @@ def control(request):
             'number'        : number
         }
 
-        data_list           = list() 
-       
-        qyery               = DocRLK.objects.filter(dataTime__gte = date_start).filter(dataTime__lte = date_end).filter(Q(contacType__id= 7) | Q(contacType__id = 42)).filter(unit__buauto = buauto).exclude(type__id = 19)
+        # Оптимизация: устраняем N+1 проблему - используем annotate для группировки
+        from django.db.models import Case, When, Value, IntegerField
+        
+        base_qs = DocRLK.objects.filter(
+            dataTime__gte=date_start,
+            dataTime__lte=date_end
+        ).filter(
+            Q(contacType__id=7) | Q(contacType__id=42)
+        ).filter(
+            unit__buauto=buauto
+        ).exclude(
+            type__id=19
+        ).select_related('unit', 'unit__city', 'type', 'contacType')
+        
         if len(number) > 0:
-            qyery = qyery.filter(nomer__icontains = number)   
+            base_qs = base_qs.filter(nomer__icontains=number)
+        
+        # Добавляем аннотацию для подсчета success_cheklist_cvc
+        subquery_success = Subquery(
+            Records_voice_recorder_cvc_checklist.objects.filter(
+                rlk__id=OuterRef(name='id')
+            ).values('result')[:1]
+        )
+        base_qs = base_qs.annotate(success_cheklist_cvc=Count(subquery_success))
+        
+        # Группируем по городам и подразделениям с агрегацией
+        city_unit_stats = base_qs.values(
+            'unit__city',
+            'unit__city__name',
+            'unit',
+            'unit__name'
+        ).annotate(
+            total_count=Count('id'),
+            cvc_ok_count=Count('id', filter=Q(success_cheklist_cvc__gt=0)),
+            cvc_no_count=Count('id', filter=Q(success_cheklist_cvc=0))
+        ).order_by('unit__city__name', 'unit__name')
+        
+        # Группируем данные по городам
+        data_dict = {}
+        doc_count = 0
+        cvc_ok = 0
+        cvc_no = 0
+        
+        for item in city_unit_stats:
+            city_id = item['unit__city']
+            city_name = item['unit__city__name'] or 'Не указан'
             
-        subquery_success    = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(rlk__id = OuterRef(name='id')).values('result')[:1])        
-        qyery               = qyery.annotate(success_cheklist_cvc = Count(subquery_success))
-        
-        #subquery    = Subquery(Records_voice_recorder.objects.filter(rlk_id = OuterRef(name='rlk_id')).values('result')[:1])        
-        #object_list = qyery.annotate(custom_cheklist = subquery).order_by('-rlk__dataTime')
-        
-        citys       = qyery.values('unit__city', 'unit__city__name').distinct().order_by('unit__city__name')
-        
-        doc_count   = 0
-        cvc_ok      = 0
-        cvc_no      = 0
-
-        for city in citys:
-            units       = qyery.filter(unit__city__id = city['unit__city']).values('unit', 'unit__name').distinct().order_by('unit__name')
-            units_list  = list()
-            doc_city      = 0   
-            cvc_ok_city   = 0 
-            cvc_no_city   = 0 
-            for unit in units:
-                count           = qyery.filter(unit__id = unit['unit']).count()
-                qyery_city      = qyery.filter(unit__id = unit['unit'])
-                no_success_cvc  = qyery_city.filter(success_cheklist_cvc = 0).count()
-                success_cvc     = qyery_city.exclude(success_cheklist_cvc = 0).count()
-
-                doc_city            = doc_city + count
-                cvc_ok_city         = cvc_ok_city + success_cvc
-                cvc_no_city         = cvc_no_city + no_success_cvc
-
-                unit_params = {
-                    'unit__id'      : unit['unit'],
-                    'unit__name'    : unit['unit__name'],
-                    'count'         : count,
-                    'cvc_ok'        : success_cvc,
-                    'cvc_no'        : no_success_cvc
+            if city_id not in data_dict:
+                data_dict[city_id] = {
+                    'city__id': city_id,
+                    'city__name': city_name,
+                    'units': [],
+                    'count_city': 0,
+                    'cvc_ok_city': 0,
+                    'cvc_no_city': 0
                 }
-                units_list.append(unit_params)
-                
-            params_city = {
-               'city__id'       : city['unit__city'],
-               'city__name'     : city['unit__city__name'],
-               'count_city'     : doc_city,
-               'cvc_ok_city'    : cvc_ok_city,
-               'cvc_no_city'    : cvc_no_city,
-               'units'          : units_list
-            }
-            data_list.append(params_city)
-            doc_count       = doc_count + doc_city
-            cvc_ok          = cvc_ok + cvc_ok_city
-            cvc_no          = cvc_no + cvc_no_city
+            
+            data_dict[city_id]['units'].append({
+                'unit__id': item['unit'],
+                'unit__name': item['unit__name'] or 'Не указано',
+                'count': item['total_count'],
+                'cvc_ok': item['cvc_ok_count'],
+                'cvc_no': item['cvc_no_count']
+            })
+            
+            data_dict[city_id]['count_city'] += item['total_count']
+            data_dict[city_id]['cvc_ok_city'] += item['cvc_ok_count']
+            data_dict[city_id]['cvc_no_city'] += item['cvc_no_count']
+        
+        # Преобразуем в список и считаем общие итоги
+        data_list = []
+        for city_data in data_dict.values():
+            data_list.append(city_data)
+            doc_count += city_data['count_city']
+            cvc_ok += city_data['cvc_ok_city']
+            cvc_no += city_data['cvc_no_city']
 
         params = {
             'type'              : 'recognitions',
@@ -1185,14 +1206,21 @@ def control_detail(request, id):
         date_start          = ''
         date_end            = ''
 
-        unit            = RefUnit.objects.get(pk = id)
-        object_list     = DocRLK.objects.filter(unit__id = id).filter(Q(contacType__id= 7) | Q(contacType__id = 42)).exclude(type__id = 19)
+        # Оптимизация: добавляем select_related для связанных объектов
+        unit = RefUnit.objects.select_related('city').get(pk=id)
+        object_list = DocRLK.objects.filter(
+            unit__id=id
+        ).filter(
+            Q(contacType__id=7) | Q(contacType__id=42)
+        ).exclude(
+            type__id=19
+        ).select_related('unit', 'unit__city', 'staff', 'type', 'contacType')
         
-        subquery        = Subquery(CheckList.objects.filter(rlk_id = OuterRef(name='id')).values('result')[:1])  
-        subquery_cvc    = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(rlk_id = OuterRef(name='id')).values('result')[:1])        
-        object_list     = object_list.annotate(custom_cheklist = subquery).order_by('-dataTime')
-        object_list     = object_list.annotate(custom_cheklist_cvc = subquery_cvc).order_by('-dataTime')
-        staffs          = object_list.order_by('staff__name').values('staff', 'staff__name').distinct()
+        subquery = Subquery(CheckList.objects.filter(rlk_id=OuterRef(name='id')).values('result')[:1])  
+        subquery_cvc = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(rlk_id=OuterRef(name='id')).values('result')[:1])        
+        object_list = object_list.annotate(custom_cheklist=subquery)
+        object_list = object_list.annotate(custom_cheklist_cvc=subquery_cvc)
+        staffs = object_list.order_by('staff__name').values('staff', 'staff__name').distinct()
 
         if len(number) > 0:
             object_list = object_list.filter(nomer__icontains = number)
@@ -1292,14 +1320,21 @@ def control_detail_excel(request, id):
         date_start          = ''
         date_end            = ''
 
-        unit            = RefUnit.objects.get(pk = id)
-        object_list     = DocRLK.objects.filter(unit__id = id).filter(Q(contacType__id= 7) | Q(contacType__id = 42)).exclude(type__id = 19)
+        # Оптимизация: добавляем select_related для связанных объектов
+        unit = RefUnit.objects.select_related('city').get(pk=id)
+        object_list = DocRLK.objects.filter(
+            unit__id=id
+        ).filter(
+            Q(contacType__id=7) | Q(contacType__id=42)
+        ).exclude(
+            type__id=19
+        ).select_related('unit', 'unit__city', 'staff', 'type', 'contacType')
         
-        subquery        = Subquery(CheckList.objects.filter(rlk_id = OuterRef(name='id')).values('result')[:1])  
-        subquery_cvc    = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(rlk_id = OuterRef(name='id')).values('result')[:1])        
-        object_list     = object_list.annotate(custom_cheklist = subquery).order_by('-dataTime')
-        object_list     = object_list.annotate(custom_cheklist_cvc = subquery_cvc).order_by('-dataTime')
-        staffs          = object_list.order_by('staff__name').values('staff', 'staff__name').distinct()
+        subquery = Subquery(CheckList.objects.filter(rlk_id=OuterRef(name='id')).values('result')[:1])  
+        subquery_cvc = Subquery(Records_voice_recorder_cvc_checklist.objects.filter(rlk_id=OuterRef(name='id')).values('result')[:1])        
+        object_list = object_list.annotate(custom_cheklist=subquery)
+        object_list = object_list.annotate(custom_cheklist_cvc=subquery_cvc)
+        staffs = object_list.order_by('staff__name').values('staff', 'staff__name').distinct()
 
         if len(number) > 0:
             object_list = object_list.filter(nomer__icontains = number)
@@ -1376,8 +1411,9 @@ def control_detail_doc(request, id, doc_id):
     }
     if request.user.is_authenticated:
         
-        audio_success   = ''
-        doc     = DocRLK.objects.get(pk = doc_id)
+        # Оптимизация: добавляем select_related для связанных объектов
+        audio_success = ''
+        doc = DocRLK.objects.select_related('unit', 'unit__city', 'staff', 'type', 'contacType').get(pk=doc_id)
         
         if request.method == 'POST':
             if 'record_replace_send_id' in request.POST:
