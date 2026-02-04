@@ -1673,9 +1673,13 @@ def cvc_op_detail(request, id):
         date_start          = ''
         date_end            = ''
 
-        object_list = Records_voice_recorder_cvc_checklist.objects.filter(success = True).filter(rlk__unit__id = id)
-        subquery    = Subquery(CheckList.objects.filter(rlk_id = OuterRef(name='rlk_id')).values('result')[:1])        
-        object_list = object_list.annotate(custom_cheklist = subquery).order_by('-rlk__dataTime')
+        # Оптимизация: добавляем select_related для связанных объектов
+        object_list = Records_voice_recorder_cvc_checklist.objects.filter(
+            success=True,
+            rlk__unit__id=id
+        ).select_related('rlk', 'rlk__unit', 'rlk__staff')
+        subquery = Subquery(CheckList.objects.filter(rlk_id=OuterRef(name='rlk_id')).values('result')[:1])
+        object_list = object_list.annotate(custom_cheklist=subquery).order_by('-rlk__dataTime')
 
         if 'date_start' in request.GET:
             date_start = request.GET['date_start']
@@ -1738,24 +1742,31 @@ def cvc_op_detail_recognition(request, id, pk):
     text_search = request.GET.get('text')
 
     if request.user.is_authenticated:
+        # Оптимизация: добавляем select_related для всех связанных объектов
+        recognition = Records_voice_recorder_cvc_checklist.objects.select_related(
+            'rlk', 'rlk__unit', 'rlk__unit__city', 'rlk__staff', 'rlk__type',
+            'records', 'records__user', 'сheck_settings', 'сheck_settings__check_settings_cvc'
+        ).get(pk=pk)
         
-        recognition         = Records_voice_recorder_cvc_checklist.objects.get(pk = pk)
-        data_list           = list()
-        tematiks            = Records_voice_recorder_cvc_checklist_tematics.objects.filter(checklist = recognition).order_by('-tematic__field')
-        recognitions_kg     = Records_voice_recorder_queue.objects.filter(rlk = recognition.rlk)
+        data_list = list()
+        # Оптимизация: добавляем select_related для tematic
+        tematiks = Records_voice_recorder_cvc_checklist_tematics.objects.filter(
+            checklist=recognition
+        ).select_related('tematic').order_by('-tematic__field')
         
-        data_list           = list()
-        if len(recognitions_kg) > 0:
-            recognition_kg  = Records_voice_recorder_queue.objects.filter(rlk = recognition.rlk)[0]    
-            data_list       = get_text_recognition(recognition_kg)
+        # Оптимизация: используем first() вместо проверки длины и индексации
+        recognition_kg = Records_voice_recorder_queue.objects.filter(
+            rlk=recognition.rlk
+        ).select_related('rlk').first()
         
-        checklists = CheckList.objects.filter(rlk = recognition.rlk)
-        checklist = ''
-        if len(checklists) > 0:
-            checklist = checklists[0]
+        if recognition_kg:
+            data_list = get_text_recognition(recognition_kg)
+        
+        # Оптимизация: используем first() вместо проверки длины
+        checklist = CheckList.objects.filter(rlk=recognition.rlk).select_related('rlk').first()
         
         if 'open_checkList' in request.GET:
-            if checklist != '':
+            if checklist:
                 if recognition.rlk.unit.buauto:
                     return HttpResponseRedirect('/checklists/glav/op_kors/op_kors_doc/?checkid=' + str(checklist.rlk.id))
                 else:
@@ -1766,7 +1777,11 @@ def cvc_op_detail_recognition(request, id, pk):
                 return HttpResponseRedirect('/checklists/glav/op_kors/op_kors_doc/?checkid=' + str(recognition.rlk.id))
             else:
                 return HttpResponseRedirect('/checklists/glav/op/op_doc_new/?check_new_cvc=' + pk)
-        checklist_kg = Records_voice_recorder_cvc_checklist_kg.objects.filter(checklist_cvc = recognition).order_by('questions_kg__chapter', '-questions_kg__priority_chapter')
+        
+        # Оптимизация: добавляем select_related для questions_kg
+        checklist_kg = Records_voice_recorder_cvc_checklist_kg.objects.filter(
+            checklist_cvc=recognition
+        ).select_related('questions_kg').order_by('questions_kg__chapter', '-questions_kg__priority_chapter')
         params = {
             'type'                  : 'recognitions',
             'recognition'           : recognition,

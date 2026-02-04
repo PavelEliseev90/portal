@@ -1,181 +1,353 @@
 {% extends 'base_web.html' %}
+{% load static %}
 
-
-{% block title %} - CVC разпознанные записи {{params.unit__name}} {% endblock %}
-
-{% block title_navbar %} - CVC разпознанные записи {{params.unit__name}} {% endblock %}
-
+{% block title %} - CVC распознанные записи {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .recognition-header {
+    margin-bottom: 1.5rem;
+  }
 
-<form method="GET" id="form" name="form">
-  
-  <div class="row">
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-		<div class="col-sm">
-			
-				<div class="card">
-					
-					<div class="card-header bg-white border-white">
-						<span class="icon-mbri-arrow-down"  id="collapse_filtr_" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="true" aria-controls="collapse_filtr"> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</span>  
-					</div>
-					
-					<div class="collapse {% if params.filtr.filtr_count > 0 %} show {% endif %}" id="collapse_filtr" style="transition: 0.25s;">
-						<div class="card-body">
-							{% csrf_token %}
-							<div class="row g-1">
-      
-                <div class="col-sm-auto">
-                  <div class="form-floating mb-3">
-                    <input type="date" class="form-control" id="date_start" name="date_start" placeholder="" value="{{params.filtr.date_start|date:'Y-m-d'}}" autocomplete="off">
-                      <label for="floatingInput">Начало</label>
-                  </div>
-                </div>
-                <div class="col-sm-auto">
-                  <div class="form-floating mb-3">
-                    <input type="date" class="form-control" id="date_end" name="date_end" placeholder="" value="{{params.filtr.date_end|date:'Y-m-d'}}" autocomplete="off">
-                      <label for="floatingInput">Окончание</label>
-                  </div>
-                </div>
-            
-                  <div class="col-sm">
-                    <div class="form-floating mb-3">
-                        <select class="form-select" id="status" name="status" aria-label="Выбор статуса тематики">
-                          <option selected></option>
-                        </select>
-                        <label for="floatingInput">Сотрудник</label>
-                    </div>
-                  </div>
-                  
-                  <div class="col-sm">
-                    <div class="form-floating mb-3">
-                        <select class="form-select" id="status_cheklist" name="status_cheklist" aria-label="Выбор статуса тематики">
-                          <option value="0" selected></option>
-                          <option value="1" {% if params.filtr.status_cheklist == 1 %} selected {% endif %}>Есть</option>
-                          <option value="2" {% if params.filtr.status_cheklist == 2 %} selected {% endif %}>Нет</option>
-                        </select>
-                        <label for="floatingInput">Ручная оценка</label>
-                    </div>
-                  </div>
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 0;
+  }
 
-                  <div class="col-sm">
-                    <div class="form-floating mb-3">
-                        <select class="form-select" id="status_canceled" name="status_canceled" aria-label="Выбор статуса тематики">
-                          <option value="0" selected></option>
-                          <option value="1" {% if params.filtr.status_canceled == 1 %} selected {% endif %}>Да</option>
-                          <option value="2" {% if params.filtr.status_canceled == 2 %} selected {% endif %}>Нет</option>
-                        </select>
-                        <label for="floatingInput">Не подлежит оценке</label>
-                    </div>
-                  </div>
+  .recognition-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-                  <div class="col-sm-auto my-auto">
-                    <div class="form-floating mb-3">
-                        <button class="btn btn-outline-success"><span class="icon-mbri-refresh"> </span></button>
-                    </div>
-                  </div>
+  .recognition-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
 
-                  
-            
-              </div>
-						</div>
-					</div>
+  .filter-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #002a5a;
+    padding: 0.75rem 0;
+    border-bottom: 2px solid #f4f7fb;
+    margin-bottom: 1rem;
+  }
 
-				</div>
-		</div>
-	</div>
+  .filter-toggle:hover {
+    color: #003d7a;
+  }
 
+  .filter-toggle i {
+    transition: transform 0.2s;
+  }
 
-  <div class="table-responsive-sm">
-    <table class="table table-hover table-sm table-striped">
-    <thead class="table-white" style="font-size: 18px;">
-      <tr class="align-middle">
-        <th scope="col" class="align-middle text-success"><span class="icon-mbri-plus"></span></th>
-        <th scope="col" class="align-middle">Дата РЛК</th>
-        <th scope="col" class="align-middle">Номер РЛК</th>
-        <th scope="col" class="align-middle">Сотрудник</th>
-        <th scope="col" class="align-middle">Продолжительность</th>
-        <th scope="col" class="align-middle">CVC</th>	
-        <th scope="col" class="align-middle">Чек</th>
-        <th scope="col" class="align-middle">Не подлежит оценке</th>				
-      </tr>
-    </thead>
-    <tbody>
-    
-      {% if params.paginator.object_list %}
-        {% for object in params.paginator.object_list %}
-          <tr class="align-middle">
-            <td class="align-middle text-success"><a href="{{object.pk}}/" class="link-success"><span class="icon-mbri-edit"></span></a></td>
-            <td class="align-middle">{{object.rlk.dataTime}}</td>
-            <td class="align-middle">{{object.rlk.nomer}}</td>
-            <td class="align-middle">{{object.rlk.staff}}</td>
-            <td class="align-middle">{{object.duration_human}}</td> 
-            <td class="align-middle">{{object.result}}</td> 
-            <td class="align-middle"> {% if object.custom_cheklist == None %} - {% else %} {{object.custom_cheklist}} {% endif %}</td>
-            <td class="align-middle"> 
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="flexCheckDisabled1" {% if object.canceled %} checked {% endif %}  disabled>
-              </div>  
-            </td>
-          </tr>
-        {% endfor %} 
-      {% endif %}
-      
-    </tbody>
-    </table>
+  .filter-toggle[aria-expanded="true"] i {
+    transform: rotate(180deg);
+  }
+
+  .filter-badge {
+    display: inline-block;
+    background: #10b981;
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
+  .recognition-table {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c7a92;
+    border-bottom: 2px solid #dee2e6;
+    vertical-align: middle;
+  }
+
+  .table tbody td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+    color: #002a5a;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .action-link {
+    color: #10b981;
+    text-decoration: none;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+  }
+
+  .action-link:hover {
+    color: #059669;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .status-badge-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  .status-badge-secondary {
+    background: rgba(108, 122, 146, 0.1);
+    color: #6c7a92;
+  }
+
+  .pagination-wrapper {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+  }
+
+  .pagination .page-link {
+    color: #002a5a;
+    border-color: rgba(0, 42, 90, 0.15);
+  }
+
+  .pagination .page-link:hover {
+    background-color: #f4f7fb;
+    border-color: rgba(0, 42, 90, 0.3);
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #002a5a;
+    border-color: #002a5a;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>CVC распознанные записи</h2>
+    <p>Детальный список распознанных записей</p>
   </div>
 
-  <hr>
+  <!-- Фильтр -->
+  <div class="recognition-filter">
+    <div class="filter-toggle" data-bs-toggle="collapse" data-bs-target="#collapse_filtr" aria-expanded="{% if params.filtr.filtr_count > 0 %}true{% else %}false{% endif %}" aria-controls="collapse_filtr">
+      <i class="bi bi-chevron-down"></i>
+      <span>Параметры фильтрации</span>
+      {% if params.filtr.filtr_count > 0 %}
+        <span class="filter-badge">{{ params.filtr.filtr_count }}</span>
+      {% endif %}
+    </div>
 
-  <div class="row g-1">
-    <div class="col justify-content-center">
-      <div class="form-floating mb-3">
-        <select class="form-select" name = "select_count" onchange="this.form.submit()">
-          <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
-          <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
-          <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
-          <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
-        </select>
-        <label for="floatingInput">Выводить</label>
+    <div class="collapse {% if params.filtr.filtr_count > 0 %}show{% endif %}" id="collapse_filtr">
+      <form method="GET" id="form" name="form">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Начало периода</label>
+            <input type="date" class="form-control" id="date_start" name="date_start" value="{% if params.filtr.date_start %}{{ params.filtr.date_start|date:'Y-m-d' }}{% endif %}" autocomplete="off">
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label">Окончание периода</label>
+            <input type="date" class="form-control" id="date_end" name="date_end" value="{% if params.filtr.date_end %}{{ params.filtr.date_end|date:'Y-m-d' }}{% endif %}" autocomplete="off">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Ручная оценка</label>
+            <select class="form-select" id="status_cheklist" name="status_cheklist">
+              <option value="0">Все</option>
+              <option value="1" {% if params.filtr.status_cheklist == 1 %}selected{% endif %}>Есть</option>
+              <option value="2" {% if params.filtr.status_cheklist == 2 %}selected{% endif %}>Нет</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Не подлежит оценке</label>
+            <select class="form-select" id="status_canceled" name="status_canceled">
+              <option value="0">Все</option>
+              <option value="1" {% if params.filtr.status_canceled == 1 %}selected{% endif %}>Да</option>
+              <option value="2" {% if params.filtr.status_canceled == 2 %}selected{% endif %}>Нет</option>
+            </select>
+          </div>
+
+          <div class="col-md-12">
+            <button type="submit" class="btn btn-portal-primary" style="background: #002a5a; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 0.75rem;">
+              <i class="bi bi-funnel"></i> Применить фильтр
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Таблица -->
+  <div class="recognition-table">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th style="width: 60px;"></th>
+            <th>Дата РЛК</th>
+            <th>Номер РЛК</th>
+            <th>Сотрудник</th>
+            <th>Продолжительность</th>
+            <th>CVC</th>
+            <th>Чек</th>
+            <th>Не подлежит оценке</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if params.paginator.object_list %}
+            {% for object in params.paginator.object_list %}
+              <tr>
+                <td>
+                  <a href="{{ object.pk }}/" class="action-link" title="Открыть запись">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+                <td>{{ object.rlk.dataTime|date:"d.m.Y H:i" }}</td>
+                <td><strong>{{ object.rlk.nomer }}</strong></td>
+                <td>{{ object.rlk.staff|default:"Не указан" }}</td>
+                <td>{{ object.duration_human }}</td>
+                <td>
+                  <span class="status-badge status-badge-success">{{ object.result }}</span>
+                </td>
+                <td>
+                  {% if object.custom_cheklist == None %}
+                    <span class="status-badge status-badge-secondary">-</span>
+                  {% else %}
+                    <span class="status-badge status-badge-success">{{ object.custom_cheklist }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" {% if object.canceled %}checked{% endif %} disabled>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-4" style="color: #6c7a92;">
+                Записи не найдены
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Пагинация -->
+  <div class="pagination-wrapper">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase" style="font-size: 0.75rem;">Выводить</label>
+        <form method="GET" id="pagination_form" style="display: inline;">
+          {% if params.filtr.date_start %}
+            <input type="hidden" name="date_start" value="{{ params.filtr.date_start|date:'Y-m-d' }}">
+          {% endif %}
+          {% if params.filtr.date_end %}
+            <input type="hidden" name="date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}">
+          {% endif %}
+          {% if params.filtr.status_cheklist %}
+            <input type="hidden" name="status_cheklist" value="{{ params.filtr.status_cheklist }}">
+          {% endif %}
+          {% if params.filtr.status_canceled %}
+            <input type="hidden" name="status_canceled" value="{{ params.filtr.status_canceled }}">
+          {% endif %}
+          <select class="form-select form-select-sm" name="select_count" onchange="this.form.submit()">
+            <option value="25" {% if params.select_count == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if params.select_count == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if params.select_count == 100 %}selected{% endif %}>100</option>
+            <option value="200" {% if params.select_count == 200 %}selected{% endif %}>200</option>
+          </select>
+        </form>
+      </div>
+      <div class="col-md-6">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center mb-0">
+            {% if params.paginator.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.filtr.date_start %}date_start={{ params.filtr.date_start|date:'Y-m-d' }}&{% endif %}{% if params.filtr.date_end %}date_end={{ params.filtr.date_end|date:'Y-m-d' }}&{% endif %}{% if params.filtr.status_cheklist %}status_cheklist={{ params.filtr.status_cheklist }}&{% endif %}{% if params.filtr.status_canceled %}status_canceled={{ params.filtr.status_canceled }}&{% endif %}select_count={{ params.select_count }}&page={{ params.paginator.previous_page_number }}">
+                  &lt;
+                </a>
+              </li>
+            {% endif %}
+            
+            {% for p in params.paginator.paginator.page_range %}
+              {% if params.paginator.number == p %}
+                <li class="page-item active">
+                  <span class="page-link">{{ p }}</span>
+                </li>
+              {% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if params.filtr.date_start %}date_start={{ params.filtr.date_start|date:'Y-m-d' }}&{% endif %}{% if params.filtr.date_end %}date_end={{ params.filtr.date_end|date:'Y-m-d' }}&{% endif %}{% if params.filtr.status_cheklist %}status_cheklist={{ params.filtr.status_cheklist }}&{% endif %}{% if params.filtr.status_canceled %}status_canceled={{ params.filtr.status_canceled }}&{% endif %}select_count={{ params.select_count }}&page={{ p }}">
+                    {{ p }}
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if params.paginator.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.filtr.date_start %}date_start={{ params.filtr.date_start|date:'Y-m-d' }}&{% endif %}{% if params.filtr.date_end %}date_end={{ params.filtr.date_end|date:'Y-m-d' }}&{% endif %}{% if params.filtr.status_cheklist %}status_cheklist={{ params.filtr.status_cheklist }}&{% endif %}{% if params.filtr.status_canceled %}status_canceled={{ params.filtr.status_canceled }}&{% endif %}select_count={{ params.select_count }}&page={{ params.paginator.next_page_number }}">
+                  &gt;
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      <div class="col-md-3 text-end">
+        <small style="color: #6c7a92;">
+          Выведено: {{ params.paginator.object_list|length }} из {{ params.paginator.paginator.count }}
+        </small>
       </div>
     </div>
-    <div class="col justify-content-center">
-      <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
-        
-        {% if  params.paginator.has_previous %}
-          <li class="page-num">
-              <a class="page-link text-secondary"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
-          </li>
-        {% endif %}
-    
-        {% for p in params.paginator.paginator.page_range %}
-          {% if  params.paginator.number == p %}
-          <li class="page-item bg-secondary text-white disabled"><a class="page-link bg-secondary text-white"><b>{{p}}</b></a></li>
-              {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-          <li class="page-item">
-            <a class="page-link  text-secondary" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
-          </li>
-          {% endif %}
-        {% endfor %}
-          
-        {% if params.paginator.has_next %}
-          <li class="page-num">
-            <a class="page-link text-secondary" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
-          </li>
-        {% endif %}
-    
-        </ul>
-      </nav>
-    </div>
-    <div class="col justify-content-center" >
-      Выведено : {{params.paginator.object_list|length}}
-    </div>
   </div>
-
-</form>
-
+</div>
 
 {% endblock %}
-
