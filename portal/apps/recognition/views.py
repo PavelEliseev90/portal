@@ -410,15 +410,17 @@ def check_lists_edit_question(request, id, pk):
     }
     if request.user.is_authenticated:
         
-        new             = False
-        object          = ''
-        direction       = 0
-        check_list      = Check_settings.objects.get(pk = id)
+        new = False
+        object = ''
+        direction = 0
+        # Оптимизация: добавляем select_related для связанных объектов
+        check_list = Check_settings.objects.select_related('check_settings_cvc').get(pk=id)
         
         if pk == '0':
-            new                     = True
+            new = True
         else:
-            object = Records_questions.objects.get(pk = pk)
+            # Оптимизация: добавляем select_related для связанных объектов
+            object = Records_questions.objects.select_related('сheck_settings').prefetch_related('tematics').get(pk=pk)
         
         if request.method == 'POST':
             
@@ -453,23 +455,37 @@ def check_lists_edit_question(request, id, pk):
             
                 object.tematics.clear()
 
+                # Оптимизация: собираем все ID тематик и добавляем их одним запросом
+                tematic_ids = []
                 for key in request.POST.keys():
                     if key.startswith('tematic_'):
-                        pk_tematic  = str(key).replace('tematic_', '')
-                        tematics    = Records_voice_recorder_cvc_tematics.objects.get(pk = pk_tematic)
-                        object.tematics.add(tematics)
+                        pk_tematic = str(key).replace('tematic_', '')
+                        tematic_ids.append(pk_tematic)
+                
+                if tematic_ids:
+                    # Используем bulk операцию для добавления тематик
+                    tematics = Records_voice_recorder_cvc_tematics.objects.filter(pk__in=tematic_ids)
+                    object.tematics.set(tematics)
                 object.save()
             return HttpResponseRedirect(request.build_absolute_uri())
         
+        # Оптимизация: загружаем тематики один раз
         tematics = Records_voice_recorder_cvc_tematics.objects.all().order_by('name')
-        if new == True:
-            tematics = Records_voice_recorder_cvc_tematics.objects.all().order_by('name')
         count_enabled = 0
 
         if object != '':
-            subquery_queue      = Subquery(object.tematics.all().filter(id = OuterRef(name='id')).values('id')[:1]) 
-            tematics            = tematics.annotate(test = subquery_queue).order_by('name')        
-            count_enabled       = object.tematics.all().count()
+            # Оптимизация: используем prefetch_related для тематик объекта
+            object_tematic_ids = set(object.tematics.all().values_list('id', flat=True))
+            # Аннотируем тематики флагом, указывающим, выбрана ли тематика
+            from django.db.models import Case, When, Value, IntegerField
+            tematics = tematics.annotate(
+                test=Case(
+                    When(id__in=object_tematic_ids, then=Value(1)),
+                    default=Value(None),
+                    output_field=IntegerField()
+                )
+            ).order_by('name')
+            count_enabled = len(object_tematic_ids)
         
         params = {
             'type'              : 'recognitions',
