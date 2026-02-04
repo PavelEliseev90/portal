@@ -8143,8 +8143,8 @@ def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids,
     Вспомогательная функция для получения QuerySet рабочих листов ОП из DocRLK.
     Оптимизированная версия с применением фильтров и select_related для уменьшения количества запросов.
     """
-    excluded_type_ids = [1, 4, 6, 7, 9, 10, 19]
-    op_rlk_qs = DocRLK.objects.exclude(type__id__in=excluded_type_ids).select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city')
+    excluded_type_ids = [1,2,3, 4, 6, 7, 9, 10, 19, 21]
+    op_rlk_qs = DocRLK.objects.exclude(nomer = '').exclude(type__id__in=excluded_type_ids).select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city')
     
     # Применяем фильтры по датам в зависимости от варианта отчета
     if report_type == 1:
@@ -8169,9 +8169,10 @@ def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids,
     if unit_ids:
         op_rlk_qs = op_rlk_qs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
     if unit_source_ids:
+        names = RefUnit.objects.filter(id__in = unit_source_ids).values_list('name', flat=True)
         op_rlk_qs = op_rlk_qs.filter(
-            Q(unit_dc__id__in=unit_source_ids) |
-            Q(unit__id__in=unit_source_ids, unit_dc__isnull=True)
+            Q(unit_dc__name__in=names) |
+            Q(unit__name__in=names, unit_dc__isnull=True)
         )
     if city_ids:
         # Фильтруем по городам подразделений
@@ -8225,13 +8226,16 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Определяем QuerySet в зависимости от варианта отчета
     if report_type == 1:
         # Сквозной - отбор по датам событий
+        # qs = base_qs.filter(
+        #     Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+        #     Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+        #     Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+        #     Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+        #     Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        # )
         qs = base_qs.filter(
-            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
-            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
-            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
-            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
-            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
-        )
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end)
+           )
     elif report_type == 2:
         # По рабочим листам
         qs = base_qs.filter(

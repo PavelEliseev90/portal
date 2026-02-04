@@ -117,6 +117,7 @@
             <th>VIN</th>
             <th>Подразделение</th>
             <th>Источник</th>
+            <th>Тип</th>
             <th>Город</th>
             <th>Бренд</th>
             <th>Тип приёма</th>
@@ -187,6 +188,13 @@
                 {% endif %}
               {% else %}
                 {{ item.unit_source_name|default:"—" }}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                {{ item.type.name}}                
+              {% else %}
+                Trade-in
               {% endif %}
             </td>
             <td>
