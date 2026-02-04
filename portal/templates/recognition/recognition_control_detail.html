@@ -1,178 +1,322 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
+{% load static %}
 
-{% block title %} - Контроль {{params.unit.name}} {% endblock %}
-
-{% block title_navbar %} - Контроль {{params.unit.name}} {% endblock %}
-
+{% block title %} - Контроль {{ params.unit.name }} {% endblock %}
 
 {% block content %}
+<style>
+  .recognition-page {
+    padding: 1rem 1.5rem 3rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
 
+  .recognition-header {
+    margin-bottom: 1.5rem;
+  }
 
-<form method="GET" id="form" name="form">
-  
-  <div class="row">
+  .recognition-header h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #002a5a;
+  }
 
-		<div class="col-sm">
-			
-			
-					
-					<div class="collapse show" id="collapse_filtr" style="transition: 0.25s;">
-						<div class="card-body">
-							{% csrf_token %}
-							<div class="row g-1">
-      
-                <div class="col-sm-auto">
-                  <div class="form-floating mb-3">
-                    <input type="date" class="form-control" id="date_start" name="date_start" placeholder="" value="{{params.filtr.date_start|date:'Y-m-d'}}" autocomplete="off">
-                      <label for="floatingInput">Начало</label>
-                  </div>
-                </div>
-                
-                <div class="col-sm-auto">
-                  <div class="form-floating mb-3">
-                    <input type="date" class="form-control" id="date_end" name="date_end" placeholder="" value="{{params.filtr.date_end|date:'Y-m-d'}}" autocomplete="off">
-                      <label for="floatingInput">Окончание</label>
-                  </div>
-                </div>
-                
-                <div class="col-sm-auto my-auto">
-                  <div class="form-floating mb-3">
-                    <select class="form-select" id="staff" name="staff" aria-label="Сотрудник">
-                      <option selected></option>
-                      {% for staff in params.selected.staffs %}
-                        <option value="{{staff.staff__name}}" {% if params.filtr.staff == staff.staff__name or params.filtr.staff == 'None' %} selected {% endif %}>{{staff.staff__name}}</option>
-                      {% endfor %}
-                    </select><label for="floatingInput">Сотрудник</label>
-                  </div>
-                </div>
+  .recognition-header p {
+    color: #6c7a92;
+    margin-bottom: 0;
+  }
 
-                <div class="col-sm">
-                  <div class="form-floating mb-3">
-                    <input type="text" class="form-control" id="number" name="number" placeholder="" value="{{params.filtr.number}}" autocomplete="off">
-                    <label for="floatingInput">Номер</label>
-                  </div>
-                </div>
-                
-                <div class="col-sm-auto my-auto">
-                  <div class="form-floating mb-3">
-                      <button class="btn btn-outline-success"><span class="icon-mbri-refresh"> </span></button>
-                  </div>
-                </div>
+  .recognition-filter {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-              </div>
-						</div>
-					</div>
+  .recognition-filter .form-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #8ea1ba;
+  }
 
+  .recognition-table {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
 
-		</div>
-	</div>
+  .table {
+    margin-bottom: 0;
+  }
 
-  <div class="table-responsive-sm">
-    <table class="table table-hover table-sm table-striped">
-    <thead class="table-white">
-      <tr class="align-middle">
-        <th scope="col" class="align-middle text-success"><span class="icon-mbri-plus"></span></th>
-        <th scope="col" class="align-middle">Дата РЛК</th>
-        <th scope="col" class="align-middle">Номер РЛК</th>
-        <th scope="col" class="align-middle">Подразделение ДЦ</th>
-        <th scope="col" class="align-middle">Сотрудник</th>
-        <th scope="col" class="align-middle">Начало</th>	
-        <th scope="col" class="align-middle">Окончание</th>
-        <th scope="col" class="align-middle">Продолжительность</th>
-        <th scope="col" class="align-middle">Запись</th>
-        <th scope="col" class="align-middle">Чек KG</th>
-        <th scope="col" class="align-middle">Чек CVC</th>
-        				
-      </tr>
-    </thead>
-    <tbody>
-    
-      {% if params.paginator.object_list %}
-        {% for object in params.paginator.object_list %}
-          <tr class="align-middle">
-            <td class="align-middle text-success"><a href="{{object.pk}}/" class="link-success"><span class="icon-mbri-edit"></span></a></td>
-            <td class="align-middle">{{object.dataTime}}</td>
-            <td class="align-middle">{{object.nomer}}</td>
-            <td class="align-middle">{{object.unit.name}}</td>
-            <td class="align-middle">{{object.staff}}</td>
-            <td class="align-middle">{{object.dataTimeCreate}}</td> 
-            <td class="align-middle">{{object.dataEnd}}</td> 
-            <td class="align-middle">{{object.time_visit}}</td> 
-            <td class="align-middle">{{object.sound_count}}</td> 
-            <td class="align-middle">{{object.custom_cheklist}}</td> 
-            <td class="align-middle">{{object.custom_cheklist_cvc}}</td> 
-            
-          </tr>
-        {% endfor %} 
-      {% endif %}
-      
-    </tbody>
-    </table>
+  .table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c7a92;
+    border-bottom: 2px solid #dee2e6;
+    vertical-align: middle;
+  }
+
+  .table tbody td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+    color: #002a5a;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .action-link {
+    color: #10b981;
+    text-decoration: none;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+  }
+
+  .action-link:hover {
+    color: #059669;
+  }
+
+  .pagination-wrapper {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+  }
+
+  .pagination .page-link {
+    color: #002a5a;
+    border-color: rgba(0, 42, 90, 0.15);
+  }
+
+  .pagination .page-link:hover {
+    background-color: #f4f7fb;
+    border-color: rgba(0, 42, 90, 0.3);
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #002a5a;
+    border-color: #002a5a;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .status-success {
+    background: #10b981;
+    color: #fff;
+  }
+
+  .status-warning {
+    background: #f59e0b;
+    color: #fff;
+  }
+
+  .status-danger {
+    background: #ef4444;
+    color: #fff;
+  }
+</style>
+
+<div class="recognition-page">
+  <div class="recognition-header">
+    <h2>Контроль {{ params.unit.name }}</h2>
+    <p>Рабочие листы по подразделению</p>
   </div>
 
-  <hr>
+  <!-- Фильтр -->
+  <div class="recognition-filter">
+    <form method="GET" id="form" name="form">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label text-uppercase">Начало</label>
+          <input type="date" class="form-control" id="date_start" name="date_start" 
+                 value="{{ params.filtr.date_start|date:'Y-m-d' }}" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label text-uppercase">Окончание</label>
+          <input type="date" class="form-control" id="date_end" name="date_end" 
+                 value="{{ params.filtr.date_end|date:'Y-m-d' }}" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label text-uppercase">Сотрудник</label>
+          <select class="form-select" id="staff" name="staff">
+            <option value="">Все</option>
+            {% for staff in params.selected.staffs %}
+              <option value="{{ staff.staff__name }}" 
+                      {% if params.filtr.staff == staff.staff__name or params.filtr.staff == 'None' %}selected{% endif %}>
+                {{ staff.staff__name|default:"Не указан" }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Номер</label>
+          <input type="text" class="form-control" id="number" name="number" 
+                 placeholder="Поиск по номеру..." value="{{ params.filtr.number }}" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary px-4" type="submit">
+            <i class="bi bi-search"></i> Найти
+          </button>
+        </div>
+        <div class="col-md-1">
+          <a href="{{ params.link_save }}" class="btn btn-outline-secondary" title="Экспорт в Excel">
+            <i class="bi bi-download"></i>
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
 
-  <div class="row align-self-center align-items-center">
-		
-		<div class="col-auto">
-			<p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
-		</div>
+  <!-- Таблица -->
+  <div class="recognition-table">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th style="width: 60px;">
+              <a href="0/" class="action-link" title="Добавить новый документ">
+                <i class="bi bi-plus-circle"></i>
+              </a>
+            </th>
+            <th>Дата РЛК</th>
+            <th>Номер РЛК</th>
+            <th>Подразделение ДЦ</th>
+            <th>Сотрудник</th>
+            <th>Начало</th>
+            <th>Окончание</th>
+            <th>Продолжительность</th>
+            <th>Запись</th>
+            <th>Чек KG</th>
+            <th>Чек CVC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if params.paginator.object_list %}
+            {% for object in params.paginator.object_list %}
+              <tr>
+                <td>
+                  <a href="{{ object.pk }}/" class="action-link" title="Открыть документ">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+                <td>{{ object.dataTime|date:"d.m.Y H:i" }}</td>
+                <td><strong>{{ object.nomer }}</strong></td>
+                <td>{{ object.unit.name|default:"Не указано" }}</td>
+                <td>{{ object.staff|default:"Не указан" }}</td>
+                <td>{{ object.dataTimeCreate|date:"d.m.Y H:i" }}</td>
+                <td>{{ object.dataEnd|date:"d.m.Y H:i" }}</td>
+                <td>{{ object.time_visit }}</td>
+                <td>
+                  {% if object.sound_count %}
+                    <span class="badge bg-info">{{ object.sound_count }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if object.custom_cheklist %}
+                    <span class="status-badge status-success">{{ object.custom_cheklist }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if object.custom_cheklist_cvc %}
+                    <span class="status-badge status-success">{{ object.custom_cheklist_cvc }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="11" class="text-center py-4" style="color: #6c7a92;">
+                Документы не найдены
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-		<div class="col-auto">
-			<a href="{{params.link_save}}" class="btn btn-outline-secondary"> <span class="icon-mbri-download"> Сохранить</span> </a>
-		</div>
-
-		<div class="col align-items-center align-self-center justify-content-center">
-			<nav aria-label="Page navigation example">
-				<ul class="pagination justify-content-center">
-				
-					{% if params.paginator.has_previous %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-						</li>
-					{% endif %}
-			
-					{% for p in params.paginator.paginator.page_range %}
-						{% if params.paginator.number == p %}
-							<li class="page-num mbr-section-btn disabled">
-								<a class="btn btn-secondary display-7">
-									<b>{{p}}</b>
-								</a>
-							</li>
-						{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-							<li class="page-num mbr-section-btn">
-								<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
-							</li>
-						{% endif %}
-					{% endfor %}
-						
-					{% if params.paginator.has_next %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-						</li>
-					{% endif %}
-		
-				</ul>
-			</nav>
-		</div>
-
-    <div class="col-sm justify-content-center">
-      <div class="form-floating mb-3">
-        <select class="form-select" name = "select_count" onchange="this.form.submit()">
-          <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
-          <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
-          <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
-          <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
+  <!-- Пагинация -->
+  <div class="pagination-wrapper">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-3">
+        <div class="d-flex align-items-center gap-2">
+          <small style="color: #6c7a92;">
+            Всего: <strong>{{ params.paginator.paginator.count }}</strong> / 
+            Выведено: <strong>{{ params.paginator.object_list|length }}</strong>
+          </small>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center mb-0">
+            {% if params.paginator.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% url_replace page=params.paginator.previous_page_number %}">
+                  &lt;
+                </a>
+              </li>
+            {% endif %}
+            
+            {% for p in params.paginator.paginator.page_range %}
+              {% if params.paginator.number == p %}
+                <li class="page-item active">
+                  <span class="page-link">{{ p }}</span>
+                </li>
+              {% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% url_replace page=p %}">
+                    {{ p }}
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if params.paginator.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% url_replace page=params.paginator.next_page_number %}">
+                  &gt;
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label text-uppercase" style="font-size: 0.75rem;">Выводить</label>
+        <select class="form-select form-select-sm" name="select_count" onchange="this.form.submit()">
+          <option value="25" {% if params.select_count == 25 %}selected{% endif %}>25</option>
+          <option value="50" {% if params.select_count == 50 %}selected{% endif %}>50</option>
+          <option value="100" {% if params.select_count == 100 %}selected{% endif %}>100</option>
+          <option value="200" {% if params.select_count == 200 %}selected{% endif %}>200</option>
         </select>
-        <label for="floatingInput">Выводить</label>
       </div>
     </div>
-
-	</div>
-
-</form>
-
+  </div>
+</div>
 
 {% endblock %}
-
