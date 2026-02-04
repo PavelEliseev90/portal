@@ -4,8 +4,7 @@ import json
 from recognition.models import Records_voice_recorder_cvc, Records_voice_recorder_cvc_checklist_kg, Records_voice_recorder_cvc_checklist_tematics, Records_voice_recorder_cvc_checklist, Records_voice_recorder_cvc_tematics, Recognition_Anketa, Records_voice_recorder, Recognition_Tematika_fraza, Recognition_Tematika, Records_voice_recorder_queue, Records_voice_recorder_cvc_tematics_fields, Records_questions, Check_settings, Settings_check_records, Check_settings_cvc
 from fuzzywuzzy import fuzz
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery
-from django.db.models import OuterRef, Subquery, Sum, Q
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Q, Case, When, IntegerField
 from documents.models import DocRLKEvents, DocZN, DocRLK
 from django.db import models
 from refs.models import RefCity, RefUnit
@@ -148,28 +147,90 @@ def start(request):
             'date_end'      : date_end
         }
 
+        # Оптимизация: объединяем count запросы и используем select_related
+        # Базовые queryset с оптимизацией
+        cvc_checklist_qs = Records_voice_recorder_cvc_checklist.objects.select_related('rlk')
+        cvc_queue_qs = Records_voice_recorder_cvc_checklist.objects.select_related('rlk')
+        op_queue_qs = Records_voice_recorder_queue.objects.select_related('rlk')
+        
+        # Объединяем count запросы для CVC ОП
+        cvc_op_stats = cvc_checklist_qs.filter(
+            direction__lte=1,
+            rlk__dataTime__gte=date_start,
+            rlk__dataTime__lte=date_end
+        ).aggregate(
+            success_count=Count('id', filter=Q(success=True)),
+            queue_count=Count('id', filter=Q(success=False))
+        )
+        
+        # Объединяем duration запросы для CVC ОП
+        cvc_op_queue_duration = cvc_queue_qs.filter(
+            direction__lte=1,
+            success=False
+        ).aggregate(duration_sum=Sum('duration'))['duration__sum'] or 0
+        
+        # Объединяем count запросы для CVC КОРС
+        cvc_kors_stats = cvc_checklist_qs.filter(
+            direction=5,
+            rlk__dataTime__gte=date_start,
+            rlk__dataTime__lte=date_end
+        ).aggregate(
+            success_count=Count('id', filter=Q(success=True)),
+            queue_count=Count('id', filter=Q(success=False))
+        )
+        
+        # Объединяем duration запросы для CVC КОРС
+        cvc_kors_queue_duration = cvc_queue_qs.filter(
+            direction=5,
+            success=False
+        ).aggregate(duration_sum=Sum('duration'))['duration__sum'] or 0
+        
+        # Объединяем count запросы для ОП
+        op_stats = op_queue_qs.filter(
+            direction=1,
+            error=False,
+            rlk__dataTime__gte=date_start,
+            rlk__dataTime__lte=date_end
+        ).aggregate(
+            check_count=Count('id', filter=~Q(data_json='')),
+            queue_count=Count('id', filter=Q(data_json=''))
+        )
+        
+        # Duration для ОП очереди
+        op_queue_duration = op_queue_qs.filter(
+            direction=1,
+            error=False,
+            data_json=''
+        ).aggregate(duration_sum=Sum('duration'))['duration_sum'] or 0
+        
+        # Статические данные (не зависят от дат) - можно кешировать
+        op_records_questions = Records_questions.objects.filter(direction=1).count()
+        op_kors_records_questions = Records_questions.objects.filter(direction=5).count()
+        cvc_op_tematiks = Records_voice_recorder_cvc_tematics.objects.filter(activated=True).count()
+        op_tematiks = Recognition_Tematika.objects.filter(anketa__id=1, enabled=True).count()
+        
         params = {
             'type'                          : 'recognitions',
             'filtr'                         : filtr,
             
-            'op_records_questions'          : Records_questions.objects.filter(direction = 1).count(),
-            'op_kors_records_questions'     : Records_questions.objects.filter(direction = 5).count(),
+            'op_records_questions'          : op_records_questions,
+            'op_kors_records_questions'     : op_kors_records_questions,
             'check_settings_1'              : get_settings_checklist(1),
             'check_settings_5'              : get_settings_checklist(5),
 
-            'cvc_op_success'                : Records_voice_recorder_cvc_checklist.objects.filter(direction__lte = 1).filter(success = True).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).count(),
-            'cvc_op_tematiks'               : Records_voice_recorder_cvc_tematics.objects.filter(activated = True).count(),
-            'cvc_op_queue'                  : Records_voice_recorder_cvc_checklist.objects.filter(direction__lte = 1).filter(success = False).count(),
-            'cvc_op_queue_duration'         : time_human(Records_voice_recorder_cvc_checklist.objects.filter(direction__lte = 1).filter(success = False).aggregate(Sum('duration'))['duration__sum']),
+            'cvc_op_success'                : cvc_op_stats['success_count'] or 0,
+            'cvc_op_tematiks'               : cvc_op_tematiks,
+            'cvc_op_queue'                  : cvc_op_stats['queue_count'] or 0,
+            'cvc_op_queue_duration'         : time_human(cvc_op_queue_duration),
             
-            'cvc_op_kors_success'           : Records_voice_recorder_cvc_checklist.objects.filter(direction = 5).filter(success = True).filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).count(),
-            'cvc_op_kors_queue'             : Records_voice_recorder_cvc_checklist.objects.filter(direction = 5).filter(success = False).count(),
-            'cvc_op_kors_queue_duration'    : time_human(Records_voice_recorder_cvc_checklist.objects.filter(direction = 5).filter(success = False).aggregate(Sum('duration'))['duration__sum']),
+            'cvc_op_kors_success'           : cvc_kors_stats['success_count'] or 0,
+            'cvc_op_kors_queue'             : cvc_kors_stats['queue_count'] or 0,
+            'cvc_op_kors_queue_duration'    : time_human(cvc_kors_queue_duration),
             
-            'op_chek_count'                 : Records_voice_recorder_queue.objects.filter(direction = 1).filter(error = False).exclude(data_json = '').filter(rlk__dataTime__gte = date_start).filter(rlk__dataTime__lte = date_end).count(),
-            'op_tematiks'                   : Recognition_Tematika.objects.filter(anketa__id = 1).filter(enabled = True).count(),
-            'op_queue'                      : Records_voice_recorder_queue.objects.filter(direction = 1).filter(error = False).filter(data_json = '').count(),
-            'op_queue_duration'             : time_human(Records_voice_recorder_queue.objects.filter(direction = 1).filter(error = False).filter(data_json = '').aggregate(Sum('duration'))['duration__sum'])
+            'op_chek_count'                 : op_stats['check_count'] or 0,
+            'op_tematiks'                   : op_tematiks,
+            'op_queue'                      : op_stats['queue_count'] or 0,
+            'op_queue_duration'             : time_human(op_queue_duration)
             
         }
         return render(request, "recognition/lk_recognition_start.html", {'params': params})    
