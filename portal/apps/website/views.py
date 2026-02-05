@@ -28,7 +28,7 @@ from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCar
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField, ExpressionWrapper, Prefetch
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField, ExpressionWrapper, Prefetch, Exists
 from django.db.models.functions import Cast, Coalesce, Extract
 from django.db import models
 from django.conf import settings
@@ -2449,7 +2449,11 @@ def docs_zn(request):
             docs = docs.filter(qyery)
 
         if len(name) > 0:
-            docs = docs.filter(nomer__icontains = name) | docs.filter(customer__name__icontains = name) | docs.filter(cars__vin__icontains = name) | docs.filter(cars__mark__icontains = name) | docs.filter(cars__model__icontains = name) | docs.filter(carsGRZ__icontains = name)
+            # Оптимизация: используем Q объекты для более эффективного OR запроса
+            name_query = Q(nomer__icontains=name) | Q(customer__name__icontains=name) | \
+                        Q(cars__vin__icontains=name) | Q(cars__mark__icontains=name) | \
+                        Q(cars__model__icontains=name) | Q(carsGRZ__icontains=name)
+            docs = docs.filter(name_query)
             filter_count = filter_count + 1
 
         if len(organization) > 0:
@@ -2459,11 +2463,13 @@ def docs_zn(request):
             docs = docs.filter(customer__company = False)
             organization = False
 
+        # ОПТИМИЗАЦИЯ: Используем подзапрос вместо отдельного запроса к RefUnitGroup
         if len(unit_group_id) > 0:
             filter_count = filter_count + 1
             unit_group_id = int(unit_group_id)
-            units_ = RefUnitGroup.objects.get(pk = unit_group_id)
-            docs = docs.filter(unit__in = units_.units.all())
+            # Используем подзапрос для получения unit_ids из группы
+            unit_ids = RefUnitGroup.objects.filter(pk=unit_group_id).values_list('units', flat=True)
+            docs = docs.filter(unit__id__in=unit_ids)
 
         if len(unit_id) > 0:
             filter_count = filter_count + 1
@@ -2479,33 +2485,38 @@ def docs_zn(request):
             recomendations_mcu_count=Count('doсrecomendationmcu', distinct=True),
         )
         
-        # Подзапрос для новых рекомендаций
-        subquery = Subquery(
-            DoсRecomendation.objects.filter(
-                status__lt=2,
-                zn_id=OuterRef('pk')
-            ).values('id')[:1],
-            output_field=models.IntegerField()
+        # ОПТИМИЗАЦИЯ: Используем Exists вместо Count для новых рекомендаций (более эффективно)
+        docs = docs.annotate(
+            recomendations_new=Exists(
+                DoсRecomendation.objects.filter(
+                    status__lt=2,
+                    zn_id=OuterRef('pk')
+                )
+            )
         )
-        docs = docs.annotate(recomendations_new=Count(subquery))
         
         if len(new) > 0:
-           docs = docs.filter(recomendations_new__gt = 0)
+           # Используем boolean поле вместо сравнения с 0
+           docs = docs.filter(recomendations_new=True)
            filter_count = filter_count + 1
         
         count   = docs.count()
         
         page_number = request.GET.get('page')
         
+        # ОПТИМИЗАЦИЯ: Собираем customer_ids до пагинации через values_list
+        # Получаем все customer_id из текущего queryset (до пагинации)
+        customer_ids = set(
+            docs.filter(customer__isnull=False)
+                .exclude(customer__company=True)
+                .values_list('customer_id', flat=True)
+                .distinct()
+        )
+        
         paginator   = Paginator(docs, countListRecord)
         page_obj    = paginator.get_page(page_number)
         
         # Оптимизация: предварительно загружаем рейтинги клиентов одним запросом
-        # Получаем всех уникальных клиентов из текущей страницы
-        customer_ids = set()
-        for doc in page_obj.object_list:
-            if doc.customer_id and not (hasattr(doc.customer, 'company') and doc.customer.company):
-                customer_ids.add(doc.customer_id)
         
         # Загружаем все рейтинги для этих клиентов одним запросом
         customer_ratings = {}
