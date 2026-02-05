@@ -2333,7 +2333,9 @@ def docs_zn(request):
         toast   = ''
         date    = ''
 
-        docs    = DocZN.objects.filter(typeRemont__tizer = True)
+        docs    = DocZN.objects.filter(typeRemont__tizer = True).select_related(
+            'typeRemont', 'unit', 'customer', 'cars'
+        )
 
         '''
         if request.user.is_superuser == False:
@@ -2464,9 +2466,24 @@ def docs_zn(request):
             unit_id = int(unit_id)
             docs = docs.filter(unit__id = unit_id)
 
-        ###Добавляем инормацию о рекомендациях
-        subquery    = Subquery(DoсRecomendation.objects.filter(status__lt = 2).filter(zn_id = OuterRef(name='id')).values('id')[:1], output_field = models.IntegerField())
-        docs        = docs.annotate(recomendations_new = Count(subquery))
+        ###Добавляем информацию о рекомендациях и оптимизируем запросы
+        # Аннотации для счетчиков (Django автоматически создает related_name в нижнем регистре с _set)
+        docs = docs.annotate(
+            products_count=Count('docznproduct_set', distinct=True),
+            works_count=Count('docznwork_set', distinct=True),
+            recomendations_customer_count=Count('doсrecomendation_set', filter=Q(doсrecomendation_set__customerStatus__gt=0), distinct=True),
+            recomendations_mcu_count=Count('doсrecomendationmcu_set', distinct=True),
+        )
+        
+        # Подзапрос для новых рекомендаций
+        subquery = Subquery(
+            DoсRecomendation.objects.filter(
+                status__lt=2,
+                zn_id=OuterRef('pk')
+            ).values('id')[:1],
+            output_field=models.IntegerField()
+        )
+        docs = docs.annotate(recomendations_new=Count(subquery))
         
         if len(new) > 0:
            docs = docs.filter(recomendations_new__gt = 0)
