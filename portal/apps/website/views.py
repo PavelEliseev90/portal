@@ -2333,8 +2333,9 @@ def docs_zn(request):
         toast   = ''
         date    = ''
 
+        # Оптимизация: используем select_related для всех связанных объектов, которые используются в шаблоне
         docs    = DocZN.objects.filter(typeRemont__tizer = True).select_related(
-            'typeRemont', 'unit', 'customer', 'cars'
+            'typeRemont', 'unit', 'customer', 'cars', 'readyStatus'
         )
 
         '''
@@ -2656,37 +2657,55 @@ def docs_zn_report_tizer(request):
                 filter_unit_id = int(filter_unit_id)
                 units    = docs.filter(dataTime__gte = date_start).filter(unit__id = filter_unit_id).filter(dataTime__lt = date_end).values('unit', 'unit__name').distinct().order_by('unit__name')
             
-            recomendationds_count   = 0
-            recomendationds_sum     = 0
+            # Оптимизация: предварительно получаем все данные для всех подразделений одним запросом
+            # Получаем все ЗН с аннотациями для подсчета
+            docs_filtered = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end)
+            
+            # Оптимизация: получаем все рекомендации одним запросом с select_related
+            all_recomendations = DoсRecomendation.objects.filter(
+                zn__closed = True,
+                zn__dataTime__gte = date_start,
+                zn__dataTime__lt = date_end
+            ).select_related('zn', 'zn__unit')
             
             table_data = list() 
             for unit in units:
                 unit_name           = unit['unit__name']
                 unit_id             = unit['unit']
-                zn_count_all        = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).filter(unit__id = unit_id).values('pk').distinct().count()
-                zn_count            = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).values('zn').distinct().count()
+                
+                # Оптимизация: используем агрегацию вместо множественных запросов
+                zn_count_all = docs_filtered.filter(unit__id = unit_id).values('pk').distinct().count()
+                
+                # Получаем рекомендации для этого подразделения с агрегацией
+                recomendations_qs = all_recomendations.filter(zn__unit__id = unit_id)
+                zn_count = recomendations_qs.values('zn').distinct().count()
+                
                 if zn_count_all > 0: 
-                    zn_percent          = round(zn_count * 100 / zn_count_all, 1)
+                    zn_percent = round(zn_count * 100 / zn_count_all, 1)
                 else:
-                    zn_percent          = 0
-                recomendations      = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).order_by("dataTime")
-                recomendations_0    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 0).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
-                recomendations_1    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 1).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
-                recomendations_2    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 2).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
-                recomendations_3    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 3).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
+                    zn_percent = 0
                 
-                zn_send_count       =  DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).exclude(customerStatus = 0).values('zn').distinct().count()
+                # Оптимизация: используем агрегацию для подсчета по статусам
+                recomendations_0 = recomendations_qs.filter(customerStatus = 0).count()
+                recomendations_1 = recomendations_qs.filter(customerStatus = 1).count()
+                recomendations_2 = recomendations_qs.filter(customerStatus = 2).count()
+                recomendations_3 = recomendations_qs.filter(customerStatus = 3).count()
+                
+                # Получаем список рекомендаций для отображения (только для этого подразделения)
+                recomendations = recomendations_qs.order_by("dataTime")
+                
+                zn_send_count = recomendations_qs.exclude(customerStatus = 0).values('zn').distinct().count()
                 
                 try:
-                    zn_send_count_sr    = round(zn_send_count * 100 / zn_count_all, 1)
+                    zn_send_count_sr = round(zn_send_count * 100 / zn_count_all, 1) if zn_count_all > 0 else 0
                 except:
-                    zn_send_count_sr    = 0
+                    zn_send_count_sr = 0
 
-                zn_success_count       = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).filter(customerStatus = 2).values('zn').distinct().count()
+                zn_success_count = recomendations_qs.filter(customerStatus = 2).values('zn').distinct().count()
                 try:
-                    zn_success_count_sr    = round(zn_success_count * 100 / zn_send_count, 1)
+                    zn_success_count_sr = round(zn_success_count * 100 / zn_send_count, 1) if zn_send_count > 0 else 0
                 except:
-                    zn_success_count_sr    = 0
+                    zn_success_count_sr = 0
 
                 params_unit = {
                     'unit_name'         : unit_name,
@@ -2708,13 +2727,19 @@ def docs_zn_report_tizer(request):
         else:
             
             if filter_group_unit_id == '':
-                units_group = RefUnitGroup.objects.filter(active = True).order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True).prefetch_related('units').order_by('name_bi')
             else:
                 filter_group_unit_id = int(filter_group_unit_id)
-                units_group = RefUnitGroup.objects.filter(active = True).filter(pk = filter_group_unit_id).order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True).filter(pk = filter_group_unit_id).prefetch_related('units').order_by('name_bi')
             
-            recomendationds_count   = 0
-            recomendationds_sum     = 0
+            # Оптимизация: предварительно получаем все рекомендации одним запросом
+            all_recomendations = DoсRecomendation.objects.filter(
+                zn__closed = True,
+                zn__dataTime__gte = date_start,
+                zn__dataTime__lt = date_end
+            ).select_related('zn', 'zn__unit')
+            
+            docs_filtered = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end)
             
             table_data = list() 
             for unit_group in units_group:
@@ -2722,30 +2747,40 @@ def docs_zn_report_tizer(request):
                 unit_id             = unit_group.id
                 unit_info           = unit_group.get_info_units()
                 units_group_all     = unit_group.units.all()
-                zn_count_all        = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).filter(unit__in = units_group_all).values('pk').distinct().count()
-                zn_count            = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).values('zn').distinct().count()
+                
+                # Оптимизация: используем агрегацию вместо множественных запросов
+                zn_count_all = docs_filtered.filter(unit__in = units_group_all).values('pk').distinct().count()
+                
+                # Получаем рекомендации для этой группы с агрегацией
+                recomendations_qs = all_recomendations.filter(zn__unit__in = units_group_all)
+                zn_count = recomendations_qs.values('zn').distinct().count()
+                
                 if zn_count_all > 0: 
-                    zn_percent          = round(zn_count * 100 / zn_count_all, 1)
+                    zn_percent = round(zn_count * 100 / zn_count_all, 1)
                 else:
-                    zn_percent          = 0
-                recomendations      = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).order_by("dataTime")
-                recomendations_0    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 0).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
-                recomendations_1    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 1).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
-                recomendations_2    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 2).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
-                recomendations_3    = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(customerStatus = 3).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
+                    zn_percent = 0
                 
-                zn_send_count       = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).exclude(customerStatus = 0).values('zn').distinct().count()
+                # Оптимизация: используем агрегацию для подсчета по статусам
+                recomendations_0 = recomendations_qs.filter(customerStatus = 0).count()
+                recomendations_1 = recomendations_qs.filter(customerStatus = 1).count()
+                recomendations_2 = recomendations_qs.filter(customerStatus = 2).count()
+                recomendations_3 = recomendations_qs.filter(customerStatus = 3).count()
+                
+                # Получаем список рекомендаций для отображения
+                recomendations = recomendations_qs.order_by("dataTime")
+                
+                zn_send_count = recomendations_qs.exclude(customerStatus = 0).values('zn').distinct().count()
                 
                 try:
-                    zn_send_count_sr    = round(zn_send_count * 100 / zn_count_all, 1)
+                    zn_send_count_sr = round(zn_send_count * 100 / zn_count_all, 1) if zn_count_all > 0 else 0
                 except:
-                    zn_send_count_sr    = 0
+                    zn_send_count_sr = 0
 
-                zn_success_count       = DoсRecomendation.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).filter(customerStatus = 2).values('zn').distinct().count()
+                zn_success_count = recomendations_qs.filter(customerStatus = 2).values('zn').distinct().count()
                 try:
-                    zn_success_count_sr    = round(zn_success_count * 100 / zn_send_count, 1)
+                    zn_success_count_sr = round(zn_success_count * 100 / zn_send_count, 1) if zn_send_count > 0 else 0
                 except:
-                    zn_success_count_sr    = 0
+                    zn_success_count_sr = 0
 
                 params_unit = {
                     'unit_name'         : unit_name,
@@ -2836,37 +2871,52 @@ def docs_zn_report_tizer_mcu(request):
                 filter_unit_id = int(filter_unit_id)
                 units    = docs.filter(dataTime__gte = date_start).filter(unit__id = filter_unit_id).filter(dataTime__lt = date_end).values('unit', 'unit__name').distinct().order_by('unit__name')
             
-            recomendationds_count   = 0
-            recomendationds_sum     = 0
+            # Оптимизация: предварительно получаем все данные для всех подразделений одним запросом
+            docs_filtered = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end)
+            
+            # Получаем все рекомендации МКУ с prefetch_related для оптимизации
+            all_recomendations = DoсRecomendationMCU.objects.filter(
+                zn__dataTime__gte = date_start,
+                zn__dataTime__lt = date_end
+            ).select_related('zn', 'zn__unit')
             
             table_data = list() 
             for unit in units:
                 unit_name           = unit['unit__name']
                 unit_id             = unit['unit']
-                zn_count            = DoсRecomendationMCU.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).values('zn').distinct().count()
-                zn_count_all        = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).filter(unit__id = unit_id).values('pk').distinct().count()
-                if zn_count_all > 0: 
-                    zn_percent          = round(zn_count * 100 / zn_count_all, 1)
-                else:
-                    zn_percent          = 0
-                recomendations      = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).order_by("dataTime")
-                recomendations_0    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 0).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
-                recomendations_1    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 1).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
-                recomendations_2    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 2).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
-                recomendations_3    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 3).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).count()
                 
-                zn_send_count       = DoсRecomendationMCU.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).exclude(customerStatus = 0).values('zn').distinct().count()
+                # Оптимизация: используем агрегацию вместо множественных запросов
+                zn_count_all = docs_filtered.filter(unit__id = unit_id).values('pk').distinct().count()
+                
+                # Получаем рекомендации для этого подразделения с агрегацией
+                recomendations_qs = all_recomendations.filter(zn__unit__id = unit_id)
+                zn_count = recomendations_qs.filter(zn__closed = True).values('zn').distinct().count()
+                
+                if zn_count_all > 0: 
+                    zn_percent = round(zn_count * 100 / zn_count_all, 1)
+                else:
+                    zn_percent = 0
+                
+                # Оптимизация: используем агрегацию для подсчета по статусам
+                recomendations_0 = recomendations_qs.filter(customerStatus = 0).count()
+                recomendations_1 = recomendations_qs.filter(customerStatus = 1).count()
+                recomendations_2 = recomendations_qs.filter(customerStatus = 2).count()
+                recomendations_3 = recomendations_qs.filter(customerStatus = 3).count()
+                
+                # Получаем список рекомендаций для отображения
+                recomendations = recomendations_qs.order_by("dataTime")
+                
+                zn_send_count = recomendations_qs.filter(zn__closed = True).exclude(customerStatus = 0).values('zn').distinct().count()
                 try:
-                    zn_send_count_sr    = round(zn_send_count * 100 / zn_count_all, 1)
+                    zn_send_count_sr = round(zn_send_count * 100 / zn_count_all, 1) if zn_count_all > 0 else 0
                 except:
-                    zn_send_count_sr    = 0
+                    zn_send_count_sr = 0
                     
-                zn_success_count       = DoсRecomendationMCU.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__id = unit_id).filter(customerStatus = 2).values('zn').distinct().count()
+                zn_success_count = recomendations_qs.filter(zn__closed = True).filter(customerStatus = 2).values('zn').distinct().count()
                 try:
-                    zn_success_count_sr    = round(zn_success_count * 100 / zn_send_count, 1)
+                    zn_success_count_sr = round(zn_success_count * 100 / zn_send_count, 1) if zn_send_count > 0 else 0
                 except:
-                    zn_success_count_sr    = 0
-
+                    zn_success_count_sr = 0
 
                 params_unit = {
                     'unit_name'         : unit_name,
@@ -2887,13 +2937,18 @@ def docs_zn_report_tizer_mcu(request):
                 table_data.append(params_unit)
         else:
             if filter_group_unit_id == '':
-                units_group = RefUnitGroup.objects.filter(active = True).order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True).prefetch_related('units').order_by('name_bi')
             else:
                 filter_group_unit_id = int(filter_group_unit_id)
-                units_group = RefUnitGroup.objects.filter(active = True).filter(pk = filter_group_unit_id).order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True).filter(pk = filter_group_unit_id).prefetch_related('units').order_by('name_bi')
             
-            recomendationds_count   = 0
-            recomendationds_sum     = 0
+            # Оптимизация: предварительно получаем все рекомендации МКУ одним запросом
+            all_recomendations = DoсRecomendationMCU.objects.filter(
+                zn__dataTime__gte = date_start,
+                zn__dataTime__lt = date_end
+            ).select_related('zn', 'zn__unit')
+            
+            docs_filtered = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end)
             
             table_data = list() 
             for unit_group in units_group:
@@ -2901,29 +2956,39 @@ def docs_zn_report_tizer_mcu(request):
                 unit_id             = unit_group.id
                 unit_info           = unit_group.get_info_units()
                 units_group_all     = unit_group.units.all()
-                zn_count            = DoсRecomendationMCU.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).values('zn').distinct().count()
-                zn_count_all        = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).filter(unit__in = units_group_all).values('pk').distinct().count()
-                if zn_count_all > 0: 
-                    zn_percent          = round(zn_count * 100 / zn_count_all, 1)
-                else:
-                    zn_percent          = 0
-                recomendations      = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).order_by("dataTime")
-                recomendations_0    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 0).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
-                recomendations_1    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 1).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
-                recomendations_2    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 2).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
-                recomendations_3    = DoсRecomendationMCU.objects.filter(zn__dataTime__gte = date_start).filter(customerStatus = 3).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).count()
                 
-                zn_send_count       = DoсRecomendationMCU.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).exclude(customerStatus = 0).values('zn').distinct().count()
+                # Оптимизация: используем агрегацию вместо множественных запросов
+                zn_count_all = docs_filtered.filter(unit__in = units_group_all).values('pk').distinct().count()
+                
+                # Получаем рекомендации для этой группы с агрегацией
+                recomendations_qs = all_recomendations.filter(zn__unit__in = units_group_all)
+                zn_count = recomendations_qs.filter(zn__closed = True).values('zn').distinct().count()
+                
+                if zn_count_all > 0: 
+                    zn_percent = round(zn_count * 100 / zn_count_all, 1)
+                else:
+                    zn_percent = 0
+                
+                # Оптимизация: используем агрегацию для подсчета по статусам
+                recomendations_0 = recomendations_qs.filter(customerStatus = 0).count()
+                recomendations_1 = recomendations_qs.filter(customerStatus = 1).count()
+                recomendations_2 = recomendations_qs.filter(customerStatus = 2).count()
+                recomendations_3 = recomendations_qs.filter(customerStatus = 3).count()
+                
+                # Получаем список рекомендаций для отображения
+                recomendations = recomendations_qs.order_by("dataTime")
+                
+                zn_send_count = recomendations_qs.filter(zn__closed = True).exclude(customerStatus = 0).values('zn').distinct().count()
                 try:
-                    zn_send_count_sr    = round(zn_send_count * 100 / zn_count_all, 1)
+                    zn_send_count_sr = round(zn_send_count * 100 / zn_count_all, 1) if zn_count_all > 0 else 0
                 except:
-                    zn_send_count_sr    = 0
+                    zn_send_count_sr = 0
                     
-                zn_success_count       = DoсRecomendationMCU.objects.filter(zn__closed = True).filter(zn__dataTime__gte = date_start).filter(zn__dataTime__lt = date_end).filter(zn__unit__in = units_group_all).filter(customerStatus = 2).values('zn').distinct().count()
+                zn_success_count = recomendations_qs.filter(zn__closed = True).filter(customerStatus = 2).values('zn').distinct().count()
                 try:
-                    zn_success_count_sr    = round(zn_success_count * 100 / zn_send_count, 1)
+                    zn_success_count_sr = round(zn_success_count * 100 / zn_send_count, 1) if zn_send_count > 0 else 0
                 except:
-                    zn_success_count_sr    = 0
+                    zn_success_count_sr = 0
 
                 params_unit = {
                     'unit_name'         : unit_name,
