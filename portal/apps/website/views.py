@@ -28,7 +28,7 @@ from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCar
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField, ExpressionWrapper
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField, ExpressionWrapper, Prefetch
 from django.db.models.functions import Cast, Coalesce, Extract
 from django.db import models
 from django.conf import settings
@@ -2537,7 +2537,22 @@ def doc_zn(request, id):
             countListRecord = int(request.GET.get('select_count', 25))
         name    = ''
         toast   = ''
-        doc   = DocZN.objects.get(pk = id)
+        
+        # Оптимизация: используем select_related для связанных объектов и prefetch_related для связанных queryset'ов
+        doc = DocZN.objects.select_related(
+            'typeRemont', 'unit', 'customer', 'cars', 'organization', 'master', 'masterOut', 'readyStatus'
+        ).prefetch_related(
+            'docznwork_set__type', 'docznwork_set__work',
+            'docznproduct_set__type', 'docznproduct_set__product',
+            Prefetch('doсrecomendation_set', queryset=DoсRecomendation.objects.prefetch_related(
+                Prefetch('doсrecomendationwork_set__work'),
+                Prefetch('doсrecomendationproduct_set__product'),
+                Prefetch('docrecomendationfiles_set')
+            ).order_by('status')),
+            Prefetch('doсrecomendationmcu_set', queryset=DoсRecomendationMCU.objects.prefetch_related(
+                Prefetch('docrecomendationfilesmcu_set')
+            ).order_by('status'))
+        ).get(pk=id)
 
         if request.method == "POST":
             
