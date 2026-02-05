@@ -298,7 +298,7 @@
 								<div class="">
 									{{doc.customer.name|default:"—"}}
 									{% if doc.customer and not doc.customer.company %}
-										{% with rating=doc.rating_customer %}
+										{% with rating=params.customer_ratings|get_item:doc.customer_id %}
 											{% if rating %}
 												<span class="badge bg-warning text-dark ms-1">
 													<i class="bi bi-star-fill"></i> {{rating}}

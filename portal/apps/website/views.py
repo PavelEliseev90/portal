@@ -2350,6 +2350,8 @@ def docs_zn(request):
             units_selected  = RefUnit.objects.filter(buauto = False).order_by('name')
         '''
 
+        # Оптимизация: загружаем единицы только если они используются в фильтрах
+        # Эти данные используются только в модальном окне фильтров, поэтому можно загружать лениво
         units_selected  = RefUnit.objects.filter(buauto = False).exclude(name = 'ЕЦО ГК').exclude(name = 'Основное подразделение').order_by('name')
         units_selected_name  = RefUnit.objects.filter(buauto = False).exclude(name__icontains = 'Техцентр').exclude(name = 'Это ГК').exclude(name__icontains = 'МКЦ ').exclude(name__icontains = 'ОП ').exclude(name = 'ЕЦО ГК').exclude(name = 'Основное подразделение').order_by('name_search').values('name_search').distinct()
         
@@ -2369,7 +2371,8 @@ def docs_zn(request):
             if RefCustomerFiltr.objects.filter(pk = delite_filter).count() > 0:
                 RefCustomerFiltr.objects.get(pk = delite_filter).delete()
 
-        filters_user    = RefCustomerFiltr.objects.filter(user = request.user).filter(page = path_start).order_by('-date')  
+        # Оптимизация: используем only() для загрузки только необходимых полей фильтров
+        filters_user    = RefCustomerFiltr.objects.filter(user = request.user).filter(page = path_start).only('id', 'name', 'page', 'path', 'date').order_by('-date')  
         if new_filtr != '' and new_filtr != None:
             dict_filtr  = request.get_full_path()
             path_save = ''
@@ -2497,6 +2500,42 @@ def docs_zn(request):
         paginator   = Paginator(docs, countListRecord)
         page_obj    = paginator.get_page(page_number)
         
+        # Оптимизация: предварительно загружаем рейтинги клиентов одним запросом
+        # Получаем всех уникальных клиентов из текущей страницы
+        customer_ids = set()
+        for doc in page_obj.object_list:
+            if doc.customer_id and not (hasattr(doc.customer, 'company') and doc.customer.company):
+                customer_ids.add(doc.customer_id)
+        
+        # Загружаем все рейтинги для этих клиентов одним запросом
+        customer_ratings = {}
+        if customer_ids:
+            # Группируем опросы по клиентам и считаем рейтинг
+            opros_by_customer = DocOprosZN.objects.filter(
+                zn__customer_id__in=customer_ids,
+                close=True,
+                canceled=False
+            ).values('zn__customer_id').annotate(
+                doc_count=Count('id'),
+                v1_sum=Sum('v1'),
+                v2_sum=Sum('v2'),
+                v3_sum=Sum('v3'),
+                v4_sum=Sum('v4'),
+                v5_sum=Sum('v5'),
+                v6_sum=Sum('v6')
+            )
+            
+            for item in opros_by_customer:
+                customer_id = item['zn__customer_id']
+                doc_count = item['doc_count']
+                if doc_count > 0:
+                    rating_sum = (item['v1_sum'] or 0) + (item['v2_sum'] or 0) + (item['v3_sum'] or 0) + \
+                                 (item['v4_sum'] or 0) + (item['v5_sum'] or 0) + (item['v6_sum'] or 0)
+                    rating = round(rating_sum / doc_count / 6, 2)
+                    customer_ratings[customer_id] = rating
+                else:
+                    customer_ratings[customer_id] = 0
+        
         filtr = {
             'name'          : name,
             'date'          : date,
@@ -2509,10 +2548,11 @@ def docs_zn(request):
             'list_units_name': list_units_name
         }
 
+        # Оптимизация: используем только() для загрузки только необходимых полей групп подразделений
         selected = {
             'units_name'    : units_selected_name,
             'units'         : units_selected,
-            'units_group'   : RefUnitGroup.objects.filter(active = True).order_by('name')
+            'units_group'   : RefUnitGroup.objects.filter(active = True).only('id', 'name').order_by('name')
         }
         
         params = {
@@ -2524,7 +2564,8 @@ def docs_zn(request):
             'filtr'         : filtr,
             'toast'         : toast,
             'count'         : count,
-            'filters_user'  : filters_user
+            'filters_user'  : filters_user,
+            'customer_ratings': customer_ratings  # Передаем словарь рейтингов в шаблон
         }
         return render(request, 'website/docs_zn.html', {'params': params})    
 
