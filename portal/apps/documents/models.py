@@ -625,6 +625,10 @@ class DocRLK(models.Model):
                 try:
                     if name.find('КорсАвто') > -1:
                         return 'корсавто'
+                    if name.find('ваз') > -1:
+                        return 'lada'
+                    if name.find('энгельса') > -1:
+                        return 'lada'
                     name = name.replace('Тула', '').replace('Калуга', '').replace('Обнинск', '').replace('Курск (50 лет Октября)', '').replace('(энгельса 173)', '').replace('Курск', '').replace('Новомосковск', '').replace('Серпухов', '').replace('Коломна', '').replace('Ногинск', '').replace('Орел', '').replace('Ярославль', '')
                     name = name.replace('ОП ', '').replace('ДЦ ', '').replace('Техцентр  ', '').replace(city_name, '').strip()
                     return name.lower()

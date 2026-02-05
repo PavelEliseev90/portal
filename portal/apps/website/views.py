@@ -9084,7 +9084,7 @@ def test(request):
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
     from analytics.models import TradeInFunnel
-    alls = TradeInFunnel.objects.filter(brand__icontains = 'энгельса')
+    alls = TradeInFunnel.objects.filter(brand__icontains = 'энгельса') | TradeInFunnel.objects.filter(brand__icontains = 'ваз')
     count = len(alls)
     s=0
     for all in alls:
