@@ -1,0 +1,101 @@
+{# Шаблон для вывода выбранных элементов справочника в блоке информации для клиента #}
+{# Вставьте этот блок в нужное место в lo_v3.html (например, в блок estimation_info_customer) #}
+
+<div class="card mb-3" style="border-radius: 1rem; box-shadow: 0 2px 8px rgba(0, 42, 90, 0.1);">
+  <div class="card-header bg-primary text-white" style="border-radius: 1rem 1rem 0 0; padding: 1rem 1.5rem;">
+    <h5 class="mb-0">
+      <i class="bi bi-clipboard-check"></i> Выявленные проблемы диагностики
+    </h5>
+  </div>
+  <div class="card-body" style="padding: 1.5rem;">
+    {% if params.selected_references %}
+      {% for category_code, items in params.selected_references.items %}
+        {% if items %}
+          <div class="mb-4">
+            <h6 class="text-primary mb-3" style="font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 0.5rem;">
+              <i class="bi bi-gear"></i> 
+              {% if category_code == 'engine' %}Двигатель
+              {% elif category_code == 'gear' %}Коробка передач
+              {% elif category_code == 'brake' %}Тормозная система
+              {% elif category_code == 'suspension' %}Подвеска
+              {% elif category_code == 'system_og' %}Система выпуска ОГ
+              {% elif category_code == 'wheel' %}Рулевое управление
+              {% elif category_code == 'conditioner' %}Кондиционер
+              {% elif category_code == 'turbo' %}Турбина
+              {% elif category_code == 'drive' %}Полный привод
+              {% elif category_code == 'to' %}ТО
+              {% elif category_code == 'subframe' %}Подрамник
+              {% elif category_code == 'airbag' %}Подушка безопасности
+              {% else %}{{ category_code }}{% endif %}
+              <span class="badge bg-primary rounded-pill ms-2">{{ items|length }}</span>
+            </h6>
+            
+            <div class="row g-2">
+              {% for item in items %}
+                <div class="col-12 col-md-6">
+                  <div class="card border-start border-primary border-3" style="border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                    <div class="card-body p-3">
+                      <h6 class="card-title mb-2" style="font-size: 0.95rem; font-weight: 600; color: #002a5a;">
+                        <i class="bi bi-exclamation-circle text-warning"></i> {{ item.title }}
+                      </h6>
+                      
+                      {% if item.observation_zones %}
+                        <div class="mb-2">
+                          <small class="text-muted d-block mb-1">
+                            <i class="bi bi-geo-alt"></i> <strong>Где наблюдается:</strong>
+                          </small>
+                          <small class="text-dark">{{ item.observation_zones|truncatewords:20 }}</small>
+                        </div>
+                      {% endif %}
+                      
+                      {% if item.possible_causes %}
+                        <div class="mb-2">
+                          <small class="text-muted d-block mb-1">
+                            <i class="bi bi-exclamation-triangle text-warning"></i> <strong>Возможные причины:</strong>
+                          </small>
+                          <small class="text-dark">{{ item.possible_causes|truncatewords:20 }}</small>
+                        </div>
+                      {% endif %}
+                      
+                      {% if item.consequences %}
+                        <div class="mb-2">
+                          <small class="text-danger d-block mb-1">
+                            <i class="bi bi-x-circle"></i> <strong>Последствия:</strong>
+                          </small>
+                          <small class="text-danger">{{ item.consequences|truncatewords:20 }}</small>
+                        </div>
+                      {% endif %}
+                      
+                      {% if item.additional_info %}
+                        <div class="alert alert-info mb-0 mt-2" style="padding: 0.5rem; font-size: 0.85rem;">
+                          <i class="bi bi-info-circle"></i> <strong>Важно:</strong> {{ item.additional_info|truncatewords:15 }}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <div class="text-center py-4">
+        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3 mb-0">Выявленных проблем не обнаружено</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .diagnostic-reference-customer-info .card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .diagnostic-reference-customer-info .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 42, 90, 0.15);
+  }
+</style>
+

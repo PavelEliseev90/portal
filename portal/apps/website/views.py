@@ -2467,12 +2467,12 @@ def docs_zn(request):
             docs = docs.filter(unit__id = unit_id)
 
         ###Добавляем информацию о рекомендациях и оптимизируем запросы
-        # Аннотации для счетчиков (Django автоматически создает related_name в нижнем регистре с _set)
+        # Аннотации для счетчиков (используем правильные related_name из модели)
         docs = docs.annotate(
-            products_count=Count('docznproduct_set', distinct=True),
-            works_count=Count('docznwork_set', distinct=True),
-            recomendations_customer_count=Count('doсrecomendation_set', filter=Q(doсrecomendation_set__customerStatus__gt=0), distinct=True),
-            recomendations_mcu_count=Count('doсrecomendationmcu_set', distinct=True),
+            products_count=Count('docznproduct', distinct=True),
+            works_count=Count('docznwork', distinct=True),
+            recomendations_customer_count=Count('doсrecomendation', filter=Q(doсrecomendation__customerStatus__gt=0), distinct=True),
+            recomendations_mcu_count=Count('doсrecomendationmcu', distinct=True),
         )
         
         # Подзапрос для новых рекомендаций

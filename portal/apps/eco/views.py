@@ -2881,12 +2881,21 @@ def doc(request, id):
             from register.models import DiagnosticReferenceSelection
             selections = DiagnosticReferenceSelection.objects.filter(
                 test_drive=estimation.page_test_drive
-            ).select_related('reference_item')
+            ).select_related('reference_item', 'reference_item__category')
             
             for selection in selections:
-                if selection.category_code not in selected_references:
-                    selected_references[selection.category_code] = []
-                selected_references[selection.category_code].append(selection.reference_item.id)
+                category_code = selection.category_code
+                if category_code not in selected_references:
+                    selected_references[category_code] = []
+                selected_references[category_code].append({
+                    'id': selection.reference_item.id,
+                    'title': selection.reference_item.title,
+                    'description': selection.reference_item.description,
+                    'observation_zones': selection.reference_item.observation_zones,
+                    'possible_causes': selection.reference_item.possible_causes,
+                    'consequences': selection.reference_item.consequences,
+                    'additional_info': selection.reference_item.additional_info,
+                })
         
         params = {
                 

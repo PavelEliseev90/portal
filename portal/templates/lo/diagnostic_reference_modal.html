@@ -5,6 +5,7 @@
       <div class="modal-header" style="border-bottom: 2px solid #f4f7fb; padding: 1.25rem 1.5rem;">
         <h5 class="modal-title" id="diagnosticReferenceModalLabel" style="font-size: 1.2rem; font-weight: 600; color: #002a5a;">
           <i class="bi bi-book"></i> Справочник диагностики: <span id="referenceCategoryName"></span>
+          <span id="referenceSelectedCount" class="badge bg-primary rounded-pill ms-2 d-none">0</span>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -75,7 +76,25 @@
     background: #f8f9fa;
     border-bottom: 1px solid rgba(0, 42, 90, 0.08);
     padding: 1rem;
-    border-radius: 0.75rem 0.75rem 0 0;
+    border-radius: 0.75rem;
+    transition: background-color 0.2s;
+  }
+  
+  .reference-item .card-header:hover {
+    background: #f0f2f5;
+  }
+  
+  .reference-item .card-header[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+  }
+  
+  .reference-item .card-header .bi-chevron-down {
+    transition: transform 0.3s;
+  }
+  
+  .reference-count-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
   }
   
   .reference-item .card-body {
@@ -164,43 +183,48 @@
       return;
     }
     
-    items.forEach(function(item) {
+    items.forEach(function(item, index) {
+      const collapseId = `collapse_ref_${item.id}`;
       const itemHtml = `
         <div class="card reference-item" data-item-id="${item.id}">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0" style="font-weight: 600; color: #002a5a;">
+          <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" 
+               data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+            <h6 class="mb-0" style="font-weight: 600; color: #002a5a; flex: 1;">
               <i class="bi bi-file-text"></i> ${escapeHtml(item.title)}
+              <i class="bi bi-chevron-down ms-2" style="font-size: 0.8rem;"></i>
             </h6>
-            <div class="form-check form-switch">
+            <div class="form-check form-switch ms-3" onclick="event.stopPropagation();">
               <input class="form-check-input reference-item-checkbox" type="checkbox" 
                      value="${item.id}" id="ref_${item.id}" 
                      data-item-id="${item.id}">
               <label class="form-check-label" for="ref_${item.id}" style="cursor: pointer;">Выбрать</label>
             </div>
           </div>
-          <div class="card-body">
-            ${item.description ? `<p class="text-muted mb-2">${escapeHtml(item.description)}</p>` : ''}
-            
-            ${item.observation_zones ? `
-              <strong><i class="bi bi-geo-alt"></i> Где наблюдается:</strong>
-              <div>${formatText(item.observation_zones)}</div>
-            ` : ''}
-            
-            ${item.possible_causes ? `
-              <strong><i class="bi bi-exclamation-triangle"></i> Возможные причины:</strong>
-              <div>${formatText(item.possible_causes)}</div>
-            ` : ''}
-            
-            ${item.consequences ? `
-              <strong><i class="bi bi-x-circle text-danger"></i> Последствия при игнорировании:</strong>
-              <div class="text-danger">${formatText(item.consequences)}</div>
-            ` : ''}
-            
-            ${item.additional_info ? `
-              <div class="alert alert-info mt-2 mb-0">
-                <strong>Важно:</strong> ${escapeHtml(item.additional_info)}
-              </div>
-            ` : ''}
+          <div class="collapse" id="${collapseId}">
+            <div class="card-body">
+              ${item.description ? `<p class="text-muted mb-2">${escapeHtml(item.description)}</p>` : ''}
+              
+              ${item.observation_zones ? `
+                <strong><i class="bi bi-geo-alt"></i> Где наблюдается:</strong>
+                <div>${formatText(item.observation_zones)}</div>
+              ` : ''}
+              
+              ${item.possible_causes ? `
+                <strong><i class="bi bi-exclamation-triangle"></i> Возможные причины:</strong>
+                <div>${formatText(item.possible_causes)}</div>
+              ` : ''}
+              
+              ${item.consequences ? `
+                <strong><i class="bi bi-x-circle text-danger"></i> Последствия при игнорировании:</strong>
+                <div class="text-danger">${formatText(item.consequences)}</div>
+              ` : ''}
+              
+              ${item.additional_info ? `
+                <div class="alert alert-info mt-2 mb-0">
+                  <strong>Важно:</strong> ${escapeHtml(item.additional_info)}
+                </div>
+              ` : ''}
+            </div>
           </div>
         </div>
       `;
@@ -219,7 +243,11 @@
         delete selectedItems[itemId];
         itemCard.removeClass('selected');
       }
+      updateSelectedCount();
     });
+    
+    // Обновление счетчика при загрузке
+    updateSelectedCount();
   }
   
   // Форматирование текста (замена переносов строк на HTML)
@@ -272,6 +300,45 @@
           }, 100);
         }
       });
+      // Обновляем счетчик после загрузки
+      setTimeout(function() {
+        updateSelectedCount();
+        updateCategoryCounter(categoryCode, selectedIds.length);
+      }, 300);
+    }
+  }
+  
+  // Обновление счетчика выбранных элементов
+  function updateSelectedCount() {
+    const count = Object.keys(selectedItems).filter(id => selectedItems[id]).length;
+    const countBadge = $('#referenceSelectedCount');
+    if (countBadge.length) {
+      countBadge.text(count);
+      if (count > 0) {
+        countBadge.removeClass('d-none');
+      } else {
+        countBadge.addClass('d-none');
+      }
+    }
+    
+    // Обновляем счетчик рядом с иконкой на странице
+    updateCategoryCounter(currentCategory, count);
+  }
+  
+  // Обновление счетчика рядом с иконкой категории
+  function updateCategoryCounter(categoryCode, count) {
+    const iconButton = $(`.diagnostic-reference-icon[data-category="${categoryCode}"]`);
+    if (iconButton.length) {
+      let badge = iconButton.find('.reference-count-badge');
+      if (badge.length === 0) {
+        badge = $('<span class="reference-count-badge badge bg-primary rounded-pill ms-1"></span>');
+        iconButton.append(badge);
+      }
+      if (count > 0) {
+        badge.text(count).show();
+      } else {
+        badge.hide();
+      }
     }
   }
   
@@ -292,40 +359,14 @@
       hiddenField.val(selectedIds.join(','));
     }
     
-    // Опционально: обновление комментария (можно добавить названия выбранных элементов)
-    updateCommentWithSelectedItems(currentCategory, selectedIds);
+    // Обновляем счетчик рядом с иконкой
+    updateCategoryCounter(currentCategory, selectedIds.length);
     
     $('#diagnosticReferenceModal').modal('hide');
     
     // Показываем уведомление
     showNotification(`Выбрано элементов: ${selectedIds.length}`, 'success');
   });
-  
-  // Обновление комментария с выбранными элементами (опционально)
-  function updateCommentWithSelectedItems(categoryCode, selectedIds) {
-    if (selectedIds.length === 0) return;
-    
-    // Получаем названия выбранных элементов
-    const selectedTitles = [];
-    $(`.reference-item-checkbox:checked`).each(function() {
-      const itemCard = $(this).closest('.reference-item');
-      const title = itemCard.find('h6').text().replace(/^.*? /, ''); // Убираем иконку
-      selectedTitles.push(title);
-    });
-    
-    // Можно добавить в комментарий или показать отдельно
-    // Например, добавить подсказку под полем комментария
-    const commentField = $(`#comment_${categoryCode}`);
-    if (commentField.length) {
-      let existingComment = commentField.val();
-      const referenceNote = '\n[Справочник: ' + selectedTitles.join(', ') + ']';
-      
-      // Добавляем только если еще не добавлено
-      if (!existingComment.includes('[Справочник:')) {
-        commentField.val(existingComment + referenceNote);
-      }
-    }
-  }
   
   // Показ уведомления
   function showNotification(message, type) {
