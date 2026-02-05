@@ -23493,6 +23493,23 @@
 
   <script>
     $(document).ready(function() {
+      // Создаем скрытые поля для всех категорий, если их нет
+      const categories = ['engine', 'gear', 'brake', 'suspension', 'system_og', 'wheel', 'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag'];
+      categories.forEach(function(categoryCode) {
+        let hiddenField = $(`input[name="selected_reference_items_${categoryCode}"]`);
+        if (hiddenField.length === 0) {
+          // Создаем скрытое поле, если его нет
+          hiddenField = $('<input>').attr({
+            type: 'hidden',
+            name: `selected_reference_items_${categoryCode}`,
+            id: `selected_reference_items_${categoryCode}`,
+            value: ''
+          });
+          // Добавляем в первую форму на странице
+          $('form').first().append(hiddenField);
+        }
+      });
+
       // Загружаем уже выбранные элементы из params
       {% if params.selected_references %}
         {% for category_code, items in params.selected_references.items %}
@@ -23502,10 +23519,21 @@
                 {{ item.id }}{% if not forloop.last %},{% endif %}
               {% endfor %}
             ];
-            $('#selected_reference_items_{{ category_code }}').val(itemIds.join(','));
+            var hiddenField = $('#selected_reference_items_{{ category_code }}');
+            if (hiddenField.length) {
+              hiddenField.val(itemIds.join(','));
+            }
           {% endif %}
         {% endfor %}
       {% endif %}
+
+      // Инициализируем бейджи после создания и заполнения полей
+      // Используем небольшую задержку, чтобы убедиться, что все поля созданы
+      setTimeout(function() {
+        if (typeof window.initializeCategoryBadges === 'function') {
+          window.initializeCategoryBadges();
+        }
+      }, 100);
     });
   </script>
 

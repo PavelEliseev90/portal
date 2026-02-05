@@ -357,6 +357,9 @@
     });
   }
   
+  // Делаем функцию доступной глобально для вызова из основного шаблона
+  window.initializeCategoryBadges = initializeCategoryBadges;
+  
   // Применение выбранных элементов
   $('#selectReferenceItems').on('click', function() {
     const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
@@ -402,11 +405,6 @@
     }, 3000);
   }
   
-  // Инициализация бейджей при загрузке страницы
-  $(document).ready(function() {
-    // Инициализируем бейджи для всех категорий
-    initializeCategoryBadges();
-  });
 })();
 </script>
 
