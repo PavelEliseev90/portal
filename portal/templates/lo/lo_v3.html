@@ -8908,7 +8908,13 @@
                         
                           <div class="portal-panel bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
                             <div class="">
-                              <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_expenses" aria-expanded="false" aria-controls="collapse_signal"> <b> &nbsp; Затраты - план / факт</b></label>  
+                              <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_expenses" aria-expanded="false" aria-controls="collapse_signal"> 
+                                <b> &nbsp; Затраты - план / факт</b>
+                                {% if params.expenses|length > 0 %}
+                                  <span class="badge bg-primary ms-2" id="expenses_count">{{params.expenses|length}} позиций</span>
+                                  <span class="badge bg-success ms-1" id="expenses_total">Итого: <span id="expenses_total_amount">0</span> &#8381;</span>
+                                {% endif %}
+                              </label>  
                               <div class="collapse" id="collapse_expenses">
                                 
                                 {% if params.expenses|length > 0 %}
@@ -8917,7 +8923,9 @@
                                     <div class=" fs-7">
                                       {% for expense in params.expenses %}
                                           
-                                        <div class="row g-1" style="border-bottom: dashed; padding-bottom: 0.1rem; border-bottom-width: 0.1rem;">
+                                        <div class="row g-1 expense-row" style="border-bottom: dashed; padding-bottom: 0.1rem; border-bottom-width: 0.1rem;" 
+                                             data-quantity="{{expense.qyantity|default:0}}" 
+                                             data-amount="{{expense.amount|default:0}}">
                                           <div class="col">
                                             <span class="badge bg-info">{{expense.type}}</span>
                                           </div>
@@ -8930,13 +8938,13 @@
                                           <div class="col">
                                             <label>{{expense.name}}</label>
                                           </div>
-                                          <div class="col">
+                                          <div class="col expense-quantity">
                                             <label>{{expense.qyantity}}</label>
                                           </div>
                                           <div class="col">
                                             <label>{{expense.price|floatformat:"2g" }} &#8381;</label>
                                           </div>
-                                          <div class="col">
+                                          <div class="col expense-amount">
                                             <label>{{expense.amount|floatformat:"2g" }} &#8381;</label>
                                           </div>
                                           {% if expense.description != '' %}
@@ -8948,8 +8956,78 @@
                                         </div>                                        
                                             
                                       {% endfor %}
+                                      
+                                      {# Итоговая строка #}
+                                      <div class="row g-1 mt-2 pt-2" style="border-top: 2px solid #0d6efd; font-weight: bold; background-color: rgba(13, 110, 253, 0.1);">
+                                        <div class="col">
+                                          <label><b>Итого:</b></label>
+                                        </div>
+                                        <div class="col-2">
+                                          <label></label>
+                                        </div>
+                                        <div class="col">
+                                          <label></label>
+                                        </div>
+                                        <div class="col">
+                                          <label></label>
+                                        </div>
+                                        <div class="col">
+                                          <label><b id="expenses_total_quantity">0</b></label>
+                                        </div>
+                                        <div class="col">
+                                          <label></label>
+                                        </div>
+                                        <div class="col">
+                                          <label><b id="expenses_total_amount_row">0.00</b> &#8381;</label>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
+                                  
+                                  <script>
+                                    function calculateExpensesTotals() {
+                                      var totalAmount = 0;
+                                      var totalQuantity = 0;
+                                      
+                                      $('.expense-row').each(function() {
+                                        var amount = parseFloat($(this).data('amount')) || 0;
+                                        var quantity = parseFloat($(this).data('quantity')) || 0;
+                                        totalAmount += amount;
+                                        totalQuantity += quantity;
+                                      });
+                                      
+                                      // Форматируем числа с пробелами для тысяч
+                                      function formatNumber(num) {
+                                        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+                                      }
+                                      
+                                      // Обновляем заголовок
+                                      var totalAmountEl = $('#expenses_total_amount');
+                                      if (totalAmountEl.length) {
+                                        totalAmountEl.text(formatNumber(totalAmount));
+                                      }
+                                      
+                                      // Обновляем итоговую строку
+                                      var totalQuantityEl = $('#expenses_total_quantity');
+                                      var totalAmountRowEl = $('#expenses_total_amount_row');
+                                      if (totalQuantityEl.length) {
+                                        totalQuantityEl.text(formatNumber(totalQuantity));
+                                      }
+                                      if (totalAmountRowEl.length) {
+                                        totalAmountRowEl.text(formatNumber(totalAmount));
+                                      }
+                                    }
+                                    
+                                    // Выполняем расчет при загрузке страницы
+                                    $(document).ready(function() {
+                                      calculateExpensesTotals();
+                                    });
+                                    
+                                    // Также выполняем при открытии блока (на случай, если блок был свернут при загрузке)
+                                    $('#collapse_expenses').on('shown.bs.collapse', function() {
+                                      calculateExpensesTotals();
+                                    });
+                                  </script>
                                   
                                 {% endif %}
 
