@@ -2784,6 +2784,8 @@ def doc(request, id):
                         if agreements > 0:
                             agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
 
+            expenses        = list_expenses(estimation)
+
             price_kors      = None #estimations_price_calculation(estimation, type_calculation='kors')
             price           = estimations_price_calculation(estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
