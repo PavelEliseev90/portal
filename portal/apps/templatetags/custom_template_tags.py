@@ -176,4 +176,8 @@ def get_item(dictionary, key):
     """Получить элемент из словаря по ключу"""
     if dictionary is None:
         return []
+    # Если это словарь (dict), возвращаем значение или None
+    if isinstance(dictionary, dict):
+        return dictionary.get(key)
+    # Для списков и других типов возвращаем элемент или пустой список
     return dictionary.get(key, [])
