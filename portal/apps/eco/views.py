@@ -8224,9 +8224,12 @@ def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids,
         op_rlk_qs = op_rlk_qs.filter(Q(unit__id__in=unit_ids) | Q(unit_dc__id__in=unit_ids))
     if unit_source_ids:
         names = RefUnit.objects.filter(id__in = unit_source_ids).values_list('name', flat=True)
+        names_list = list()
+        for name in names:
+            names_list.append(name.replace('ОП ', 'ДЦ '))
         op_rlk_qs = op_rlk_qs.filter(
-            Q(unit_dc__name__in=names) |
-            Q(unit__name__in=names, unit_dc__isnull=True)
+            Q(unit_dc__name__in=names_list) |
+            Q(unit__name__in=names_list, unit_dc__isnull=True)
         )
     if city_ids:
         # Фильтруем по городам подразделений
