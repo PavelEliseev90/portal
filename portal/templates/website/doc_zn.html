@@ -7,6 +7,10 @@
 
 {% block title_navbar %} - заказ наряд №{{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
 
+
+
+{% block content %}
+
 {% block extra_css %}
 <style>
   .doc-zn-page {
@@ -82,9 +86,8 @@
 
   .doc-zn-summary-details {
     display: flex;
-    justify-content: space-between;
     font-size: 0.9rem;
-    opacity: 0.95;
+    opacity: 0.95;    
   }
 
   .doc-zn-section {
@@ -218,11 +221,12 @@
 </style>
 {% endblock %}
 
-{% block content %}
+
+
 <div class="doc-zn-page">
   <div class="doc-zn-header">
     <h2>
-      <i class="bi bi-file-earmark-text"></i> Заказ-наряд №{{params.doc.nomer}}
+      <i class="bi bi-file-earmark-text"></i> Заказ-наряд № {{params.doc.nomer}} - {{params.doc.readyStatus.name}}
     </h2>
     <p class="text-muted mb-0">
       <i class="bi bi-calendar3"></i> {{params.doc.dataTime|date:"d.m.Y H:i"}}
@@ -270,12 +274,13 @@
     </div>
     {% endif %}
 
-    <div class="doc-zn-summary">
+    <div class="doc-zn-summary {% if not params.doc.closed %} bg-danger bg-gradient {% endif %}" >
       <div class="doc-zn-summary-title">Итого</div>
       <div class="doc-zn-summary-amount">{{params.doc.amount|floatformat:"2g"}} ₽</div>
       <div class="doc-zn-summary-details">
-        <span><i class="bi bi-bag"></i> Товары: {{params.doc.products_amount|floatformat:"2g"}} ₽</span>
-        <span><i class="bi bi-gear"></i> Работы: {{params.doc.works_amount|floatformat:"2g"}} ₽</span>
+        <span style="padding-left: 0.5rem;"><i class="bi bi-bag"></i> Товары: {{params.doc.products_amount|floatformat:"2g"}} ₽</span>
+        <span style="padding-left: 0.5rem;"><i class="bi bi-gear"></i> Работы: {{params.doc.works_amount|floatformat:"2g"}} ₽</span>
+        
       </div>
     </div>
   </div>
@@ -680,7 +685,7 @@
       <div class="accordion-item">
         <h2 class="accordion-header" id="flush-heading_dop_mcu">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse_dop_mcu{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-heading_dop_mcu">
-            Расширения малярно - кузовного участка - {{params.doc.recomendations_mcu_count}}
+            <i class="bi bi-plus-circle me-2"></i> Расширения малярно - кузовного участка - {{params.doc.recomendations_mcu_count}}
           </button>
         </h2>
         <div id="flush-collapse_dop_mcu{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-heading_dop_mcu" data-bs-parent="#accordionFlushExample">
