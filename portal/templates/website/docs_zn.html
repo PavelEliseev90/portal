@@ -261,13 +261,13 @@
 				<div class="card docs-zn-card h-100" onclick="window.location.href='{{doc.id}}/'; return false" style="cursor: pointer; transition: all 0.3s ease; border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.1);">
 					<div class="card-body">
 						<div class="row g-2 align-items-center mb-2">
-							<div class="col-md-2 col-sm-6">
+							<div class="col-md-1 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-calendar3"></i> Дата
 								</small>
 								<div class="fw-semibold">{{doc.dataTime|date:"d.m.Y H:i"}}</div>
 							</div>
-							<div class="col-md-2 col-sm-6">
+							<div class="col-md-1 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-hash"></i> Номер
 								</small>
@@ -275,11 +275,23 @@
 							</div>
 							<div class="col-md-2 col-sm-6">
 								<small class="text-muted d-block mb-1">
+									<i class="bi bi-building"></i> Подразделение
+								</small>
+								<div class="fw-semibold">{{doc.unit.name|default:"—"}}</div>
+							</div>
+							<div class="col-md-2 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-tools"></i> Статус
+								</small>
+								<div class="fw-semibold">{{doc.readyStatus.name|default:"—"}}</div>
+							</div>
+							<div class="col-md-2 col-sm-6">
+								<small class="text-muted d-block mb-1">
 									<i class="bi bi-tools"></i> Вид ремонта
 								</small>
 								<div class="fw-semibold">{{doc.typeRemont|default:"—"}}</div>
 							</div>
-							<div class="col-md-3 col-sm-6">
+							<div class="col-md-2 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-person"></i> Клиент
 								</small>
@@ -296,16 +308,17 @@
 									{% endif %}
 								</div>
 							</div>
-							<div class="col-md-3 col-sm-12">
+							<div class="col-md-2 col-sm-12">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-car-front"></i> Автомобиль
 								</small>
 								<div class="fw-semibold">
 									{% if doc.cars %}
-										{{doc.cars.mark|default:""}} {{doc.cars.model|default:""}}
-										{% if doc.cars.vin %}
-											<small class="text-muted d-block">VIN: {{doc.cars.vin}}</small>
-										{% endif %}
+										{{doc.cars.mark|default:""}} {{doc.cars.model|default:""}}  {{doc.cars.year|default:""}} г.в.
+										
+										<small class="text-muted d-block">VIN: {{doc.cars.vin|default:"-"}} Гос. номер: {{doc.cars_grz_board|default:"-"}}</small>
+										
+										
 									{% else %}
 										—
 									{% endif %}
@@ -313,40 +326,32 @@
 							</div>
 						</div>
 						
-						{% if doc.cars_grz_board %}
-						<div class="row mb-2">
-							<div class="col-12">
-								<small class="text-muted">
-									<i class="bi bi-123"></i> Гос. номер: <span class="fw-semibold">{{doc.cars_grz_board}}</span>
-								</small>
-							</div>
-						</div>
-						{% endif %}
-
-						<hr class="my-2">
-
+						
 						<div class="row g-2 align-items-center">
-							<div class="col-auto">
-								<div class="d-flex flex-wrap gap-2 align-items-center">
-									<span class="badge bg-light text-dark border">
-										<i class="bi bi-box-seam"></i> Запчасти: <strong>{{doc.products_count|default:0}}</strong>
-									</span>
-									<span class="badge bg-light text-dark border">
-										<i class="bi bi-wrench"></i> Работы: <strong>{{doc.works_count|default:0}}</strong>
-									</span>
+							<div class="col text-end">
+									{% if doc.products_count > 0 %}
+										<span class="badge bg-success bg-gradient">
+											<i class="bi bi-box-seam"></i> Запчасти: {{doc.products_count|default:0}}
+										</span>
+									{% endif %}
+									{% if doc.works_count > 0 %}
+										<span class="badge bg-success bg-gradient">
+											<i class="bi bi-wrench"></i> Работы: {{doc.works_count|default:0}}
+										</span>
+									{% endif %}
 									{% if doc.recomendations_customer_count > 0 %}
-									<span class="badge bg-info text-white">
-										<i class="bi bi-file-earmark-plus"></i> Рекомендации клиенту: <strong>{{doc.recomendations_customer_count}}</strong>
+									<span class="badge bg-success bg-gradient">
+										<i class="bi bi-file-earmark-plus"></i> Рекомендации клиенту: {{doc.recomendations_customer_count}}
 									</span>
 									{% endif %}
 									{% if doc.recomendations_mcu_count > 0 %}
-									<span class="badge bg-primary text-white">
-										<i class="bi bi-file-earmark-text"></i> Рекомендации МЦУ: <strong>{{doc.recomendations_mcu_count}}</strong>
+									<span class="badge bg-success bg-gradient">
+										<i class="bi bi-file-earmark-text"></i> Рекомендации МКУ: {{doc.recomendations_mcu_count}}
 									</span>
 									{% endif %}
-								</div>
+								
 							</div>
-							<div class="col text-end">
+							<div class="col-auto text-end">
 								<div class="d-inline-block px-3 py-2 rounded 
 									{% if doc.recomendations_new > 0 %}
 										bg-warning text-dark
