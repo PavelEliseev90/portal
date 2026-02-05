@@ -265,37 +265,37 @@
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-calendar3"></i> Дата
 								</small>
-								<div class="fw-semibold">{{doc.dataTime|date:"d.m.Y H:i"}}</div>
+								<div class="">{{doc.dataTime|date:"d.m.Y H:i"}}</div>
 							</div>
 							<div class="col-md-1 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-hash"></i> Номер
 								</small>
-								<div class="fw-semibold">{{doc.nomer}}</div>
+								<div class="">{{doc.nomer}}</div>
 							</div>
 							<div class="col-md-2 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-building"></i> Подразделение
 								</small>
-								<div class="fw-semibold">{{doc.unit.name|default:"—"}}</div>
+								<div class="">{{doc.unit.name|default:"—"}}</div>
 							</div>
 							<div class="col-md-2 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-tools"></i> Статус
 								</small>
-								<div class="fw-semibold">{{doc.readyStatus.name|default:"—"}}</div>
+								<div class="">{{doc.readyStatus.name|default:"—"}}</div>
 							</div>
 							<div class="col-md-2 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-tools"></i> Вид ремонта
 								</small>
-								<div class="fw-semibold">{{doc.typeRemont|default:"—"}}</div>
+								<div class="">{{doc.typeRemont|default:"—"}}</div>
 							</div>
 							<div class="col-md-2 col-sm-6">
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-person"></i> Клиент
 								</small>
-								<div class="fw-semibold">
+								<div class="">
 									{{doc.customer.name|default:"—"}}
 									{% if doc.customer and not doc.customer.company %}
 										{% with rating=doc.rating_customer %}
@@ -312,7 +312,7 @@
 								<small class="text-muted d-block mb-1">
 									<i class="bi bi-car-front"></i> Автомобиль
 								</small>
-								<div class="fw-semibold">
+								<div class="">
 									{% if doc.cars %}
 										{{doc.cars.mark|default:""}} {{doc.cars.model|default:""}}  {{doc.cars.year|default:""}} г.в.
 										
