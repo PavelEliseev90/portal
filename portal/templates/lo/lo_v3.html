@@ -4588,7 +4588,20 @@
                 <div class="card">
                   <div class="card-body">
 
-                    <h6><span class="icon-mbri-credit-card"></span> Двигатель</h6>
+                    <h6>
+                      <span class="icon-mbri-credit-card"></span> Двигатель
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#diagnosticReferenceModal"
+                        data-category="engine"
+                        title="Открыть справочник диагностики"
+                        style="color: #002a5a; text-decoration: none;"
+                      >
+                        <i class="bi bi-info-circle"></i>
+                      </button>
+                    </h6>
                     <hr class="my-3">
 
                     <div class="row">
@@ -7125,7 +7138,20 @@
                               <div class="col-12 col-xl-6">
                                 
                                 <div class="portal-panel">
-                                  <h6><span class="icon-mbri-info"></span> Двигатель</h6>
+                                  <h6>
+                                    <span class="icon-mbri-credit-card"></span> Двигатель
+                                    <button 
+                                      type="button" 
+                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                      data-bs-toggle="modal" 
+                                      data-bs-target="#diagnosticReferenceModal"
+                                      data-category="engine"
+                                      title="Открыть справочник диагностики"
+                                      style="color: #002a5a; text-decoration: none;"
+                                    >
+                                      <i class="bi bi-info-circle"></i>
+                                    </button>
+                                  </h6>
                                   
                                   <div class="kors-btn-group-wrapper-simple">
                                     <div class="kors-btn-group-compact" role="group" aria-label="Двигатель">
@@ -23213,5 +23239,7 @@
     </div>
   </div>
 </div>
+
+  {% include 'lo/diagnostic_reference_modal.html' %}
 
 {% endblock %}
