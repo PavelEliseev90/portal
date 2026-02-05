@@ -331,15 +331,30 @@
     if (iconButton.length) {
       let badge = iconButton.find('.reference-count-badge');
       if (badge.length === 0) {
-        badge = $('<span class="reference-count-badge badge bg-primary rounded-pill ms-1"></span>');
+        badge = $('<span class="reference-count-badge badge rounded-pill ms-1"></span>');
         iconButton.append(badge);
       }
+      // Всегда показываем бейдж: зеленый для 0, красный для >0
       if (count > 0) {
-        badge.text(count).show();
+        badge.removeClass('bg-success').addClass('bg-danger').text(count).show();
       } else {
-        badge.hide();
+        badge.removeClass('bg-danger').addClass('bg-success').text('0').show();
       }
     }
+  }
+  
+  // Инициализация бейджей при загрузке страницы
+  function initializeCategoryBadges() {
+    const categories = ['engine', 'gear', 'brake', 'suspension', 'system_og', 'wheel', 'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag'];
+    categories.forEach(function(categoryCode) {
+      const hiddenField = $(`input[name="selected_reference_items_${categoryCode}"]`);
+      let count = 0;
+      if (hiddenField.length && hiddenField.val()) {
+        const selectedIds = hiddenField.val().split(',').filter(id => id.trim());
+        count = selectedIds.length;
+      }
+      updateCategoryCounter(categoryCode, count);
+    });
   }
   
   // Применение выбранных элементов
@@ -386,6 +401,12 @@
       });
     }, 3000);
   }
+  
+  // Инициализация бейджей при загрузке страницы
+  $(document).ready(function() {
+    // Инициализируем бейджи для всех категорий
+    initializeCategoryBadges();
+  });
 })();
 </script>
 
