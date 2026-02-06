@@ -2965,9 +2965,9 @@ def update_trade_in_funnel(estimation):
         price_auto_bcp  = estimation.page_remote.price_auto_bcp
         diff            = estimation.page_remote.discount_torg + estimation.page_remote.zachita_ot_ubitka
         diff_summ = estimation.page_remote.price_eco - estimation.page_remote.price_auto
-        if diff < 0:
+        if diff_summ < 0:
             comparison_remote_type = -1
-        elif diff >= 0 and diff <= diff_summ:
+        elif diff_summ >= 0 and diff_summ <= diff:
             comparison_remote_type = 0
         else:
             comparison_remote_type = 1
@@ -2997,10 +2997,10 @@ def update_trade_in_funnel(estimation):
                 price_auto_before       = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.amount_ss
                 comparison_before       = price_before - estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.amount_ss
                 diff            = estimation.page_soglasovanie.discount_torg + estimation.page_soglasovanie.zachita_ot_ubitka
-                diff_summ       = price_before - estimation.page_soglasovanie.price_auto_2
-                if diff < 0:
+                diff_summ       = price_before - price_auto_before
+                if diff_summ < 0:
                     comparison_before_type = -1
-                elif diff >= 0 and diff <= diff_summ:
+                elif diff_summ >= 0 and diff_summ <= diff:
                     comparison_before_type = 0
                 else:
                     comparison_before_type = 1
@@ -3009,9 +3009,9 @@ def update_trade_in_funnel(estimation):
                 comparison_after        = price_after - estimation.page_soglasovanie.price_auto_2
                 diff            = estimation.page_soglasovanie.discount_torg + estimation.page_soglasovanie.zachita_ot_ubitka
                 diff_summ       = price_after - estimation.page_soglasovanie.price_auto_2
-                if diff < 0:
+                if diff_summ < 0:
                     comparison_after_type = -1
-                elif diff >= 0 and diff <= diff_summ:
+                elif diff_summ >= 0 and diff_summ <= diff:
                     comparison_after_type = 0
                 else:
                     comparison_after_type = 1
