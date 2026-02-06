@@ -10322,7 +10322,7 @@ def tradein_funnel_analytics_detail(request):
         # Дистанционная оценка аналитика
         analyst_id = _get_int(request.GET.get('analyst_id'))
         if analyst_id:
-            qs = qs.filter(analyst_remote_id=analyst_id, valid_date_remote)
+            qs = qs.filter(analyst_remote_id=analyst_id).filter(valid_date_remote)
             filter_title = f'Дистанционная оценка аналитика (ID: {analyst_id})'
         else:
             return HttpResponse('Не указан ID аналитика', status=400)
@@ -10330,7 +10330,7 @@ def tradein_funnel_analytics_detail(request):
         # До КД аналитика
         analyst_id = _get_int(request.GET.get('analyst_id'))
         if analyst_id:
-            qs = qs.filter(analyst_before_id=analyst_id, valid_date_before)
+            qs = qs.filter(analyst_before_id=analyst_id).filter(valid_date_before)
             filter_title = f'До КД аналитика (ID: {analyst_id})'
         else:
             return HttpResponse('Не указан ID аналитика', status=400)
@@ -10338,7 +10338,7 @@ def tradein_funnel_analytics_detail(request):
         # После КД аналитика
         analyst_id = _get_int(request.GET.get('analyst_id'))
         if analyst_id:
-            qs = qs.filter(analyst_after_id=analyst_id, valid_date_after)
+            qs = qs.filter(analyst_after_id=analyst_id).filter(valid_date_after)
             filter_title = f'После КД аналитика (ID: {analyst_id})'
         else:
             return HttpResponse('Не указан ID аналитика', status=400)
@@ -10346,7 +10346,7 @@ def tradein_funnel_analytics_detail(request):
         # Рабочие листы оценщика
         staff_id = _get_int(request.GET.get('staff_id'))
         if staff_id:
-            qs = qs.filter(staff_id=staff_id, valid_date_rlk)
+            qs = qs.filter(staff_id=staff_id).filter(valid_date_rlk)
             filter_title = f'Рабочие листы оценщика (ID: {staff_id})'
         else:
             return HttpResponse('Не указан ID оценщика', status=400)
