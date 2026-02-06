@@ -9049,7 +9049,7 @@ def sb_lo(request):
 
 def test(request):
     
-    #RegInteractivOcenka.objects.get(pk = 47119).save()
+    # RegInteractivOcenka.objects.get(pk = 47119).save()
     #DocRLK.objects.get(pk = 2607921).save()
 
     # date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
@@ -9061,7 +9061,7 @@ def test(request):
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
-    date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=11, year=2025)
     # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
     # count = len(estimations_id)
     # s = 0
@@ -9083,19 +9083,19 @@ def test(request):
         
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
-    from analytics.models import TradeInFunnel
-    alls = TradeInFunnel.objects.filter(brand__icontains = 'энгельса') | TradeInFunnel.objects.filter(brand__icontains = 'ваз')
-    count = len(alls)
-    s=0
-    for all in alls:
-        all.brand = all.brand.lower()
-        if all.unit_name == 'КорсАвто Обнинск':
-            all.city_id     = 16
-            all.city_name   = 'Обнинск' 
-        all.brand = 'lada'
-        all.save()
-        s = s + 1 
-        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+    # from analytics.models import TradeInFunnel
+    # alls = TradeInFunnel.objects.filter(brand__icontains = 'энгельса') | TradeInFunnel.objects.filter(brand__icontains = 'ваз')
+    # count = len(alls)
+    # s=0
+    # for all in alls:
+    #     all.brand = all.brand.lower()
+    #     if all.unit_name == 'КорсАвто Обнинск':
+    #         all.city_id     = 16
+    #         all.city_name   = 'Обнинск' 
+    #     all.brand = 'lada'
+    #     all.save()
+    #     s = s + 1 
+    #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
     # estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
     # count = len(estimations_id)
