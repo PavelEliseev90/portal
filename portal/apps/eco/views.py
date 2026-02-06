@@ -1530,6 +1530,7 @@ def tradein_funnel_rejected(request):
     unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
     source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
     staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
+    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
     type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
     
     # Одиночные фильтры
@@ -1539,6 +1540,9 @@ def tradein_funnel_rejected(request):
     staff_id = _get_int(request.GET.get('staff_id'))
     if staff_id and staff_id not in staff_ids:
         staff_ids.append(staff_id)
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    if analyst_id and analyst_id not in analyst_ids:
+        analyst_ids.append(analyst_id)
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
     if type_reception_id and type_reception_id not in type_reception_ids:
         type_reception_ids.append(type_reception_id)
@@ -1574,6 +1578,20 @@ def tradein_funnel_rejected(request):
         rlk__in=docs_all.values_list('id', flat=True)
     ).exclude(staff__isnull=True).values_list('staff_id', flat=True).distinct())
     staffs = RefStaff.objects.filter(id__in=staff_ids_from_est).exclude(name='').order_by('name') if staff_ids_from_est else RefStaff.objects.none()
+    
+    # Получаем список аналитиков из всех оценок в периоде (до применения фильтров)
+    analyst_ids_from_est = set()
+    analyst_ids_from_est.update(
+        RegInteractivOcenka.objects.filter(
+            rlk__in=docs_all.values_list('id', flat=True)
+        ).exclude(staff_eco_1__isnull=True).values_list('staff_eco_1_id', flat=True).distinct()
+    )
+    analyst_ids_from_est.update(
+        RegInteractivOcenka.objects.filter(
+            rlk__in=docs_all.values_list('id', flat=True)
+        ).exclude(staff_eco_2__isnull=True).values_list('staff_eco_2_id', flat=True).distinct()
+    )
+    analysts = RefStaff.objects.filter(id__in=list(analyst_ids_from_est)).exclude(name='').order_by('name') if analyst_ids_from_est else RefStaff.objects.none()
     
     # Получаем список типов приема из всех оценок в периоде (до применения фильтров)
     type_reception_ids_from_est = set()
@@ -1623,6 +1641,15 @@ def tradein_funnel_rejected(request):
     # Фильтр по причине архива (если указан)
     reason_archive_filter = request.GET.get('reason_archive', '').strip()
     
+    # Дополнительные фильтры для анализа причин непринятия
+    has_agreement_filter = request.GET.get('has_agreement', '').strip()
+    has_footing_agreement_filter = request.GET.get('has_footing_agreement', '').strip()
+    has_diagnostics_filter = request.GET.get('has_diagnostics', '').strip()
+    has_lo_filter = request.GET.get('has_lo', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    price_before_exists_filter = request.GET.get('price_before_exists', '').strip()
+    price_after_exists_filter = request.GET.get('price_after_exists', '').strip()
+    
     docs = docs.annotate(
         has_estimation=Exists(RegInteractivOcenka.objects.filter(rlk=OuterRef('id'))),
         start_estimation=Subquery(subquery_est.values('start_estimation')[:1]),
@@ -1649,6 +1676,10 @@ def tradein_funnel_rejected(request):
         year=Subquery(subquery_est.values('year')[:1]),
         staff_name=Subquery(subquery_est.values('staff__name')[:1]),
         staff_id=Subquery(subquery_est.values('staff__id')[:1]),
+        # Аналитики
+        analyst_remote_id=Subquery(subquery_est.values('staff_eco_1__id')[:1]),
+        analyst_before_id=Subquery(subquery_est.values('staff_eco_2__id')[:1]),
+        analyst_after_id=Subquery(subquery_est.values('staff_eco_2__id')[:1]),
         reg_estimation_id=Subquery(subquery_est.values('id')[:1]),
     )
     
@@ -1682,6 +1713,13 @@ def tradein_funnel_rejected(request):
     if staff_ids:
         docs = docs.filter(staff_id__in=staff_ids)
     
+    # Фильтр по аналитикам
+    if analyst_ids:
+        analyst_q = Q()
+        for a_id in analyst_ids:
+            analyst_q |= Q(analyst_remote_id=a_id) | Q(analyst_before_id=a_id) | Q(analyst_after_id=a_id)
+        docs = docs.filter(analyst_q)
+    
     # Фильтр по типам приема
     if type_reception_ids:
         type_reception_q = Q()
@@ -1692,6 +1730,8 @@ def tradein_funnel_rejected(request):
     # Собираем все документы в один список (без группировки)
     rejected_items = []
     reason_archive_stats = defaultdict(int)  # Статистика причин архива
+    failure_reasons_stats = defaultdict(int)  # Статистика причин срыва
+    footing_stats = defaultdict(int)  # Статистика по основаниям
     
     # Импортируем модели для анализа сделки
     from documents.models import DocCarShipment, DocCarAgreement
@@ -1741,22 +1781,77 @@ def tradein_funnel_rejected(request):
         failure_analysis = []
         if not doc.lo_exists:
             failure_analysis.append("Не создан лист оценки")
+            failure_reasons_stats["Не создан лист оценки"] += 1
         elif doc.lo_active is False:
             failure_analysis.append("Лист оценки не проведен")
+            failure_reasons_stats["Лист оценки не проведен"] += 1
         
         if doc.status_name and 'принят' not in doc.status_name.lower():
             failure_analysis.append(f"Статус: {doc.status_name}")
+            failure_reasons_stats[f"Статус: {doc.status_name}"] += 1
         
         if doc.price_before_kd and doc.price_before_kd == 0:
             failure_analysis.append("Не согласована цена до КД")
+            failure_reasons_stats["Не согласована цена до КД"] += 1
         elif doc.price_after_kd and doc.price_after_kd == 0:
             failure_analysis.append("Не согласована цена после КД")
+            failure_reasons_stats["Не согласована цена после КД"] += 1
         
         if not doc.start_estimation:
             failure_analysis.append("Оценка не начата")
+            failure_reasons_stats["Оценка не начата"] += 1
         
         if doc.archive:
             failure_analysis.append("Документ в архиве")
+            failure_reasons_stats["Документ в архиве"] += 1
+        
+        # Определяем наличие соглашения
+        has_agreement = (doc.price_before_kd and doc.price_before_kd > 0) or (doc.price_after_kd and doc.price_after_kd > 0)
+        
+        # Определяем наличие соглашения/отгрузки в основании
+        has_footing_agreement = len(footing_analysis) > 0
+        if has_footing_agreement:
+            for footing_item in footing_analysis:
+                if "Соглашение" in footing_item:
+                    footing_stats["Есть соглашение в основании"] += 1
+                elif "Отгрузка" in footing_item:
+                    footing_stats["Есть отгрузка в основании"] += 1
+                elif "Основание в архиве" in footing_item:
+                    footing_stats["Основание в архиве"] += 1
+        
+        # Применяем дополнительные фильтры
+        if has_agreement_filter == 'yes' and not has_agreement:
+            continue
+        if has_agreement_filter == 'no' and has_agreement:
+            continue
+        
+        if has_footing_agreement_filter == 'yes' and not has_footing_agreement:
+            continue
+        if has_footing_agreement_filter == 'no' and has_footing_agreement:
+            continue
+        
+        if has_diagnostics_filter == 'yes' and not bool(doc.has_diagnostics or doc.no_diagnostica):
+            continue
+        if has_diagnostics_filter == 'no' and bool(doc.has_diagnostics or doc.no_diagnostica):
+            continue
+        
+        if has_lo_filter == 'yes' and not doc.lo_exists:
+            continue
+        if has_lo_filter == 'no' and doc.lo_exists:
+            continue
+        
+        if status_filter and doc.status_name and status_filter.lower() not in doc.status_name.lower():
+            continue
+        
+        if price_before_exists_filter == 'yes' and not (doc.price_before_kd and doc.price_before_kd > 0):
+            continue
+        if price_before_exists_filter == 'no' and (doc.price_before_kd and doc.price_before_kd > 0):
+            continue
+        
+        if price_after_exists_filter == 'yes' and not (doc.price_after_kd and doc.price_after_kd > 0):
+            continue
+        if price_after_exists_filter == 'no' and (doc.price_after_kd and doc.price_after_kd > 0):
+            continue
         
         rejected_items.append({
             'rlk': doc,
@@ -1784,6 +1879,9 @@ def tradein_funnel_rejected(request):
             'footing_analysis': footing_analysis,
             'estimation_id': doc.reg_estimation_id,
             'has_diagnostics': bool(doc.has_diagnostics or doc.no_diagnostica),
+            'has_agreement': has_agreement,
+            'has_footing_agreement': has_footing_agreement,
+            'lo_exists': doc.lo_exists,
         })
     
     # Сортируем по дате (новые сверху)
@@ -1802,14 +1900,30 @@ def tradein_funnel_rejected(request):
         'staff_id': staff_id or '',
         'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
         'staff_ids_list': staff_ids,
+        'analyst_id': analyst_id or '',
+        'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
+        'analyst_ids_list': analyst_ids,
         'type_reception_id': type_reception_id or '',
         'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
         'type_reception_ids_list': type_reception_ids,
         'reason_archive': reason_archive_filter,
+        'has_agreement': has_agreement_filter,
+        'has_footing_agreement': has_footing_agreement_filter,
+        'has_diagnostics': has_diagnostics_filter,
+        'has_lo': has_lo_filter,
+        'status': status_filter,
+        'price_before_exists': price_before_exists_filter,
+        'price_after_exists': price_after_exists_filter,
     }
     
     # Сортируем статистику причин архива по количеству (по убыванию)
     reason_archive_stats_sorted = sorted(reason_archive_stats.items(), key=lambda x: x[1], reverse=True)
+    
+    # Сортируем статистику причин срыва по количеству (по убыванию)
+    failure_reasons_stats_sorted = sorted(failure_reasons_stats.items(), key=lambda x: x[1], reverse=True)
+    
+    # Сортируем статистику по основаниям по количеству (по убыванию)
+    footing_stats_sorted = sorted(footing_stats.items(), key=lambda x: x[1], reverse=True)
     
     params = {
         'type': 'eco_funnel',
@@ -1819,10 +1933,13 @@ def tradein_funnel_rejected(request):
         'unit_groups': unit_groups,
         'source_units': source_units,
         'staffs': staffs,
+        'analysts': analysts,
         'type_receptions': type_receptions,
         'rejected_items': rejected_items,
         'total_count': len(rejected_items),
         'reason_archive_stats': reason_archive_stats_sorted,
+        'failure_reasons_stats': failure_reasons_stats_sorted,
+        'footing_stats': footing_stats_sorted,
     }
     
     return render(request, 'lo/tradein_funnel_rejected.html', {'params': params})
@@ -10264,6 +10381,36 @@ def eco_analysts_performance(request):
     # Сортируем по общему количеству оценок
     analyst_stats.sort(key=lambda x: x['total_estimations'], reverse=True)
     
+    # Общие показатели (суммируем по всем аналитикам)
+    total_estimations_all = sum(s['total_estimations'] for s in analyst_stats)
+    total_remote_all = sum(s['remote']['count'] for s in analyst_stats)
+    total_before_all = sum(s['before']['count'] for s in analyst_stats)
+    total_after_all = sum(s['after']['count'] for s in analyst_stats)
+    
+    # Общие показатели дистанционной оценки
+    remote_below_all = sum(s['remote']['below'] for s in analyst_stats)
+    remote_equal_all = sum(s['remote']['equal'] for s in analyst_stats)
+    remote_above_all = sum(s['remote']['above'] for s in analyst_stats)
+    remote_total_comparison = remote_below_all + remote_equal_all + remote_above_all
+    
+    # Средние цены для дистанционной оценки (взвешенные)
+    remote_price_sum = sum(s['remote']['avg_price'] * s['remote']['count'] for s in analyst_stats if s['remote']['count'] > 0)
+    remote_auto_sum = sum(s['remote']['avg_auto'] * s['remote']['count'] for s in analyst_stats if s['remote']['count'] > 0)
+    remote_avg_price_all = (remote_price_sum / total_remote_all) if total_remote_all > 0 else 0
+    remote_avg_auto_all = (remote_auto_sum / total_remote_all) if total_remote_all > 0 else 0
+    
+    # Общие показатели для до КД
+    before_below_all = sum(s['before']['below'] for s in analyst_stats)
+    before_equal_all = sum(s['before']['equal'] for s in analyst_stats)
+    before_above_all = sum(s['before']['above'] for s in analyst_stats)
+    before_total_comparison = before_below_all + before_equal_all + before_above_all
+    
+    # Общие показатели для после КД
+    after_below_all = sum(s['after']['below'] for s in analyst_stats)
+    after_equal_all = sum(s['after']['equal'] for s in analyst_stats)
+    after_above_all = sum(s['after']['above'] for s in analyst_stats)
+    after_total_comparison = after_below_all + after_equal_all + after_above_all
+    
     # Загружаем справочники для фильтров
     from refs.models import RefCity, RefStaff
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
@@ -10285,6 +10432,35 @@ def eco_analysts_performance(request):
         'type': 'eco_funnel',
         'nav_selected': 4,
         'analyst_stats': analyst_stats,
+        'totals': {
+            'total_estimations': total_estimations_all,
+            'total_remote': total_remote_all,
+            'total_before': total_before_all,
+            'total_after': total_after_all,
+        },
+        'remote_totals': {
+            'total': total_remote_all,
+            'below': remote_below_all,
+            'equal': remote_equal_all,
+            'above': remote_above_all,
+            'total_comparison': remote_total_comparison,
+            'avg_price': remote_avg_price_all,
+            'avg_auto': remote_avg_auto_all,
+        },
+        'before_totals': {
+            'total': total_before_all,
+            'below': before_below_all,
+            'equal': before_equal_all,
+            'above': before_above_all,
+            'total_comparison': before_total_comparison,
+        },
+        'after_totals': {
+            'total': total_after_all,
+            'below': after_below_all,
+            'equal': after_equal_all,
+            'above': after_above_all,
+            'total_comparison': after_total_comparison,
+        },
         'filters': {
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),

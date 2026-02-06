@@ -178,7 +178,7 @@
         <p>Анализ воронки Trade-In на основе данных TradeInFunnel</p>
       </div>
       <div>
-        <a href="{% url 'eco:tradein_funnel_rejected' %}?{{ request.GET.urlencode }}" 
+        <a href="/eco/funnel/rejected/?{{ request.GET.urlencode }}" 
            class="btn btn-outline-danger">
           📊 Анализ не принятых
         </a>

@@ -201,6 +201,129 @@
     </div>
   </form>
 
+  <!-- Общие показатели -->
+  {% if params.totals %}
+    <div class="kors-panel mb-3">
+      <div class="kors-panel__head">
+        <h3>Общие показатели</h3>
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <h5 class="text-muted mb-1">Всего оценок</h5>
+              <h3 class="mb-0">{{ params.totals.total_estimations|floatformat:"0g" }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <h5 class="text-muted mb-1">Дистанционно</h5>
+              <h3 class="mb-0">{{ params.totals.total_remote|floatformat:"0g" }}</h3>
+              {% if params.totals.total_remote > 0 %}
+                <div class="mt-2">
+                  <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote&{{ request.GET.urlencode }}" 
+                     class="btn btn-sm btn-outline-primary">👁️ Детали</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <h5 class="text-muted mb-1">До КД</h5>
+              <h3 class="mb-0">{{ params.totals.total_before|floatformat:"0g" }}</h3>
+              {% if params.totals.total_before > 0 %}
+                <div class="mt-2">
+                  <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before&{{ request.GET.urlencode }}" 
+                     class="btn btn-sm btn-outline-primary">👁️ Детали</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <h5 class="text-muted mb-1">После КД</h5>
+              <h3 class="mb-0">{{ params.totals.total_after|floatformat:"0g" }}</h3>
+              {% if params.totals.total_after > 0 %}
+                <div class="mt-2">
+                  <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after&{{ request.GET.urlencode }}" 
+                     class="btn btn-sm btn-outline-primary">👁️ Детали</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Общие показатели дистанционной оценки -->
+  {% if params.remote_totals and params.remote_totals.total > 0 %}
+    <div class="kors-panel mb-3">
+      <div class="kors-panel__head">
+        <h3>Общие показатели дистанционной оценки</h3>
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_totals.total|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Всего дистанционных оценок</p>
+            <div class="mt-2">
+              <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote&{{ request.GET.urlencode }}" 
+                 class="btn btn-sm btn-outline-primary">👁️ Детали</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1 text-danger">{{ params.remote_totals.below|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Ниже авторасчета</p>
+            {% if params.remote_totals.total_comparison > 0 %}
+              <span class="badge bg-danger mt-1">{{ params.remote_totals.below|floatformat:"0g" }} / {{ params.remote_totals.total_comparison|floatformat:"0g" }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1 text-info">{{ params.remote_totals.equal|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Равно авторасчету</p>
+            {% if params.remote_totals.total_comparison > 0 %}
+              <span class="badge bg-info mt-1">{{ params.remote_totals.equal|floatformat:"0g" }} / {{ params.remote_totals.total_comparison|floatformat:"0g" }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1 text-success">{{ params.remote_totals.above|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Выше авторасчета</p>
+            {% if params.remote_totals.total_comparison > 0 %}
+              <span class="badge bg-success mt-1">{{ params.remote_totals.above|floatformat:"0g" }} / {{ params.remote_totals.total_comparison|floatformat:"0g" }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-6">
+          <div class="text-center p-3 bg-light rounded">
+            <h5 class="mb-1">Средняя цена аналитика</h5>
+            <h4 class="mb-0">{{ params.remote_totals.avg_price|floatformat:"0g" }} ₽</h4>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-center p-3 bg-light rounded">
+            <h5 class="mb-1">Средняя цена авторасчета</h5>
+            <h4 class="mb-0">{{ params.remote_totals.avg_auto|floatformat:"0g" }} ₽</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
   {% if params.analyst_stats %}
     {% for analyst in params.analyst_stats %}
       <div class="analyst-card is-collapsed" id="analystCard{{ analyst.analyst_id }}">
