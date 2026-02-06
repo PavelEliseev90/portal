@@ -7084,6 +7084,20 @@ def korsavto_dashboard(request):
     return render(request, 'kors/dashboard.html', {'params': params})
 
 
+@login_required
+def main_menu(request):
+    """
+    Главное меню системы - быстрый доступ ко всем разделам
+    """
+    params = {
+        'type': 'main_menu',
+        'nav_selected': 0,
+        'request': request,
+    }
+    
+    return render(request, 'kors/menu.html', {'params': params})
+
+
 def korsavto_settings_dc_cars(request, slug):
     
     car = RefCarsOrganization.objects.filter(slug = slug)[0]
