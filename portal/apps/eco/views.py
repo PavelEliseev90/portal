@@ -1675,7 +1675,7 @@ def tradein_funnel_rejected(request):
         modification=Subquery(subquery_est.values('modification__name')[:1]),
         year=Subquery(subquery_est.values('year')[:1]),
         staff_name=Subquery(subquery_est.values('staff__name')[:1]),
-        staff_id=Subquery(subquery_est.values('staff__id')[:1]),
+        estimation_staff_id=Subquery(subquery_est.values('staff__id')[:1]),
         # Аналитики
         analyst_remote_id=Subquery(subquery_est.values('staff_eco_1__id')[:1]),
         analyst_before_id=Subquery(subquery_est.values('staff_eco_2__id')[:1]),
