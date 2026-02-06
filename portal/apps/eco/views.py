@@ -10354,7 +10354,7 @@ def tradein_funnel_analytics_detail(request):
         # Принятые оценщиком
         staff_id = _get_int(request.GET.get('staff_id'))
         if staff_id:
-            qs = qs.filter(staff_id=staff_id, valid_date_reception)
+            qs = qs.filter(staff_id=staff_id).filter(valid_date_reception)
             filter_title = f'Принятые оценщиком (ID: {staff_id})'
         else:
             return HttpResponse('Не указан ID оценщика', status=400)
