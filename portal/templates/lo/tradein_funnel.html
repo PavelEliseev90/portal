@@ -547,6 +547,105 @@
     {% endfor %}
   </div>
 
+  <!-- Бейдж эффективности дистанционной оценки -->
+  {% if params.remote_effectiveness %}
+    <div class="kors-panel mb-3">
+      <div class="kors-panel__head">
+        <h3>Эффективность дистанционной оценки</h3>
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.total_remote|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Всего дистанционных оценок</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.got_price_before|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Получили цену до КД</p>
+            <span class="badge bg-primary mt-1">{{ params.remote_effectiveness.conv_to_before }}%</span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.got_price_after|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Получили цену после КД</p>
+            <span class="badge bg-primary mt-1">{{ params.remote_effectiveness.conv_to_after }}%</span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.accepted|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Было принято</p>
+            <span class="badge bg-success mt-1">{{ params.remote_effectiveness.conv_to_accepted }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Временные промежутки -->
+  {% if params.time_intervals %}
+    <div class="kors-panel mb-3">
+      <div class="kors-panel__head">
+        <h3>Временные промежутки</h3>
+      </div>
+      <div class="row g-3 mt-2">
+        {% if params.time_intervals.rlk_to_start.count > 0 %}
+          <div class="col-md-4 col-lg-2">
+            <div class="text-center p-2 bg-light rounded">
+              <h5 class="mb-1 text-primary">{{ params.time_intervals.rlk_to_start.avg_days|floatformat:"1g" }}</h5>
+              <p class="mb-0 text-muted small">дней</p>
+              <p class="mb-0 text-muted" style="font-size: 0.75rem;">РЛК → Начало оценки</p>
+              <span class="badge bg-secondary mt-1" style="font-size: 0.7rem;">n={{ params.time_intervals.rlk_to_start.count }}</span>
+            </div>
+          </div>
+        {% endif %}
+        {% if params.time_intervals.start_to_remote.count > 0 %}
+          <div class="col-md-4 col-lg-2">
+            <div class="text-center p-2 bg-light rounded">
+              <h5 class="mb-1 text-info">{{ params.time_intervals.start_to_remote.avg_days|floatformat:"1g" }}</h5>
+              <p class="mb-0 text-muted small">дней</p>
+              <p class="mb-0 text-muted" style="font-size: 0.75rem;">Начало → Дистанционная</p>
+              <span class="badge bg-secondary mt-1" style="font-size: 0.7rem;">n={{ params.time_intervals.start_to_remote.count }}</span>
+            </div>
+          </div>
+        {% endif %}
+        {% if params.time_intervals.start_to_before.count > 0 %}
+          <div class="col-md-4 col-lg-2">
+            <div class="text-center p-2 bg-light rounded">
+              <h5 class="mb-1 text-warning">{{ params.time_intervals.start_to_before.avg_days|floatformat:"1g" }}</h5>
+              <p class="mb-0 text-muted small">дней</p>
+              <p class="mb-0 text-muted" style="font-size: 0.75rem;">Начало → До КД</p>
+              <span class="badge bg-secondary mt-1" style="font-size: 0.7rem;">n={{ params.time_intervals.start_to_before.count }}</span>
+            </div>
+          </div>
+        {% endif %}
+        {% if params.time_intervals.before_to_after.count > 0 %}
+          <div class="col-md-4 col-lg-2">
+            <div class="text-center p-2 bg-light rounded">
+              <h5 class="mb-1 text-danger">{{ params.time_intervals.before_to_after.avg_days|floatformat:"1g" }}</h5>
+              <p class="mb-0 text-muted small">дней</p>
+              <p class="mb-0 text-muted" style="font-size: 0.75rem;">До КД → После КД</p>
+              <span class="badge bg-secondary mt-1" style="font-size: 0.7rem;">n={{ params.time_intervals.before_to_after.count }}</span>
+            </div>
+          </div>
+        {% endif %}
+        {% if params.time_intervals.after_to_reception.count > 0 %}
+          <div class="col-md-4 col-lg-2">
+            <div class="text-center p-2 bg-light rounded">
+              <h5 class="mb-1 text-success">{{ params.time_intervals.after_to_reception.avg_days|floatformat:"1g" }}</h5>
+              <p class="mb-0 text-muted small">дней</p>
+              <p class="mb-0 text-muted" style="font-size: 0.75rem;">После КД → Принятие</p>
+              <span class="badge bg-secondary mt-1" style="font-size: 0.7rem;">n={{ params.time_intervals.after_to_reception.count }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
   <div class="row g-3">
     <div class="col-xl-3 col-sm-6">
       <article class="kors-stage-card">

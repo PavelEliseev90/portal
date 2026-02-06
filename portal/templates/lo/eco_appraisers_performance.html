@@ -33,50 +33,54 @@
     color: #8ea1ba;
   }
 
-  .kors-panel {
-    background: #fff;
-    border-radius: 1.3rem;
-    padding: 1.25rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
-    margin-bottom: 1.5rem;
-  }
-
-  .kors-panel__head h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin-bottom: 0.35rem;
-  }
-
-  .table th {
-    background: #f8f9fa;
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6c7a92;
-    border-bottom: 2px solid #dee2e6;
-  }
-
-  .table td {
-    vertical-align: middle;
-    font-size: 0.9rem;
-  }
-
   .appraiser-card {
     background: #fff;
     border-radius: 1rem;
-    padding: 1.25rem;
+    padding: 0;
     border: 1px solid rgba(0, 42, 90, 0.08);
     box-shadow: 0 10px 25px rgba(0, 23, 61, 0.05);
     margin-bottom: 1.5rem;
+    overflow: hidden;
   }
 
-  .appraiser-card h4 {
+  .appraiser-card__header {
+    padding: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+  }
+
+  .appraiser-card__header:hover {
+    background: #f0f1f2;
+  }
+
+  .appraiser-card__header h4 {
     color: #002a5a;
     font-size: 1.2rem;
-    margin-bottom: 1rem;
+    margin: 0;
+    flex: 1;
+  }
+
+  .appraiser-card__toggle {
+    font-size: 1.2rem;
+    color: #6c7a92;
+    transition: transform 0.3s;
+  }
+
+  .appraiser-card.is-collapsed .appraiser-card__toggle {
+    transform: rotate(-90deg);
+  }
+
+  .appraiser-card__body {
+    padding: 1.25rem;
+    display: block;
+  }
+
+  .appraiser-card.is-collapsed .appraiser-card__body {
+    display: none;
   }
 
   .conv-badge {
@@ -101,6 +105,20 @@
     background: #ef4444;
     color: #fff;
   }
+
+  .list-group {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .list-group-item {
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
 </style>
 
 <div class="kors-funnel-page">
@@ -109,7 +127,7 @@
     <p>Детальный анализ работы оценщиков на основе данных TradeInFunnel</p>
   </div>
 
-  <form class="kors-filter" method="get">
+  <form class="kors-filter" method="get" id="funnelFilterForm" onsubmit="return prepareFormData(this);">
     <div class="row g-3 align-items-end">
       <div class="col-md-3">
         <label class="form-label text-uppercase">Дата с</label>
@@ -120,136 +138,194 @@
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label text-uppercase">Подразделения</label>
-        <select class="form-select" name="unit_ids" multiple>
-          {% for unit in params.units %}
-            <option value="{{ unit.id }}" {% if unit.id in params.filters.unit_ids_list %}selected{% endif %}>{{ unit.name }}</option>
-          {% endfor %}
-        </select>
+        <button class="btn btn-primary px-4" type="submit">Применить</button>
       </div>
       <div class="col-md-3">
-        <label class="form-label text-uppercase">Оценщики</label>
-        <select class="form-select" name="staff_ids" multiple>
-          {% for staff in params.staffs %}
-            <option value="{{ staff.id }}" {% if staff.id in params.filters.staff_ids_list %}selected{% endif %}>{{ staff.name }}</option>
-          {% endfor %}
-        </select>
+        <button class="btn btn-secondary px-4" type="button" onclick="resetFilters()">Сбросить</button>
       </div>
-      <div class="col-md-12">
-        <button type="submit" class="btn btn-primary">Применить фильтры</button>
-        <a href="{% url 'eco:eco_appraisers_performance' %}" class="btn btn-outline-secondary">Сбросить</a>
+    </div>
+    
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Источник приема</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="sourceUnitSearch" placeholder="Поиск по источникам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="sourceUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.source_units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_source_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_source_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedSourceUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Подразделения</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Оценщики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="staffSearch" placeholder="Поиск по оценщикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="staffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for staff in params.staffs %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="staff_ids" value="{{ staff.id }}" 
+                  {% if staff.id in params.filters.staff_ids_list %}checked{% endif %}>
+                {{ staff.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedStaffs" class="mt-2"></div>
       </div>
     </div>
   </form>
 
   {% if params.staff_stats %}
     {% for staff in params.staff_stats %}
-      <div class="appraiser-card">
-        <h4>{{ staff.staff_name }}</h4>
-        
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <div class="card bg-light">
-              <div class="card-body text-center">
-                <h5 class="text-muted mb-1">Рабочих листов</h5>
-                <h3 class="mb-0">{{ staff.total_rlk }}</h3>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card bg-light">
-              <div class="card-body text-center">
-                <h5 class="text-muted mb-1">До КД / Дистанционно</h5>
-                <h3 class="mb-0">{{ staff.total_before }}</h3>
-                <small class="text-muted">{{ staff.conv_before|floatformat:"1g" }}%</small>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card bg-light">
-              <div class="card-body text-center">
-                <h5 class="text-muted mb-1">После КД</h5>
-                <h3 class="mb-0">{{ staff.total_after }}</h3>
-                <small class="text-muted">{{ staff.conv_after|floatformat:"1g" }}%</small>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card bg-light">
-              <div class="card-body text-center">
-                <h5 class="text-muted mb-1">Принято</h5>
-                <h3 class="mb-0">{{ staff.total_reception }}</h3>
-                <small class="text-muted">{{ staff.conv_reception|floatformat:"1g" }}%</small>
-              </div>
-            </div>
+      <div class="appraiser-card is-collapsed" id="appraiserCard{{ staff.staff_id }}">
+        <div class="appraiser-card__header" onclick="toggleAppraiserCard({{ staff.staff_id }})">
+          <h4>{{ staff.staff_name }}</h4>
+          <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-primary">РЛ: {{ staff.total_rlk }}</span>
+            <span class="appraiser-card__toggle">▼</span>
           </div>
         </div>
+        <div class="appraiser-card__body">
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h5 class="text-muted mb-1">Рабочих листов</h5>
+                  <h3 class="mb-0">{{ staff.total_rlk }}</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h5 class="text-muted mb-1">До КД / Дистанционно</h5>
+                  <h3 class="mb-0">{{ staff.total_before }}</h3>
+                  <small class="text-muted">{{ staff.conv_before|floatformat:"1g" }}%</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h5 class="text-muted mb-1">После КД</h5>
+                  <h3 class="mb-0">{{ staff.total_after }}</h3>
+                  <small class="text-muted">{{ staff.conv_after|floatformat:"1g" }}%</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h5 class="text-muted mb-1">Принято</h5>
+                  <h3 class="mb-0">{{ staff.total_reception }}</h3>
+                  <small class="text-muted">{{ staff.conv_reception|floatformat:"1g" }}%</small>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <h5 class="mb-2">Конверсии</h5>
-            <p class="mb-1">
-              <strong>До КД:</strong> 
-              <span class="conv-badge {% if staff.conv_before >= 50 %}conv-high{% elif staff.conv_before >= 30 %}conv-medium{% else %}conv-low{% endif %}">
-                {{ staff.conv_before|floatformat:"1g" }}%
-              </span>
-            </p>
-            <p class="mb-1">
-              <strong>После КД:</strong> 
-              <span class="conv-badge {% if staff.conv_after >= 50 %}conv-high{% elif staff.conv_after >= 30 %}conv-medium{% else %}conv-low{% endif %}">
-                {{ staff.conv_after|floatformat:"1g" }}%
-              </span>
-            </p>
-            <p class="mb-1">
-              <strong>Принято:</strong> 
-              <span class="conv-badge {% if staff.conv_reception >= 50 %}conv-high{% elif staff.conv_reception >= 30 %}conv-medium{% else %}conv-low{% endif %}">
-                {{ staff.conv_reception|floatformat:"1g" }}%
-              </span>
-            </p>
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <h5 class="mb-2">Конверсии</h5>
+              <p class="mb-1">
+                <strong>До КД:</strong> 
+                <span class="conv-badge {% if staff.conv_before >= 50 %}conv-high{% elif staff.conv_before >= 30 %}conv-medium{% else %}conv-low{% endif %}">
+                  {{ staff.conv_before|floatformat:"1g" }}%
+                </span>
+              </p>
+              <p class="mb-1">
+                <strong>После КД:</strong> 
+                <span class="conv-badge {% if staff.conv_after >= 50 %}conv-high{% elif staff.conv_after >= 30 %}conv-medium{% else %}conv-low{% endif %}">
+                  {{ staff.conv_after|floatformat:"1g" }}%
+                </span>
+              </p>
+              <p class="mb-1">
+                <strong>Принято:</strong> 
+                <span class="conv-badge {% if staff.conv_reception >= 50 %}conv-high{% elif staff.conv_reception >= 30 %}conv-medium{% else %}conv-low{% endif %}">
+                  {{ staff.conv_reception|floatformat:"1g" }}%
+                </span>
+              </p>
+              {% if staff.total_rlk > 0 %}
+                <div class="mt-2">
+                  <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=staff_rlk&staff_id={{ staff.staff_id }}&{{ request.GET.urlencode }}" 
+                     class="btn btn-sm btn-outline-primary">👁️ Детали РЛ ({{ staff.total_rlk }})</a>
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-4">
+              <h5 class="mb-2">Средние цены</h5>
+              <p class="mb-1"><strong>Цена приема:</strong> {{ staff.avg_price_reception|floatformat:"2g" }} ₽</p>
+              <p class="mb-1"><strong>Цена продажи:</strong> {{ staff.avg_price_sale|floatformat:"2g" }} ₽</p>
+              {% if staff.total_reception > 0 %}
+                <div class="mt-2">
+                  <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=staff_reception&staff_id={{ staff.staff_id }}&{{ request.GET.urlencode }}" 
+                     class="btn btn-sm btn-outline-primary">👁️ Детали принятых ({{ staff.total_reception }})</a>
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-4">
+              <h5 class="mb-2">Дополнительно</h5>
+              <p class="mb-1"><strong>Среднее время на складе:</strong> {{ staff.avg_hours_stock|floatformat:"0g" }} дней</p>
+            </div>
           </div>
-          <div class="col-md-4">
-            <h5 class="mb-2">Средние цены</h5>
-            <p class="mb-1"><strong>Цена приема:</strong> {{ staff.avg_price_reception|floatformat:"2g" }} ₽</p>
-            <p class="mb-1"><strong>Цена продажи:</strong> {{ staff.avg_price_sale|floatformat:"2g" }} ₽</p>
-          </div>
-          <div class="col-md-4">
-            <h5 class="mb-2">Дополнительно</h5>
-            <p class="mb-1"><strong>Среднее время на складе:</strong> {{ staff.avg_hours_stock|floatformat:"0g" }} дней</p>
-          </div>
+
+          {% if staff.units_stats %}
+            <div class="mt-3">
+              <h5>Топ подразделений:</h5>
+              <div class="d-flex flex-wrap gap-2">
+                {% for unit_stat in staff.units_stats|slice:":5" %}
+                  <span class="badge bg-secondary">{{ unit_stat.unit_name }}: {{ unit_stat.count }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          {% if staff.type_reception_stats %}
+            <div class="mt-3">
+              <h5>Топ типов приема:</h5>
+              <div class="d-flex flex-wrap gap-2">
+                {% for type_stat in staff.type_reception_stats|slice:":5" %}
+                  <span class="badge bg-info">{{ type_stat.type_reception_name }}: {{ type_stat.count }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          {% if staff.brand_stats %}
+            <div class="mt-3">
+              <h5>Топ брендов:</h5>
+              <div class="d-flex flex-wrap gap-2">
+                {% for brand_stat in staff.brand_stats|slice:":5" %}
+                  <span class="badge bg-warning text-dark">{{ brand_stat.brand }}: {{ brand_stat.count }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
         </div>
-
-        {% if staff.units_stats %}
-          <div class="mt-3">
-            <h5>Топ подразделений:</h5>
-            <div class="d-flex flex-wrap gap-2">
-              {% for unit_stat in staff.units_stats|slice:":5" %}
-                <span class="badge bg-secondary">{{ unit_stat.unit_name }}: {{ unit_stat.count }}</span>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
-
-        {% if staff.type_reception_stats %}
-          <div class="mt-3">
-            <h5>Топ типов приема:</h5>
-            <div class="d-flex flex-wrap gap-2">
-              {% for type_stat in staff.type_reception_stats|slice:":5" %}
-                <span class="badge bg-info">{{ type_stat.type_reception_name }}: {{ type_stat.count }}</span>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
-
-        {% if staff.brand_stats %}
-          <div class="mt-3">
-            <h5>Топ брендов:</h5>
-            <div class="d-flex flex-wrap gap-2">
-              {% for brand_stat in staff.brand_stats|slice:":5" %}
-                <span class="badge bg-warning text-dark">{{ brand_stat.brand }}: {{ brand_stat.count }}</span>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
       </div>
     {% endfor %}
   {% else %}
@@ -258,5 +334,116 @@
     </div>
   {% endif %}
 </div>
-{% endblock %}
 
+<script>
+  function toggleAppraiserCard(staffId) {
+    const card = document.getElementById('appraiserCard' + staffId);
+    card.classList.toggle('is-collapsed');
+  }
+
+  function initMultiSelect(searchId, dropdownId, selectedId) {
+    const searchInput = document.getElementById(searchId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedDiv = document.getElementById(selectedId);
+    
+    if (!searchInput || !dropdown || !selectedDiv) return;
+    
+    function updateSelected() {
+      const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+      selectedDiv.innerHTML = '';
+      if (checked.length > 0) {
+        const badges = Array.from(checked).map(cb => {
+          const label = cb.closest('label');
+          const text = label ? label.textContent.trim() : '';
+          const value = cb.value;
+          return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedId}();"></button></span>`;
+        }).join('');
+        selectedDiv.innerHTML = badges;
+      }
+    }
+    
+    window['updateSelected_' + selectedId] = updateSelected;
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const items = dropdown.querySelectorAll('label');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+    
+    searchInput.addEventListener('focus', function() {
+      dropdown.style.display = 'block';
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelected);
+    });
+    
+    updateSelected();
+  }
+
+  function prepareFormData(form) {
+    const unitSourceIds = Array.from(form.querySelectorAll('input[name="unit_source_ids"]:checked')).map(cb => cb.value);
+    const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
+    const staffIds = Array.from(form.querySelectorAll('input[name="staff_ids"]:checked')).map(cb => cb.value);
+    
+    form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="staff_ids"]').forEach(el => el.remove());
+    
+    if (unitSourceIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'unit_source_ids';
+      hidden.value = unitSourceIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (unitIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'unit_ids';
+      hidden.value = unitIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    if (staffIds.length > 0) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'staff_ids';
+      hidden.value = staffIds.join(',');
+      form.appendChild(hidden);
+    }
+    
+    return true;
+  }
+
+  function resetFilters() {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedStaffs'];
+    selectedDivs.forEach(id => {
+      const div = document.getElementById(id);
+      if (div) div.innerHTML = '';
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+      initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+      initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
+    });
+  } else {
+    initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+    initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+    initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
+  }
+</script>
+{% endblock %}
