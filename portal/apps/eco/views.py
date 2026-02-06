@@ -10289,23 +10289,29 @@ def tradein_funnel_analytics_rejected(request):
     if brand and brand not in brand_list:
         brand_list.append(brand)
     
-    # Базовый QuerySet с фильтрами
+    # Базовый QuerySet для данных (с фильтрами)
     base_qs = TradeInFunnel.objects.all()
     
-    # Применяем фильтры
+    # QuerySet для справочников (без фильтров по источникам и подразделениям, чтобы показывать все доступные значения)
+    refs_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры к базовому QuerySet
     if unit_source_ids:
         base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
     if unit_ids:
         base_qs = base_qs.filter(unit_id__in=unit_ids)
     if city_ids:
         base_qs = base_qs.filter(city_id__in=city_ids)
+        refs_qs = refs_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+        refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
     if brand_list:
         brand_q = Q()
         for b in brand_list:
             brand_q |= Q(brand__icontains=b)
         base_qs = base_qs.filter(brand_q)
+        refs_qs = refs_qs.filter(brand_q)
     
     # Определяем QuerySet в зависимости от варианта отчета
     if report_type == 1:
@@ -10372,18 +10378,20 @@ def tradein_funnel_analytics_rejected(request):
     pct_rejected_reception = (rejected_reception / total_after * 100) if total_after > 0 else 0
     
     # Загружаем справочники для фильтров
+    # Используем refs_qs для получения всех возможных значений (без фильтров по источникам и подразделениям)
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     
-    source_unit_ids = list(qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+    # Получаем источники из refs_qs (все записи, которые могут попасть в отчет)
+    source_unit_ids = list(refs_qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
     source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
     
     from refs.models import RefCity
-    city_ids_from_funnel = list(qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    city_ids_from_funnel = list(refs_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
     cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
     
-    brands_list = list(qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
+    brands_list = list(refs_qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
     
-    type_reception_ids_from_funnel = list(qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
     
     params = {

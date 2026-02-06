@@ -192,8 +192,8 @@
         <label class="form-label text-uppercase">Вариант отчета</label>
         <select class="form-select" name="report_type">
           <option value="1" {% if params.filters.report_type == 1 %}selected{% endif %}>Базовый</option>
-          <option value="2" {% if params.filters.report_type == 2 %}selected{% endif %}>По рабочим листам</option>
-          <option value="3" {% if params.filters.report_type == 3 %}selected{% endif %}>По принятым</option>
+          <option value="2" {% if params.filters.report_type == 2 %}selected{% endif %}>Сквозной по РЛ</option>
+          <option value="3" {% if params.filters.report_type == 3 %}selected{% endif %}>Сквозной по ЛО</option>
         </select>
       </div>
       <div class="col-md-3">
