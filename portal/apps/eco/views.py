@@ -1529,11 +1529,19 @@ def tradein_funnel_rejected(request):
     unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
     unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
     source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
+    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
     
     # Одиночные фильтры
     unit_id = _get_int(request.GET.get('unit_id'))
     if unit_id and unit_id not in unit_ids:
         unit_ids.append(unit_id)
+    staff_id = _get_int(request.GET.get('staff_id'))
+    if staff_id and staff_id not in staff_ids:
+        staff_ids.append(staff_id)
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
     
     # Получаем подразделения из групп
     if unit_group_ids:
@@ -1556,6 +1564,32 @@ def tradein_funnel_rejected(request):
         DocRLK.objects.filter(eco=True, unit_dc__isnull=True).exclude(unit__isnull=True).values_list('unit_id', flat=True).distinct()
     )
     source_units = RefUnit.objects.filter(id__in=source_unit_ids_from_rlk).exclude(name='').order_by('name')
+    
+    # Получаем список оценщиков из всех оценок в периоде (до применения фильтров)
+    docs_all = DocRLK.objects.filter(
+        dataTime__gte=date_start,
+        dataTime__lte=date_end
+    ).filter(base_rlk_q)
+    staff_ids_from_est = list(RegInteractivOcenka.objects.filter(
+        rlk__in=docs_all.values_list('id', flat=True)
+    ).exclude(staff__isnull=True).values_list('staff_id', flat=True).distinct())
+    staffs = RefStaff.objects.filter(id__in=staff_ids_from_est).exclude(name='').order_by('name') if staff_ids_from_est else RefStaff.objects.none()
+    
+    # Получаем список типов приема из всех оценок в периоде (до применения фильтров)
+    type_reception_ids_from_est = set()
+    type_reception_ids_from_est.update(
+        RegInteractivOcenka.objects.filter(
+            rlk__in=docs_all.values_list('id', flat=True)
+        ).exclude(page_documents__type_reception__isnull=True).values_list('page_documents__type_reception__id', flat=True).distinct()
+    )
+    type_reception_ids_from_est.update(
+        RegInteractivOcenka.objects.filter(
+            rlk__in=docs_all.values_list('id', flat=True)
+        ).exclude(page_remote__type_reception__isnull=True).values_list('page_remote__type_reception__id', flat=True).distinct()
+    )
+    type_receptions = RefTypeReceptionCarsOrganization.objects.filter(
+        id__in=list(type_reception_ids_from_est)
+    ).exclude(name='').order_by('name') if type_reception_ids_from_est else RefTypeReceptionCarsOrganization.objects.none()
     
     # Базовый Q объект для DocRLK
     base_rlk_q = Q(
@@ -1601,8 +1635,10 @@ def tradein_funnel_rejected(request):
         price_after_kd=Subquery(subquery_est.values('page_soglasovanie__price_after_kd')[:1]),
         price_auto_2=Subquery(subquery_est.values('page_soglasovanie__price_auto_2')[:1]),
         type_reception_name=Subquery(subquery_est.values('page_documents__type_reception__name')[:1]),
+        type_reception_id=Subquery(subquery_est.values('page_documents__type_reception__id')[:1]),
         # Для дистанционной оценки
         page_remote_type_reception=Subquery(subquery_est.values('page_remote__type_reception__name')[:1]),
+        page_remote_type_reception_id=Subquery(subquery_est.values('page_remote__type_reception__id')[:1]),
         page_remote_price_auto=Subquery(subquery_est.values('page_remote__price_auto')[:1]),
         page_remote_price_eco=Subquery(subquery_est.values('page_remote__price_eco')[:1]),
         is_remote=Exists(RegInteractivOcenka.objects.filter(rlk=OuterRef('id')).exclude(page_remote__isnull=True)),
@@ -1612,6 +1648,7 @@ def tradein_funnel_rejected(request):
         modification=Subquery(subquery_est.values('modification__name')[:1]),
         year=Subquery(subquery_est.values('year')[:1]),
         staff_name=Subquery(subquery_est.values('staff__name')[:1]),
+        staff_id=Subquery(subquery_est.values('staff__id')[:1]),
         reg_estimation_id=Subquery(subquery_est.values('id')[:1]),
     )
     
@@ -1640,6 +1677,17 @@ def tradein_funnel_rejected(request):
     # Фильтр по причине архива (если указан)
     if reason_archive_filter:
         docs = docs.filter(reasonArchive__istartswith=reason_archive_filter)
+    
+    # Фильтр по оценщикам
+    if staff_ids:
+        docs = docs.filter(staff_id__in=staff_ids)
+    
+    # Фильтр по типам приема
+    if type_reception_ids:
+        type_reception_q = Q()
+        for tr_id in type_reception_ids:
+            type_reception_q |= Q(type_reception_id=tr_id) | Q(page_remote_type_reception_id=tr_id)
+        docs = docs.filter(type_reception_q)
     
     # Собираем все документы в один список (без группировки)
     rejected_items = []
@@ -1751,6 +1799,12 @@ def tradein_funnel_rejected(request):
         'unit_group_ids_list': unit_group_ids,
         'source_unit_ids': ','.join(map(str, source_unit_ids)) if source_unit_ids else '',
         'source_unit_ids_list': source_unit_ids,
+        'staff_id': staff_id or '',
+        'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
+        'staff_ids_list': staff_ids,
+        'type_reception_id': type_reception_id or '',
+        'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
+        'type_reception_ids_list': type_reception_ids,
         'reason_archive': reason_archive_filter,
     }
     
@@ -1764,6 +1818,8 @@ def tradein_funnel_rejected(request):
         'units': units,
         'unit_groups': unit_groups,
         'source_units': source_units,
+        'staffs': staffs,
+        'type_receptions': type_receptions,
         'rejected_items': rejected_items,
         'total_count': len(rejected_items),
         'reason_archive_stats': reason_archive_stats_sorted,
@@ -1772,483 +1828,8 @@ def tradein_funnel_rejected(request):
     return render(request, 'lo/tradein_funnel_rejected.html', {'params': params})
 
 
-def tradein_funnel(request):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
-
-    now = DT.datetime.now()
-    #default_end     = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    #default_start   = default_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    now_null        = now.replace(year=1, month=1, day=1, hour=23, minute=59, second=59, microsecond=0)
-
-    default_end     = now.replace(year=1, month=1, day=1, hour=23, minute=59, second=59, microsecond=0)
-    default_start   = default_end
-
-    date_start  = _parse_date(request.GET.get('date_start', ''), now_null, is_end=False)
-    date_end    = _parse_date(request.GET.get('date_end', ''), now_null, is_end=True)
-
-    date_start_lo   = _parse_date(request.GET.get('date_start_lo', ''), now_null, is_end=False)
-    date_end_lo     = _parse_date(request.GET.get('date_end_lo', ''), now_null, is_end=True)
-
-    unit_id = _get_int(request.GET.get('unit_id'))
-    staff_id = _get_int(request.GET.get('staff_id'))
-    analyst_id = _get_int(request.GET.get('analyst_id'))
-    type_id = _get_int(request.GET.get('type_id'))
-    status_id = _get_int(request.GET.get('status_id'))
-    type_id = _get_int(request.GET.get('type_id'))
-    status_id = _get_int(request.GET.get('status_id'))
-    type_reception_id = _get_int(request.GET.get('type_reception_id'))
-
-    if date_start != now_null or date_start_lo != now_null:
-        s = 1
-    type_receptions = RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name')
-    color_palette = ['#2563eb', '#f97316', '#22c55e', '#a855f7', '#f43f5e', '#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#d946ef']
-    
-    stage_counts_raw = _get_stage_counts(
-        date_start,
-        date_end,
-        unit_id=unit_id,
-        staff_id=staff_id,
-        analyst_id=analyst_id,
-        type_reception_id=type_reception_id,
-    )
-    stage_counts = stage_counts_raw[:4]
-    stage_diagnostics_qs = stage_counts_raw[4]
-    stage_labels = [
-        'Рабочие листы TRADE-IN',
-        'Интерактивные оценки',
-        'Диагностика заполнена',
-        'АМ принят (из диагностики)',
-    ]
-
-    def _conversion(current, previous):
-        if not previous:
-            return 0
-        return round(current / previous * 100, 1)
-
-    stages = [
-        {
-            'title': stage_labels[0],
-            'count': stage_counts[0],
-            'description': 'DocRLK с признаком TRADE-IN',
-            'conversion': 100 if stage_counts[0] else 0,
-        },
-        {
-            'title': stage_labels[1],
-            'count': stage_counts[1],
-            'description': 'Созданные интерактивные оценки',
-            'conversion': _conversion(stage_counts[1], stage_counts[0]),
-        },
-        {
-            'title': stage_labels[2],
-            'count': stage_counts[2],
-            'description': 'Есть заполненная секция "Диагностика"',
-            'conversion': _conversion(stage_counts[2], stage_counts[1]),
-        },
-        {
-            'title': stage_labels[3],
-            'count': stage_counts[3],
-            'description': 'Статус содержит "АМ принят"',
-            'conversion': _conversion(stage_counts[3], stage_counts[2]),
-        },
-    ]
-
-    type_distribution_total = list(
-        _get_type_distribution(
-            date_start,
-            date_end,
-            unit_id=unit_id,
-            staff_id=staff_id,
-            analyst_id=analyst_id,
-            type_reception_id=type_reception_id,
-        )
-    )
-    type_pie_chart = None
-    type_name_order = []
-    if type_distribution_total:
-        pie_labels = []
-        pie_values = []
-        pie_colors = []
-        for idx, item in enumerate(type_distribution_total):
-            name = item['name'] or 'Не указано'
-            pie_labels.append(name)
-            pie_values.append(item['total'])
-            pie_colors.append(color_palette[idx % len(color_palette)])
-            if name not in type_name_order:
-                type_name_order.append(name)
-        type_pie_chart = {
-            'labels': pie_labels,
-            'values': pie_values,
-            'colors': pie_colors,
-        }
-
-    funnel_chart = {
-        'labels': stage_labels,
-        'values': stage_counts,
-    }
-
-    monthly_labels = []
-    monthly_series = {
-        'work_orders': [],
-        'evaluations': [],
-        'diagnostics': [],
-        'accepted': [],
-    }
-    monthly_type_data = []
-
-    base_month = default_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    for shift in range(2, -1, -1):
-        month_start = base_month - relativedelta(months=shift)
-        month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
-        month_label = month_start.strftime('%b %Y')
-        month_counts = _get_stage_counts(
-            month_start,
-            month_end,
-            unit_id=unit_id,
-            staff_id=staff_id,
-            analyst_id=analyst_id,
-            type_reception_id=type_reception_id,
-        )
-        counts = month_counts[:4]
-        monthly_labels.append(month_label)
-        monthly_series['work_orders'].append(counts[0])
-        monthly_series['evaluations'].append(counts[1])
-        monthly_series['diagnostics'].append(counts[2])
-        monthly_series['accepted'].append(counts[3])
-
-        month_type_counts = list(
-            _get_type_distribution(
-                month_start,
-                month_end,
-                unit_id=unit_id,
-                staff_id=staff_id,
-                analyst_id=analyst_id,
-                type_reception_id=type_reception_id,
-            )
-        )
-        month_type_map = {}
-        for item in month_type_counts:
-            name = item['name'] or 'Не указано'
-            month_type_map[name] = item['total']
-            if name not in type_name_order:
-                type_name_order.append(name)
-        monthly_type_data.append(month_type_map)
-
-    type_monthly_chart = None
-    if monthly_labels and type_name_order:
-        type_datasets = []
-        for idx, type_name in enumerate(type_name_order):
-            series = [entry.get(type_name, 0) for entry in monthly_type_data]
-            if not any(series):
-                continue
-            type_datasets.append({
-                'label': type_name,
-                'data': series,
-                'color': color_palette[idx % len(color_palette)],
-            })
-        if type_datasets:
-            type_monthly_chart = {
-                'labels': monthly_labels,
-                'datasets': type_datasets,
-            }
-
-    # Преобразуем абсолютные значения в проценты относительно рабочих листов
-    trend_series_percent = {
-        'work_orders': [],
-        'evaluations': [],
-        'diagnostics': [],
-        'accepted': [],
-    }
-    for idx, month_label in enumerate(monthly_labels):
-        work_orders_count = monthly_series['work_orders'][idx]
-        if work_orders_count > 0:
-            # Рабочие листы всегда 100%
-            trend_series_percent['work_orders'].append(100.0)
-            # Остальные ступени - процент от рабочих листов
-            trend_series_percent['evaluations'].append(round(monthly_series['evaluations'][idx] / work_orders_count * 100, 1))
-            trend_series_percent['diagnostics'].append(round(monthly_series['diagnostics'][idx] / work_orders_count * 100, 1))
-            trend_series_percent['accepted'].append(round(monthly_series['accepted'][idx] / work_orders_count * 100, 1))
-        else:
-            trend_series_percent['work_orders'].append(0)
-            trend_series_percent['evaluations'].append(0)
-            trend_series_percent['diagnostics'].append(0)
-            trend_series_percent['accepted'].append(0)
-    
-    trend_chart = {
-        'labels': monthly_labels,
-        'series': [
-            {'label': stage_labels[0], 'data': trend_series_percent['work_orders']},
-            {'label': stage_labels[1], 'data': trend_series_percent['evaluations']},
-            {'label': stage_labels[2], 'data': trend_series_percent['diagnostics']},
-            {'label': stage_labels[3], 'data': trend_series_percent['accepted']},
-        ],
-    }
-
-    units = RefUnit.objects.filter(buauto=True).filter(active_eco=True).exclude(name='').order_by('name')
-    staffs = RefStaff.objects.exclude(name='').order_by('name')
-    analysts = User.objects.filter(profiles__eco=True)
-    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
-    statuses = RefStatusEstimation.objects.order_by('name')
-    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
-    statuses = RefStatusEstimation.objects.order_by('name')
-    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
-    statuses = RefStatusEstimation.objects.order_by('name')
-
-    unit_trend_chart = None
-    if not unit_id:
-        unit_names = []
-        unit_values_map = {}
-        for unit in units:
-            series_data = []
-            has_values = False
-            for shift in range(2, -1, -1):
-                month_start = base_month - relativedelta(months=shift)
-                month_end = (month_start + relativedelta(months=1)) - DT.timedelta(seconds=1)
-                counts = _get_stage_counts(
-                    month_start,
-                    month_end,
-                    unit.id,
-                    staff_id,
-                    analyst_id,
-                    type_reception_id,
-                )
-                series_data.append(counts[1])
-                if counts[1]:
-                    has_values = True
-            if has_values:
-                unit_names.append(unit.name)
-                unit_values_map[unit.name] = series_data
-
-        if unit_names:
-            unit_datasets = []
-            for idx, month_label in enumerate(monthly_labels):
-                month_values = [unit_values_map[name][idx] for name in unit_names]
-                unit_datasets.append({
-                    'label': month_label,
-                    'data': month_values,
-                    'color': color_palette[idx % len(color_palette)],
-                })
-            unit_trend_chart = {
-                'units': unit_names,
-                'datasets': unit_datasets,
-            }
-
-    chart_payload = json.dumps({
-        'funnel': funnel_chart,
-        'trend': trend_chart,
-        'unitTrend': unit_trend_chart,
-        'typeMonthly': type_monthly_chart,
-        'typePie': type_pie_chart,
-    }, ensure_ascii=False)
-
-    unit_trend_available = bool(unit_trend_chart)
-    type_monthly_available = bool(type_monthly_chart and type_monthly_chart.get('datasets'))
-    type_pie_available = bool(type_pie_chart and type_pie_chart.get('labels'))
-
-    source_stats, source_totals = _get_source_stats(
-        date_start,
-        date_end,
-        unit_id=unit_id,
-        staff_id=staff_id,
-        analyst_id=analyst_id,
-        type_reception_id=type_reception_id,
-    )
-    
-    source_totals['conv_to_accepted'] = round((source_totals['accepted'] / source_totals['work_orders'] * 100) if source_totals['work_orders'] > 0 else 0, 1)
-
-    #Воронка дистанционных оценок (старый способ через RegInteractivOcenka)
-    etimation_list_remote_all   = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).count()
-    etimation_list_remote       = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).exclude(page_soglasovanie = None).count()
-    etimation_list_remote_before_kd     = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).filter(page_soglasovanie__price_before_kd__gte = 0).count()
-    etimation_list_remote_after_kd      = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).filter(page_soglasovanie__price_after_kd__gte = 0).count()
-    etimation_list_remote_success       = RegInteractivOcenka.objects.filter(start_estimation__gte = date_start).filter(start_estimation__lte = date_end).exclude(page_remote = None).filter(page_soglasovanie__price_after_kd__gte = 0).filter(status__id = 8).count()
-    
-    # Эффективность дистанционной оценки на основе TradeInFunnel
-    date_invalid = DT.date(1, 1, 1)
-    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
-    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
-    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
-    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
-    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
-    valid_date_start_estimation = Q(date_start_estimation__isnull=False) & ~Q(date_start_estimation=date_invalid)
-    
-    # Базовый QuerySet с фильтрами
-    funnel_qs = TradeInFunnel.objects.all()
-    if date_start != now_null or date_end != now_null:
-        funnel_qs = funnel_qs.filter(date_rlk__gte=date_start, date_rlk__lte=date_end)
-    if unit_id:
-        funnel_qs = funnel_qs.filter(unit_id=unit_id)
-    if staff_id:
-        funnel_qs = funnel_qs.filter(staff_id=staff_id)
-    if analyst_id:
-        funnel_qs = funnel_qs.filter(
-            Q(analyst_remote_id=analyst_id) | Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id)
-        )
-    if type_reception_id:
-        funnel_qs = funnel_qs.filter(type_reception_id=type_reception_id)
-    
-    # Подсчет эффективности дистанционной оценки
-    remote_effectiveness = {
-        'total_remote': funnel_qs.filter(valid_date_remote).count(),
-        'got_price_before': funnel_qs.filter(valid_date_remote, valid_date_before).count(),
-        'got_price_after': funnel_qs.filter(valid_date_remote, valid_date_after).count(),
-        'accepted': funnel_qs.filter(valid_date_remote, valid_date_reception).count(),
-    }
-    
-    # Проценты конверсии
-    if remote_effectiveness['total_remote'] > 0:
-        remote_effectiveness['conv_to_before'] = round(remote_effectiveness['got_price_before'] / remote_effectiveness['total_remote'] * 100, 1)
-        remote_effectiveness['conv_to_after'] = round(remote_effectiveness['got_price_after'] / remote_effectiveness['total_remote'] * 100, 1)
-        remote_effectiveness['conv_to_accepted'] = round(remote_effectiveness['accepted'] / remote_effectiveness['total_remote'] * 100, 1)
-    else:
-        remote_effectiveness['conv_to_before'] = 0
-        remote_effectiveness['conv_to_after'] = 0
-        remote_effectiveness['conv_to_accepted'] = 0
-    
-    # Временные промежутки между датами
-    # Вычисляем оптимизированно: загружаем только нужные поля и считаем в Python
-    time_intervals_data = funnel_qs.values(
-        'date_rlk', 'date_start_estimation', 'date_remote_success', 
-        'date_before_success', 'date_after_success', 'date_reception_success'
-    )
-    
-    # Собираем промежутки
-    intervals_rlk_to_start = []
-    intervals_start_to_remote = []
-    intervals_start_to_before = []
-    intervals_before_to_after = []
-    intervals_after_to_reception = []
-    
-    for item in time_intervals_data:
-        date_rlk = item.get('date_rlk')
-        date_start = item.get('date_start_estimation')
-        date_remote = item.get('date_remote_success')
-        date_before = item.get('date_before_success')
-        date_after = item.get('date_after_success')
-        date_reception = item.get('date_reception_success')
-        
-        # Проверяем валидность дат (не None и не 1,1,1)
-        def is_valid_date(d):
-            if d is None:
-                return False
-            # Приводим к date для сравнения
-            if isinstance(d, DT.datetime):
-                d_date = d.date()
-            elif isinstance(d, DT.date):
-                d_date = d
-            else:
-                return False
-            # Сравниваем с date_invalid (1,1,1)
-            return d_date != date_invalid
-        
-        # РЛК до начала оценки
-        if is_valid_date(date_rlk) and is_valid_date(date_start):
-            delta = (date_start.date() if isinstance(date_start, DT.datetime) else date_start) - \
-                    (date_rlk.date() if isinstance(date_rlk, DT.datetime) else date_rlk)
-            if delta.days >= 0:
-                intervals_rlk_to_start.append(delta.days)
-        
-        # Начало оценки до дистанционной оценки
-        if is_valid_date(date_start) and is_valid_date(date_remote):
-            delta = (date_remote.date() if isinstance(date_remote, DT.datetime) else date_remote) - \
-                    (date_start.date() if isinstance(date_start, DT.datetime) else date_start)
-            if delta.days >= 0:
-                intervals_start_to_remote.append(delta.days)
-        
-        # Начало оценки до до КД (если нет дистанционной)
-        if is_valid_date(date_start) and is_valid_date(date_before) and not is_valid_date(date_remote):
-            delta = (date_before.date() if isinstance(date_before, DT.datetime) else date_before) - \
-                    (date_start.date() if isinstance(date_start, DT.datetime) else date_start)
-            if delta.days >= 0:
-                intervals_start_to_before.append(delta.days)
-        
-        # До КД до после КД
-        if is_valid_date(date_before) and is_valid_date(date_after):
-            delta = (date_after.date() if isinstance(date_after, DT.datetime) else date_after) - \
-                    (date_before.date() if isinstance(date_before, DT.datetime) else date_before)
-            if delta.days >= 0:
-                intervals_before_to_after.append(delta.days)
-        
-        # После КД до принятия
-        if is_valid_date(date_after) and is_valid_date(date_reception):
-            delta = (date_reception.date() if isinstance(date_reception, DT.datetime) else date_reception) - \
-                    (date_after.date() if isinstance(date_after, DT.datetime) else date_after)
-            if delta.days >= 0:
-                intervals_after_to_reception.append(delta.days)
-    
-    # Вычисляем средние значения
-    def avg_days(intervals):
-        return round(sum(intervals) / len(intervals), 1) if intervals else 0
-    
-    time_intervals = {
-        'rlk_to_start': {
-            'avg_days': avg_days(intervals_rlk_to_start),
-            'count': len(intervals_rlk_to_start),
-        },
-        'start_to_remote': {
-            'avg_days': avg_days(intervals_start_to_remote),
-            'count': len(intervals_start_to_remote),
-        },
-        'start_to_before': {
-            'avg_days': avg_days(intervals_start_to_before),
-            'count': len(intervals_start_to_before),
-        },
-        'before_to_after': {
-            'avg_days': avg_days(intervals_before_to_after),
-            'count': len(intervals_before_to_after),
-        },
-        'after_to_reception': {
-            'avg_days': avg_days(intervals_after_to_reception),
-            'count': len(intervals_after_to_reception),
-        },
-    }
-
-    filters = {
-        'date_start'    : date_start.strftime('%Y-%m-%d'),
-        'date_end'      : date_end.strftime('%Y-%m-%d'),
-        'date_start_lo' : date_start_lo.strftime('%Y-%m-%d'),
-        'date_end_lo'   : date_end_lo.strftime('%Y-%m-%d'),
-        'unit_id': unit_id or '',
-        'staff_id': staff_id or '',
-        'analyst_id': analyst_id or '',
-        'type_reception_id': type_reception_id or '',
-    }
-
-    params = {
-        'type': 'eco_funnel',
-        'nav_selected': 4,
-        'etimation_list_remote_all' : etimation_list_remote_all,
-        'etimation_list_remote'     : etimation_list_remote,
-        'etimation_list_remote_before_kd'     : etimation_list_remote_before_kd,
-        'etimation_list_remote_after_kd'     : etimation_list_remote_after_kd,
-        'etimation_list_remote_success'     : etimation_list_remote_success,
-        'remote_effectiveness': remote_effectiveness,
-        'time_intervals': time_intervals,
-
-        'request': request,
-        'filters': filters,
-        'stages': stages,
-        'chart_data': chart_payload,
-        'units': units,
-        'staffs': staffs,
-        'analysts': analysts,
-        'type_receptions': type_receptions,
-        'unit_trend_available': unit_trend_available,
-        'type_monthly_available': type_monthly_available,
-        'type_pie_available': type_pie_available,
-        'source_stats': source_stats,
-        'source_totals': source_totals,
-    }
-
-    return render(request, 'lo/tradein_funnel.html', {'params': params})
+# УДАЛЕНО: функция tradein_funnel больше не используется, заменена на tradein_funnel_new
+# Функция была удалена для освобождения кода и устранения путаницы
 
 
 def eco_monitors(request):
@@ -9340,6 +8921,83 @@ def tradein_funnel_analytics(request):
     
     # Все вычисления уже выполнены в _process_funnel_filters и добавлены в params через params.update(main_data)
     
+    # Добавляем расчет эффективности дистанционной оценки
+    # Создаем базовый QuerySet с примененными фильтрами
+    date_invalid = DT.date(1, 1, 1)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    
+    # Создаем QuerySet с теми же фильтрами, что и в main_data
+    funnel_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры по датам в зависимости от report_type
+    if report_type == 1:
+        funnel_qs = funnel_qs.filter(
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+    elif report_type == 2:
+        funnel_qs = funnel_qs.filter(
+            date_rlk__gte=date_start,
+            date_rlk__lte=date_end
+        )
+    else:  # report_type == 3
+        funnel_qs = funnel_qs.filter(
+            date_reception_success__gte=date_start,
+            date_reception_success__lte=date_end
+        )
+    
+    # Применяем остальные фильтры
+    if unit_source_ids:
+        funnel_qs = funnel_qs.filter(unit_source_id__in=unit_source_ids)
+    if unit_ids:
+        funnel_qs = funnel_qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        funnel_qs = funnel_qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        funnel_qs = funnel_qs.filter(type_reception_id__in=type_reception_ids)
+    if brand_list:
+        brand_q = Q()
+        for b in brand_list:
+            brand_q |= Q(brand__icontains=b)
+        funnel_qs = funnel_qs.filter(brand_q)
+    if staff_ids:
+        funnel_qs = funnel_qs.filter(staff_id__in=staff_ids)
+    if analyst_ids:
+        analyst_q = Q()
+        for a_id in analyst_ids:
+            analyst_q |= Q(analyst_remote_id=a_id) | Q(analyst_before_id=a_id) | Q(analyst_after_id=a_id)
+        funnel_qs = funnel_qs.filter(analyst_q)
+    if remote_filter == 'with':
+        funnel_qs = funnel_qs.filter(valid_date_remote)
+    elif remote_filter == 'without':
+        funnel_qs = funnel_qs.exclude(valid_date_remote)
+    
+    # Подсчет эффективности дистанционной оценки
+    remote_effectiveness = {
+        'total_remote': funnel_qs.filter(valid_date_remote).count(),
+        'got_price_before': funnel_qs.filter(valid_date_remote, valid_date_before).count(),
+        'got_price_after': funnel_qs.filter(valid_date_remote, valid_date_after).count(),
+        'accepted': funnel_qs.filter(valid_date_remote, valid_date_reception).count(),
+    }
+    
+    # Проценты конверсии
+    if remote_effectiveness['total_remote'] > 0:
+        remote_effectiveness['conv_to_before'] = round(remote_effectiveness['got_price_before'] / remote_effectiveness['total_remote'] * 100, 1)
+        remote_effectiveness['conv_to_after'] = round(remote_effectiveness['got_price_after'] / remote_effectiveness['total_remote'] * 100, 1)
+        remote_effectiveness['conv_to_accepted'] = round(remote_effectiveness['accepted'] / remote_effectiveness['total_remote'] * 100, 1)
+    else:
+        remote_effectiveness['conv_to_before'] = 0
+        remote_effectiveness['conv_to_after'] = 0
+        remote_effectiveness['conv_to_accepted'] = 0
+    
+    params['remote_effectiveness'] = remote_effectiveness
+    
     return render(request, 'lo/tradein_funnel_analytics.html', {'params': params})
 
 
@@ -9857,258 +9515,7 @@ def tradein_funnel_analytics_detail(request):
     }
     
     return render(request, 'lo/tradein_funnel_analytics_detail.html', {'params': params})
-
-
-def tradein_funnel_analytics_rejected(request):
-    """Анализ не принятых автомобилей в воронке Trade-In"""
-    
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-    
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
-    
-    # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
-    now = DT.datetime.now()
-    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
-    
-    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
-    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
-    
-    # Вариант отчета
-    report_type = _get_int(request.GET.get('report_type', 1)) or 1
-    
-    # Фильтры - множественный выбор
-    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
-    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
-    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
-    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
-    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
-    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
-    brands_str = request.GET.get('brands', '').strip()
-    brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
-    
-    # Обратная совместимость с одиночными фильтрами
-    unit_source_id = _get_int(request.GET.get('unit_source_id'))
-    unit_id = _get_int(request.GET.get('unit_id'))
-    city_id = _get_int(request.GET.get('city_id'))
-    type_reception_id = _get_int(request.GET.get('type_reception_id'))
-    analyst_id = _get_int(request.GET.get('analyst_id'))
-    staff_id = _get_int(request.GET.get('staff_id'))
-    brand = request.GET.get('brand', '').strip()
-    
-    if unit_source_id and unit_source_id not in unit_source_ids:
-        unit_source_ids.append(unit_source_id)
-    if unit_id and unit_id not in unit_ids:
-        unit_ids.append(unit_id)
-    if city_id and city_id not in city_ids:
-        city_ids.append(city_id)
-    if type_reception_id and type_reception_id not in type_reception_ids:
-        type_reception_ids.append(type_reception_id)
-    if analyst_id and analyst_id not in analyst_ids:
-        analyst_ids.append(analyst_id)
-    if staff_id and staff_id not in staff_ids:
-        staff_ids.append(staff_id)
-    if brand and brand not in brand_list:
-        brand_list.append(brand)
-    
-    # Базовый QuerySet с фильтрами
-    base_qs = TradeInFunnel.objects.all()
-    
-    # QuerySet для справочников (без фильтров по источникам и подразделениям, чтобы показывать все доступные значения)
-    refs_qs = TradeInFunnel.objects.all()
-    
-    # Применяем фильтры к базовому QuerySet
-    if unit_source_ids:
-        base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
-    if unit_ids:
-        base_qs = base_qs.filter(unit_id__in=unit_ids)
-    if city_ids:
-        base_qs = base_qs.filter(city_id__in=city_ids)
-        refs_qs = refs_qs.filter(city_id__in=city_ids)
-    if type_reception_ids:
-        base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
-        refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
-    if brand_list:
-        brand_q = Q()
-        for b in brand_list:
-            brand_q |= Q(brand__icontains=b)
-        base_qs = base_qs.filter(brand_q)
-        refs_qs = refs_qs.filter(brand_q)
-    if analyst_ids:
-        analyst_q = Q()
-        for a_id in analyst_ids:
-            analyst_q |= Q(analyst_remote_id=a_id) | Q(analyst_before_id=a_id) | Q(analyst_after_id=a_id)
-        base_qs = base_qs.filter(analyst_q)
-        refs_qs = refs_qs.filter(analyst_q)
-    if staff_ids:
-        base_qs = base_qs.filter(staff_id__in=staff_ids)
-        refs_qs = refs_qs.filter(staff_id__in=staff_ids)
-    
-    # Определяем QuerySet в зависимости от варианта отчета
-    if report_type == 1:
-        qs = base_qs.filter(
-            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
-            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
-            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
-            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
-            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
-        )
-    elif report_type == 2:
-        qs = base_qs.filter(
-            date_rlk__gte=date_start,
-            date_rlk__lte=date_end
-        )
-    else:  # report_type == 3
-        qs = base_qs.filter(
-            date_reception_success__gte=date_start,
-            date_reception_success__lte=date_end
-        )
-    
-    # Дата для исключения некорректных дат (1.1.1)
-    date_invalid = DT.date(1, 1, 1)
-    
-    # Вспомогательные Q-объекты для проверки валидных дат
-    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
-    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
-    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
-    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
-    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
-    
-    # Подсчитываем не принятых на разных этапах
-    # Не дошли до КД / Дистанционной оценки
-    rejected_before = qs.filter(valid_date_rlk).exclude(
-        valid_date_before | valid_date_remote
-    ).count()
-    
-    # Не дошли до после КД
-    rejected_after = qs.filter(
-        valid_date_before | valid_date_remote
-    ).exclude(valid_date_after).count()
-    
-    # Не приняты
-    rejected_reception = qs.filter(valid_date_after).exclude(valid_date_reception).count()
-    
-    # Общее количество для расчета процентов
-    total_rlk = qs.filter(valid_date_rlk).count()
-    total_before = qs.filter(valid_date_before | valid_date_remote).count()
-    total_after = qs.filter(valid_date_after).count()
-    
-    # Проценты
-    rejected_before_pct = (rejected_before / total_rlk * 100) if total_rlk > 0 else 0
-    rejected_after_pct = (rejected_after / total_before * 100) if total_before > 0 else 0
-    rejected_reception_pct = (rejected_reception / total_after * 100) if total_after > 0 else 0
-    
-    # Загружаем справочники для фильтров
-    from refs.models import RefCity, RefTypeReceptionCarsOrganization
-    from refs.models import RefStaff
-    
-    # Получаем подразделения для фильтра
-    unit_ids_from_funnel = list(refs_qs.exclude(unit_id__isnull=True).values_list('unit_id', flat=True).distinct())
-    units = RefUnit.objects.filter(id__in=unit_ids_from_funnel).exclude(name='').order_by('name') if unit_ids_from_funnel else RefUnit.objects.none()
-    
-    # Получаем источники приема для фильтра
-    unit_source_ids_from_funnel = list(refs_qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
-    source_units = RefUnit.objects.filter(id__in=unit_source_ids_from_funnel).exclude(name='').order_by('name') if unit_source_ids_from_funnel else RefUnit.objects.none()
-    
-    # Получаем города для фильтра
-    city_ids_from_funnel = list(refs_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
-    cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
-    
-    # Получаем бренды для фильтра
-    brands_list = list(refs_qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
-    
-    type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
-    type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
-    
-    # Получаем аналитиков для фильтра
-    analyst_ids_from_funnel = set()
-    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
-    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
-    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
-    analyst_ids_list = list(analyst_ids_from_funnel)
-    analysts = RefStaff.objects.filter(id__in=analyst_ids_list).exclude(name='').order_by('name') if analyst_ids_list else RefStaff.objects.none()
-    
-    # Получаем оценщиков для фильтра
-    staff_ids_from_funnel = list(refs_qs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
-    staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name') if staff_ids_from_funnel else RefStaff.objects.none()
-    
-    # Подсчитываем дополнительные метрики для бейджей
-    # Есть соглашение (price_before > 0 или price_after > 0), но не принят
-    rejected_with_agreement_before = qs.filter(
-        valid_date_before,
-        price_before__gt=0
-    ).exclude(valid_date_reception).count()
-    
-    rejected_with_agreement_after = qs.filter(
-        valid_date_after,
-        price_after__gt=0
-    ).exclude(valid_date_reception).count()
-    
-    params = {
-        'type': 'eco_funnel',
-        'nav_selected': 4,
-        'filters': {
-            'date_start': date_start.strftime('%Y-%m-%d'),
-            'date_end': date_end.strftime('%Y-%m-%d'),
-            'report_type': report_type,
-            'unit_source_id': unit_source_id or '',
-            'unit_source_ids': ','.join(map(str, unit_source_ids)) if unit_source_ids else '',
-            'unit_source_ids_list': unit_source_ids,
-            'unit_id': unit_id or '',
-            'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
-            'unit_ids_list': unit_ids,
-            'city_id': city_id or '',
-            'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
-            'city_ids_list': city_ids,
-            'type_reception_id': type_reception_id or '',
-            'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
-            'type_reception_ids_list': type_reception_ids,
-            'analyst_id': analyst_id or '',
-            'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
-            'analyst_ids_list': analyst_ids,
-            'staff_id': staff_id or '',
-            'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
-            'staff_ids_list': staff_ids,
-            'brand': brand,
-            'brands': ','.join(brand_list) if brand_list else '',
-            'brands_list': brand_list,
-        },
-        'units': units,
-        'source_units': source_units,
-        'cities': cities,
-        'type_receptions': type_receptions,
-        'analysts': analysts,
-        'staffs': staffs,
-        'brands': brands_list,
-        'rejected_with_agreement_before': rejected_with_agreement_before,
-        'rejected_with_agreement_after': rejected_with_agreement_after,
-        'rejected_stats': {
-            'before': {
-                'count': rejected_before,
-                'percent': rejected_before_pct,
-                'total': total_rlk,
-            },
-            'after': {
-                'count': rejected_after,
-                'percent': rejected_after_pct,
-                'total': total_before,
-            },
-            'reception': {
-                'count': rejected_reception,
-                'percent': rejected_reception_pct,
-                'total': total_after,
-            },
-        },
-    }
-    
-    return render(request, 'lo/tradein_funnel_analytics_rejected.html', {'params': params})
+# УДАЛЕНО: функция tradein_funnel_analytics_rejected больше не используется, заменена на tradein_funnel_rejected
 
 
 #История изменений
@@ -10658,256 +10065,7 @@ def tradein_funnel_analytics_detail(request):
     }
     
     return render(request, 'lo/tradein_funnel_analytics_detail.html', {'params': params})
-
-
-def tradein_funnel_analytics_rejected(request):
-    """Анализ не принятых автомобилей на основе TradeInFunnel - отвалившиеся на каждом этапе"""
-    
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-    
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
-    
-    # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
-    now = DT.datetime.now()
-    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
-    
-    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
-    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
-    
-    # Вариант отчета
-    report_type = _get_int(request.GET.get('report_type', 1)) or 1
-    
-    # Фильтры - множественный выбор
-    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
-    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
-    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
-    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
-    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
-    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
-    brands_str = request.GET.get('brands', '').strip()
-    brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
-    
-    # Обратная совместимость с одиночными фильтрами
-    unit_source_id = _get_int(request.GET.get('unit_source_id'))
-    unit_id = _get_int(request.GET.get('unit_id'))
-    city_id = _get_int(request.GET.get('city_id'))
-    type_reception_id = _get_int(request.GET.get('type_reception_id'))
-    analyst_id = _get_int(request.GET.get('analyst_id'))
-    staff_id = _get_int(request.GET.get('staff_id'))
-    brand = request.GET.get('brand', '').strip()
-    
-    if unit_source_id and unit_source_id not in unit_source_ids:
-        unit_source_ids.append(unit_source_id)
-    if unit_id and unit_id not in unit_ids:
-        unit_ids.append(unit_id)
-    if city_id and city_id not in city_ids:
-        city_ids.append(city_id)
-    if type_reception_id and type_reception_id not in type_reception_ids:
-        type_reception_ids.append(type_reception_id)
-    if analyst_id and analyst_id not in analyst_ids:
-        analyst_ids.append(analyst_id)
-    if staff_id and staff_id not in staff_ids:
-        staff_ids.append(staff_id)
-    if brand and brand not in brand_list:
-        brand_list.append(brand)
-    
-    # Базовый QuerySet для данных (с фильтрами)
-    base_qs = TradeInFunnel.objects.all()
-    
-    # QuerySet для справочников (без фильтров по источникам и подразделениям, чтобы показывать все доступные значения)
-    refs_qs = TradeInFunnel.objects.all()
-    
-    # Применяем фильтры к базовому QuerySet
-    if unit_source_ids:
-        base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
-    if unit_ids:
-        base_qs = base_qs.filter(unit_id__in=unit_ids)
-    if city_ids:
-        base_qs = base_qs.filter(city_id__in=city_ids)
-        refs_qs = refs_qs.filter(city_id__in=city_ids)
-    if type_reception_ids:
-        base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
-        refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
-    if analyst_ids:
-        base_qs = base_qs.filter(
-            Q(analyst_remote_id__in=analyst_ids) |
-            Q(analyst_before_id__in=analyst_ids) |
-            Q(analyst_after_id__in=analyst_ids)
-        )
-    if staff_ids:
-        base_qs = base_qs.filter(staff_id__in=staff_ids)
-    if brand_list:
-        brand_q = Q()
-        for b in brand_list:
-            brand_q |= Q(brand__icontains=b)
-        base_qs = base_qs.filter(brand_q)
-        refs_qs = refs_qs.filter(brand_q)
-    
-    # Определяем QuerySet в зависимости от варианта отчета
-    if report_type == 1:
-        qs = base_qs.filter(
-            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
-            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
-            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
-            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
-            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
-        )
-    elif report_type == 2:
-        qs = base_qs.filter(
-            date_rlk__gte=date_start,
-            date_rlk__lte=date_end
-        )
-    else:  # report_type == 3
-        qs = base_qs.filter(
-            date_reception_success__gte=date_start,
-            date_reception_success__lte=date_end
-        )
-    
-    # Дата для исключения некорректных дат (1.1.1)
-    date_invalid = DT.date(1, 1, 1)
-    
-    # Вспомогательные Q-объекты для проверки валидных дат (не null и не 1.1.1)
-    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
-    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
-    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
-    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
-    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
-    
-    # Подсчитываем отвалившихся на каждом этапе
-    # 1. Не дошли до КД/дистанционной оценки - есть date_rlk, но нет date_before_success и date_remote_success
-    rejected_before = qs.filter(
-        valid_date_rlk
-    ).exclude(
-        valid_date_before | valid_date_remote
-    ).count()
-    
-    # 2. Не дошли до после КД - есть date_before_success или date_remote_success, но нет date_after_success
-    rejected_after = qs.filter(
-        valid_date_before | valid_date_remote
-    ).exclude(
-        valid_date_after
-    ).count()
-    
-    # 3. Не приняты - есть date_after_success, но нет date_reception_success
-    rejected_reception = qs.filter(
-        valid_date_after
-    ).exclude(
-        valid_date_reception
-    ).count()
-    
-    # Общее количество с рабочими листами
-    total_rlk = qs.filter(valid_date_rlk).count()
-    total_before = qs.filter(
-        valid_date_before | valid_date_remote
-    ).count()
-    total_after = qs.filter(valid_date_after).count()
-    
-    # Проценты отвалившихся
-    pct_rejected_before = (rejected_before / total_rlk * 100) if total_rlk > 0 else 0
-    pct_rejected_after = (rejected_after / total_before * 100) if total_before > 0 else 0
-    pct_rejected_reception = (rejected_reception / total_after * 100) if total_after > 0 else 0
-    
-    # Загружаем справочники для фильтров
-    # Используем refs_qs для получения всех возможных значений (без фильтров по источникам и подразделениям)
-    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
-    
-    # Получаем источники из refs_qs (все записи, которые могут попасть в отчет)
-    source_unit_ids = list(refs_qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
-    source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
-    
-    from refs.models import RefCity
-    city_ids_from_funnel = list(refs_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
-    cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
-    
-    brands_list = list(refs_qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
-    
-    type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
-    type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
-    
-    # Получаем аналитиков для фильтра
-    from refs.models import RefStaff
-    analyst_ids_from_funnel = set()
-    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
-    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
-    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
-    analyst_ids_list = list(analyst_ids_from_funnel)
-    analysts = RefStaff.objects.filter(id__in=analyst_ids_list).exclude(name='').order_by('name') if analyst_ids_list else RefStaff.objects.none()
-    
-    # Получаем оценщиков для фильтра
-    staff_ids_from_funnel = list(refs_qs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
-    staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name') if staff_ids_from_funnel else RefStaff.objects.none()
-    
-    # Подсчитываем дополнительные метрики для бейджей
-    # Есть соглашение (price_before > 0 или price_after > 0), но не принят
-    rejected_with_agreement_before = qs.filter(
-        valid_date_before,
-        price_before__gt=0
-    ).exclude(valid_date_reception).count()
-    
-    rejected_with_agreement_after = qs.filter(
-        valid_date_after,
-        price_after__gt=0
-    ).exclude(valid_date_reception).count()
-    
-    params = {
-        'type': 'eco_funnel',
-        'nav_selected': 4,
-        'filters': {
-            'date_start': date_start.strftime('%Y-%m-%d'),
-            'date_end': date_end.strftime('%Y-%m-%d'),
-            'report_type': report_type,
-            'unit_source_id': unit_source_id or '',
-            'unit_source_ids': ','.join(map(str, unit_source_ids)) if unit_source_ids else '',
-            'unit_source_ids_list': unit_source_ids,
-            'unit_id': unit_id or '',
-            'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
-            'unit_ids_list': unit_ids,
-            'city_id': city_id or '',
-            'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
-            'city_ids_list': city_ids,
-            'type_reception_id': type_reception_id or '',
-            'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
-            'type_reception_ids_list': type_reception_ids,
-            'analyst_id': analyst_id or '',
-            'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
-            'analyst_ids_list': analyst_ids,
-            'staff_id': staff_id or '',
-            'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
-            'staff_ids_list': staff_ids,
-            'brand': brand,
-            'brands': ','.join(brand_list) if brand_list else '',
-            'brands_list': brand_list,
-        },
-        'units': units,
-        'source_units': source_units,
-        'cities': cities,
-        'type_receptions': type_receptions,
-        'analysts': analysts,
-        'staffs': staffs,
-        'brands': brands_list,
-        'rejected_with_agreement_before': rejected_with_agreement_before,
-        'rejected_with_agreement_after': rejected_with_agreement_after,
-        'rejected': {
-            'before': {'count': rejected_before, 'percent': pct_rejected_before},
-            'after': {'count': rejected_after, 'percent': pct_rejected_after},
-            'reception': {'count': rejected_reception, 'percent': pct_rejected_reception},
-        },
-        'totals': {
-            'rlk': total_rlk,
-            'before': total_before,
-            'after': total_after,
-        },
-    }
-    
-    return render(request, 'lo/tradein_funnel_analytics_rejected.html', {'params': params})
+# УДАЛЕНО: функция tradein_funnel_analytics_rejected больше не используется, заменена на tradein_funnel_rejected
 
 
 def eco_analysts_performance(request):

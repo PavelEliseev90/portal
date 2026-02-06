@@ -151,6 +151,20 @@
   .reason-stat-item.active .reason-stat-count {
     background: rgba(255, 255, 255, 0.2);
   }
+
+  .list-group {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .list-group-item {
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
 </style>
 
 <div class="kors-funnel-page">
@@ -163,7 +177,7 @@
     <div class="kors-panel__head">
       <h3>Фильтры</h3>
     </div>
-    <form method="get" class="row g-3">
+    <form method="get" id="funnelFilterForm" onsubmit="return prepareFormData(this);" class="row g-3">
       <div class="col-md-3">
         <label class="form-label">Дата с</label>
         <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
@@ -172,19 +186,83 @@
         <label class="form-label">Дата по</label>
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Подразделение</label>
-        <select class="form-select" name="unit_id">
-          <option value="">Все</option>
-          {% for unit in params.units %}
-            <option value="{{ unit.id }}" {% if unit.id == params.filters.unit_id %}selected{% endif %}>{{ unit.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
       <div class="col-md-3 d-flex align-items-end">
         <button class="btn btn-primary w-100" type="submit">Применить</button>
       </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-secondary w-100" type="button" onclick="resetFilters()">Сбросить</button>
+      </div>
     </form>
+    
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Источник приема</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="sourceUnitSearch" placeholder="Поиск по источникам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="sourceUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.source_units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="source_unit_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.source_unit_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedSourceUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Подразделения</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for unit in params.units %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.id }}" 
+                  {% if unit.id in params.filters.unit_ids_list %}checked{% endif %}>
+                {{ unit.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnits" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Оценщики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="staffSearch" placeholder="Поиск по оценщикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="staffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for staff in params.staffs %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="staff_ids" value="{{ staff.id }}" 
+                  {% if staff.id in params.filters.staff_ids_list %}checked{% endif %}>
+                {{ staff.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedStaffs" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Типы приема</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="typeReceptionSearch" placeholder="Поиск по типам приема..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="typeReceptionDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for type_reception in params.type_receptions %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="type_reception_ids" value="{{ type_reception.id }}" 
+                  {% if type_reception.id in params.filters.type_reception_ids_list %}checked{% endif %}>
+                {{ type_reception.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedTypeReceptions" class="mt-2"></div>
+      </div>
+    </div>
   </div>
 
   {% if params.reason_archive_stats %}
@@ -369,5 +447,94 @@
     url.searchParams.delete('reason_archive');
     window.location.href = url.toString();
   }
+
+  // JavaScript для множественного выбора
+  (function() {
+    function initMultiSelect(searchId, dropdownId, selectedDivId) {
+      const searchInput = document.getElementById(searchId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedDiv = document.getElementById(selectedDivId);
+      
+      if (!searchInput || !dropdown || !selectedDiv) return;
+      
+      function updateSelected() {
+        const checked = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'));
+        selectedDiv.innerHTML = '';
+        if (checked.length > 0) {
+          const badges = Array.from(checked).map(cb => {
+            const label = cb.closest('label');
+            const text = label ? label.textContent.trim() : '';
+            const value = cb.value;
+            return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedDivId}();"></button></span>`;
+          }).join('');
+          selectedDiv.innerHTML = badges;
+        }
+      }
+      
+      window['updateSelected_' + selectedDivId] = updateSelected;
+      
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const items = dropdown.querySelectorAll('label');
+        items.forEach(item => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+      });
+      
+      searchInput.addEventListener('focus', function() {
+        dropdown.style.display = 'block';
+      });
+      
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+      
+      dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateSelected);
+      });
+      
+      updateSelected();
+    }
+    
+    function prepareFormData(form) {
+      // Собираем все выбранные значения из чекбоксов
+      const checkboxes = form.querySelectorAll('input[type="checkbox"]:checked');
+      checkboxes.forEach(cb => {
+        // Убеждаемся, что чекбокс будет отправлен
+        if (!form.querySelector(`input[type="hidden"][name="${cb.name}"][value="${cb.value}"]`)) {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = cb.name;
+          hidden.value = cb.value;
+          form.appendChild(hidden);
+        }
+      });
+      return true;
+    }
+    
+    function resetFilters() {
+      window.location.href = window.location.pathname;
+    }
+    
+    window.prepareFormData = prepareFormData;
+    window.resetFilters = resetFilters;
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+        initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+        initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
+        initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+      });
+    } else {
+      initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
+      initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+      initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
+      initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+    }
+  })();
 </script>
 {% endblock %}

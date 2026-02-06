@@ -178,7 +178,7 @@
         <p>Анализ воронки Trade-In на основе данных TradeInFunnel</p>
       </div>
       <div>
-        <a href="{% url 'eco:tradein_funnel_analytics_rejected' %}?{{ request.GET.urlencode }}" 
+        <a href="{% url 'eco:tradein_funnel_rejected' %}?{{ request.GET.urlencode }}" 
            class="btn btn-outline-danger">
           📊 Анализ не принятых
         </a>
@@ -694,6 +694,44 @@
       </span>
     </div>
   </div>
+
+  <!-- Бейдж эффективности дистанционной оценки -->
+  {% if params.remote_effectiveness %}
+    <div class="kors-panel mb-3">
+      <div class="kors-panel__head">
+        <h3>Эффективность дистанционной оценки</h3>
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.total_remote|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Всего дистанционных оценок</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.got_price_before|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Получили цену до КД</p>
+            <span class="badge bg-primary mt-1">{{ params.remote_effectiveness.conv_to_before }}%</span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.got_price_after|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Получили цену после КД</p>
+            <span class="badge bg-primary mt-1">{{ params.remote_effectiveness.conv_to_after }}%</span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center p-3 bg-light rounded">
+            <h4 class="mb-1">{{ params.remote_effectiveness.accepted|floatformat:"0g" }}</h4>
+            <p class="mb-0 text-muted small">Было принято</p>
+            <span class="badge bg-success mt-1">{{ params.remote_effectiveness.conv_to_accepted }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 
   <!-- Сравнение с авторасчетом -->
   <div class="kors-panel">
