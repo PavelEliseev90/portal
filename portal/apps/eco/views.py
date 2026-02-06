@@ -1569,6 +1569,15 @@ def tradein_funnel_rejected(request):
     )
     source_units = RefUnit.objects.filter(id__in=source_unit_ids_from_rlk).exclude(name='').order_by('name')
     
+    # Базовый Q объект для DocRLK
+    base_rlk_q = Q(
+        Q(type__id=2, unit_dc__buauto=True) |
+        Q(type__id=7, eco=True) |
+        Q(type__id=1, eco=True) |
+        Q(type__id=19, eco=True) |
+        Q(eco=True)
+    )
+    
     # Получаем список оценщиков из всех оценок в периоде (до применения фильтров)
     docs_all = DocRLK.objects.filter(
         dataTime__gte=date_start,
@@ -1608,15 +1617,6 @@ def tradein_funnel_rejected(request):
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(
         id__in=list(type_reception_ids_from_est)
     ).exclude(name='').order_by('name') if type_reception_ids_from_est else RefTypeReceptionCarsOrganization.objects.none()
-    
-    # Базовый Q объект для DocRLK
-    base_rlk_q = Q(
-        Q(type__id=2, unit_dc__buauto=True) |
-        Q(type__id=7, eco=True) |
-        Q(type__id=1, eco=True) |
-        Q(type__id=19, eco=True) |
-        Q(eco=True)
-    )
     
     # Получаем DocRLK в периоде
     docs = DocRLK.objects.filter(
