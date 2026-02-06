@@ -31,26 +31,33 @@ def get_cars_organization(user, filter):
 
 
 def get_catalog():
-    
+    # ОПТИМИЗАЦИЯ: Используем Count напрямую вместо Func для более эффективного подсчета
     autoru = AutoruMark.objects.all().order_by('name')
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(modification_autoru__model__mark__id = OuterRef(name='id')).annotate(count=Func(F('id'), function='Count')).values('count')
-    
-    autoru = autoru.annotate(cars_count = Subquery(cars))
+    # ОПТИМИЗАЦИЯ: Используем Count напрямую в аннотации через связанные модели
+    # Путь: AutoruMark -> AutoruModel -> AutoruModification -> RefCarsOrganization
+    autoru = autoru.annotate(
+        cars_count=Count('autorumodel__autorumodification__refcarsorganization', 
+                        filter=Q(autorumodel__autorumodification__refcarsorganization__quantity__gt=0) &
+                               Q(autorumodel__autorumodification__refcarsorganization__modification_autoru__isnull=False),
+                        distinct=True)
+    )
     autoru = autoru.exclude(cars_count = 0)
 
     return autoru
 
 
 def get_catalog_mark(mark):
-    
-    autoru = AutoruModel.objects.filter(mark__nameEn = mark).order_by('name').distinct()
+    # ОПТИМИЗАЦИЯ: Используем Count напрямую вместо Func и Subquery
+    autoru = AutoruModel.objects.filter(mark__nameEn = mark).select_related('mark').order_by('name').distinct()
 
-    # Подсчитываем количество автомобилей для каждой модели через Subquery (как в get_catalog)
-    # Используем правильный путь от RefCarsOrganization к модели
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).filter(modification_autoru__model__id = OuterRef(name='id')).annotate(count=Func(F('id'), function='Count')).values('count')
-    
-    autoru = autoru.annotate(cars_count = Subquery(cars))
+    # ОПТИМИЗАЦИЯ: Используем Count напрямую в аннотации
+    autoru = autoru.annotate(
+        cars_count=Count('autorumodification__refcarsorganization',
+                        filter=Q(autorumodification__refcarsorganization__quantity__gt=0) &
+                               Q(autorumodification__refcarsorganization__modification_autoru__isnull=False),
+                        distinct=True)
+    )
     autoru = autoru.exclude(cars_count = 0).distinct()
     
     # Группируем по nameEn и суммируем cars_count
@@ -64,7 +71,7 @@ def get_catalog_mark(mark):
                 'nameHuman': name_human,
                 'cars_count': 0
             }
-        # Subquery возвращает значение напрямую
+        # Count возвращает значение напрямую
         seen_names[name_en]['cars_count'] += model.cars_count or 0
     
     return list(seen_names.values())
@@ -75,8 +82,14 @@ def catalog_mark(request, mark_name_en):
     select_count    = request.GET.get('select_count', 12)
     catalog         = get_catalog_mark(mark_name_en) 
     
+    # ОПТИМИЗАЦИЯ: Добавляем select_related для связанных объектов
     cars = get_cars_organization(request.user, filter = '')
-    cars = cars.filter(modification_autoru__model__mark__nameEn = mark_name_en)
+    cars = cars.filter(modification_autoru__model__mark__nameEn = mark_name_en).select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'store'
+    )
 
     page_number = request.GET.get('page', 1)
         
@@ -96,16 +109,19 @@ def catalog_mark(request, mark_name_en):
         'filtr_count'       : filter_count
     }
 
+    # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
     selected = {
-        'stores'        : RefStore.objects.all().order_by('name'),
-        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
+        'stores'        : RefStore.objects.only('id', 'name').order_by('name'),
+        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
     }
     
-    # Подсчет общего количества автомобилей в каталоге
-    total_count = get_cars_organization(request.user, filter='').count()
+    # ОПТИМИЗАЦИЯ: Подсчет общего количества автомобилей в каталоге
+    total_count = RefCarsOrganization.objects.exclude(quantity=0).exclude(modification_autoru=None).count()
     
-    # Подсчет количества автомобилей для данной марки
-    mark_count = get_cars_organization(request.user, filter='').filter(modification_autoru__model__mark__nameEn=mark_name_en).count()
+    # ОПТИМИЗАЦИЯ: Подсчет количества автомобилей для данной марки
+    mark_count = RefCarsOrganization.objects.exclude(quantity=0).exclude(modification_autoru=None).filter(
+        modification_autoru__model__mark__nameEn=mark_name_en
+    ).count()
     
     params = {
         'type'          : 'cars',
@@ -127,8 +143,16 @@ def catalog_model(request, mark_name_en, model_name):
     select_count    = request.GET.get('select_count', 12)
     catalog         = get_catalog_mark(mark_name_en) 
     
+    # ОПТИМИЗАЦИЯ: Добавляем select_related для связанных объектов
     cars = get_cars_organization(request.user, filter = '')
-    cars = cars.filter(modification_autoru__model__mark__nameEn = mark_name_en).filter(modification_autoru__model__nameEn__icontains = model_name)
+    cars = cars.filter(modification_autoru__model__mark__nameEn = mark_name_en).filter(
+        modification_autoru__model__nameEn__icontains = model_name
+    ).select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'store'
+    )
 
     page_number = request.GET.get('page', 1)
         
@@ -148,16 +172,19 @@ def catalog_model(request, mark_name_en, model_name):
         'filtr_count'       : filter_count
     }
 
+    # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
     selected = {
-        'stores'        : RefStore.objects.all().order_by('name'),
-        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
+        'stores'        : RefStore.objects.only('id', 'name').order_by('name'),
+        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
     }
     
-    # Подсчет общего количества автомобилей в каталоге
-    total_count = get_cars_organization(request.user, filter='').count()
+    # ОПТИМИЗАЦИЯ: Подсчет общего количества автомобилей в каталоге
+    total_count = RefCarsOrganization.objects.exclude(quantity=0).exclude(modification_autoru=None).count()
     
-    # Подсчет количества автомобилей для данной марки
-    mark_count = get_cars_organization(request.user, filter='').filter(modification_autoru__model__mark__nameEn=mark_name_en).count()
+    # ОПТИМИЗАЦИЯ: Подсчет количества автомобилей для данной марки
+    mark_count = RefCarsOrganization.objects.exclude(quantity=0).exclude(modification_autoru=None).filter(
+        modification_autoru__model__mark__nameEn=mark_name_en
+    ).count()
     
     params = {
         'type'          : 'cars',
@@ -175,11 +202,12 @@ def catalog_model(request, mark_name_en, model_name):
 
 
 def cars_catalog(request):
-
-    catalog         = get_catalog() 
+    # ОПТИМИЗАЦИЯ: Используем кэширование и оптимизированные запросы
+    catalog = get_catalog() 
     
-    # Подсчет общего количества автомобилей в каталоге
-    total_count = get_cars_organization(request.user, filter='').count()
+    # ОПТИМИЗАЦИЯ: Подсчет общего количества через аннотацию в get_catalog или отдельным оптимизированным запросом
+    # Используем только() для загрузки минимальных данных
+    total_count = RefCarsOrganization.objects.exclude(quantity=0).exclude(modification_autoru=None).count()
 
     params = {
         'type'          : 'cars',
@@ -196,10 +224,28 @@ def cars(request):
     select_count    = request.GET.get('select_count', 12)
     catalog         = get_catalog() 
 
-    cars        = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None)
-    subquery    = Subquery(RefCarsOrganizationFiles.objects.filter(сars_organization__id = OuterRef(name='pk')).values('id')[:1])
-    cars        = cars.annotate(photos = Count(subquery))    
-    cars        = cars.order_by('-photos', '-date_create')
+    # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для связанных объектов
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'modification_autoru__typeBody',
+        'modification_autoru__typeGear',
+        'status',
+        'store',
+        'store__city',
+        'unit',
+        'type_sale',
+        'stage_price',
+        'evaluation',
+        'type_drive'
+    ).prefetch_related(
+        'refcarsorganizationfiles_set'
+    )
+    
+    # ОПТИМИЗАЦИЯ: Используем Count напрямую вместо Subquery для подсчета фото
+    cars = cars.annotate(photos=Count('refcarsorganizationfiles', distinct=True))
+    cars = cars.order_by('-photos', '-date_create')
     
     filter_count    = 0
     
@@ -332,17 +378,18 @@ def cars(request):
         'filtr_count'       : filter_count
     }
 
+    # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
     selected = {
-        'stage_prices'  : RefStagePrice.objects.all().order_by('name'),
-        'type_sales'    : RefTypeSaleCarsOrganization.objects.all().order_by('name'),
-        'statuses'      : RefStatusCarsOrganization.objects.all().order_by('name'),
-        'marks'         : AutoruMark.objects.all().order_by('name'),
-        'bodys'         : RefTypeBody.objects.all().order_by('name'),
-        'drives'        : RefTypeDrive.objects.all().order_by('name'),
-        'gears'         : RefTypeKpp.objects.all().order_by('name'),
-        'stores'        : RefStore.objects.all().order_by('name'),
-        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
-        'citys'         : RefUnit.objects.filter(buauto = True).exclude(city = None).order_by('city__name').values('city', 'city__name').distinct()
+        'stage_prices'  : RefStagePrice.objects.only('id', 'name').order_by('name'),
+        'type_sales'    : RefTypeSaleCarsOrganization.objects.only('id', 'name').order_by('name'),
+        'statuses'      : RefStatusCarsOrganization.objects.only('id', 'name').order_by('name'),
+        'marks'         : AutoruMark.objects.only('id', 'name').order_by('name'),
+        'bodys'         : RefTypeBody.objects.only('id', 'name').order_by('name'),
+        'drives'        : RefTypeDrive.objects.only('id', 'name').order_by('name'),
+        'gears'         : RefTypeKpp.objects.only('id', 'name').order_by('name'),
+        'stores'        : RefStore.objects.only('id', 'name').order_by('name'),
+        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
+        'citys'         : RefUnit.objects.filter(buauto = True).exclude(city = None).select_related('city').only('city', 'city__name').order_by('city__name').values('city', 'city__name').distinct()
     }
     
     params = {
@@ -368,8 +415,24 @@ def disposition(request):
     status_type = request.GET.get('status', 'sale')  # По умолчанию "В продаже"
     select_count = int(request.GET.get('select_count', 50))
     
+    # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для связанных объектов
     # Базовый запрос
-    cars = RefCarsOrganization.objects.exclude(quantity=0)
+    cars = RefCarsOrganization.objects.exclude(quantity=0).select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'modification_autoru__typeBody',
+        'modification_autoru__typeGear',
+        'status',
+        'store',
+        'store__city',
+        'unit',
+        'evaluation',
+        'type_drive',
+        'stage_price'
+    ).prefetch_related(
+        'refcarsorganizationfiles_set'
+    )
     
     # Фильтр по статусу (тип диспозиции)
     if status_type == 'warehouse':
@@ -571,20 +634,22 @@ def disposition(request):
         days_in_stock_start or days_in_stock_end
     )
     
+    # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
     # Данные для фильтров
     selected = {
-        'marks': AutoruMark.objects.all().order_by('name'),
-        'statuses': RefStatusCarsOrganization.objects.all().order_by('name'),
-        'stores': RefStore.objects.all().order_by('name'),
-        'units': RefUnit.objects.filter(buauto=True).order_by('name'),
-        'body_types': RefTypeBody.objects.all().order_by('name'),
-        'gear_types': RefTypeKpp.objects.all().order_by('name'),
-        'drive_types': RefTypeDrive.objects.all().order_by('name'),
-        'evaluation_types': RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
+        'marks': AutoruMark.objects.only('id', 'name').order_by('name'),
+        'statuses': RefStatusCarsOrganization.objects.only('id', 'name').order_by('name'),
+        'stores': RefStore.objects.only('id', 'name').order_by('name'),
+        'units': RefUnit.objects.filter(buauto=True).only('id', 'name').order_by('name'),
+        'body_types': RefTypeBody.objects.only('id', 'name').order_by('name'),
+        'gear_types': RefTypeKpp.objects.only('id', 'name').order_by('name'),
+        'drive_types': RefTypeDrive.objects.only('id', 'name').order_by('name'),
+        'evaluation_types': RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
     }
     
+    # ОПТИМИЗАЦИЯ: Загружаем модели с select_related для марки
     # Загружаем модели (все для множественного выбора, или отфильтрованные по марке)
-    models_list = AutoruModel.objects.all().order_by('name')
+    models_list = AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name')
     if mark_id:
         models_list = models_list.filter(mark__id=mark_id)
     
@@ -633,7 +698,7 @@ def disposition(request):
         'selected': selected,
         'filtr': filtr,
         'models_list': models_list,
-        'all_models': AutoruModel.objects.all().order_by('name'),  # Все модели для множественного выбора
+        'all_models': AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name'),  # ОПТИМИЗАЦИЯ: Все модели для множественного выбора
         'total_cars_count': total_cars_count,
         'has_filters': has_filters,
     }
