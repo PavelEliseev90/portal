@@ -10690,6 +10690,8 @@ def tradein_funnel_analytics_rejected(request):
     unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
     city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
     type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
+    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
     brands_str = request.GET.get('brands', '').strip()
     brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
     
@@ -10698,6 +10700,8 @@ def tradein_funnel_analytics_rejected(request):
     unit_id = _get_int(request.GET.get('unit_id'))
     city_id = _get_int(request.GET.get('city_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
     brand = request.GET.get('brand', '').strip()
     
     if unit_source_id and unit_source_id not in unit_source_ids:
@@ -10708,6 +10712,10 @@ def tradein_funnel_analytics_rejected(request):
         city_ids.append(city_id)
     if type_reception_id and type_reception_id not in type_reception_ids:
         type_reception_ids.append(type_reception_id)
+    if analyst_id and analyst_id not in analyst_ids:
+        analyst_ids.append(analyst_id)
+    if staff_id and staff_id not in staff_ids:
+        staff_ids.append(staff_id)
     if brand and brand not in brand_list:
         brand_list.append(brand)
     
@@ -11294,8 +11302,8 @@ def eco_appraisers_performance(request):
             'brand_stats': brand_stats,
         })
     
-    # Сортируем по общему количеству рабочих листов
-    staff_stats.sort(key=lambda x: x['total_rlk'], reverse=True)
+    # Сортируем по имени оценщика (алфавит)
+    staff_stats.sort(key=lambda x: x.get('staff_name', '').lower())
     
     # Загружаем справочники для фильтров
     from refs.models import RefCity, RefStaff
@@ -11309,7 +11317,10 @@ def eco_appraisers_performance(request):
     cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
     type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
-    staffs = RefStaff.objects.filter(id__in=staff_ids_list).exclude(name='').order_by('name') if staff_ids_list else RefStaff.objects.none()
+    
+    # Получаем всех оценщиков из refs_qs для фильтра (отсортированных по алфавиту)
+    staff_ids_from_funnel = list(refs_qs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
+    staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name') if staff_ids_from_funnel else RefStaff.objects.none()
     
     params = {
         'type': 'eco_funnel',
