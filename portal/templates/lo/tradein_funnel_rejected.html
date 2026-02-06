@@ -263,7 +263,124 @@
         <div id="selectedTypeReceptions" class="mt-2"></div>
       </div>
     </div>
+    
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Аналитики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="analystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="analystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for analyst in params.analysts %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
+                  {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
+                {{ analyst.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedAnalysts" class="mt-2"></div>
+      </div>
+    </div>
+    
+    <!-- Дополнительные фильтры для анализа причин непринятия -->
+    <div class="row g-3 mt-2">
+      <div class="col-md-12">
+        <label class="form-label text-uppercase">Анализ причин непринятия</label>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Наличие соглашения</label>
+        <select class="form-select" name="has_agreement">
+          <option value="">Все</option>
+          <option value="yes" {% if params.filters.has_agreement == 'yes' %}selected{% endif %}>Есть соглашение</option>
+          <option value="no" {% if params.filters.has_agreement == 'no' %}selected{% endif %}>Нет соглашения</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Соглашение/отгрузка в основании</label>
+        <select class="form-select" name="has_footing_agreement">
+          <option value="">Все</option>
+          <option value="yes" {% if params.filters.has_footing_agreement == 'yes' %}selected{% endif %}>Есть</option>
+          <option value="no" {% if params.filters.has_footing_agreement == 'no' %}selected{% endif %}>Нет</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Наличие диагностики</label>
+        <select class="form-select" name="has_diagnostics">
+          <option value="">Все</option>
+          <option value="yes" {% if params.filters.has_diagnostics == 'yes' %}selected{% endif %}>Есть диагностика</option>
+          <option value="no" {% if params.filters.has_diagnostics == 'no' %}selected{% endif %}>Нет диагностики</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Наличие листа оценки</label>
+        <select class="form-select" name="has_lo">
+          <option value="">Все</option>
+          <option value="yes" {% if params.filters.has_lo == 'yes' %}selected{% endif %}>Есть лист оценки</option>
+          <option value="no" {% if params.filters.has_lo == 'no' %}selected{% endif %}>Нет листа оценки</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <label class="form-label">Цена до КД</label>
+        <select class="form-select" name="price_before_exists">
+          <option value="">Все</option>
+          <option value="yes" {% if params.filters.price_before_exists == 'yes' %}selected{% endif %}>Есть цена</option>
+          <option value="no" {% if params.filters.price_before_exists == 'no' %}selected{% endif %}>Нет цены</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Цена после КД</label>
+        <select class="form-select" name="price_after_exists">
+          <option value="">Все</option>
+          <option value="yes" {% if params.filters.price_after_exists == 'yes' %}selected{% endif %}>Есть цена</option>
+          <option value="no" {% if params.filters.price_after_exists == 'no' %}selected{% endif %}>Нет цены</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Статус (поиск)</label>
+        <input type="text" class="form-control" name="status" value="{{ params.filters.status }}" placeholder="Введите часть статуса...">
+      </div>
+    </div>
   </div>
+
+  <!-- Статистика по причинам непринятия -->
+  {% if params.failure_reasons_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Основные причины непринятия</h3>
+      <p class="text-muted mb-0">Статистика по причинам срыва сделки</p>
+    </div>
+    <div class="reason-stats">
+      {% for reason, count in params.failure_reasons_stats %}
+        <div class="reason-stat-item">
+          <span>{{ reason }}</span>
+          <span class="reason-stat-count">{{ count }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Статистика по основаниям -->
+  {% if params.footing_stats %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Анализ сделок в основании</h3>
+      <p class="text-muted mb-0">Статистика по наличию соглашений и отгрузок в основании</p>
+    </div>
+    <div class="reason-stats">
+      {% for footing_type, count in params.footing_stats %}
+        <div class="reason-stat-item">
+          <span>{{ footing_type }}</span>
+          <span class="reason-stat-count">{{ count }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   {% if params.reason_archive_stats %}
   <div class="kors-panel">
@@ -528,12 +645,14 @@
         initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
         initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
         initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+        initMultiSelect('analystSearch', 'analystDropdown', 'selectedAnalysts');
       });
     } else {
       initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
       initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
       initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
       initMultiSelect('typeReceptionSearch', 'typeReceptionDropdown', 'selectedTypeReceptions');
+      initMultiSelect('analystSearch', 'analystDropdown', 'selectedAnalysts');
     }
   })();
 </script>

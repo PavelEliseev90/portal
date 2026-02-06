@@ -963,6 +963,17 @@
                             </a>
                         </li>
                         
+                        {% if request.user.is_superuser or request.user.profiles.korsavto_settings %}
+                        
+                            <li class="nav-item">
+                                <a class="nav-link text-{% if params.type == 'main_menu' %}secondary active {% else %}white {% endif %}" href="{% url 'website:main_menu' %}">
+                                    <span class="sidebar-icon bi bi-list-ul"></span>
+                                    Меню
+                                </a>
+                            </li>
+                            
+                        {% endif %} 
+
                         {% if request.user.profiles.user_sb %}
                         
                             <li class="nav-item">
