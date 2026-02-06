@@ -105,6 +105,20 @@
     margin-right: 0.5rem;
     margin-bottom: 0.5rem;
   }
+
+  .list-group {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .list-group-item {
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
 </style>
 
 <div class="kors-funnel-page">
@@ -140,7 +154,7 @@
       </div>
     </div>
     
-    <!-- Множественные фильтры (упрощенная версия) -->
+    <!-- Множественные фильтры -->
     <div class="row g-3 align-items-end mt-2">
       <div class="col-md-3">
         <label class="form-label text-uppercase">Источник приема</label>
@@ -210,6 +224,42 @@
         <div id="selectedBrands" class="mt-2"></div>
       </div>
     </div>
+    
+    <div class="row g-3 align-items-end mt-2">
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Аналитики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="analystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="analystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for analyst in params.analysts %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
+                  {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
+                {{ analyst.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedAnalysts" class="mt-2"></div>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label text-uppercase">Оценщики</label>
+        <div class="position-relative">
+          <input type="text" class="form-control" id="staffSearch" placeholder="Поиск по оценщикам..." autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="staffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
+            {% for staff in params.staffs %}
+              <label class="list-group-item">
+                <input class="form-check-input me-2" type="checkbox" name="staff_ids" value="{{ staff.id }}" 
+                  {% if staff.id in params.filters.staff_ids_list %}checked{% endif %}>
+                {{ staff.name }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedStaffs" class="mt-2"></div>
+      </div>
+    </div>
   </form>
 
   <!-- Блоки не принятых -->
@@ -250,6 +300,11 @@
         <h2>{{ params.rejected.reception.count|floatformat:"0g" }}</h2>
         <p class="kors-stage-desc">Из {{ params.totals.after|floatformat:"0g" }} после КД</p>
         <span class="kors-stage-conv">Процент отвалившихся: {{ params.rejected.reception.percent|floatformat:"2g" }}%</span>
+        {% if params.rejected_with_agreement_after > 0 %}
+          <div class="mt-2">
+            <span class="badge bg-warning text-dark">⚠️ С соглашением: {{ params.rejected_with_agreement_after }}</span>
+          </div>
+        {% endif %}
         <div class="mt-2">
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=rejected_reception&{{ request.GET.urlencode }}" 
              class="btn btn-sm btn-primary">
@@ -259,6 +314,31 @@
       </article>
     </div>
   </div>
+  
+  <!-- Дополнительные метрики -->
+  {% if params.rejected_with_agreement_before > 0 or params.rejected_with_agreement_after > 0 %}
+    <div class="kors-panel mt-3">
+      <h3>Дополнительная информация</h3>
+      <div class="row">
+        {% if params.rejected_with_agreement_before > 0 %}
+          <div class="col-md-6">
+            <div class="alert alert-warning">
+              <strong>⚠️ Соглашение до КД, но не принят:</strong> {{ params.rejected_with_agreement_before }}
+              <p class="mb-0 mt-1 small">Есть согласованная цена до КД, но автомобиль не был принят</p>
+            </div>
+          </div>
+        {% endif %}
+        {% if params.rejected_with_agreement_after > 0 %}
+          <div class="col-md-6">
+            <div class="alert alert-warning">
+              <strong>⚠️ Соглашение после КД, но не принят:</strong> {{ params.rejected_with_agreement_after }}
+              <p class="mb-0 mt-1 small">Есть согласованная цена после КД, но автомобиль не был принят</p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
 
   <div class="text-center">
     <a href="{% url 'eco:tradein_funnel_analytics' %}?{{ request.GET.urlencode }}" 
@@ -308,18 +388,71 @@
       updateSelected();
     }
     
+    function initMultiSelect(searchId, dropdownId, selectedDivId) {
+      const searchInput = document.getElementById(searchId);
+      const dropdown = document.getElementById(dropdownId);
+      const selectedDiv = document.getElementById(selectedDivId);
+      
+      if (!searchInput || !dropdown || !selectedDiv) return;
+      
+      function updateSelected() {
+        const checked = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'));
+        selectedDiv.innerHTML = '';
+        if (checked.length > 0) {
+          const badges = Array.from(checked).map(cb => {
+            const label = cb.closest('label');
+            const text = label ? label.textContent.trim() : '';
+            const value = cb.value;
+            return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedDivId}();"></button></span>`;
+          }).join('');
+          selectedDiv.innerHTML = badges;
+        }
+      }
+      
+      window['updateSelected_' + selectedDivId] = updateSelected;
+      
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const items = dropdown.querySelectorAll('label');
+        items.forEach(item => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+      });
+      
+      searchInput.addEventListener('focus', function() {
+        dropdown.style.display = 'block';
+      });
+      
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+      
+      dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateSelected);
+      });
+      
+      updateSelected();
+    }
+    
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
         initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
         initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
         initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
         initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+        initMultiSelect('analystSearch', 'analystDropdown', 'selectedAnalysts');
+        initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
       });
     } else {
       initMultiSelect('sourceUnitSearch', 'sourceUnitDropdown', 'selectedSourceUnits');
       initMultiSelect('unitSearch', 'unitDropdown', 'selectedUnits');
       initMultiSelect('citySearch', 'cityDropdown', 'selectedCities');
       initMultiSelect('brandSearch', 'brandDropdown', 'selectedBrands');
+      initMultiSelect('analystSearch', 'analystDropdown', 'selectedAnalysts');
+      initMultiSelect('staffSearch', 'staffDropdown', 'selectedStaffs');
     }
     
     function prepareFormData(form) {
@@ -327,8 +460,10 @@
       const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
       const cityIds = Array.from(form.querySelectorAll('input[name="city_ids"]:checked')).map(cb => cb.value);
       const brands = Array.from(form.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
+      const analystIds = Array.from(form.querySelectorAll('input[name="analyst_ids"]:checked')).map(cb => cb.value);
+      const staffIds = Array.from(form.querySelectorAll('input[name="staff_ids"]:checked')).map(cb => cb.value);
       
-      form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="brands"]').forEach(el => el.remove());
+      form.querySelectorAll('input[type="hidden"][name^="unit_source_ids"], input[type="hidden"][name^="unit_ids"], input[type="hidden"][name^="city_ids"], input[type="hidden"][name^="brands"], input[type="hidden"][name^="analyst_ids"], input[type="hidden"][name^="staff_ids"]').forEach(el => el.remove());
       
       if (unitSourceIds.length > 0) {
         const hidden = document.createElement('input');
@@ -362,6 +497,22 @@
         form.appendChild(hidden);
       }
       
+      if (analystIds.length > 0) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'analyst_ids';
+        hidden.value = analystIds.join(',');
+        form.appendChild(hidden);
+      }
+      
+      if (staffIds.length > 0) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'staff_ids';
+        hidden.value = staffIds.join(',');
+        form.appendChild(hidden);
+      }
+      
       return true;
     }
     
@@ -370,7 +521,7 @@
     function resetFilters() {
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       document.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
-      const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedBrands'];
+      const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedBrands', 'selectedAnalysts', 'selectedStaffs'];
       selectedDivs.forEach(id => {
         const div = document.getElementById(id);
         if (div) div.innerHTML = '';

@@ -10176,6 +10176,46 @@ def tradein_funnel_analytics_detail(request):
             valid_date_reception
         )
         filter_title = 'Не приняты'
+    elif filter_type == 'analyst_remote':
+        # Дистанционная оценка аналитика
+        analyst_id = _get_int(request.GET.get('analyst_id'))
+        if analyst_id:
+            qs = qs.filter(analyst_remote_id=analyst_id, valid_date_remote)
+            filter_title = f'Дистанционная оценка аналитика (ID: {analyst_id})'
+        else:
+            return HttpResponse('Не указан ID аналитика', status=400)
+    elif filter_type == 'analyst_before':
+        # До КД аналитика
+        analyst_id = _get_int(request.GET.get('analyst_id'))
+        if analyst_id:
+            qs = qs.filter(analyst_before_id=analyst_id, valid_date_before)
+            filter_title = f'До КД аналитика (ID: {analyst_id})'
+        else:
+            return HttpResponse('Не указан ID аналитика', status=400)
+    elif filter_type == 'analyst_after':
+        # После КД аналитика
+        analyst_id = _get_int(request.GET.get('analyst_id'))
+        if analyst_id:
+            qs = qs.filter(analyst_after_id=analyst_id, valid_date_after)
+            filter_title = f'После КД аналитика (ID: {analyst_id})'
+        else:
+            return HttpResponse('Не указан ID аналитика', status=400)
+    elif filter_type == 'staff_rlk':
+        # Рабочие листы оценщика
+        staff_id = _get_int(request.GET.get('staff_id'))
+        if staff_id:
+            qs = qs.filter(staff_id=staff_id, valid_date_rlk)
+            filter_title = f'Рабочие листы оценщика (ID: {staff_id})'
+        else:
+            return HttpResponse('Не указан ID оценщика', status=400)
+    elif filter_type == 'staff_reception':
+        # Принятые оценщиком
+        staff_id = _get_int(request.GET.get('staff_id'))
+        if staff_id:
+            qs = qs.filter(staff_id=staff_id, valid_date_reception)
+            filter_title = f'Принятые оценщиком (ID: {staff_id})'
+        else:
+            return HttpResponse('Не указан ID оценщика', status=400)
     else:
         return HttpResponse('Неверный тип фильтра', status=400)
     
@@ -10306,6 +10346,14 @@ def tradein_funnel_analytics_rejected(request):
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
         refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
+    if analyst_ids:
+        base_qs = base_qs.filter(
+            Q(analyst_remote_id__in=analyst_ids) |
+            Q(analyst_before_id__in=analyst_ids) |
+            Q(analyst_after_id__in=analyst_ids)
+        )
+    if staff_ids:
+        base_qs = base_qs.filter(staff_id__in=staff_ids)
     if brand_list:
         brand_q = Q()
         for b in brand_list:
@@ -10394,6 +10442,31 @@ def tradein_funnel_analytics_rejected(request):
     type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
     
+    # Получаем аналитиков для фильтра
+    from refs.models import RefStaff
+    analyst_ids_from_funnel = set()
+    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
+    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
+    analyst_ids_from_funnel.update(refs_qs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
+    analyst_ids_list = list(analyst_ids_from_funnel)
+    analysts = RefStaff.objects.filter(id__in=analyst_ids_list).exclude(name='').order_by('name') if analyst_ids_list else RefStaff.objects.none()
+    
+    # Получаем оценщиков для фильтра
+    staff_ids_from_funnel = list(refs_qs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
+    staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name') if staff_ids_from_funnel else RefStaff.objects.none()
+    
+    # Подсчитываем дополнительные метрики для бейджей
+    # Есть соглашение (price_before > 0 или price_after > 0), но не принят
+    rejected_with_agreement_before = qs.filter(
+        valid_date_before,
+        price_before__gt=0
+    ).exclude(valid_date_reception).count()
+    
+    rejected_with_agreement_after = qs.filter(
+        valid_date_after,
+        price_after__gt=0
+    ).exclude(valid_date_reception).count()
+    
     params = {
         'type': 'eco_funnel',
         'nav_selected': 4,
@@ -10413,6 +10486,12 @@ def tradein_funnel_analytics_rejected(request):
             'type_reception_id': type_reception_id or '',
             'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
             'type_reception_ids_list': type_reception_ids,
+            'analyst_id': analyst_id or '',
+            'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
+            'analyst_ids_list': analyst_ids,
+            'staff_id': staff_id or '',
+            'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
+            'staff_ids_list': staff_ids,
             'brand': brand,
             'brands': ','.join(brand_list) if brand_list else '',
             'brands_list': brand_list,
@@ -10421,7 +10500,11 @@ def tradein_funnel_analytics_rejected(request):
         'source_units': source_units,
         'cities': cities,
         'type_receptions': type_receptions,
+        'analysts': analysts,
+        'staffs': staffs,
         'brands': brands_list,
+        'rejected_with_agreement_before': rejected_with_agreement_before,
+        'rejected_with_agreement_after': rejected_with_agreement_after,
         'rejected': {
             'before': {'count': rejected_before, 'percent': pct_rejected_before},
             'after': {'count': rejected_after, 'percent': pct_rejected_after},
@@ -10459,17 +10542,21 @@ def eco_analysts_performance(request):
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
     
+    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
     unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
     city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
     type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
     analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
     
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
     unit_id = _get_int(request.GET.get('unit_id'))
     city_id = _get_int(request.GET.get('city_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
     
     # Обратная совместимость
+    if unit_source_id and unit_source_id not in unit_source_ids:
+        unit_source_ids.append(unit_source_id)
     if unit_id and unit_id not in unit_ids:
         unit_ids.append(unit_id)
     if city_id and city_id not in city_ids:
@@ -10482,6 +10569,9 @@ def eco_analysts_performance(request):
     # Базовый QuerySet
     base_qs = TradeInFunnel.objects.all()
     
+    # QuerySet для справочников (без фильтров по источникам и подразделениям)
+    refs_qs = TradeInFunnel.objects.all()
+    
     # Применяем фильтры по датам (сквозной отчет)
     qs = base_qs.filter(
         Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
@@ -10490,12 +10580,16 @@ def eco_analysts_performance(request):
         Q(date_after_success__gte=date_start, date_after_success__lte=date_end)
     )
     
+    if unit_source_ids:
+        qs = qs.filter(unit_source_id__in=unit_source_ids)
     if unit_ids:
         qs = qs.filter(unit_id__in=unit_ids)
     if city_ids:
         qs = qs.filter(city_id__in=city_ids)
+        refs_qs = refs_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         qs = qs.filter(type_reception_id__in=type_reception_ids)
+        refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
     if analyst_ids:
         qs = qs.filter(
             Q(analyst_remote_id__in=analyst_ids) |
@@ -10625,9 +10719,14 @@ def eco_analysts_performance(request):
     # Загружаем справочники для фильтров
     from refs.models import RefCity, RefStaff
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
-    city_ids_from_funnel = list(base_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    
+    # Получаем источники из refs_qs
+    source_unit_ids = list(refs_qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+    source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
+    
+    city_ids_from_funnel = list(refs_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
     cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
-    type_reception_ids_from_funnel = list(base_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
     
     # Получаем всех аналитиков для фильтра
@@ -10641,6 +10740,8 @@ def eco_analysts_performance(request):
         'filters': {
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_source_ids': ','.join(map(str, unit_source_ids)) if unit_source_ids else '',
+            'unit_source_ids_list': unit_source_ids,
             'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
             'unit_ids_list': unit_ids,
             'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
@@ -10651,6 +10752,7 @@ def eco_analysts_performance(request):
             'analyst_ids_list': analyst_ids,
         },
         'units': units,
+        'source_units': source_units,
         'cities': cities,
         'type_receptions': type_receptions,
         'analysts': analysts,
@@ -10681,17 +10783,21 @@ def eco_appraisers_performance(request):
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
     
+    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
     unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
     city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
     type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
     staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
     
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
     unit_id = _get_int(request.GET.get('unit_id'))
     city_id = _get_int(request.GET.get('city_id'))
     type_reception_id = _get_int(request.GET.get('type_reception_id'))
     staff_id = _get_int(request.GET.get('staff_id'))
     
     # Обратная совместимость
+    if unit_source_id and unit_source_id not in unit_source_ids:
+        unit_source_ids.append(unit_source_id)
     if unit_id and unit_id not in unit_ids:
         unit_ids.append(unit_id)
     if city_id and city_id not in city_ids:
@@ -10704,6 +10810,9 @@ def eco_appraisers_performance(request):
     # Базовый QuerySet
     base_qs = TradeInFunnel.objects.all()
     
+    # QuerySet для справочников (без фильтров по источникам и подразделениям)
+    refs_qs = TradeInFunnel.objects.all()
+    
     # Применяем фильтры по датам (сквозной отчет)
     qs = base_qs.filter(
         Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
@@ -10713,12 +10822,16 @@ def eco_appraisers_performance(request):
         Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
     )
     
+    if unit_source_ids:
+        qs = qs.filter(unit_source_id__in=unit_source_ids)
     if unit_ids:
         qs = qs.filter(unit_id__in=unit_ids)
     if city_ids:
         qs = qs.filter(city_id__in=city_ids)
+        refs_qs = refs_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         qs = qs.filter(type_reception_id__in=type_reception_ids)
+        refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
     if staff_ids:
         qs = qs.filter(staff_id__in=staff_ids)
     
@@ -10805,9 +10918,14 @@ def eco_appraisers_performance(request):
     # Загружаем справочники для фильтров
     from refs.models import RefCity, RefStaff
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
-    city_ids_from_funnel = list(base_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    
+    # Получаем источники из refs_qs
+    source_unit_ids = list(refs_qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+    source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
+    
+    city_ids_from_funnel = list(refs_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
     cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
-    type_reception_ids_from_funnel = list(base_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
     staffs = RefStaff.objects.filter(id__in=staff_ids_list).exclude(name='').order_by('name') if staff_ids_list else RefStaff.objects.none()
     
@@ -10818,6 +10936,8 @@ def eco_appraisers_performance(request):
         'filters': {
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_source_ids': ','.join(map(str, unit_source_ids)) if unit_source_ids else '',
+            'unit_source_ids_list': unit_source_ids,
             'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
             'unit_ids_list': unit_ids,
             'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
@@ -10828,6 +10948,7 @@ def eco_appraisers_performance(request):
             'staff_ids_list': staff_ids,
         },
         'units': units,
+        'source_units': source_units,
         'cities': cities,
         'type_receptions': type_receptions,
         'staffs': staffs,
