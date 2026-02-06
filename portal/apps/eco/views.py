@@ -8390,10 +8390,31 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     after_equal = totals_agg['after_equal'] or 0
     after_above = totals_agg['after_above'] or 0
     
-    # Общее количество для расчета процентов
-    total_remote_comparison = remote_below + remote_equal + remote_above
-    total_before_comparison = before_below + before_equal + before_above
-    total_after_comparison = after_below + after_equal + after_above
+    # ОПТИМИЗАЦИЯ: Подсчет общего количества для авторасчетов по правильным условиям
+    # Дистанционная оценка: date_remote_success заполнено и не равно 1,1,1
+    total_remote_comparison = qs.filter(valid_date_remote).count()
+    
+    # До КД: date_before_success указана и больше даты 1,1,1
+    total_before_comparison = qs.filter(valid_date_before).count()
+    
+    # После КД: date_after_success заполнены и не равны дате 1,1,1
+    total_after_comparison = qs.filter(valid_date_after).count()
+    
+    # Пересчитываем сравнения только для записей с валидными датами
+    if total_remote_comparison > 0:
+        remote_below = qs.filter(valid_date_remote, comparison_remote_type=-1).count()
+        remote_equal = qs.filter(valid_date_remote, comparison_remote_type=0).count()
+        remote_above = qs.filter(valid_date_remote, comparison_remote_type=1).count()
+    
+    if total_before_comparison > 0:
+        before_below = qs.filter(valid_date_before, comparison_before_type=-1).count()
+        before_equal = qs.filter(valid_date_before, comparison_before_type=0).count()
+        before_above = qs.filter(valid_date_before, comparison_before_type=1).count()
+    
+    if total_after_comparison > 0:
+        after_below = qs.filter(valid_date_after, comparison_after_type=-1).count()
+        after_equal = qs.filter(valid_date_after, comparison_after_type=0).count()
+        after_above = qs.filter(valid_date_after, comparison_after_type=1).count()
     
     # Проценты
     conv_op_to_tradein = (total_rlk / total_op_rlk * 100) if total_op_rlk > 0 else 0
@@ -10108,31 +10129,34 @@ def tradein_funnel_analytics_detail(request):
         qs = qs.filter(Q(diagostica=False) & valid_date_after) 
         filter_title = 'Без диагностики'
     elif filter_type == 'remote_below':
-        qs = qs.filter(comparison_remote_type=-1)
+        # Дистанционная оценка: date_remote_success заполнено и не равно 1,1,1
+        qs = qs.filter(valid_date_remote, comparison_remote_type=-1)
         filter_title = 'Дистанционная оценка - Ниже авторасчета'
     elif filter_type == 'remote_equal':
-        qs = qs.filter(comparison_remote_type=0)
+        qs = qs.filter(valid_date_remote, comparison_remote_type=0)
         filter_title = 'Дистанционная оценка - Равно авторасчету'
     elif filter_type == 'remote_above':
-        qs = qs.filter(comparison_remote_type=1)
+        qs = qs.filter(valid_date_remote, comparison_remote_type=1)
         filter_title = 'Дистанционная оценка - Выше авторасчета'
     elif filter_type == 'before_below':
-        qs = qs.filter(comparison_before_type=-1)
+        # До КД: date_before_success указана и больше даты 1,1,1
+        qs = qs.filter(valid_date_before, comparison_before_type=-1)
         filter_title = 'До КД - Ниже авторасчета'
     elif filter_type == 'before_equal':
-        qs = qs.filter(comparison_before_type=0)
+        qs = qs.filter(valid_date_before, comparison_before_type=0)
         filter_title = 'До КД - Равно авторасчету'
     elif filter_type == 'before_above':
-        qs = qs.filter(comparison_before_type=1)
+        qs = qs.filter(valid_date_before, comparison_before_type=1)
         filter_title = 'До КД - Выше авторасчета'
     elif filter_type == 'after_below':
-        qs = qs.filter(comparison_after_type=-1)
+        # После КД: date_after_success заполнены и не равны дате 1,1,1
+        qs = qs.filter(valid_date_after, comparison_after_type=-1)
         filter_title = 'После КД - Ниже авторасчета'
     elif filter_type == 'after_equal':
-        qs = qs.filter(comparison_after_type=0)
+        qs = qs.filter(valid_date_after, comparison_after_type=0)
         filter_title = 'После КД - Равно авторасчету'
     elif filter_type == 'after_above':
-        qs = qs.filter(comparison_after_type=1)
+        qs = qs.filter(valid_date_after, comparison_after_type=1)
         filter_title = 'После КД - Выше авторасчета'
     elif filter_type == 'rejected_before':
         # Не дошли до КД/дистанционной оценки
@@ -10265,23 +10289,29 @@ def tradein_funnel_analytics_rejected(request):
     if brand and brand not in brand_list:
         brand_list.append(brand)
     
-    # Базовый QuerySet с фильтрами
+    # Базовый QuerySet для данных (с фильтрами)
     base_qs = TradeInFunnel.objects.all()
     
-    # Применяем фильтры
+    # QuerySet для справочников (без фильтров по источникам и подразделениям, чтобы показывать все доступные значения)
+    refs_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры к базовому QuerySet
     if unit_source_ids:
         base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
     if unit_ids:
         base_qs = base_qs.filter(unit_id__in=unit_ids)
     if city_ids:
         base_qs = base_qs.filter(city_id__in=city_ids)
+        refs_qs = refs_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+        refs_qs = refs_qs.filter(type_reception_id__in=type_reception_ids)
     if brand_list:
         brand_q = Q()
         for b in brand_list:
             brand_q |= Q(brand__icontains=b)
         base_qs = base_qs.filter(brand_q)
+        refs_qs = refs_qs.filter(brand_q)
     
     # Определяем QuerySet в зависимости от варианта отчета
     if report_type == 1:
@@ -10348,18 +10378,20 @@ def tradein_funnel_analytics_rejected(request):
     pct_rejected_reception = (rejected_reception / total_after * 100) if total_after > 0 else 0
     
     # Загружаем справочники для фильтров
+    # Используем refs_qs для получения всех возможных значений (без фильтров по источникам и подразделениям)
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     
-    source_unit_ids = list(qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
+    # Получаем источники из refs_qs (все записи, которые могут попасть в отчет)
+    source_unit_ids = list(refs_qs.exclude(unit_source_id__isnull=True).values_list('unit_source_id', flat=True).distinct())
     source_units = RefUnit.objects.filter(id__in=source_unit_ids).exclude(name='').order_by('name') if source_unit_ids else RefUnit.objects.none()
     
     from refs.models import RefCity
-    city_ids_from_funnel = list(qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    city_ids_from_funnel = list(refs_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
     cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
     
-    brands_list = list(qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
+    brands_list = list(refs_qs.exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand'))
     
-    type_reception_ids_from_funnel = list(qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_reception_ids_from_funnel = list(refs_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
     
     params = {
@@ -10403,6 +10435,405 @@ def tradein_funnel_analytics_rejected(request):
     }
     
     return render(request, 'lo/tradein_funnel_analytics_rejected.html', {'params': params})
+
+
+def eco_analysts_performance(request):
+    """Анализ эффективности аналитиков на основе TradeInFunnel"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    # Парсим фильтры
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
+    
+    unit_id = _get_int(request.GET.get('unit_id'))
+    city_id = _get_int(request.GET.get('city_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    
+    # Обратная совместимость
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if city_id and city_id not in city_ids:
+        city_ids.append(city_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    if analyst_id and analyst_id not in analyst_ids:
+        analyst_ids.append(analyst_id)
+    
+    # Базовый QuerySet
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры по датам (сквозной отчет)
+    qs = base_qs.filter(
+        Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+        Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+        Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+        Q(date_after_success__gte=date_start, date_after_success__lte=date_end)
+    )
+    
+    if unit_ids:
+        qs = qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        qs = qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        qs = qs.filter(type_reception_id__in=type_reception_ids)
+    if analyst_ids:
+        qs = qs.filter(
+            Q(analyst_remote_id__in=analyst_ids) |
+            Q(analyst_before_id__in=analyst_ids) |
+            Q(analyst_after_id__in=analyst_ids)
+        )
+    
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    
+    # Получаем всех уникальных аналитиков
+    analyst_ids_remote = set(qs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
+    analyst_ids_before = set(qs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
+    analyst_ids_after = set(qs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
+    all_analyst_ids_set = analyst_ids_remote | analyst_ids_before | analyst_ids_after
+    
+    analyst_stats = []
+    
+    for analyst_id_val in all_analyst_ids_set:
+        if analyst_id_val is None:
+            continue
+        
+        # Получаем имя аналитика
+        analyst_name = None
+        analyst_name_obj = qs.filter(
+            Q(analyst_remote_id=analyst_id_val) | Q(analyst_before_id=analyst_id_val) | Q(analyst_after_id=analyst_id_val)
+        ).exclude(
+            Q(analyst_remote_name='') & Q(analyst_before_name='') & Q(analyst_after_name='')
+        ).first()
+        
+        if analyst_name_obj:
+            if analyst_name_obj.analyst_remote_id == analyst_id_val and analyst_name_obj.analyst_remote_name:
+                analyst_name = analyst_name_obj.analyst_remote_name
+            elif analyst_name_obj.analyst_before_id == analyst_id_val and analyst_name_obj.analyst_before_name:
+                analyst_name = analyst_name_obj.analyst_before_name
+            elif analyst_name_obj.analyst_after_id == analyst_id_val and analyst_name_obj.analyst_after_name:
+                analyst_name = analyst_name_obj.analyst_after_name
+        
+        if not analyst_name:
+            analyst_name = f'Аналитик #{analyst_id_val}'
+        
+        # Фильтруем по аналитику
+        analyst_qs = qs.filter(
+            Q(analyst_remote_id=analyst_id_val) | Q(analyst_before_id=analyst_id_val) | Q(analyst_after_id=analyst_id_val)
+        )
+        
+        # Подсчеты для дистанционной оценки
+        remote_qs = analyst_qs.filter(Q(analyst_remote_id=analyst_id_val) & valid_date_remote)
+        remote_count = remote_qs.count()
+        remote_below = remote_qs.filter(comparison_remote_type=-1).count()
+        remote_equal = remote_qs.filter(comparison_remote_type=0).count()
+        remote_above = remote_qs.filter(comparison_remote_type=1).count()
+        remote_avg_price = remote_qs.aggregate(avg=Avg('price_remote'))['avg'] or 0
+        remote_avg_auto = remote_qs.aggregate(avg=Avg('price_auto_remote'))['avg'] or 0
+        
+        # Подсчеты для до КД
+        before_qs = analyst_qs.filter(Q(analyst_before_id=analyst_id_val) & valid_date_before)
+        before_count = before_qs.count()
+        before_below = before_qs.filter(comparison_before_type=-1).count()
+        before_equal = before_qs.filter(comparison_before_type=0).count()
+        before_above = before_qs.filter(comparison_before_type=1).count()
+        before_avg_price = before_qs.aggregate(avg=Avg('price_before'))['avg'] or 0
+        before_avg_auto = before_qs.aggregate(avg=Avg('price_auto_before'))['avg'] or 0
+        
+        # Подсчеты для после КД
+        after_qs = analyst_qs.filter(Q(analyst_after_id=analyst_id_val) & valid_date_after)
+        after_count = after_qs.count()
+        after_below = after_qs.filter(comparison_after_type=-1).count()
+        after_equal = after_qs.filter(comparison_after_type=0).count()
+        after_above = after_qs.filter(comparison_after_type=1).count()
+        after_avg_price = after_qs.aggregate(avg=Avg('price_after'))['avg'] or 0
+        after_avg_auto = after_qs.aggregate(avg=Avg('price_auto_after'))['avg'] or 0
+        
+        # Общее количество оценок
+        total_estimations = remote_count + before_count + after_count
+        
+        # Статистика по подразделениям
+        units_stats = list(analyst_qs.exclude(unit_id__isnull=True).values('unit_id', 'unit_name').annotate(
+            count=Count('rlk_id', distinct=True)
+        ).order_by('-count')[:10])
+        
+        # Статистика по типам приема
+        type_reception_stats = list(analyst_qs.exclude(type_reception_id__isnull=True).values('type_reception_id', 'type_reception_name').annotate(
+            count=Count('rlk_id', distinct=True)
+        ).order_by('-count')[:10])
+        
+        analyst_stats.append({
+            'analyst_id': analyst_id_val,
+            'analyst_name': analyst_name,
+            'total_estimations': total_estimations,
+            'remote': {
+                'count': remote_count,
+                'below': remote_below,
+                'equal': remote_equal,
+                'above': remote_above,
+                'avg_price': remote_avg_price,
+                'avg_auto': remote_avg_auto,
+            },
+            'before': {
+                'count': before_count,
+                'below': before_below,
+                'equal': before_equal,
+                'above': before_above,
+                'avg_price': before_avg_price,
+                'avg_auto': before_avg_auto,
+            },
+            'after': {
+                'count': after_count,
+                'below': after_below,
+                'equal': after_equal,
+                'above': after_above,
+                'avg_price': after_avg_price,
+                'avg_auto': after_avg_auto,
+            },
+            'units_stats': units_stats,
+            'type_reception_stats': type_reception_stats,
+        })
+    
+    # Сортируем по общему количеству оценок
+    analyst_stats.sort(key=lambda x: x['total_estimations'], reverse=True)
+    
+    # Загружаем справочники для фильтров
+    from refs.models import RefCity, RefStaff
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    city_ids_from_funnel = list(base_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
+    type_reception_ids_from_funnel = list(base_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
+    
+    # Получаем всех аналитиков для фильтра
+    all_analyst_ids_list = list(all_analyst_ids_set)
+    analysts = RefStaff.objects.filter(id__in=all_analyst_ids_list).exclude(name='').order_by('name') if all_analyst_ids_list else RefStaff.objects.none()
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'analyst_stats': analyst_stats,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
+            'unit_ids_list': unit_ids,
+            'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
+            'city_ids_list': city_ids,
+            'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
+            'type_reception_ids_list': type_reception_ids,
+            'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
+            'analyst_ids_list': analyst_ids,
+        },
+        'units': units,
+        'cities': cities,
+        'type_receptions': type_receptions,
+        'analysts': analysts,
+    }
+    
+    return render(request, 'lo/eco_analysts_performance.html', {'params': params})
+
+
+def eco_appraisers_performance(request):
+    """Анализ эффективности оценщиков на основе TradeInFunnel"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    # Парсим фильтры
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
+    
+    unit_id = _get_int(request.GET.get('unit_id'))
+    city_id = _get_int(request.GET.get('city_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    
+    # Обратная совместимость
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if city_id and city_id not in city_ids:
+        city_ids.append(city_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    if staff_id and staff_id not in staff_ids:
+        staff_ids.append(staff_id)
+    
+    # Базовый QuerySet
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры по датам (сквозной отчет)
+    qs = base_qs.filter(
+        Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+        Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+        Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+        Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+        Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+    )
+    
+    if unit_ids:
+        qs = qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        qs = qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        qs = qs.filter(type_reception_id__in=type_reception_ids)
+    if staff_ids:
+        qs = qs.filter(staff_id__in=staff_ids)
+    
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат
+    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    
+    # Получаем всех уникальных оценщиков
+    staff_ids_list = list(qs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
+    
+    staff_stats = []
+    
+    for staff_id_val in staff_ids_list:
+        if staff_id_val is None:
+            continue
+        
+        # Фильтруем по оценщику
+        staff_qs = qs.filter(staff_id=staff_id_val)
+        
+        # Получаем имя оценщика
+        staff_name_obj = staff_qs.exclude(staff_name='').first()
+        staff_name = staff_name_obj.staff_name if staff_name_obj else f'Оценщик #{staff_id_val}'
+        
+        # Подсчеты
+        total_rlk = staff_qs.filter(valid_date_rlk).count()
+        total_before = staff_qs.filter(valid_date_before | valid_date_remote).count()
+        total_after = staff_qs.filter(valid_date_after).count()
+        total_reception = staff_qs.filter(valid_date_reception).count()
+        
+        # Конверсии
+        conv_before = (total_before / total_rlk * 100) if total_rlk > 0 else 0
+        conv_after = (total_after / total_before * 100) if total_before > 0 else 0
+        conv_reception = (total_reception / total_after * 100) if total_after > 0 else 0
+        
+        # Средние цены
+        avg_price_reception = staff_qs.filter(valid_date_reception).aggregate(avg=Avg('price_reception_staff'))['avg'] or 0
+        avg_price_sale = staff_qs.filter(valid_date_reception).aggregate(avg=Avg('price_sale_staff'))['avg'] or 0
+        
+        # Статистика по подразделениям
+        units_stats = list(staff_qs.exclude(unit_id__isnull=True).values('unit_id', 'unit_name').annotate(
+            count=Count('rlk_id', distinct=True)
+        ).order_by('-count')[:10])
+        
+        # Статистика по типам приема
+        type_reception_stats = list(staff_qs.exclude(type_reception_id__isnull=True).values('type_reception_id', 'type_reception_name').annotate(
+            count=Count('rlk_id', distinct=True)
+        ).order_by('-count')[:10])
+        
+        # Статистика по брендам
+        brand_stats = list(staff_qs.exclude(brand='').values('brand').annotate(
+            count=Count('rlk_id', distinct=True)
+        ).order_by('-count')[:10])
+        
+        # Среднее время на складе
+        avg_hours_stock = staff_qs.filter(valid_date_reception).aggregate(avg=Avg('hours_stock'))['avg'] or 0
+        
+        staff_stats.append({
+            'staff_id': staff_id_val,
+            'staff_name': staff_name,
+            'total_rlk': total_rlk,
+            'total_before': total_before,
+            'total_after': total_after,
+            'total_reception': total_reception,
+            'conv_before': conv_before,
+            'conv_after': conv_after,
+            'conv_reception': conv_reception,
+            'avg_price_reception': avg_price_reception,
+            'avg_price_sale': avg_price_sale,
+            'avg_hours_stock': avg_hours_stock,
+            'units_stats': units_stats,
+            'type_reception_stats': type_reception_stats,
+            'brand_stats': brand_stats,
+        })
+    
+    # Сортируем по общему количеству рабочих листов
+    staff_stats.sort(key=lambda x: x['total_rlk'], reverse=True)
+    
+    # Загружаем справочники для фильтров
+    from refs.models import RefCity, RefStaff
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    city_ids_from_funnel = list(base_qs.exclude(city_id__isnull=True).values_list('city_id', flat=True).distinct())
+    cities = RefCity.objects.filter(id__in=city_ids_from_funnel).exclude(name='').order_by('name') if city_ids_from_funnel else RefCity.objects.none()
+    type_reception_ids_from_funnel = list(base_qs.exclude(type_reception_id__isnull=True).values_list('type_reception_id', flat=True).distinct())
+    type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
+    staffs = RefStaff.objects.filter(id__in=staff_ids_list).exclude(name='').order_by('name') if staff_ids_list else RefStaff.objects.none()
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'staff_stats': staff_stats,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_ids': ','.join(map(str, unit_ids)) if unit_ids else '',
+            'unit_ids_list': unit_ids,
+            'city_ids': ','.join(map(str, city_ids)) if city_ids else '',
+            'city_ids_list': city_ids,
+            'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
+            'type_reception_ids_list': type_reception_ids,
+            'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
+            'staff_ids_list': staff_ids,
+        },
+        'units': units,
+        'cities': cities,
+        'type_receptions': type_receptions,
+        'staffs': staffs,
+    }
+    
+    return render(request, 'lo/eco_appraisers_performance.html', {'params': params})
 
 
 #История изменений
