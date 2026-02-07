@@ -1,0 +1,559 @@
+{% extends 'base_web.html' %}
+
+{% load custom_template_tags %}
+
+{% block url %} {% endblock %} 
+
+{% block title %} Затраты на автомобиль {{params.object.name}} {% endblock %}
+
+{% block title_navbar %} Затраты на автомобиль - {{params.object.name}}  {% endblock %}
+    
+{% block content %}
+  
+<div class="portal-page">
+	{% if request.user.is_authenticated %}
+		<div class="breadcrumb-nav">
+			<div class="d-flex flex-wrap align-items-center">
+				<a href="/cars/">На главную</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/">{{params.object.modification_autoru.model.mark.name|lower|capfirst}}</a>
+				<span class="separator">/</span>
+				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}">{{params.object.modification_autoru.model.nameHuman|capfirst}}</a>
+				<span class="separator">/</span>
+				<a href="/cars/{{params.object.slug}}">{{params.object.name}}</a>
+				<span class="separator">/</span>
+				<span class="text-dark fw-bold">Затраты на автомобиль</span>
+			</div>
+		</div>
+	{% endif %}
+
+	<div class="row g-3">
+		<div class="col-sm-12 col-md-3 col-lg-3">
+			<div class="portal-panel">
+				{% with photos=params.object.get_files %}
+					{% if photos|length > 0 %}
+						{% with first_photo=photos|first %}
+							<img src="{% if first_photo.file_mini %}{{ first_photo.file_mini.url }}{% elif first_photo.file %}{{ first_photo.file.url }}{% else %}{{ first_photo }}{% endif %}" alt="{{params.object.name}}" style="width: 100%; border-radius: 0.85rem; margin-bottom: 1rem;">
+						{% endwith %}
+					{% else %}
+						<div class="text-center py-5">
+							<span class="icon-mbri-photo" style="font-size: 3rem; color: #8ea1ba;"></span>
+							<p class="mt-3 text-muted">Нет фотографий</p>
+						</div>
+					{% endif %}
+				{% endwith %}
+
+				<div class="car-info-card">
+					<img class="item-img-mini" src="{{params.object.logo}}" style="height: 40px; width: auto; margin-bottom: 0.75rem;">
+					<div class="car-info-item">{{params.object.modification_autoru.model.mark.name}}</div>
+					<div class="car-info-item">{{params.object.modification_autoru.model.name}}</div>
+					<div class="car-info-item">{{params.object.modification_autoru.name}}</div>
+					<div class="car-info-item">{{params.object.vin}}</div>
+					<div class="car-info-item">{{params.object.year}} г.в.</div>
+					<div class="car-info-item">{{params.object.run|floatformat:"0g"}} км.</div>
+				</div>
+			</div>
+
+			<div class="portal-panel">
+				<a href="/cars/{{params.object.slug}}/" class="btn btn-primary w-100 mb-2">
+					<span class="icon-mbri-left me-2"></span>Вернуться к карточке
+				</a>
+				<a href="/cars/{{params.object.slug}}/price_edit/" class="btn btn-outline-primary w-100 mb-2">
+					<span class="icon-mbri-key me-2"></span>Управление ценообразованием
+				</a>
+				<a href="/cars/{{params.object.slug}}/photos_edit/" class="btn btn-outline-info w-100">
+					<span class="icon-mbri-photo me-2"></span>Управление фотографиями
+				</a>
+			</div>
+		</div>
+
+		<div class="col-sm-12 col-md-9 col-lg-9">
+			<div class="portal-panel">
+				<h3 class="mb-4">
+					<span class="icon-mbri-dollar me-2"></span>Затраты на автомобиль
+				</h3>
+
+				{% if params.znka_list %}
+					<!-- Общая статистика -->
+					<div class="row g-3 mb-4">
+						<div class="col-6 col-md-3">
+							<div class="stat-card stat-card-works">
+								<div class="stat-card-icon">
+									<span class="icon-mbri-setting3"></span>
+								</div>
+								<div class="stat-card-content">
+									<div class="stat-card-label">Работы</div>
+									<div class="stat-card-value">{{params.total_works|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-6 col-md-3">
+							<div class="stat-card stat-card-products">
+								<div class="stat-card-icon">
+									<span class="icon-mbri-cart"></span>
+								</div>
+								<div class="stat-card-content">
+									<div class="stat-card-label">Товары</div>
+									<div class="stat-card-value">{{params.total_products|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-6 col-md-3">
+							<div class="stat-card stat-card-services">
+								<div class="stat-card-icon">
+									<span class="icon-mbri-service"></span>
+								</div>
+								<div class="stat-card-content">
+									<div class="stat-card-label">Услуги</div>
+									<div class="stat-card-value">{{params.total_services|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-6 col-md-3">
+							<div class="stat-card stat-card-total">
+								<div class="stat-card-icon">
+									<span class="icon-mbri-dollar"></span>
+								</div>
+								<div class="stat-card-content">
+									<div class="stat-card-label">Итого</div>
+									<div class="stat-card-value">{{params.grand_total|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Список заказ-нарядов -->
+					{% for znka_data in params.znka_list %}
+						<div class="znka-card mb-4">
+							<div class="znka-card-header">
+								<div class="znka-card-title">
+									<h5 class="mb-1">
+										<span class="icon-mbri-file me-2"></span>
+										Заказ-наряд №{{znka_data.znka.nomer}}
+										{% if znka_data.znka.nomer_dc %}
+											<small class="text-muted">(ДЦ: {{znka_data.znka.nomer_dc}})</small>
+										{% endif %}
+									</h5>
+									<div class="znka-card-meta">
+										<span class="badge bg-{% if znka_data.znka.active %}success{% else %}secondary{% endif %}">
+											{% if znka_data.znka.active %}Проведен{% else %}Не проведен{% endif %}
+										</span>
+										{% if znka_data.znka.readyStatus %}
+											<span class="badge bg-info">{{znka_data.znka.readyStatus.name}}</span>
+										{% endif %}
+										<span class="text-muted small">
+											{{znka_data.znka.dataTime|date:"d.m.Y H:i"}}
+										</span>
+									</div>
+								</div>
+								<div class="znka-card-total">
+									<strong class="text-primary">{{znka_data.total_amount|floatformat:"2g"}} ₽</strong>
+								</div>
+							</div>
+
+							<div class="znka-card-body">
+								<!-- Работы -->
+								{% if znka_data.works %}
+									<div class="costs-section mb-3">
+										<h6 class="costs-section-title">
+											<span class="icon-mbri-setting3 me-2"></span>Работы
+											<span class="badge bg-primary ms-2">{{znka_data.works|length}}</span>
+										</h6>
+										<div class="table-responsive">
+											<table class="table table-sm table-hover">
+												<thead>
+													<tr>
+														<th>Работа</th>
+														<th>Тип</th>
+														<th class="text-end">Количество</th>
+														<th class="text-end">Цена</th>
+														<th class="text-end">Скидка</th>
+														<th class="text-end">Сумма</th>
+													</tr>
+												</thead>
+												<tbody>
+													{% for work in znka_data.works %}
+														<tr>
+															<td>{{work.work.name|default:"—"}}</td>
+															<td><span class="badge bg-secondary">{{work.type.name|default:"—"}}</span></td>
+															<td class="text-end">{{work.quantity|floatformat:"2g"}}</td>
+															<td class="text-end">{{work.price|floatformat:"2g"}} ₽</td>
+															<td class="text-end">
+																{% if work.discountPercentage > 0 %}
+																	<span class="text-danger">{{work.discountPercentage|floatformat:"2g"}}%</span>
+																	<br><small class="text-muted">({{work.discountAmount|floatformat:"2g"}} ₽)</small>
+																{% else %}
+																	—
+																{% endif %}
+															</td>
+															<td class="text-end"><strong>{{work.amountResult|floatformat:"2g"}} ₽</strong></td>
+														</tr>
+													{% endfor %}
+												</tbody>
+												<tfoot>
+													<tr class="table-active">
+														<td colspan="5" class="text-end"><strong>Итого по работам:</strong></td>
+														<td class="text-end"><strong>{{znka_data.works_total|floatformat:"2g"}} ₽</strong></td>
+													</tr>
+												</tfoot>
+											</table>
+										</div>
+									</div>
+								{% endif %}
+
+								<!-- Товары -->
+								{% if znka_data.products %}
+									<div class="costs-section mb-3">
+										<h6 class="costs-section-title">
+											<span class="icon-mbri-cart me-2"></span>Товары
+											<span class="badge bg-success ms-2">{{znka_data.products|length}}</span>
+										</h6>
+										<div class="table-responsive">
+											<table class="table table-sm table-hover">
+												<thead>
+													<tr>
+														<th>Товар</th>
+														<th>Тип</th>
+														<th class="text-end">Количество</th>
+														<th class="text-end">Цена</th>
+														<th class="text-end">Скидка</th>
+														<th class="text-end">Сумма</th>
+													</tr>
+												</thead>
+												<tbody>
+													{% for product in znka_data.products %}
+														<tr>
+															<td>{{product.product.name|default:"—"}}</td>
+															<td><span class="badge bg-secondary">{{product.type.name|default:"—"}}</span></td>
+															<td class="text-end">{{product.quantity|floatformat:"2g"}}</td>
+															<td class="text-end">{{product.price|floatformat:"2g"}} ₽</td>
+															<td class="text-end">
+																{% if product.discountPercentage > 0 %}
+																	<span class="text-danger">{{product.discountPercentage|floatformat:"2g"}}%</span>
+																	<br><small class="text-muted">({{product.discountAmount|floatformat:"2g"}} ₽)</small>
+																{% else %}
+																	—
+																{% endif %}
+															</td>
+															<td class="text-end"><strong>{{product.amountResult|floatformat:"2g"}} ₽</strong></td>
+														</tr>
+													{% endfor %}
+												</tbody>
+												<tfoot>
+													<tr class="table-active">
+														<td colspan="5" class="text-end"><strong>Итого по товарам:</strong></td>
+														<td class="text-end"><strong>{{znka_data.products_total|floatformat:"2g"}} ₽</strong></td>
+													</tr>
+												</tfoot>
+											</table>
+										</div>
+									</div>
+								{% endif %}
+
+								<!-- Услуги -->
+								{% if znka_data.services %}
+									<div class="costs-section mb-3">
+										<h6 class="costs-section-title">
+											<span class="icon-mbri-service me-2"></span>Услуги
+											<span class="badge bg-info ms-2">{{znka_data.services|length}}</span>
+										</h6>
+										<div class="table-responsive">
+											<table class="table table-sm table-hover">
+												<thead>
+													<tr>
+														<th>Услуга</th>
+														<th>Тип</th>
+														<th class="text-end">Количество</th>
+														<th class="text-end">Цена</th>
+														<th class="text-end">Скидка</th>
+														<th class="text-end">Сумма</th>
+													</tr>
+												</thead>
+												<tbody>
+													{% for service in znka_data.services %}
+														<tr>
+															<td>{{service.service.name|default:"—"}}</td>
+															<td><span class="badge bg-secondary">{{service.type.name|default:"—"}}</span></td>
+															<td class="text-end">{{service.quantity|floatformat:"2g"}}</td>
+															<td class="text-end">{{service.price|floatformat:"2g"}} ₽</td>
+															<td class="text-end">
+																{% if service.discountPercentage > 0 %}
+																	<span class="text-danger">{{service.discountPercentage|floatformat:"2g"}}%</span>
+																	<br><small class="text-muted">({{service.discountAmount|floatformat:"2g"}} ₽)</small>
+																{% else %}
+																	—
+																{% endif %}
+															</td>
+															<td class="text-end"><strong>{{service.amountResult|floatformat:"2g"}} ₽</strong></td>
+														</tr>
+													{% endfor %}
+												</tbody>
+												<tfoot>
+													<tr class="table-active">
+														<td colspan="5" class="text-end"><strong>Итого по услугам:</strong></td>
+														<td class="text-end"><strong>{{znka_data.services_total|floatformat:"2g"}} ₽</strong></td>
+													</tr>
+												</tfoot>
+											</table>
+										</div>
+									</div>
+								{% endif %}
+
+								<!-- Исполнители -->
+								{% if znka_data.performers %}
+									<div class="costs-section">
+										<h6 class="costs-section-title">
+											<span class="icon-mbri-user me-2"></span>Исполнители
+											<span class="badge bg-warning text-dark ms-2">{{znka_data.performers|length}}</span>
+										</h6>
+										<div class="table-responsive">
+											<table class="table table-sm table-hover">
+												<thead>
+													<tr>
+														<th>Исполнитель</th>
+														<th class="text-end">Процент</th>
+													</tr>
+												</thead>
+												<tbody>
+													{% for performer in znka_data.performers %}
+														<tr>
+															<td>{{performer.staff.name|default:"—"}}</td>
+															<td class="text-end">{{performer.percent|floatformat:"2g"}}%</td>
+														</tr>
+													{% endfor %}
+												</tbody>
+											</table>
+										</div>
+									</div>
+								{% endif %}
+
+								<!-- Дополнительная информация -->
+								{% if znka_data.znka.master or znka_data.znka.masterOut or znka_data.znka.customerWords %}
+									<div class="costs-section mt-3">
+										<h6 class="costs-section-title">
+											<span class="icon-mbri-info me-2"></span>Дополнительная информация
+										</h6>
+										<div class="row g-2">
+											{% if znka_data.znka.master %}
+												<div class="col-12 col-md-6">
+													<small class="text-muted">Мастер-консультант:</small>
+													<div>{{znka_data.znka.master.name}}</div>
+												</div>
+											{% endif %}
+											{% if znka_data.znka.masterOut %}
+												<div class="col-12 col-md-6">
+													<small class="text-muted">Выпускающий мастер:</small>
+													<div>{{znka_data.znka.masterOut.name}}</div>
+												</div>
+											{% endif %}
+											{% if znka_data.znka.customerWords %}
+												<div class="col-12">
+													<small class="text-muted">Заявка со слов клиента:</small>
+													<div class="text-muted">{{znka_data.znka.customerWords|truncatewords:50}}</div>
+												</div>
+											{% endif %}
+										</div>
+									</div>
+								{% endif %}
+							</div>
+						</div>
+					{% endfor %}
+				{% else %}
+					<div class="text-center py-5 text-muted">
+						<span class="icon-mbri-dollar" style="font-size: 4rem; display: block; margin-bottom: 1rem; opacity: 0.3;"></span>
+						<p>Нет данных о затратах</p>
+						<p class="small">Затраты появятся после создания заказ-нарядов для данного автомобиля</p>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.car-info-card {
+	background: #f8f9fa;
+	border-radius: 0.75rem;
+	padding: 1rem;
+}
+
+.car-info-item {
+	font-size: 0.9rem;
+	color: #495057;
+	margin-bottom: 0.5rem;
+}
+
+.car-info-item:last-child {
+	margin-bottom: 0;
+}
+
+.stat-card {
+	background: #fff;
+	border-radius: 0.75rem;
+	border: 1px solid rgba(0, 42, 90, 0.1);
+	padding: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 42, 90, 0.15);
+	transform: translateY(-2px);
+}
+
+.stat-card-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 0.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.5rem;
+	flex-shrink: 0;
+}
+
+.stat-card-works .stat-card-icon {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+}
+
+.stat-card-products .stat-card-icon {
+	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+	color: #fff;
+}
+
+.stat-card-services .stat-card-icon {
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+	color: #fff;
+}
+
+.stat-card-total .stat-card-icon {
+	background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+	color: #fff;
+}
+
+.stat-card-content {
+	flex: 1;
+}
+
+.stat-card-label {
+	font-size: 0.85rem;
+	color: #8ea1ba;
+	margin-bottom: 0.25rem;
+}
+
+.stat-card-value {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: #002a5a;
+}
+
+.znka-card {
+	background: #fff;
+	border-radius: 0.75rem;
+	border: 1px solid rgba(0, 42, 90, 0.1);
+	overflow: hidden;
+	transition: all 0.3s ease;
+}
+
+.znka-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 42, 90, 0.15);
+	border-color: rgba(0, 42, 90, 0.2);
+}
+
+.znka-card-header {
+	padding: 1.25rem;
+	background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+	border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 1rem;
+}
+
+.znka-card-title h5 {
+	margin: 0;
+	color: #002a5a;
+	font-weight: 700;
+}
+
+.znka-card-meta {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.znka-card-total {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #00509d;
+	white-space: nowrap;
+}
+
+.znka-card-body {
+	padding: 1.25rem;
+}
+
+.costs-section {
+	border-top: 1px solid rgba(0, 42, 90, 0.1);
+	padding-top: 1rem;
+}
+
+.costs-section:first-child {
+	border-top: none;
+	padding-top: 0;
+}
+
+.costs-section-title {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #002a5a;
+	margin-bottom: 0.75rem;
+	display: flex;
+	align-items: center;
+}
+
+.table {
+	margin-bottom: 0;
+}
+
+.table thead th {
+	background: #f8f9fa;
+	border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+	font-weight: 600;
+	color: #002a5a;
+	font-size: 0.85rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.table tbody tr:hover {
+	background: #f8f9fa;
+}
+
+.table tfoot tr {
+	background: #f8f9fa;
+	font-weight: 600;
+}
+
+@media (max-width: 768px) {
+	.znka-card-header {
+		flex-direction: column;
+	}
+	
+	.znka-card-total {
+		font-size: 1.25rem;
+	}
+	
+	.stat-card {
+		flex-direction: column;
+		text-align: center;
+	}
+}
+</style>
+{% endblock %}
+

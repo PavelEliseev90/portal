@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from refs.models import AutoruComplectation, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefTypeDrive
 from refs.models import RefStagePrice, RefTypeSaleCarsOrganization, RefStatusCarsOrganization, RefTypeDrive, RefTypeBody, RefTypeKpp, RefUnit, RefCity, RefSpecificationData, RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
 from api.views_avtosalon import add_statistic_cars_organization
@@ -16,7 +17,7 @@ from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegInteractivOcenka, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations
 from avtosalon.models import Avtohub
-from documents.models import DocCarAgreement, DocCarShipment
+from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA
 from django.http import JsonResponse
 from rest_framework import status
 
@@ -725,17 +726,38 @@ def disposition_get_models(request):
 
 
 def car(request, slug):
-
-    car = RefCarsOrganization.objects.get(slug = slug)
+    # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для всех связанных объектов
+    car = RefCarsOrganization.objects.select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'modification_autoru__typeBody',
+        'modification_autoru__typeGear',
+        'modification_autoru__typeEngine',
+        'status',
+        'store',
+        'store__city',
+        'unit',
+        'evaluation',
+        'type_drive',
+        'type_sale',
+        'stage_price',
+        'group_price',
+        'rating',
+        'complectation_autoru'
+    ).prefetch_related(
+        'refcarsorganizationfiles_set'
+    ).get(slug=slug)
     
     add_statistic_cars_organization(cars=car, store=car.store, type=1)
     
+    # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
     selected = {
-        'stores'        : RefStore.objects.all().order_by('name'),
-        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
-        'stageprices'   : RefStagePrice.objects.all().order_by('name'),
-        'groupprices'   : RefGroupPrice.objects.all().order_by('name'),
-        'ratings'       : RefRatingCarsOrganization.objects.all().order_by('name'), 
+        'stores'        : RefStore.objects.only('id', 'name').order_by('name'),
+        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
+        'stageprices'   : RefStagePrice.objects.only('id', 'name').order_by('name'),
+        'groupprices'   : RefGroupPrice.objects.only('id', 'name').order_by('name'),
+        'ratings'       : RefRatingCarsOrganization.objects.only('id', 'name').order_by('name'), 
     }
 
     params = {
@@ -891,6 +913,290 @@ def price_edit(request, slug):
     }
     
     return render(request, "avtosalon/car_new_price_edit.html", {'params': params})
+
+
+@login_required
+def photos_edit(request, slug):
+    """
+    Страница управления фотографиями автомобиля
+    """
+    from django.contrib import messages
+    
+    # ОПТИМИЗАЦИЯ: Используем select_related для оптимизации запросов
+    car = RefCarsOrganization.objects.select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'unit',
+        'store'
+    ).get(slug=slug)
+    
+    # Проверка прав доступа
+    if not request.user.profiles.korsavto_settings:
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    # Обработка POST запросов
+    if request.method == "POST":
+        action = request.POST.get('action', '')
+        
+        # Удаление фотографии
+        if action == 'delete':
+            photo_id = request.POST.get('photo_id', '')
+            try:
+                photo = RefCarsOrganizationFiles.objects.get(id=photo_id, сars_organization=car)
+                photo.delete()
+                messages.success(request, 'Фотография успешно удалена')
+            except RefCarsOrganizationFiles.DoesNotExist:
+                messages.error(request, 'Фотография не найдена')
+        
+        # Установка главной фотографии
+        elif action == 'set_main':
+            photo_id = request.POST.get('photo_id', '')
+            try:
+                # Снимаем флаг главной со всех фотографий
+                RefCarsOrganizationFiles.objects.filter(сars_organization=car).update(main=False)
+                # Устанавливаем новую главную
+                photo = RefCarsOrganizationFiles.objects.get(id=photo_id, сars_organization=car)
+                photo.main = True
+                photo.save()
+                messages.success(request, 'Главная фотография обновлена')
+            except RefCarsOrganizationFiles.DoesNotExist:
+                messages.error(request, 'Фотография не найдена')
+        
+        # Загрузка новых фотографий
+        elif action == 'upload':
+            uploaded_files = request.FILES.getlist('photos')
+            if uploaded_files:
+                uploaded_count = 0
+                errors = []
+                
+                for uploaded_file in uploaded_files:
+                    # Проверка типа файла
+                    if not uploaded_file.content_type.startswith('image/'):
+                        continue
+                    
+                    try:
+                        # Создаем объект фотографии
+                        photo = RefCarsOrganizationFiles()
+                        photo.сars_organization = car
+                        photo.name = uploaded_file.name
+                        photo.file = uploaded_file
+                        photo.main = False
+                        photo.car = True
+                        photo.processed = False
+                        photo.date = datetime.now()
+                        
+                        # Сохраняем основное изображение
+                        photo.save()
+                        
+                        # Создаем миниатюру автоматически
+                        try:
+                            from PIL import Image
+                            from django.core.files.base import ContentFile
+                            import io
+                            import os
+                            
+                            # Открываем сохраненный файл
+                            if photo.file and photo.file.name:
+                                # Получаем путь к файлу
+                                file_path = photo.file.path
+                                
+                                # Проверяем существование файла на диске
+                                if not os.path.exists(file_path):
+                                    # Если файл еще не на диске, ждем немного и проверяем снова
+                                    import time
+                                    time.sleep(0.1)
+                                    if not os.path.exists(file_path):
+                                        raise FileNotFoundError(f"Файл {file_path} не найден после сохранения")
+                                
+                                # Открываем изображение с диска
+                                img = Image.open(file_path)
+                                
+                                # Конвертируем в RGB если нужно (для JPEG)
+                                original_mode = img.mode
+                                if img.mode in ('RGBA', 'LA', 'P'):
+                                    # Создаем белый фон
+                                    background = Image.new('RGB', img.size, (255, 255, 255))
+                                    if img.mode == 'P':
+                                        img = img.convert('RGBA')
+                                    # Вставляем изображение на фон с учетом альфа-канала
+                                    if img.mode == 'RGBA' and len(img.split()) >= 4:
+                                        background.paste(img, mask=img.split()[3])
+                                    else:
+                                        background.paste(img)
+                                    img = background
+                                elif img.mode not in ('RGB', 'L'):
+                                    img = img.convert('RGB')
+                                
+                                # Создаем миниатюру (максимальный размер 400x400, сохраняя пропорции)
+                                max_size = (400, 400)
+                                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                                
+                                # Сохраняем миниатюру в память
+                                thumb_io = io.BytesIO()
+                                
+                                # Всегда сохраняем миниатюру как JPEG для универсальности и меньшего размера
+                                img.save(thumb_io, format='JPEG', quality=85, optimize=True)
+                                
+                                thumb_io.seek(0)
+                                
+                                # Генерируем имя для миниатюры (всегда .jpg)
+                                base_name = os.path.basename(photo.file.name)
+                                name_without_ext, ext = os.path.splitext(base_name)
+                                mini_name = f'{name_without_ext}_mini.jpg'
+                                
+                                # Сохраняем миниатюру
+                                photo.file_mini.save(
+                                    mini_name,
+                                    ContentFile(thumb_io.read()),
+                                    save=False
+                                )
+                                photo.save()
+                                
+                        except ImportError:
+                            # Pillow не установлен - пытаемся использовать оригинал как миниатюру
+                            if photo.file:
+                                photo.file_mini = photo.file
+                                photo.save()
+                            errors.append(f'Pillow не установлен, миниатюра не создана для {uploaded_file.name}')
+                        except Exception as e:
+                            # Если не удалось создать миниатюру, используем оригинал
+                            if photo.file:
+                                try:
+                                    photo.file_mini = photo.file
+                                    photo.save()
+                                except:
+                                    pass
+                            errors.append(f'Ошибка создания миниатюры для {uploaded_file.name}: {str(e)}')
+                        
+                        uploaded_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f'Ошибка загрузки {uploaded_file.name}: {str(e)}')
+                        continue
+                
+                if uploaded_count > 0:
+                    if errors:
+                        messages.warning(request, f'Загружено фотографий: {uploaded_count}. Предупреждения: {len(errors)}')
+                    else:
+                        messages.success(request, f'Загружено фотографий: {uploaded_count}')
+                else:
+                    if errors:
+                        messages.error(request, f'Не удалось загрузить фотографии. Ошибки: {"; ".join(errors[:3])}')
+                    else:
+                        messages.warning(request, 'Не удалось загрузить фотографии')
+        
+        return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Получаем все фотографии автомобиля
+    photos = RefCarsOrganizationFiles.objects.filter(сars_organization=car).order_by('-main', '-date')
+    
+    params = {
+        'type': 'photos_edit',
+        'object': car,
+        'photos': photos,
+    }
+    
+    return render(request, "avtosalon/car_new_photos_edit.html", {'params': params})
+
+
+@login_required
+def costs_edit(request, slug):
+    """
+    Страница отображения затрат на автомобиль
+    Затраты хранятся в DocZNKA, связь через поле lo (DocLO)
+    """
+    # ОПТИМИЗАЦИЯ: Используем select_related для оптимизации запросов
+    car = RefCarsOrganization.objects.select_related(
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'unit',
+        'store',
+        'lo'
+    ).get(slug=slug)
+    
+    # Проверка прав доступа
+    if not request.user.profiles.korsavto_settings:
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    # Получаем все заказ-наряды по листу оценки
+    znka_list = []
+    if car.lo:
+        # ОПТИМИЗАЦИЯ: Загружаем все заказ-наряды с оптимизацией
+        # Используем prefetch_related для загрузки всех связанных объектов одним запросом
+        znka_queryset = DocZNKA.objects.filter(lo=car.lo).select_related(
+            'organization',
+            'unit',
+            'master',
+            'masterOut',
+            'customer',
+            'cars',
+            'typeRemont',
+            'readyStatus',
+            'lo'
+        ).prefetch_related(
+            'docznworkka_set__work',
+            'docznworkka_set__type',
+            'docznproductka_set__product',
+            'docznproductka_set__type',
+            'docznserviceska_set__service',
+            'docznserviceska_set__type',
+            'docznperformerska_set__staff'
+        ).order_by('-dataTime')
+        
+        for znka in znka_queryset:
+            # ОПТИМИЗАЦИЯ: Используем уже загруженные через prefetch_related объекты
+            # Не делаем дополнительных запросов к БД
+            works = list(znka.docznworkka_set.all())
+            products = list(znka.docznproductka_set.all())
+            services = list(znka.docznserviceska_set.all())
+            performers = list(znka.docznperformerska_set.all())
+            
+            # Подсчитываем суммы
+            works_total = sum(w.amountResult for w in works)
+            products_total = sum(p.amountResult for p in products)
+            services_total = sum(s.amountResult for s in services)
+            total_amount = works_total + products_total + services_total
+            
+            znka_data = {
+                'znka': znka,
+                'works': works,
+                'products': products,
+                'services': services,
+                'performers': performers,
+                'works_total': works_total,
+                'products_total': products_total,
+                'services_total': services_total,
+                'total_amount': total_amount,
+            }
+            znka_list.append(znka_data)
+    
+    # Общие суммы по всем заказ-нарядам
+    total_works = sum(z['works_total'] for z in znka_list)
+    total_products = sum(z['products_total'] for z in znka_list)
+    total_services = sum(z['services_total'] for z in znka_list)
+    grand_total = sum(z['total_amount'] for z in znka_list)
+    
+    params = {
+        'type': 'costs_edit',
+        'object': car,
+        'znka_list': znka_list,
+        'total_works': total_works,
+        'total_products': total_products,
+        'total_services': total_services,
+        'grand_total': grand_total,
+    }
+    
+    return render(request, "avtosalon/car_new_costs_edit.html", {'params': params})
 
 
 def refresh_cars(request):
