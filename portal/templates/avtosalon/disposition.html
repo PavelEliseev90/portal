@@ -288,13 +288,48 @@
   border-color: rgba(0, 42, 90, 0.2);
 }
 
-.btn-floating-icon:active {
-  transform: translateY(-50%) scale(0.95);
-}
+  .btn-floating-icon:active {
+    transform: translateY(-50%) scale(0.95);
+  }
 
 /* Отступ для input */
 .form-floating.position-relative .form-control {
   padding-right: 3rem;
+}
+
+/* Стили для фильтров с чекбоксами (как в воронке приема) */
+.list-group {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 42, 90, 0.15);
+}
+
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.list-group-item .form-check-input {
+  margin-top: 0.25rem;
+}
+
+.list-group-item label {
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 </style>
@@ -320,7 +355,7 @@
 
   <!-- Фильтры (скрыто на мобильных, показывается в модальном окне) -->
   <div class="portal-panel mb-3 d-none d-lg-block">
-    <form method="get" id="filtersForm">
+    <form method="get" id="filtersForm" onsubmit="return prepareFormData(this);">
       <input type="hidden" name="status" value="{{ params.filtr.status }}">
       
       <div class="row g-2">
@@ -328,6 +363,13 @@
           <div class="form-floating">
             <input type="text" class="form-control" id="vin" name="vin" value="{{ params.filtr.vin }}" placeholder="ВИН">
             <label for="vin">ВИН</label>
+          </div>
+        </div>
+        
+        <div class="col-12 col-md-6 col-lg-3">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="search_fields" name="search_fields" value="{{ params.filtr.search_fields }}" placeholder="Поиск">
+            <label for="search_fields">Поиск по всем полям</label>
           </div>
         </div>
         
@@ -379,69 +421,88 @@
       <div class="collapse mt-2" id="additionalFilters">
         <div class="row g-2">
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="body_type" name="body_type[]" multiple>
+            <label class="form-label text-uppercase">Тип кузова</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="bodyTypeSearch" placeholder="Поиск по типам кузова..." autocomplete="off">
+              <div class="list-group position-absolute w-100 mt-1" id="bodyTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                 {% for body_type in params.selected.body_types %}
-                  <option value="{{ body_type.id }}" {% if body_type.id|stringformat:"s" in params.filtr.body_type %}selected{% endif %}>{{ body_type.name }}</option>
+                  <label class="list-group-item">
+                    <input class="form-check-input me-2" type="checkbox" name="body_type[]" value="{{ body_type.id }}" 
+                      {% if body_type.id in params.body_type_ids_list %}checked{% endif %}>
+                    {{ body_type.name }}
+                  </label>
                 {% endfor %}
-              </select>
-              <label class="fs-6" for="body_type">Тип кузова</label>
+              </div>
             </div>
+            <div id="selectedBodyTypes" class="mt-2"></div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="gear_type" name="gear_type[]" multiple>
+            <label class="form-label text-uppercase">Коробка передач</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="gearTypeSearch" placeholder="Поиск по коробкам передач..." autocomplete="off">
+              <div class="list-group position-absolute w-100 mt-1" id="gearTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                 {% for gear_type in params.selected.gear_types %}
-                  <option value="{{ gear_type.id }}" {% if gear_type.id|stringformat:"s" in params.filtr.gear_type %}selected{% endif %}>{{ gear_type.name }}</option>
+                  <label class="list-group-item">
+                    <input class="form-check-input me-2" type="checkbox" name="gear_type[]" value="{{ gear_type.id }}" 
+                      {% if gear_type.id in params.gear_type_ids_list %}checked{% endif %}>
+                    {{ gear_type.name }}
+                  </label>
                 {% endfor %}
-              </select>
-              <label class="fs-6" for="gear_type">Коробка передач</label>
+              </div>
             </div>
+            <div id="selectedGearTypes" class="mt-2"></div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="drive_type" name="drive_type[]" multiple>
+            <label class="form-label text-uppercase">Привод</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="driveTypeSearch" placeholder="Поиск по приводам..." autocomplete="off">
+              <div class="list-group position-absolute w-100 mt-1" id="driveTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                 {% for drive_type in params.selected.drive_types %}
-                  <option value="{{ drive_type.id }}" {% if drive_type.id|stringformat:"s" in params.filtr.drive_type %}selected{% endif %}>{{ drive_type.name }}</option>
+                  <label class="list-group-item">
+                    <input class="form-check-input me-2" type="checkbox" name="drive_type[]" value="{{ drive_type.id }}" 
+                      {% if drive_type.id in params.drive_type_ids_list %}checked{% endif %}>
+                    {{ drive_type.name }}
+                  </label>
                 {% endfor %}
-              </select>
-              <label class="fs-6" for="drive_type">Привод</label>
+              </div>
             </div>
+            <div id="selectedDriveTypes" class="mt-2"></div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="evaluation_type" name="evaluation_type[]" multiple>
+            <label class="form-label text-uppercase">Тип оценки</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="evaluationTypeSearch" placeholder="Поиск по типам оценки..." autocomplete="off">
+              <div class="list-group position-absolute w-100 mt-1" id="evaluationTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                 {% for eval_type in params.selected.evaluation_types %}
-                  <option value="{{ eval_type.id }}" {% if eval_type.id|stringformat:"s" in params.filtr.evaluation_type %}selected{% endif %}>{{ eval_type.name }}</option>
+                  <label class="list-group-item">
+                    <input class="form-check-input me-2" type="checkbox" name="evaluation_type[]" value="{{ eval_type.id }}" 
+                      {% if eval_type.id in params.evaluation_type_ids_list %}checked{% endif %}>
+                    {{ eval_type.name }}
+                  </label>
                 {% endfor %}
-              </select>
-              <label class="fs-6" for="evaluation_type">Тип оценки</label>
+              </div>
             </div>
+            <div id="selectedEvaluationTypes" class="mt-2"></div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="unit" name="unit[]" multiple>
-                {% for unit in params.selected.units %}
-                  <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filtr.unit %}selected{% endif %}>{{ unit.name }}</option>
-                {% endfor %}
-              </select>
-              <label class="fs-6" for="unit">Филиал</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="store" name="store[]" multiple>
+            <label class="form-label text-uppercase">Стоянка</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="storeSearch" placeholder="Поиск по стоянкам..." autocomplete="off">
+              <div class="list-group position-absolute w-100 mt-1" id="storeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                 {% for store in params.selected.stores %}
-                  <option value="{{ store.id }}" {% if store.id|stringformat:"s" in params.filtr.store %}selected{% endif %}>{{ store.name }}</option>
+                  <label class="list-group-item">
+                    <input class="form-check-input me-2" type="checkbox" name="store[]" value="{{ store.id }}" 
+                      {% if store.id in params.store_ids_list %}checked{% endif %}>
+                    {{ store.name }}
+                  </label>
                 {% endfor %}
-              </select>
-              <label class="fs-6" for="store">Стоянка</label>
+              </div>
             </div>
+            <div id="selectedStores" class="mt-2"></div>
           </div>
           
           <div class="col-12 col-md-6 col-lg-3">
@@ -831,7 +892,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
       <div class="modal-body">
-        <form method="get" id="mobileFiltersForm">
+        <form method="get" id="mobileFiltersForm" onsubmit="return prepareFormData(this);">
           <input type="hidden" name="status" value="{{ params.filtr.status }}">
           
           <div class="row g-2">
@@ -839,6 +900,13 @@
               <div class="form-floating">
                 <input type="text" class="form-control" id="mobile_vin" name="vin" value="{{ params.filtr.vin }}" placeholder="ВИН">
                 <label for="mobile_vin">ВИН</label>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="mobile_search_fields" name="search_fields" value="{{ params.filtr.search_fields }}" placeholder="Поиск">
+                <label for="mobile_search_fields">Поиск по всем полям</label>
               </div>
             </div>
             
@@ -888,69 +956,88 @@
           <div class="collapse mt-2" id="mobileAdditionalFilters">
             <div class="row g-2">
               <div class="col-12">
-                <div class="search-select-wrapper select2-wrapper">
-                  <select class="search-select kors-form-control" id="mobile_body_type" name="body_type[]" multiple>
+                <label class="form-label text-uppercase">Тип кузова</label>
+                <div class="position-relative">
+                  <input type="text" class="form-control" id="mobile_bodyTypeSearch" placeholder="Поиск по типам кузова..." autocomplete="off">
+                  <div class="list-group position-absolute w-100 mt-1" id="mobile_bodyTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                     {% for body_type in params.selected.body_types %}
-                      <option value="{{ body_type.id }}" {% if body_type.id|stringformat:"s" in params.filtr.body_type %}selected{% endif %}>{{ body_type.name }}</option>
+                      <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="body_type[]" value="{{ body_type.id }}" 
+                          {% if body_type.id in params.body_type_ids_list %}checked{% endif %}>
+                        {{ body_type.name }}
+                      </label>
                     {% endfor %}
-                  </select>
-                  <label class="fs-6" for="mobile_body_type">Тип кузова</label>
+                  </div>
                 </div>
+                <div id="mobile_selectedBodyTypes" class="mt-2"></div>
               </div>
               
               <div class="col-12">
-                <div class="search-select-wrapper select2-wrapper">
-                  <select class="search-select kors-form-control" id="mobile_gear_type" name="gear_type[]" multiple>
+                <label class="form-label text-uppercase">Коробка передач</label>
+                <div class="position-relative">
+                  <input type="text" class="form-control" id="mobile_gearTypeSearch" placeholder="Поиск по коробкам передач..." autocomplete="off">
+                  <div class="list-group position-absolute w-100 mt-1" id="mobile_gearTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                     {% for gear_type in params.selected.gear_types %}
-                      <option value="{{ gear_type.id }}" {% if gear_type.id|stringformat:"s" in params.filtr.gear_type %}selected{% endif %}>{{ gear_type.name }}</option>
+                      <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="gear_type[]" value="{{ gear_type.id }}" 
+                          {% if gear_type.id in params.gear_type_ids_list %}checked{% endif %}>
+                        {{ gear_type.name }}
+                      </label>
                     {% endfor %}
-                  </select>
-                  <label class="fs-6" for="mobile_gear_type">Коробка передач</label>
+                  </div>
                 </div>
+                <div id="mobile_selectedGearTypes" class="mt-2"></div>
               </div>
               
               <div class="col-12">
-                <div class="search-select-wrapper select2-wrapper">
-                  <select class="search-select kors-form-control" id="mobile_drive_type" name="drive_type[]" multiple>
+                <label class="form-label text-uppercase">Привод</label>
+                <div class="position-relative">
+                  <input type="text" class="form-control" id="mobile_driveTypeSearch" placeholder="Поиск по приводам..." autocomplete="off">
+                  <div class="list-group position-absolute w-100 mt-1" id="mobile_driveTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                     {% for drive_type in params.selected.drive_types %}
-                      <option value="{{ drive_type.id }}" {% if drive_type.id|stringformat:"s" in params.filtr.drive_type %}selected{% endif %}>{{ drive_type.name }}</option>
+                      <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="drive_type[]" value="{{ drive_type.id }}" 
+                          {% if drive_type.id in params.drive_type_ids_list %}checked{% endif %}>
+                        {{ drive_type.name }}
+                      </label>
                     {% endfor %}
-                  </select>
-                  <label class="fs-6" for="mobile_drive_type">Привод</label>
+                  </div>
                 </div>
+                <div id="mobile_selectedDriveTypes" class="mt-2"></div>
               </div>
               
               <div class="col-12">
-                <div class="search-select-wrapper select2-wrapper">
-                  <select class="search-select kors-form-control" id="mobile_evaluation_type" name="evaluation_type[]" multiple>
+                <label class="form-label text-uppercase">Тип оценки</label>
+                <div class="position-relative">
+                  <input type="text" class="form-control" id="mobile_evaluationTypeSearch" placeholder="Поиск по типам оценки..." autocomplete="off">
+                  <div class="list-group position-absolute w-100 mt-1" id="mobile_evaluationTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                     {% for eval_type in params.selected.evaluation_types %}
-                      <option value="{{ eval_type.id }}" {% if eval_type.id|stringformat:"s" in params.filtr.evaluation_type %}selected{% endif %}>{{ eval_type.name }}</option>
+                      <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="evaluation_type[]" value="{{ eval_type.id }}" 
+                          {% if eval_type.id in params.evaluation_type_ids_list %}checked{% endif %}>
+                        {{ eval_type.name }}
+                      </label>
                     {% endfor %}
-                  </select>
-                  <label class="fs-6" for="mobile_evaluation_type">Тип оценки</label>
+                  </div>
                 </div>
+                <div id="mobile_selectedEvaluationTypes" class="mt-2"></div>
               </div>
               
               <div class="col-12">
-                <div class="search-select-wrapper select2-wrapper">
-                  <select class="search-select kors-form-control" id="mobile_unit" name="unit[]" multiple>
-                    {% for unit in params.selected.units %}
-                      <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filtr.unit %}selected{% endif %}>{{ unit.name }}</option>
-                    {% endfor %}
-                  </select>
-                  <label class="fs-6" for="mobile_unit">Филиал</label>
-                </div>
-              </div>
-              
-              <div class="col-12">
-                <div class="search-select-wrapper select2-wrapper">
-                  <select class="search-select kors-form-control" id="mobile_store" name="store[]" multiple>
+                <label class="form-label text-uppercase">Стоянка</label>
+                <div class="position-relative">
+                  <input type="text" class="form-control" id="mobile_storeSearch" placeholder="Поиск по стоянкам..." autocomplete="off">
+                  <div class="list-group position-absolute w-100 mt-1" id="mobile_storeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
                     {% for store in params.selected.stores %}
-                      <option value="{{ store.id }}" {% if store.id|stringformat:"s" in params.filtr.store %}selected{% endif %}>{{ store.name }}</option>
+                      <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="store[]" value="{{ store.id }}" 
+                          {% if store.id in params.store_ids_list %}checked{% endif %}>
+                        {{ store.name }}
+                      </label>
                     {% endfor %}
-                  </select>
-                  <label class="fs-6" for="mobile_store">Стоянка</label>
+                  </div>
                 </div>
+                <div id="mobile_selectedStores" class="mt-2"></div>
               </div>
               
               <div class="col-12">
@@ -1643,109 +1730,115 @@ function applyMobileFilters() {
   desktopForm.submit();
 }
 
-// Инициализация Select2 и обработка дополнительных фильтров
-document.addEventListener('DOMContentLoaded', function() {
-  // Проверяем наличие jQuery и Select2
-  if (typeof $ === 'undefined' || !$.fn.select2) {
-    console.error('jQuery or Select2 not loaded');
-    return;
-  }
-  
-  // Одиночный выбор для марки (десктоп) - если элемент существует
-  if ($('#mark').length) {
-    $('#mark').select2({
-      placeholder: 'Выберите марку',
-      allowClear: true,
-      width: '100%',
-      language: {
-        noResults: function() {
-          return "Результаты не найдены";
-        },
-        searching: function() {
-          return "Поиск...";
-        }
-      },
-      minimumResultsForSearch: 0 // Всегда показывать поиск
-    });
-  }
-  
-  // Множественный выбор для модели (десктоп) - если элемент существует
-  if ($('#model').length) {
-    $('#model').select2({
-      placeholder: 'Выберите модели',
-      allowClear: true,
-      width: '100%',
-      language: {
-        noResults: function() {
-          return "Результаты не найдены";
-        },
-        searching: function() {
-          return "Поиск...";
-        }
-      },
-      minimumResultsForSearch: 0 // Всегда показывать поиск
-    });
-  }
-
-  // Функция для получения метки поля
-  function getFieldLabel(fieldId) {
-    const labels = {
-      'body_type': 'типы кузова',
-      'gear_type': 'КПП',
-      'drive_type': 'приводы',
-      'evaluation_type': 'типы оценки',
-      'unit': 'филиалы',
-      'store': 'стоянки'
-    };
-    return labels[fieldId] || 'значения';
-  }
-  
-  // Функция инициализации множественного выбора для дополнительных фильтров
-  function initMultiSelectFields(isMobile = false) {
-    const multiSelectFields = [
-      'body_type',
-      'gear_type', 
-      'drive_type',
-      'evaluation_type',
-      'unit',
-      'store'
-    ];
+// JavaScript для множественного выбора с поиском (как в воронке приема)
+(function() {
+  function initMultiSelect(searchId, dropdownId, selectedDivId) {
+    const searchInput = document.getElementById(searchId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedDiv = document.getElementById(selectedDivId);
     
-    multiSelectFields.forEach(function(fieldId) {
-      const fieldLabel = getFieldLabel(fieldId);
-      const selector = isMobile ? `#mobile_${fieldId}` : `#${fieldId}`;
-      if ($(selector).length) {
-        $(selector).select2({
-          placeholder: `Выберите ${fieldLabel}`,
-          allowClear: true,
-          width: '100%',
-          language: {
-            noResults: function() {
-              return "Результаты не найдены";
-            },
-            searching: function() {
-              return "Поиск...";
-            }
-          },
-          minimumResultsForSearch: 0 // Всегда показывать поиск для множественного выбора
-        });
+    if (!searchInput || !dropdown || !selectedDiv) return;
+    
+    function updateSelected() {
+      const checked = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'));
+      selectedDiv.innerHTML = '';
+      if (checked.length > 0) {
+        const badges = Array.from(checked).map(cb => {
+          const label = cb.closest('label');
+          const text = label ? label.textContent.trim() : '';
+          const value = cb.value;
+          return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[name=&quot;${cb.name}&quot;][value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedDivId}();"></button></span>`;
+        }).join('');
+        selectedDiv.innerHTML = badges;
+      }
+    }
+    
+    window['updateSelected_' + selectedDivId] = updateSelected;
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const items = dropdown.querySelectorAll('label');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+    
+    searchInput.addEventListener('focus', function() {
+      dropdown.style.display = 'block';
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
       }
     });
+    
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelected);
+    });
+    
+    updateSelected();
   }
   
-  // Инициализируем множественный выбор (десктоп)
-  initMultiSelectFields(false);
+  function prepareFormData(form) {
+    // Собираем все выбранные значения из чекбоксов
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => {
+      // Убеждаемся, что чекбокс будет отправлен
+      if (!form.querySelector(`input[type="hidden"][name="${cb.name}"][value="${cb.value}"]`)) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = cb.name;
+        hidden.value = cb.value;
+        form.appendChild(hidden);
+      }
+    });
+    return true;
+  }
   
-  // Инициализируем множественный выбор для мобильных фильтров
-  initMultiSelectFields(true);
+  window.prepareFormData = prepareFormData;
   
-  // Обработка иконки раскрытия/сворачивания дополнительных фильтров (десктоп)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Десктоп версия
+      initMultiSelect('bodyTypeSearch', 'bodyTypeDropdown', 'selectedBodyTypes');
+      initMultiSelect('gearTypeSearch', 'gearTypeDropdown', 'selectedGearTypes');
+      initMultiSelect('driveTypeSearch', 'driveTypeDropdown', 'selectedDriveTypes');
+      initMultiSelect('evaluationTypeSearch', 'evaluationTypeDropdown', 'selectedEvaluationTypes');
+      initMultiSelect('storeSearch', 'storeDropdown', 'selectedStores');
+      
+      // Мобильная версия
+      initMultiSelect('mobile_bodyTypeSearch', 'mobile_bodyTypeDropdown', 'mobile_selectedBodyTypes');
+      initMultiSelect('mobile_gearTypeSearch', 'mobile_gearTypeDropdown', 'mobile_selectedGearTypes');
+      initMultiSelect('mobile_driveTypeSearch', 'mobile_driveTypeDropdown', 'mobile_selectedDriveTypes');
+      initMultiSelect('mobile_evaluationTypeSearch', 'mobile_evaluationTypeDropdown', 'mobile_selectedEvaluationTypes');
+      initMultiSelect('mobile_storeSearch', 'mobile_storeDropdown', 'mobile_selectedStores');
+    });
+  } else {
+    // Десктоп версия
+    initMultiSelect('bodyTypeSearch', 'bodyTypeDropdown', 'selectedBodyTypes');
+    initMultiSelect('gearTypeSearch', 'gearTypeDropdown', 'selectedGearTypes');
+    initMultiSelect('driveTypeSearch', 'driveTypeDropdown', 'selectedDriveTypes');
+    initMultiSelect('evaluationTypeSearch', 'evaluationTypeDropdown', 'selectedEvaluationTypes');
+    initMultiSelect('storeSearch', 'storeDropdown', 'selectedStores');
+    
+    // Мобильная версия
+    initMultiSelect('mobile_bodyTypeSearch', 'mobile_bodyTypeDropdown', 'mobile_selectedBodyTypes');
+    initMultiSelect('mobile_gearTypeSearch', 'mobile_gearTypeDropdown', 'mobile_selectedGearTypes');
+    initMultiSelect('mobile_driveTypeSearch', 'mobile_driveTypeDropdown', 'mobile_selectedDriveTypes');
+    initMultiSelect('mobile_evaluationTypeSearch', 'mobile_evaluationTypeDropdown', 'mobile_selectedEvaluationTypes');
+    initMultiSelect('mobile_storeSearch', 'mobile_storeDropdown', 'mobile_selectedStores');
+  }
+})();
+
+// Обработка иконки раскрытия/сворачивания дополнительных фильтров
+document.addEventListener('DOMContentLoaded', function() {
   const additionalFiltersToggle = document.getElementById('additionalFiltersToggle');
   const additionalFiltersIcon = document.getElementById('additionalFiltersIcon');
   const additionalFilters = document.getElementById('additionalFilters');
   
   if (additionalFiltersToggle && additionalFiltersIcon && additionalFilters) {
-    // Проверяем, открыты ли фильтры по умолчанию
     const isExpanded = additionalFilters.classList.contains('show');
     if (isExpanded) {
       additionalFiltersIcon.style.transform = 'rotate(180deg)';
@@ -1753,10 +1846,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     additionalFilters.addEventListener('show.bs.collapse', function() {
       additionalFiltersIcon.style.transform = 'rotate(180deg)';
-      // Обновляем размер Select2 после раскрытия (небольшая задержка для корректного рендеринга)
-      setTimeout(function() {
-        initMultiSelectFields(false);
-      }, 100);
     });
     
     additionalFilters.addEventListener('hide.bs.collapse', function() {
@@ -1764,17 +1853,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Обработка иконки раскрытия/сворачивания дополнительных фильтров (мобильный)
   const mobileAdditionalFiltersIcon = document.getElementById('mobileAdditionalFiltersIcon');
   const mobileAdditionalFilters = document.getElementById('mobileAdditionalFilters');
   
   if (mobileAdditionalFiltersIcon && mobileAdditionalFilters) {
     mobileAdditionalFilters.addEventListener('show.bs.collapse', function() {
       mobileAdditionalFiltersIcon.style.transform = 'rotate(180deg)';
-      // Обновляем размер Select2 после раскрытия
-      setTimeout(function() {
-        initMultiSelectFields(true);
-      }, 100);
     });
     
     mobileAdditionalFilters.addEventListener('hide.bs.collapse', function() {

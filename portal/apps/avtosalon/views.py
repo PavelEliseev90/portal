@@ -464,6 +464,11 @@ def disposition(request):
     if vin:
         cars = cars.filter(Q(vin__icontains=vin) | Q(vin2__icontains=vin))
     
+    # Фильтр по search_fields (поиск по всем полям)
+    search_fields = request.GET.get('search_fields', '').strip()
+    if search_fields:
+        cars = cars.filter(search_fields__icontains=search_fields)
+    
     mark_id = request.GET.get('mark', '')
     if mark_id:
         cars = cars.filter(modification_autoru__model__mark__id=mark_id)
@@ -663,9 +668,18 @@ def disposition(request):
     unit_ids_str = [str(uid) for uid in unit_ids]
     store_ids_str = [str(sid) for sid in store_ids]
     
+    # Для фильтров с чекбоксами - списки ID для проверки в шаблоне
+    body_type_ids_list = body_type_ids
+    gear_type_ids_list = gear_type_ids
+    drive_type_ids_list = drive_type_ids
+    evaluation_type_ids_list = evaluation_type_ids
+    unit_ids_list = unit_ids
+    store_ids_list = store_ids
+    
     filtr = {
         'status': status_type,
         'vin': vin,
+        'search_fields': search_fields,
         'mark': mark_id,
         'model': model_ids_str,
         'year_start': year_start,
@@ -702,6 +716,13 @@ def disposition(request):
         'all_models': AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name'),  # ОПТИМИЗАЦИЯ: Все модели для множественного выбора
         'total_cars_count': total_cars_count,
         'has_filters': has_filters,
+        # Для фильтров с чекбоксами
+        'body_type_ids_list': body_type_ids_list,
+        'gear_type_ids_list': gear_type_ids_list,
+        'drive_type_ids_list': drive_type_ids_list,
+        'evaluation_type_ids_list': evaluation_type_ids_list,
+        'unit_ids_list': unit_ids_list,
+        'store_ids_list': store_ids_list,
     }
     
     return render(request, "avtosalon/disposition.html", {'params': params})
