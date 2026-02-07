@@ -613,11 +613,25 @@
 
 					{% if request.user.profiles.korsavto_settings %}
 					
-						<div class="row">
+						<div class="row g-2">
 							<div class="col-12 col-sm-auto text-center" >
 								<a href="price_edit/" class="text-dark">
 									<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
 										<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Управление<br>ценообразованием
+									</div>
+								</a>
+							</div>
+							<div class="col-12 col-sm-auto text-center" >
+								<a href="photos_edit/" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-info bg-opacity-10" style="padding: 0.5rem; height: 100%;">
+										<span class="icon-mbri-photo fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Управление<br>фотографиями
+									</div>
+								</a>
+							</div>
+							<div class="col-12 col-sm-auto text-center" >
+								<a href="costs_edit/" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-warning bg-opacity-10" style="padding: 0.5rem; height: 100%;">
+										<span class="icon-mbri-dollar fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Затраты на<br>автомобиль
 									</div>
 								</a>
 							</div>

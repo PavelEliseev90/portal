@@ -1651,29 +1651,41 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   
-  // Одиночный выбор для марки (десктоп)
-  $('#mark').select2({
-    placeholder: 'Выберите марку',
-    allowClear: true,
-    width: '100%',
-    language: {
-      noResults: function() {
-        return "Результаты не найдены";
-      }
-    }
-  });
+  // Одиночный выбор для марки (десктоп) - если элемент существует
+  if ($('#mark').length) {
+    $('#mark').select2({
+      placeholder: 'Выберите марку',
+      allowClear: true,
+      width: '100%',
+      language: {
+        noResults: function() {
+          return "Результаты не найдены";
+        },
+        searching: function() {
+          return "Поиск...";
+        }
+      },
+      minimumResultsForSearch: 0 // Всегда показывать поиск
+    });
+  }
   
-  // Множественный выбор для модели (десктоп)
-  $('#model').select2({
-    placeholder: 'Выберите модели',
-    allowClear: true,
-    width: '100%',
-    language: {
-      noResults: function() {
-        return "Результаты не найдены";
-      }
-    }
-  });
+  // Множественный выбор для модели (десктоп) - если элемент существует
+  if ($('#model').length) {
+    $('#model').select2({
+      placeholder: 'Выберите модели',
+      allowClear: true,
+      width: '100%',
+      language: {
+        noResults: function() {
+          return "Результаты не найдены";
+        },
+        searching: function() {
+          return "Поиск...";
+        }
+      },
+      minimumResultsForSearch: 0 // Всегда показывать поиск
+    });
+  }
 
   // Функция для получения метки поля
   function getFieldLabel(fieldId) {
@@ -1702,16 +1714,22 @@ document.addEventListener('DOMContentLoaded', function() {
     multiSelectFields.forEach(function(fieldId) {
       const fieldLabel = getFieldLabel(fieldId);
       const selector = isMobile ? `#mobile_${fieldId}` : `#${fieldId}`;
-      $(selector).select2({
-        placeholder: `Выберите ${fieldLabel}`,
-        allowClear: true,
-        width: '100%',
-        language: {
-          noResults: function() {
-            return "Результаты не найдены";
-          }
-        }
-      });
+      if ($(selector).length) {
+        $(selector).select2({
+          placeholder: `Выберите ${fieldLabel}`,
+          allowClear: true,
+          width: '100%',
+          language: {
+            noResults: function() {
+              return "Результаты не найдены";
+            },
+            searching: function() {
+              return "Поиск...";
+            }
+          },
+          minimumResultsForSearch: 0 // Всегда показывать поиск для множественного выбора
+        });
+      }
     });
   }
   
