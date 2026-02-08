@@ -13,10 +13,13 @@ from email import header
 from itertools import product
 import requests
 import tempfile
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
+from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, Case, When, IntegerField, FloatField, ExpressionWrapper
+from django.utils import timezone
+from datetime import timedelta
+import os
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegInteractivOcenka, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations
-from avtosalon.models import Avtohub
+from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite
 from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA
 from django.http import JsonResponse
 from rest_framework import status
@@ -464,6 +467,11 @@ def disposition(request):
     if vin:
         cars = cars.filter(Q(vin__icontains=vin) | Q(vin2__icontains=vin))
     
+    # Фильтр по search_fields (поиск по всем полям)
+    search_fields = request.GET.get('search_fields', '').strip()
+    if search_fields:
+        cars = cars.filter(search_fields__icontains=search_fields)
+    
     mark_id = request.GET.get('mark', '')
     if mark_id:
         cars = cars.filter(modification_autoru__model__mark__id=mark_id)
@@ -663,9 +671,18 @@ def disposition(request):
     unit_ids_str = [str(uid) for uid in unit_ids]
     store_ids_str = [str(sid) for sid in store_ids]
     
+    # Для фильтров с чекбоксами - списки ID для проверки в шаблоне
+    body_type_ids_list = body_type_ids
+    gear_type_ids_list = gear_type_ids
+    drive_type_ids_list = drive_type_ids
+    evaluation_type_ids_list = evaluation_type_ids
+    unit_ids_list = unit_ids
+    store_ids_list = store_ids
+    
     filtr = {
         'status': status_type,
         'vin': vin,
+        'search_fields': search_fields,
         'mark': mark_id,
         'model': model_ids_str,
         'year_start': year_start,
@@ -702,6 +719,13 @@ def disposition(request):
         'all_models': AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name'),  # ОПТИМИЗАЦИЯ: Все модели для множественного выбора
         'total_cars_count': total_cars_count,
         'has_filters': has_filters,
+        # Для фильтров с чекбоксами
+        'body_type_ids_list': body_type_ids_list,
+        'gear_type_ids_list': gear_type_ids_list,
+        'drive_type_ids_list': drive_type_ids_list,
+        'evaluation_type_ids_list': evaluation_type_ids_list,
+        'unit_ids_list': unit_ids_list,
+        'store_ids_list': store_ids_list,
     }
     
     return render(request, "avtosalon/disposition.html", {'params': params})
@@ -1197,6 +1221,376 @@ def costs_edit(request, slug):
     }
     
     return render(request, "avtosalon/car_new_costs_edit.html", {'params': params})
+
+
+@login_required
+def warehouse_analysis(request):
+    """
+    Анализ склада автомобилей - дашборд с метриками и проблемами
+    """
+    from datetime import datetime, timedelta
+    from django.db.models import Exists, OuterRef
+    try:
+        from dateutil import parser
+    except ImportError:
+        parser = None
+    
+    # Фильтры
+    unit_ids = request.GET.getlist('unit[]')
+    status_ids = request.GET.getlist('status[]')
+    days_in_stock_min = request.GET.get('days_in_stock_min', '')
+    days_in_stock_max = request.GET.get('days_in_stock_max', '')
+    photo_age_days = request.GET.get('photo_age_days', '90')
+    evaluation_age_days = request.GET.get('evaluation_age_days', '90')
+    
+    try:
+        photo_age_days = int(photo_age_days)
+    except:
+        photo_age_days = 90
+    
+    try:
+        evaluation_age_days = int(evaluation_age_days)
+    except:
+        evaluation_age_days = 90
+    
+    # Базовый queryset
+    base_qs = RefCarsOrganization.objects.exclude(quantity=0).select_related(
+        'unit', 'status', 'store', 'modification_autoru',
+        'modification_autoru__model', 'modification_autoru__model__mark',
+        'evaluation', 'lo'
+    ).prefetch_related(
+        'refcarsorganizationfiles_set'
+    )
+    
+    # Применяем фильтры
+    if unit_ids:
+        try:
+            base_qs = base_qs.filter(unit__id__in=[int(uid) for uid in unit_ids])
+        except ValueError:
+            pass
+    
+    if status_ids:
+        try:
+            base_qs = base_qs.filter(status__id__in=[int(sid) for sid in status_ids])
+        except ValueError:
+            pass
+    
+    if days_in_stock_min:
+        try:
+            base_qs = base_qs.filter(days_in_stok__gte=int(days_in_stock_min))
+        except ValueError:
+            pass
+    
+    if days_in_stock_max:
+        try:
+            base_qs = base_qs.filter(days_in_stok__lte=int(days_in_stock_max))
+        except ValueError:
+            pass
+    
+    # ОПТИМИЗАЦИЯ: Загружаем данные о фото батчами
+    cars_list = list(base_qs)
+    car_ids = [car.id for car in cars_list]
+    car_vins = [car.vin for car in cars_list if car.vin]
+    
+    # Загружаем данные о фото батчами
+    photos_data = {}
+    if car_ids:
+        from django.db.models import Min
+        photos_qs = RefCarsOrganizationFiles.objects.filter(
+            сars_organization_id__in=car_ids,
+            file__isnull=False
+        ).values('сars_organization_id').annotate(
+            count=Count('id'),
+            oldest_date=Min('date')
+        )
+        for item in photos_qs:
+            photos_data[item['сars_organization_id']] = {
+                'count': item['count'],
+                'oldest_date': item['oldest_date']
+            }
+    
+    # Загружаем данные Autohub
+    latest_autohub_data = {}
+    prev_autohub_data = {}
+    comparison_date = timezone.now() - timedelta(days=7)
+    
+    if car_vins:
+        # ОПТИМИЗАЦИЯ: Используем подзапросы для получения последних записей по каждому VIN
+        from django.db.models import Max
+        # Получаем максимальные даты для каждого VIN
+        max_dates = Avtohub.objects.filter(vin__in=car_vins).values('vin').annotate(
+            max_date=Max('date')
+        )
+        max_date_dict = {item['vin']: item['max_date'] for item in max_dates}
+        
+        # Загружаем последние записи
+        for vin, max_date in max_date_dict.items():
+            latest_record = Avtohub.objects.filter(vin=vin, date=max_date).first()
+            if latest_record:
+                latest_autohub_data[vin] = latest_record
+        
+        # Предыдущие записи для сравнения (за 7 дней до последней записи)
+        for vin in car_vins:
+            if vin in max_date_dict:
+                vin_max_date = max_date_dict[vin]
+                prev_date_threshold = vin_max_date - timedelta(days=7)
+                prev_record = Avtohub.objects.filter(
+                    vin=vin,
+                    date__lte=prev_date_threshold
+                ).order_by('-date').first()
+                if prev_record:
+                    prev_autohub_data[vin] = prev_record
+    
+    # Загружаем информацию о размещении
+    autoru_site = AvtohubSite.objects.filter(name__icontains='auto.ru').first()
+    avito_site = AvtohubSite.objects.filter(name__icontains='avito').first()
+    
+    autoru_placement = {}
+    avito_placement = {}
+    
+    if autoru_site and car_vins:
+        # ОПТИМИЗАЦИЯ: Получаем последние записи для каждого VIN
+        from django.db.models import Max
+        autoru_max_dates = AvtohubSiteInfo.objects.filter(
+            vin__in=car_vins,
+            site=autoru_site
+        ).values('vin').annotate(max_date=Max('date'))
+        
+        for item in autoru_max_dates:
+            record = AvtohubSiteInfo.objects.filter(
+                vin=item['vin'],
+                site=autoru_site,
+                date=item['max_date']
+            ).first()
+            if record:
+                autoru_placement[item['vin']] = record
+    
+    if avito_site and car_vins:
+        # ОПТИМИЗАЦИЯ: Получаем последние записи для каждого VIN
+        from django.db.models import Max
+        avito_max_dates = AvtohubSiteInfo.objects.filter(
+            vin__in=car_vins,
+            site=avito_site
+        ).values('vin').annotate(max_date=Max('date'))
+        
+        for item in avito_max_dates:
+            record = AvtohubSiteInfo.objects.filter(
+                vin=item['vin'],
+                site=avito_site,
+                date=item['max_date']
+            ).first()
+            if record:
+                avito_placement[item['vin']] = record
+    
+    # Загружаем данные о переоценке
+    estimation_data = {}
+    price_data = {}
+    
+    if car_ids:
+        # Последние оценки
+        estimations = RegEstimationRefCarsOrganizations.objects.filter(
+            car_id__in=car_ids
+        ).order_by('car_id', '-date')
+        seen_cars = set()
+        for est in estimations:
+            if est.car_id and est.car_id not in seen_cars:
+                estimation_data[est.car_id] = est.date
+                seen_cars.add(est.car_id)
+        
+        # Последние расчеты цены
+        prices = RegRefCarsOrganizationsCalculationPrice.objects.filter(
+            car_id__in=car_ids
+        ).order_by('car_id', '-date')
+        seen_cars = set()
+        for price in prices:
+            if price.car_id and price.car_id not in seen_cars:
+                price_data[price.car_id] = price.date
+                seen_cars.add(price.car_id)
+    
+    # Обрабатываем каждый автомобиль
+    now = timezone.now()
+    analysis_results = []
+    
+    stats = {
+        'total_cars': len(cars_list),
+        'no_photos': 0,
+        'old_photos': 0,
+        'poor_photo_quality': 0,
+        'not_on_autoru': 0,
+        'not_on_avito': 0,
+        'falling_interest': 0,
+        'falling_price': 0,
+        'not_in_sale_status': 0,
+        'old_evaluation': 0,
+    }
+    
+    for car in cars_list:
+        car_analysis = {
+            'car': car,
+            'issues': [],
+            'metrics': {},
+        }
+        
+        # 1. Анализ фото
+        photo_info = photos_data.get(car.id, {})
+        photos_count_val = photo_info.get('count', 0)
+        
+        if photos_count_val == 0:
+            car_analysis['issues'].append('no_photos')
+            stats['no_photos'] += 1
+        else:
+            # Проверяем возраст фото
+            oldest_date = photo_info.get('oldest_date')
+            if oldest_date:
+                if isinstance(oldest_date, str):
+                    try:
+                        if parser:
+                            oldest_date = parser.parse(oldest_date)
+                        else:
+                            from django.utils.dateparse import parse_datetime
+                            oldest_date = parse_datetime(oldest_date)
+                    except:
+                        oldest_date = None
+            
+            if oldest_date:
+                try:
+                    if oldest_date.tzinfo is None:
+                        oldest_date = timezone.make_aware(oldest_date)
+                    days_old = (now - oldest_date).days
+                    car_analysis['metrics']['photo_age_days'] = days_old
+                    if days_old > photo_age_days:
+                        car_analysis['issues'].append('old_photos')
+                        stats['old_photos'] += 1
+                except Exception:
+                    pass
+            
+            # Проверяем количество фото
+            if photos_count_val < 5:
+                car_analysis['issues'].append('poor_photo_quality')
+                stats['poor_photo_quality'] += 1
+        
+        car_analysis['metrics']['photos_count'] = photos_count_val
+        
+        # 2. Анализ размещения на Авто.ру
+        if car.vin in autoru_placement:
+            placement = autoru_placement[car.vin]
+            if placement.externalState not in ['active', 'published'] or placement.hasProblems:
+                car_analysis['issues'].append('autoru_problems')
+        else:
+            car_analysis['issues'].append('not_on_autoru')
+            stats['not_on_autoru'] += 1
+        
+        # 3. Анализ размещения на Авито
+        if car.vin in avito_placement:
+            placement = avito_placement[car.vin]
+            if placement.externalState not in ['active', 'published'] or placement.hasProblems:
+                car_analysis['issues'].append('avito_problems')
+        else:
+            car_analysis['issues'].append('not_on_avito')
+            stats['not_on_avito'] += 1
+        
+        # 4. Анализ по Autohub
+        if car.vin in latest_autohub_data:
+            latest = latest_autohub_data[car.vin]
+            prev = prev_autohub_data.get(car.vin)
+            
+            if prev:
+                views_change = (latest.autoruViews or 0) - (prev.autoruViews or 0)
+                calls_change = (latest.callsCounts_uniqueTotal or 0) - (prev.callsCounts_uniqueTotal or 0)
+                chats_change = (latest.chatsCounts_uniqueTotal or 0) - (prev.chatsCounts_uniqueTotal or 0)
+                position_change = (prev.vRatingPosition or 999) - (latest.vRatingPosition or 999)
+                price_change = (prev.avgMarketPrice or 0) - (latest.avgMarketPrice or 0)
+                
+                car_analysis['metrics']['autohub'] = {
+                    'views_change': views_change,
+                    'calls_change': calls_change,
+                    'chats_change': chats_change,
+                    'position_change': position_change,
+                    'price_change': price_change,
+                    'current_position': latest.vRatingPosition,
+                    'current_price': latest.avgMarketPrice,
+                }
+                
+                if views_change < -10 or calls_change < -2 or chats_change < -2:
+                    car_analysis['issues'].append('falling_interest')
+                    stats['falling_interest'] += 1
+                
+                if position_change < -5:
+                    car_analysis['issues'].append('worse_position')
+                
+                if price_change > 50000:
+                    car_analysis['issues'].append('falling_price')
+                    stats['falling_price'] += 1
+        
+        # 5. Анализ статуса
+        if car.status:
+            status_name_lower = car.status.name.lower()
+            if 'продаж' not in status_name_lower and 'готов' not in status_name_lower:
+                if car.date_refresh:
+                    try:
+                        days_not_in_sale = (now - car.date_refresh).days
+                        if days_not_in_sale > 30:
+                            car_analysis['issues'].append('not_in_sale_status')
+                            stats['not_in_sale_status'] += 1
+                            car_analysis['metrics']['days_not_in_sale'] = days_not_in_sale
+                    except Exception:
+                        pass
+        
+        # 6. Анализ переоценки
+        evaluation_date = estimation_data.get(car.id) or price_data.get(car.id)
+        if not evaluation_date and car.lo and car.lo.dataTime:
+            evaluation_date = car.lo.dataTime
+        
+        if evaluation_date:
+            if isinstance(evaluation_date, str):
+                try:
+                    if parser:
+                        evaluation_date = parser.parse(evaluation_date)
+                    else:
+                        from django.utils.dateparse import parse_datetime
+                        evaluation_date = parse_datetime(evaluation_date)
+                except:
+                    evaluation_date = None
+            
+            if evaluation_date:
+                try:
+                    if evaluation_date.tzinfo is None:
+                        evaluation_date = timezone.make_aware(evaluation_date)
+                    days_since_evaluation = (now - evaluation_date).days
+                    car_analysis['metrics']['days_since_evaluation'] = days_since_evaluation
+                    if days_since_evaluation > evaluation_age_days:
+                        car_analysis['issues'].append('old_evaluation')
+                        stats['old_evaluation'] += 1
+                except Exception:
+                    pass
+        
+        if car_analysis['issues']:
+            analysis_results.append(car_analysis)
+    
+    # Сортируем по количеству проблем
+    analysis_results.sort(key=lambda x: len(x['issues']), reverse=True)
+    
+    # Справочные данные
+    units = RefUnit.objects.filter(buauto=True).only('id', 'name').order_by('name')
+    statuses = RefStatusCarsOrganization.objects.only('id', 'name').order_by('name')
+    
+    params = {
+        'type': 'warehouse_analysis',
+        'analysis_results': analysis_results,
+        'stats': stats,
+        'units': units,
+        'statuses': statuses,
+        'filters': {
+            'unit_ids': [int(uid) for uid in unit_ids if uid.isdigit()],
+            'status_ids': [int(sid) for sid in status_ids if sid.isdigit()],
+            'days_in_stock_min': days_in_stock_min,
+            'days_in_stock_max': days_in_stock_max,
+            'photo_age_days': photo_age_days,
+            'evaluation_age_days': evaluation_age_days,
+        },
+    }
+    
+    return render(request, "avtosalon/warehouse_analysis.html", {'params': params})
 
 
 def refresh_cars(request):
