@@ -464,7 +464,14 @@
     <!-- Список проблемных автомобилей -->
     <div class="analysis-panel">
         <div class="analysis-panel-header">
-            <h3 class="analysis-panel-title">Проблемные автомобили ({{ params.analysis_results|length }})</h3>
+            <h3 class="analysis-panel-title">
+                Проблемные автомобили 
+                {% if params.analysis_results %}
+                    ({{ params.analysis_results.paginator.count }} всего, показано {{ params.analysis_results.start_index }}-{{ params.analysis_results.end_index }})
+                {% else %}
+                    (0)
+                {% endif %}
+            </h3>
         </div>
         
         {% if params.analysis_results %}
@@ -569,6 +576,59 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Пагинация -->
+            {% if params.analysis_results.has_other_pages %}
+                <nav aria-label="Пагинация результатов">
+                    <ul class="pagination justify-content-center mt-4">
+                        {% if params.analysis_results.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                                    <span class="icon-mbri-left"></span> Первая
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ params.analysis_results.previous_page_number }}">
+                                    <span class="icon-mbri-left"></span> Предыдущая
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><span class="icon-mbri-left"></span> Первая</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><span class="icon-mbri-left"></span> Предыдущая</span>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Страница {{ params.analysis_results.number }} из {{ params.analysis_results.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if params.analysis_results.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ params.analysis_results.next_page_number }}">
+                                    Следующая <span class="icon-mbri-right"></span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ params.analysis_results.paginator.num_pages }}">
+                                    Последняя <span class="icon-mbri-right"></span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Следующая <span class="icon-mbri-right"></span></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Последняя <span class="icon-mbri-right"></span></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
         {% else %}
             <div class="text-center py-5 text-muted">
                 <span class="icon-mbri-success" style="font-size: 4rem; display: block; margin-bottom: 1rem; opacity: 0.3;"></span>
