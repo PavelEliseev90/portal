@@ -23,6 +23,9 @@ from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite
 from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA
 from django.http import JsonResponse
 from rest_framework import status
+import qrcode
+import io
+import base64
 
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
@@ -775,6 +778,14 @@ def car(request, slug):
     
     add_statistic_cars_organization(cars=car, store=car.store, type=1)
     
+    # Генерация QR-кода со ссылкой на страницу автомобиля
+    car_url = request.build_absolute_uri(f'/cars/{car.slug}/')
+    qr_code_image = qrcode.make(car_url)
+    buffer = io.BytesIO()
+    qr_code_image.save(buffer, format="PNG")
+    qr_code_image_data = base64.b64encode(buffer.getvalue()).decode()
+    qr_code_base64 = f'data:image/png;base64,{qr_code_image_data}'
+    
     # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
     selected = {
         'stores'        : RefStore.objects.only('id', 'name').order_by('name'),
@@ -787,6 +798,8 @@ def car(request, slug):
     params = {
         'object'        : car,
         'selected'      : selected,
+        'qr_code'       : qr_code_base64,
+        'car_url'       : car_url,
     }
     
     return render(request, "avtosalon/car_new.html", {'params': params})    
