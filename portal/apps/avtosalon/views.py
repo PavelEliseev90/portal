@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from refs.models import AutoruComplectation, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefTypeDrive
 from refs.models import RefStagePrice, RefTypeSaleCarsOrganization, RefStatusCarsOrganization, RefTypeDrive, RefTypeBody, RefTypeKpp, RefUnit, RefCity, RefSpecificationData, RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
 from api.views_avtosalon import add_statistic_cars_organization
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 from api.views import get_unit, get_organization, get_store, get_stage_price, get_group_price, get_model_object
 from avtosalon.models import RefreshCarsLog
@@ -1291,15 +1291,15 @@ def warehouse_analysis(request):
         except ValueError:
             pass
     
-    # ОПТИМИЗАЦИЯ: Получаем только нужные данные
-    # Ограничиваем количество для производительности (можно увеличить при необходимости)
-    cars_list = list(base_qs[:1000])  # Ограничение на 1000 автомобилей для быстрой загрузки
-    car_ids = [car.id for car in cars_list]
-    car_vins = [car.vin for car in cars_list if car.vin]
+    # ОПТИМИЗАЦИЯ: Получаем все автомобили для статистики (без ограничений)
+    # Но для отображения используем пагинацию
+    cars_list_all = list(base_qs)
+    car_ids_all = [car.id for car in cars_list_all]
+    car_vins_all = [car.vin for car in cars_list_all if car.vin]
     
     # Данные о фото уже в аннотациях, создаем словарь для удобства
     photos_data = {}
-    for car in cars_list:
+    for car in cars_list_all:
         photos_data[car.id] = {
             'count': car.photos_count or 0,
             'oldest_date': car.oldest_photo_date
@@ -1310,12 +1310,12 @@ def warehouse_analysis(request):
     prev_autohub_data = {}
     comparison_date = timezone.now() - timedelta(days=7)
     
-    if car_vins:
+    if car_vins_all:
         # ОПТИМИЗАЦИЯ: Используем один запрос с подзапросами для получения последних записей
         from django.db.models import Max
         
         # Получаем максимальные даты для каждого VIN одним запросом
-        max_dates_qs = Avtohub.objects.filter(vin__in=car_vins).values('vin').annotate(
+        max_dates_qs = Avtohub.objects.filter(vin__in=car_vins_all).values('vin').annotate(
             max_date=Max('date')
         )
         max_date_dict = {item['vin']: item['max_date'] for item in max_dates_qs}
@@ -1367,11 +1367,11 @@ def warehouse_analysis(request):
     autoru_placement = {}
     avito_placement = {}
     
-    if autoru_site and car_vins:
+    if autoru_site and car_vins_all:
         # ОПТИМИЗАЦИЯ: Получаем последние записи с использованием only() и одного запроса
         from django.db.models import Max
         autoru_max_dates = AvtohubSiteInfo.objects.filter(
-            vin__in=car_vins,
+            vin__in=car_vins_all,
             site=autoru_site
         ).values('vin').annotate(max_date=Max('date'))
         
@@ -1392,11 +1392,11 @@ def warehouse_analysis(request):
             for record in autoru_records:
                 autoru_placement[record.vin] = record
     
-    if avito_site and car_vins:
+    if avito_site and car_vins_all:
         # ОПТИМИЗАЦИЯ: Получаем последние записи с использованием only() и одного запроса
         from django.db.models import Max
         avito_max_dates = AvtohubSiteInfo.objects.filter(
-            vin__in=car_vins,
+            vin__in=car_vins_all,
             site=avito_site
         ).values('vin').annotate(max_date=Max('date'))
         
@@ -1421,28 +1421,28 @@ def warehouse_analysis(request):
     estimation_data = {}
     price_data = {}
     
-    if car_ids:
+    if car_ids_all:
         # ОПТИМИЗАЦИЯ: Используем агрегацию для получения последних дат одним запросом
         from django.db.models import Max
         
         # Последние оценки - получаем максимальные даты для каждого автомобиля
         estimation_dates = RegEstimationRefCarsOrganizations.objects.filter(
-            car_id__in=car_ids
+            car_id__in=car_ids_all
         ).values('car_id').annotate(max_date=Max('date'))
         estimation_data = {item['car_id']: item['max_date'] for item in estimation_dates}
         
         # Последние расчеты цены - получаем максимальные даты для каждого автомобиля
         price_dates = RegRefCarsOrganizationsCalculationPrice.objects.filter(
-            car_id__in=car_ids
+            car_id__in=car_ids_all
         ).values('car_id').annotate(max_date=Max('date'))
         price_data = {item['car_id']: item['max_date'] for item in price_dates}
     
-    # Обрабатываем каждый автомобиль
+    # Обрабатываем каждый автомобиль для статистики
     now = timezone.now()
-    analysis_results = []
+    analysis_results_all = []
     
     stats = {
-        'total_cars': len(cars_list),
+        'total_cars': len(cars_list_all),
         'no_photos': 0,
         'old_photos': 0,
         'poor_photo_quality': 0,
@@ -1595,10 +1595,21 @@ def warehouse_analysis(request):
                     pass
         
         if car_analysis['issues']:
-            analysis_results.append(car_analysis)
+            analysis_results_all.append(car_analysis)
     
     # Сортируем по количеству проблем
-    analysis_results.sort(key=lambda x: len(x['issues']), reverse=True)
+    analysis_results_all.sort(key=lambda x: len(x['issues']), reverse=True)
+    
+    # ПАГИНАЦИЯ: Разбиваем результаты на страницы по 25 автомобилей
+    paginator = Paginator(analysis_results_all, 25)
+    page = request.GET.get('page', 1)
+    
+    try:
+        analysis_results = paginator.page(page)
+    except PageNotAnInteger:
+        analysis_results = paginator.page(1)
+    except EmptyPage:
+        analysis_results = paginator.page(paginator.num_pages)
     
     # Справочные данные
     units = RefUnit.objects.filter(buauto=True).only('id', 'name').order_by('name')
