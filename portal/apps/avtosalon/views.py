@@ -1253,13 +1253,17 @@ def warehouse_analysis(request):
     except:
         evaluation_age_days = 90
     
-    # Базовый queryset
+    # Базовый queryset с аннотациями для оптимизации
+    from django.db.models import Min, Max, Prefetch
+    
+    # ОПТИМИЗАЦИЯ: Используем аннотации для подсчета фото прямо в queryset
     base_qs = RefCarsOrganization.objects.exclude(quantity=0).select_related(
         'unit', 'status', 'store', 'modification_autoru',
         'modification_autoru__model', 'modification_autoru__model__mark',
         'evaluation', 'lo'
-    ).prefetch_related(
-        'refcarsorganizationfiles_set'
+    ).annotate(
+        photos_count=Count('refcarsorganizationfiles', filter=Q(refcarsorganizationfiles__file__isnull=False), distinct=True),
+        oldest_photo_date=Min('refcarsorganizationfiles__date', filter=Q(refcarsorganizationfiles__file__isnull=False))
     )
     
     # Применяем фильтры
@@ -1287,27 +1291,19 @@ def warehouse_analysis(request):
         except ValueError:
             pass
     
-    # ОПТИМИЗАЦИЯ: Загружаем данные о фото батчами
-    cars_list = list(base_qs)
+    # ОПТИМИЗАЦИЯ: Получаем только нужные данные
+    # Ограничиваем количество для производительности (можно увеличить при необходимости)
+    cars_list = list(base_qs[:1000])  # Ограничение на 1000 автомобилей для быстрой загрузки
     car_ids = [car.id for car in cars_list]
     car_vins = [car.vin for car in cars_list if car.vin]
     
-    # Загружаем данные о фото батчами
+    # Данные о фото уже в аннотациях, создаем словарь для удобства
     photos_data = {}
-    if car_ids:
-        from django.db.models import Min
-        photos_qs = RefCarsOrganizationFiles.objects.filter(
-            сars_organization_id__in=car_ids,
-            file__isnull=False
-        ).values('сars_organization_id').annotate(
-            count=Count('id'),
-            oldest_date=Min('date')
-        )
-        for item in photos_qs:
-            photos_data[item['сars_organization_id']] = {
-                'count': item['count'],
-                'oldest_date': item['oldest_date']
-            }
+    for car in cars_list:
+        photos_data[car.id] = {
+            'count': car.photos_count or 0,
+            'oldest_date': car.oldest_photo_date
+        }
     
     # Загружаем данные Autohub
     latest_autohub_data = {}
@@ -1315,31 +1311,54 @@ def warehouse_analysis(request):
     comparison_date = timezone.now() - timedelta(days=7)
     
     if car_vins:
-        # ОПТИМИЗАЦИЯ: Используем подзапросы для получения последних записей по каждому VIN
+        # ОПТИМИЗАЦИЯ: Используем один запрос с подзапросами для получения последних записей
         from django.db.models import Max
-        # Получаем максимальные даты для каждого VIN
-        max_dates = Avtohub.objects.filter(vin__in=car_vins).values('vin').annotate(
+        
+        # Получаем максимальные даты для каждого VIN одним запросом
+        max_dates_qs = Avtohub.objects.filter(vin__in=car_vins).values('vin').annotate(
             max_date=Max('date')
         )
-        max_date_dict = {item['vin']: item['max_date'] for item in max_dates}
+        max_date_dict = {item['vin']: item['max_date'] for item in max_dates_qs}
         
-        # Загружаем последние записи
-        for vin, max_date in max_date_dict.items():
-            latest_record = Avtohub.objects.filter(vin=vin, date=max_date).first()
-            if latest_record:
-                latest_autohub_data[vin] = latest_record
+        # ОПТИМИЗАЦИЯ: Загружаем все последние записи одним запросом используя Q объекты
+        if max_date_dict:
+            # Создаем Q объект для фильтрации по vin и date одновременно
+            q_objects = Q()
+            for vin, max_date in max_date_dict.items():
+                q_objects |= Q(vin=vin, date=max_date)
+            
+            latest_records = Avtohub.objects.filter(q_objects).only(
+                'vin', 'autoruViews', 'avitoViews', 'callsCounts_uniqueTotal',
+                'chatsCounts_uniqueTotal', 'vRatingPosition', 'avgMarketPrice', 'price', 'isInSale', 'date'
+            )
+            
+            for record in latest_records:
+                latest_autohub_data[record.vin] = record
         
-        # Предыдущие записи для сравнения (за 7 дней до последней записи)
-        for vin in car_vins:
-            if vin in max_date_dict:
-                vin_max_date = max_date_dict[vin]
-                prev_date_threshold = vin_max_date - timedelta(days=7)
-                prev_record = Avtohub.objects.filter(
-                    vin=vin,
-                    date__lte=prev_date_threshold
-                ).order_by('-date').first()
-                if prev_record:
-                    prev_autohub_data[vin] = prev_record
+        # ОПТИМИЗАЦИЯ: Загружаем предыдущие записи более эффективно - одним запросом
+        if max_date_dict and latest_autohub_data:
+            # Для каждого VIN получаем предыдущую запись
+            prev_vins = list(latest_autohub_data.keys())
+            # Загружаем все записи для этих VIN одним запросом
+            prev_records_all = Avtohub.objects.filter(
+                vin__in=prev_vins
+            ).only(
+                'vin', 'autoruViews', 'avitoViews', 'callsCounts_uniqueTotal',
+                'chatsCounts_uniqueTotal', 'vRatingPosition', 'avgMarketPrice', 'price', 'date'
+            ).order_by('vin', '-date')
+            
+            # Группируем по VIN и берем первую запись для каждого VIN, которая <= threshold
+            current_vin = None
+            current_max_date = None
+            for record in prev_records_all:
+                if record.vin != current_vin:
+                    current_vin = record.vin
+                    if current_vin in max_date_dict:
+                        current_max_date = max_date_dict[current_vin]
+                        prev_date_threshold = current_max_date - timedelta(days=7)
+                        if record.date <= prev_date_threshold:
+                            prev_autohub_data[current_vin] = record
+                            current_vin = None  # Помечаем, что нашли для этого VIN
     
     # Загружаем информацию о размещении
     autoru_site = AvtohubSite.objects.filter(name__icontains='auto.ru').first()
@@ -1349,63 +1368,74 @@ def warehouse_analysis(request):
     avito_placement = {}
     
     if autoru_site and car_vins:
-        # ОПТИМИЗАЦИЯ: Получаем последние записи для каждого VIN
+        # ОПТИМИЗАЦИЯ: Получаем последние записи с использованием only() и одного запроса
         from django.db.models import Max
         autoru_max_dates = AvtohubSiteInfo.objects.filter(
             vin__in=car_vins,
             site=autoru_site
         ).values('vin').annotate(max_date=Max('date'))
         
-        for item in autoru_max_dates:
-            record = AvtohubSiteInfo.objects.filter(
-                vin=item['vin'],
-                site=autoru_site,
-                date=item['max_date']
-            ).first()
-            if record:
-                autoru_placement[item['vin']] = record
+        # Создаем словарь для быстрого поиска
+        vin_date_map = {item['vin']: item['max_date'] for item in autoru_max_dates}
+        
+        # Загружаем все записи одним запросом с only()
+        if vin_date_map:
+            # Используем Q объекты для фильтрации по vin и date одновременно
+            q_objects = Q()
+            for vin, max_date in vin_date_map.items():
+                q_objects |= Q(vin=vin, date=max_date)
+            
+            autoru_records = AvtohubSiteInfo.objects.filter(
+                site=autoru_site
+            ).filter(q_objects).only('vin', 'externalState', 'hasProblems', 'externalURL')
+            
+            for record in autoru_records:
+                autoru_placement[record.vin] = record
     
     if avito_site and car_vins:
-        # ОПТИМИЗАЦИЯ: Получаем последние записи для каждого VIN
+        # ОПТИМИЗАЦИЯ: Получаем последние записи с использованием only() и одного запроса
         from django.db.models import Max
         avito_max_dates = AvtohubSiteInfo.objects.filter(
             vin__in=car_vins,
             site=avito_site
         ).values('vin').annotate(max_date=Max('date'))
         
-        for item in avito_max_dates:
-            record = AvtohubSiteInfo.objects.filter(
-                vin=item['vin'],
-                site=avito_site,
-                date=item['max_date']
-            ).first()
-            if record:
-                avito_placement[item['vin']] = record
+        # Создаем словарь для быстрого поиска
+        vin_date_map = {item['vin']: item['max_date'] for item in avito_max_dates}
+        
+        # Загружаем все записи одним запросом с only()
+        if vin_date_map:
+            # Используем Q объекты для фильтрации по vin и date одновременно
+            q_objects = Q()
+            for vin, max_date in vin_date_map.items():
+                q_objects |= Q(vin=vin, date=max_date)
+            
+            avito_records = AvtohubSiteInfo.objects.filter(
+                site=avito_site
+            ).filter(q_objects).only('vin', 'externalState', 'hasProblems', 'externalURL')
+            
+            for record in avito_records:
+                avito_placement[record.vin] = record
     
     # Загружаем данные о переоценке
     estimation_data = {}
     price_data = {}
     
     if car_ids:
-        # Последние оценки
-        estimations = RegEstimationRefCarsOrganizations.objects.filter(
-            car_id__in=car_ids
-        ).order_by('car_id', '-date')
-        seen_cars = set()
-        for est in estimations:
-            if est.car_id and est.car_id not in seen_cars:
-                estimation_data[est.car_id] = est.date
-                seen_cars.add(est.car_id)
+        # ОПТИМИЗАЦИЯ: Используем агрегацию для получения последних дат одним запросом
+        from django.db.models import Max
         
-        # Последние расчеты цены
-        prices = RegRefCarsOrganizationsCalculationPrice.objects.filter(
+        # Последние оценки - получаем максимальные даты для каждого автомобиля
+        estimation_dates = RegEstimationRefCarsOrganizations.objects.filter(
             car_id__in=car_ids
-        ).order_by('car_id', '-date')
-        seen_cars = set()
-        for price in prices:
-            if price.car_id and price.car_id not in seen_cars:
-                price_data[price.car_id] = price.date
-                seen_cars.add(price.car_id)
+        ).values('car_id').annotate(max_date=Max('date'))
+        estimation_data = {item['car_id']: item['max_date'] for item in estimation_dates}
+        
+        # Последние расчеты цены - получаем максимальные даты для каждого автомобиля
+        price_dates = RegRefCarsOrganizationsCalculationPrice.objects.filter(
+            car_id__in=car_ids
+        ).values('car_id').annotate(max_date=Max('date'))
+        price_data = {item['car_id']: item['max_date'] for item in price_dates}
     
     # Обрабатываем каждый автомобиль
     now = timezone.now()
