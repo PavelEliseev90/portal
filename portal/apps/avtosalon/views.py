@@ -1454,7 +1454,7 @@ def warehouse_analysis(request):
         'old_evaluation': 0,
     }
     
-    for car in cars_list:
+    for car in cars_list_all:
         car_analysis = {
             'car': car,
             'issues': [],
