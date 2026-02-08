@@ -125,6 +125,9 @@
             <th>Дата после КД</th>
             <th>Дата принято</th>
             <th>Ценовая группа</th>
+            <th>Согласованная цена (ЕЦО)</th>
+            <th>Цена авторасчета</th>
+            <th>Разница, %</th>
           </tr>
         </thead>
         <tbody>
@@ -258,10 +261,45 @@
                 {{ item.zg_name|default:"—" }}
               {% endif %}
             </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {% if item.agreed_price %}
+                  {{ item.agreed_price|floatformat:"2g" }} ₽
+                {% else %}
+                  —
+                {% endif %}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {% if item.auto_price %}
+                  {{ item.auto_price|floatformat:"2g" }} ₽
+                {% else %}
+                  —
+                {% endif %}
+              {% endif %}
+            </td>
+            <td>
+              {% if params.op_rlk_data %}
+                —
+              {% else %}
+                {% if item.price_diff_percent is not None %}
+                  <span class="badge {% if item.price_diff_percent > 0 %}bg-success{% elif item.price_diff_percent < 0 %}bg-danger{% else %}bg-secondary{% endif %}">
+                    {{ item.price_diff_percent|floatformat:"2g" }}%
+                  </span>
+                {% else %}
+                  —
+                {% endif %}
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="13" class="text-center text-muted py-4">
+            <td colspan="16" class="text-center text-muted py-4">
               Нет данных для отображения
             </td>
           </tr>

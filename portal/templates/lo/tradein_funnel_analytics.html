@@ -1853,6 +1853,10 @@
       dropdown.style.display = 'block';
     });
     
+    searchInput.addEventListener('click', function() {
+      dropdown.style.display = 'block';
+    });
+    
     document.addEventListener('click', function(e) {
       if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
         dropdown.style.display = 'none';
@@ -2107,6 +2111,13 @@
       if (sourceUnitDropdown) {
         sourceUnitDropdown.querySelectorAll('label').forEach(label => label.style.display = '');
       }
+      // Обновляем отображение выбранных
+      if (window.updateSelected_selectedUnits) {
+        window.updateSelected_selectedUnits();
+      }
+      if (window.updateSelected_selectedSourceUnits) {
+        window.updateSelected_selectedSourceUnits();
+      }
       return;
     }
     
@@ -2125,6 +2136,7 @@
     
     // Фильтруем подразделения
     if (unitDropdown) {
+      let hasUnchecked = false;
       unitDropdown.querySelectorAll('label').forEach(label => {
         const checkbox = label.querySelector('input[type="checkbox"]');
         if (checkbox) {
@@ -2133,7 +2145,10 @@
             label.style.display = '';
           } else {
             label.style.display = 'none';
-            checkbox.checked = false; // Снимаем выбор с недоступных
+            if (checkbox.checked) {
+              checkbox.checked = false; // Снимаем выбор с недоступных
+              hasUnchecked = true;
+            }
           }
         }
       });
@@ -2143,8 +2158,9 @@
       }
     }
     
-    // Фильтруем источники
+    // Фильтруем источники - важно: скрываем и снимаем выбор с недоступных
     if (sourceUnitDropdown) {
+      let hasUnchecked = false;
       sourceUnitDropdown.querySelectorAll('label').forEach(label => {
         const checkbox = label.querySelector('input[type="checkbox"]');
         if (checkbox) {
@@ -2153,11 +2169,14 @@
             label.style.display = '';
           } else {
             label.style.display = 'none';
-            checkbox.checked = false; // Снимаем выбор с недоступных
+            if (checkbox.checked) {
+              checkbox.checked = false; // Снимаем выбор с недоступных
+              hasUnchecked = true;
+            }
           }
         }
       });
-      // Обновляем отображение выбранных
+      // Обновляем отображение выбранных источников
       if (window.updateSelected_selectedSourceUnits) {
         window.updateSelected_selectedSourceUnits();
       }
