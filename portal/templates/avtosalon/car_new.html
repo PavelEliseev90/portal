@@ -2128,8 +2128,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		<!-- Шапка с логотипами -->
 		<div class="price-tag-header">
 			<div class="price-tag-logo-left">
-				<div class="kors-logo-text">корс</div>
-				<div class="kors-logo-badge">авто</div>
+				<div class="kors-group-logo">
+					<span class="kors-group-k">K</span>
+					<div class="kors-group-text">
+						<div class="kors-group-name">КорсАвто</div>
+						<div class="kors-group-subtitle">автомобили с пробегом</div>
+					</div>
+				</div>
 			</div>
 			<div class="price-tag-logo-right">
 				<div class="kors-group-logo">
@@ -2147,16 +2152,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
 		</div>
 
-		<!-- Цена -->
-		{% if params.object.reserve == 0 %}
-		<div class="price-tag-price">
-			{{params.object.price|floatformat:"2g"}} ₽
-		</div>
-		{% else %}
-		<div class="price-tag-price price-tag-price-reserved">
-			В резерве
-		</div>
-		{% endif %}
+		
 
 		<!-- Основной контент -->
 		<div class="price-tag-main">
@@ -2165,9 +2161,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				<div class="price-tag-brand-logo">
 					<img src="{{params.object.logo}}" alt="{{params.object.modification_autoru.model.mark.name}}" class="brand-logo-img">
 				</div>
-				<div class="price-tag-number">
-					{% if params.object.id %}{{params.object.id}}{% else %}{{params.object.slug|slice:":6"}}{% endif %}
-				</div>
+				
 			</div>
 
 			<!-- Правая часть: характеристики -->
@@ -2207,8 +2201,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		<!-- Услуги -->
 		<div class="price-tag-services">
+			
 			<div class="service-item">
-				<div class="service-icon">
+				<div class="">
 					<span class="icon-mbri-file"></span>
 				</div>
 				<div class="service-text">Юридическая гарантия</div>
@@ -2219,7 +2214,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				</div>
 				<div class="service-text">Кредит без первоначального взноса</div>
 			</div>
-			<div class="service-item">
+			<div class="service-item bg-secondary">
 				<div class="service-icon service-icon-exchange">
 					<span class="icon-mbri-refresh"></span>
 				</div>
@@ -2231,38 +2226,28 @@ document.addEventListener('DOMContentLoaded', function() {
 				</div>
 				<div class="service-text">Все виды страхования</div>
 			</div>
+
 		</div>
 
 		<!-- Нижняя часть: сайт и QR-код -->
 		<div class="price-tag-footer">
-			<div class="price-tag-website">
-				www.korsavto.ru
-			</div>
 			{% if params.qr_code %}
-			<div class="price-tag-qrcode">
-				<img src="{{ params.qr_code }}" alt="QR код" class="qrcode-image">
-				<div class="qrcode-text">Отсканируйте для<br>подробной информации</div>
-			</div>
+				<div class="price-tag-qrcode">
+					<img src="{{ params.qr_code }}" alt="QR код" class="qrcode-image">				
+				</div>
 			{% endif %}
 		</div>
-
-		<!-- Изображение автомобиля (если есть) -->
-		{% if params.object.get_photo_mini %}
-		<div class="price-tag-car-image">
-			<img src="{{params.object.get_photo_mini}}" alt="{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}" class="car-image-print">
-		</div>
-		{% endif %}
 
 		<!-- Дополнительная информация -->
 		<div class="price-tag-additional">
-			<div class="price-tag-id">
-				{% if params.object.id %}{{params.object.id}}{% else %}{{params.object.slug|slice:":6"}}{% endif %}
-			</div>
-			{% if params.object.unit %}
+			
 			<div class="price-tag-unit">
-				<span class="icon-mbri-home"></span> {{params.object.unit.name}}
+				<span class="icon-mbri-home"></span> КорсАвто {{params.object.unit.city}} 
 			</div>
-			{% endif %}
+			<div class="price-tag-unit">
+				<span class="icon-mbri-home"></span> {{params.object.store.phone}}
+			</div>
+			
 		</div>
 	</div>
 </div>
@@ -2272,8 +2257,52 @@ document.addEventListener('DOMContentLoaded', function() {
 .price-tag-print {
 	display: none !important;
 }
-
+.icon-mbri-file:before {
+		content: '\e967' !important;
+		font-family: 'fontello' !important;
+	}
+	
+	.icon-mbri-refresh:before {
+		content: '\e99e' !important;
+		font-family: 'fontello' !important;
+	}
 @media print {
+	/* Принудительная загрузка шрифта иконок при печати */
+	@font-face {
+		font-family: 'fontello';
+		src: url('/static/fonts/fontello.woff2') format('woff2'),
+			 url('/static/fonts/fontello.woff') format('woff'),
+			 url('/static/fonts/fontello.ttf') format('truetype');
+		font-weight: normal;
+		font-style: normal;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+	
+	/* Убеждаемся, что иконки используют шрифт */
+	.icon-mbri-file:before,
+	.icon-mbri-refresh:before {
+		font-family: 'fontello' !important;
+		speak: none;
+		font-style: normal;
+		font-weight: normal;
+		font-variant: normal;
+		text-transform: none;
+		line-height: 1;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		display: inline-block !important;
+		visibility: visible !important;
+	}
+	
+	.icon-mbri-file:before {
+		content: '\e967' !important; /* Код иконки file */
+	}
+	
+	.icon-mbri-refresh:before {
+		content: '\e99e' !important; /* Код иконки refresh */
+	}
+	
 	@page {
 		size: A4 portrait;
 		margin: 0;
@@ -2282,6 +2311,18 @@ document.addEventListener('DOMContentLoaded', function() {
 	/* Скрываем все элементы страницы кроме ценника */
 	body > *:not(.price-tag-print) {
 		display: none !important;
+	}
+	
+	/* Принудительная загрузка шрифта иконок при печати */
+	@font-face {
+		font-family: 'fontello';
+		src: url('/static/fonts/fontello.woff2?68937649') format('woff2'),
+			 url('/static/fonts/fontello.woff?68937649') format('woff'),
+			 url('/static/fonts/fontello.ttf?68937649') format('truetype');
+		font-weight: normal;
+		font-style: normal;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 	}
 	
 	html, body {
@@ -2330,6 +2371,32 @@ document.addEventListener('DOMContentLoaded', function() {
 	.price-tag-print span,
 	.price-tag-print img {
 		display: revert !important;
+	}
+	
+	/* Убеждаемся, что иконки отображаются при печати */
+	.price-tag-print .icon-mbri-file,
+	.price-tag-print .icon-mbri-refresh {
+		display: inline-block !important;
+		visibility: visible !important;
+		font-family: 'fontello' !important;
+		font-size: inherit !important;
+		line-height: 1 !important;
+		-webkit-font-smoothing: antialiased !important;
+		-moz-osx-font-smoothing: grayscale !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+	
+	.price-tag-print .icon-mbri-file:before {
+		content: '\e967' !important;
+		display: inline-block !important;
+		visibility: visible !important;
+	}
+	
+	.price-tag-print .icon-mbri-refresh:before {
+		content: '\e99e' !important;
+		display: inline-block !important;
+		visibility: visible !important;
 	}
 	
 	.price-tag-header {
@@ -2728,7 +2795,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		font-size: 10px;
+		font-size: 18px;
 	}
 }
 

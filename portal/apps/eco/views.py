@@ -10167,6 +10167,41 @@ def tradein_funnel_analytics_detail(request):
             paginator = Paginator(items, 50)
             page_obj = paginator.get_page(1)
     
+    # ОПТИМИЗАЦИЯ: Вычисляем цены для каждого элемента в page_obj
+    # Логика: согласованная цена (ЕЦО) - price_after > 0, иначе price_before > 0, иначе price_remote
+    # Авторасчет - price_auto_after > 0, иначе price_auto_before > 0, иначе price_auto_remote
+    from decimal import Decimal
+    for item in page_obj:
+        # Согласованная цена (ЕЦО)
+        if item.price_after and item.price_after > 0:
+            item.agreed_price = item.price_after
+        elif item.price_before and item.price_before > 0:
+            item.agreed_price = item.price_before
+        elif item.price_remote and item.price_remote > 0:
+            item.agreed_price = item.price_remote
+        else:
+            item.agreed_price = None
+        
+        # Цена авторасчета
+        if item.price_auto_after and item.price_auto_after > 0:
+            item.auto_price = item.price_auto_after
+        elif item.price_auto_before and item.price_auto_before > 0:
+            item.auto_price = item.price_auto_before
+        elif item.price_auto_remote and item.price_auto_remote > 0:
+            item.auto_price = item.price_auto_remote
+        else:
+            item.auto_price = None
+        
+        # Разница в процентах
+        if item.agreed_price and item.auto_price and item.auto_price > 0:
+            try:
+                diff_percent = ((item.agreed_price - item.auto_price) / item.auto_price) * 100
+                item.price_diff_percent = diff_percent
+            except:
+                item.price_diff_percent = None
+        else:
+            item.price_diff_percent = None
+    
     params = {
         'type': 'eco_funnel',
         'nav_selected': 4,
