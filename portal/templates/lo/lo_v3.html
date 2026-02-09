@@ -7350,6 +7350,35 @@
                                     <input type="text" class="form-control kors-form-control text-secondary" id="comment_airbag" name="comment_airbag" value="{{params.estimation.page_test_drive.comment_airbag}}" placeholder="" autocomplete="off">
                                     <label for="comment_airbag">Комментарий</label>
                                   </div>
+                                  
+                                  <!-- Блок выбора конкретных проблем безопасности (показывается при "Не исправны" или "Есть замечания") -->
+                                  <div id="airbag_issues_block" class="mb-3" style="display: {% if params.estimation.page_test_drive.airbag == 0 or params.estimation.page_test_drive.airbag == 2 %}block{% else %}none{% endif %};">
+                                    <label class="form-label fw-bold">Укажите конкретные проблемы:</label>
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" name="airbag_driver_issue" id="airbag_driver_issue" value="1" {% if params.estimation.page_test_drive.airbag_driver_issue %} checked {% endif %}>
+                                      <label class="form-check-label" for="airbag_driver_issue">Подушка водителя</label>
+                                    </div>
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" name="airbag_passenger_issue" id="airbag_passenger_issue" value="1" {% if params.estimation.page_test_drive.airbag_passenger_issue %} checked {% endif %}>
+                                      <label class="form-check-label" for="airbag_passenger_issue">Подушка пассажира + перешив торпеды</label>
+                                    </div>
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" name="airbag_side_issue" id="airbag_side_issue" value="1" {% if params.estimation.page_test_drive.airbag_side_issue %} checked {% endif %}>
+                                      <label class="form-check-label" for="airbag_side_issue">Боковые подушки</label>
+                                    </div>
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" name="airbag_knee_issue" id="airbag_knee_issue" value="1" {% if params.estimation.page_test_drive.airbag_knee_issue %} checked {% endif %}>
+                                      <label class="form-check-label" for="airbag_knee_issue">Подушка коленная</label>
+                                    </div>
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" name="seat_belt_restore_issue" id="seat_belt_restore_issue" value="1" {% if params.estimation.page_test_drive.seat_belt_restore_issue %} checked {% endif %}>
+                                      <label class="form-check-label" for="seat_belt_restore_issue">Восстановление ремней безопасности</label>
+                                    </div>
+                                    <div class="form-check">
+                                      <input class="form-check-input" type="checkbox" name="srs_block_issue" id="srs_block_issue" value="1" {% if params.estimation.page_test_drive.srs_block_issue %} checked {% endif %}>
+                                      <label class="form-check-label" for="srs_block_issue">Блок SRS</label>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             
@@ -23707,6 +23736,27 @@
 
   <script>
     $(document).ready(function() {
+      // Функция для показа/скрытия блока выбора проблем безопасности
+      function toggleAirbagIssuesBlock() {
+        const selectedValue = $('input[name="radio_airbag"]:checked').val();
+        const issuesBlock = $('#airbag_issues_block');
+        if (selectedValue === '0' || selectedValue === '2') {
+          issuesBlock.show();
+        } else {
+          issuesBlock.hide();
+          // Сбрасываем все чекбоксы при скрытии
+          issuesBlock.find('input[type="checkbox"]').prop('checked', false);
+        }
+      }
+      
+      // Инициализация при загрузке страницы
+      toggleAirbagIssuesBlock();
+      
+      // Обработчик изменения radio button для подушек безопасности
+      $('input[name="radio_airbag"]').on('change', function() {
+        toggleAirbagIssuesBlock();
+      });
+      
       // Создаем скрытые поля для всех категорий, если их нет
       const categories = ['engine', 'gear', 'brake', 'suspension', 'system_og', 'wheel', 'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag'];
       categories.forEach(function(categoryCode) {

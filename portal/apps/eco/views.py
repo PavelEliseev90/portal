@@ -3008,6 +3008,14 @@ def doc(request, id):
 
             reg_interactiv_ocenka_test_drive.airbag             = int(request.POST.get('radio_airbag', '3'))
             reg_interactiv_ocenka_test_drive.comment_airbag     = request.POST.get('comment_airbag', '')
+            
+            # Сохранение конкретных проблем безопасности
+            reg_interactiv_ocenka_test_drive.airbag_driver_issue = 'airbag_driver_issue' in request.POST
+            reg_interactiv_ocenka_test_drive.airbag_passenger_issue = 'airbag_passenger_issue' in request.POST
+            reg_interactiv_ocenka_test_drive.airbag_side_issue = 'airbag_side_issue' in request.POST
+            reg_interactiv_ocenka_test_drive.airbag_knee_issue = 'airbag_knee_issue' in request.POST
+            reg_interactiv_ocenka_test_drive.seat_belt_restore_issue = 'seat_belt_restore_issue' in request.POST
+            reg_interactiv_ocenka_test_drive.srs_block_issue = 'srs_block_issue' in request.POST
 
             reg_interactiv_ocenka_test_drive.brake              = int(request.POST.get('radio_brake', '3'))  
             reg_interactiv_ocenka_test_drive.comment_brake      = request.POST.get('comment_brake', '')
@@ -5490,6 +5498,199 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
         }
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
+
+    # Безопасность - расчет для каждого пункта, если выбрано "не исправны" или "есть замечания"
+    if estimation.page_test_drive != None and (estimation.page_test_drive.airbag == 0 or estimation.page_test_drive.airbag == 2):
+        # Получаем значения для текущей ценовой группы
+        airbag_driver_danger_kf = getattr(estimation_settings, f'airbag_driver_danger_kf_{zg}', 0)
+        airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{zg}', 0)
+        airbag_driver_warning_kf = getattr(estimation_settings, f'airbag_driver_warning_kf_{zg}', 0)
+        airbag_driver_warning_amount_min = getattr(estimation_settings, f'airbag_driver_warning_amount_min_{zg}', 0)
+        airbag_passenger_danger_kf = getattr(estimation_settings, f'airbag_passenger_danger_kf_{zg}', 0)
+        airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{zg}', 0)
+        airbag_passenger_warning_kf = getattr(estimation_settings, f'airbag_passenger_warning_kf_{zg}', 0)
+        airbag_passenger_warning_amount_min = getattr(estimation_settings, f'airbag_passenger_warning_amount_min_{zg}', 0)
+        airbag_side_danger_kf = getattr(estimation_settings, f'airbag_side_danger_kf_{zg}', 0)
+        airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{zg}', 0)
+        airbag_side_warning_kf = getattr(estimation_settings, f'airbag_side_warning_kf_{zg}', 0)
+        airbag_side_warning_amount_min = getattr(estimation_settings, f'airbag_side_warning_amount_min_{zg}', 0)
+        airbag_knee_danger_kf = getattr(estimation_settings, f'airbag_knee_danger_kf_{zg}', 0)
+        airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{zg}', 0)
+        airbag_knee_warning_kf = getattr(estimation_settings, f'airbag_knee_warning_kf_{zg}', 0)
+        airbag_knee_warning_amount_min = getattr(estimation_settings, f'airbag_knee_warning_amount_min_{zg}', 0)
+        seat_belt_restore_danger_kf = getattr(estimation_settings, f'seat_belt_restore_danger_kf_{zg}', 0)
+        seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{zg}', 0)
+        seat_belt_restore_warning_kf = getattr(estimation_settings, f'seat_belt_restore_warning_kf_{zg}', 0)
+        seat_belt_restore_warning_amount_min = getattr(estimation_settings, f'seat_belt_restore_warning_amount_min_{zg}', 0)
+        srs_block_danger_kf = getattr(estimation_settings, f'srs_block_danger_kf_{zg}', 0)
+        srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{zg}', 0)
+        srs_block_warning_kf = getattr(estimation_settings, f'srs_block_warning_kf_{zg}', 0)
+        srs_block_warning_amount_min = getattr(estimation_settings, f'srs_block_warning_amount_min_{zg}', 0)
+        
+        is_danger = estimation.page_test_drive.airbag == 0
+        is_warning = estimation.page_test_drive.airbag == 2
+        
+        # Подушка водителя
+        if estimation.page_test_drive.airbag_driver_issue:
+            if is_danger:
+                price_diff = (price * airbag_driver_danger_kf / 100) if airbag_driver_danger_kf > 0 else 0
+                if price_diff < airbag_driver_danger_amount_min:
+                    price_diff = airbag_driver_danger_amount_min
+                dop = {
+                    'name': 'Подушка водителя ремонт',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+            elif is_warning:
+                price_diff = (price * airbag_driver_warning_kf / 100) if airbag_driver_warning_kf > 0 else 0
+                if price_diff < airbag_driver_warning_amount_min:
+                    price_diff = airbag_driver_warning_amount_min
+                dop = {
+                    'name': 'Подушка водителя устранение замечаний',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+        
+        # Подушка пассажира + перешив торпеды
+        if estimation.page_test_drive.airbag_passenger_issue:
+            if is_danger:
+                price_diff = (price * airbag_passenger_danger_kf / 100) if airbag_passenger_danger_kf > 0 else 0
+                if price_diff < airbag_passenger_danger_amount_min:
+                    price_diff = airbag_passenger_danger_amount_min
+                dop = {
+                    'name': 'Подушка пассажира + перешив торпеды ремонт',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+            elif is_warning:
+                price_diff = (price * airbag_passenger_warning_kf / 100) if airbag_passenger_warning_kf > 0 else 0
+                if price_diff < airbag_passenger_warning_amount_min:
+                    price_diff = airbag_passenger_warning_amount_min
+                dop = {
+                    'name': 'Подушка пассажира + перешив торпеды устранение замечаний',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+        
+        # Боковые подушки
+        if estimation.page_test_drive.airbag_side_issue:
+            if is_danger:
+                price_diff = (price * airbag_side_danger_kf / 100) if airbag_side_danger_kf > 0 else 0
+                if price_diff < airbag_side_danger_amount_min:
+                    price_diff = airbag_side_danger_amount_min
+                dop = {
+                    'name': 'Боковые подушки ремонт',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+            elif is_warning:
+                price_diff = (price * airbag_side_warning_kf / 100) if airbag_side_warning_kf > 0 else 0
+                if price_diff < airbag_side_warning_amount_min:
+                    price_diff = airbag_side_warning_amount_min
+                dop = {
+                    'name': 'Боковые подушки устранение замечаний',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+        
+        # Подушка коленная
+        if estimation.page_test_drive.airbag_knee_issue:
+            if is_danger:
+                price_diff = (price * airbag_knee_danger_kf / 100) if airbag_knee_danger_kf > 0 else 0
+                if price_diff < airbag_knee_danger_amount_min:
+                    price_diff = airbag_knee_danger_amount_min
+                dop = {
+                    'name': 'Подушка коленная ремонт',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+            elif is_warning:
+                price_diff = (price * airbag_knee_warning_kf / 100) if airbag_knee_warning_kf > 0 else 0
+                if price_diff < airbag_knee_warning_amount_min:
+                    price_diff = airbag_knee_warning_amount_min
+                dop = {
+                    'name': 'Подушка коленная устранение замечаний',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+        
+        # Восстановление ремней безопасности
+        if estimation.page_test_drive.seat_belt_restore_issue:
+            if is_danger:
+                price_diff = (price * seat_belt_restore_danger_kf / 100) if seat_belt_restore_danger_kf > 0 else 0
+                if price_diff < seat_belt_restore_danger_amount_min:
+                    price_diff = seat_belt_restore_danger_amount_min
+                dop = {
+                    'name': 'Восстановление ремней безопасности ремонт',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+            elif is_warning:
+                price_diff = (price * seat_belt_restore_warning_kf / 100) if seat_belt_restore_warning_kf > 0 else 0
+                if price_diff < seat_belt_restore_warning_amount_min:
+                    price_diff = seat_belt_restore_warning_amount_min
+                dop = {
+                    'name': 'Восстановление ремней безопасности устранение замечаний',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+        
+        # Блок SRS
+        if estimation.page_test_drive.srs_block_issue:
+            if is_danger:
+                price_diff = (price * srs_block_danger_kf / 100) if srs_block_danger_kf > 0 else 0
+                if price_diff < srs_block_danger_amount_min:
+                    price_diff = srs_block_danger_amount_min
+                dop = {
+                    'name': 'Блок SRS ремонт',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
+            elif is_warning:
+                price_diff = (price * srs_block_warning_kf / 100) if srs_block_warning_kf > 0 else 0
+                if price_diff < srs_block_warning_amount_min:
+                    price_diff = srs_block_warning_amount_min
+                dop = {
+                    'name': 'Блок SRS устранение замечаний',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': price_diff
+                }
+                list_work_mcu.append(dop)
+                amount_mcu = amount_mcu + price_diff
 
     kors_price_reception = 0
     if estimation.kors_count_sale > 0: 
