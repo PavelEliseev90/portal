@@ -1572,7 +1572,7 @@ def warehouse_analysis(request):
                 if car.date_refresh:
                     try:
                         days_not_in_sale = (now - car.date_refresh).days
-                        if days_not_in_sale > 30:
+                        if days_not_in_sale > 3:
                             car_analysis['issues'].append('not_in_sale_status')
                             stats['not_in_sale_status'] += 1
                             car_analysis['metrics']['days_not_in_sale'] = days_not_in_sale

@@ -77,7 +77,7 @@ urlpatterns = [
     #cvc
     path('profiles_edit/',  include('profiles.urls')),
 
-       #телефония
+    #телефония
     path('telephony/',      include('telephony.urls')),
 
     path('eco/',                include('eco.urls')),

@@ -9066,7 +9066,7 @@ def test(request):
     # RegInteractivOcenka.objects.get(pk = 47119).save()
     #DocRLK.objects.get(pk = 2607921).save()
 
-    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=2, year=2026)
     # docs = DocRLK.objects.filter(eco = True).filter(dataTime__gt = date_start)
     # count = len(docs)
     # s = 0
@@ -9111,12 +9111,12 @@ def test(request):
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
-    # estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
-    # count = len(estimations_id)
-    # s = 0
-    # for estimation_id in estimations_id:
-    #     estimation      = DocLO.objects.get(id = estimation_id['id'])
-    #     estimation.save()
+    estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
+    count = len(estimations_id)
+    s = 0
+    for estimation_id in estimations_id:
+        estimation      = DocLO.objects.get(id = estimation_id['id'])
+        estimation.save()
 
         # slug_chat       = 'rlk_' + str(estimation.rlk.id)
         # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
@@ -9130,8 +9130,8 @@ def test(request):
         #     estimation.date_s_remote = date_s_remote
         #     estimation.save(update_fields=['date_s_remote']) 
         
-        # s = s + 1 
-        # print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
     # ssms = DocSMS.objects.all().values('id')
     # count = ssms.count()
@@ -9284,11 +9284,11 @@ def test(request):
     #from task_manager.views import refresh_chat_data
     #refresh_chat_data()
     
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     #refresh_avtoteka_vin()
 
