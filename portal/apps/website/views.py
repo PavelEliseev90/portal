@@ -7272,7 +7272,13 @@ def settings_diagnostic(request):
                 key.startswith('drive_') or
                 key.startswith('brake_') or
                 key.startswith('subframe_') or
-                key.startswith('to_')):
+                key.startswith('to_') or
+                key.startswith('airbag_driver_') or
+                key.startswith('airbag_passenger_') or
+                key.startswith('airbag_side_') or
+                key.startswith('airbag_knee_') or
+                key.startswith('seat_belt_restore_') or
+                key.startswith('srs_block_')):
                 try:
                     value = request.POST.get(key, 0)
                     if value == '':
