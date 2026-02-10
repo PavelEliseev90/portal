@@ -220,7 +220,7 @@
             </select>
             <div id="carSelectDropdown" class="list-group position-relative" style="max-height: 300px; overflow-y: auto; display: none; border: 1px solid #e0e7ef; border-radius: 0.5rem;">
               {% for car in params.cars_list %}
-                <a href="?car={{ car.slug }}{% if params.selected_estimation %}&estimation_id={{ params.selected_estimation.id }}{% endif %}{% if params.use_estimation_in_payment %}&use_estimation_in_payment=1{% endif %}{% for sid in request.GET.getlist 'opfu_services' %}&opfu_services={{ sid }}{% endfor %}" 
+                <a href="?car={{ car.slug }}{% if params.selected_estimation %}&estimation_id={{ params.selected_estimation.id }}{% endif %}{% if params.use_estimation_in_payment %}&use_estimation_in_payment=1{% endif %}{% for sid in params.selected_opfu_ids %}&opfu_services={{ sid }}{% endfor %}" 
                    class="list-group-item list-group-item-action car-option" 
                    data-name="{{ car.name|lower }}" 
                    data-vin="{{ car.vin|lower }}"
@@ -307,7 +307,7 @@
               <input type="text" class="form-control mb-2" id="estimationSearch" placeholder="Поиск по номеру РЛК, подразделению..." autocomplete="off" onkeyup="filterEstimations()">
               <div id="estimationSelectDropdown" class="list-group position-relative" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e7ef; border-radius: 0.5rem;">
                 {% for estimation in params.estimations_list %}
-                  <a href="?{% if params.selected_car %}car={{ params.selected_car.slug }}&{% endif %}estimation_id={{ estimation.id }}&use_estimation_in_payment=1{% for sid in request.GET.getlist 'opfu_services' %}&opfu_services={{ sid }}{% endfor %}" 
+                  <a href="?{% if params.selected_car %}car={{ params.selected_car.slug }}&{% endif %}estimation_id={{ estimation.id }}&use_estimation_in_payment=1{% for sid in params.selected_opfu_ids %}&opfu_services={{ sid }}{% endfor %}" 
                      class="list-group-item list-group-item-action estimation-option"
                      data-rlk="{{ estimation.rlk.nomer|default:''|lower }}"
                      data-unit="{% if estimation.rlk.unit_dc %}{{ estimation.rlk.unit_dc.name|lower }}{% elif estimation.rlk.unit %}{{ estimation.rlk.unit.name|lower }}{% endif %}"

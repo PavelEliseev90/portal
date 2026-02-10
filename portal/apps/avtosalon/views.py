@@ -2008,6 +2008,7 @@ def deal_calculation(request):
         'estimations_list': estimations_list,
         'opfu_services': opfu_services,
         'selected_opfu_services': selected_opfu_services,
+        'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
         'car_price': car_price,
         'estimation_price': estimation_price,
         'promotions_discount': promotions_discount,
