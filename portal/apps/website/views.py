@@ -46,7 +46,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan
+from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -7301,6 +7301,130 @@ def settings_diagnostic(request):
     }
     
     return render(request, "kors/settings_diagnostic.html", {'params': params})
+
+@login_required
+def settings_diagnostic_reference(request):
+    """
+    Управление справочником диагностики - категории и элементы
+    """
+    if not request.user.profiles.korsavto_settings:
+        return HttpResponseNotFound()
+    
+    # Обработка POST запросов
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'add_category':
+            # Добавление новой категории
+            code = request.POST.get('code', '').strip()
+            name = request.POST.get('name', '').strip()
+            description = request.POST.get('description', '').strip()
+            order = int(request.POST.get('order', 0))
+            
+            if code and name:
+                category = DiagnosticReferenceCategory.objects.create(
+                    code=code,
+                    name=name,
+                    description=description,
+                    order=order,
+                    is_active=True
+                )
+                return HttpResponseRedirect(request.build_absolute_uri())
+        
+        elif action == 'edit_category':
+            # Редактирование категории
+            category_id = request.POST.get('category_id')
+            try:
+                category = DiagnosticReferenceCategory.objects.get(id=category_id)
+                category.code = request.POST.get('code', '').strip()
+                category.name = request.POST.get('name', '').strip()
+                category.description = request.POST.get('description', '').strip()
+                category.order = int(request.POST.get('order', 0))
+                category.is_active = request.POST.get('is_active') == 'on'
+                category.save()
+                return HttpResponseRedirect(request.build_absolute_uri())
+            except DiagnosticReferenceCategory.DoesNotExist:
+                pass
+        
+        elif action == 'delete_category':
+            # Удаление категории
+            category_id = request.POST.get('category_id')
+            try:
+                category = DiagnosticReferenceCategory.objects.get(id=category_id)
+                category.delete()
+                return HttpResponseRedirect(request.build_absolute_uri())
+            except DiagnosticReferenceCategory.DoesNotExist:
+                pass
+        
+        elif action == 'add_item':
+            # Добавление нового элемента
+            category_id = request.POST.get('category_id')
+            title = request.POST.get('title', '').strip()
+            description = request.POST.get('description', '').strip()
+            observation_zones = request.POST.get('observation_zones', '').strip()
+            possible_causes = request.POST.get('possible_causes', '').strip()
+            consequences = request.POST.get('consequences', '').strip()
+            additional_info = request.POST.get('additional_info', '').strip()
+            order = int(request.POST.get('order', 0))
+            
+            if category_id and title:
+                try:
+                    category = DiagnosticReferenceCategory.objects.get(id=category_id)
+                    item = DiagnosticReferenceItem.objects.create(
+                        category=category,
+                        title=title,
+                        description=description,
+                        observation_zones=observation_zones,
+                        possible_causes=possible_causes,
+                        consequences=consequences,
+                        additional_info=additional_info,
+                        order=order,
+                        is_active=True
+                    )
+                    return HttpResponseRedirect(request.build_absolute_uri())
+                except DiagnosticReferenceCategory.DoesNotExist:
+                    pass
+        
+        elif action == 'edit_item':
+            # Редактирование элемента
+            item_id = request.POST.get('item_id')
+            try:
+                item = DiagnosticReferenceItem.objects.get(id=item_id)
+                item.category_id = request.POST.get('category_id')
+                item.title = request.POST.get('title', '').strip()
+                item.description = request.POST.get('description', '').strip()
+                item.observation_zones = request.POST.get('observation_zones', '').strip()
+                item.possible_causes = request.POST.get('possible_causes', '').strip()
+                item.consequences = request.POST.get('consequences', '').strip()
+                item.additional_info = request.POST.get('additional_info', '').strip()
+                item.order = int(request.POST.get('order', 0))
+                item.is_active = request.POST.get('is_active') == 'on'
+                item.save()
+                return HttpResponseRedirect(request.build_absolute_uri())
+            except DiagnosticReferenceItem.DoesNotExist:
+                pass
+        
+        elif action == 'delete_item':
+            # Удаление элемента
+            item_id = request.POST.get('item_id')
+            try:
+                item = DiagnosticReferenceItem.objects.get(id=item_id)
+                item.delete()
+                return HttpResponseRedirect(request.build_absolute_uri())
+            except DiagnosticReferenceItem.DoesNotExist:
+                pass
+    
+    # Получение данных для отображения
+    categories = DiagnosticReferenceCategory.objects.all().order_by('order', 'name')
+    items = DiagnosticReferenceItem.objects.select_related('category').all().order_by('category__order', 'category__name', 'order', 'title')
+    
+    params = {
+        'type': 'settings',
+        'categories': categories,
+        'items': items,
+    }
+    
+    return render(request, "kors/settings_diagnostic_reference.html", {'params': params})
 
 @login_required
 def settings_vnesh(request):

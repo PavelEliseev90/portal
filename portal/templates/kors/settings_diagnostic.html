@@ -468,180 +468,60 @@
           <!-- Безопасность -->
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка водителя</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_kf_200" name="airbag_driver_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_amount_min_200" name="airbag_driver_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_amount_min_200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_kf_200" name="airbag_driver_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_200" name="airbag_driver_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_amount_min_200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_200" name="airbag_driver_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_200|default:0}}" autocomplete="off">
+                <label for="airbag_driver_danger_amount_min_200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка пассажира + перешив торпеды</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_kf_200" name="airbag_passenger_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_amount_min_200" name="airbag_passenger_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_amount_min_200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_kf_200" name="airbag_passenger_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_200" name="airbag_passenger_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_amount_min_200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_200" name="airbag_passenger_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_200|default:0}}" autocomplete="off">
+                <label for="airbag_passenger_danger_amount_min_200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Боковые подушки</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_kf_200" name="airbag_side_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_amount_min_200" name="airbag_side_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_amount_min_200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_kf_200" name="airbag_side_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_200" name="airbag_side_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_amount_min_200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_200" name="airbag_side_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_200|default:0}}" autocomplete="off">
+                <label for="airbag_side_danger_amount_min_200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка коленная</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_kf_200" name="airbag_knee_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_amount_min_200" name="airbag_knee_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_amount_min_200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_kf_200" name="airbag_knee_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_kf_200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_200" name="airbag_knee_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_amount_min_200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_200" name="airbag_knee_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_200|default:0}}" autocomplete="off">
+                <label for="airbag_knee_danger_amount_min_200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Восстановление ремней безопасности</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_kf_200" name="seat_belt_restore_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_kf_200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_amount_min_200" name="seat_belt_restore_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_amount_min_200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_kf_200" name="seat_belt_restore_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_kf_200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_200" name="seat_belt_restore_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_amount_min_200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_200" name="seat_belt_restore_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_200|default:0}}" autocomplete="off">
+                <label for="seat_belt_restore_danger_amount_min_200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Блок SRS</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_kf_200" name="srs_block_warning_kf_200" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_kf_200|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_amount_min_200" name="srs_block_warning_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_amount_min_200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_kf_200" name="srs_block_danger_kf_200" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_kf_200|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_kf_200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_200" name="srs_block_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_200|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_amount_min_200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_200" name="srs_block_danger_amount_min_200" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_200|default:0}}" autocomplete="off">
+                <label for="srs_block_danger_amount_min_200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
@@ -1095,180 +975,60 @@
           <!-- Безопасность -->
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка водителя</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_kf_400" name="airbag_driver_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_amount_min_400" name="airbag_driver_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_amount_min_400">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_kf_400" name="airbag_driver_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_400" name="airbag_driver_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_amount_min_400">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_400" name="airbag_driver_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_400|default:0}}" autocomplete="off">
+                <label for="airbag_driver_danger_amount_min_400">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка пассажира + перешив торпеды</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_kf_400" name="airbag_passenger_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_amount_min_400" name="airbag_passenger_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_amount_min_400">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_kf_400" name="airbag_passenger_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_400" name="airbag_passenger_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_amount_min_400">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_400" name="airbag_passenger_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_400|default:0}}" autocomplete="off">
+                <label for="airbag_passenger_danger_amount_min_400">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Боковые подушки</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_kf_400" name="airbag_side_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_amount_min_400" name="airbag_side_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_amount_min_400">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_kf_400" name="airbag_side_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_400" name="airbag_side_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_amount_min_400">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_400" name="airbag_side_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_400|default:0}}" autocomplete="off">
+                <label for="airbag_side_danger_amount_min_400">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка коленная</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_kf_400" name="airbag_knee_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_amount_min_400" name="airbag_knee_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_amount_min_400">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_kf_400" name="airbag_knee_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_kf_400|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_400" name="airbag_knee_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_amount_min_400">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_400" name="airbag_knee_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_400|default:0}}" autocomplete="off">
+                <label for="airbag_knee_danger_amount_min_400">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Восстановление ремней безопасности</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_kf_400" name="seat_belt_restore_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_kf_400|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_amount_min_400" name="seat_belt_restore_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_amount_min_400">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_kf_400" name="seat_belt_restore_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_kf_400|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_400" name="seat_belt_restore_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_amount_min_400">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_400" name="seat_belt_restore_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_400|default:0}}" autocomplete="off">
+                <label for="seat_belt_restore_danger_amount_min_400">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Блок SRS</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_kf_400" name="srs_block_warning_kf_400" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_kf_400|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_amount_min_400" name="srs_block_warning_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_amount_min_400">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_kf_400" name="srs_block_danger_kf_400" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_kf_400|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_kf_400">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_400" name="srs_block_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_400|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_amount_min_400">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_400" name="srs_block_danger_amount_min_400" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_400|default:0}}" autocomplete="off">
+                <label for="srs_block_danger_amount_min_400">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
@@ -1722,180 +1482,60 @@
           <!-- Безопасность -->
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка водителя</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_kf_700" name="airbag_driver_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_amount_min_700" name="airbag_driver_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_amount_min_700">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_kf_700" name="airbag_driver_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_700" name="airbag_driver_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_amount_min_700">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_700" name="airbag_driver_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_700|default:0}}" autocomplete="off">
+                <label for="airbag_driver_danger_amount_min_700">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка пассажира + перешив торпеды</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_kf_700" name="airbag_passenger_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_amount_min_700" name="airbag_passenger_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_amount_min_700">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_kf_700" name="airbag_passenger_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_700" name="airbag_passenger_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_amount_min_700">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_700" name="airbag_passenger_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_700|default:0}}" autocomplete="off">
+                <label for="airbag_passenger_danger_amount_min_700">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Боковые подушки</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_kf_700" name="airbag_side_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_amount_min_700" name="airbag_side_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_amount_min_700">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_kf_700" name="airbag_side_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_700" name="airbag_side_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_amount_min_700">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_700" name="airbag_side_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_700|default:0}}" autocomplete="off">
+                <label for="airbag_side_danger_amount_min_700">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка коленная</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_kf_700" name="airbag_knee_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_amount_min_700" name="airbag_knee_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_amount_min_700">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_kf_700" name="airbag_knee_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_kf_700|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_700" name="airbag_knee_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_amount_min_700">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_700" name="airbag_knee_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_700|default:0}}" autocomplete="off">
+                <label for="airbag_knee_danger_amount_min_700">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Восстановление ремней безопасности</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_kf_700" name="seat_belt_restore_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_kf_700|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_amount_min_700" name="seat_belt_restore_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_amount_min_700">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_kf_700" name="seat_belt_restore_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_kf_700|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_700" name="seat_belt_restore_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_amount_min_700">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_700" name="seat_belt_restore_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_700|default:0}}" autocomplete="off">
+                <label for="seat_belt_restore_danger_amount_min_700">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Блок SRS</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_kf_700" name="srs_block_warning_kf_700" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_kf_700|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_amount_min_700" name="srs_block_warning_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_amount_min_700">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_kf_700" name="srs_block_danger_kf_700" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_kf_700|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_kf_700">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_700" name="srs_block_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_700|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_amount_min_700">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_700" name="srs_block_danger_amount_min_700" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_700|default:0}}" autocomplete="off">
+                <label for="srs_block_danger_amount_min_700">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
@@ -2349,180 +1989,60 @@
           <!-- Безопасность -->
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка водителя</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_kf_1200" name="airbag_driver_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_amount_min_1200" name="airbag_driver_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_amount_min_1200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_kf_1200" name="airbag_driver_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_1200" name="airbag_driver_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_amount_min_1200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_1200" name="airbag_driver_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_1200|default:0}}" autocomplete="off">
+                <label for="airbag_driver_danger_amount_min_1200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка пассажира + перешив торпеды</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_kf_1200" name="airbag_passenger_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_amount_min_1200" name="airbag_passenger_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_amount_min_1200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_kf_1200" name="airbag_passenger_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_1200" name="airbag_passenger_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_amount_min_1200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_1200" name="airbag_passenger_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_1200|default:0}}" autocomplete="off">
+                <label for="airbag_passenger_danger_amount_min_1200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Боковые подушки</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_kf_1200" name="airbag_side_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_amount_min_1200" name="airbag_side_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_amount_min_1200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_kf_1200" name="airbag_side_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_1200" name="airbag_side_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_amount_min_1200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_1200" name="airbag_side_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_1200|default:0}}" autocomplete="off">
+                <label for="airbag_side_danger_amount_min_1200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка коленная</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_kf_1200" name="airbag_knee_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_amount_min_1200" name="airbag_knee_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_amount_min_1200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_kf_1200" name="airbag_knee_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_kf_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_1200" name="airbag_knee_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_amount_min_1200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_1200" name="airbag_knee_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_1200|default:0}}" autocomplete="off">
+                <label for="airbag_knee_danger_amount_min_1200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Восстановление ремней безопасности</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_kf_1200" name="seat_belt_restore_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_kf_1200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_amount_min_1200" name="seat_belt_restore_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_amount_min_1200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_kf_1200" name="seat_belt_restore_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_kf_1200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_1200" name="seat_belt_restore_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_amount_min_1200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_1200" name="seat_belt_restore_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_1200|default:0}}" autocomplete="off">
+                <label for="seat_belt_restore_danger_amount_min_1200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Блок SRS</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_kf_1200" name="srs_block_warning_kf_1200" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_kf_1200|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_amount_min_1200" name="srs_block_warning_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_amount_min_1200">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_kf_1200" name="srs_block_danger_kf_1200" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_kf_1200|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_kf_1200">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_1200" name="srs_block_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_1200|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_amount_min_1200">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_1200" name="srs_block_danger_amount_min_1200" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_1200|default:0}}" autocomplete="off">
+                <label for="srs_block_danger_amount_min_1200">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
@@ -2976,180 +2496,60 @@
           <!-- Безопасность -->
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка водителя</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_kf_2000" name="airbag_driver_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_driver_warning_amount_min_2000" name="airbag_driver_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_warning_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_warning_amount_min_2000">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_kf_2000" name="airbag_driver_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_2000" name="airbag_driver_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_driver_danger_amount_min_2000">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_driver_danger_amount_min_2000" name="airbag_driver_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_driver_danger_amount_min_2000|default:0}}" autocomplete="off">
+                <label for="airbag_driver_danger_amount_min_2000">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка пассажира + перешив торпеды</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_kf_2000" name="airbag_passenger_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_passenger_warning_amount_min_2000" name="airbag_passenger_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_warning_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_warning_amount_min_2000">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_kf_2000" name="airbag_passenger_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_2000" name="airbag_passenger_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_passenger_danger_amount_min_2000">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_passenger_danger_amount_min_2000" name="airbag_passenger_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_passenger_danger_amount_min_2000|default:0}}" autocomplete="off">
+                <label for="airbag_passenger_danger_amount_min_2000">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Боковые подушки</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_kf_2000" name="airbag_side_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_side_warning_amount_min_2000" name="airbag_side_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_side_warning_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_side_warning_amount_min_2000">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_kf_2000" name="airbag_side_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_2000" name="airbag_side_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_side_danger_amount_min_2000">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_side_danger_amount_min_2000" name="airbag_side_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_side_danger_amount_min_2000|default:0}}" autocomplete="off">
+                <label for="airbag_side_danger_amount_min_2000">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Подушка коленная</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_kf_2000" name="airbag_knee_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="airbag_knee_warning_amount_min_2000" name="airbag_knee_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_warning_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_warning_amount_min_2000">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_kf_2000" name="airbag_knee_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_kf_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_2000" name="airbag_knee_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="airbag_knee_danger_amount_min_2000">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="airbag_knee_danger_amount_min_2000" name="airbag_knee_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.airbag_knee_danger_amount_min_2000|default:0}}" autocomplete="off">
+                <label for="airbag_knee_danger_amount_min_2000">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Восстановление ремней безопасности</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_kf_2000" name="seat_belt_restore_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_kf_2000|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="seat_belt_restore_warning_amount_min_2000" name="seat_belt_restore_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_warning_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_warning_amount_min_2000">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_kf_2000" name="seat_belt_restore_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_kf_2000|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_2000" name="seat_belt_restore_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="seat_belt_restore_danger_amount_min_2000">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="seat_belt_restore_danger_amount_min_2000" name="seat_belt_restore_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.seat_belt_restore_danger_amount_min_2000|default:0}}" autocomplete="off">
+                <label for="seat_belt_restore_danger_amount_min_2000">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
 
           <div class="diagnostic-param-card">
             <div class="diagnostic-param-card-title">Блок SRS</div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title warning">Предупреждение</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_kf_2000" name="srs_block_warning_kf_2000" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_kf_2000|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-warning bg-opacity-25" id="srs_block_warning_amount_min_2000" name="srs_block_warning_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.srs_block_warning_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="srs_block_warning_amount_min_2000">Мин. сумма</label>
-                </div>
-              </div>
-            </div>
-            <div class="diagnostic-param-section">
-              <div class="diagnostic-param-section-title danger">Опасность</div>
-              <div class="diagnostic-param-fields">
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_kf_2000" name="srs_block_danger_kf_2000" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_kf_2000|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_kf_2000">% понижения от оценки</label>
-                </div>
-                <div class="form-floating">
-                  <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_2000" name="srs_block_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_2000|default:0}}" autocomplete="off">
-                  <label for="srs_block_danger_amount_min_2000">Мин. сумма</label>
-                </div>
+            <div class="diagnostic-param-fields">
+              <div class="form-floating">
+                <input type="number" class="form-control bg-danger bg-opacity-25" id="srs_block_danger_amount_min_2000" name="srs_block_danger_amount_min_2000" placeholder="" value="{{params.settings.settings_estimation.srs_block_danger_amount_min_2000|default:0}}" autocomplete="off">
+                <label for="srs_block_danger_amount_min_2000">Мин. сумма опасность</label>
               </div>
             </div>
           </div>
