@@ -2058,7 +2058,7 @@
     const form = document.getElementById('funnelFilterForm');
     form.reset();
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedTypeReceptions', 'selectedBrands'];
+    const selectedDivs = ['selectedSourceUnits', 'selectedUnits', 'selectedCities', 'selectedTypeReceptions', 'selectedBrands', 'selectedStaffs', 'selectedAnalysts'];
     selectedDivs.forEach(id => {
       const div = document.getElementById(id);
       if (div) div.innerHTML = '';
