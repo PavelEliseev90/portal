@@ -8958,8 +8958,15 @@ def tradein_funnel_analytics(request):
     if remote_filter not in ['with', 'without']:
         remote_filter = None
     
+    # Одиночные фильтры (для обратной совместимости)
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
+    
+    # Если передан одиночный фильтр, добавляем его в множественный
+    if staff_id and staff_id not in staff_ids:
+        staff_ids.append(staff_id)
+    if analyst_id and analyst_id not in analyst_ids:
+        analyst_ids.append(analyst_id)
     
     # Обрабатываем основной фильтр
     main_data = _process_funnel_filters(
@@ -9002,6 +9009,12 @@ def tradein_funnel_analytics(request):
         
         compare_staff_id = _get_int(request.GET.get('compare_staff_id'))
         compare_analyst_id = _get_int(request.GET.get('compare_analyst_id'))
+        
+        # Если передан одиночный фильтр для сравнения, добавляем его в множественный
+        if compare_staff_id and compare_staff_id not in compare_staff_ids:
+            compare_staff_ids.append(compare_staff_id)
+        if compare_analyst_id and compare_analyst_id not in compare_analyst_ids:
+            compare_analyst_ids.append(compare_analyst_id)
         
         # Обрабатываем фильтр для сравнения
         compare_data = _process_funnel_filters(
@@ -9098,6 +9111,13 @@ def tradein_funnel_analytics(request):
             'brand': brand,
             'brands': ','.join(brand_list) if brand_list else '',
             'brands_list': brand_list,
+            'staff_id': staff_id or '',
+            'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
+            'staff_ids_list': staff_ids,
+            'analyst_id': analyst_id or '',
+            'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
+            'analyst_ids_list': analyst_ids,
+            'remote_filter': remote_filter or '',
         },
         'units': units,
         'source_units': source_units,
