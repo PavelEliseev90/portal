@@ -1990,6 +1990,8 @@ def deal_calculation(request):
     
     # Получаем выбранные услуги ОПФУ
     selected_opfu_ids = request.GET.getlist('opfu_services')
+    if not selected_opfu_ids:
+        selected_opfu_ids = []
     selected_opfu_services = []
     if selected_opfu_ids:
         selected_opfu_services = RefService.objects.filter(id__in=selected_opfu_ids)
