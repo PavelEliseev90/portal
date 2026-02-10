@@ -20,7 +20,7 @@ import os
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegInteractivOcenka, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations
 from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite
-from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA
+from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA, DocRLK, DocLO, RefService, DocServiceItem
 from django.http import JsonResponse
 from rest_framework import status
 import qrcode
@@ -1883,3 +1883,138 @@ def info_js(request, slug):
         }
     
     return JsonResponse(params, safe=False, status=status.HTTP_200_OK)
+
+
+@login_required
+def deal_calculation(request):
+    """
+    Калькулятор сделки автомобиля
+    """
+    try:
+        from analytics.models import TradeInFunnel
+    except ImportError:
+        TradeInFunnel = None
+    
+    params = {
+        'type': 'deal_calculation',
+        'nav_selected': 4,
+        'request': request,
+    }
+    
+    # Получаем выбранный автомобиль из диспозиции
+    car_slug = request.GET.get('car', '')
+    selected_car = None
+    if car_slug:
+        try:
+            selected_car = RefCarsOrganization.objects.select_related(
+                'modification_autoru__model__mark',
+                'status',
+                'unit',
+                'store'
+            ).get(slug=car_slug)
+        except RefCarsOrganization.DoesNotExist:
+            pass
+    
+    # Получаем выбранную интерактивную оценку
+    estimation_id = request.GET.get('estimation_id', '')
+    selected_estimation = None
+    estimation_price = 0
+    if estimation_id:
+        try:
+            selected_estimation = RegInteractivOcenka.objects.select_related(
+                'rlk',
+                'rlk__unit',
+                'rlk__unit_dc'
+            ).get(pk=estimation_id)
+            
+            # Получаем цену из TradeInFunnel
+            if selected_estimation.rlk and TradeInFunnel:
+                try:
+                    funnel = TradeInFunnel.objects.filter(rlk_id=selected_estimation.rlk.id).first()
+                    if funnel:
+                        # Приоритет: price_after > price_before > price_remote
+                        if funnel.price_after and funnel.price_after > 0:
+                            estimation_price = float(funnel.price_after)
+                        elif funnel.price_before and funnel.price_before > 0:
+                            estimation_price = float(funnel.price_before)
+                        elif funnel.price_remote and funnel.price_remote > 0:
+                            estimation_price = float(funnel.price_remote)
+                except Exception as e:
+                    print(f"Error getting estimation price: {e}")
+                    pass
+        except RegInteractivOcenka.DoesNotExist:
+            pass
+    
+    # Получаем список автомобилей из диспозиции для выбора
+    cars_list = RefCarsOrganization.objects.filter(
+        quantity__gt=0
+    ).select_related(
+        'modification_autoru__model__mark',
+        'status',
+        'unit'
+    ).order_by('-date_create')[:100]
+    
+    # Получаем список интерактивных оценок для выбора (связанных с DocRLK)
+    estimations_list = RegInteractivOcenka.objects.filter(
+        rlk__isnull=False
+    ).select_related(
+        'rlk',
+        'rlk__unit',
+        'rlk__unit_dc'
+    ).order_by('-start_estimation')[:100]
+    
+    # Получаем список услуг ОПФУ
+    opfu_services = RefService.objects.all().order_by('name')[:200]
+    
+    # Обработка POST запроса для сохранения калькуляции
+    if request.method == 'POST':
+        # Здесь будет логика сохранения калькуляции
+        # Пока просто редирект
+        pass
+    
+    # Расчет итоговой суммы
+    total_amount = 0
+    car_price = 0
+    promotions_discount = 0
+    bu_wheels_price = 0
+    opfu_services_total = 0
+    
+    if selected_car:
+        car_price = selected_car.price or 0
+        total_amount += car_price
+    
+    # Если оценка используется в счет, вычитаем её из суммы
+    use_estimation_in_payment = request.GET.get('use_estimation_in_payment') == '1'
+    if use_estimation_in_payment and estimation_price > 0:
+        total_amount -= estimation_price
+    
+    # Получаем выбранные услуги ОПФУ
+    selected_opfu_ids = request.GET.getlist('opfu_services')
+    selected_opfu_services = []
+    if selected_opfu_ids:
+        selected_opfu_services = RefService.objects.filter(id__in=selected_opfu_ids)
+        # Здесь можно добавить расчет стоимости услуг
+        # Пока просто добавляем заглушку
+        opfu_services_total = len(selected_opfu_services) * 1000  # Заглушка
+    
+    total_amount += opfu_services_total
+    total_amount -= promotions_discount
+    total_amount -= bu_wheels_price
+    
+    params.update({
+        'selected_car': selected_car,
+        'selected_estimation': selected_estimation,
+        'cars_list': cars_list,
+        'estimations_list': estimations_list,
+        'opfu_services': opfu_services,
+        'selected_opfu_services': selected_opfu_services,
+        'car_price': car_price,
+        'estimation_price': estimation_price,
+        'promotions_discount': promotions_discount,
+        'bu_wheels_price': bu_wheels_price,
+        'opfu_services_total': opfu_services_total,
+        'total_amount': total_amount,
+        'use_estimation_in_payment': use_estimation_in_payment,
+    })
+    
+    return render(request, 'avtosalon/deal_calculation.html', {'params': params})
