@@ -8370,6 +8370,18 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
             brand_q |= Q(brand__icontains=b)
         base_qs = base_qs.filter(brand_q)
     
+    # Применяем фильтры по оценщикам (staff_id)
+    if staff_ids:
+        base_qs = base_qs.filter(staff_id__in=staff_ids)
+    
+    # Применяем фильтры по аналитикам (analyst_remote_id, analyst_before_id, analyst_after_id)
+    if analyst_ids:
+        analyst_q = Q()
+        analyst_q |= Q(analyst_remote_id__in=analyst_ids)
+        analyst_q |= Q(analyst_before_id__in=analyst_ids)
+        analyst_q |= Q(analyst_after_id__in=analyst_ids)
+        base_qs = base_qs.filter(analyst_q)
+    
     # Определяем QuerySet в зависимости от варианта отчета
     if report_type == 1:
         # Сквозной - отбор по датам событий
