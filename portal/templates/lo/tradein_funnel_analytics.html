@@ -305,13 +305,17 @@
         <div class="position-relative">
           <input type="text" class="form-control" id="staffSearch" placeholder="Поиск по оценщикам..." autocomplete="off">
           <div class="list-group position-absolute w-100 mt-1" id="staffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-            {% for staff in params.staffs %}
-              <label class="list-group-item">
-                <input class="form-check-input me-2" type="checkbox" name="staff_ids" value="{{ staff.id }}" 
-                  {% if staff.id in params.filters.staff_ids_list %}checked{% endif %}>
-                {{ staff.name }}
-              </label>
-            {% endfor %}
+            {% if params.staffs %}
+              {% for staff in params.staffs %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="staff_ids" value="{{ staff.id }}" 
+                    {% if staff.id in params.filters.staff_ids_list %}checked{% endif %}>
+                  {{ staff.name }}
+                </label>
+              {% endfor %}
+            {% else %}
+              <div class="list-group-item text-muted">Нет данных</div>
+            {% endif %}
           </div>
         </div>
         <div id="selectedStaffs" class="mt-2"></div>
@@ -322,13 +326,17 @@
         <div class="position-relative">
           <input type="text" class="form-control" id="analystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
           <div class="list-group position-absolute w-100 mt-1" id="analystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-            {% for analyst in params.analysts %}
-              <label class="list-group-item">
-                <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
-                  {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
-                {{ analyst.name }}
-              </label>
-            {% endfor %}
+            {% if params.analysts %}
+              {% for analyst in params.analysts %}
+                <label class="list-group-item">
+                  <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
+                    {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
+                  {{ analyst.name }}
+                </label>
+              {% endfor %}
+            {% else %}
+              <div class="list-group-item text-muted">Нет данных</div>
+            {% endif %}
           </div>
         </div>
         <div id="selectedAnalysts" class="mt-2"></div>
@@ -1821,7 +1829,10 @@
     const dropdown = document.getElementById(dropdownId);
     const selectedDiv = document.getElementById(selectedId);
     
-    if (!searchInput || !dropdown || !selectedDiv) return;
+    if (!searchInput || !dropdown || !selectedDiv) {
+      console.warn('initMultiSelect: элементы не найдены', { searchId, dropdownId, selectedId, searchInput: !!searchInput, dropdown: !!dropdown, selectedDiv: !!selectedDiv });
+      return;
+    }
     
     function updateSelected() {
       const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
