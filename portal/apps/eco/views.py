@@ -9055,16 +9055,28 @@ def tradein_funnel_analytics(request):
     type_receptions = RefTypeReceptionCarsOrganization.objects.filter(id__in=type_reception_ids_from_funnel).exclude(name='').order_by('name') if type_reception_ids_from_funnel else RefTypeReceptionCarsOrganization.objects.none()
     
     # Получаем уникальных оценщиков (staff)
+    # Загружаем всех оценщиков для фильтра (независимо от текущих фильтров)
     from refs.models import RefStaff
+    # Загружаем всех оценщиков, которые есть в TradeInFunnel, или всех, если funnel пустой
     staff_ids_from_funnel = list(base_qs_for_refs.exclude(staff_id__isnull=True).values_list('staff_id', flat=True).distinct())
-    staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name') if staff_ids_from_funnel else RefStaff.objects.none()
+    if staff_ids_from_funnel:
+        staffs = RefStaff.objects.filter(id__in=staff_ids_from_funnel).exclude(name='').order_by('name')
+    else:
+        # Если нет данных в funnel, загружаем всех оценщиков
+        staffs = RefStaff.objects.exclude(name='').order_by('name')
     
     # Получаем уникальных аналитиков (из analyst_after_id, analyst_before_id, analyst_remote_id)
+    # Загружаем всех аналитиков для фильтра (независимо от текущих фильтров)
     analyst_ids_from_funnel = set()
     analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
     analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
     analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
-    analysts = RefStaff.objects.filter(id__in=list(analyst_ids_from_funnel)).exclude(name='').order_by('name') if analyst_ids_from_funnel else RefStaff.objects.none()
+    if analyst_ids_from_funnel:
+        analysts = RefStaff.objects.filter(id__in=list(analyst_ids_from_funnel)).exclude(name='').order_by('name')
+    else:
+        # Если нет данных в funnel, загружаем всех аналитиков
+        # В TradeInFunnel аналитики хранятся как RefStaff (ID из RefStaff)
+        analysts = RefStaff.objects.exclude(name='').order_by('name')
     
     # Создаем словари для связи городов с подразделениями и источниками (для JavaScript фильтрации)
     city_unit_map = {}
@@ -9124,6 +9136,8 @@ def tradein_funnel_analytics(request):
         'cities': cities,
         'type_receptions': type_receptions,
         'brands': brands_list,
+        'staffs': staffs,
+        'analysts': analysts,
         'city_unit_map': city_unit_map,
         'city_source_unit_map': city_source_unit_map,
         'compare_mode': compare_mode,
