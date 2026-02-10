@@ -1990,6 +1990,8 @@ def deal_calculation(request):
     
     # Получаем выбранные услуги ОПФУ
     selected_opfu_ids = request.GET.getlist('opfu_services')
+    if not selected_opfu_ids:
+        selected_opfu_ids = []
     selected_opfu_services = []
     if selected_opfu_ids:
         selected_opfu_services = RefService.objects.filter(id__in=selected_opfu_ids)
@@ -2008,6 +2010,7 @@ def deal_calculation(request):
         'estimations_list': estimations_list,
         'opfu_services': opfu_services,
         'selected_opfu_services': selected_opfu_services,
+        'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
         'car_price': car_price,
         'estimation_price': estimation_price,
         'promotions_discount': promotions_discount,
