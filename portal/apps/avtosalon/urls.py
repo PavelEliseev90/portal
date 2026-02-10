@@ -19,7 +19,8 @@ urlpatterns = [
    path('<slug>/photos_edit/',               views.photos_edit, name='photos_edit'),
    path('<slug>/costs_edit/',                views.costs_edit, name='costs_edit'),
    path('<slug>/info_js/',                   views.info_js, name='slug'),
-   path('<slug>/',                           views.car, name='slug')
+   path('<slug>/',                           views.car, name='slug'),
+   path('deal/calculation/',                 views.deal_calculation, name='deal_calculation')
    
    #path('op/<slug:id>/<slug:pk>/', views.op_detail_recognition, name='slug'),
 ]
