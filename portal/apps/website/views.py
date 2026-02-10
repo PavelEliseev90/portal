@@ -46,7 +46,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem
+from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -7416,7 +7416,9 @@ def settings_diagnostic_reference(request):
     
     # Получение данных для отображения
     categories = DiagnosticReferenceCategory.objects.all().order_by('order', 'name')
-    items = DiagnosticReferenceItem.objects.select_related('category').all().order_by('category__order', 'category__name', 'order', 'title')
+    items = DiagnosticReferenceItem.objects.select_related('category').annotate(
+        selections_count=Count('selections')
+    ).all().order_by('category__order', 'category__name', 'order', 'title')
     
     params = {
         'type': 'settings',
