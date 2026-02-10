@@ -547,6 +547,8 @@ def tradein_funnel_new(request):
     unit_group_ids = _parse_multiple_ints(request.GET.get('unit_group_ids', ''))
     type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
     source_unit_ids = _parse_multiple_ints(request.GET.get('source_unit_ids', ''))
+    staff_ids = _parse_multiple_ints(request.GET.get('staff_ids', ''))
+    analyst_ids = _parse_multiple_ints(request.GET.get('analyst_ids', ''))
     
     # Одиночные фильтры (для обратной совместимости)
     unit_id             = _get_int(request.GET.get('unit_id'))
@@ -559,6 +561,10 @@ def tradein_funnel_new(request):
         unit_ids.append(unit_id)
     if type_reception_id and type_reception_id not in type_reception_ids:
         type_reception_ids.append(type_reception_id)
+    if staff_id and staff_id not in staff_ids:
+        staff_ids.append(staff_id)
+    if analyst_id and analyst_id not in analyst_ids:
+        analyst_ids.append(analyst_id)
     
     # Получаем подразделения из групп, если выбраны группы
     if unit_group_ids:
@@ -1129,7 +1135,11 @@ def tradein_funnel_new(request):
         'source_unit_ids': ','.join(map(str, source_unit_ids)) if source_unit_ids else '',
         'source_unit_ids_list': source_unit_ids,  # Список для проверки в шаблоне
         'staff_id': staff_id or '',
+        'staff_ids': ','.join(map(str, staff_ids)) if staff_ids else '',
+        'staff_ids_list': staff_ids,  # Список для проверки в шаблоне
         'analyst_id': analyst_id or '',
+        'analyst_ids': ','.join(map(str, analyst_ids)) if analyst_ids else '',
+        'analyst_ids_list': analyst_ids,  # Список для проверки в шаблоне
         'type_reception_id': type_reception_id or '',
         'type_reception_ids': ','.join(map(str, type_reception_ids)) if type_reception_ids else '',
         'type_reception_ids_list': type_reception_ids,  # Список для проверки в шаблоне
