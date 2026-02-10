@@ -95,6 +95,7 @@
               <th>Описание</th>
               <th>Порядок</th>
               <th>Активен</th>
+              <th>Выбрано раз</th>
               <th>Действия</th>
             </tr>
           </thead>
@@ -113,6 +114,9 @@
                 {% endif %}
               </td>
               <td>
+                <span class="badge bg-primary">{{ item.selections_count|default:0 }}</span>
+              </td>
+              <td>
                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editItemModal{{ item.id }}">
                   <span class="icon-mbri-edit"></span> Редактировать
                 </button>
@@ -128,7 +132,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6" class="text-center text-muted">Нет элементов</td>
+              <td colspan="7" class="text-center text-muted">Нет элементов</td>
             </tr>
             {% endfor %}
           </tbody>
