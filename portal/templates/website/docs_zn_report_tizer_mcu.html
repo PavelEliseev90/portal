@@ -20,15 +20,20 @@
   
   .docs-zn-report-card {
     background: #fff;
-    border-radius: 1.25rem;
+    border-radius: 1.3rem;
     padding: 1.5rem;
-    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
     margin-bottom: 1.5rem;
   }
   
   .table-responsive-sm {
     border-radius: 1rem;
     overflow: hidden;
+  }
+  
+  .table {
+    margin-bottom: 0;
   }
   
   .table thead th {
@@ -42,6 +47,15 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+  }
+  
+  .table tbody td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+    color: #002a5a;
+    padding: 0.75rem;
   }
   
   .table tbody tr {
@@ -56,6 +70,13 @@
     cursor: pointer;
   }
   
+  .table tbody.labels tr th {
+    font-weight: 600;
+    color: #002a5a;
+    padding: 0.75rem;
+    vertical-align: middle;
+  }
+  
   .table tbody.hide {
     display: none;
   }
@@ -67,6 +88,12 @@
   
   .table tbody.hide tr:hover {
     background-color: #e9ecef;
+  }
+  
+  .table tbody.hide tr th,
+  .table tbody.hide tr td {
+    padding: 0.75rem;
+    vertical-align: middle;
   }
 </style>
 {% endblock %}
@@ -158,8 +185,8 @@
   </div>
 
   <div class="docs-zn-report-card">
-    <div class="table-responsive-sm">
-      <table class="table table-hover table-sm align-middle">	
+    <div class="table-responsive">
+      <table class="table table-hover">	
         <thead>
           <tr>
             <th scope="col" style="text-align: center;">
