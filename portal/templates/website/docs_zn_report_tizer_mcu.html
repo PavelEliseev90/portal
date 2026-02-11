@@ -66,34 +66,54 @@
     background-color: #f8f9fa;
   }
   
-  .table tbody.labels tr {
-    cursor: pointer;
+  .table-group-header {
+    transition: background-color 0.2s;
   }
   
-  .table tbody.labels tr th {
-    font-weight: 600;
+  .table-group-header:hover {
+    background-color: #e9ecef !important;
+  }
+  
+  .table-group-detail {
+    transition: background-color 0.2s;
+  }
+  
+  .table-group-detail:hover {
+    background-color: #f8f9fa !important;
+  }
+  
+  .toggle-icon {
+    transition: transform 0.3s ease;
+    display: inline-block;
+  }
+  
+  .toggle-icon.rotated {
+    transform: rotate(90deg);
+  }
+  
+  .pagination-wrapper {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-top: 1.5rem;
+  }
+  
+  .pagination .page-link {
     color: #002a5a;
-    padding: 0.75rem;
-    vertical-align: middle;
+    border-color: rgba(0, 42, 90, 0.15);
   }
   
-  .table tbody.hide {
-    display: none;
+  .pagination .page-link:hover {
+    background-color: #f4f7fb;
+    border-color: rgba(0, 42, 90, 0.3);
   }
   
-  .table tbody.hide tr {
-    background-color: #f8f9fa;
-    cursor: pointer;
-  }
-  
-  .table tbody.hide tr:hover {
-    background-color: #e9ecef;
-  }
-  
-  .table tbody.hide tr th,
-  .table tbody.hide tr td {
-    padding: 0.75rem;
-    vertical-align: middle;
+  .pagination .page-item.active .page-link {
+    background-color: #002a5a;
+    border-color: #002a5a;
+    color: #fff;
   }
 </style>
 {% endblock %}
@@ -186,98 +206,155 @@
 
   <div class="docs-zn-report-card">
     <div class="table-responsive">
-      <table class="table table-hover">	
+      <table class="table table-hover">
         <thead>
           <tr>
-            <th scope="col" style="text-align: center;">
+            <th style="width: 40px;"></th>
+            <th>
               {% if params.filtr.unit_group == 'no' %}
                 Подразделение
               {% else %}
                 Группа подразделений
               {% endif %}
             </th>
-            <th scope="col" style="text-align: center;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом"></span></th>
-            <th scope="col" style="text-align: center;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;">На согласовании</th>
-            <th scope="col" style="text-align: center;">Согласовано</th>
-            <th scope="col" style="text-align: center;">Отклонено</th>							
+            <th class="text-end">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом"></span></th>
+            <th class="text-end" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">ЗН c рекомендациями<span class="icon-mbri-question"></span></th>
+            <th class="text-end" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question"></span></th>
+            <th class="text-end" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация">ЗН c согласованными<span class="icon-mbri-question"></span></th>
+            <th class="text-end">На согласовании</th>
+            <th class="text-end">Согласовано</th>
+            <th class="text-end">Отклонено</th>
           </tr>
         </thead>
-
-        {% for doc in params.docs %}
-          {% if doc.unit_name|length > 0 and doc.unit_name != "ЕЦО ГК" %}
-            <tbody class="labels">	
-              <tr class="align-middle">
-                <th>
-                  <label for="dc{{doc.unit_id}}" title='{% if doc.unit_info %}{{doc.unit_info}}{% endif %}' style="cursor: pointer;">
-                    <span class="icon-mbri-arrow-down" id="span-dc{{doc.unit_id}}"></span> {{doc.unit_name}}
-                  </label>
-                  <input type="checkbox" name="dc{{doc.unit_id}}" id="dc{{doc.unit_id}}" data-toggle="toggle" style="display: none;">
-                </th>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_count_all}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_count}} ({{doc.zn_percent}} %)</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations|length}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_success_count}} ({{doc.zn_success_count_sr}} %)</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_1}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_2}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_3}}</td>
-              </tr>
-            </tbody>
-            
-            <tbody class="hide">
-              {% for doc_rec in doc.recomendations %}
-                <tr class="align-middle" style="background-color: #f8f9fa;" onclick="window.location.href='/docs_recomendation_mcu/{{doc_rec.id}}'; return false">
-                  {% if params.filtr.unit_group == 'no' %}
-                    <th scope="row">
-                      № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime}} - {{doc_rec.name}}
-                    </th>
-                    <td colspan="2" style="text-align: left;"> - </td>
-                  {% else %}
-                    <th scope="row">
-                      {{doc_rec.zn.unit.name}}
-                    </th>
-                    <td colspan="2" style="text-align: left;"> № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime}} - {{doc_rec.name}} </td>
+        <tbody>
+          {% for doc in params.docs %}
+            {% if doc.unit_name|length > 0 and doc.unit_name != "ЕЦО ГК" %}
+              <tr class="table-group-header" data-unit-id="{{doc.unit_id}}" style="background-color: #f8f9fa; cursor: pointer;">
+                <td>
+                  <span class="icon-mbri-arrow-down toggle-icon" id="icon-dc{{doc.unit_id}}" style="color: #002a5a; font-size: 1rem;"></span>
+                </td>
+                <td>
+                  <strong style="color: #002a5a;">{{doc.unit_name}}</strong>
+                  {% if doc.unit_info %}
+                    <br><small class="text-muted" style="font-size: 0.8rem;">{{doc.unit_info}}</small>
                   {% endif %}
-                  <td style="text-align: center;"> 1 </td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 1 %} 1 {% else %} - {% endif %}</td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 2 %} 1 {% else %} - {% endif %}</td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 3 %} 1 {% else %} - {% endif %}</td>
+                </td>
+                <td class="text-end"><strong>{{doc.zn_count_all}}</strong></td>
+                <td class="text-end">
+                  <strong>{{doc.zn_count}}</strong>
+                  <small class="text-muted">({{doc.zn_percent}}%)</small>
+                </td>
+                <td class="text-end"><strong>{{doc.recomendations|length}}</strong></td>
+                <td class="text-end">
+                  <strong>{{doc.zn_success_count}}</strong>
+                  <small class="text-muted">({{doc.zn_success_count_sr}}%)</small>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-warning text-dark">{{doc.recomendations_1}}</span>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-success">{{doc.recomendations_2}}</span>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-danger">{{doc.recomendations_3}}</span>
+                </td>
+              </tr>
+              
+              {% for doc_rec in doc.recomendations %}
+                <tr class="table-group-detail detail-row-{{doc.unit_id}}" style="display: none; background-color: #fff;" onclick="window.location.href='/docs_recomendation_mcu/{{doc_rec.id}}'; return false">
+                  <td></td>
+                  <td>
+                    {% if params.filtr.unit_group == 'no' %}
+                      <span style="color: #6c7a92; font-size: 0.9rem;">
+                        № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime|date:"d.m.Y"}} - {{doc_rec.name}}
+                      </span>
+                    {% else %}
+                      <div>
+                        <strong style="color: #002a5a;">{{doc_rec.zn.unit.name}}</strong>
+                        <br>
+                        <span style="color: #6c7a92; font-size: 0.85rem;">
+                          № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime|date:"d.m.Y"}} - {{doc_rec.name}}
+                        </span>
+                      </div>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">-</td>
+                  <td class="text-end">-</td>
+                  <td class="text-end">1</td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 1 %}
+                      <span class="badge bg-warning text-dark">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 2 %}
+                      <span class="badge bg-success">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 3 %}
+                      <span class="badge bg-danger">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
-            </tbody>
+            {% endif %}
+          {% endfor %}
+          
+          {% if not params.docs %}
+            <tr>
+              <td colspan="9" class="text-center py-5" style="color: #6c7a92;">
+                <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                <p class="mt-2 mb-0">Данные не найдены</p>
+              </td>
+            </tr>
           {% endif %}
-        {% endfor %}	
+        </tbody>
       </table>
     </div>
 
     {% if params.paginator %}
-      <nav aria-label="Page navigation" class="mt-3">
-        <ul class="pagination justify-content-center">
-          {% if params.paginator.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ params.paginator.previous_page_number }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">&lt;</a>
-            </li>
-          {% endif %}
-          
-          {% for p in params.paginator.paginator.page_range %}
-            {% if params.paginator.number == p %}
-              <li class="page-item active"><a class="page-link">{{p}}</a></li>
-            {% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+      <div class="pagination-wrapper">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center mb-0">
+            {% if params.paginator.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ p }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">{{ p }}</a>
+                <a class="page-link" href="?page={{ params.paginator.previous_page_number }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">
+                  &lt;
+                </a>
               </li>
             {% endif %}
-          {% endfor %}
-          
-          {% if params.paginator.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ params.paginator.next_page_number }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">&gt;</a>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
+            
+            {% for p in params.paginator.paginator.page_range %}
+              {% if params.paginator.number == p %}
+                <li class="page-item active">
+                  <span class="page-link">{{ p }}</span>
+                </li>
+              {% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ p }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">
+                    {{ p }}
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if params.paginator.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ params.paginator.next_page_number }}{% if request.GET.unit_group %}&unit_group={{ request.GET.unit_group }}{% endif %}{% if request.GET.date_start %}&date_start={{ request.GET.date_start }}{% endif %}{% if request.GET.date_end %}&date_end={{ request.GET.date_end }}{% endif %}{% if request.GET.select_unit_id %}&select_unit_id={{ request.GET.select_unit_id }}{% endif %}{% if request.GET.select_unit_group_id %}&select_unit_group_id={{ request.GET.select_unit_group_id }}{% endif %}">
+                  &gt;
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
     {% endif %}
   </div>
 </div>
@@ -379,25 +456,21 @@
     $(document).ready(function() {
       visible_filtr_dc_and_group();
 
-      $('[data-toggle="toggle"]').change(function(){
-        var check = !$(this).is(':checked');
-        var id = 'span-' + $(this)[0].id;
-        if (String(check).toLowerCase() === "true"){
-          $(this).prop('checked', false);
-          $('#'+ id).attr('class', 'icon-mbri-arrow-down');
-        }else{
-          $(this).prop('checked', true);
-          $('#'+ id).attr('class', 'icon-mbri-arrow-up');
-        }
-
-        $(this).parents().next('.hide').toggle();
-      });
-      
-      // Клик по строке для раскрытия
-      $('tbody.labels tr').click(function(e) {
-        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
-          const checkbox = $(this).find('input[type="checkbox"]');
-          checkbox.trigger('change');
+      // Раскрытие/сворачивание строк с деталями
+      $('.table-group-header').click(function(e) {
+        e.preventDefault();
+        const unitId = $(this).data('unit-id');
+        const icon = $(this).find('.toggle-icon');
+        const detailRows = $('.detail-row-' + unitId);
+        
+        if (detailRows.is(':visible')) {
+          detailRows.slideUp(200);
+          icon.removeClass('rotated');
+          icon.attr('class', 'icon-mbri-arrow-down toggle-icon');
+        } else {
+          detailRows.slideDown(200);
+          icon.addClass('rotated');
+          icon.attr('class', 'icon-mbri-arrow-right toggle-icon rotated');
         }
       });
     });
