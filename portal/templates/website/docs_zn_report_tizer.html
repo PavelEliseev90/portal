@@ -187,24 +187,24 @@
   <div class="docs-zn-report-card">
     <div class="table-responsive">
       <table class="table table-hover">	
-        <thead>
-          <tr>
-            <th scope="col" style="text-align: center;">
+        <thead style="border-radius: 1.3rem 1.3rem 0 0;">
+          <tr style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border-radius: 1.3rem 1.3rem 0 0; overflow: hidden;">
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">
               {% if params.filtr.unit_group == 'no' %}
                 Подразделение
               {% else %}
                 Группа подразделений
               {% endif %}
             </th>
-            <th scope="col" style="text-align: center;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом"></span></th>
-            <th scope="col" style="text-align: center;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;" title="Всего уникальных заказ - нарядов к которым отправлена хоть одна рекомендация)">Всего ЗН c отправленными рекомендациями<span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question"></span></th>
-            <th scope="col" style="text-align: center;">Не активных</th>
-            <th scope="col" style="text-align: center;">На согласовании</th>
-            <th scope="col" style="text-align: center;">Согласовано</th>
-            <th scope="col" style="text-align: center;">Отклонено</th>							
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым отправлена хоть одна рекомендация)">Всего ЗН c отправленными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Не активных</th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">На согласовании</th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Согласовано</th>
+            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Отклонено</th>							
           </tr>
         </thead>
 
