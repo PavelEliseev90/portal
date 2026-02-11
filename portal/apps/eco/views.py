@@ -8517,21 +8517,52 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         after_above = 0
     
     # Дополнительные показатели для блоков сравнения
-    # Для дистанционной оценки: сколько дошли до цены "до КД" и сколько принято
-    remote_to_before = qs.filter(valid_date_remote, valid_date_before).count()
-    remote_to_before_pct = (remote_to_before / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
-    remote_to_reception = qs.filter(valid_date_remote, valid_date_reception).count()
-    remote_to_reception_pct = (remote_to_reception / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
+    # Для каждой группы (below, equal, above) в дистанционной оценке:
+    # - сколько дошли до цены "до КД"
+    # - сколько принято
+    remote_below_to_before = qs.filter(valid_date_remote, comparison_remote_type=-1, valid_date_before).count()
+    remote_below_to_before_pct = (remote_below_to_before / remote_below * 100) if remote_below > 0 else 0
+    remote_below_to_reception = qs.filter(valid_date_remote, comparison_remote_type=-1, valid_date_reception).count()
+    remote_below_to_reception_pct = (remote_below_to_reception / remote_below * 100) if remote_below > 0 else 0
     
-    # Для "До КД": сколько дошли до цены "после КД" и сколько принято
-    before_to_after = qs.filter(valid_date_before, valid_date_after).count()
-    before_to_after_pct = (before_to_after / total_before_comparison * 100) if total_before_comparison > 0 else 0
-    before_to_reception = qs.filter(valid_date_before, valid_date_reception).count()
-    before_to_reception_pct = (before_to_reception / total_before_comparison * 100) if total_before_comparison > 0 else 0
+    remote_equal_to_before = qs.filter(valid_date_remote, comparison_remote_type=0, valid_date_before).count()
+    remote_equal_to_before_pct = (remote_equal_to_before / remote_equal * 100) if remote_equal > 0 else 0
+    remote_equal_to_reception = qs.filter(valid_date_remote, comparison_remote_type=0, valid_date_reception).count()
+    remote_equal_to_reception_pct = (remote_equal_to_reception / remote_equal * 100) if remote_equal > 0 else 0
     
-    # Для "После КД": сколько принято
-    after_to_reception = qs.filter(valid_date_after, valid_date_reception).count()
-    after_to_reception_pct = (after_to_reception / total_after_comparison * 100) if total_after_comparison > 0 else 0
+    remote_above_to_before = qs.filter(valid_date_remote, comparison_remote_type=1, valid_date_before).count()
+    remote_above_to_before_pct = (remote_above_to_before / remote_above * 100) if remote_above > 0 else 0
+    remote_above_to_reception = qs.filter(valid_date_remote, comparison_remote_type=1, valid_date_reception).count()
+    remote_above_to_reception_pct = (remote_above_to_reception / remote_above * 100) if remote_above > 0 else 0
+    
+    # Для каждой группы (below, equal, above) в "До КД":
+    # - сколько дошли до цены "после КД"
+    # - сколько принято
+    before_below_to_after = qs.filter(valid_date_before, comparison_before_type=-1, valid_date_after).count()
+    before_below_to_after_pct = (before_below_to_after / before_below * 100) if before_below > 0 else 0
+    before_below_to_reception = qs.filter(valid_date_before, comparison_before_type=-1, valid_date_reception).count()
+    before_below_to_reception_pct = (before_below_to_reception / before_below * 100) if before_below > 0 else 0
+    
+    before_equal_to_after = qs.filter(valid_date_before, comparison_before_type=0, valid_date_after).count()
+    before_equal_to_after_pct = (before_equal_to_after / before_equal * 100) if before_equal > 0 else 0
+    before_equal_to_reception = qs.filter(valid_date_before, comparison_before_type=0, valid_date_reception).count()
+    before_equal_to_reception_pct = (before_equal_to_reception / before_equal * 100) if before_equal > 0 else 0
+    
+    before_above_to_after = qs.filter(valid_date_before, comparison_before_type=1, valid_date_after).count()
+    before_above_to_after_pct = (before_above_to_after / before_above * 100) if before_above > 0 else 0
+    before_above_to_reception = qs.filter(valid_date_before, comparison_before_type=1, valid_date_reception).count()
+    before_above_to_reception_pct = (before_above_to_reception / before_above * 100) if before_above > 0 else 0
+    
+    # Для каждой группы (below, equal, above) в "После КД":
+    # - сколько принято
+    after_below_to_reception = qs.filter(valid_date_after, comparison_after_type=-1, valid_date_reception).count()
+    after_below_to_reception_pct = (after_below_to_reception / after_below * 100) if after_below > 0 else 0
+    
+    after_equal_to_reception = qs.filter(valid_date_after, comparison_after_type=0, valid_date_reception).count()
+    after_equal_to_reception_pct = (after_equal_to_reception / after_equal * 100) if after_equal > 0 else 0
+    
+    after_above_to_reception = qs.filter(valid_date_after, comparison_after_type=1, valid_date_reception).count()
+    after_above_to_reception_pct = (after_above_to_reception / after_above * 100) if after_above > 0 else 0
     
     # Проценты
     conv_op_to_tradein = (total_rlk / total_op_rlk * 100) if total_op_rlk > 0 else 0
@@ -8920,27 +8951,64 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
             'auction': {'count': total_auction, 'percent': auction_pct},
             'no_diag': {'count': total_no_diag, 'percent': no_diag_pct},
             'remote_comparison': {
-                'below': {'count': remote_below, 'percent': remote_below_pct},
-                'equal': {'count': remote_equal, 'percent': remote_equal_pct},
-                'above': {'count': remote_above, 'percent': remote_above_pct},
+                'below': {
+                    'count': remote_below, 
+                    'percent': remote_below_pct,
+                    'to_before': {'count': remote_below_to_before, 'percent': remote_below_to_before_pct},
+                    'to_reception': {'count': remote_below_to_reception, 'percent': remote_below_to_reception_pct}
+                },
+                'equal': {
+                    'count': remote_equal, 
+                    'percent': remote_equal_pct,
+                    'to_before': {'count': remote_equal_to_before, 'percent': remote_equal_to_before_pct},
+                    'to_reception': {'count': remote_equal_to_reception, 'percent': remote_equal_to_reception_pct}
+                },
+                'above': {
+                    'count': remote_above, 
+                    'percent': remote_above_pct,
+                    'to_before': {'count': remote_above_to_before, 'percent': remote_above_to_before_pct},
+                    'to_reception': {'count': remote_above_to_reception, 'percent': remote_above_to_reception_pct}
+                },
                 'total': total_remote_comparison,
-                'to_before': {'count': remote_to_before, 'percent': remote_to_before_pct},
-                'to_reception': {'count': remote_to_reception, 'percent': remote_to_reception_pct},
             },
             'before_comparison': {
-                'below': {'count': before_below, 'percent': before_below_pct},
-                'equal': {'count': before_equal, 'percent': before_equal_pct},
-                'above': {'count': before_above, 'percent': before_above_pct},
+                'below': {
+                    'count': before_below, 
+                    'percent': before_below_pct,
+                    'to_after': {'count': before_below_to_after, 'percent': before_below_to_after_pct},
+                    'to_reception': {'count': before_below_to_reception, 'percent': before_below_to_reception_pct}
+                },
+                'equal': {
+                    'count': before_equal, 
+                    'percent': before_equal_pct,
+                    'to_after': {'count': before_equal_to_after, 'percent': before_equal_to_after_pct},
+                    'to_reception': {'count': before_equal_to_reception, 'percent': before_equal_to_reception_pct}
+                },
+                'above': {
+                    'count': before_above, 
+                    'percent': before_above_pct,
+                    'to_after': {'count': before_above_to_after, 'percent': before_above_to_after_pct},
+                    'to_reception': {'count': before_above_to_reception, 'percent': before_above_to_reception_pct}
+                },
                 'total': total_before_comparison,
-                'to_after': {'count': before_to_after, 'percent': before_to_after_pct},
-                'to_reception': {'count': before_to_reception, 'percent': before_to_reception_pct},
             },
             'after_comparison': {
-                'below': {'count': after_below, 'percent': after_below_pct},
-                'equal': {'count': after_equal, 'percent': after_equal_pct},
-                'above': {'count': after_above, 'percent': after_above_pct},
+                'below': {
+                    'count': after_below, 
+                    'percent': after_below_pct,
+                    'to_reception': {'count': after_below_to_reception, 'percent': after_below_to_reception_pct}
+                },
+                'equal': {
+                    'count': after_equal, 
+                    'percent': after_equal_pct,
+                    'to_reception': {'count': after_equal_to_reception, 'percent': after_equal_to_reception_pct}
+                },
+                'above': {
+                    'count': after_above, 
+                    'percent': after_above_pct,
+                    'to_reception': {'count': after_above_to_reception, 'percent': after_above_to_reception_pct}
+                },
                 'total': total_after_comparison,
-                'to_reception': {'count': after_to_reception, 'percent': after_to_reception_pct},
             },
         },
         'type_reception_stats': type_reception_stats,
