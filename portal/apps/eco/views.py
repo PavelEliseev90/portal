@@ -8385,16 +8385,16 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     # Определяем QuerySet в зависимости от варианта отчета
     if report_type == 1:
         # Сквозной - отбор по датам событий
-        # qs = base_qs.filter(
-        #     Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
-        #     Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
-        #     Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
-        #     Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
-        #     Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
-        # )
         qs = base_qs.filter(
-            Q(date_rlk__gte=date_start, date_rlk__lte=date_end)
-           )
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+        # qs = base_qs.filter(
+        #     Q(date_rlk__gte=date_start, date_rlk__lte=date_end)
+        #    )
     elif report_type == 2:
         # По рабочим листам
         qs = base_qs.filter(
@@ -9084,11 +9084,11 @@ def tradein_funnel_analytics(request):
     analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
     analyst_ids_from_funnel.update(base_qs_for_refs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
     if analyst_ids_from_funnel:
-        analysts = RefStaff.objects.filter(id__in=list(analyst_ids_from_funnel)).exclude(name='').order_by('name')
+        analysts = Profiles.objects.filter(id__in=list(analyst_ids_from_funnel)).exclude(eco_name='').order_by('eco_name')
     else:
         # Если нет данных в funnel, загружаем всех аналитиков
         # В TradeInFunnel аналитики хранятся как RefStaff (ID из RefStaff)
-        analysts = RefStaff.objects.exclude(name='').order_by('name')
+        analysts = Profiles.objects.filter(eco=True).order_by('eco_name')
     
     # Создаем словари для связи городов с подразделениями и источниками (для JavaScript фильтрации)
     city_unit_map = {}

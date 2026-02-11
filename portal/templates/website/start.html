@@ -1,5 +1,7 @@
 {% extends 'base_web.html' %}
 
+{% load custom_template_tags %}
+
 {% block url %} {% endblock %} 
 
 {% block title %} - главная {% endblock %}
@@ -21,7 +23,7 @@
 
 	{% endif %}
 
-	{% if request.user.profiles.korsavto_settings_dc %}
+	<!-- {% if request.user.profiles.korsavto_settings_dc %}
 		<div class="card">
 			<div class="card-body">
 				<div class="row">
@@ -31,7 +33,7 @@
 				</div>
 			</div>
 		</div>
-	{% endif %}
+	{% endif %} -->
 
 	{% if params.info.updates_count > 0 %}
 		
@@ -180,393 +182,546 @@
 	{% endif %}
 
 
-	{% if params.rab_stol.docs_zn_in|length > 0 or params.rab_stol.rating > 0 %}
+	{% if params.rab_stol.doc_zn_count > 0 or params.rab_stol.rating > 0 %}
 		
-		<br>
-		<div class="row">
-			
-			<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-					
-				<div class="row row-cols-3">
-					<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Рабочий стол МК   </span></div>
-					<div class="col"></div>
-					<div class="col"></div>
-				</div>
+	{% load static %}
 
+	<style>
+	  .master-desk-modern {
+		padding: 1.5rem;
+		background: #f4f7fb;
+		min-height: 100vh;
+	  }
+	
+	  .master-desk-header {
+		background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+		border-radius: 1.3rem 1.3rem 0 0;
+		padding: 1.25rem 1.5rem;
+		color: #fff;
+		margin-bottom: 0;
+	  }
+	
+	  .master-desk-header h2 {
+		font-size: 1.5rem;
+		font-weight: 600;
+		margin: 0;
+		color: #fff;
+	  }
+	
+	  .master-desk-content {
+		background: #fff;
+		border-radius: 0 0 1.3rem 1.3rem;
+		padding: 1.5rem;
+		box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+		border: 1px solid rgba(0, 42, 90, 0.08);
+	  }
+	
+	  .rating-card {
+		background: #fff;
+		border-radius: 1.25rem;
+		padding: 1.5rem;
+		box-shadow: 0 10px 30px rgba(0, 23, 61, 0.08);
+		border: 1px solid rgba(0, 42, 90, 0.08);
+		text-align: center;
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+		height: 100%;
+	  }
+	
+	  .rating-card:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 15px 40px rgba(0, 23, 61, 0.12);
+	  }
+	
+	  .rating-card-header {
+		font-size: 0.85rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: #8ea1ba;
+		font-weight: 600;
+		margin-bottom: 1rem;
+	  }
+	
+	  .rating-value {
+		font-size: 3rem;
+		font-weight: 700;
+		margin: 0.5rem 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+	  }
+	
+	  .rating-value .icon-mbri-star {
+		font-size: 2.5rem;
+	  }
+	
+	  .rating-value.text-success {
+		color: #22c55e !important;
+	  }
+	
+	  .rating-value.text-warning {
+		color: #f59e0b !important;
+	  }
+	
+	  .rating-value.text-danger {
+		color: #ef4444 !important;
+	  }
+	
+	  .action-buttons {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	  }
+	
+	  .btn-action {
+		background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+		border: none;
+		color: #fff;
+		font-weight: 600;
+		padding: 1rem 1.5rem;
+		border-radius: 1rem;
+		transition: all 0.3s ease;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+	  }
+	
+	  .btn-action:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+		color: #fff;
+	  }
+	
+	  .btn-action .badge {
+		background: rgba(255, 255, 255, 0.25);
+		color: #fff;
+		font-size: 0.9rem;
+		padding: 0.4rem 0.8rem;
+		border-radius: 0.5rem;
+	  }
+	
+	  .btn-action-all {
+		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+		box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+	  }
+	
+	  .btn-action-all:hover {
+		box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+	  }
+	
+	  /* Модальное окно */
+	  .modal-content {
+		border-radius: 1.3rem;
+		border: none;
+		box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);
+	  }
+	
+	  .modal-header {
+		background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+		color: #fff;
+		border-radius: 1.3rem 1.3rem 0 0;
+		padding: 1.25rem 1.5rem;
+		border: none;
+	  }
+	
+	  .modal-header .modal-title {
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: #fff;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	  }
+	
+	  .modal-header .btn-close {
+		filter: invert(1);
+		opacity: 0.8;
+	  }
+	
+	  .modal-body {
+		padding: 1.5rem;
+		background: #f4f7fb;
+	  }
+	
+	  /* Таймлайн */
+	  .timeline-modern {
+		position: relative;
+		padding: 2rem 0;
+	  }
+	
+	  .timeline-line {
+		position: absolute;
+		left: 2rem;
+		top: 0;
+		bottom: 0;
+		width: 3px;
+		background: linear-gradient(180deg, #00509d 0%, #3b82f6 100%);
+		border-radius: 2px;
+	  }
+	
+	  .timeline-item {
+		position: relative;
+		margin-bottom: 2rem;
+		padding-left: 4rem;
+	  }
+	
+	  .timeline-dot {
+		position: absolute;
+		left: 1.5rem;
+		top: 1.5rem;
+		width: 1rem;
+		height: 1rem;
+		border-radius: 50%;
+		background: #fff;
+		border: 3px solid #00509d;
+		box-shadow: 0 0 0 4px rgba(0, 80, 157, 0.1);
+		z-index: 2;
+	  }
+	
+	  .timeline-dot.active {
+		background: #22c55e;
+		border-color: #16a34a;
+		box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+	  }
+	
+	  .timeline-dot.inactive {
+		background: #ef4444;
+		border-color: #dc2626;
+		box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+	  }
+	
+	  .timeline-card {
+		background: #fff;
+		border-radius: 1.25rem;
+		padding: 1.5rem;
+		box-shadow: 0 10px 30px rgba(0, 23, 61, 0.08);
+		border: 1px solid rgba(0, 42, 90, 0.08);
+		transition: all 0.3s ease;
+	  }
+	
+	  .timeline-card:hover {
+		transform: translateX(5px);
+		box-shadow: 0 15px 40px rgba(0, 23, 61, 0.12);
+	  }
+	
+	  .status-badge {
+		position: absolute;
+		top: -0.75rem;
+		right: 1.5rem;
+		padding: 0.5rem 1rem;
+		border-radius: 0.75rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	  }
+	
+	  .status-badge.success {
+		background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+		color: #fff;
+	  }
+	
+	  .status-badge.danger {
+		background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+		color: #fff;
+	  }
+	
+	  .info-section {
+		margin-bottom: 1.5rem;
+	  }
+	
+	  .info-section-header {
+		background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+		color: #fff;
+		padding: 0.75rem 1rem;
+		border-radius: 0.75rem 0.75rem 0 0;
+		font-size: 0.9rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	  }
+	
+	  .info-section-body {
+		background: #fff;
+		border: 1px solid rgba(0, 42, 90, 0.1);
+		border-top: none;
+		border-radius: 0 0 0.75rem 0.75rem;
+		padding: 1rem;
+	  }
+	
+	  .info-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.75rem 0;
+		border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+	  }
+	
+	  .info-row:last-child {
+		border-bottom: none;
+	  }
+	
+	  .info-label {
+		color: #6c7a92;
+		font-size: 0.9rem;
+		font-weight: 500;
+	  }
+	
+	  .info-value {
+		color: #002a5a;
+		font-weight: 600;
+		text-align: right;
+	  }
+	
+	  .price-footer {
+		background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+		color: #fff;
+		padding: 1rem;
+		border-radius: 0.75rem;
+		text-align: right;
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin-top: 1rem;
+	  }
+	
+	  .rating-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.35rem 0.7rem;
+		border-radius: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+	  }
+	
+	  .rating-badge.success {
+		background: rgba(34, 197, 94, 0.1);
+		color: #16a34a;
+	  }
+	
+	  .rating-badge.warning {
+		background: rgba(245, 158, 11, 0.1);
+		color: #d97706;
+	  }
+	
+	  .rating-badge.danger {
+		background: rgba(239, 68, 68, 0.1);
+		color: #dc2626;
+	  }
+	
+	  .btn-detail {
+		background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+		border: none;
+		color: #fff;
+		padding: 0.75rem 1.5rem;
+		border-radius: 0.75rem;
+		font-weight: 600;
+		transition: all 0.3s ease;
+		width: 100%;
+		margin-top: 1rem;
+	  }
+	
+	  .btn-detail:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(107, 114, 128, 0.3);
+		color: #fff;
+	  }
+	</style>
+	
+	<div class="master-desk-modern">
+	  <div class="master-desk-header">
+		<h2><i class="bi bi-speedometer2 me-2"></i>Рабочий стол МК</h2>
+	  </div>
+	  
+	  <div class="master-desk-content">
+		<div class="row g-3">
+		  <!-- Рейтинг общий -->
+		  <div class="col-md-4 col-sm-6">
+			<div class="rating-card">
+			  <div class="rating-card-header">Общий рейтинг</div>
+			  <div class="rating-value {% if params.rab_stol.rating_common > 8 %}text-success{% elif params.rab_stol.rating_common > 3 %}text-warning{% else %}text-danger{% endif %}">
+				<span class="icon-mbri-star"></span>
+				{{ params.rab_stol.rating_common }}
+			  </div>
 			</div>
-
-			<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
-				<br>
-				
-				<div class="row g-1 my-auto">
-					
-					<div class="col-sm-auto">
-						
-						<div class="card">
-							<div class="card-header bg-light"> Общий </div>
-							<div class="card-body bg-light" style="padding: 2rem;">
-								{% if params.rab_stol.rating_common > 8 %}
-									<span class="fs-1 text-success"><span class="icon-mbri-star"></span> {{params.rab_stol.rating_common}} </span> 
-								{% elif params.rab_stol.rating_common > 3 %}
-									<span class="fs-1 text-warning"><span class="icon-mbri-star"></span> {{params.rab_stol.rating_common}} </span>
-								{% else %}
-									<span class="fs-1 text-danger"><span class="icon-mbri-star"></span> {{params.rab_stol.rating_common}} </span>
-								{% endif %}
+		  </div>
+	
+		  <!-- Рейтинг текущий месяц -->
+		  {% if params.rab_stol.rating > 0 %}
+		  <div class="col-md-4 col-sm-6">
+			<div class="rating-card">
+			  <div class="rating-card-header">Текущий месяц</div>
+			  <div class="rating-value {% if params.rab_stol.rating > 8 %}text-success{% elif params.rab_stol.rating > 3 %}text-warning{% else %}text-danger{% endif %}">
+				<span class="icon-mbri-star"></span>
+				{{ params.rab_stol.rating }}
+			  </div>
+			</div>
+		  </div>
+		  {% endif %}
+	
+		  <!-- Кнопки действий -->
+		  <div class="col-md-4 col-sm-12">
+			<div class="action-buttons">
+			  <button type="button" class="btn btn-action" data-bs-toggle="modal" data-bs-target="#docZN">
+				<span>
+				  <i class="bi bi-file-earmark-text me-2"></i>
+				  Заказ-наряды за сегодня
+				</span>
+				<span class="badge">{{ params.rab_stol.docs_zn_in|length }}</span>
+			  </button>
+			  
+			  <a href="/docs_zn/?staff_id={{params.user_id}}" class="btn btn-action btn-action-all">
+				<span>
+				  <i class="bi bi-files me-2"></i>
+				  Все мои заказ-наряды
+				</span>
+				<i class="bi bi-arrow-right"></i>
+			  </a>
+			</div>
+		  </div>
+		</div>
+	  </div>
+	</div>
+	
+	<!-- Модальное окно с заказ-нарядами -->
+	<div class="modal fade" id="docZN" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="docZNLabel" aria-hidden="true">
+	  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+		<div class="modal-content">
+		  <div class="modal-header">
+			<h6 class="modal-title" id="docZNLabel">
+			  <i class="bi bi-file-earmark-text me-2"></i>
+			  Заказ-наряды за сегодня
+			</h6>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		  </div>
+		  <div class="modal-body">
+			
+			  {% for doc in params.rab_stol.docs_zn_in %}
+			  
+			  <div class="col-12" style="padding-bottom: 0.2rem;">
+				<div class="card docs-zn-card h-100" style="cursor: pointer; transition: all 0.3s ease; border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.1); ">
+					<div class="card-body">
+						<div class="row g-2 align-items-center mb-2">
+							<div class="col-md-1 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-calendar3"></i> Дата
+								</small>
+								<div class="">{{doc.dataTime|date:"d.m.Y H:i"}}</div>
 							</div>
-						</div> 
-					</div>
-
-					{% if params.rab_stol.rating > 0 %}
-						<div class="col-sm-auto">
-							
-							<div class="card">
-								<div class="card-header bg-light"> Текущий месяц </div>
-								<div class="card-body bg-light" style="padding: 2rem;">
-									{% if params.rab_stol.rating > 8 %}
-										<span class="fs-1 text-success"><span class="icon-mbri-star"></span> {{params.rab_stol.rating}} </span>
-									{% elif params.rab_stol.rating > 3 %}
-										<span class="fs-1 text-warning"><span class="icon-mbri-star"></span> {{params.rab_stol.rating}} </span>
+							<div class="col-md-1 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-hash"></i> Номер
+								</small>
+								<div class="">{{doc.nomer}}</div>
+							</div>
+							<div class="col-md-2 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-building"></i> Подразделение
+								</small>
+								<div class="">{{doc.unit.name|default:"—"}}</div>
+							</div>
+							<div class="col-md-2 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-tools"></i> Статус
+								</small>
+								<div class="">{{doc.readyStatus.name|default:"—"}}</div>
+							</div>
+							<div class="col-md-2 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-tools"></i> Вид ремонта
+								</small>
+								<div class="">{{doc.typeRemont|default:"—"}}</div>
+							</div>
+							<div class="col-md-2 col-sm-6">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-person"></i> Клиент
+								</small>
+								<div class="">
+									{{doc.customer.name|default:"—"}}
+									
+								</div>
+							</div>
+							<div class="col-md-2 col-sm-12">
+								<small class="text-muted d-block mb-1">
+									<i class="bi bi-car-front"></i> Автомобиль
+								</small>
+								<div class="">
+									{% if doc.cars %}
+										{{doc.cars.mark|default:""}} {{doc.cars.model|default:""}}  {{doc.cars.year|default:""}} г.в.
+										
+										<small class="text-muted d-block">VIN: {{doc.cars.vin|default:"-"}} Гос. номер: {{doc.cars_grz_board|default:"-"}}</small>
+										
+										
 									{% else %}
-										<span class="fs-1 text-danger"><span class="icon-mbri-star"></span> {{params.rab_stol.rating}} </span>
+										—
 									{% endif %}
 								</div>
-							</div> 
-						</div>
-					{% endif %}
-
-					<div class="col-sm-auto">
-						<div class="d-grid gap-2">
-						
-							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
-								<span class="icon-mbri-file"></span> Заказ - наряды за сегодня 
-								<span class="badge text-bg-success">{{params.rab_stol.docs_zn_in|length}}</span>
-							</button>	
-						
-						</div>
-					</div>
-
-					<!--
-					<div class="col-sm-auto">
-						<div class="d-grid gap-1">
-							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
-								<span class="icon-mbri-error"></span> Не активных 
-								<span class="badge text-bg-secondary bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
-							</button>
-							
-							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
-								<span class="icon-mbri-timer"></span> На согласовании 
-								<span class="badge text-bg-warning bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
-							</button>
-							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
-								<span class="icon-mbri-success"></span> Согласовано
-								<span class="badge text-bg-success bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
-							</button>
-							<button type="button" class="btn btn-block btn-outline-success" data-bs-toggle="modal" data-bs-target="#docZN"> 
-								<span class="icon-mbri-close"></span> Отклонено 
-								<span class="badge text-bg-danger bg-opacity-75">{{params.rab_stol.docs_zn_in|length}}</span>
-							</button>	
-						
-						</div>
-					</div>
-					-->
-					<div class="modal fade" id="docZN" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
-
-						<div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
-							<div class="modal-content">
-								<div class="modal-header">
-									<span class=""></span><h6 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Заказ - наряды за сегодня </h6>
-									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-								</div>
-								<div class="modal-body">
-								
-									<div class="row g-1" id="rlks_trade_in" style="width: 100%; overflow-x: scroll;">
-										<div style="display: flex; text-align: start; margin-bottom: 1em;">
-											
-											<div class='timeline'>
-												<div class='start'></div>
-											</div>
-											
-											<div class='entries'>
-												{% for doc in params.rab_stol.docs_zn_in %}
-												
-												<div class='entry {% if doc.active %} life {% else %} project {% endif %}' style="background-color: white;">
-													
-													<div class='dot'>   </div>
-													<div class='label {% if doc.active %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10' style="width: 350px; text-align: left; border-radius: 0.375rem;" >
-														
-														<div class="card">
-															<div class="card-body">
-														{% if doc.active %} 
-															<p class="fs-5 fw-normal">
-																<span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success bg-opacity-75">
-																	<span class="icon-mbri-success"> </span> {{ doc.ready_status_board }} 
-																	<span class="visually-hidden"></span>
-																</span>
-															</p>
-														{% else %}
-															<p class="fs-5 fw-normal">
-																<span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger bg-opacity-75">
-																	<span class="icon-mbri-setting3"> </span> {{ doc.ready_status_board }} 
-																	<span class="visually-hidden"></span>
-																</span>
-															</p>
-														{% endif %}
-
-														<div class='detail'>
-															
-															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-																	
-																<div class="row row-cols-3">
-																	<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Заказ - наряд </span></div>
-																	<div class="col-2"></div>
-																	<div class="col-2"></div>
-																</div>
-
-															</div>
-
-															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																<div class="col text-start my-auto">{{doc.nomer}} / {{doc.dataTime|date:"H:i"}} / {% if doc.active %} Проведен {% else %} Не проведен {% endif %}</div>
-																</div>
-																
-																
-																<hr style="margin: 0px;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																	<div class="col text-start"> --> {{ doc.dateStart|date:"H:i" }} --> {{doc.dateEnd|date:"H:i"}}</div>
-																</div>
-
-																<hr style="margin: 0px;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																	<div class="col text-start"> {{doc.typeRemont}}</div>
-																</div>																				
-
-															</div>
-
-														</div>
-
-														<br>
-														
-														<div class='detail'>
-															
-															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-																	
-																<div class="row row-cols-3">
-																	<div class="card_name col-8 text-start text-white" style="border-radius:  10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Клиент </span></div>
-																	<div class="col-1"></div>
-																	<div class="col-3 text-center"> 
-																		{% if doc.rating_customer > 0 %}
-																			{% if doc.rating_customer > 8 %}
-																				<span class="badge text-bg-success bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>
-																			{% elif doc.rating_customer > 4 %}	
-																				<span class="badge text-bg-warning bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>	
-																			{% elif doc.rating_customer > 0 %}
-																				<span class="badge text-bg-danger bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>
-																			{% else %}
-																				<span class="badge text-bg-dark bg-opacity-75" style="font-size: smaller;"> <span class="icon-mbri-star"> </span> {{doc.rating_customer}}</span>
-																			{% endif %}
-																		{% endif %}
-																	</div>
-																</div>
-
-															</div>
-
-															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																<div class="col text-start my-auto">{% if doc.clientName|length > 0 %} {{doc.clientName}} {% else %} Не указан {% endif %}</div>
-																</div>
-																
-																{% if doc.customer != None %}
-																	<hr style="margin: 0px;">
-																	
-																	<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																		<div class="col text-start">{{doc.customer.phoneNorm|truncatechars:40}}</div>
-																	</div>
-
-																{% endif %}
-
-															</div>
-
-														</div>
-
-														<br>
-
-														<div class='detail'>
-															
-															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-																	
-																<div class="row row-cols-3">
-																	<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Автомобиль </span></div>
-																	<div class="col-2"></div>
-																	<div class="col-2"></div>
-																</div>
-
-															</div>
-
-															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																	<div class="col text-start my-auto">{{ doc.cars.mark }} {{ doc.cars.model }} {{ doc.cars.year }}</div>
-																</div>
-																
-																<hr style="margin: 0px;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																	<div class="col text-start">{{ doc.cars.vin }}</div>
-																</div>
-
-																<hr style="margin: 0px;">
-																
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																	<div class="col text-start">{{ doc.cars_grz_board }}</div>
-																</div>
-
-																<hr style="margin: 0px;">
-
-																<div class="row row-cols-1 my-auto" style="padding: 0.1rem;">
-																	<div class="col text-start">{{ doc.run|floatformat:"0g" }} км.</div>
-																</div>
-																
-															</div>
-
-														</div>
-
-														<br>
-
-														<div class='detail'>
-															
-															
-
-															<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 10px 10px 0 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
-																
-																<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
-																<div class="col my-auto">Работы</div>
-																<div class="col">{{ doc.works_count }}</div>
-																<div class="col text-end">{{ doc.works_amount|floatformat:"2g" }} &#8381;</div>
-																</div>
-																<hr style="margin: 0px;">
-																<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
-																	<div class="col">Товары</div>
-																	<div class="col">{{ doc.products_count }}</div>
-																	<div class="col text-end">{{ doc.products_amount|floatformat:"2g" }} &#8381;</div>
-																</div>
-
-															</div>
-
-															<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-																	
-																<div class="row row-cols-3">
-																	<div class="col-2"></div>
-																	<div class="col-2"></div>
-																	<div class="price col-8 text-end text-white" style="border-radius: 0px 0px 10px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">{{ doc.amount|floatformat:"2g" }} &#8381; </span></div>
-																</div>
-
-															</div>
-															
-															
-														</div>
-
-														
-														
-														{% if doc.typeRemont.tizer %}
-															<br>	
-															<div class='detail'>
-																
-																<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-																		
-																	<div class="row row-cols-3">
-																		<div class="card_name col-8 text-start text-white" style="border-radius: 10px 0px 0px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">Расширения </span></div>
-																		<div class="col-2"></div>
-																		<div class="col-2"></div>
-																	</div>
-
-																</div>
-
-																<div class="container" style="border:1px solid rgb(108,117,125); border-radius: 0px 10px 0 10px; padding-top: 0px; padding-bottom: 0px; text-align: center;">
-																	
-																	
-																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
-																		<div class="col-8 my-auto text-start">Не активных</div>
-																		<div class="col-2 text-end">{{ doc.recomendations_customer_0_count}}</div>
-																	</div>
-																	
-																	<hr style="margin: 0px;">
-
-																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
-																		<div class="col-8 my-auto text-start">На согласовании</div>
-																		<div class="col-2 text-end">{{ doc.recomendations_customer_1_count}}</div>
-																	</div>
-
-																	<hr style="margin: 0px;">
-
-																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
-																		<div class="col-8 my-auto text-start">Согласовано</div>
-																		<div class="col-2 text-end">{{ doc.recomendations_customer_2_count}}</div>
-																	</div>
-
-																	<hr style="margin: 0px;">
-
-																	<div class="row row-cols-3 my-auto" style="padding: 0.1rem;">
-																		<div class="col-8 my-auto text-start">Отклонено</div>
-																		<div class="col-2 text-end">{{ doc.recomendations_customer_3_count}}</div>
-																	</div>
-
-																</div>
-
-																<div class="container align-middle" style="border-radius: 10px 10px 10px 10px; padding-top: 0px; padding-bottom: 0px; text-align: midle;">
-																		
-																	<div class="row row-cols-3">
-																		<div class="col-2"></div>
-																		<div class="col-2"></div>
-																		<div class="price col-8 text-end text-white" style="border-radius: 0px 0px 10px 0px; padding-top: 0px; padding-bottom: 0px; text-align: midle;"><span class="fs-6">{{ doc.recomendations_count}} </span></div>
-																	</div>
-
-																</div>
-																
-																
-															</div>
-														{% endif %}
-														
-														<hr style="width: 75%;">
-													
-														<div class='detail' style="text-align: center">
-															
-															<a href="/docs_zn/{{doc.id}}" class="btn btn-block btn-outline-secondary">
-																<span class="icon-mbri-play"> </span> Подробнее
-															</a>
-
-														</div>
-													</div>
-													</div>
-													</div>
-												</div>	
-												
-												{% endfor %} 
-
-
-												<br>
-											</div>
-
-											<br>
-										</div>
-									</div>
-								
-								</div>
-							<div class="modal-footer">
-								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="icon-mbri-close"> </span> Закрыть</button>
 							</div>
 						</div>
+						
+						
+						<div class="row g-2 align-items-center">
+							<div class="col text-end">
+									{% if doc.products_count > 0 %}
+										<span class="badge bg-success bg-gradient">
+											<i class="bi bi-box-seam"></i> Запчасти: {{doc.products_count|default:0}}
+										</span>
+									{% endif %}
+									{% if doc.works_count > 0 %}
+										<span class="badge bg-success bg-gradient">
+											<i class="bi bi-wrench"></i> Работы: {{doc.works_count|default:0}}
+										</span>
+									{% endif %}
+									{% if doc.recomendations_customer_count > 0 %}
+									<span class="badge bg-success bg-gradient">
+										<i class="bi bi-file-earmark-plus"></i> Рекомендации клиенту: {{doc.recomendations_customer_count}}
+									</span>
+									{% endif %}
+									{% if doc.recomendations_mcu_count > 0 %}
+									<span class="badge bg-success bg-gradient">
+										<i class="bi bi-file-earmark-text"></i> Рекомендации МКУ: {{doc.recomendations_mcu_count}}
+									</span>
+									{% endif %}
+								
+							</div>
+							<div class="col-auto text-end">
+								<div class="d-inline-block px-3 py-2 rounded 
+									{% if doc.recomendations_new %}
+										bg-warning text-dark
+									{% elif doc.closed %} 
+										bg-success text-white
+									{% else %}
+										bg-danger text-white
+									{% endif %}" 
+									style="min-width: 100px;">
+									{{doc.amount|floatformat:"2g"}} &#8381;
+								</div>
+
+								<div class="d-inline-block px-3 py-2 rounded bg-primary text-white">
+									<a href="/docs_zn/{{doc.id}}/" class="text-white"> <i class="bi bi-files me-2"></i> Открыть</a>
+								</div>
+
+							</div>
 						</div>
 					</div>
-
 				</div>
-				
-				<br>
 			</div>
+
+			  {% endfor %}
+			
+		  <div class="modal-footer">
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+			  <i class="bi bi-x-lg me-2"></i>Закрыть
+			</button>
+		  </div>
 		</div>
+	  </div>
+	</div>
+	
+	
 	{% endif %}
 
 	<!--

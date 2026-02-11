@@ -331,7 +331,7 @@
                 <label class="list-group-item">
                   <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
                     {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
-                  {{ analyst.profiles.eco.name }}
+                  {{ analyst.eco_name }}
                 </label>
               {% endfor %}
             {% else %}

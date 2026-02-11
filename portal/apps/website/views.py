@@ -330,8 +330,9 @@ def get_start(user):
            
     rlks_count      = DocRLK.objects.filter(dataTime__gte = currentdate).filter(staff__domain_login = user.username).count()
     doc_rlks        = list()
+    # doc_zn_count      = DocZN.objects.filter(dataTime__gte = currentdate).filter(dataTime__lte = currentdate_end).filter(master__domain_login = user.username).count()
+    doc_zn_count        = ResourcePlanning.objects.filter(staff__domain_login = user.username).count()
     
-    doc_zn_count    = DocZN.objects.filter(dataTime__gte = currentdate).filter(dataTime__lte = currentdate_end).filter(master__domain_login = user.username).count()
     docs_zn_in      = list()
 
     #Проверка есть ли рабочие листы и записи диктофона загруженные на портал
@@ -390,6 +391,7 @@ def get_start(user):
     
     rab_stol = {
         'rlk_count'     : rlks_count,
+        'doc_zn_count'  : doc_zn_count,
         'warning_list'  : warning_list,
         'doc_rlks'      : doc_rlks,
         'docs_zn_in'    : docs_zn_in,
@@ -2362,10 +2364,12 @@ def docs_zn(request):
         new             = request.GET.get('new', '')
         unit_id         = request.GET.get('unit_id', '')
         unit_group_id   = request.GET.get('unit_group_id', '')
+        staff_id        = request.GET.get('staff_id', '')
         list_units_name = request.GET.getlist('units_name[]')
         new_filtr           = request.GET.get('new_filtr')
         save_filter_new     = request.GET.get('save_filter_new')
         path_start          = request.path
+        
         delite_filter       = request.GET.get('delite_filter', '')
         if len(delite_filter) > 0:
             if RefCustomerFiltr.objects.filter(pk = delite_filter).count() > 0:
@@ -2475,6 +2479,11 @@ def docs_zn(request):
             filter_count = filter_count + 1
             unit_id = int(unit_id)
             docs = docs.filter(unit__id = unit_id)
+
+        if len(staff_id) > 0:
+            user_staff = User.objects.filter(id = staff_id).first()
+            filter_count = filter_count + 1
+            docs = docs.filter(master__domain_login = user_staff.username)
 
         ###Добавляем информацию о рекомендациях и оптимизируем запросы
         # Аннотации для счетчиков (используем правильные related_name из модели)
@@ -9198,7 +9207,7 @@ def test(request):
     # RegInteractivOcenka.objects.get(pk = 47119).save()
     #DocRLK.objects.get(pk = 2607921).save()
 
-    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=10, year=2025)
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=2, year=2026)
     # docs = DocRLK.objects.filter(eco = True).filter(dataTime__gt = date_start)
     # count = len(docs)
     # s = 0
@@ -9243,12 +9252,12 @@ def test(request):
     #     s = s + 1 
     #     print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
-    # estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
-    # count = len(estimations_id)
-    # s = 0
-    # for estimation_id in estimations_id:
-    #     estimation      = DocLO.objects.get(id = estimation_id['id'])
-    #     estimation.save()
+    estimations_id = DocLO.objects.filter(dataTime__gt = date_start).order_by('-id').values('id')
+    count = len(estimations_id)
+    s = 0
+    for estimation_id in estimations_id:
+        estimation      = DocLO.objects.get(id = estimation_id['id'])
+        estimation.save()
 
         # slug_chat       = 'rlk_' + str(estimation.rlk.id)
         # messages_list   = ChatMessage.objects.filter(chat__slug = slug_chat).order_by('date')
@@ -9262,8 +9271,8 @@ def test(request):
         #     estimation.date_s_remote = date_s_remote
         #     estimation.save(update_fields=['date_s_remote']) 
         
-        # s = s + 1 
-        # print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
+        s = s + 1 
+        print(' ' + str(s) + ' ' + str(count) + ' --- ' + str(round(s / count * 100, 1)) + ' %')
 
     # ssms = DocSMS.objects.all().values('id')
     # count = ssms.count()
@@ -9416,11 +9425,11 @@ def test(request):
     #from task_manager.views import refresh_chat_data
     #refresh_chat_data()
     
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     #refresh_avtoteka_vin()
 
