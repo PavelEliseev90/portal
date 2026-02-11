@@ -330,8 +330,9 @@ def get_start(user):
            
     rlks_count      = DocRLK.objects.filter(dataTime__gte = currentdate).filter(staff__domain_login = user.username).count()
     doc_rlks        = list()
+    # doc_zn_count      = DocZN.objects.filter(dataTime__gte = currentdate).filter(dataTime__lte = currentdate_end).filter(master__domain_login = user.username).count()
+    doc_zn_count        = ResourcePlanning.objects.filter(staff__domain_login = user.username).count()
     
-    doc_zn_count    = DocZN.objects.filter(dataTime__gte = currentdate).filter(dataTime__lte = currentdate_end).filter(master__domain_login = user.username).count()
     docs_zn_in      = list()
 
     #Проверка есть ли рабочие листы и записи диктофона загруженные на портал
@@ -390,6 +391,7 @@ def get_start(user):
     
     rab_stol = {
         'rlk_count'     : rlks_count,
+        'doc_zn_count'  : doc_zn_count,
         'warning_list'  : warning_list,
         'doc_rlks'      : doc_rlks,
         'docs_zn_in'    : docs_zn_in,
@@ -2362,10 +2364,12 @@ def docs_zn(request):
         new             = request.GET.get('new', '')
         unit_id         = request.GET.get('unit_id', '')
         unit_group_id   = request.GET.get('unit_group_id', '')
+        staff_id        = request.GET.get('staff_id', '')
         list_units_name = request.GET.getlist('units_name[]')
         new_filtr           = request.GET.get('new_filtr')
         save_filter_new     = request.GET.get('save_filter_new')
         path_start          = request.path
+        
         delite_filter       = request.GET.get('delite_filter', '')
         if len(delite_filter) > 0:
             if RefCustomerFiltr.objects.filter(pk = delite_filter).count() > 0:
@@ -2475,6 +2479,11 @@ def docs_zn(request):
             filter_count = filter_count + 1
             unit_id = int(unit_id)
             docs = docs.filter(unit__id = unit_id)
+
+        if len(staff_id) > 0:
+            user_staff = User.objects.filter(id = staff_id).first()
+            filter_count = filter_count + 1
+            docs = docs.filter(master__domain_login = user_staff.username)
 
         ###Добавляем информацию о рекомендациях и оптимизируем запросы
         # Аннотации для счетчиков (используем правильные related_name из модели)
