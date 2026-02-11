@@ -336,13 +336,14 @@
 
 <div class="portal-page">
   <div class="portal-header">
-    <h2>Диспозиция: {% if params.filtr.status == 'sale' %}ВсеВПродаже{% elif params.filtr.status == 'warehouse' %}Склад{% elif params.filtr.status == 'ready' %}Готов{% elif params.filtr.status == 'auction' %}Аукцион{% elif params.filtr.status == 'reserve' %}В резерве{% elif params.filtr.status == 'transit' %}Транзит{% elif params.filtr.status == 'preparation' %}Подготовка{% elif params.filtr.status == 'repair' %}Ремонт{% elif params.filtr.status == 'sold' %}Проданные{% elif params.filtr.status == 'no_sale' %}Не продавать{% elif params.filtr.status == 'returned' %}Возвращенные клиенту{% else %}ВсеВПродаже{% endif %}</h2>
+    <h2>Диспозиция: {% if params.filtr.status == 'all' or params.filtr.status == '' %}Все{% elif params.filtr.status == 'sale' %}В продаже{% elif params.filtr.status == 'warehouse' %}Склад{% elif params.filtr.status == 'ready' %}Готов{% elif params.filtr.status == 'auction' %}Аукцион{% elif params.filtr.status == 'reserve' %}В резерве{% elif params.filtr.status == 'transit' %}Транзит{% elif params.filtr.status == 'preparation' %}Подготовка{% elif params.filtr.status == 'repair' %}Ремонт{% elif params.filtr.status == 'sold' %}Проданные{% elif params.filtr.status == 'no_sale' %}Не продавать{% elif params.filtr.status == 'returned' %}Возвращенные клиенту{% else %}Все{% endif %}</h2>
     <p>Управление автомобилями на складе</p>
   </div>
 
   <!-- Вкладки статусов -->
   <div class="portal-panel mb-3">
     <div class="d-flex flex-wrap gap-2 align-items-center">
+      <button type="button" class="btn btn-sm {% if params.filtr.status == 'all' or params.filtr.status == '' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('all')">Все</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'ready' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('ready')">Готов</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'sale' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('sale')">В продаже</button>
       <button type="button" class="btn btn-sm {% if params.filtr.status == 'auction' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('auction')">Аукцион</button>
@@ -565,7 +566,7 @@
         </div>
 
         <div class="col-auto">
-          <a href="/cars/disposition/?status={{ params.filtr.status }}" class="btn btn-outline-secondary">
+          <a href="/cars/disposition/?status={{ params.filtr.status|default:'all' }}" class="btn btn-outline-secondary">
             <span class="icon-mbri-close me-1"></span>Сбросить
           </a>
         </div>
@@ -1099,7 +1100,7 @@
         </form>
       </div>
       <div class="modal-footer">
-        <a href="/cars/disposition/?status={{ params.filtr.status }}" class="btn btn-outline-secondary">
+        <a href="/cars/disposition/?status={{ params.filtr.status|default:'all' }}" class="btn btn-outline-secondary">
           <span class="icon-mbri-close me-1"></span>Сбросить
         </a>
         <button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
@@ -1688,9 +1689,30 @@
 <script>
 function changeStatus(status) {
   const form = document.getElementById('filtersForm');
-  const statusInput = form.querySelector('input[name="status"]');
-  statusInput.value = status;
-  form.submit();
+  if (form) {
+    const statusInput = form.querySelector('input[name="status"]');
+    if (statusInput) {
+      statusInput.value = status;
+    }
+    // Сохраняем все параметры фильтров при смене статуса
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('status', status);
+    // Сохраняем все остальные параметры из формы
+    const formData = new FormData(form);
+    for (const [key, value] of formData.entries()) {
+      if (key !== 'status' && value) {
+        if (key.endsWith('[]')) {
+          // Для массивов удаляем старые значения и добавляем новые
+          urlParams.delete(key);
+          const values = formData.getAll(key);
+          values.forEach(v => urlParams.append(key, v));
+        } else {
+          urlParams.set(key, value);
+        }
+      }
+    }
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+  }
 }
 
 function applyMobileFilters() {
@@ -1794,6 +1816,8 @@ function applyMobileFilters() {
         form.appendChild(hidden);
       }
     });
+    
+    // Фильтры уже сохраняются в URL через GET параметры, так что они автоматически сохраняются при перезагрузке
     return true;
   }
   

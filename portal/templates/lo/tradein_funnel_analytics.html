@@ -778,6 +778,20 @@
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_above&{{ request.GET.urlencode }}" 
              class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
+        <div class="mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.2);">
+          <span class="badge-special" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff;">
+            📊 До цены до КД: {{ params.badges.remote_comparison.to_before.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.to_before.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.remote_comparison.to_before.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.to_before.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+          </span>
+          <span class="badge-special" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff;">
+            ✅ Принято: {{ params.badges.remote_comparison.to_reception.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.to_reception.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.remote_comparison.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.to_reception.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+          </span>
+        </div>
       </div>
       
       <div class="mb-3">
@@ -811,6 +825,20 @@
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_above&{{ request.GET.urlencode }}" 
              class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
+        <div class="mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.2);">
+          <span class="badge-special" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff;">
+            📊 До цены после КД: {{ params.badges.before_comparison.to_after.count|floatformat:"0g" }} ({{ params.badges.before_comparison.to_after.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.before_comparison.to_after.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.to_after.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+          </span>
+          <span class="badge-special" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff;">
+            ✅ Принято: {{ params.badges.before_comparison.to_reception.count|floatformat:"0g" }} ({{ params.badges.before_comparison.to_reception.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.before_comparison.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.to_reception.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+          </span>
+        </div>
       </div>
       
       <div class="mb-3">
@@ -844,6 +872,14 @@
           <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_above&{{ request.GET.urlencode }}" 
              class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
         </span>
+        <div class="mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.2);">
+          <span class="badge-special" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff;">
+            ✅ Принято: {{ params.badges.after_comparison.to_reception.count|floatformat:"0g" }} ({{ params.badges.after_comparison.to_reception.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.after_comparison.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.after_comparison.to_reception.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+          </span>
+        </div>
       </div>
     </div>
   </div>

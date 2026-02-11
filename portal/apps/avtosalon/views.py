@@ -419,7 +419,7 @@ def disposition(request):
     from django.db.models import Q
     
     # Параметры фильтрации
-    status_type = request.GET.get('status', 'sale')  # По умолчанию "В продаже"
+    status_type = request.GET.get('status', 'all')  # По умолчанию "Все"
     select_count = int(request.GET.get('select_count', 50))
     
     # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для связанных объектов
@@ -442,7 +442,11 @@ def disposition(request):
     )
     
     # Фильтр по статусу (тип диспозиции)
-    if status_type == 'warehouse':
+    # Если status_type == 'all' или пустой, показываем все автомобили в наличии (без фильтра по статусу)
+    if status_type == 'all' or status_type == '':
+        # Не применяем фильтр по статусу - показываем все автомобили в наличии
+        pass
+    elif status_type == 'warehouse':
         cars = cars.filter(status__name__icontains='Склад')
     elif status_type == 'ready':
         cars = cars.filter(status__name__icontains='Готов')
