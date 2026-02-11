@@ -7,22 +7,58 @@
 {% block title_navbar %} - Настройки - Состав группы "{{ params.group.name }}" {% endblock %}
 
 {% block content %}
-  
-<section class="settings-vnesh-page">
-  <div class="settings-vnesh-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <div>
-      <h2>Состав группы: {{ params.group.name }}</h2>
-      <p>Управление подразделениями в группе.</p>
+<div class="portal-page" style="padding: 1.5rem; background: #f4f7fb; min-height: 100vh;">
+  <div class="portal-header" style="margin-bottom: 1.5rem;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 style="font-size: 1.6rem; font-weight: 600; margin-bottom: 0.35rem; color: #002a5a;">Состав группы: {{ params.group.name }}</h2>
+        <p style="color: #6c7a92; margin-bottom: 0;">Управление подразделениями в группе.</p>
+      </div>
+      <a href="/settings/settings_unit_groups/" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
+        <i class="bi bi-arrow-left me-1"></i> Назад к группам
+      </a>
     </div>
-    <a href="/settings/settings_unit_groups/" class="btn btn-link text-decoration-none">&larr; Назад к группам</a>
   </div>
 
   <form method="post">
     {% csrf_token %}
 
-    <div class="settings-vnesh-panel">
-      <h3 class="mb-3">Параметры группы</h3>
+    <div class="settings-vnesh-panel" style="background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <h3 class="mb-3" style="font-size: 1.25rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem;">Параметры группы</h3>
       <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Наименование</div>
+          <div class="form-floating">
+            <input type="text" class="form-control" id="group_name" name="group_name" placeholder="" value="{{ params.group.name }}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <label for="group_name">Наименование</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Наименование BI</div>
+          <div class="form-floating">
+            <input type="text" class="form-control" id="group_name_bi" name="group_name_bi" placeholder="" value="{{ params.group.name_bi }}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <label for="group_name_bi">Наименование BI</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Город</div>
+          <div class="form-floating">
+            <select class="form-select" id="group_city" name="group_city" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <option value="">Не выбрано</option>
+              {% for city in params.cities %}
+              <option value="{{ city.pk }}" {% if params.group.city and params.group.city.pk == city.pk %}selected{% endif %}>{{ city.name }}</option>
+              {% endfor %}
+            </select>
+            <label for="group_city">Город</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Комментарий</div>
+          <div class="form-floating">
+            <input type="text" class="form-control" id="group_comment" name="group_comment" placeholder="" value="{{ params.group.comment }}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <label for="group_comment">Комментарий</label>
+          </div>
+        </div>
         <div class="col-md-6">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="group_active" name="group_active" {% if params.group.active %}checked{% endif %}>
@@ -38,12 +74,13 @@
       </div>
     </div>
 
-    <div class="settings-vnesh-panel">
-      <h3 class="mb-3">Поиск подразделений</h3>
+    <div class="settings-vnesh-panel" style="background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <h3 class="mb-3" style="font-size: 1.25rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem;">Поиск подразделений</h3>
       <div class="row g-3 mb-4">
         <div class="col-md-12">
+          <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Поиск</div>
           <div class="form-floating">
-            <input type="text" class="form-control" id="search_units" placeholder="Поиск по названию или городу..." autocomplete="off">
+            <input type="text" class="form-control" id="search_units" placeholder="Поиск по названию или городу..." autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
             <label for="search_units">Поиск по названию или городу...</label>
           </div>
         </div>
@@ -52,9 +89,9 @@
 
     <div class="row g-3">
       <div class="col-md-6">
-        <div class="settings-vnesh-panel">
-          <h3 class="mb-3">Подразделения в группе <span class="badge bg-primary">0</span></h3>
-          <div class="border rounded p-3" style="max-height: 600px; overflow-y: auto;" id="units_in_group">
+        <div class="settings-vnesh-panel" style="background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <h3 class="mb-3" style="font-size: 1.25rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem;">Подразделения в группе <span class="badge bg-primary">0</span></h3>
+          <div class="border rounded p-3" style="max-height: 600px; overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.15);" id="units_in_group">
             {% for unit in params.units_in_group %}
             <div class="form-check mb-2 unit-item" data-name="{{ unit.name|lower }}" data-city="{{ unit.city|lower }}">
               <input class="form-check-input" type="checkbox" id="unit_{{ unit.pk }}" name="units" value="{{ unit.pk }}" checked>
@@ -71,9 +108,9 @@
       </div>
 
       <div class="col-md-6">
-        <div class="settings-vnesh-panel">
-          <h3 class="mb-3">Доступные подразделения <span class="badge bg-secondary">0</span></h3>
-          <div class="border rounded p-3" style="max-height: 600px; overflow-y: auto;" id="units_not_in_group">
+        <div class="settings-vnesh-panel" style="background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <h3 class="mb-3" style="font-size: 1.25rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem;">Доступные подразделения <span class="badge bg-secondary">0</span></h3>
+          <div class="border rounded p-3" style="max-height: 600px; overflow-y: auto; border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.15);" id="units_not_in_group">
             {% for unit in params.units_not_in_group %}
             <div class="form-check mb-2 unit-item" data-name="{{ unit.name|lower }}" data-city="{{ unit.city|lower }}">
               <input class="form-check-input" type="checkbox" id="unit_{{ unit.pk }}" name="units" value="{{ unit.pk }}">
@@ -90,13 +127,15 @@
       </div>
     </div>
 
-    <div class="settings-vnesh-panel" style="text-align: right;">
-      <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
-      <a href="/settings/settings_unit_groups/" class="btn btn-secondary px-4">Отмена</a>
+    <div class="settings-vnesh-panel" style="background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); text-align: right;">
+      <button type="submit" class="btn btn-primary px-4" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.5rem;">
+        <i class="bi bi-check-circle me-1"></i> Сохранить изменения
+      </button>
+      <a href="/settings/settings_unit_groups/" class="btn btn-outline-secondary px-4" style="border-radius: 0.75rem; padding: 0.5rem 1.5rem;">Отмена</a>
     </div>
 
   </form>
-</section>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -172,10 +211,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .settings-vnesh-panel {
   background: #fff;
-  border-radius: 0.5rem;
+  border-radius: 1.25rem;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
 }
 
 .settings-vnesh-panel h3 {
@@ -183,6 +222,16 @@ document.addEventListener('DOMContentLoaded', function() {
   font-weight: 600;
   color: #002a5a;
   margin-bottom: 1rem;
+}
+
+.unit-item {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.unit-item:hover {
+  background-color: #f8f9fa;
 }
 </style>
 {% endblock %}
