@@ -16,9 +16,6 @@
 
   <form method="post" id="mainForm">
     {% csrf_token %}
-    {% if params.settings.search_query %}
-      <input type="hidden" name="search" value="{{ params.settings.search_query }}">
-    {% endif %}
 
     <div class="portal-panel">
       <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_add_group" aria-expanded="false" aria-controls="collapse_add_group" style="cursor: pointer;">
@@ -82,24 +79,11 @@
       </h3>
       
       <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
-        <form method="get" class="d-flex gap-2 align-items-end">
-          <div class="flex-grow-1">
-            <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Поиск по наименованию или наименованию BI</label>
-            <input type="text" class="form-control" id="search_groups" name="search" placeholder="Введите текст для поиска..." value="{{ params.settings.search_query|default:'' }}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
-          </div>
-          <div>
-            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
-              <i class="bi bi-search me-1"></i> Найти
-            </button>
-          </div>
-          {% if params.settings.search_query %}
-          <div>
-            <a href="?" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
-              <i class="bi bi-x-circle me-1"></i> Сбросить
-            </a>
-          </div>
-          {% endif %}
-        </form>
+        <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Поиск по наименованию или наименованию BI</div>
+        <div class="form-floating">
+          <input type="text" class="form-control" id="search_groups" placeholder="Введите текст для поиска..." autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+          <label for="search_groups">Введите текст для поиска...</label>
+        </div>
       </div>
       
       <div class="table-responsive table-sticky">
@@ -118,7 +102,7 @@
           </thead>
           <tbody>
             {% for group in params.settings.groups %}
-            <tr>
+            <tr class="group-row" data-name="{{ group.name|default:''|lower }}" data-name-bi="{{ group.name_bi|default:''|lower }}">
               <td data-label="№">{{ group.pk }}</td>
               <td data-label="Наименование">
                 <span style="font-weight: 500; color: #002a5a;">{{ group.name|default:"—" }}</span>
@@ -162,28 +146,41 @@
 </div>
 
 <script>
-  // Сохранение параметра поиска при отправке формы
+  // Клиентский поиск по группам (без запросов к БД)
   document.addEventListener('DOMContentLoaded', function() {
-    const mainForm = document.getElementById('mainForm');
     const searchInput = document.getElementById('search_groups');
+    const allGroupRows = document.querySelectorAll('.group-row');
     
-    if (mainForm && searchInput) {
-      mainForm.addEventListener('submit', function(e) {
-        const searchValue = searchInput.value.trim();
-        if (searchValue) {
-          // Добавляем скрытое поле с параметром поиска, если его еще нет
-          let hiddenInput = mainForm.querySelector('input[name="search"]');
-          if (!hiddenInput) {
-            hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'search';
-            mainForm.appendChild(hiddenInput);
+    if (searchInput && allGroupRows.length > 0) {
+      // Функция поиска
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        allGroupRows.forEach(function(row) {
+          const name = row.getAttribute('data-name') || '';
+          const nameBi = row.getAttribute('data-name-bi') || '';
+          const searchText = name + ' ' + nameBi;
+          
+          if (searchTerm === '' || searchText.includes(searchTerm)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
           }
-          hiddenInput.value = searchValue;
-        }
+        });
       });
     }
   });
 </script>
+
+<style>
+.group-row {
+  transition: opacity 0.2s;
+}
+
+.group-row[style*="display: none"] {
+  opacity: 0;
+  pointer-events: none;
+}
+</style>
 {% endblock %}
 

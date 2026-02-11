@@ -7657,33 +7657,18 @@ def settings_unit_groups(request):
             except (ValueError, AttributeError):
                 pass
         
-        # Сохраняем параметр поиска при редиректе (из GET или POST)
-        search_param = request.POST.get('search', '') or request.GET.get('search', '')
-        if search_param:
-            from urllib.parse import urlencode
-            return HttpResponseRedirect(request.path + '?search=' + urlencode({'search': search_param}))
         return HttpResponseRedirect(request.build_absolute_uri())
     
-    # Получаем параметр поиска
-    search_query = request.GET.get('search', '').strip()
-    
     # Получаем все группы подразделений с оптимизацией запросов
+    # Поиск теперь выполняется на клиентской стороне, поэтому загружаем все группы
     groups = RefUnitGroup.objects.select_related('city').order_by('name')
-    
-    # Применяем фильтр поиска, если указан
-    if search_query:
-        from django.db.models import Q
-        groups = groups.filter(
-            Q(name__icontains=search_query) | Q(name_bi__icontains=search_query)
-        )
     
     # Получаем все города для выбора
     cities = RefCity.objects.all().order_by('name')
     
     settings_data = {
         'groups' : list(groups),
-        'cities' : list(cities),
-        'search_query' : search_query
+        'cities' : list(cities)
     }
     params = {
         'type'          : 'settings',
