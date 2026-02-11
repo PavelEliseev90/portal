@@ -63,142 +63,106 @@
 	</div>
 
 	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">
-					<i class="bi bi-funnel"></i> Параметры фильтрации
-					{% if params.filtr.filtr_count > 0 %}
-						<span class="badge bg-primary ms-2">{{params.filtr.filtr_count}}</span>
-					{% endif %}
-				</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			
-				<div class="modal-body">
-					
-						
-					<div class="form-floating mb-3">							
-						<select class="form-select" id="unit_group_id" name="unit_group_id" placeholder="">
-							<option></option>
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content" style="border-radius: 1.3rem; border: none; box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);">
+				<div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.3rem 1.3rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+					<h5 class="modal-title" id="exampleModalLabel" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+						<i class="bi bi-funnel-fill"></i> Параметры фильтрации
+						{% if params.filtr.filtr_count > 0 %}
+							<span class="badge bg-light text-dark ms-2">{{params.filtr.filtr_count}}</span>
+						{% endif %}
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1); opacity: 0.8;"></button>
+				</div>
+				
+				<div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Группа ДЦ</div>
+						<select class="form-select" id="unit_group_id" name="unit_group_id" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); box-shadow: none;">
+							<option value="">Выберите группу</option>
 							{% for unit_group in params.selected.units_group %}
 								<option value="{{unit_group.id}}" {% if params.filtr.unit_group_id == unit_group.id %} selected {% endif %}> {{unit_group.name}} </option>
 							{% endfor %}
 						</select>
-						<label for="floatingInput">Группа ДЦ</label>
 					</div>
 
-					<div class="form-floating mb-3">
-						<div class="card">
-							<div class="card-body1 bg-white" style="border-radius:  0.3rem;" >
-							<label class="text-secondary fs-6" for="floatingInput" style="padding-left: 0.2rem; padding-top: 0.2rem;">Подразделение ДЦ</label><br>
-							
-							<div class="checkselect form-floating" style="padding-left: 0rem;">
-								
-								<div class="sticky-top bg-white">
-								<input class="form-control" type="text" id="search_units_name" value="" style="left: 0;" placeholder="Поиск" autocomplete="off">
-								<br>
-								<br>
-								</div>
-								
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Подразделение ДЦ</div>
+						<div class="position-relative">
+							<input type="text" class="form-control" id="search_units_name" placeholder="Поиск по подразделениям..." autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+							<div class="list-group position-absolute w-100 mt-1" id="unitsNameDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; border-radius: 0.75rem; box-shadow: 0 10px 30px rgba(0, 23, 61, 0.15);">
 								{% for unit_name in params.selected.units_name %}
 									{% if unit_name.name_search|length > 0 %}
-										<label style="margin: 0.2rem;" class="fs-6" id="label_search {{unit_name.name_search}}">
-											<input type="checkbox" name="units_name[]" value="{{unit_name.name_search}}" id="dc_units_name{{unit_name.name_search}}" {% if unit_name.name_search|join:"" in params.filtr.list_units_name %} checked {% endif %} > {{unit_name.name_search}}</label>
+										<label class="list-group-item" style="cursor: pointer; border: none; border-bottom: 1px solid rgba(0, 42, 90, 0.05);">
+											<input class="form-check-input me-2" type="checkbox" name="units_name[]" value="{{unit_name.name_search}}" id="dc_units_name{{unit_name.name_search}}" {% if unit_name.name_search|join:"" in params.filtr.list_units_name %} checked {% endif %}>
+											{{unit_name.name_search}}
+										</label>
 									{% endif %}
 								{% endfor %}
-							
-								<script>
-								$('#search_units_name').on('input', function() {
-									var search = $(this).val();
-									if (search.length === 0){
-										$('[id*="label_search"]').removeClass('d-none');
-									}
-									else {
-										$('[id*="label_search"]').addClass('d-none');
-										var search_lower = search.toLowerCase();
-										var labels = $('[id*="label_search"]');
-										for (let i = 0; i < labels.length; i++) {
-										label = labels[i];
-										var id_name = label.id.toLowerCase();
-										if (id_name.indexOf(search_lower) >= 0){
-											console.log(label.id);
-											$('[id*="' + label.id + '"]').removeClass('d-none');                        
-										};
-										};
-									};                  
-								});              
-								</script>
-					
-							</div> 
-
-							</div>					
+							</div>
 						</div>
+						<div id="selectedUnitsName" class="mt-2"></div>
 					</div>
 
-					<div class="form-floating mb-3">
-						<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
-						<label for="floatingInput">Клиент, Номер ЗН или АМ, Марка или модель АМ</label>
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Мастер-приемщик</div>
+						<div class="position-relative">
+							<input type="text" class="form-control" id="staffSearch" placeholder="Поиск по мастерам..." autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+							<input type="hidden" name="staff_id" id="staff_id" value="{{params.filtr.staff_id|default:''}}">
+							<div class="list-group position-absolute w-100 mt-1" id="staffDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; border-radius: 0.75rem; box-shadow: 0 10px 30px rgba(0, 23, 61, 0.15);">
+								<div class="list-group-item text-muted text-center">Начните вводить для поиска...</div>
+							</div>
+						</div>
+						<div id="selectedStaff" class="mt-2"></div>
 					</div>
 
-					<div class="form-floating mb-3">
-						<input class="form-control form-control-sm" type="month" id="date" name="date" value="{{params.filtr.date|date:"Y-m"}}">
-						<label for="floatingInput">Месяц</label>
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Клиент, Номер ЗН или АМ, Марка или модель АМ</div>
+						<input type="text" class="form-control" id="name" name="name" placeholder="Введите для поиска..." value="{{params.filtr.name}}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+					</div>
+
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Месяц</div>
+						<input class="form-control" type="month" id="date" name="date" value="{{params.filtr.date|date:"Y-m"}}" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
 					</div>
 					
-					<div class="form-check form-switch">
-						<input class="form-check-input" type="checkbox" role="switch" name="new" id="new" {% if params.filtr.new %} checked {% endif %}>
-						<label class="form-check-label" for="new">Только с новыми событиями</label>
-					</div>
-					<hr>
-					
-					<div class="form-check form-switch">
-						<input class="form-check-input" type="checkbox" role="switch" name="organization" id="organization" {% if params.filtr.organization %} checked {% endif %}>
-						<label class="form-check-label" for="organization">Показывать юридические лица</label>
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+						<div class="form-check form-switch">
+							<input class="form-check-input" type="checkbox" role="switch" name="new" id="new" {% if params.filtr.new %} checked {% endif %} style="cursor: pointer;">
+							<label class="form-check-label" for="new" style="cursor: pointer;">Только с новыми событиями</label>
+						</div>
+						
+						<hr style="margin: 1rem 0;">
+						
+						<div class="form-check form-switch">
+							<input class="form-check-input" type="checkbox" role="switch" name="organization" id="organization" {% if params.filtr.organization %} checked {% endif %} style="cursor: pointer;">
+							<label class="form-check-label" for="organization" style="cursor: pointer;">Показывать юридические лица</label>
+						</div>
 					</div>
 					
 					{% if params.filters_user|length > 0 %}
-						
-						<hr>
-						
-						<div class="table-responsive">
-							<table class="table table-fit">
-							<tbody>
-									<tr>
-										{% for filter in params.filters_user %}
-								
-											<td>
-												<a href="{{filter.page}}{{filter.path}}" class="btn  btn-outline-success">{{filter.name}}</a>
-											</td>
-										
-										{% endfor %}
-										
-										<td>
-											<button type="button" class="btn btn-outline-success" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
-										</td>
-
-									</tr>
-							</tbody>
-							</table>
+						<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+							<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Сохраненные фильтры</div>
+							<div class="d-flex flex-wrap gap-2">
+								{% for filter in params.filters_user %}
+									<a href="{{filter.page}}{{filter.path}}" class="btn btn-outline-primary btn-sm">{{filter.name}}</a>
+								{% endfor %}
+								<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal">
+									<i class="bi bi-gear"></i>
+								</button>
+							</div>
 						</div>
-
 					{% endif %}
 					
-					<hr>
-					
-					<div class="row">
-						<div class="col-auto">
-							
-							<button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
-							
-						</div>
-						<div class="col">
-							<button class="btn btn_block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>	
-						</div>
+					<div class="d-flex gap-2 justify-content-end">
+						<button class="btn btn-outline-primary" type="button" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal">
+							<i class="bi bi-star me-1"></i> Сохранить
+						</button>
+						<button class="btn btn-primary" type="submit" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);">
+							<i class="bi bi-check-circle me-1"></i> Применить
+						</button>
 					</div>
-				
 				</div>
-
 			</div>
 		</div>
 	</div>
@@ -481,6 +445,179 @@
 
 <script language="JavaScript">
 	
+	// Поиск по подразделениям
+	document.addEventListener('DOMContentLoaded', function() {
+		const searchUnitsName = document.getElementById('search_units_name');
+		const unitsNameDropdown = document.getElementById('unitsNameDropdown');
+		const selectedUnitsName = document.getElementById('selectedUnitsName');
+		
+		if (searchUnitsName && unitsNameDropdown) {
+			// Функция обновления выбранных подразделений
+			function updateSelectedUnits() {
+				const checked = unitsNameDropdown.querySelectorAll('input[type="checkbox"]:checked');
+				selectedUnitsName.innerHTML = '';
+				if (checked.length > 0) {
+					const badges = Array.from(checked).map(cb => {
+						const label = cb.closest('label');
+						const text = label ? label.textContent.trim() : '';
+						const value = cb.value;
+						const safeId = value.replace(/[^a-zA-Z0-9]/g, '_');
+						return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="const cb = document.getElementById('dc_units_name${safeId}'); if(cb) { cb.checked=false; updateSelectedUnits(); }"></button></span>`;
+					}).join('');
+					selectedUnitsName.innerHTML = badges;
+				}
+			}
+			
+			window.updateSelectedUnits = updateSelectedUnits;
+			
+			// Поиск
+			searchUnitsName.addEventListener('input', function() {
+				const searchTerm = this.value.toLowerCase();
+				const items = unitsNameDropdown.querySelectorAll('label');
+				items.forEach(item => {
+					const text = item.textContent.toLowerCase();
+					item.style.display = text.includes(searchTerm) ? '' : 'none';
+				});
+			});
+			
+			// Показать/скрыть выпадающий список
+			searchUnitsName.addEventListener('focus', function() {
+				unitsNameDropdown.style.display = 'block';
+			});
+			
+			searchUnitsName.addEventListener('click', function() {
+				unitsNameDropdown.style.display = 'block';
+			});
+			
+			// Скрыть при клике вне
+			document.addEventListener('click', function(e) {
+				if (!searchUnitsName.contains(e.target) && !unitsNameDropdown.contains(e.target)) {
+					unitsNameDropdown.style.display = 'none';
+				}
+			});
+			
+			// Обновление при изменении чекбоксов
+			unitsNameDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+				cb.addEventListener('change', updateSelectedUnits);
+			});
+			
+			updateSelectedUnits();
+		}
+		
+		// Поиск по мастерам
+		const staffSearch = document.getElementById('staffSearch');
+		const staffDropdown = document.getElementById('staffDropdown');
+		const staffIdInput = document.getElementById('staff_id');
+		const selectedStaff = document.getElementById('selectedStaff');
+		let staffSearchTimeout = null;
+		let selectedStaffData = null;
+		
+		// Загрузка выбранного мастера при открытии модального окна
+		{% if params.filtr.staff_id %}
+		const selectedStaffId = {{ params.filtr.staff_id }};
+		if (selectedStaffId) {
+			fetch(`{% url 'website:docs_zn_get_staffs' %}?search=`)
+				.then(response => response.json())
+				.then(data => {
+					const staff = data.staffs.find(s => s.id === selectedStaffId);
+					if (staff) {
+						selectedStaffData = staff;
+						staffIdInput.value = staff.id;
+						staffSearch.value = staff.name;
+						updateSelectedStaff();
+					}
+				});
+		}
+		{% endif %}
+		
+		// Функция обновления выбранного мастера
+		function updateSelectedStaff() {
+			selectedStaff.innerHTML = '';
+			if (selectedStaffData) {
+				selectedStaff.innerHTML = `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${selectedStaffData.name} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="clearSelectedStaff();"></button></span>`;
+			}
+		}
+		
+		window.updateSelectedStaff = updateSelectedStaff;
+		window.clearSelectedStaff = function() {
+			selectedStaffData = null;
+			staffIdInput.value = '';
+			staffSearch.value = '';
+			updateSelectedStaff();
+		};
+		
+		// Поиск мастеров
+		if (staffSearch && staffDropdown) {
+			staffSearch.addEventListener('input', function() {
+				const searchTerm = this.value.trim();
+				
+				// Очищаем предыдущий таймаут
+				if (staffSearchTimeout) {
+					clearTimeout(staffSearchTimeout);
+				}
+				
+				// Если поле пустое, скрываем выпадающий список
+				if (searchTerm.length === 0) {
+					staffDropdown.style.display = 'none';
+					return;
+				}
+				
+				// Показываем индикатор загрузки
+				staffDropdown.innerHTML = '<div class="list-group-item text-muted text-center">Загрузка...</div>';
+				staffDropdown.style.display = 'block';
+				
+				// Задержка перед запросом (debounce)
+				staffSearchTimeout = setTimeout(function() {
+					fetch(`{% url 'website:docs_zn_get_staffs' %}?search=${encodeURIComponent(searchTerm)}`)
+						.then(response => response.json())
+						.then(data => {
+							staffDropdown.innerHTML = '';
+							if (data.staffs && data.staffs.length > 0) {
+								data.staffs.forEach(staff => {
+									if (staff.id) {
+										const item = document.createElement('div');
+										item.className = 'list-group-item';
+										item.style.cursor = 'pointer';
+										item.style.border = 'none';
+										item.style.borderBottom = '1px solid rgba(0, 42, 90, 0.05)';
+										item.textContent = staff.name;
+										item.addEventListener('click', function() {
+											selectedStaffData = staff;
+											staffIdInput.value = staff.id;
+											staffSearch.value = staff.name;
+											staffDropdown.style.display = 'none';
+											updateSelectedStaff();
+										});
+										staffDropdown.appendChild(item);
+									}
+								});
+							} else {
+								staffDropdown.innerHTML = '<div class="list-group-item text-muted text-center">Ничего не найдено</div>';
+							}
+						})
+						.catch(error => {
+							console.error('Ошибка загрузки мастеров:', error);
+							staffDropdown.innerHTML = '<div class="list-group-item text-danger text-center">Ошибка загрузки</div>';
+						});
+				}, 300); // Задержка 300мс
+			});
+			
+			// Показать выпадающий список при фокусе
+			staffSearch.addEventListener('focus', function() {
+				if (this.value.trim().length > 0 && staffDropdown.children.length > 0) {
+					staffDropdown.style.display = 'block';
+				}
+			});
+			
+			// Скрыть при клике вне
+			document.addEventListener('click', function(e) {
+				if (!staffSearch.contains(e.target) && !staffDropdown.contains(e.target)) {
+					staffDropdown.style.display = 'none';
+				}
+			});
+		}
+	});
+	
 	function change_link(){
 		
 		var url 	= new URL(document.location.href);
@@ -492,9 +629,9 @@
 			url.searchParams.delete('unit_group_id')
 		}
 
-		find_unit_id 	= document.getElementById('unit_id').value;
-		if (find_unit_id.length > 0){
-			url.searchParams.set('unit_id', find_unit_id);
+		find_unit_id 	= document.getElementById('unit_id');
+		if (find_unit_id && find_unit_id.value && find_unit_id.value.length > 0){
+			url.searchParams.set('unit_id', find_unit_id.value);
 		}else{
 			url.searchParams.delete('unit_id')
 		}
@@ -532,9 +669,17 @@
 			url.searchParams.delete('new')
 		}
 		
-		find_new_filtr 	= document.getElementById('new_filtr').value;
-		if (find_new_filtr.length > 0){
-			url.searchParams.set('new_filtr', find_new_filtr);
+		// Добавляем staff_id
+		find_staff_id = document.getElementById('staff_id');
+		if (find_staff_id && find_staff_id.value && find_staff_id.value.length > 0){
+			url.searchParams.set('staff_id', find_staff_id.value);
+		}else{
+			url.searchParams.delete('staff_id')
+		}
+		
+		find_new_filtr 	= document.getElementById('new_filtr');
+		if (find_new_filtr && find_new_filtr.value && find_new_filtr.value.length > 0){
+			url.searchParams.set('new_filtr', find_new_filtr.value);
 			url.searchParams.delete('page')
 		}else{
 			url.searchParams.delete('new_filtr')

@@ -50,6 +50,8 @@ urlpatterns = [
 
    path('refs/units_group/',     views.refs_unit_group_list),
    
+   path('docs_zn/get_staffs/',   views.docs_zn_get_staffs, name='docs_zn_get_staffs'),
+   
    path('balance_edit/<id>/',   views.balance_edit, name='id'),
 
    # Доски приветствия
