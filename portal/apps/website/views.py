@@ -3071,7 +3071,7 @@ def docs_zn_report_tizer_mcu(request):
             
             table_data = list() 
             for unit_group in units_group:
-                unit_name           = unit_group.name_bi
+                unit_name           = unit_group.name_bi if unit_group.name_bi else unit_group.name
                 unit_id             = unit_group.id
                 unit_info           = unit_group.get_info_units()
                 units_group_all     = unit_group.units.all()
