@@ -2564,6 +2564,7 @@ def docs_zn(request):
             'closed'        : closed,
             'unit_id'       : unit_id,
             'unit_group_id' : unit_group_id,
+            'staff_id'      : staff_id,
             'filtr_count'   : filter_count,
             'list_units_name': list_units_name
         }
@@ -2588,6 +2589,46 @@ def docs_zn(request):
             'customer_ratings': customer_ratings  # Передаем словарь рейтингов в шаблон
         }
         return render(request, 'website/docs_zn.html', {'params': params})    
+
+
+@login_required
+def docs_zn_get_staffs(request):
+    """
+    API endpoint для получения списка мастеров с поиском
+    """
+    from django.http import JsonResponse
+    from django.contrib.auth.models import User
+    
+    search = request.GET.get('search', '').strip().lower()
+    
+    # Получаем мастеров из DocZN
+    staffs_qs = DocZN.objects.exclude(master=None).select_related('master').values_list('master', flat=True).distinct()
+    staffs = RefStaff.objects.filter(id__in=staffs_qs).exclude(name='').order_by('name')
+    
+    if search:
+        staffs = staffs.filter(name__icontains=search)
+    
+    # Ограничиваем количество результатов
+    staffs = staffs[:50]
+    
+    result = []
+    for staff in staffs:
+        # Получаем User для этого staff, если есть
+        user = None
+        if staff.domain_login:
+            try:
+                user = User.objects.filter(username__iexact=staff.domain_login).first()
+            except:
+                pass
+        
+        result.append({
+            'id': user.id if user else None,
+            'staff_id': staff.id,
+            'name': staff.name,
+            'domain_login': staff.domain_login or '',
+        })
+    
+    return JsonResponse({'staffs': result})
 
 
 def doc_zn(request, id):
