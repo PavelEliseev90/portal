@@ -2985,10 +2985,10 @@ def docs_zn_report_tizer_mcu(request):
 
         if filtr_unit_group == 'no':
             if filter_unit_id == '':
-                units    = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).values('unit', 'unit__name_bi', 'unit__name').distinct().order_by('unit__name_bi')
+                units    = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).values('unit', 'unit__name').distinct().order_by('unit__name')
             else:
                 filter_unit_id = int(filter_unit_id)
-                units    = docs.filter(dataTime__gte = date_start).filter(unit__id = filter_unit_id).filter(dataTime__lt = date_end).values('unit', 'unit__name_bi', 'unit__name').distinct().order_by('unit__name_bi')
+                units    = docs.filter(dataTime__gte = date_start).filter(unit__id = filter_unit_id).filter(dataTime__lt = date_end).values('unit', 'unit__name').distinct().order_by('unit__name')
             
             # Оптимизация: предварительно получаем все данные для всех подразделений одним запросом
             docs_filtered = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end)
@@ -3001,7 +3001,7 @@ def docs_zn_report_tizer_mcu(request):
             
             table_data = list() 
             for unit in units:
-                unit_name           = unit['unit__name_bi'] if unit.get('unit__name_bi') else unit.get('unit__name', '')
+                unit_name           = unit['unit__name']
                 unit_id             = unit['unit']
                 
                 # Оптимизация: используем агрегацию вместо множественных запросов
