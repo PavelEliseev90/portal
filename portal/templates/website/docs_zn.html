@@ -41,23 +41,25 @@
 
 	<div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
 		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="modal-header">
-				<h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			<div class="modal-content" style="border-radius: 1.3rem; border: none; box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);">
+				<div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.3rem 1.3rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+					<h5 class="modal-title" id="exampleModalToggleLabel2" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+						<i class="bi bi-star-fill"></i> Сохранение параметров фильтра
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть" style="filter: invert(1); opacity: 0.8;"></button>
 				</div>
-				<div class="modal-body">
-			
-					<div class="form-floating mb-3">
-						<input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="" value="" autocomplete="off">  
-						<label for="floatingInput">Наименование</label>
+				<div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
+					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 0;">
+						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.75rem;">Наименование фильтра</div>
+						<input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="Введите название фильтра..." value="" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
 					</div>
 				</div>
-			
-				<div class="modal-footer">
-					<button class="btn btn-success" type="submit" name="save_filter_new" id="save_filter_new">Сохранить</button>
+				<div class="modal-footer" style="padding: 1.25rem 1.5rem; background: #fff; border-radius: 0 0 1.3rem 1.3rem; border-top: 1px solid rgba(0, 42, 90, 0.1);">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem;">Отмена</button>
+					<button class="btn btn-primary" type="submit" name="save_filter_new" id="save_filter_new" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
+						<i class="bi bi-check-circle me-1"></i> Сохранить
+					</button>
 				</div>
-
 			</div>
 		</div>
 	</div>
@@ -78,12 +80,21 @@
 				<div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
 					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
 						<div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Группа ДЦ</div>
-						<select class="form-select" id="unit_group_id" name="unit_group_id" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); box-shadow: none;">
-							<option value="">Выберите группу</option>
-							{% for unit_group in params.selected.units_group %}
-								<option value="{{unit_group.id}}" {% if params.filtr.unit_group_id == unit_group.id %} selected {% endif %}> {{unit_group.name}} </option>
-							{% endfor %}
-						</select>
+						<div class="position-relative">
+							<input type="text" class="form-control" id="search_unit_group" placeholder="Поиск по группам ДЦ..." autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+							<input type="hidden" name="unit_group_id" id="unit_group_id" value="{{params.filtr.unit_group_id|default:''}}">
+							<div class="list-group position-absolute w-100 mt-1" id="unitGroupDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; border-radius: 0.75rem; box-shadow: 0 10px 30px rgba(0, 23, 61, 0.15); background: #fff;">
+								<div class="list-group-item text-muted text-center" style="cursor: pointer; border: none; border-bottom: 1px solid rgba(0, 42, 90, 0.05);" onclick="clearSelectedUnitGroup();">
+									<i class="bi bi-x-circle me-1"></i> Сбросить выбор
+								</div>
+								{% for unit_group in params.selected.units_group %}
+									<div class="list-group-item unit-group-item" style="cursor: pointer; border: none; border-bottom: 1px solid rgba(0, 42, 90, 0.05); padding: 0.75rem 1rem; transition: background-color 0.2s;" data-id="{{unit_group.id}}" data-name="{{unit_group.name}}" onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='';">
+										{{unit_group.name}}
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+						<div id="selectedUnitGroup" class="mt-2"></div>
 					</div>
 
 					<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
@@ -170,36 +181,51 @@
 </form>
 
 <div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-	<div class="modal-dialog modal-dialog-centered">
-	  <div class="modal-content">
-		<div class="modal-header">
-		  <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
-		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+	<div class="modal-dialog modal-dialog-centered modal-lg">
+	  <div class="modal-content" style="border-radius: 1.3rem; border: none; box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);">
+		<div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.3rem 1.3rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+		  <h5 class="modal-title" id="exampleModalToggleLabel2" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+			<i class="bi bi-gear-fill"></i> Управление фильтрами
+		  </h5>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть" style="filter: invert(1); opacity: 0.8;"></button>
 		</div>
-		<div class="modal-body">
+		<div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
 			{% if params.filters_user|length > 0 %}
-					<hr>
+				<div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
 					<div class="table-responsive">
-						<table class="table">
-						  <tbody>
-								
-							{% for filter in params.filters_user %}
+						<table class="table table-hover align-middle mb-0">
+						  <thead style="background: #f8f9fa;">
 							<tr>
-								<td>
-									{{filter.name}}
+								<th style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6c7a92; font-weight: 600; border: none; padding: 0.75rem 1rem;">Название фильтра</th>
+								<th style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6c7a92; font-weight: 600; border: none; padding: 0.75rem 1rem; text-align: center; width: 100px;">Действие</th>
+							</tr>
+						  </thead>
+						  <tbody>
+							{% for filter in params.filters_user %}
+							<tr style="border-bottom: 1px solid rgba(0, 42, 90, 0.05);">
+								<td style="padding: 0.75rem 1rem; border: none;">
+									<span style="font-weight: 500; color: #002a5a;">{{filter.name}}</span>
 								</td>
-								<td>
-									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn  btn-outline-danger"><span class="icon-mbri-close"></span></a>
+								<td style="padding: 0.75rem 1rem; border: none; text-align: center;">
+									<a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn btn-outline-danger btn-sm" style="border-radius: 0.5rem; padding: 0.25rem 0.5rem;" title="Удалить фильтр">
+										<i class="bi bi-trash"></i>
+									</a>
 								</td>
 							</tr>
 							{% endfor %}
-								
 						  </tbody>
 						</table>
-					  </div>
-				{% endif %}
+					</div>
+				</div>
+			{% else %}
+				<div class="text-center py-4">
+					<p class="text-muted mb-0">Нет сохраненных фильтров</p>
+				</div>
+			{% endif %}
 		</div>
-		
+		<div class="modal-footer" style="padding: 1.25rem 1.5rem; background: #fff; border-radius: 0 0 1.3rem 1.3rem; border-top: 1px solid rgba(0, 42, 90, 0.1);">
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem;">Закрыть</button>
+		</div>
 	  </div>
 	</div>
 </div>
@@ -504,6 +530,107 @@
 			updateSelectedUnits();
 		}
 		
+		// Поиск по группам ДЦ
+		const searchUnitGroup = document.getElementById('search_unit_group');
+		const unitGroupDropdown = document.getElementById('unitGroupDropdown');
+		const unitGroupIdInput = document.getElementById('unit_group_id');
+		const selectedUnitGroup = document.getElementById('selectedUnitGroup');
+		let selectedUnitGroupData = null;
+		
+		if (searchUnitGroup && unitGroupDropdown && unitGroupIdInput) {
+			// Функция обновления выбранной группы
+			function updateSelectedUnitGroup() {
+				selectedUnitGroup.innerHTML = '';
+				if (selectedUnitGroupData) {
+					selectedUnitGroup.innerHTML = `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${selectedUnitGroupData.name} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="clearSelectedUnitGroup();"></button></span>`;
+				}
+			}
+			
+			window.updateSelectedUnitGroup = updateSelectedUnitGroup;
+			window.clearSelectedUnitGroup = function() {
+				selectedUnitGroupData = null;
+				unitGroupIdInput.value = '';
+				searchUnitGroup.value = '';
+				updateSelectedUnitGroup();
+			};
+			
+			// Поиск
+			searchUnitGroup.addEventListener('input', function() {
+				const searchTerm = this.value.toLowerCase();
+				const items = unitGroupDropdown.querySelectorAll('.unit-group-item');
+				items.forEach(item => {
+					const text = item.textContent.toLowerCase();
+					item.style.display = text.includes(searchTerm) ? '' : 'none';
+				});
+			});
+			
+			// Показать/скрыть выпадающий список
+			searchUnitGroup.addEventListener('focus', function() {
+				unitGroupDropdown.style.display = 'block';
+			});
+			
+			searchUnitGroup.addEventListener('click', function() {
+				unitGroupDropdown.style.display = 'block';
+			});
+			
+			// Выбор группы из списка
+			unitGroupDropdown.querySelectorAll('.unit-group-item').forEach(item => {
+				item.addEventListener('click', function() {
+					const id = this.getAttribute('data-id');
+					const name = this.getAttribute('data-name');
+					selectedUnitGroupData = { id: id, name: name };
+					unitGroupIdInput.value = id;
+					searchUnitGroup.value = name;
+					unitGroupDropdown.style.display = 'none';
+					updateSelectedUnitGroup();
+				});
+			});
+			
+			// Скрыть при клике вне
+			document.addEventListener('click', function(e) {
+				if (!searchUnitGroup.contains(e.target) && !unitGroupDropdown.contains(e.target)) {
+					unitGroupDropdown.style.display = 'none';
+				}
+			});
+			
+			// Загрузка выбранной группы при открытии модального окна
+			const exampleModal = document.getElementById('exampleModal');
+			if (exampleModal) {
+				exampleModal.addEventListener('shown.bs.modal', function() {
+					{% if params.filtr.unit_group_id %}
+					const selectedGroupId = {{ params.filtr.unit_group_id }};
+					if (selectedGroupId && !selectedUnitGroupData) {
+						const groupItem = unitGroupDropdown.querySelector(`.unit-group-item[data-id="${selectedGroupId}"]`);
+						if (groupItem) {
+							const id = groupItem.getAttribute('data-id');
+							const name = groupItem.getAttribute('data-name');
+							selectedUnitGroupData = { id: id, name: name };
+							unitGroupIdInput.value = id;
+							searchUnitGroup.value = name;
+							updateSelectedUnitGroup();
+						}
+					}
+					{% endif %}
+				});
+			}
+			
+			// Инициализация при загрузке страницы
+			{% if params.filtr.unit_group_id %}
+			const initialGroupId = {{ params.filtr.unit_group_id }};
+			if (initialGroupId) {
+				const groupItem = unitGroupDropdown.querySelector(`.unit-group-item[data-id="${initialGroupId}"]`);
+				if (groupItem) {
+					const id = groupItem.getAttribute('data-id');
+					const name = groupItem.getAttribute('data-name');
+					selectedUnitGroupData = { id: id, name: name };
+					unitGroupIdInput.value = id;
+					searchUnitGroup.value = name;
+					updateSelectedUnitGroup();
+				}
+			}
+			{% endif %}
+		}
+		
 		// Поиск по мастерам
 		const staffSearch = document.getElementById('staffSearch');
 		const staffDropdown = document.getElementById('staffDropdown');
@@ -511,24 +638,6 @@
 		const selectedStaff = document.getElementById('selectedStaff');
 		let staffSearchTimeout = null;
 		let selectedStaffData = null;
-		
-		// Загрузка выбранного мастера при открытии модального окна
-		{% if params.filtr.staff_id %}
-		const selectedStaffId = {{ params.filtr.staff_id }};
-		if (selectedStaffId) {
-			fetch(`{% url 'website:docs_zn_get_staffs' %}?search=`)
-				.then(response => response.json())
-				.then(data => {
-					const staff = data.staffs.find(s => s.id === selectedStaffId);
-					if (staff) {
-						selectedStaffData = staff;
-						staffIdInput.value = staff.id;
-						staffSearch.value = staff.name;
-						updateSelectedStaff();
-					}
-				});
-		}
-		{% endif %}
 		
 		// Функция обновления выбранного мастера
 		function updateSelectedStaff() {
@@ -545,6 +654,47 @@
 			staffSearch.value = '';
 			updateSelectedStaff();
 		};
+		
+		// Загрузка выбранного мастера при открытии модального окна
+		const exampleModal = document.getElementById('exampleModal');
+		if (exampleModal) {
+			exampleModal.addEventListener('shown.bs.modal', function() {
+				{% if params.filtr.staff_id %}
+				const selectedStaffId = {{ params.filtr.staff_id }};
+				if (selectedStaffId && !selectedStaffData) {
+					// Показываем индикатор загрузки
+					staffSearch.value = 'Загрузка...';
+					staffIdInput.value = selectedStaffId;
+					
+					// Загружаем мастера по ID User
+					fetch(`{% url 'website:docs_zn_get_staffs' %}?id=${selectedStaffId}`)
+						.then(response => response.json())
+						.then(data => {
+							if (data.staffs && data.staffs.length > 0) {
+								const staff = data.staffs.find(s => s.id == selectedStaffId);
+								if (staff) {
+									selectedStaffData = staff;
+									staffIdInput.value = staff.id;
+									staffSearch.value = staff.name;
+									updateSelectedStaff();
+								} else {
+									staffSearch.value = '';
+									staffIdInput.value = '';
+								}
+							} else {
+								staffSearch.value = '';
+								staffIdInput.value = '';
+							}
+						})
+						.catch(error => {
+							console.error('Ошибка загрузки мастера:', error);
+							staffSearch.value = '';
+							staffIdInput.value = '';
+						});
+				}
+				{% endif %}
+			});
+		}
 		
 		// Поиск мастеров
 		if (staffSearch && staffDropdown) {
