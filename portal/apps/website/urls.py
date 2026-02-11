@@ -46,6 +46,8 @@ urlpatterns = [
    path('settings/settings_autopricing_korsavto/table/',   views.settings_autopricing_korsavto_table, name='settings_autopricing_korsavto_table'),
    path('settings/settings_autopricing_korsavto/<int:unit_id>/', views.settings_autopricing_korsavto_unit, name='settings_autopricing_korsavto_unit'),
 
+   path('admin/traffic-desk/',   views.admin_traffic_desk, name='admin_traffic_desk'),
+
    path('refs/units_group/',     views.refs_unit_group_list),
    
    path('balance_edit/<id>/',   views.balance_edit, name='id'),

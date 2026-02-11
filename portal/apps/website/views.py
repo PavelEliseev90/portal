@@ -24,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -9481,3 +9481,156 @@ def test(request):
     
 
     return render(request, "website/test.html")
+
+
+@login_required
+def admin_traffic_desk(request):
+    """
+    Рабочий стол администратора ОП - фиксация трафика клиентов и создание рабочих листов
+    """
+    from django.utils import timezone
+    from django.core.paginator import Paginator
+    import uuid
+    
+    params = {
+        'type': 'admin_traffic_desk',
+        'request': request,
+    }
+    
+    # Получаем справочные данные
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    marks = AutoruMark.objects.all().order_by('name')
+    contact_types = RefContactType.objects.all().order_by('name')
+    
+    # Получаем модели для выбранной марки
+    models_list = []
+    mark_id = request.GET.get('mark_id', '')
+    if mark_id:
+        try:
+            models_list = AutoruModel.objects.filter(mark_id=mark_id).select_related('mark').order_by('name')
+        except:
+            pass
+    
+    # Обработка создания рабочего листа
+    if request.method == 'POST':
+        if 'create_rlk_op' in request.POST or 'create_rlk_tradein' in request.POST:
+            try:
+                # Получаем данные из формы
+                event_type = request.POST.get('event_type', '')
+                client_name = request.POST.get('client_name', '').strip()
+                phone = request.POST.get('phone', '').strip()
+                comment = request.POST.get('comment_administrator', '').strip()
+                unit_id = request.POST.get('unit_id', '')
+                staff_id = request.POST.get('staff_id', '')
+                mark_id = request.POST.get('mark_id', '')
+                model_id = request.POST.get('model_id', '')
+                gender = request.POST.get('gender', '')
+                missed = 'missed' in request.POST
+                
+                # Определяем тип рабочего листа
+                # 1 - ОП, 2 - Trade-In
+                rlk_type_id = 2 if 'create_rlk_tradein' in request.POST else 1
+                
+                # Получаем объекты
+                unit = None
+                if unit_id:
+                    try:
+                        unit = RefUnit.objects.get(pk=unit_id)
+                    except:
+                        pass
+                
+                staff = None
+                if staff_id:
+                    try:
+                        staff = RefStaff.objects.get(pk=staff_id)
+                    except:
+                        pass
+                
+                # Генерируем uin и nomer
+                uin = str(uuid.uuid4())
+                now = timezone.now()
+                
+                # Получаем последний номер для подразделения
+                last_rlk = DocRLK.objects.filter(
+                    unit=unit,
+                    type_id=rlk_type_id
+                ).order_by('-nomer').first()
+                
+                nomer = '1'
+                if last_rlk and last_rlk.nomer:
+                    try:
+                        nomer = str(int(last_rlk.nomer) + 1)
+                    except:
+                        nomer = '1'
+                
+                # Создаем рабочий лист
+                rlk = DocRLK.objects.create(
+                    dataTime=now,
+                    dataEnd=now,
+                    uin=uin,
+                    nomer=nomer,
+                    clientName=client_name or 'Клиент',
+                    unit=unit,
+                    staff=staff,
+                    phone=phone,
+                    commentAdministrator=comment,
+                    type_id=rlk_type_id,
+                    contacType_id=contact_types.first().id if contact_types.exists() else None,
+                )
+                
+                # Если есть модель, сохраняем в tradeInModel
+                if model_id and rlk_type_id == 2:
+                    try:
+                        model = AutoruModel.objects.get(pk=model_id)
+                        rlk.tradeInModel = model.name
+                        rlk.save()
+                    except:
+                        pass
+                
+                # Сохраняем аудио запись, если есть
+                if 'audio_recording' in request.FILES:
+                    audio_file = request.FILES['audio_recording']
+                    # Здесь можно сохранить файл в модель для записей разговоров
+                    # Пока просто пропускаем
+                    pass
+                
+                # Перенаправляем на страницу с сообщением об успехе
+                from django.contrib import messages
+                messages.success(request, f'Рабочий лист {rlk.nomer} успешно создан')
+                return HttpResponseRedirect(request.path)
+                
+            except Exception as e:
+                from django.contrib import messages
+                messages.error(request, f'Ошибка при создании рабочего листа: {str(e)}')
+    
+    # Получаем трафик за сегодня
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    traffic_today = DocRLK.objects.filter(
+        dataTime__gte=today_start,
+        dataTime__lte=today_end
+    ).select_related(
+        'unit', 'staff', 'type', 'contacType', 'customer'
+    ).order_by('-dataTime')[:50]
+    
+    # Пагинация для трафика
+    paginator = Paginator(traffic_today, 20)
+    page = request.GET.get('page', 1)
+    try:
+        traffic_page = paginator.page(page)
+    except:
+        traffic_page = paginator.page(1)
+    
+    params.update({
+        'units': units,
+        'staffs': staffs,
+        'marks': marks,
+        'models_list': models_list,
+        'contact_types': contact_types,
+        'traffic_today': traffic_page,
+        'selected_mark_id': mark_id,
+    })
+    
+    return render(request, 'website/admin_traffic_desk.html', {'params': params})
