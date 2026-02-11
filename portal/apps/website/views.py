@@ -2573,7 +2573,7 @@ def docs_zn(request):
         selected = {
             'units_name'    : units_selected_name,
             'units'         : units_selected,
-            'units_group'   : RefUnitGroup.objects.filter(active = True).only('id', 'name').order_by('name')
+            'units_group'   : RefUnitGroup.objects.filter(active = True, bu_auto = False).only('id', 'name').order_by('name')
         }
         
         params = {
@@ -2846,10 +2846,10 @@ def docs_zn_report_tizer(request):
         else:
             
             if filter_group_unit_id == '':
-                units_group = RefUnitGroup.objects.filter(active = True).prefetch_related('units').order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True, bu_auto = False).prefetch_related('units').order_by('name_bi')
             else:
                 filter_group_unit_id = int(filter_group_unit_id)
-                units_group = RefUnitGroup.objects.filter(active = True).filter(pk = filter_group_unit_id).prefetch_related('units').order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True, bu_auto = False).filter(pk = filter_group_unit_id).prefetch_related('units').order_by('name_bi')
             
             # Оптимизация: предварительно получаем все рекомендации одним запросом
             all_recomendations = DoсRecomendation.objects.filter(
@@ -2934,7 +2934,7 @@ def docs_zn_report_tizer(request):
 
         selected = {
             'units'              : RefUnit.objects.filter(buauto = False).order_by('name'),
-            'units_group'        : RefUnitGroup.objects.filter(active = True).order_by('name_bi'),
+            'units_group'        : RefUnitGroup.objects.filter(active = True, bu_auto = False).order_by('name_bi'),
         }
 
         params = {
@@ -3056,10 +3056,10 @@ def docs_zn_report_tizer_mcu(request):
                 table_data.append(params_unit)
         else:
             if filter_group_unit_id == '':
-                units_group = RefUnitGroup.objects.filter(active = True).prefetch_related('units').order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True, bu_auto = False).prefetch_related('units').order_by('name_bi')
             else:
                 filter_group_unit_id = int(filter_group_unit_id)
-                units_group = RefUnitGroup.objects.filter(active = True).filter(pk = filter_group_unit_id).prefetch_related('units').order_by('name_bi')
+                units_group = RefUnitGroup.objects.filter(active = True, bu_auto = False).filter(pk = filter_group_unit_id).prefetch_related('units').order_by('name_bi')
             
             # Оптимизация: предварительно получаем все рекомендации МКУ одним запросом
             all_recomendations = DoсRecomendationMCU.objects.filter(
@@ -3141,7 +3141,7 @@ def docs_zn_report_tizer_mcu(request):
         }
         selected = {
             'units'              : RefUnit.objects.filter(buauto = False).order_by('name'),
-            'units_group'        : RefUnitGroup.objects.filter(active = True).order_by('name_bi'),            
+            'units_group'        : RefUnitGroup.objects.filter(active = True, bu_auto = False).order_by('name_bi'),            
         }
         
         params = {
@@ -7657,40 +7657,33 @@ def settings_unit_groups(request):
             except (ValueError, AttributeError):
                 pass
         
-        # Обрабатываем обновление существующих групп
-        for key in request.POST.keys():
-            if key.startswith('groupdata_') and key.find('_name') > 0:
-                try:
-                    pk_group = key.split('_')[1]
-                    group = RefUnitGroup.objects.get(pk=pk_group)
-                    
-                    group.name = request.POST.get('groupdata_' + pk_group + '_name', '')
-                    group.name_bi = request.POST.get('groupdata_' + pk_group + '_name_bi', '')
-                    group.comment = request.POST.get('groupdata_' + pk_group + '_comment', '')
-                    group.active = 'groupdata_' + pk_group + '_active' in request.POST
-                    group.bu_auto = 'groupdata_' + pk_group + '_bu_auto' in request.POST
-                    
-                    city_id = request.POST.get('groupdata_' + pk_group + '_city', '')
-                    if city_id:
-                        group.city_id = int(city_id) if city_id else None
-                    else:
-                        group.city_id = None
-                    
-                    group.save()
-                except (ValueError, AttributeError, RefUnitGroup.DoesNotExist):
-                    pass
-        
+        # Сохраняем параметр поиска при редиректе (из GET или POST)
+        search_param = request.POST.get('search', '') or request.GET.get('search', '')
+        if search_param:
+            from urllib.parse import urlencode
+            return HttpResponseRedirect(request.path + '?search=' + urlencode({'search': search_param}))
         return HttpResponseRedirect(request.build_absolute_uri())
+    
+    # Получаем параметр поиска
+    search_query = request.GET.get('search', '').strip()
     
     # Получаем все группы подразделений с оптимизацией запросов
     groups = RefUnitGroup.objects.select_related('city').order_by('name')
+    
+    # Применяем фильтр поиска, если указан
+    if search_query:
+        from django.db.models import Q
+        groups = groups.filter(
+            Q(name__icontains=search_query) | Q(name_bi__icontains=search_query)
+        )
     
     # Получаем все города для выбора
     cities = RefCity.objects.all().order_by('name')
     
     settings_data = {
         'groups' : list(groups),
-        'cities' : list(cities)
+        'cities' : list(cities),
+        'search_query' : search_query
     }
     params = {
         'type'          : 'settings',
@@ -7709,7 +7702,19 @@ def settings_unit_group_units(request, group_id):
         # Обновляем параметры группы
         group.active = 'group_active' in request.POST
         group.bu_auto = 'group_bu_auto' in request.POST
-        group.save(update_fields=['active', 'bu_auto'])
+        
+        # Обновляем поля группы
+        group.name = request.POST.get('group_name', group.name)
+        group.name_bi = request.POST.get('group_name_bi', group.name_bi)
+        group.comment = request.POST.get('group_comment', group.comment)
+        
+        city_id = request.POST.get('group_city', '')
+        if city_id:
+            group.city_id = int(city_id) if city_id else None
+        else:
+            group.city_id = None
+        
+        group.save()
         
         # Обновляем состав группы
         unit_ids = request.POST.getlist('units')
@@ -7718,6 +7723,9 @@ def settings_unit_group_units(request, group_id):
     
     # Получаем все подразделения
     all_units = RefUnit.objects.select_related('city').order_by('name')
+    
+    # Получаем все города для выбора
+    cities = RefCity.objects.all().order_by('name')
     
     # Получаем ID подразделений, входящих в группу
     group_unit_ids = set(group.units.all().values_list('pk', flat=True))
@@ -7741,6 +7749,7 @@ def settings_unit_group_units(request, group_id):
     params = {
         'type': 'settings',
         'group': group,
+        'cities': cities,
         'units_in_group': units_in_group,
         'units_not_in_group': units_not_in_group,
     }

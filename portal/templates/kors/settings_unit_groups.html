@@ -14,8 +14,11 @@
     <p>Управление группами подразделений и их составом.</p>
   </div>
 
-  <form method="post">
+  <form method="post" id="mainForm">
     {% csrf_token %}
+    {% if params.settings.search_query %}
+      <input type="hidden" name="search" value="{{ params.settings.search_query }}">
+    {% endif %}
 
     <div class="portal-panel">
       <h3 class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse_add_group" aria-expanded="false" aria-controls="collapse_add_group" style="cursor: pointer;">
@@ -78,6 +81,27 @@
         <span>Список групп подразделений</span>
       </h3>
       
+      <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+        <form method="get" class="d-flex gap-2 align-items-end">
+          <div class="flex-grow-1">
+            <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Поиск по наименованию или наименованию BI</label>
+            <input type="text" class="form-control" id="search_groups" name="search" placeholder="Введите текст для поиска..." value="{{ params.settings.search_query|default:'' }}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
+              <i class="bi bi-search me-1"></i> Найти
+            </button>
+          </div>
+          {% if params.settings.search_query %}
+          <div>
+            <a href="?" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
+              <i class="bi bi-x-circle me-1"></i> Сбросить
+            </a>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+      
       <div class="table-responsive table-sticky">
         <table class="table table-hover table-mobile-cards">
           <thead>
@@ -97,49 +121,34 @@
             <tr>
               <td data-label="№">{{ group.pk }}</td>
               <td data-label="Наименование">
-                <div class="form-floating">
-                  <input type="text" class="form-control" id="groupdata_{{ group.pk }}_name" name="groupdata_{{ group.pk }}_name" placeholder="" value="{{ group.name }}" autocomplete="off">
-                  <label for="groupdata_{{ group.pk }}_name">Наименование</label>
-                </div>
+                <span style="font-weight: 500; color: #002a5a;">{{ group.name|default:"—" }}</span>
               </td>
               <td data-label="Наименование BI">
-                <div class="form-floating">
-                  <input type="text" class="form-control" id="groupdata_{{ group.pk }}_name_bi" name="groupdata_{{ group.pk }}_name_bi" placeholder="" value="{{ group.name_bi }}" autocomplete="off">
-                  <label for="groupdata_{{ group.pk }}_name_bi">Наименование BI</label>
-                </div>
+                <span style="font-weight: 500; color: #002a5a;">{{ group.name_bi|default:"—" }}</span>
               </td>
               <td data-label="Город">
-                <div class="form-floating">
-                  <select class="form-select" id="groupdata_{{ group.pk }}_city" name="groupdata_{{ group.pk }}_city">
-                    <option value="">Не выбрано</option>
-                    {% for city in params.settings.cities %}
-                    <option value="{{ city.pk }}" {% if group.city and group.city.pk == city.pk %}selected{% endif %}>{{ city.name }}</option>
-                    {% endfor %}
-                  </select>
-                  <label for="groupdata_{{ group.pk }}_city">Город</label>
-                </div>
+                <span style="color: #6c7a92;">{% if group.city %}{{ group.city.name }}{% else %}—{% endif %}</span>
               </td>
               <td data-label="Комментарий">
-                <div class="form-floating">
-                  <input type="text" class="form-control" id="groupdata_{{ group.pk }}_comment" name="groupdata_{{ group.pk }}_comment" placeholder="" value="{{ group.comment }}" autocomplete="off">
-                  <label for="groupdata_{{ group.pk }}_comment">Комментарий</label>
-                </div>
+                <span style="color: #6c7a92;">{{ group.comment|default:"—" }}</span>
               </td>
               <td data-label="Активно">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_active" name="groupdata_{{ group.pk }}_active" {% if group.active %}checked{% endif %}>
-                  <label class="form-check-label" for="groupdata_{{ group.pk }}_active">Активно</label>
-                </div>
+                {% if group.active %}
+                  <span class="badge bg-success">Активно</span>
+                {% else %}
+                  <span class="badge bg-secondary">Неактивно</span>
+                {% endif %}
               </td>
               <td data-label="Б/У Автомобили">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="groupdata_{{ group.pk }}_bu_auto" name="groupdata_{{ group.pk }}_bu_auto" {% if group.bu_auto %}checked{% endif %}>
-                  <label class="form-check-label" for="groupdata_{{ group.pk }}_bu_auto">Б/У Автомобили</label>
-                </div>
+                {% if group.bu_auto %}
+                  <span class="badge bg-warning">Да</span>
+                {% else %}
+                  <span class="badge bg-secondary">Нет</span>
+                {% endif %}
               </td>
               <td data-label="Действия">
-                <a href="/settings/settings_unit_groups/{{ group.pk }}/units/" class="btn btn-sm btn-outline-primary">
-                  Редактировать состав
+                <a href="/settings/settings_unit_groups/{{ group.pk }}/units/" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 2px 8px rgba(0, 42, 90, 0.15); border-radius: 0.5rem;">
+                  <i class="bi bi-pencil me-1"></i> Редактировать
                 </a>
               </td>
             </tr>
@@ -149,11 +158,32 @@
       </div>
     </div>
 
-    <div class="portal-panel" style="text-align: right;">
-      <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
-    </div>
-
   </form>
 </div>
+
+<script>
+  // Сохранение параметра поиска при отправке формы
+  document.addEventListener('DOMContentLoaded', function() {
+    const mainForm = document.getElementById('mainForm');
+    const searchInput = document.getElementById('search_groups');
+    
+    if (mainForm && searchInput) {
+      mainForm.addEventListener('submit', function(e) {
+        const searchValue = searchInput.value.trim();
+        if (searchValue) {
+          // Добавляем скрытое поле с параметром поиска, если его еще нет
+          let hiddenInput = mainForm.querySelector('input[name="search"]');
+          if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'search';
+            mainForm.appendChild(hiddenInput);
+          }
+          hiddenInput.value = searchValue;
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
 

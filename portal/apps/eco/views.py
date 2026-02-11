@@ -8493,16 +8493,45 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         remote_below = qs.filter(valid_date_remote, comparison_remote_type=-1).count()
         remote_equal = qs.filter(valid_date_remote, comparison_remote_type=0).count()
         remote_above = qs.filter(valid_date_remote, comparison_remote_type=1).count()
+    else:
+        remote_below = 0
+        remote_equal = 0
+        remote_above = 0
     
     if total_before_comparison > 0:
         before_below = qs.filter(valid_date_before, comparison_before_type=-1).count()
         before_equal = qs.filter(valid_date_before, comparison_before_type=0).count()
         before_above = qs.filter(valid_date_before, comparison_before_type=1).count()
+    else:
+        before_below = 0
+        before_equal = 0
+        before_above = 0
     
     if total_after_comparison > 0:
         after_below = qs.filter(valid_date_after, comparison_after_type=-1).count()
         after_equal = qs.filter(valid_date_after, comparison_after_type=0).count()
         after_above = qs.filter(valid_date_after, comparison_after_type=1).count()
+    else:
+        after_below = 0
+        after_equal = 0
+        after_above = 0
+    
+    # Дополнительные показатели для блоков сравнения
+    # Для дистанционной оценки: сколько дошли до цены "до КД" и сколько принято
+    remote_to_before = qs.filter(valid_date_remote, valid_date_before).count()
+    remote_to_before_pct = (remote_to_before / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
+    remote_to_reception = qs.filter(valid_date_remote, valid_date_reception).count()
+    remote_to_reception_pct = (remote_to_reception / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
+    
+    # Для "До КД": сколько дошли до цены "после КД" и сколько принято
+    before_to_after = qs.filter(valid_date_before, valid_date_after).count()
+    before_to_after_pct = (before_to_after / total_before_comparison * 100) if total_before_comparison > 0 else 0
+    before_to_reception = qs.filter(valid_date_before, valid_date_reception).count()
+    before_to_reception_pct = (before_to_reception / total_before_comparison * 100) if total_before_comparison > 0 else 0
+    
+    # Для "После КД": сколько принято
+    after_to_reception = qs.filter(valid_date_after, valid_date_reception).count()
+    after_to_reception_pct = (after_to_reception / total_after_comparison * 100) if total_after_comparison > 0 else 0
     
     # Проценты
     conv_op_to_tradein = (total_rlk / total_op_rlk * 100) if total_op_rlk > 0 else 0
@@ -8895,18 +8924,23 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
                 'equal': {'count': remote_equal, 'percent': remote_equal_pct},
                 'above': {'count': remote_above, 'percent': remote_above_pct},
                 'total': total_remote_comparison,
+                'to_before': {'count': remote_to_before, 'percent': remote_to_before_pct},
+                'to_reception': {'count': remote_to_reception, 'percent': remote_to_reception_pct},
             },
             'before_comparison': {
                 'below': {'count': before_below, 'percent': before_below_pct},
                 'equal': {'count': before_equal, 'percent': before_equal_pct},
                 'above': {'count': before_above, 'percent': before_above_pct},
                 'total': total_before_comparison,
+                'to_after': {'count': before_to_after, 'percent': before_to_after_pct},
+                'to_reception': {'count': before_to_reception, 'percent': before_to_reception_pct},
             },
             'after_comparison': {
                 'below': {'count': after_below, 'percent': after_below_pct},
                 'equal': {'count': after_equal, 'percent': after_equal_pct},
                 'above': {'count': after_above, 'percent': after_above_pct},
                 'total': total_after_comparison,
+                'to_reception': {'count': after_to_reception, 'percent': after_to_reception_pct},
             },
         },
         'type_reception_stats': type_reception_stats,
