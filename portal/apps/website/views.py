@@ -2600,16 +2600,33 @@ def docs_zn_get_staffs(request):
     from django.contrib.auth.models import User
     
     search = request.GET.get('search', '').strip().lower()
+    staff_id = request.GET.get('id', '').strip()  # ID User для поиска конкретного мастера
     
     # Получаем мастеров из DocZN
     staffs_qs = DocZN.objects.exclude(master=None).select_related('master').values_list('master', flat=True).distinct()
     staffs = RefStaff.objects.filter(id__in=staffs_qs).exclude(name='').order_by('name')
     
+    # Если передан ID User, ищем мастера по этому ID
+    if staff_id:
+        try:
+            user_id = int(staff_id)
+            user = User.objects.filter(id=user_id).first()
+            if user and user.username:
+                # Ищем RefStaff по domain_login
+                staff_by_user = RefStaff.objects.filter(domain_login__iexact=user.username).exclude(name='').first()
+                if staff_by_user:
+                    staffs = RefStaff.objects.filter(id=staff_by_user.id)
+                else:
+                    staffs = RefStaff.objects.none()
+        except (ValueError, TypeError):
+            pass
+    
     if search:
         staffs = staffs.filter(name__icontains=search)
     
-    # Ограничиваем количество результатов
-    staffs = staffs[:50]
+    # Ограничиваем количество результатов (только если не ищем по ID)
+    if not staff_id:
+        staffs = staffs[:50]
     
     result = []
     for staff in staffs:
