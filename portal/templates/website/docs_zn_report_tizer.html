@@ -66,34 +66,29 @@
     background-color: #f8f9fa;
   }
   
-  .table tbody.labels tr {
-    cursor: pointer;
+  .table-group-header {
+    transition: background-color 0.2s;
   }
   
-  .table tbody.labels tr th {
-    font-weight: 600;
-    color: #002a5a;
-    padding: 0.75rem;
-    vertical-align: middle;
+  .table-group-header:hover {
+    background-color: #e9ecef !important;
   }
   
-  .table tbody.hide {
-    display: none;
+  .table-group-detail {
+    transition: background-color 0.2s;
   }
   
-  .table tbody.hide tr {
-    background-color: #f8f9fa;
-    cursor: pointer;
+  .table-group-detail:hover {
+    background-color: #f8f9fa !important;
   }
   
-  .table tbody.hide tr:hover {
-    background-color: #e9ecef;
+  .toggle-icon {
+    transition: transform 0.3s ease;
+    display: inline-block;
   }
   
-  .table tbody.hide tr th,
-  .table tbody.hide tr td {
-    padding: 0.75rem;
-    vertical-align: middle;
+  .toggle-icon.rotated {
+    transform: rotate(90deg);
   }
 </style>
 {% endblock %}
@@ -184,77 +179,138 @@
     </div>
   </div>
 
+  <br>
   <div class="docs-zn-report-card">
     <div class="table-responsive">
       <table class="table table-hover">	
         <thead style="border-radius: 1.3rem 1.3rem 0 0;">
           <tr style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border-radius: 1.3rem 1.3rem 0 0; overflow: hidden;">
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">
+            <th style="width: 40px; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">&nbsp;</th>
+            <th scope="col" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">
               {% if params.filtr.unit_group == 'no' %}
                 Подразделение
               {% else %}
                 Группа подразделений
               {% endif %}
             </th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым отправлена хоть одна рекомендация)">Всего ЗН c отправленными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Не активных</th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">На согласовании</th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Согласовано</th>
-            <th scope="col" style="text-align: center; color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Отклонено</th>							
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Всего ЗН <span class="icon-mbri-question" title="Всего закрытых заказ нарядов с видом ремонта ТО, ТР и доп на АМ с пробегом" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым добавлена хоть одна рекомендация (в скобках указан процент зн с рекомендациями к общему количеству зн по подразделению)">Всего ЗН c рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым отправлена хоть одна рекомендация)">Всего ЗН c отправленными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Всего уникальных заказ - нарядов к которым согласована хоть одна рекомендация)">Всего ЗН c согласованными рекомендациями<span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;" title="Общее количество рекомендаций по всем заказ нарядам">Всего рекомендаций <span class="icon-mbri-question" style="color: rgba(255, 255, 255, 0.9) !important; opacity: 0.8;"></span></th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Не активных</th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">На согласовании</th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Согласовано</th>
+            <th class="text-end" style="color: #fff !important; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important; position: sticky; top: 0; z-index: 10; vertical-align: middle; padding: 1rem 0.75rem; border: none !important;">Отклонено</th>							
           </tr>
         </thead>
 
-        {% for doc in params.docs %}
-          {% if doc.unit_name|length > 0 and doc.unit_name != "ЕЦО ГК" %}
-            <tbody class="labels">	
-              <tr class="align-middle">
-                <th>
-                  <label for="dc{{doc.unit_id}}" title='{% if doc.unit_info %}{{doc.unit_info}}{% endif %}' style="cursor: pointer;">
-                    <span class="icon-mbri-arrow-down" id="span-dc{{doc.unit_id}}"></span> 
-                    {{doc.unit_name}}
-                  </label>
-                  <input type="checkbox" name="dc{{doc.unit_id}}" id="dc{{doc.unit_id}}" data-toggle="toggle" style="display: none;">
-                </th>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_count_all}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_count}} ({{doc.zn_percent}} %)</td>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_send_count}} ({{doc.zn_send_count_sr}} %)</td>
-                <td class="align-middle" style="text-align: center;">{{doc.zn_success_count}} ({{doc.zn_success_count_sr}} %)</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations|length}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_0}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_1}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_2}}</td>
-                <td class="align-middle" style="text-align: center;">{{doc.recomendations_3}}</td>
+        <tbody>
+          {% for doc in params.docs %}
+            {% if doc.unit_name|length > 0 and doc.unit_name != "ЕЦО ГК" %}
+              <tr class="table-group-header" data-unit-id="{{doc.unit_id}}" style="background-color: #f8f9fa; cursor: pointer;">
+                <td>
+                  <span class="icon-mbri-arrow-down toggle-icon" id="icon-dc{{doc.unit_id}}" style="color: #002a5a; font-size: 1rem;"></span>
+                </td>
+                <td>
+                  <strong style="color: #002a5a;">{{doc.unit_name}}</strong>
+                  {% if doc.unit_info %}
+                    <br><small class="text-muted" style="font-size: 0.8rem;">{{doc.unit_info}}</small>
+                  {% endif %}
+                </td>
+                <td class="text-end"><strong>{{doc.zn_count_all}}</strong></td>
+                <td class="text-end">
+                  <strong>{{doc.zn_count}}</strong>
+                  <small class="text-muted">({{doc.zn_percent}}%)</small>
+                </td>
+                <td class="text-end">
+                  <strong>{{doc.zn_send_count}}</strong>
+                  <small class="text-muted">({{doc.zn_send_count_sr}}%)</small>
+                </td>
+                <td class="text-end">
+                  <strong>{{doc.zn_success_count}}</strong>
+                  <small class="text-muted">({{doc.zn_success_count_sr}}%)</small>
+                </td>
+                <td class="text-end"><strong>{{doc.recomendations|length}}</strong></td>
+                <td class="text-end">
+                  <span class="badge bg-secondary">{{doc.recomendations_0}}</span>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-warning text-dark">{{doc.recomendations_1}}</span>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-success">{{doc.recomendations_2}}</span>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-danger">{{doc.recomendations_3}}</span>
+                </td>
               </tr>
-            </tbody>
-            
-            <tbody class="hide">
+              
               {% for doc_rec in doc.recomendations %}
-                <tr class="align-middle" style="background-color: #f8f9fa;" onclick="window.location.href='/docs_recomendation/{{doc_rec.id}}'; return false">
-                  {% if params.filtr.unit_group == 'no' %}
-                    <th scope="row">
-                      № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime}} - {{doc_rec.name}}
-                    </th>
-                    <td colspan="4" style="text-align: left;"> - </td>
-                  {% else %}
-                    <th scope="row">
-                      {{doc_rec.zn.unit.name}}
-                    </th>
-                    <td colspan="4" style="text-align: left;"> № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime}} - {{doc_rec.name}} </td>
-                  {% endif %}	
-                  <td style="text-align: center;"> 1 </td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 0 %} 1 {% else %} - {% endif %}</td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 1 %} 1 {% else %} - {% endif %}</td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 2 %} 1 {% else %} - {% endif %}</td>
-                  <td class="align-middle" style="text-align: center;">{% if doc_rec.customerStatus == 3 %} 1 {% else %} - {% endif %}</td>
+                <tr class="table-group-detail detail-row-{{doc.unit_id}}" style="display: none; background-color: #fff;" onclick="window.location.href='/docs_recomendation/{{doc_rec.id}}'; return false">
+                  <td></td>
+                  <td>
+                    {% if params.filtr.unit_group == 'no' %}
+                      <span style="color: #6c7a92; font-size: 0.9rem;">
+                        № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime|date:"d.m.Y"}} - {{doc_rec.name}}
+                      </span>
+                    {% else %}
+                      <div>
+                        <strong style="color: #002a5a;">{{doc_rec.zn.unit.name}}</strong>
+                        <br>
+                        <span style="color: #6c7a92; font-size: 0.85rem;">
+                          № {{doc_rec.zn.nomer}} / {{doc_rec.dataTime|date:"d.m.Y"}} - {{doc_rec.name}}
+                        </span>
+                      </div>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">-</td>
+                  <td class="text-end">-</td>
+                  <td class="text-end">-</td>
+                  <td class="text-end">-</td>
+                  <td class="text-end">1</td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 0 %}
+                      <span class="badge bg-secondary">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 1 %}
+                      <span class="badge bg-warning text-dark">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 2 %}
+                      <span class="badge bg-success">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if doc_rec.customerStatus == 3 %}
+                      <span class="badge bg-danger">1</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
-            </tbody>
+            {% endif %}
+          {% endfor %}
+          
+          {% if not params.docs %}
+            <tr>
+              <td colspan="11" class="text-center py-5" style="color: #6c7a92;">
+                <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                <p class="mt-2 mb-0">Данные не найдены</p>
+              </td>
+            </tr>
           {% endif %}
-        {% endfor %}	
+        </tbody>	
       </table>
     </div>
     
@@ -385,25 +441,21 @@
     $(document).ready(function() {
       visible_filtr_dc_and_group();
 
-      $('[data-toggle="toggle"]').change(function(){
-        var check = !$(this).is(':checked');
-        var id = 'span-' + $(this)[0].id;
-        if (String(check).toLowerCase() === "true"){
-          $(this).prop('checked', false);
-          $('#'+ id).attr('class', 'icon-mbri-arrow-down');
-        }else{
-          $(this).prop('checked', true);
-          $('#'+ id).attr('class', 'icon-mbri-arrow-up');
-        }
-
-        $(this).parents().next('.hide').toggle();
-      });
-      
-      // Клик по строке для раскрытия
-      $('tbody.labels tr').click(function(e) {
-        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
-          const checkbox = $(this).find('input[type="checkbox"]');
-          checkbox.trigger('change');
+      // Раскрытие/сворачивание строк с деталями
+      $('.table-group-header').click(function(e) {
+        e.preventDefault();
+        const unitId = $(this).data('unit-id');
+        const icon = $(this).find('.toggle-icon');
+        const detailRows = $('.detail-row-' + unitId);
+        
+        if (detailRows.is(':visible')) {
+          detailRows.slideUp(200);
+          icon.removeClass('rotated');
+          icon.attr('class', 'icon-mbri-arrow-down toggle-icon');
+        } else {
+          detailRows.slideDown(200);
+          icon.addClass('rotated');
+          icon.attr('class', 'icon-mbri-arrow-right toggle-icon rotated');
         }
       });
     });
