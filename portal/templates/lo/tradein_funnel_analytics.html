@@ -572,7 +572,22 @@
     </div>
 
     <div class="col-xl-4 col-sm-6">
-      <article class="kors-stage-card">
+      <article class="kors-stage-card" style="position: relative;">
+        {% with target=70 current=params.totals.conv_before target_minus_5=65 %}
+          {% if current >= target %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-success">Цель: {{ target }}%</span>
+            </div>
+          {% elif current >= target_minus_5 %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-warning">Цель: {{ target }}%</span>
+            </div>
+          {% else %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-danger">Цель: {{ target }}%</span>
+            </div>
+          {% endif %}
+        {% endwith %}
         <h3>До КД / Дистанционно</h3>
         <h2>
           {{ params.totals.before|floatformat:"0g" }}
@@ -601,7 +616,22 @@
     </div>
 
     <div class="col-xl-6 col-sm-12">
-      <article class="kors-stage-card">
+      <article class="kors-stage-card" style="position: relative;">
+        {% with target=50 current=params.totals.conv_after target_minus_5=45 %}
+          {% if current >= target %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-success">Цель: {{ target }}%</span>
+            </div>
+          {% elif current >= target_minus_5 %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-warning">Цель: {{ target }}%</span>
+            </div>
+          {% else %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-danger">Цель: {{ target }}%</span>
+            </div>
+          {% endif %}
+        {% endwith %}
         <h3>После КД</h3>
         <h2>
           {{ params.totals.after|floatformat:"0g" }}
@@ -630,7 +660,22 @@
     </div>
 
     <div class="col-xl-6 col-sm-12">
-      <article class="kors-stage-card">
+      <article class="kors-stage-card" style="position: relative;">
+        {% with target=80 current=params.totals.conv_reception target_minus_5=75 %}
+          {% if current >= target %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-success">Цель: {{ target }}%</span>
+            </div>
+          {% elif current >= target_minus_5 %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-warning">Цель: {{ target }}%</span>
+            </div>
+          {% else %}
+            <div style="position: absolute; top: 1rem; right: 1rem; font-size: 0.85rem; font-weight: 600;">
+              <span class="text-danger">Цель: {{ target }}%</span>
+            </div>
+          {% endif %}
+        {% endwith %}
         <h3>Принято</h3>
         <h2>
           {{ params.totals.reception|floatformat:"0g" }}
