@@ -4,207 +4,329 @@
 
 {% block title %} - сток интернет магазин {% endblock %}
 
-{% block title_navbar %} - сток  интернет магазин {% endblock %}
+{% block title_navbar %} - сток интернет магазин {% endblock %}
+
+{% block extra_css %}
+<style>
+  .stok-page {
+    background: #f4f7fb;
+    min-height: 100vh;
+    padding: 1.5rem 0;
+  }
+  
+  .stok-header {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .stok-header-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+  
+  .stok-header-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .stok-count {
+    font-size: 0.95rem;
+    color: #6c7a92;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .stok-count .icon-mbri-shopping-bag {
+    font-size: 1.2rem;
+    color: #002a5a;
+  }
+  
+  .product-card {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  
+  .product-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
+    transform: translateY(-2px);
+    border-color: rgba(0, 42, 90, 0.15);
+  }
+  
+  .product-card-body {
+    padding: 1.25rem;
+  }
+  
+  .product-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 1rem;
+  }
+  
+  .product-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #002a5a;
+    flex: 1;
+    line-height: 1.4;
+  }
+  
+  .product-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e74c3c;
+    white-space: nowrap;
+  }
+  
+  .product-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+  
+  .product-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .product-detail-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    font-weight: 600;
+  }
+  
+  .product-detail-value {
+    font-size: 0.95rem;
+    color: #002a5a;
+    font-weight: 500;
+  }
+  
+  .product-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .product-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .product-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #6c7a92;
+  }
+  
+  .product-stat-item .icon-mbri-preview,
+  .product-stat-item .icon-mbri-touch,
+  .product-stat-item .icon-mbri-hearth {
+    font-size: 1.1rem;
+    color: #002a5a;
+  }
+  
+  .product-status {
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .product-status.active {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+  }
+  
+  .product-status.no {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+  }
+  
+  .product-status.no_foto {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+  }
+</style>
+{% endblock %}
     
 {% block content %}
- 	
-<div class="row">
+<div class="stok-page">
+  <div class="container-fluid">
+    
+    <!-- Заголовок с фильтром -->
+    <div class="stok-header">
+      <h2 class="stok-header-title">Сток интернет магазин</h2>
+      <div class="stok-header-info">
+        <div class="stok-count">
+          <span class="icon-mbri-shopping-bag"></span>
+          <span>Всего товаров: <strong>{{params.answer|length}}</strong></span>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
+          <span class="icon-mbri-setting2"></span> Параметры
+          {% if params.filtr_count > 0 %}
+            <span class="badge bg-light text-dark ms-2">{{params.filtr_count}}</span>
+          {% endif %}
+        </button>
+      </div>
+    </div>
 
+    <!-- Модальное окно фильтра -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 1.3rem; border: none; box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.3rem 1.3rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <h5 class="modal-title" id="exampleModalLabel" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="icon-mbri-setting2"></span> Параметры
+              {% if params.filtr.filtr_count > 0 %}
+                <span class="badge bg-light text-dark ms-2">{{params.filtr.filtr_count}}</span>
+              {% endif %}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1); opacity: 0.8;"></button>
+          </div>
+          
+          <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
+            <form method="get">
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Наименование</div>
+                <input type="text" class="form-control" id="name" name="name" placeholder="Введите наименование..." value="{{params.filtr.name}}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
+              </div>
 
-	<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr_count > 0 %} - {{params.filtr_count}} {% endif %}</button>
-	
-	<label class="icon-mbri-shopping-bag"> Всего товаров: {{params.answer|length}}</label>
-	
-	<div class="col-sm-auto">
-		
-		<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-				<div class="modal-dialog modal-dialog-centered">
-					<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					
-						<div class="modal-body">
-							<form method="get">
-								<!--
-								<div class="form-floating mb-3">							
-									<select class="form-select" id="status" name="status" placeholder="">
-										<option></option>
-										<option value="active" {% if params.filtr.status == 'active' %} selected {% endif %}> active </option>
-										<option value="no" {% if params.filtr.status == 'no' %} selected {% endif %}> no </option>
-										<option value="Не_выгружался" {% if params.filtr.status == 'Не_выгружался' %} selected {% endif %}> Не выгружался </option>
-									</select>
-									<label for="floatingInput">Статус</label>
-								</div>
-								-->
-								<div class="form-floating mb-3">
-									<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
-									<label for="floatingInput">Наименование</label>
-								</div>
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Артикул</div>
+                <input type="text" class="form-control" id="articul" name="articul" placeholder="Введите артикул..." value="{{params.filtr.articul}}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
+              </div>
 
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Ячейка</div>
+                <input type="text" class="form-control" id="cell" name="cell" placeholder="Введите ячейку..." value="{{params.filtr.cell}}" autocomplete="off" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
+              </div>
 
-								<div class="form-floating mb-3">
-									<input type="text" class="form-control" id="articul" name="articul" placeholder="" value="{{params.filtr.articul}}" autocomplete="off">
-									<label for="floatingInput">Артикул</label>
-								</div>
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" role="switch" id="no_foto" name="no_foto" {% if params.filtr.no_foto == 'on' %} checked {% endif %} style="width: 3rem; height: 1.5rem; cursor: pointer;">
+                  <label class="form-check-label" for="no_foto" style="font-size: 0.95rem; color: #002a5a; font-weight: 500; margin-left: 0.5rem; cursor: pointer;">Без фото</label>
+                </div>
+              </div>
 
-								<div class="form-floating mb-3">
-									<input type="text" class="form-control" id="cell" name="cell" placeholder="" value="{{params.filtr.cell}}" autocomplete="off">
-									<label for="floatingInput">Ячейка</label>
-								</div>
+              <div class="d-grid gap-2">
+                <button class="btn btn-primary" type="submit" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.75rem 1.5rem; font-weight: 600;">
+                  <span class="icon-mbri-success"></span> Применить
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
 
-								<div class="form-check form-switch">
-									<input class="form-check-input" type="checkbox" role="switch" id="no_foto" name="no_foto" {% if params.filtr.no_foto == 'on' %} checked {% endif %}>
-									<label class="form-check-label" for="no_foto">Без фото</label>
-								</div>
-								<hr>
-								
-								<div class="d-grid gap-2">
-									<button class="btn btn-block btn-outline-success" type="submit" ><span class="icon-mbri-success"></span> Применить</button>
-								</div>
-							</form>
-						</div>
+    <!-- Список товаров -->
+    <div class="row g-3">
+      {% if params.answer %}
+        {% for product in params.answer %}
+          <div class="col-12">
+            <div class="product-card" onclick="window.location.href='product/?kod={{product.НоменклатураКод}}'; return false">
+              <div class="product-card-body">
+                <div class="product-card-header">
+                  <div class="product-name">{{product.Номенклатура}}</div>
+                  <div class="product-price">{{product.Price|floatformat:"2g"}} ₽</div>
+                </div>
+                
+                <div class="product-details">
+                  <div class="product-detail-item">
+                    <div class="product-detail-label">Артикул</div>
+                    <div class="product-detail-value">{{product.Артикул|default:"—"}}</div>
+                  </div>
+                  <div class="product-detail-item">
+                    <div class="product-detail-label">Ячейка</div>
+                    <div class="product-detail-value">{{product.ЯчейкаХранения|default:"—"}}</div>
+                  </div>
+                  <div class="product-detail-item">
+                    <div class="product-detail-label">Остаток</div>
+                    <div class="product-detail-value">{{product.КоличествоОстаток|default:"0"}}</div>
+                  </div>
+                  <div class="product-detail-item">
+                    <div class="product-detail-label">Производитель</div>
+                    <div class="product-detail-value">{{product.Производитель|default:"—"}}</div>
+                  </div>
+                  <div class="product-detail-item">
+                    <div class="product-detail-label">Категория Авито</div>
+                    <div class="product-detail-value">{{product.КатегорияАвито|default:"—"}}</div>
+                  </div>
+                  <div class="product-detail-item">
+                    <div class="product-detail-label">Фото</div>
+                    <div class="product-detail-value">{{product.КоличествоФото|default:"0"}}</div>
+                  </div>
+                </div>
+                
+                <div class="product-meta">
+                  <div class="product-stats">
+                    <div class="product-stat-item">
+                      <span class="icon-mbri-preview"></span>
+                      <span>{{product.Просмотров|default:"0"}}</span>
+                    </div>
+                    <div class="product-stat-item">
+                      <span class="icon-mbri-touch"></span>
+                      <span>{{product.Контактов|default:"0"}}</span>
+                    </div>
+                    <div class="product-stat-item">
+                      <span class="icon-mbri-hearth"></span>
+                      <span>{{product.Избранное|default:"0"}}</span>
+                    </div>
+                  </div>
+                  <div class="product-status {% if product.Статус == 'active' %}active{% elif product.Статус == 'no' %}no{% else %}no_foto{% endif %}">
+                    {{product.Статус|default:"—"}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12">
+          <div class="portal-panel text-center" style="padding: 3rem 1.5rem;">
+            <p class="text-muted" style="font-size: 1.1rem; margin: 0;">Товары не найдены</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
 
-					</div>
-				</div>
-		</div>
-		<br>
-
-
-	</div>
-	
-	<hr>
-
-<!-- Второй столбец !-->
-		<div class="col-sm">
-			<div class="row g-1">
-				{% if params.answer %}
-					{% for product in params.answer %}
-						  
-						<div class="card"  onclick="window.location.href='product/?kod={{product.НоменклатураКод}}'; return false"> 
-							<div class="card-body" style="padding: 0;">
-								
-								<div class="row" style="padding: 0.2em;">
-									
-									<div class="col-sm-4">
-										{{product.Номенклатура}}
-									</div>
-									
-									<div class="col-sm">
-										{{product.Артикул}} 
-									</div>
-									
-									<div class="col-sm">
-										{{product.ЯчейкаХранения}} 
-									</div>
-
-									<div class="col-sm">
-										{{product.КоличествоОстаток}} 
-									</div>
-
-									<div class="col-sm">
-										{{product.Производитель}} 
-									</div>
-
-									<div class="col-sm">
-										{{product.КатегорияАвито}} 
-									</div>
-									
-									<div class="col-sm">
-										{{product.Статус}}
-									</div>
-									
-									<div class="col-sm">
-										{{product.КоличествоФото}} 
-									</div>
-
-								</div>
-
-								<div class="row">
-									<div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
-                                                                           
-										<label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
-											
-											<span class="icon-mbri-preview"></span> {{product.Просмотров}}
-											<div class="vr"></div>
-											<span class="icon-mbri-touch"></span> {{product.Контактов}}
-											<div class="vr"></div>
-											<span class="icon-mbri-hearth"></span> {{product.Избранное}}
-											
-										</label>
-
-									</div>
-
-									<div class="col text-end">
-										<label class="fs-4 bg-opacity-75 " style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{product.Price|floatformat:"2g"}} &#8381;</label>
-									</div>
-								</div>
-							</div>
-						</div>
-							
-					{% endfor %} 
-				{% endif %}
-				
-			</div>
-		</div>
-
-	</div>
-
+  </div>
 </div>
-	
-</form>
-
-<script>
-	document.forms.upload.onsubmit = function() {
-	  var input = this.elements.file_audio;
-	  var file = input.files[0];
-	  if (file) {
-		upload(file);
-	  }
-	  return false;
-	}
-  
-	function upload(file) {
-
-	var xhr = new XMLHttpRequest();
-
-	// обработчик для отправки
-	xhr.upload.onprogress = function(event) {
-		console.log(event.loaded + ' / ' + event.total);
-	}
-
-	// обработчики успеха и ошибки
-	// если status == 200, то это успех, иначе ошибка
-	xhr.onload = xhr.onerror = function() {
-	if (this.status == 200) {
-		console.log("success");
-	} else {
-		console.log("error " + this.status);
-	}
-	};
-
-	xhr.open("POST", "", true);
-	xhr.send(file);
-
-	}
-  </script>
-
-  
-
-<script language="JavaScript">
-	
-</script>
-
-<script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
-	}
-	
-</script>
-
-
 {% endblock %}
