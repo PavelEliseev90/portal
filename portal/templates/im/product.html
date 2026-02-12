@@ -5,428 +5,454 @@
 {% block title %} - {{params.answer.Номенклатура}} {% endblock %}
 
 {% block title_navbar %} - {{params.answer.Номенклатура}} {% endblock %}
+
+{% block extra_css %}
+<style>
+  .product-page {
+    background: #f4f7fb;
+    min-height: 100vh;
+    padding: 1.5rem 0;
+  }
+  
+  .product-panel {
+    background: #fff;
+    border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .product-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(0, 42, 90, 0.08);
+  }
+  
+  .product-panel-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin: 0;
+  }
+  
+  .product-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
+  }
+  
+  .product-info-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  
+  .product-info-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #8ea1ba;
+    font-weight: 600;
+  }
+  
+  .product-info-value {
+    font-size: 1.1rem;
+    color: #002a5a;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .product-info-value .icon-mbri-minus {
+    color: #8ea1ba;
+    font-size: 0.9rem;
+  }
+  
+  .product-price-block {
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    color: #fff;
+    border-radius: 1.2rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .product-price-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+  }
+  
+  .product-price-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .product-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .product-stat-card {
+    background: #f8f9fc;
+    border-radius: 0.85rem;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    transition: all 0.2s;
+  }
+  
+  .product-stat-card:hover {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.08);
+  }
+  
+  .product-stat-icon {
+    font-size: 1.5rem;
+    color: #002a5a;
+    margin-bottom: 0.5rem;
+  }
+  
+  .product-stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+  
+  .product-stat-label {
+    font-size: 0.8rem;
+    color: #6c7a92;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .product-status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .product-status-badge.active {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+  }
+  
+  .product-status-badge.no {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+  }
+  
+  .product-status-badge.no_foto {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+  }
+  
+  .photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .photo-item {
+    aspect-ratio: 1;
+    border-radius: 0.85rem;
+    overflow: hidden;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    background: #f8f9fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .add-photo-btn {
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    border: none;
+    color: #fff;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2);
+  }
+  
+  .add-photo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 42, 90, 0.3);
+    color: #fff;
+  }
+</style>
+{% endblock %}
     
 {% block content %}
- 
-<div class="row g-1">
-			
-	<div class="col-12 col-sm-6 h-100">
+<div class="product-page">
+  <div class="container-fluid">
+    
+    <!-- Основная информация о товаре -->
+    <div class="row g-3">
+      <div class="col-12 col-lg-8">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <h2 class="product-panel-title">{{params.answer.Номенклатура}}</h2>
+            <div class="product-status-badge {% if params.answer.Статус == 'active' %}active{% elif params.answer.Статус == 'no' %}no{% else %}no_foto{% endif %}">
+              {{params.answer.Статус|default:"—"}}
+            </div>
+          </div>
+          
+          <div class="product-price-block">
+            <div class="product-price-label">Цена</div>
+            <div class="product-price-value">{{params.answer.Price|floatformat:"2g"}} ₽</div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Код 1С</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.НоменклатураКод}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Артикул</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.Артикул|default:"—"}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Ячейка хранения</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.ЯчейкаХранения|default:"—"}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Производитель</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.Производитель|default:"—"}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Количество остаток</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.КоличествоОстаток|floatformat:"2g"|default:"0"}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-12 col-lg-4">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <h3 class="product-panel-title" style="font-size: 1.2rem;">Статистика</h3>
+          </div>
+          
+          <div class="product-stats-grid">
+            <div class="product-stat-card">
+              <div class="product-stat-icon">
+                <span class="icon-mbri-preview"></span>
+              </div>
+              <div class="product-stat-value">{{params.answer.Просмотров|default:"0"}}</div>
+              <div class="product-stat-label">Просмотров</div>
+            </div>
+            
+            <div class="product-stat-card">
+              <div class="product-stat-icon">
+                <span class="icon-mbri-touch"></span>
+              </div>
+              <div class="product-stat-value">{{params.answer.Контактов|default:"0"}}</div>
+              <div class="product-stat-label">Контактов</div>
+            </div>
+            
+            <div class="product-stat-card">
+              <div class="product-stat-icon">
+                <span class="icon-mbri-hearth"></span>
+              </div>
+              <div class="product-stat-value">{{params.answer.Избранное|default:"0"}}</div>
+              <div class="product-stat-label">Избранное</div>
+            </div>
+            
+            <div class="product-stat-card">
+              <div class="product-stat-icon">
+                <span class="icon-mbri-picture"></span>
+              </div>
+              <div class="product-stat-value">{{params.answer.КоличествоФото|default:"0"}}</div>
+              <div class="product-stat-label">Фото</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Фотографии -->
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <h3 class="product-panel-title" style="font-size: 1.2rem;">
+              Фотографии
+              <span class="badge bg-primary ms-2">{{params.answer.КоличествоФото|default:"0"}}</span>
+            </h3>
+            <a class="add-photo-btn" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu">
+              <span class="icon-mbri-edit"></span> Добавить
+            </a>
+          </div>
+          
+          <div class="photo-gallery">
+            <!-- Здесь будут фотографии товара -->
+            <div class="photo-item">
+              <span class="text-muted">Нет фотографий</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Дополнительная информация -->
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <h3 class="product-panel-title" style="font-size: 1.2rem;">
+              Дополнительное описание
+              <span class="badge bg-primary ms-2">{{params.answer.ДополнительныеПоля|length|default:"0"}}</span>
+            </h3>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Авито категория</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.Категория|default:"—"}}</span>
+            </div>
+          </div>
+          
+          {% for dop in params.answer.ДополнительныеПоля %}
+            <div class="product-info-item">
+              <div class="product-info-label">{{dop.СвойствоЗаголовок}}</div>
+              <div class="product-info-value">
+                <span class="icon-mbri-minus"></span>
+                <span>{{dop.Значение|default:"—"}}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <div class="col-12 col-lg-6">
+        <div class="product-panel">
+          <div class="product-panel-header">
+            <h3 class="product-panel-title" style="font-size: 1.2rem;">Авито информация</h3>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Статус</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.Статус|default:"—"}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Создано</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.DateBegin|default:"—"}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">Закрыто</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.DateEnd|default:"—"}}</span>
+            </div>
+          </div>
+          
+          <div class="product-info-item">
+            <div class="product-info-label">ID</div>
+            <div class="product-info-value">
+              <span class="icon-mbri-minus"></span>
+              <span>{{params.answer.AvitoId|default:"—"}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Модальное окно добавления фото -->
+    <div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 1.3rem; border: none; box-shadow: 0 25px 50px rgba(0, 23, 61, 0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.3rem 1.3rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <h5 class="modal-title" id="exampleModalLabel" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="icon-mbri-play"></span> Добавление фото товара
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1); opacity: 0.8;"></button>
+          </div>
+          
+          <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
+            <form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
+              {% csrf_token %}
+              
+              <input type="text" class="form-control" name="dop_mcu_new" value="dop_mcu_new" hidden>
+              
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Выберите файлы</div>
+                <input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
+              </div>
+              
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="progressMCU" style="height: 8px; background: #f0f0f0; border-radius: 0.5rem; overflow: hidden;">
+                  <div class="progress-bar bg-success" style="height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <div id="uploadStatusMCU" style="margin-top: 1rem; font-size: 0.9rem; color: #6c7a92;"></div>
+              </div>
+              
+              <div class="d-grid gap-2">
+                <button class="btn btn-primary" id="send" type="submit" name="dop_mcu_new" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.75rem 1.5rem; font-weight: 600;">
+                  <span class="icon-mbri-success"></span> Сохранить
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
 
-		<div class="card">
-			<div class="card-body">
-				
-				<label class="fs-4">{{params.answer.Номенклатура}} {{params.answer.Артикул}}</label>
-				
-				<hr style="width: 75%;">
-
-				<!--
-				<div class="row g-1">
-					<div class="col-12 col-sm-6">
-						<div class="form-floating">
-							<input class="form-control form-control-sm fs-5" type="text" readonly value="{{params.answer.НоменклатураКод}}">
-							<label for="floatingInput">Код 1С</label>
-						</div>
-					</div>
-					<div class="col-12 col-sm-6">
-						<div class="form-floating">
-							<input class="form-control form-control-sm fs-5" type="text" readonly value="{{params.answer.ЯчейкаХранения}}">
-							<label for="floatingInput">Ячейка</label>
-						</div>
-					</div>
-				</div>
-				-->
-
-				<label class="fs-6 text-start fw-normal text-secondary">
-					Код 1С: 
-				</label><br>
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.НоменклатураКод}}
-				</label><br>
-				
-				<label class="fs-6 text-start fw-normal text-secondary">
-					Ячейка: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.ЯчейкаХранения}}
-				</label><br>
-		
-				<label class="fs-6 text-start fw-normal text-secondary">
-					Производитель: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Производитель}}
-				</label><br>
-
-				<label class="fs-6 text-start fw-normal text-secondary">
-					Артикул: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Артикул}}
-				</label><br>
-
-				<label class="fs-6 text-start fw-normal text-secondary">
-					Количество остаток: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.КоличествоОстаток|floatformat:"2g"}}
-				</label><br>
-				
-				<label class="fs-6 text-start fw-normal text-secondary">
-					Цена: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Price|floatformat:"2g"}} &#8381; 
-				</label><br>
-
-			</div>
-		</div>
-
-	</div>
-
-	<div class="col-12 col-sm-6 h-auto">
-		<div class="card h-100">
-			<div class="card-body h-100">
-				
-				<label class="fs-4"> Фотографии - {{params.answer.КоличествоФото}} </label> 
-				<a class="" data-bs-toggle="modal" data-bs-target="#exampleModal_dop_mcu" data-bs-whatever="@mdo"> <span class="icon-mbri-edit"></span> Добавить </a>
-				
-				<hr style="width: 75%;">
-				
-				<div class="col-sm-auto">
-					<div class="modal fade" id="exampleModal_dop_mcu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-						<div class="modal-dialog modal-dialog-centered">
-							<div class="modal-content">
-							<div class="modal-header">
-								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-play"></span> Добавление фото товара</h5>
-								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-							</div>
-							
-								<div class="modal-body">
-									<form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
-										
-										{% csrf_token %}
-			
-										<input type="text" class="form-control" name="dop_mcu_new" name="dop_mcu_new" placeholder="" value="dop_mcu_new"  hidden>
-										<div class="mb-3">
-											<input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*">
-										</div>
-												
-										<hr>
-										<div class="progressMCU">
-											<div class="progress-bar bg-success"></div>
-										</div> 
-										
-										<div id="uploadStatusMCU">
-			
-										</div>
-										
-										<hr>
-			
-										<div class="d-grid gap-2">
-											<button class="btn btn-block btn-outline-success" id ='send' type="submit" name="dop_mcu_new" ><span class="icon-mbri-success"></span> Сохранить </button>
-										</div>
-										
-									</form>
-								</div>
-			
-							</div>
-						</div>
-					</div>
-				</div>
-
-			</div>
-		</div>		
-	</div>
+  </div>
 </div>
-
-<br>
-
-<div class="row g-1">
-	<div class="col-12 col-sm-6">
-		<div class="card">
-			<div class="card-body">
-				
-				<label class="fs-4"> Дополнительное описание - {{params.answer.ДополнительныеПоля|length}} </label>
-				<hr style="width: 75%;">
-				
-				<label class="fs-6 text-start fw-normal">
-					Авито категория: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Категория}}
-				</label><br>
-
-				{% for dop in params.answer.ДополнительныеПоля %}
-					
-					<label class="fs-6 text-start text-secondary fw-normal">
-						{{dop.СвойствоЗаголовок}}: 
-					</label><br>
-					<label class="fs-5 text-start fw-normal fw-bold">
-						<span class="icon-mbri-minus text-secondary"></span>{{dop.Значение}}
-					</label><br>
-
-				{% endfor %}
-
-				
-			</div>
-		
-		</div>
-	</div>
-
-	<div class="col-12 col-sm-6">
-		<div class="card">
-			
-			<div class="card-body">
-				
-				<label class="fs-4"> Авито информация </label>
-				<hr style="width: 75%;">
-				
-				<label class="fs-6 text-start fw-normal">
-					Статус: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Статус}}
-				</label><br>
-
-				<label class="fs-6 text-start fw-normal">
-					Создано: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.DateBegin}}
-				</label><br>
-
-				<label class="fs-6 text-start fw-normal">
-					Закрыто: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.DateEnd}}
-				</label><br>
-
-				<label class="fs-6 text-start fw-normal">
-					ИД: 
-				</label><br> 
-				<label class="fs-5 text-start fw-normal fw-bold">
-					<span class="icon-mbri-minus text-secondary"></span>{{params.answer.AvitoId}}
-				</label><br>
-				
-			</div>
-		
-		</div>
-	</div>
-
-</div>
-
-
-<!-- Второй столбец !-->
-<!--
-<div class="card">
-	<div class="card-body">
-		<label class="fs-6 text-start fw-normal">
-			Код 1С: 
-		</label><br>
-		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.НоменклатураКод}}
-		</label><br>
-
-		<label class="fs-6 text-start fw-normal">
-			Наименование: 
-		</label><br> 
-		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Номенклатура}}
-		</label><br>
-		
-		<label class="fs-6 text-start fw-normal">
-			Ячейка: 
-		</label><br> 
-		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.ЯчейкаХранения}}
-		</label><br>
-
-		<label class="fs-6 text-start fw-normal">
-			Артикул: 
-		</label><br> 
-		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Артикул}}
-		</label><br>
-
-		<label class="fs-6 text-start fw-normal">
-			Производитель: 
-		</label><br> 
-		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Производитель}}
-		</label><br>
-		
-		<label class="fs-6 text-start fw-normal">
-			Авито категория: 
-		</label><br> 
-		<label class="fs-4 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary"></span>{{params.answer.Категория}}
-		</label><br>
-
-		<hr>
-		<label class="fs-6 text-start fw-normal">
-			Описание: 
-		</label> <br>
-		<label class="fs-6 text-start fw-normal">
-			<span class="icon-mbri-minus text-secondary">{{params.answer.AVITOОписание}}</span><br>
-		</label>
-
-		<hr>
-		<div class="col-auto text-center bg-opacity-75 
-				{% if params.answer.Статус == 'Не выгружался' %}
-					bg-warning
-				{% elif params.answer.Статус == 'active' %} 
-					bg-success
-				{% else %}
-					bg-danger
-				{% endif %}" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
-				<label class="fs-2 text-white " style="padding: 0.2em;">  {{params.answer.Статус}}</label>
-		</div>
-
-		<div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
-												
-			<div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
-			   
-				<label class="fs-6 text-center" style="padding: 0.2em;">  
-					<table>
-						<tbody>
-							<tr>
-								<td class="text-start"><span class="icon-mbri-preview">Просмотров</td>
-								<td> &nbsp;-&nbsp; </td>
-								<td class="text-end">{{params.answer.Просмотров}}</td>
-							</tr>
-							<tr>
-								<td class="text-start"><span class="icon-mbri-touch">Контактов</td>
-								<td> &nbsp;-&nbsp; </td>
-								<td class="text-end">{{params.answer.Контактов}}</td>
-							</tr>
-							<tr>
-								<td class="text-start"><span class="icon-mbri-hearth">Избранное</td>
-								<td> &nbsp;-&nbsp; </td>
-								<td class="text-end">{{params.answer.Избранное}}</td>
-							</tr>
-						</tbody>
-					</table>
-					
-				</label>
-				
-			</div>
-	
-			<div class="col">
-	
-			</div>
-	
-			<div class="col-auto text-end bg-opacity-75 
-				{% if params.answer.Статус == 'Не выгружался' %}
-					bg-warning
-				{% elif params.answer.Статус == 'active' %} 
-					bg-success
-				{% else %}
-					bg-danger
-				{% endif %}" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
-				<label class="fs-2 text-white " style="padding: 0.2em;">  {{params.answer.Цена|floatformat:"2g"}} &#8381;</label>
-			</div>
-	
-		</div>
-		
-		{% if params.answer.Ссылка != '' %}
-			<div class="row">
-				<div class="col-sm">
-					<div class="form-floating mb-3">
-						<input class="form-control form-control-sm" type="datetime" readonly value="{{params.answer.АвитоДатаСтарт}}">
-						<label for="floatingInput">Дата начала публикации</label>
-					</div>
-				</div>
-				<div class="col-sm">
-					<div class="form-floating mb-3">
-						<input class="form-control form-control-sm" type="datetime" readonly value="{{params.answer.АвитоДатаОкончания}}">
-						<label for="floatingInput">Дата окончания публикации</label>
-					</div>
-				</div>
-			</div>
-
-			<div class="row">
-				<div class="col-sm">
-					<div class="form-floating mb-3">
-						<input class="form-control form-control-sm" type="text" readonly value="{{params.answer.АвитоНаименование}}">
-						<label for="floatingInput">Наименование на авито</label>
-					</div>
-				</div>
-				<div class="col-sm-auto">
-					<div class="form-floating mb-3">
-						<input class="form-control form-control-sm" type="datetime" value="{{params.answer.АвитоИД}}">
-						<label for="floatingInput">ID</label>
-					</div>
-				</div>
-				<div class="col-sm-auto align-items-center justify-content-center">
-					<a class="btn text-center text-white bg-opacity-75 
-					{% if params.answer.Статус == 'Не выгружался' %}
-						bg-warning
-					{% elif params.answer.Статус == 'active' %} 
-						bg-success
-					{% else %}
-						bg-danger
-					{% endif %}" href="{{params.answer.Ссылка}}" target="_blank"> Посмотреть на Авито</a>
-				</div>
-			</div>
-		{% endif %}
-	</div>
-
-</div>
-	-->
-
-</form>
-
-<script>
-	document.forms.upload.onsubmit = function() {
-	  var input = this.elements.file_audio;
-	  var file = input.files[0];
-	  if (file) {
-		upload(file);
-	  }
-	  return false;
-	}
-  
-	function upload(file) {
-
-	var xhr = new XMLHttpRequest();
-
-	// обработчик для отправки
-	xhr.upload.onprogress = function(event) {
-		console.log(event.loaded + ' / ' + event.total);
-	}
-
-	// обработчики успеха и ошибки
-	// если status == 200, то это успех, иначе ошибка
-	xhr.onload = xhr.onerror = function() {
-	if (this.status == 200) {
-		console.log("success");
-	} else {
-		console.log("error " + this.status);
-	}
-	};
-
-	xhr.open("POST", "", true);
-	xhr.send(file);
-
-	}
-  </script>
-
-  
-
-<script language="JavaScript">
-	
-</script>
-
-<script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
-	}
-	
-</script>
-
-
 {% endblock %}
