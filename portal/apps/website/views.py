@@ -4742,10 +4742,80 @@ def product(request):
         
         if request.method == "POST":
             file_objects = request.FILES.getlist('files')
-            for file_object in file_objects: 
+            for file_object in file_objects:
+                # Проверка типа файла (только изображения)
+                if not file_object.content_type or not file_object.content_type.startswith('image/'):
+                    continue
+                
+                # Читаем файл в память для обработки
+                file_object.seek(0)
+                file_content = file_object.read()
+                
+                # Максимальное разрешение для оптимизации
+                MAX_RESOLUTION = (1920, 1080)
+                
+                processed_file = None
+                file_name = file_object.name
+                
+                # Оптимизируем все файлы
+                try:
+                    from PIL import Image
+                    import io
+                    
+                    # Открываем изображение из памяти
+                    img = Image.open(io.BytesIO(file_content))
+                    
+                    # Проверяем размер изображения
+                    if img.size[0] > MAX_RESOLUTION[0] or img.size[1] > MAX_RESOLUTION[1]:
+                        # Изменяем размер, сохраняя пропорции
+                        img.thumbnail(MAX_RESOLUTION, Image.Resampling.LANCZOS)
+                    
+                    # Конвертируем в RGB если нужно (для JPEG)
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        # Создаем белый фон
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        if img.mode == 'P':
+                            img = img.convert('RGBA')
+                        # Вставляем изображение на фон с учетом альфа-канала
+                        if img.mode == 'RGBA' and len(img.split()) >= 4:
+                            background.paste(img, mask=img.split()[3])
+                        else:
+                            background.paste(img)
+                        img = background
+                    elif img.mode not in ('RGB', 'L'):
+                        img = img.convert('RGB')
+                    
+                    # Сохраняем оптимизированное изображение в память
+                    optimized_io = io.BytesIO()
+                    
+                    # Определяем формат по расширению или используем JPEG
+                    file_ext = os.path.splitext(file_name)[1].lower()
+                    if file_ext in ['.jpg', '.jpeg', '.png']:
+                        # Сохраняем как JPEG с качеством 85%
+                        img.save(optimized_io, format='JPEG', quality=85, optimize=True)
+                        optimized_io.seek(0)
+                        processed_file = optimized_io
+                        # Обновляем имя файла на .jpg если было .png
+                        if file_ext == '.png':
+                            file_name = os.path.splitext(file_name)[0] + '.jpg'
+                    else:
+                        # Для других форматов сохраняем как JPEG с оптимизацией
+                        img.save(optimized_io, format='JPEG', quality=85, optimize=True)
+                        optimized_io.seek(0)
+                        processed_file = optimized_io
+                        file_name = os.path.splitext(file_name)[0] + '.jpg'
+                        
+                except Exception as e:
+                    # Если не удалось обработать, используем оригинальный файл
+                    file_object.seek(0)
+                    processed_file = file_object
+                
+                # Отправляем обработанный файл на сервер
+                # Если processed_file это BytesIO (оптимизированный файл), он уже готов к отправке
+                # Если это оригинальный file_object, используем его напрямую
                 response = requests.post(server_im + 'product/' + url_search,
-                                            params={'file_name': file_object.name}, 
-                                        files = {"files": (file_object.name, file_object)}, verify=False)
+                                            params={'file_name': file_name}, 
+                                        files = {"files": (file_name, processed_file)}, verify=False)
                 if response.status_code == 200:
                     return HttpResponseRedirect(request.build_absolute_uri())
 
