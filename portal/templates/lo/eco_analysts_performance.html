@@ -108,6 +108,32 @@
     color: #fff;
   }
 
+  .badge-special {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .kors-panel {
+    background: #fff;
+    border-radius: 1.3rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .kors-panel__head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 0.35rem;
+  }
+
   .list-group {
     border-radius: 0.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -322,6 +348,242 @@
         </div>
       </div>
     </div>
+  {% endif %}
+
+  <!-- Сравнение с авторасчетом -->
+  {% if params.badges %}
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Сравнение с авторасчетом</h3>
+    </div>
+    <div class="mt-3">
+      
+      {% if params.badges.remote_comparison %}
+      <div class="mb-3">
+        <h5 class="mb-2">
+          Дистанционная оценка (всего: {{ params.badges.remote_comparison.total|floatformat:"0g" }})
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 0.9rem; font-weight: normal;">/ {{ params.compare_data.badges.remote_comparison.total|floatformat:"0g" }}</span>
+          {% endif %}
+        </h5>
+        <div class="d-flex flex-wrap gap-3" style="align-items: flex-start;">
+          <div class="flex-fill" style="min-width: 250px; flex: 1 1 30%;">
+            <span class="badge-special badge-below">
+              ⬇️ Ниже авторасчета: {{ params.badges.remote_comparison.below.count }} ({{ params.badges.remote_comparison.below.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.remote_comparison.below.count }} ({{ params.compare_data.badges.remote_comparison.below.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+              <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_below&{{ request.GET.urlencode }}" 
+                 class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+            </span>
+            <div class="mt-1 ms-3">
+              <small class="text-muted">📊 До цены до КД: {{ params.badges.remote_comparison.below.to_before.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.below.to_before.percent|floatformat:"2g" }}%)
+                {% if params.compare_mode and params.compare_data %}
+                  <span style="color: #6c7a92;">/ {{ params.compare_data.badges.remote_comparison.below.to_before.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.below.to_before.percent|floatformat:"2g" }}%)</span>
+                {% endif %}
+              </small>
+              <br>
+              <small class="text-muted">✅ Принято: {{ params.badges.remote_comparison.below.to_reception.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.below.to_reception.percent|floatformat:"2g" }}%)
+                {% if params.compare_mode and params.compare_data %}
+                  <span style="color: #6c7a92;">/ {{ params.compare_data.badges.remote_comparison.below.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.below.to_reception.percent|floatformat:"2g" }}%)</span>
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          <div class="flex-fill" style="min-width: 250px; flex: 1 1 30%;">
+            <span class="badge-special badge-equal">
+              ➡️ Равно авторасчету: {{ params.badges.remote_comparison.equal.count }} ({{ params.badges.remote_comparison.equal.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.remote_comparison.equal.count }} ({{ params.compare_data.badges.remote_comparison.equal.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+              <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_equal&{{ request.GET.urlencode }}" 
+                 class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+            </span>
+            <div class="mt-1 ms-3">
+              <small class="text-muted">📊 До цены до КД: {{ params.badges.remote_comparison.equal.to_before.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.equal.to_before.percent|floatformat:"2g" }}%)
+                {% if params.compare_mode and params.compare_data %}
+                  <span style="color: #6c7a92;">/ {{ params.compare_data.badges.remote_comparison.equal.to_before.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.equal.to_before.percent|floatformat:"2g" }}%)</span>
+                {% endif %}
+              </small>
+              <br>
+              <small class="text-muted">✅ Принято: {{ params.badges.remote_comparison.equal.to_reception.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.equal.to_reception.percent|floatformat:"2g" }}%)
+                {% if params.compare_mode and params.compare_data %}
+                  <span style="color: #6c7a92;">/ {{ params.compare_data.badges.remote_comparison.equal.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.equal.to_reception.percent|floatformat:"2g" }}%)</span>
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          <div class="flex-fill" style="min-width: 250px; flex: 1 1 30%;">
+            <span class="badge-special badge-above">
+              ⬆️ Выше авторасчета: {{ params.badges.remote_comparison.above.count }} ({{ params.badges.remote_comparison.above.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.remote_comparison.above.count }} ({{ params.compare_data.badges.remote_comparison.above.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+              <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=remote_above&{{ request.GET.urlencode }}" 
+                 class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+            </span>
+            <div class="mt-1 ms-3">
+              <small class="text-muted">📊 До цены до КД: {{ params.badges.remote_comparison.above.to_before.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.above.to_before.percent|floatformat:"2g" }}%)
+                {% if params.compare_mode and params.compare_data %}
+                  <span style="color: #6c7a92;">/ {{ params.compare_data.badges.remote_comparison.above.to_before.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.above.to_before.percent|floatformat:"2g" }}%)</span>
+                {% endif %}
+              </small>
+              <br>
+              <small class="text-muted">✅ Принято: {{ params.badges.remote_comparison.above.to_reception.count|floatformat:"0g" }} ({{ params.badges.remote_comparison.above.to_reception.percent|floatformat:"2g" }}%)
+                {% if params.compare_mode and params.compare_data %}
+                  <span style="color: #6c7a92;">/ {{ params.compare_data.badges.remote_comparison.above.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.remote_comparison.above.to_reception.percent|floatformat:"2g" }}%)</span>
+                {% endif %}
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if params.badges.before_comparison %}
+      <div class="mb-3">
+        <h5 class="mb-2">
+          До КД (всего: {{ params.badges.before_comparison.total|floatformat:"0g" }})
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 0.9rem; font-weight: normal;">/ {{ params.compare_data.badges.before_comparison.total|floatformat:"0g" }}</span>
+          {% endif %}
+        </h5>
+        <div class="mb-2">
+          <span class="badge-special badge-below">
+            ⬇️ Ниже авторасчета: {{ params.badges.before_comparison.below.count }} ({{ params.badges.before_comparison.below.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.before_comparison.below.count }} ({{ params.compare_data.badges.before_comparison.below.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+            <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_below&{{ request.GET.urlencode }}" 
+               class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+          </span>
+          <div class="mt-1 ms-3">
+            <small class="text-muted">📊 До цены после КД: {{ params.badges.before_comparison.below.to_after.count|floatformat:"0g" }} ({{ params.badges.before_comparison.below.to_after.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.before_comparison.below.to_after.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.below.to_after.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+            <br>
+            <small class="text-muted">✅ Принято: {{ params.badges.before_comparison.below.to_reception.count|floatformat:"0g" }} ({{ params.badges.before_comparison.below.to_reception.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.before_comparison.below.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.below.to_reception.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+          </div>
+        </div>
+        <div class="mb-2">
+          <span class="badge-special badge-equal">
+            ➡️ Равно авторасчету: {{ params.badges.before_comparison.equal.count }} ({{ params.badges.before_comparison.equal.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.before_comparison.equal.count }} ({{ params.compare_data.badges.before_comparison.equal.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+            <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_equal&{{ request.GET.urlencode }}" 
+               class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+          </span>
+          <div class="mt-1 ms-3">
+            <small class="text-muted">📊 До цены после КД: {{ params.badges.before_comparison.equal.to_after.count|floatformat:"0g" }} ({{ params.badges.before_comparison.equal.to_after.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.before_comparison.equal.to_after.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.equal.to_after.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+            <br>
+            <small class="text-muted">✅ Принято: {{ params.badges.before_comparison.equal.to_reception.count|floatformat:"0g" }} ({{ params.badges.before_comparison.equal.to_reception.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.before_comparison.equal.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.equal.to_reception.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+          </div>
+        </div>
+        <div class="mb-2">
+          <span class="badge-special badge-above">
+            ⬆️ Выше авторасчета: {{ params.badges.before_comparison.above.count }} ({{ params.badges.before_comparison.above.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.before_comparison.above.count }} ({{ params.compare_data.badges.before_comparison.above.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+            <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=before_above&{{ request.GET.urlencode }}" 
+               class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+          </span>
+          <div class="mt-1 ms-3">
+            <small class="text-muted">📊 До цены после КД: {{ params.badges.before_comparison.above.to_after.count|floatformat:"0g" }} ({{ params.badges.before_comparison.above.to_after.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.before_comparison.above.to_after.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.above.to_after.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+            <br>
+            <small class="text-muted">✅ Принято: {{ params.badges.before_comparison.above.to_reception.count|floatformat:"0g" }} ({{ params.badges.before_comparison.above.to_reception.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.before_comparison.above.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.before_comparison.above.to_reception.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if params.badges.after_comparison %}
+      <div class="mb-3">
+        <h5 class="mb-2">
+          После КД (всего: {{ params.badges.after_comparison.total|floatformat:"0g" }})
+          {% if params.compare_mode and params.compare_data %}
+            <span style="color: #6c7a92; font-size: 0.9rem; font-weight: normal;">/ {{ params.compare_data.badges.after_comparison.total|floatformat:"0g" }}</span>
+          {% endif %}
+        </h5>
+        <div class="mb-2">
+          <span class="badge-special badge-below">
+            ⬇️ Ниже авторасчета: {{ params.badges.after_comparison.below.count }} ({{ params.badges.after_comparison.below.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.after_comparison.below.count }} ({{ params.compare_data.badges.after_comparison.below.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+            <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_below&{{ request.GET.urlencode }}" 
+               class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+          </span>
+          <div class="mt-1 ms-3">
+            <small class="text-muted">✅ Принято: {{ params.badges.after_comparison.below.to_reception.count|floatformat:"0g" }} ({{ params.badges.after_comparison.below.to_reception.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.after_comparison.below.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.after_comparison.below.to_reception.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+          </div>
+        </div>
+        <div class="mb-2">
+          <span class="badge-special badge-equal">
+            ➡️ Равно авторасчету: {{ params.badges.after_comparison.equal.count }} ({{ params.badges.after_comparison.equal.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.after_comparison.equal.count }} ({{ params.compare_data.badges.after_comparison.equal.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+            <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_equal&{{ request.GET.urlencode }}" 
+               class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+          </span>
+          <div class="mt-1 ms-3">
+            <small class="text-muted">✅ Принято: {{ params.badges.after_comparison.equal.to_reception.count|floatformat:"0g" }} ({{ params.badges.after_comparison.equal.to_reception.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.after_comparison.equal.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.after_comparison.equal.to_reception.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+          </div>
+        </div>
+        <div class="mb-2">
+          <span class="badge-special badge-above">
+            ⬆️ Выше авторасчета: {{ params.badges.after_comparison.above.count }} ({{ params.badges.after_comparison.above.percent|floatformat:"2g" }}%)
+            {% if params.compare_mode and params.compare_data %}
+              <span style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">/ {{ params.compare_data.badges.after_comparison.above.count }} ({{ params.compare_data.badges.after_comparison.above.percent|floatformat:"2g" }}%)</span>
+            {% endif %}
+            <a href="{% url 'eco:tradein_funnel_analytics_detail' %}?filter_type=after_above&{{ request.GET.urlencode }}" 
+               class="ms-2 text-white text-decoration-none" title="Посмотреть детали">👁️</a>
+          </span>
+          <div class="mt-1 ms-3">
+            <small class="text-muted">✅ Принято: {{ params.badges.after_comparison.above.to_reception.count|floatformat:"0g" }} ({{ params.badges.after_comparison.above.to_reception.percent|floatformat:"2g" }}%)
+              {% if params.compare_mode and params.compare_data %}
+                <span style="color: #6c7a92;">/ {{ params.compare_data.badges.after_comparison.above.to_reception.count|floatformat:"0g" }} ({{ params.compare_data.badges.after_comparison.above.to_reception.percent|floatformat:"2g" }}%)</span>
+              {% endif %}
+            </small>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
   {% endif %}
 
   {% if params.analyst_stats %}

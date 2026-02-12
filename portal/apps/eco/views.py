@@ -8440,18 +8440,6 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         total_auction=Count('rlk_id', filter=Q(auction=True)),
         total_no_diag=Count('rlk_id', filter=Q(diagostica=False) & valid_date_after),
         total_all=Count('rlk_id'),
-        # Сравнение с авторасчетом - дистанционная оценка
-        remote_below=Count('rlk_id', filter=Q(comparison_remote_type=-1)),
-        remote_equal=Count('rlk_id', filter=Q(comparison_remote_type=0)),
-        remote_above=Count('rlk_id', filter=Q(comparison_remote_type=1)),
-        # Сравнение с авторасчетом - до КД
-        before_below=Count('rlk_id', filter=Q(comparison_before_type=-1)),
-        before_equal=Count('rlk_id', filter=Q(comparison_before_type=0)),
-        before_above=Count('rlk_id', filter=Q(comparison_before_type=1)),
-        # Сравнение с авторасчетом - после КД
-        after_below=Count('rlk_id', filter=Q(comparison_after_type=-1)),
-        after_equal=Count('rlk_id', filter=Q(comparison_after_type=0)),
-        after_above=Count('rlk_id', filter=Q(comparison_after_type=1)),
     )
     
     total_op_rlk = total_op_rlk or 0  # Уже вычислено выше
@@ -8467,103 +8455,6 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     total_no_diag = totals_agg['total_no_diag'] or 0
     total_all = totals_agg['total_all'] or 0
     
-    # Сравнение с авторасчетом
-    remote_below = totals_agg['remote_below'] or 0
-    remote_equal = totals_agg['remote_equal'] or 0
-    remote_above = totals_agg['remote_above'] or 0
-    before_below = totals_agg['before_below'] or 0
-    before_equal = totals_agg['before_equal'] or 0
-    before_above = totals_agg['before_above'] or 0
-    after_below = totals_agg['after_below'] or 0
-    after_equal = totals_agg['after_equal'] or 0
-    after_above = totals_agg['after_above'] or 0
-    
-    # ОПТИМИЗАЦИЯ: Подсчет общего количества для авторасчетов по правильным условиям
-    # Дистанционная оценка: date_remote_success заполнено и не равно 1,1,1
-    total_remote_comparison = qs.filter(valid_date_remote).count()
-    
-    # До КД: date_before_success указана и больше даты 1,1,1
-    total_before_comparison = qs.filter(valid_date_before).count()
-    
-    # После КД: date_after_success заполнены и не равны дате 1,1,1
-    total_after_comparison = qs.filter(valid_date_after).count()
-    
-    # Пересчитываем сравнения только для записей с валидными датами
-    if total_remote_comparison > 0:
-        remote_below = qs.filter(valid_date_remote, comparison_remote_type=-1).count()
-        remote_equal = qs.filter(valid_date_remote, comparison_remote_type=0).count()
-        remote_above = qs.filter(valid_date_remote, comparison_remote_type=1).count()
-    else:
-        remote_below = 0
-        remote_equal = 0
-        remote_above = 0
-    
-    if total_before_comparison > 0:
-        before_below = qs.filter(valid_date_before, comparison_before_type=-1).count()
-        before_equal = qs.filter(valid_date_before, comparison_before_type=0).count()
-        before_above = qs.filter(valid_date_before, comparison_before_type=1).count()
-    else:
-        before_below = 0
-        before_equal = 0
-        before_above = 0
-    
-    if total_after_comparison > 0:
-        after_below = qs.filter(valid_date_after, comparison_after_type=-1).count()
-        after_equal = qs.filter(valid_date_after, comparison_after_type=0).count()
-        after_above = qs.filter(valid_date_after, comparison_after_type=1).count()
-    else:
-        after_below = 0
-        after_equal = 0
-        after_above = 0
-    
-    # Дополнительные показатели для блоков сравнения
-    # Для каждой группы (below, equal, above) в дистанционной оценке:
-    # - сколько дошли до цены "до КД"
-    # - сколько принято
-    remote_below_to_before = qs.filter(valid_date_remote, comparison_remote_type=-1).filter(valid_date_before).count()
-    remote_below_to_before_pct = (remote_below_to_before / remote_below * 100) if remote_below > 0 else 0
-    remote_below_to_reception = qs.filter(valid_date_remote, comparison_remote_type=-1).filter(valid_date_reception).count()
-    remote_below_to_reception_pct = (remote_below_to_reception / remote_below * 100) if remote_below > 0 else 0
-    
-    remote_equal_to_before = qs.filter(valid_date_remote, comparison_remote_type=0).filter(valid_date_before).count()
-    remote_equal_to_before_pct = (remote_equal_to_before / remote_equal * 100) if remote_equal > 0 else 0
-    remote_equal_to_reception = qs.filter(valid_date_remote, comparison_remote_type=0).filter(valid_date_reception).count()
-    remote_equal_to_reception_pct = (remote_equal_to_reception / remote_equal * 100) if remote_equal > 0 else 0
-    
-    remote_above_to_before = qs.filter(valid_date_remote, comparison_remote_type=1).filter(valid_date_before).count()
-    remote_above_to_before_pct = (remote_above_to_before / remote_above * 100) if remote_above > 0 else 0
-    remote_above_to_reception = qs.filter(valid_date_remote, comparison_remote_type=1).filter(valid_date_reception).count()
-    remote_above_to_reception_pct = (remote_above_to_reception / remote_above * 100) if remote_above > 0 else 0
-    
-    # Для каждой группы (below, equal, above) в "До КД":
-    # - сколько дошли до цены "после КД"
-    # - сколько принято
-    before_below_to_after = qs.filter(valid_date_before, comparison_before_type=-1).filter(valid_date_after).count()
-    before_below_to_after_pct = (before_below_to_after / before_below * 100) if before_below > 0 else 0
-    before_below_to_reception = qs.filter(valid_date_before, comparison_before_type=-1).filter(valid_date_reception).count()
-    before_below_to_reception_pct = (before_below_to_reception / before_below * 100) if before_below > 0 else 0
-    
-    before_equal_to_after = qs.filter(valid_date_before, comparison_before_type=0).filter(valid_date_after).count()
-    before_equal_to_after_pct = (before_equal_to_after / before_equal * 100) if before_equal > 0 else 0
-    before_equal_to_reception = qs.filter(valid_date_before, comparison_before_type=0).filter(valid_date_reception).count()
-    before_equal_to_reception_pct = (before_equal_to_reception / before_equal * 100) if before_equal > 0 else 0
-    
-    before_above_to_after = qs.filter(valid_date_before, comparison_before_type=1).filter(valid_date_after).count()
-    before_above_to_after_pct = (before_above_to_after / before_above * 100) if before_above > 0 else 0
-    before_above_to_reception = qs.filter(valid_date_before, comparison_before_type=1).filter(valid_date_reception).count()
-    before_above_to_reception_pct = (before_above_to_reception / before_above * 100) if before_above > 0 else 0
-    
-    # Для каждой группы (below, equal, above) в "После КД":
-    # - сколько принято
-    after_below_to_reception = qs.filter(valid_date_after, comparison_after_type=-1).filter(valid_date_reception).count()
-    after_below_to_reception_pct = (after_below_to_reception / after_below * 100) if after_below > 0 else 0
-    
-    after_equal_to_reception = qs.filter(valid_date_after, comparison_after_type=0).filter(valid_date_reception).count()
-    after_equal_to_reception_pct = (after_equal_to_reception / after_equal * 100) if after_equal > 0 else 0
-    
-    after_above_to_reception = qs.filter(valid_date_after, comparison_after_type=1).filter(valid_date_reception).count()
-    after_above_to_reception_pct = (after_above_to_reception / after_above * 100) if after_above > 0 else 0
-    
     # Проценты
     conv_op_to_tradein = (total_rlk / total_op_rlk * 100) if total_op_rlk > 0 else 0
     conv_before = (total_before / total_rlk * 100) if total_rlk > 0 else 0
@@ -8575,17 +8466,6 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     iznos_pct = (total_iznos / total_all * 100) if total_all > 0 else 0
     auction_pct = (total_auction / total_all * 100) if total_all > 0 else 0
     no_diag_pct = (total_no_diag / total_all * 100) if total_all > 0 else 0
-    
-    # Проценты для сравнения с авторасчетом
-    remote_below_pct = (remote_below / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
-    remote_equal_pct = (remote_equal / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
-    remote_above_pct = (remote_above / total_remote_comparison * 100) if total_remote_comparison > 0 else 0
-    before_below_pct = (before_below / total_before_comparison * 100) if total_before_comparison > 0 else 0
-    before_equal_pct = (before_equal / total_before_comparison * 100) if total_before_comparison > 0 else 0
-    before_above_pct = (before_above / total_before_comparison * 100) if total_before_comparison > 0 else 0
-    after_below_pct = (after_below / total_after_comparison * 100) if total_after_comparison > 0 else 0
-    after_equal_pct = (after_equal / total_after_comparison * 100) if total_after_comparison > 0 else 0
-    after_above_pct = (after_above / total_after_comparison * 100) if total_after_comparison > 0 else 0
     
     # Статистика по типам приема
     type_reception_stats = list(qs.values('type_reception_id', 'type_reception_name').annotate(
@@ -8773,88 +8653,6 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     staff_totals['conv_after'] = (staff_totals['after'] / staff_totals['before'] * 100) if staff_totals['before'] > 0 else 0
     staff_totals['conv_reception'] = (staff_totals['reception'] / staff_totals['after'] * 100) if staff_totals['after'] > 0 else 0
     
-    # Статистика по аналитикам
-    analyst_ids_remote = set(qs.exclude(analyst_remote_id__isnull=True).values_list('analyst_remote_id', flat=True).distinct())
-    analyst_ids_before = set(qs.exclude(analyst_before_id__isnull=True).values_list('analyst_before_id', flat=True).distinct())
-    analyst_ids_after = set(qs.exclude(analyst_after_id__isnull=True).values_list('analyst_after_id', flat=True).distinct())
-    all_analyst_ids = analyst_ids_remote | analyst_ids_before | analyst_ids_after
-    
-    analyst_stats_dict = {}
-    
-    for analyst_id in all_analyst_ids:
-        if analyst_id is None:
-            continue
-        
-        analyst_name = None
-        analyst_name_obj = qs.filter(
-            Q(analyst_remote_id=analyst_id) | Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id)
-        ).exclude(
-            Q(analyst_remote_name='') & Q(analyst_before_name='') & Q(analyst_after_name='')
-        ).first()
-        
-        if analyst_name_obj:
-            if analyst_name_obj.analyst_remote_id == analyst_id and analyst_name_obj.analyst_remote_name:
-                analyst_name = analyst_name_obj.analyst_remote_name
-            elif analyst_name_obj.analyst_before_id == analyst_id and analyst_name_obj.analyst_before_name:
-                analyst_name = analyst_name_obj.analyst_before_name
-            elif analyst_name_obj.analyst_after_id == analyst_id and analyst_name_obj.analyst_after_name:
-                analyst_name = analyst_name_obj.analyst_after_name
-        
-        if not analyst_name:
-            analyst_name = f'Аналитик #{analyst_id}'
-        
-        analyst_qs = qs.filter(
-            Q(analyst_remote_id=analyst_id) | Q(analyst_before_id=analyst_id) | Q(analyst_after_id=analyst_id)
-        )
-        
-        total = analyst_qs.values('rlk_id').distinct().count()
-        
-        before_qs = analyst_qs.filter(
-            (Q(analyst_remote_id=analyst_id) & valid_date_remote) |
-            (Q(analyst_before_id=analyst_id) & valid_date_before)
-        )
-        before = before_qs.values('rlk_id').distinct().count()
-        
-        after_qs = analyst_qs.filter(
-            Q(analyst_after_id=analyst_id) & valid_date_after
-        )
-        after = after_qs.values('rlk_id').distinct().count()
-        
-        reception_qs = analyst_qs.filter(
-            valid_date_reception
-        )
-        reception = reception_qs.values('rlk_id').distinct().count()
-        
-        analyst_stats_dict[analyst_id] = {
-            'analyst_id': analyst_id,
-            'analyst_name': analyst_name,
-            'op_rlk': 0,  # В DocRLK нет analyst_id
-            'total': total,
-            'before': before,
-            'after': after,
-            'reception': reception,
-            'conv_op_to_tradein': 0,
-            'conv_before': (before / total * 100) if total > 0 else 0,
-            'conv_after': (after / before * 100) if before > 0 else 0,
-            'conv_reception': (reception / after * 100) if after > 0 else 0,
-        }
-    
-    analyst_stats = sorted(analyst_stats_dict.values(), key=lambda x: x['analyst_name'])
-    
-    # Итоги для статистики по аналитикам
-    analyst_totals = {
-        'analyst_name': 'Итого',
-        'op_rlk': total_op_rlk,  # Общее количество ОП для всех аналитиков
-        'total': sum(s['total'] for s in analyst_stats),
-        'before': sum(s['before'] for s in analyst_stats),
-        'after': sum(s['after'] for s in analyst_stats),
-        'reception': sum(s['reception'] for s in analyst_stats),
-    }
-    analyst_totals['conv_op_to_tradein'] = (analyst_totals['total'] / analyst_totals['op_rlk'] * 100) if analyst_totals['op_rlk'] > 0 else 0
-    analyst_totals['conv_before'] = (analyst_totals['before'] / analyst_totals['total'] * 100) if analyst_totals['total'] > 0 else 0
-    analyst_totals['conv_after'] = (analyst_totals['after'] / analyst_totals['before'] * 100) if analyst_totals['before'] > 0 else 0
-    analyst_totals['conv_reception'] = (analyst_totals['reception'] / analyst_totals['after'] * 100) if analyst_totals['after'] > 0 else 0
-    
     # График по дням
     from datetime import timedelta
     date_list = []
@@ -8950,66 +8748,6 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
             'iznos': {'count': total_iznos, 'percent': iznos_pct},
             'auction': {'count': total_auction, 'percent': auction_pct},
             'no_diag': {'count': total_no_diag, 'percent': no_diag_pct},
-            'remote_comparison': {
-                'below': {
-                    'count': remote_below, 
-                    'percent': remote_below_pct,
-                    'to_before': {'count': remote_below_to_before, 'percent': remote_below_to_before_pct},
-                    'to_reception': {'count': remote_below_to_reception, 'percent': remote_below_to_reception_pct}
-                },
-                'equal': {
-                    'count': remote_equal, 
-                    'percent': remote_equal_pct,
-                    'to_before': {'count': remote_equal_to_before, 'percent': remote_equal_to_before_pct},
-                    'to_reception': {'count': remote_equal_to_reception, 'percent': remote_equal_to_reception_pct}
-                },
-                'above': {
-                    'count': remote_above, 
-                    'percent': remote_above_pct,
-                    'to_before': {'count': remote_above_to_before, 'percent': remote_above_to_before_pct},
-                    'to_reception': {'count': remote_above_to_reception, 'percent': remote_above_to_reception_pct}
-                },
-                'total': total_remote_comparison,
-            },
-            'before_comparison': {
-                'below': {
-                    'count': before_below, 
-                    'percent': before_below_pct,
-                    'to_after': {'count': before_below_to_after, 'percent': before_below_to_after_pct},
-                    'to_reception': {'count': before_below_to_reception, 'percent': before_below_to_reception_pct}
-                },
-                'equal': {
-                    'count': before_equal, 
-                    'percent': before_equal_pct,
-                    'to_after': {'count': before_equal_to_after, 'percent': before_equal_to_after_pct},
-                    'to_reception': {'count': before_equal_to_reception, 'percent': before_equal_to_reception_pct}
-                },
-                'above': {
-                    'count': before_above, 
-                    'percent': before_above_pct,
-                    'to_after': {'count': before_above_to_after, 'percent': before_above_to_after_pct},
-                    'to_reception': {'count': before_above_to_reception, 'percent': before_above_to_reception_pct}
-                },
-                'total': total_before_comparison,
-            },
-            'after_comparison': {
-                'below': {
-                    'count': after_below, 
-                    'percent': after_below_pct,
-                    'to_reception': {'count': after_below_to_reception, 'percent': after_below_to_reception_pct}
-                },
-                'equal': {
-                    'count': after_equal, 
-                    'percent': after_equal_pct,
-                    'to_reception': {'count': after_equal_to_reception, 'percent': after_equal_to_reception_pct}
-                },
-                'above': {
-                    'count': after_above, 
-                    'percent': after_above_pct,
-                    'to_reception': {'count': after_above_to_reception, 'percent': after_above_to_reception_pct}
-                },
-                'total': total_after_comparison,
-            },
         },
         'type_reception_stats': type_reception_stats,
         'type_reception_totals': type_reception_totals,
@@ -9021,8 +8759,6 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         'brand_totals': brand_totals,
         'staff_stats': staff_stats,
         'staff_totals': staff_totals,
-        'analyst_stats': analyst_stats,
-        'analyst_totals': analyst_totals,
         'chart_data': chart_data_json,
         'chart_datasets': chart_datasets,  # Для режима сравнения
         'chart_labels': date_list,  # Для режима сравнения
