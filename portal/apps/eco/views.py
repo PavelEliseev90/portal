@@ -10293,7 +10293,7 @@ def eco_analysts_performance(request):
     analyst_stats = []
     
     for analyst_id_val in all_analyst_ids_set:
-        if analyst_id_val is None:
+        if analyst_id_val is None or analyst_id_val == 0:
             continue
         
         # Получаем имя аналитика
@@ -10401,6 +10401,10 @@ def eco_analysts_performance(request):
     total_before_all = sum(s['before']['count'] for s in analyst_stats)
     total_after_all = sum(s['after']['count'] for s in analyst_stats)
     
+    # Подсчитываем общее количество принятых автомобилей с учетом фильтров
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    total_reception_all = qs.filter(valid_date_reception).count()
+    
     # Общие показатели дистанционной оценки
     remote_below_all = sum(s['remote']['below'] for s in analyst_stats)
     remote_equal_all = sum(s['remote']['equal'] for s in analyst_stats)
@@ -10433,52 +10437,67 @@ def eco_analysts_performance(request):
     remote_below_qs = qs.filter(valid_date_remote, comparison_remote_type=-1)
     remote_below_to_before = remote_below_qs.filter(valid_date_before).count()
     remote_below_to_before_pct = (remote_below_to_before / remote_below_all * 100) if remote_below_all > 0 else 0
+    remote_below_to_before_pct_from_total = (remote_below_to_before / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
     remote_below_to_reception = remote_below_qs.filter(valid_date_reception).count()
     remote_below_to_reception_pct = (remote_below_to_reception / remote_below_all * 100) if remote_below_all > 0 else 0
+    remote_below_to_reception_pct_from_total = (remote_below_to_reception / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
     
     remote_equal_qs = qs.filter(valid_date_remote, comparison_remote_type=0)
     remote_equal_to_before = remote_equal_qs.filter(valid_date_before).count()
     remote_equal_to_before_pct = (remote_equal_to_before / remote_equal_all * 100) if remote_equal_all > 0 else 0
+    remote_equal_to_before_pct_from_total = (remote_equal_to_before / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
     remote_equal_to_reception = remote_equal_qs.filter(valid_date_reception).count()
     remote_equal_to_reception_pct = (remote_equal_to_reception / remote_equal_all * 100) if remote_equal_all > 0 else 0
+    remote_equal_to_reception_pct_from_total = (remote_equal_to_reception / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
     
     remote_above_qs = qs.filter(valid_date_remote, comparison_remote_type=1)
     remote_above_to_before = remote_above_qs.filter(valid_date_before).count()
     remote_above_to_before_pct = (remote_above_to_before / remote_above_all * 100) if remote_above_all > 0 else 0
+    remote_above_to_before_pct_from_total = (remote_above_to_before / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
     remote_above_to_reception = remote_above_qs.filter(valid_date_reception).count()
     remote_above_to_reception_pct = (remote_above_to_reception / remote_above_all * 100) if remote_above_all > 0 else 0
+    remote_above_to_reception_pct_from_total = (remote_above_to_reception / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
     
     # Для каждой группы (below, equal, above) в "До КД"
     before_below_qs = qs.filter(valid_date_before, comparison_before_type=-1)
     before_below_to_after = before_below_qs.filter(valid_date_after).count()
     before_below_to_after_pct = (before_below_to_after / before_below_all * 100) if before_below_all > 0 else 0
+    before_below_to_after_pct_from_total = (before_below_to_after / before_total_comparison * 100) if before_total_comparison > 0 else 0
     before_below_to_reception = before_below_qs.filter(valid_date_reception).count()
     before_below_to_reception_pct = (before_below_to_reception / before_below_all * 100) if before_below_all > 0 else 0
+    before_below_to_reception_pct_from_total = (before_below_to_reception / before_total_comparison * 100) if before_total_comparison > 0 else 0
     
     before_equal_qs = qs.filter(valid_date_before, comparison_before_type=0)
     before_equal_to_after = before_equal_qs.filter(valid_date_after).count()
     before_equal_to_after_pct = (before_equal_to_after / before_equal_all * 100) if before_equal_all > 0 else 0
+    before_equal_to_after_pct_from_total = (before_equal_to_after / before_total_comparison * 100) if before_total_comparison > 0 else 0
     before_equal_to_reception = before_equal_qs.filter(valid_date_reception).count()
     before_equal_to_reception_pct = (before_equal_to_reception / before_equal_all * 100) if before_equal_all > 0 else 0
+    before_equal_to_reception_pct_from_total = (before_equal_to_reception / before_total_comparison * 100) if before_total_comparison > 0 else 0
     
     before_above_qs = qs.filter(valid_date_before, comparison_before_type=1)
     before_above_to_after = before_above_qs.filter(valid_date_after).count()
     before_above_to_after_pct = (before_above_to_after / before_above_all * 100) if before_above_all > 0 else 0
+    before_above_to_after_pct_from_total = (before_above_to_after / before_total_comparison * 100) if before_total_comparison > 0 else 0
     before_above_to_reception = before_above_qs.filter(valid_date_reception).count()
     before_above_to_reception_pct = (before_above_to_reception / before_above_all * 100) if before_above_all > 0 else 0
+    before_above_to_reception_pct_from_total = (before_above_to_reception / before_total_comparison * 100) if before_total_comparison > 0 else 0
     
     # Для каждой группы (below, equal, above) в "После КД"
     after_below_qs = qs.filter(valid_date_after, comparison_after_type=-1)
     after_below_to_reception = after_below_qs.filter(valid_date_reception).count()
     after_below_to_reception_pct = (after_below_to_reception / after_below_all * 100) if after_below_all > 0 else 0
+    after_below_to_reception_pct_from_total = (after_below_to_reception / after_total_comparison * 100) if after_total_comparison > 0 else 0
     
     after_equal_qs = qs.filter(valid_date_after, comparison_after_type=0)
     after_equal_to_reception = after_equal_qs.filter(valid_date_reception).count()
     after_equal_to_reception_pct = (after_equal_to_reception / after_equal_all * 100) if after_equal_all > 0 else 0
+    after_equal_to_reception_pct_from_total = (after_equal_to_reception / after_total_comparison * 100) if after_total_comparison > 0 else 0
     
     after_above_qs = qs.filter(valid_date_after, comparison_after_type=1)
     after_above_to_reception = after_above_qs.filter(valid_date_reception).count()
     after_above_to_reception_pct = (after_above_to_reception / after_above_all * 100) if after_above_all > 0 else 0
+    after_above_to_reception_pct_from_total = (after_above_to_reception / after_total_comparison * 100) if after_total_comparison > 0 else 0
     
     # Проценты для сравнения с авторасчетом
     remote_below_pct = (remote_below_all / remote_total_comparison * 100) if remote_total_comparison > 0 else 0
@@ -10517,6 +10536,7 @@ def eco_analysts_performance(request):
             'total_remote': total_remote_all,
             'total_before': total_before_all,
             'total_after': total_after_all,
+            'total_reception': total_reception_all,
         },
         'remote_totals': {
             'total': total_remote_all,
@@ -10546,20 +10566,20 @@ def eco_analysts_performance(request):
                 'below': {
                     'count': remote_below_all, 
                     'percent': remote_below_pct,
-                    'to_before': {'count': remote_below_to_before, 'percent': remote_below_to_before_pct},
-                    'to_reception': {'count': remote_below_to_reception, 'percent': remote_below_to_reception_pct}
+                    'to_before': {'count': remote_below_to_before, 'percent': remote_below_to_before_pct, 'percent_from_total': remote_below_to_before_pct_from_total},
+                    'to_reception': {'count': remote_below_to_reception, 'percent': remote_below_to_reception_pct, 'percent_from_total': remote_below_to_reception_pct_from_total}
                 },
                 'equal': {
                     'count': remote_equal_all, 
                     'percent': remote_equal_pct,
-                    'to_before': {'count': remote_equal_to_before, 'percent': remote_equal_to_before_pct},
-                    'to_reception': {'count': remote_equal_to_reception, 'percent': remote_equal_to_reception_pct}
+                    'to_before': {'count': remote_equal_to_before, 'percent': remote_equal_to_before_pct, 'percent_from_total': remote_equal_to_before_pct_from_total},
+                    'to_reception': {'count': remote_equal_to_reception, 'percent': remote_equal_to_reception_pct, 'percent_from_total': remote_equal_to_reception_pct_from_total}
                 },
                 'above': {
                     'count': remote_above_all, 
                     'percent': remote_above_pct,
-                    'to_before': {'count': remote_above_to_before, 'percent': remote_above_to_before_pct},
-                    'to_reception': {'count': remote_above_to_reception, 'percent': remote_above_to_reception_pct}
+                    'to_before': {'count': remote_above_to_before, 'percent': remote_above_to_before_pct, 'percent_from_total': remote_above_to_before_pct_from_total},
+                    'to_reception': {'count': remote_above_to_reception, 'percent': remote_above_to_reception_pct, 'percent_from_total': remote_above_to_reception_pct_from_total}
                 },
                 'total': remote_total_comparison,
             },
@@ -10567,20 +10587,20 @@ def eco_analysts_performance(request):
                 'below': {
                     'count': before_below_all, 
                     'percent': before_below_pct,
-                    'to_after': {'count': before_below_to_after, 'percent': before_below_to_after_pct},
-                    'to_reception': {'count': before_below_to_reception, 'percent': before_below_to_reception_pct}
+                    'to_after': {'count': before_below_to_after, 'percent': before_below_to_after_pct, 'percent_from_total': before_below_to_after_pct_from_total},
+                    'to_reception': {'count': before_below_to_reception, 'percent': before_below_to_reception_pct, 'percent_from_total': before_below_to_reception_pct_from_total}
                 },
                 'equal': {
                     'count': before_equal_all, 
                     'percent': before_equal_pct,
-                    'to_after': {'count': before_equal_to_after, 'percent': before_equal_to_after_pct},
-                    'to_reception': {'count': before_equal_to_reception, 'percent': before_equal_to_reception_pct}
+                    'to_after': {'count': before_equal_to_after, 'percent': before_equal_to_after_pct, 'percent_from_total': before_equal_to_after_pct_from_total},
+                    'to_reception': {'count': before_equal_to_reception, 'percent': before_equal_to_reception_pct, 'percent_from_total': before_equal_to_reception_pct_from_total}
                 },
                 'above': {
                     'count': before_above_all, 
                     'percent': before_above_pct,
-                    'to_after': {'count': before_above_to_after, 'percent': before_above_to_after_pct},
-                    'to_reception': {'count': before_above_to_reception, 'percent': before_above_to_reception_pct}
+                    'to_after': {'count': before_above_to_after, 'percent': before_above_to_after_pct, 'percent_from_total': before_above_to_after_pct_from_total},
+                    'to_reception': {'count': before_above_to_reception, 'percent': before_above_to_reception_pct, 'percent_from_total': before_above_to_reception_pct_from_total}
                 },
                 'total': before_total_comparison,
             },
@@ -10588,17 +10608,17 @@ def eco_analysts_performance(request):
                 'below': {
                     'count': after_below_all, 
                     'percent': after_below_pct,
-                    'to_reception': {'count': after_below_to_reception, 'percent': after_below_to_reception_pct}
+                    'to_reception': {'count': after_below_to_reception, 'percent': after_below_to_reception_pct, 'percent_from_total': after_below_to_reception_pct_from_total}
                 },
                 'equal': {
                     'count': after_equal_all, 
                     'percent': after_equal_pct,
-                    'to_reception': {'count': after_equal_to_reception, 'percent': after_equal_to_reception_pct}
+                    'to_reception': {'count': after_equal_to_reception, 'percent': after_equal_to_reception_pct, 'percent_from_total': after_equal_to_reception_pct_from_total}
                 },
                 'above': {
                     'count': after_above_all, 
                     'percent': after_above_pct,
-                    'to_reception': {'count': after_above_to_reception, 'percent': after_above_to_reception_pct}
+                    'to_reception': {'count': after_above_to_reception, 'percent': after_above_to_reception_pct, 'percent_from_total': after_above_to_reception_pct_from_total}
                 },
                 'total': after_total_comparison,
             },
