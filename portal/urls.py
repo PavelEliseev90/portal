@@ -87,5 +87,7 @@ urlpatterns = [
 
     path('estimations/',        include('estimations.urls')),
 
+    #Классифайды - выгрузка автомобилей
+    path('classifieds/',        include('classifieds.urls')),
 
 ]

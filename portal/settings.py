@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     'chats.apps.ChatsConfig',
     'estimations.apps.EstimationsConfig',
     'analytics.apps.AnalyticsConfig',
+    'classifieds.apps.ClassifiedsConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',
