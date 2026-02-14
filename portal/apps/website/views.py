@@ -9765,3 +9765,15 @@ def admin_traffic_desk(request):
     })
     
     return render(request, 'website/admin_traffic_desk.html', {'params': params})
+
+
+@login_required
+def main_menu(request):
+    """Главное меню системы"""
+    return render(request, 'kors/menu.html')
+
+
+@login_required
+def director_menu(request):
+    """Панель управления автосалоном для директора"""
+    return render(request, 'kors/menu_director.html')

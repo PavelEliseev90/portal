@@ -140,4 +140,5 @@ urlpatterns = [
    
    # Главное меню
    path('menu/',                              views.main_menu, name='main_menu'),
+   path('menu/director/',                     views.director_menu, name='director_menu'),
 ]
