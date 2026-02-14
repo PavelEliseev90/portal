@@ -1,0 +1,346 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Заказ-наряд {{ work_order.number }} {% endblock %}
+{% block title_navbar %} - Заказ-наряд {% endblock %}
+
+{% block content %}
+<style>
+.work-order-detail-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.work-item-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0, 42, 90, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+  transition: all 0.3s ease;
+}
+
+.work-item-card.completed {
+  border-left: 4px solid #22c55e;
+  background: #f0fdf4;
+}
+
+.work-item-card.in_progress {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.work-item-card.pending {
+  border-left: 4px solid #6c757d;
+}
+
+.photo-upload-area {
+  border: 2px dashed #00509d;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.photo-upload-area:hover {
+  background: #e9ecef;
+  border-color: #002a5a;
+}
+</style>
+
+<div class="work-order-detail-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-1">{{ work_order.number }} - {{ work_order.title }}</h2>
+        <p class="text-muted mb-0">
+          Автомобиль: <a href="/cars/{{ work_order.car.slug }}/" target="_blank">{{ work_order.car.name|default:work_order.car.vin }}</a>
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'car_preparation:work_order_timeline' work_order.car.id %}" class="btn btn-outline-info">
+          <span class="icon-mbri-clock"></span> Таймлайн
+        </a>
+        {% if work_order.preparation %}
+        <a href="{% url 'car_preparation:schedule' work_order.preparation.id %}" class="btn btn-outline-secondary">
+          <span class="icon-mbri-arrow-prev"></span> К планированию
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Информация о заказ-наряде -->
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="mb-0" style="color: #fff;">
+          <span class="icon-mbri-info"></span> Информация о заказ-наряде
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <small class="text-muted d-block">Статус</small>
+            <span class="badge 
+              {% if work_order.status == 'completed' %}bg-success
+              {% elif work_order.status == 'in_progress' %}bg-warning
+              {% elif work_order.status == 'scheduled' %}bg-primary
+              {% else %}bg-secondary{% endif %}" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              {{ work_order.get_status_display }}
+            </span>
+          </div>
+          {% if work_order.repair_zone %}
+          <div class="col-md-3">
+            <small class="text-muted d-block">Ремонтная зона</small>
+            <strong>{{ work_order.repair_zone.name }}</strong>
+          </div>
+          {% endif %}
+          {% if work_order.planned_start %}
+          <div class="col-md-3">
+            <small class="text-muted d-block">Планируемое время</small>
+            <strong>{{ work_order.planned_start|date:"d.m.Y H:i" }}</strong>
+            {% if work_order.planned_end %}
+            - <strong>{{ work_order.planned_end|date:"H:i" }}</strong>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if work_order.responsible %}
+          <div class="col-md-3">
+            <small class="text-muted d-block">Ответственный</small>
+            <strong>{{ work_order.responsible.name }}</strong>
+          </div>
+          {% endif %}
+        </div>
+        {% if work_order.description %}
+        <div class="mt-3">
+          <small class="text-muted d-block">Описание</small>
+          <p class="mb-0">{{ work_order.description }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Работы в заказ-наряде -->
+    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="mb-0" style="color: #fff;">
+          <span class="icon-mbri-list"></span> Работы ({{ work_order.items.count }})
+        </h5>
+      </div>
+      <div class="card-body">
+        {% for item in work_order.items.all %}
+        <div class="work-item-card {{ item.status }}" id="work-item-{{ item.id }}">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h6 class="mb-1" style="color: #002a5a;">{{ item.work.name }}</h6>
+              {% if item.work.stage %}
+              <span class="badge bg-info">{{ item.work.stage.name }}</span>
+              {% endif %}
+            </div>
+            <span class="badge 
+              {% if item.status == 'completed' %}bg-success
+              {% elif item.status == 'in_progress' %}bg-warning
+              {% else %}bg-secondary{% endif %}">
+              {{ item.get_status_display }}
+            </span>
+          </div>
+          
+          <div class="row g-3 mb-3">
+            <div class="col-md-3">
+              <small class="text-muted d-block">Планируемое время</small>
+              {% if item.planned_start %}
+              <strong>{{ item.planned_start|date:"d.m.Y H:i" }}</strong>
+              {% if item.planned_end %}
+              - <strong>{{ item.planned_end|date:"H:i" }}</strong>
+              {% endif %}
+              {% else %}
+              <span class="text-muted">Не указано</span>
+              {% endif %}
+            </div>
+            <div class="col-md-3">
+              <small class="text-muted d-block">Фактическое время</small>
+              {% if item.actual_start %}
+              <strong>{{ item.actual_start|date:"d.m.Y H:i" }}</strong>
+              {% if item.actual_end %}
+              - <strong>{{ item.actual_end|date:"H:i" }}</strong>
+              {% endif %}
+              {% else %}
+              <span class="text-muted">Не начато</span>
+              {% endif %}
+            </div>
+            <div class="col-md-3">
+              <small class="text-muted d-block">Исполнитель</small>
+              <select class="form-select form-select-sm" id="performer_{{ item.id }}" 
+                      onchange="updatePerformer({{ item.id }}, this.value)">
+                <option value="">Не назначен</option>
+                {% for performer in performers %}
+                <option value="{{ performer.id }}" {% if item.performer and item.performer.user == performer %}selected{% endif %}>
+                  {{ performer.username }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex gap-2">
+                {% if item.status != 'completed' %}
+                {% if item.status == 'pending' %}
+                <button class="btn btn-sm btn-success" onclick="startWork({{ item.id }})">
+                  <span class="icon-mbri-play"></span> Начать
+                </button>
+                {% elif item.status == 'in_progress' %}
+                <button class="btn btn-sm btn-primary" onclick="completeWork({{ item.id }})">
+                  <span class="icon-mbri-success"></span> Завершить
+                </button>
+                {% endif %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Комментарий -->
+          <div class="mb-3">
+            <textarea class="form-control" id="comment_{{ item.id }}" rows="2" 
+                      placeholder="Комментарий к работе..."
+                      onblur="updateComment({{ item.id }}, this.value)">{{ item.comment }}</textarea>
+          </div>
+          
+          <!-- Загрузка фотографий -->
+          <div class="mb-3">
+            <label class="form-label small">Фотографии</label>
+            <div class="photo-upload-area" onclick="document.getElementById('photoInput_{{ item.id }}').click()">
+              <input type="file" id="photoInput_{{ item.id }}" 
+                     accept="image/*" 
+                     style="display: none;"
+                     onchange="uploadPhoto({{ item.id }}, this.files[0])">
+              <span class="icon-mbri-camera" style="font-size: 2rem; color: #00509d;"></span>
+              <div class="mt-2">
+                <small class="text-muted">Нажмите для загрузки фотографии</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Галерея фотографий -->
+          {% if item.photos.exists %}
+          <div class="photo-gallery">
+            {% for photo in item.photos.all %}
+            <div class="position-relative" style="display: inline-block;">
+              <img src="{{ photo.photo.url }}" alt="{{ photo.description }}" 
+                   class="photo-thumb" 
+                   onclick="window.open('{{ photo.photo.url }}', '_blank')">
+              {% if photo.created_by == request.user.staff or request.user.is_staff %}
+              <button class="btn btn-sm btn-danger position-absolute top-0 end-0" 
+                      style="padding: 0.25rem 0.5rem;"
+                      onclick="deletePhoto({{ photo.id }}, {{ item.id }})">
+                <span class="icon-mbri-trash"></span>
+              </button>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function startWork(itemId) {
+  if (!confirm('Начать выполнение работы?')) return;
+  
+  fetch(`{% url 'car_preparation:work_order_item_start' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при начале работы');
+  });
+}
+
+function completeWork(itemId) {
+  if (!confirm('Завершить работу?')) return;
+  
+  fetch(`{% url 'car_preparation:work_order_item_complete' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при завершении работы');
+  });
+}
+
+function uploadPhoto(itemId, file) {
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append('photo', file);
+  
+  fetch(`{% url 'car_preparation:work_order_item_photo_upload' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при загрузке фотографии');
+  });
+}
+
+function updatePerformer(itemId, performerId) {
+  // TODO: Реализовать обновление исполнителя через API
+  console.log('Update performer', itemId, performerId);
+}
+
+function updateComment(itemId, comment) {
+  // TODO: Реализовать обновление комментария через API
+  console.log('Update comment', itemId, comment);
+}
+
+function deletePhoto(photoId, itemId) {
+  if (!confirm('Удалить фотографию?')) return;
+  
+  // TODO: Реализовать удаление фотографии через API
+  console.log('Delete photo', photoId);
+}
+</script>
+{% endblock %}
+

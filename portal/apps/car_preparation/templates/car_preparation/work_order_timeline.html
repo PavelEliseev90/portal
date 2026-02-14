@@ -1,0 +1,279 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Таймлайн заказ-нарядов - {{ car }} {% endblock %}
+{% block title_navbar %} - Таймлайн заказ-нарядов {% endblock %}
+
+{% block content %}
+<style>
+.timeline-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.timeline-container {
+  position: relative;
+  padding-left: 3rem;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 1.5rem;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #002a5a 0%, #00509d 100%);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -2.25rem;
+  top: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #00509d;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 3px #00509d;
+  z-index: 10;
+}
+
+.timeline-content {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 23, 61, 0.1);
+  border: 1px solid rgba(0, 42, 90, 0.1);
+}
+
+.work-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(0, 42, 90, 0.1);
+}
+
+.work-order-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #002a5a;
+  margin: 0;
+}
+
+.work-order-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.work-item {
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid #00509d;
+}
+
+.work-item.completed {
+  border-left-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.work-item.in_progress {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.work-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.5rem;
+}
+
+.work-item-name {
+  font-weight: 600;
+  color: #002a5a;
+}
+
+.work-item-time {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.photo-gallery {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.photo-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: 2px solid rgba(0, 42, 90, 0.1);
+  transition: all 0.2s;
+}
+
+.photo-thumb:hover {
+  border-color: #00509d;
+  transform: scale(1.05);
+}
+</style>
+
+<div class="timeline-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-1">Таймлайн заказ-нарядов</h2>
+        <p class="text-muted mb-0">
+          Автомобиль: <a href="/cars/{{ car.slug }}/" target="_blank">{{ car.name|default:car.vin }}</a>
+        </p>
+      </div>
+      <a href="{% url 'car_preparation:list' %}" class="btn btn-outline-secondary">
+        <span class="icon-mbri-arrow-prev"></span> К списку
+      </a>
+    </div>
+
+    {% if work_orders %}
+    <div class="timeline-container">
+      <div class="timeline-line"></div>
+      
+      {% for work_order in work_orders %}
+      <div class="timeline-item">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <div class="work-order-header">
+            <div>
+              <h5 class="work-order-title">{{ work_order.number }} - {{ work_order.title }}</h5>
+              {% if work_order.repair_zone %}
+              <span class="badge bg-info mt-2">{{ work_order.repair_zone.name }}</span>
+              {% endif %}
+            </div>
+            <span class="badge 
+              {% if work_order.status == 'completed' %}bg-success
+              {% elif work_order.status == 'in_progress' %}bg-warning
+              {% elif work_order.status == 'scheduled' %}bg-primary
+              {% else %}bg-secondary{% endif %}" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+              {{ work_order.get_status_display }}
+            </span>
+          </div>
+          
+          <div class="work-order-meta">
+            {% if work_order.planned_start %}
+            <div>
+              <small class="text-muted d-block">Планируемое время</small>
+              <strong>{{ work_order.planned_start|date:"d.m.Y H:i" }}</strong>
+              {% if work_order.planned_end %}
+              - <strong>{{ work_order.planned_end|date:"H:i" }}</strong>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% if work_order.actual_start %}
+            <div>
+              <small class="text-muted d-block">Фактическое время</small>
+              <strong>{{ work_order.actual_start|date:"d.m.Y H:i" }}</strong>
+              {% if work_order.actual_end %}
+              - <strong>{{ work_order.actual_end|date:"H:i" }}</strong>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% if work_order.responsible %}
+            <div>
+              <small class="text-muted d-block">Ответственный</small>
+              <strong>{{ work_order.responsible.name }}</strong>
+            </div>
+            {% endif %}
+          </div>
+          
+          {% if work_order.description %}
+          <div class="mt-3">
+            <p class="text-muted mb-0">{{ work_order.description }}</p>
+          </div>
+          {% endif %}
+          
+          <!-- Работы в заказ-наряде -->
+          <div class="mt-3">
+            <h6 class="mb-3" style="color: #002a5a;">Работы ({{ work_order.items.count }})</h6>
+            {% for item in work_order.items.all %}
+            <div class="work-item {{ item.status }}">
+              <div class="work-item-header">
+                <div>
+                  <div class="work-item-name">{{ item.work.name }}</div>
+                  <div class="work-item-time">
+                    {% if item.actual_start %}
+                      Начато: {{ item.actual_start|date:"d.m.Y H:i" }}
+                    {% elif item.planned_start %}
+                      Запланировано: {{ item.planned_start|date:"d.m.Y H:i" }}
+                    {% endif %}
+                    {% if item.actual_end %}
+                      • Завершено: {{ item.actual_end|date:"d.m.Y H:i" }}
+                    {% endif %}
+                  </div>
+                </div>
+                <span class="badge 
+                  {% if item.status == 'completed' %}bg-success
+                  {% elif item.status == 'in_progress' %}bg-warning
+                  {% else %}bg-secondary{% endif %}">
+                  {{ item.get_status_display }}
+                </span>
+              </div>
+              
+              {% if item.performer %}
+              <div class="small text-muted mt-2">
+                Исполнитель: <strong>{{ item.performer.name }}</strong>
+              </div>
+              {% endif %}
+              
+              {% if item.comment %}
+              <div class="mt-2">
+                <small class="text-muted">Комментарий:</small>
+                <p class="mb-0 small">{{ item.comment }}</p>
+              </div>
+              {% endif %}
+              
+              <!-- Фотографии -->
+              {% if item.photos.exists %}
+              <div class="photo-gallery mt-2">
+                {% for photo in item.photos.all %}
+                <img src="{{ photo.photo.url }}" alt="{{ photo.description }}" 
+                     class="photo-thumb" 
+                     onclick="window.open('{{ photo.photo.url }}', '_blank')">
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          
+          <div class="mt-3">
+            <a href="{% url 'car_preparation:work_order_detail' work_order.id %}" 
+               class="btn btn-sm btn-outline-primary">
+              <span class="icon-mbri-file"></span> Подробнее
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <p class="text-muted">Заказ-нарядов по этому автомобилю пока нет</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

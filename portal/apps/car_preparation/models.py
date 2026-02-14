@@ -788,3 +788,266 @@ def create_work_notifications(sender, instance, created, **kwargs):
 # Отключаем автоматическое создание, чтобы не было дублирования
 # post_save.connect(create_work_notifications, sender=CarPreparationWorkItem)
 
+
+# ===========================================
+# СИСТЕМА ЗАКАЗ-НАРЯДОВ
+# ===========================================
+
+class RefRepairZone(models.Model):
+    """Ремонтные зоны (где выполняются работы)"""
+    name = models.CharField("Наименование зоны", max_length=250, default='')
+    code = models.CharField("Код", max_length=50, default='', unique=True)
+    description = models.TextField("Описание", max_length=2000, blank=True, default='')
+    unit = models.ForeignKey(RefUnit, null=True, on_delete=models.SET_NULL,
+                            verbose_name="Подразделение")
+    is_active = models.BooleanField("Активна", default=True)
+    sort_order = models.IntegerField("Порядок сортировки", default=0)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        db_table = 'refRepairZone'
+        verbose_name = "Ремонтная зона"
+        verbose_name_plural = "Ремонтные зоны"
+        ordering = ['sort_order', 'name']
+
+
+class WorkOrderTemplate(models.Model):
+    """Шаблон заказ-наряда (например, 'мойка перед выдачей')"""
+    name = models.CharField("Наименование шаблона", max_length=250, default='')
+    description = models.TextField("Описание", max_length=2000, blank=True, default='')
+    code = models.CharField("Код", max_length=50, default='', unique=True)
+    
+    # Работы в шаблоне
+    works = models.ManyToManyField(RefCarPreparationWork, through='WorkOrderTemplateWork',
+                                  verbose_name="Работы")
+    
+    # Планируемое время заказ-наряда
+    estimated_duration_minutes = models.IntegerField("Планируемая длительность (мин)", default=0)
+    
+    # Настройки
+    is_active = models.BooleanField("Активен", default=True)
+    is_default = models.BooleanField("Шаблон по умолчанию", default=False)
+    unit = models.ForeignKey(RefUnit, null=True, blank=True, on_delete=models.SET_NULL,
+                            verbose_name="Подразделение (если пусто - для всех)")
+    
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    date_updated = models.DateTimeField('Дата обновления', auto_now=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        db_table = 'workOrderTemplate'
+        verbose_name = "Шаблон заказ-наряда"
+        verbose_name_plural = "Шаблоны заказ-нарядов"
+        ordering = ['name']
+
+
+class WorkOrderTemplateWork(models.Model):
+    """Работа в шаблоне заказ-наряда"""
+    template = models.ForeignKey(WorkOrderTemplate, on_delete=models.CASCADE)
+    work = models.ForeignKey(RefCarPreparationWork, on_delete=models.CASCADE)
+    
+    is_required = models.BooleanField("Обязательна", default=True)
+    estimated_time = models.IntegerField("Планируемое время (мин)", default=0, blank=True)
+    sort_order = models.IntegerField("Порядок", default=0)
+    
+    class Meta:
+        db_table = 'workOrderTemplateWork'
+        verbose_name = "Работа в шаблоне заказ-наряда"
+        verbose_name_plural = "Работы в шаблонах заказ-нарядов"
+        unique_together = ['template', 'work']
+        ordering = ['sort_order']
+
+
+class WorkOrder(models.Model):
+    """Заказ-наряд по автомобилю"""
+    STATUS_CHOICES = [
+        ('draft', 'Черновик'),
+        ('scheduled', 'Запланирован'),
+        ('in_progress', 'В работе'),
+        ('completed', 'Выполнен'),
+        ('cancelled', 'Отменен'),
+    ]
+    
+    car = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT,
+                           verbose_name="Автомобиль", related_name='work_orders')
+    preparation = models.ForeignKey(CarPreparation, null=True, blank=True, on_delete=models.SET_NULL,
+                                   verbose_name="Подготовка", related_name='work_orders')
+    template = models.ForeignKey(WorkOrderTemplate, null=True, blank=True, on_delete=models.SET_NULL,
+                                verbose_name="Шаблон заказ-наряда")
+    
+    # Основная информация
+    number = models.CharField("Номер заказ-наряда", max_length=50, default='', unique=True, blank=True)
+    title = models.CharField("Название заказ-наряда", max_length=512, default='')
+    description = models.TextField("Описание", max_length=2000, blank=True, default='')
+    
+    # Ремонтная зона
+    repair_zone = models.ForeignKey(RefRepairZone, null=True, blank=True, on_delete=models.SET_NULL,
+                                    verbose_name="Ремонтная зона")
+    
+    # Временные рамки
+    planned_start = models.DateTimeField('Планируемое время начала', null=True, blank=True)
+    planned_end = models.DateTimeField('Планируемое время окончания', null=True, blank=True)
+    actual_start = models.DateTimeField('Фактическое время начала', null=True, blank=True)
+    actual_end = models.DateTimeField('Фактическое время окончания', null=True, blank=True)
+    
+    # Статус
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    # Ответственные
+    created_by = models.ForeignKey(RefStaff, null=True, on_delete=models.SET_NULL,
+                                  verbose_name="Создал", related_name='created_work_orders')
+    responsible = models.ForeignKey(RefStaff, null=True, blank=True, on_delete=models.SET_NULL,
+                                   verbose_name="Ответственный", related_name='responsible_work_orders')
+    
+    # Даты
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    date_updated = models.DateTimeField('Дата обновления', auto_now=True)
+    
+    # Комментарии
+    comment = models.TextField("Комментарий", max_length=5000, blank=True, default='')
+    
+    def get_duration_minutes(self):
+        """Получить продолжительность в минутах"""
+        if self.planned_start and self.planned_end:
+            delta = self.planned_end - self.planned_start
+            return int(delta.total_seconds() / 60)
+        return 0
+    
+    def get_actual_duration_minutes(self):
+        """Получить фактическую продолжительность в минутах"""
+        if self.actual_start and self.actual_end:
+            delta = self.actual_end - self.actual_start
+            return int(delta.total_seconds() / 60)
+        return 0
+    
+    def generate_number(self):
+        """Генерация номера заказ-наряда"""
+        if not self.number:
+            from django.utils import timezone
+            date_str = timezone.now().strftime('%Y%m%d')
+            last_order = WorkOrder.objects.filter(number__startswith=date_str).order_by('-id').first()
+            if last_order:
+                try:
+                    last_num = int(last_order.number[-4:])
+                    new_num = last_num + 1
+                except:
+                    new_num = 1
+            else:
+                new_num = 1
+            self.number = f"ЗН-{date_str}-{new_num:04d}"
+        return self.number
+    
+    def save(self, *args, **kwargs):
+        if not self.number:
+            self.generate_number()
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.number or 'Черновик'} - {self.car}"
+    
+    class Meta:
+        db_table = 'workOrder'
+        verbose_name = "Заказ-наряд"
+        verbose_name_plural = "Заказ-наряды"
+        ordering = ['-date_created']
+        indexes = [
+            models.Index(fields=['car', 'status']),
+            models.Index(fields=['planned_start', 'planned_end']),
+            models.Index(fields=['status']),
+            models.Index(fields=['number']),
+        ]
+
+
+class WorkOrderItem(models.Model):
+    """Работа в заказ-наряде"""
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает выполнения'),
+        ('in_progress', 'В работе'),
+        ('completed', 'Выполнена'),
+        ('skipped', 'Пропущена'),
+    ]
+    
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE,
+                                   verbose_name="Заказ-наряд", related_name='items')
+    work = models.ForeignKey(RefCarPreparationWork, on_delete=models.PROTECT,
+                            verbose_name="Вид работы")
+    
+    # Статус
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Временные рамки
+    planned_start = models.DateTimeField('Планируемое время начала', null=True, blank=True)
+    planned_end = models.DateTimeField('Планируемое время окончания', null=True, blank=True)
+    actual_start = models.DateTimeField('Фактическое время начала', null=True, blank=True)
+    actual_end = models.DateTimeField('Фактическое время окончания', null=True, blank=True)
+    
+    # Исполнитель
+    performer = models.ForeignKey(RefStaff, null=True, blank=True, on_delete=models.SET_NULL,
+                                 verbose_name="Исполнитель", related_name='work_order_items')
+    
+    # Комментарии
+    comment = models.TextField("Комментарий", max_length=2000, blank=True, default='')
+    
+    # Порядок выполнения
+    sort_order = models.IntegerField("Порядок", default=0)
+    
+    # Связь с работой подготовки (если есть)
+    preparation_work_item = models.ForeignKey(CarPreparationWorkItem, null=True, blank=True,
+                                              on_delete=models.SET_NULL,
+                                              verbose_name="Работа подготовки",
+                                              related_name='work_order_items')
+    
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    date_updated = models.DateTimeField('Дата обновления', auto_now=True)
+    
+    def get_duration_minutes(self):
+        """Получить планируемую продолжительность в минутах"""
+        if self.planned_start and self.planned_end:
+            delta = self.planned_end - self.planned_start
+            return int(delta.total_seconds() / 60)
+        return self.work.estimated_time if self.work else 0
+    
+    def get_actual_duration_minutes(self):
+        """Получить фактическую продолжительность в минутах"""
+        if self.actual_start and self.actual_end:
+            delta = self.actual_end - self.actual_start
+            return int(delta.total_seconds() / 60)
+        return 0
+    
+    def __str__(self):
+        return f"{self.work_order.number or 'Черновик'} - {self.work.name}"
+    
+    class Meta:
+        db_table = 'workOrderItem'
+        verbose_name = "Работа в заказ-наряде"
+        verbose_name_plural = "Работы в заказ-нарядах"
+        ordering = ['sort_order', 'id']
+        indexes = [
+            models.Index(fields=['work_order', 'status']),
+            models.Index(fields=['performer', 'status']),
+        ]
+
+
+class WorkOrderItemPhoto(models.Model):
+    """Фотографии работы в заказ-наряде"""
+    work_order_item = models.ForeignKey(WorkOrderItem, on_delete=models.CASCADE,
+                                       verbose_name="Работа", related_name='photos')
+    photo = models.ImageField(upload_to='work_orders/%Y/%m/%d/',
+                             verbose_name="Фотография", max_length=255)
+    description = models.CharField("Описание", max_length=500, blank=True, default='')
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    created_by = models.ForeignKey(RefStaff, null=True, on_delete=models.SET_NULL,
+                                  verbose_name="Автор фотографии")
+    
+    def __str__(self):
+        return f"Фото {self.work_order_item.work.name} - {self.date_created}"
+    
+    class Meta:
+        db_table = 'workOrderItemPhoto'
+        verbose_name = "Фотография работы"
+        verbose_name_plural = "Фотографии работ"
+        ordering = ['-date_created']
