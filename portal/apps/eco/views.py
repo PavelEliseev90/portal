@@ -8771,13 +8771,13 @@ def tradein_funnel_analytics(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible  and not request.user.profiles.korsavto_settings_dc:
+    #     params = {
+    #         'type': 'eco_funnel',
+    #         'nav_selected': 4,
+    #         'request': request,
+    #     }
+    #     return render(request, 'errors/403.html', {'params': params})
 
     now = DT.datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
@@ -9103,8 +9103,8 @@ def tradein_funnel_analytics_export(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        return HttpResponseRedirect('/')
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+    #     return HttpResponseRedirect('/')
     
     export_type = request.GET.get('export_type', '')  # op_rlk, rlk, before, after, reception, reception_price_list
     
@@ -9368,13 +9368,13 @@ def tradein_funnel_analytics_detail(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.profiles.korsavto_settings_dc:
+    #     params = {
+    #         'type': 'eco_funnel',
+    #         'nav_selected': 4,
+    #         'request': request,
+    #     }
+    #     return render(request, 'errors/403.html', {'params': params})
     
     # Тип фильтра для детальной страницы
     filter_type = request.GET.get('filter_type', '')
@@ -9625,8 +9625,8 @@ def tradein_funnel_analytics_export(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        return HttpResponseRedirect('/')
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+    #     return HttpResponseRedirect('/')
     
     export_type = request.GET.get('export_type', '')  # op_rlk, rlk, before, after, reception, reception_price_list
     
