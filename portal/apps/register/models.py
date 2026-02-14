@@ -4812,6 +4812,114 @@ class RegRefCarsOrganizationsCalculationPrice(models.Model):
         verbose_name_plural = "Цены автомобилей организаций расчетные"
 
 
+class RegCarsRepricingHistory(models.Model):
+    """История переоценки автомобилей"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'В очереди'),
+        ('processing', 'Обрабатывается'),
+        ('success', 'Успешно'),
+        ('error', 'Ошибка'),
+        ('partial', 'Частично'),
+    ]
+    
+    unit = models.ForeignKey(RefUnit, null=True, on_delete=models.SET_NULL, verbose_name='Подразделение ДЦ')
+    evaluation = models.ForeignKey(RefTypeEvaluationCarsOrganization, null=True, blank=True, 
+                                   on_delete=models.SET_NULL, verbose_name='Вариант управления ценообразованием')
+    
+    # Статус и результат
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='pending')
+    cars_total = models.IntegerField("Всего автомобилей", default=0)
+    cars_processed = models.IntegerField("Обработано автомобилей", default=0)
+    cars_updated = models.IntegerField("Обновлено цен", default=0)
+    cars_skipped = models.IntegerField("Пропущено автомобилей", default=0)
+    cars_errors = models.IntegerField("Ошибок", default=0)
+    
+    # Детали
+    error_message = models.TextField("Сообщение об ошибке", blank=True, default='')
+    details = models.TextField("Детали переоценки (JSON)", blank=True, default='{}',
+                               help_text="Дополнительная информация о переоценке")
+    
+    # Метаданные
+    date_start = models.DateTimeField('Дата начала', default=datetime.now, blank=False)
+    date_end = models.DateTimeField('Дата окончания', null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                            on_delete=models.SET_NULL, related_name='cars_repricing_history',
+                            verbose_name="Пользователь")
+    is_manual = models.BooleanField("Ручная переоценка", default=False,
+                                    help_text="True если запущена вручную, False если автоматически")
+    
+    def __str__(self):
+        return f"{self.unit.name if self.unit else 'Все'} - {self.date_start.strftime('%d.%m.%Y %H:%M')} ({self.status})"
+    
+    def get_details(self):
+        """Получить детали переоценки как словарь"""
+        try:
+            return json.loads(self.details) if self.details else {}
+        except:
+            return {}
+    
+    def set_details(self, details_dict):
+        """Установить детали переоценки из словаря"""
+        self.details = json.dumps(details_dict, ensure_ascii=False)
+    
+    class Meta:
+        db_table = 'regCarsRepricingHistory'
+        verbose_name = "История переоценки автомобилей"
+        verbose_name_plural = "История переоценок автомобилей"
+        ordering = ['-date_start']
+        indexes = [
+            models.Index(fields=['unit', 'date_start']),
+            models.Index(fields=['status']),
+            models.Index(fields=['evaluation']),
+        ]
+
+
+class RegCarsRepricingLog(models.Model):
+    """Лог переоценки конкретного автомобиля"""
+    
+    STATUS_CHOICES = [
+        ('success', 'Успешно'),
+        ('error', 'Ошибка'),
+        ('skipped', 'Пропущен'),
+    ]
+    
+    repricing_history = models.ForeignKey(RegCarsRepricingHistory, on_delete=models.CASCADE,
+                                         related_name='repricing_logs', verbose_name="История переоценки")
+    car = models.ForeignKey(RefCarsOrganization, on_delete=models.CASCADE,
+                           related_name='repricing_logs', verbose_name="Автомобиль")
+    
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='success')
+    old_price = models.IntegerField("Старая цена", null=True, blank=True, default=None)
+    new_price = models.IntegerField("Новая цена", null=True, blank=True, default=None)
+    price_difference = models.IntegerField("Разница в цене", null=True, blank=True, default=None)
+    error_message = models.TextField("Сообщение об ошибке", blank=True, default='')
+    calculation_details = models.TextField("Детали расчета (JSON)", blank=True, default='{}',
+                                          help_text="Детали расчета новой цены")
+    
+    date_create = models.DateTimeField('Дата создания', default=datetime.now, blank=False)
+    
+    def __str__(self):
+        return f"{self.car.vin} - {self.status}"
+    
+    def get_calculation_details(self):
+        """Получить детали расчета как словарь"""
+        try:
+            return json.loads(self.calculation_details) if self.calculation_details else {}
+        except:
+            return {}
+    
+    class Meta:
+        db_table = 'regCarsRepricingLog'
+        verbose_name = "Лог переоценки автомобиля"
+        verbose_name_plural = "Логи переоценки автомобилей"
+        ordering = ['-date_create']
+        indexes = [
+            models.Index(fields=['repricing_history', 'car']),
+            models.Index(fields=['status']),
+        ]
+
+
 class RegCarsExpenses(models.Model):
     car                     = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль")
     date                    = models.DateTimeField('Дата', default=datetime.now, blank=True, null=True)

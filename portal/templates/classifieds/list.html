@@ -1,0 +1,153 @@
+{% extends "base_web.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h4><span class="icon-mbri-file"></span> Классифайды - Настройки выгрузки</h4>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'classifieds:config_create' %}" class="btn btn-success">
+                <span class="icon-mbri-plus"></span> Создать настройку
+            </a>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск..." 
+                           value="{{ params.filters.search }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="platform" class="form-select">
+                        <option value="">Все площадки</option>
+                        {% for platform in params.platforms %}
+                        <option value="{{ platform.id }}" {% if params.filters.platform == platform.id|stringformat:"s" %}selected{% endif %}>
+                            {{ platform.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="unit" class="form-select">
+                        <option value="">Все подразделения</option>
+                        {% for unit in params.units %}
+                        <option value="{{ unit.id }}" {% if params.filters.unit == unit.id|stringformat:"s" %}selected{% endif %}>
+                            {{ unit.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">Все статусы</option>
+                        <option value="active" {% if params.filters.status == 'active' %}selected{% endif %}>Активна</option>
+                        <option value="inactive" {% if params.filters.status == 'inactive' %}selected{% endif %}>Неактивна</option>
+                        <option value="error" {% if params.filters.status == 'error' %}selected{% endif %}>Ошибка</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">Применить</button>
+                    <a href="{% url 'classifieds:list' %}" class="btn btn-secondary">Сбросить</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблица настроек -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Наименование</th>
+                            <th>Площадка</th>
+                            <th>Подразделение</th>
+                            <th>Статус</th>
+                            <th>Авто</th>
+                            <th>Дата создания</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in params.page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'classifieds:config_detail' config.id %}">
+                                    {{ config.name }}
+                                </a>
+                            </td>
+                            <td>{{ config.platform.name|default:"—" }}</td>
+                            <td>{{ config.unit.name|default:"—" }}</td>
+                            <td>
+                                {% if config.status == 'active' %}
+                                    <span class="badge bg-success">Активна</span>
+                                {% elif config.status == 'inactive' %}
+                                    <span class="badge bg-secondary">Неактивна</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Ошибка</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if config.auto_export %}
+                                    <span class="badge bg-info">Да</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Нет</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ config.date_create|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'classifieds:config_detail' config.id %}" class="btn btn-sm btn-outline-primary">
+                                    <span class="icon-mbri-eye"></span>
+                                </a>
+                                <a href="{% url 'classifieds:config_edit' config.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <span class="icon-mbri-edit"></span>
+                                </a>
+                                <a href="{% url 'classifieds:export_run' config.id %}" class="btn btn-sm btn-outline-success">
+                                    <span class="icon-mbri-play"></span> Выгрузить
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">Настройки не найдены</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Пагинация -->
+            {% if params.page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if params.page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% for key, value in params.filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Предыдущая</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Страница {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if params.page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% for key, value in params.filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
