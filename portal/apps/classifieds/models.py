@@ -77,8 +77,7 @@ class ClassifiedsExportConfig(ChangeloggableMixin, models.Model):
                                           verbose_name="Подразделения (фильтр)")
     filter_statuses = models.ManyToManyField(RefStatusCarsOrganization, blank=True,
                                             verbose_name="Статусы автомобилей (фильтр)")
-    filter_is_new = models.BooleanField("Только новые", null=True, blank=True, default=None,
-                                       verbose_name="Только новые автомобили")
+    filter_is_new = models.BooleanField("Только новые автомобили", null=True, blank=True, default=False)
     filter_min_price = models.IntegerField("Минимальная цена", null=True, blank=True, default=None)
     filter_max_price = models.IntegerField("Максимальная цена", null=True, blank=True, default=None)
     filter_min_year = models.IntegerField("Минимальный год", null=True, blank=True, default=None)
