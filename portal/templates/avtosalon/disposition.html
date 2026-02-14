@@ -664,6 +664,16 @@
                     <span class="detail-label">На складе:</span>
                     <span class="detail-value">{{ car.days_in_stok|default:0 }} дн.</span>
                   </div>
+                  {% if car.active_tasks_count > 0 %}
+                  <div class="disposition-card-horizontal__detail-item">
+                    <span class="detail-label">Активные задачи:</span>
+                    <span class="detail-value">
+                      <a href="{% url 'avtosalon:car_tasks_list_by_car' car.id %}" class="text-decoration-none" style="color: #dc3545; font-weight: 600;">
+                        <span class="icon-mbri-file me-1"></span>{{ car.active_tasks_count }}
+                      </a>
+                    </span>
+                  </div>
+                  {% endif %}
                 </div>
                 
                 {% if car.description_op %}
@@ -786,6 +796,16 @@
                 <span class="spec-label">На складе</span>
                 <span class="spec-value">{{ car.days_in_stok|default:0 }} дн.</span>
               </div>
+              {% if car.active_tasks_count > 0 %}
+              <div class="mobile-car-card__spec-row">
+                <span class="spec-label">Активные задачи</span>
+                <span class="spec-value">
+                  <a href="{% url 'avtosalon:car_tasks_list_by_car' car.id %}" class="text-decoration-none" style="color: #dc3545; font-weight: 600;">
+                    <span class="icon-mbri-file me-1"></span>{{ car.active_tasks_count }}
+                  </a>
+                </span>
+              </div>
+              {% endif %}
               {% if car.lo_link_number %}
               <div class="mobile-car-card__spec-row">
                 <span class="spec-label">Лист оценки</span>

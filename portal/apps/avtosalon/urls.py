@@ -20,7 +20,19 @@ urlpatterns = [
    path('<slug>/costs_edit/',                views.costs_edit, name='costs_edit'),
    path('<slug>/info_js/',                   views.info_js, name='slug'),
    path('<slug>/',                           views.car, name='slug'),
-   path('deal/calculation/',                 views.deal_calculation, name='deal_calculation')
+   path('deal/calculation/',                 views.deal_calculation, name='deal_calculation'),
+   
+   # Задачи по автомобилям
+   path('tasks/',                            views.car_tasks_list, name='car_tasks_list'),
+   path('tasks/<int:car_id>/',               views.car_tasks_list, name='car_tasks_list_by_car'),
+   path('task/create/<int:car_id>/',         views.car_task_create, name='car_task_create'),
+   path('task/<int:task_id>/',               views.car_task_detail, name='car_task_detail'),
+   path('task/<int:task_id>/take/',          views.car_task_take, name='car_task_take'),
+   path('task/<int:task_id>/complete/',      views.car_task_complete, name='car_task_complete'),
+   path('task/<int:task_id>/comment/',       views.car_task_comment_add, name='car_task_comment_add'),
+   
+   # Витрина склада
+   path('warehouse/showcase/create/',        views.warehouse_showcase_create, name='warehouse_showcase_create'),
    
    #path('op/<slug:id>/<slug:pk>/', views.op_detail_recognition, name='slug'),
 ]
