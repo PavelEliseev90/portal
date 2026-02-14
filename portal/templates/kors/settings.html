@@ -43,6 +43,15 @@
   </div>
 
   <div class="settings-panel">
+    <h3>Классифайды</h3>
+    <p>Управление выгрузкой автомобилей на площадки (Авито, Авто.ру, Drom и т.д.).</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="settings-chip" href="{% url 'classifieds:list' %}">Настройки выгрузок</a>
+      <a class="settings-chip" href="{% url 'classifieds:export_history' %}">История выгрузок</a>
+    </div>
+  </div>
+
+  <div class="settings-panel">
     <h3>Аукцион</h3>
     <p>Управление матрицами расчёта БЦП.</p>
     <div class="d-flex flex-wrap gap-2">

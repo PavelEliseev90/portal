@@ -1,0 +1,280 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Детали переоценки {% endblock %}
+
+{% block title_navbar %} - Детали переоценки {% endblock %}
+
+{% block content %}
+<div class="docs-zn-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0">Детали переоценки</h2>
+        <p class="text-muted mb-0">{{ params.history.date_start|date:"d.m.Y H:i" }} - {{ params.history.unit.name|default:"Все подразделения" }}</p>
+      </div>
+      <a href="{% url 'register:repricing_list' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+        <span class="icon-mbri-arrow-prev"></span> К списку
+      </a>
+    </div>
+
+    <!-- Информация о переоценке -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card text-center" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-body">
+            <div class="mb-2">
+              <span class="icon-mbri-file" style="font-size: 2.5rem; color: #002a5a; opacity: 0.7;"></span>
+            </div>
+            <h3 class="mb-0" style="color: #002a5a; font-weight: 700;">{{ params.history.cars_total }}</h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Всего автомобилей</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-body">
+            <div class="mb-2">
+              <span class="icon-mbri-setting3" style="font-size: 2.5rem; color: #6c7a92; opacity: 0.7;"></span>
+            </div>
+            <h3 class="mb-0" style="color: #6c7a92; font-weight: 700;">{{ params.history.cars_processed }}</h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Обработано</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-body">
+            <div class="mb-2">
+              <span class="icon-mbri-success" style="font-size: 2.5rem; color: #22c55e; opacity: 0.7;"></span>
+            </div>
+            <h3 class="mb-0" style="color: #22c55e; font-weight: 700;">{{ params.history.cars_updated }}</h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Обновлено цен</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-body">
+            <div class="mb-2">
+              <span class="icon-mbri-error" style="font-size: 2.5rem; color: #ef4444; opacity: 0.7;"></span>
+            </div>
+            <h3 class="mb-0" style="color: #ef4444; font-weight: 700;">{{ params.history.cars_errors }}</h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Ошибок</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Детальная информация -->
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+          <span class="icon-mbri-info"></span> Информация о переоценке
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Подразделение</label>
+              <div style="font-size: 1rem; color: #002a5a; font-weight: 500;">{{ params.history.unit.name|default:"Все подразделения" }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Вариант управления ценой</label>
+              <div style="font-size: 1rem; color: #002a5a; font-weight: 500;">{{ params.history.evaluation.name|default:"Все варианты" }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Статус</label>
+              <div>
+                {% if params.history.status == 'success' %}
+                  <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">Успешно</span>
+                {% elif params.history.status == 'error' %}
+                  <span class="badge bg-danger" style="padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">Ошибка</span>
+                {% elif params.history.status == 'partial' %}
+                  <span class="badge bg-warning text-dark" style="padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">Частично</span>
+                {% elif params.history.status == 'processing' %}
+                  <span class="badge bg-info" style="padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">Обрабатывается</span>
+                {% else %}
+                  <span class="badge bg-secondary" style="padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">В очереди</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Дата начала</label>
+              <div style="font-size: 1rem; color: #002a5a; font-weight: 500;">{{ params.history.date_start|date:"d.m.Y H:i:s" }}</div>
+            </div>
+          </div>
+          {% if params.history.date_end %}
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Дата окончания</label>
+              <div style="font-size: 1rem; color: #002a5a; font-weight: 500;">{{ params.history.date_end|date:"d.m.Y H:i:s" }}</div>
+            </div>
+          </div>
+          {% endif %}
+          {% if params.history.error_message %}
+          <div class="col-md-12">
+            <div class="alert alert-danger" style="border-radius: 0.75rem; border: 1px solid rgba(239, 68, 68, 0.2);">
+              <strong>Ошибка:</strong> {{ params.history.error_message }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Логи переоценки -->
+    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+          <span class="icon-mbri-file"></span> Логи переоценки ({{ params.page_obj.paginator.count }})
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead style="background: rgba(0, 42, 90, 0.05);">
+              <tr>
+                <th style="border: none; padding: 1rem; font-weight: 600; color: #002a5a;">VIN</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; color: #002a5a;">Автомобиль</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; color: #002a5a; text-align: right;">Старая цена</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; color: #002a5a; text-align: right;">Новая цена</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; color: #002a5a; text-align: right;">Разница</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; color: #002a5a;">Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in params.page_obj %}
+              <tr>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  <code style="background: rgba(0, 42, 90, 0.05); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.85rem;">{{ log.car.vin }}</code>
+                </td>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  <div style="font-weight: 500; color: #002a5a;">{{ log.car.mark }} {{ log.car.model }}</div>
+                  <small class="text-muted">{{ log.car.year }} г., {{ log.car.run|default:"—" }} км</small>
+                </td>
+                <td style="padding: 1rem; vertical-align: middle; text-align: right;">
+                  {% if log.old_price %}
+                    <span style="color: #6c7a92;">{{ log.old_price|floatformat:0 }} ₽</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 1rem; vertical-align: middle; text-align: right;">
+                  {% if log.new_price %}
+                    <span style="font-weight: 600; color: #002a5a;">{{ log.new_price|floatformat:0 }} ₽</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 1rem; vertical-align: middle; text-align: right;">
+                  {% if log.price_difference %}
+                    {% if log.price_difference > 0 %}
+                      <span style="font-weight: 600; color: #22c55e;">+{{ log.price_difference|floatformat:0 }} ₽</span>
+                    {% elif log.price_difference < 0 %}
+                      <span style="font-weight: 600; color: #ef4444;">{{ log.price_difference|floatformat:0 }} ₽</span>
+                    {% else %}
+                      <span style="color: #6c7a92;">0 ₽</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  {% if log.status == 'success' %}
+                    <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Успешно</span>
+                  {% elif log.status == 'error' %}
+                    <span class="badge bg-danger" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Ошибка</span>
+                    {% if log.error_message %}
+                      <br><small class="text-danger mt-1 d-block">{{ log.error_message|truncatechars:50 }}</small>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Пропущен</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5" style="color: #6c7a92;">
+                  <div class="mb-3">
+                    <span class="icon-mbri-file" style="font-size: 3rem; opacity: 0.3;"></span>
+                  </div>
+                  <p class="mb-0">Логи переоценки отсутствуют</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Пагинация -->
+    {% if params.page_obj.has_other_pages %}
+    <nav aria-label="Навигация по страницам" class="mt-4">
+      <ul class="pagination justify-content-center">
+        {% if params.page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <span class="icon-mbri-arrow-prev"></span>
+          </a>
+        </li>
+        {% endif %}
+        
+        {% for num in params.page_obj.paginator.page_range %}
+          {% if params.page_obj.number == num %}
+          <li class="page-item active">
+            <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; margin: 0 0.25rem;">{{ num }}</span>
+          </li>
+          {% elif num > params.page_obj.number|add:'-3' and num < params.page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">{{ num }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if params.page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.next_page_number }}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <span class="icon-mbri-arrow-next"></span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.docs-zn-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0, 42, 90, 0.03);
+}
+</style>
+{% endblock %}
+
