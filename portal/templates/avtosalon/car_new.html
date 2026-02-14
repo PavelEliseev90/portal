@@ -629,6 +629,18 @@
 								</a>
 							</div>
 							<div class="col-12 col-sm-auto text-center" >
+								<a href="{% url 'avtosalon:car_tasks_list_by_car' params.object.id %}" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-success bg-opacity-10" style="padding: 0.5rem; height: 100%; position: relative;">
+										<span class="icon-mbri-file fs-4"></span>  Задачи
+										{% if params.tasks_count > 0 %}
+										<span class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 0.7rem; padding: 0.25rem 0.4rem;">
+											{{ params.tasks_count }}
+										</span>
+										{% endif %}
+									</div>
+								</a>
+							</div>
+							<div class="col-12 col-sm-auto text-center" >
 								<a href="costs_edit/" class="text-dark">
 									<div class="card mb-1 rounded-3 shadow-sm bg-warning bg-opacity-10" style="padding: 0.5rem; height: 100%;">
 										<span class="icon-mbri-cash fs-4"></span>  Затраты на<br>автомобиль

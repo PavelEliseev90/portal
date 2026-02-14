@@ -111,6 +111,25 @@
         </div>
       </div>
     </div>
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <span class="text-uppercase text-muted small">Открытые задачи</span>
+          <div class="d-flex align-items-baseline justify-content-between mt-1">
+            <span class="display-6 fw-semibold">{{ params.open_tasks_count|default:0 }}</span>
+            <span class="text-muted">шт.</span>
+          </div>
+          <div class="row">
+            <div class="col">
+              <span class="text-muted small">По автомобилям</span>
+            </div>
+            <div class="col-auto text-end">
+              <a href="{% url 'avtosalon:car_tasks_list' %}" class="text-success small text-decoration-none">перейти →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card shadow-sm border-0 mb-4">

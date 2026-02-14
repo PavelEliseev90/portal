@@ -1,7 +1,9 @@
 from django.db import models
 from django.db.models import Avg, Max, Min, Sum, F
 from datetime import datetime
-from refs.models import RefUnit, AutoruModification, AutoruComplectation
+from refs.models import RefUnit, AutoruModification, AutoruComplectation, RefCarsOrganization
+from django.conf import settings
+from django.contrib.auth.models import User
 import uuid
 import random
 import json
@@ -320,5 +322,97 @@ class Autoteka_signal(models.Model):
         db_table = 'autoteka_signal'
         verbose_name = 'Сигнал автотека'
         verbose_name_plural = "Сигнал автотека - https://developers.avito.ru/api-catalog/autoteka/documentation#operation/monitoringBucketAdd - get-leads"
+
+
+# Статусы задач по автомобилям
+TASK_STATUS_CHOICES = [
+    ('new', 'Новый'),
+    ('in_progress', 'В работе'),
+    ('completed', 'Выполнена'),
+]
+
+
+class RegCarsOrganizationTask(models.Model):
+    """Задача по автомобилю"""
+    car = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль", related_name='tasks')
+    staff_created = models.ForeignKey(User, related_name="car_task_created", on_delete=models.SET_NULL, null=True, verbose_name="Пользователь создавший")
+    staff_assignee = models.ForeignKey(User, related_name="car_task_assignee", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Исполнитель")
+    status = models.CharField("Статус", max_length=20, choices=TASK_STATUS_CHOICES, default='new')
+    title = models.CharField("Название задачи", max_length=512, default='', null=True, blank=True)
+    description = models.TextField("Описание задачи", default='', null=True, blank=True)
+    date_created = models.DateTimeField('Дата создания', default=datetime.now, blank=True, null=True)
+    date_started = models.DateTimeField('Дата начала работы', blank=True, null=True)
+    date_completed = models.DateTimeField('Дата завершения', blank=True, null=True)
+    
+    def comments_count(self):
+        return self.comments.filter(is_deleted=False).count()
+    
+    def __str__(self):
+        return "{} - {} - {} - {}".format(self.car, self.title, self.status, self.staff_assignee)
+    
+    class Meta:
+        db_table = 'regCarsOrganizationTask'
+        verbose_name = "Задача по автомобилю"
+        verbose_name_plural = "Задачи по автомобилям"
+        ordering = ['-date_created']
+        indexes = [
+            models.Index(fields=['car', 'status']),
+            models.Index(fields=['staff_assignee', 'status']),
+            models.Index(fields=['date_created']),
+        ]
+
+
+class RegCarsOrganizationTaskComment(models.Model):
+    """Комментарий к задаче по автомобилю"""
+    task = models.ForeignKey(RegCarsOrganizationTask, on_delete=models.CASCADE, null=True, verbose_name="Задача", related_name='comments')
+    staff = models.ForeignKey(User, related_name="car_task_comment", on_delete=models.SET_NULL, null=True, verbose_name="Автор комментария")
+    comment = models.TextField("Комментарий", default='', null=True, blank=True)
+    date_created = models.DateTimeField('Дата создания', default=datetime.now, blank=True, null=True)
+    is_deleted = models.BooleanField("Удален", default=False)
+    
+    def __str__(self):
+        return "{} - {} - {}".format(self.task, self.staff, self.date_created)
+    
+    class Meta:
+        db_table = 'regCarsOrganizationTaskComment'
+        verbose_name = "Комментарий к задаче по автомобилю"
+        verbose_name_plural = "Комментарии к задачам по автомобилям"
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['task', 'date_created']),
+        ]
+
+
+class CarsWarehouseShowcase(models.Model):
+    """Витрина склада - снимок данных для анализа склада"""
+    date_created = models.DateTimeField('Дата создания', default=datetime.now, blank=True, null=True)
+    unit = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Подразделение ДЦ")
+    
+    # Статистика
+    total_cars = models.IntegerField('Всего автомобилей', default=0)
+    total_price = models.DecimalField('Общая стоимость', max_digits=15, decimal_places=2, default=0)
+    total_cost = models.DecimalField('Общая себестоимость', max_digits=15, decimal_places=2, default=0)
+    
+    # Проблемы
+    cars_no_photos = models.IntegerField('Авто без фото', default=0)
+    cars_old_photos = models.IntegerField('Авто со старыми фото', default=0)
+    cars_no_evaluation = models.IntegerField('Авто без оценки', default=0)
+    cars_old_evaluation = models.IntegerField('Авто со старой оценкой', default=0)
+    cars_long_in_stock = models.IntegerField('Авто долго на складе', default=0)
+    
+    # Данные в JSON для детального анализа
+    data_json = models.TextField("Данные в JSON", default='{}', null=True, blank=True)
+    
+    def __str__(self):
+        return "{} - {} - {}".format(self.date_created, self.unit, self.total_cars)
+    
+    class Meta:
+        db_table = 'carsWarehouseShowcase'
+        verbose_name = "Витрина склада"
+        verbose_name_plural = "Витрины склада"
+        ordering = ['-date_created']
+        indexes = [
+            models.Index(fields=['unit', 'date_created']),
+        ]
 
 

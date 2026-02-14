@@ -1,0 +1,227 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Задача по автомобилю {% endblock %}
+
+{% block title_navbar %} - Задача по автомобилю {% endblock %}
+
+{% block content %}
+<div class="docs-zn-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0">{{ params.task.title|default:"Задача" }}</h2>
+        <p class="text-muted mb-0">Автомобиль: <a href="/cars/{{ params.task.car.slug }}/" target="_blank">{{ params.task.car.name|default:params.task.car.vin }}</a></p>
+      </div>
+      <a href="{% url 'avtosalon:car_tasks_list' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+        <span class="icon-mbri-arrow-prev"></span> К списку задач
+      </a>
+    </div>
+
+    <!-- Информация о задаче -->
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-mbri-info"></span> Информация о задаче
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Статус:</strong> 
+              {% if params.task.status == 'new' %}
+                <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Новый</span>
+              {% elif params.task.status == 'in_progress' %}
+                <span class="badge bg-info" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">В работе</span>
+              {% elif params.task.status == 'completed' %}
+                <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Выполнена</span>
+              {% endif %}
+            </p>
+            <p><strong>Создал:</strong> {{ params.task.staff_created.username|default:"—" }}</p>
+            <p><strong>Исполнитель:</strong> {{ params.task.staff_assignee.username|default:"Не назначен" }}</p>
+            <p><strong>Дата создания:</strong> {{ params.task.date_created|date:"d.m.Y H:i" }}</p>
+          </div>
+          <div class="col-md-6">
+            {% if params.task.date_started %}
+            <p><strong>Дата начала работы:</strong> {{ params.task.date_started|date:"d.m.Y H:i" }}</p>
+            {% endif %}
+            {% if params.task.date_completed %}
+            <p><strong>Дата завершения:</strong> {{ params.task.date_completed|date:"d.m.Y H:i" }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% if params.task.description %}
+        <div class="mt-3">
+          <strong>Описание:</strong>
+          <p style="color: #6c7a92; white-space: pre-wrap;">{{ params.task.description }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Действия -->
+        <div class="mt-4 d-flex gap-2">
+          {% if params.task.status == 'new' %}
+          <button type="button" class="btn btn-primary" onclick="takeTask({{ params.task.id }})" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+            <span class="icon-mbri-play"></span> Принять в работу
+          </button>
+          {% elif params.task.status == 'in_progress' %}
+          <button type="button" class="btn btn-success" onclick="completeTask({{ params.task.id }})" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+            <span class="icon-mbri-success"></span> Завершить задачу
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Комментарии -->
+    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-mbri-comment"></span> Комментарии ({{ params.comments|length }})
+        </h5>
+      </div>
+      <div class="card-body">
+        <!-- Форма добавления комментария -->
+        <div class="mb-4">
+          <form id="commentForm" onsubmit="addComment(event, {{ params.task.id }})">
+            <div class="form-floating">
+              <textarea class="form-control" id="commentText" placeholder="Добавить комментарий" style="height: 100px; border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);" required></textarea>
+              <label for="commentText">Добавить комментарий</label>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+              <span class="icon-mbri-plus"></span> Добавить комментарий
+            </button>
+          </form>
+        </div>
+
+        <!-- Список комментариев -->
+        <div id="commentsList">
+          {% for comment in params.comments %}
+          <div class="card mb-3" style="border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.1);">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <strong style="color: #002a5a;">{{ comment.staff.username|default:"—" }}</strong>
+                  <small class="text-muted ms-2">{{ comment.date_created|date:"d.m.Y H:i" }}</small>
+                </div>
+              </div>
+              <p style="color: #6c7a92; white-space: pre-wrap; margin-bottom: 0;">{{ comment.comment }}</p>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted text-center py-4">Комментариев пока нет</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function takeTask(taskId) {
+  if (!confirm('Принять задачу в работу?')) return;
+  
+  fetch(`/cars/task/${taskId}/take/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при принятии задачи');
+  });
+}
+
+function completeTask(taskId) {
+  if (!confirm('Завершить задачу?')) return;
+  
+  fetch(`/cars/task/${taskId}/complete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при завершении задачи');
+  });
+}
+
+function addComment(event, taskId) {
+  event.preventDefault();
+  
+  const commentText = document.getElementById('commentText').value;
+  if (!commentText.trim()) return;
+  
+  const formData = new FormData();
+  formData.append('comment', commentText);
+  formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  
+  fetch(`/cars/task/${taskId}/comment/`, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const commentsList = document.getElementById('commentsList');
+      const commentHtml = `
+        <div class="card mb-3" style="border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.1);">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <strong style="color: #002a5a;">${data.comment.author}</strong>
+                <small class="text-muted ms-2">${data.comment.date}</small>
+              </div>
+            </div>
+            <p style="color: #6c7a92; white-space: pre-wrap; margin-bottom: 0;">${data.comment.text}</p>
+          </div>
+        </div>
+      `;
+      if (commentsList.querySelector('.text-muted.text-center')) {
+        commentsList.innerHTML = commentHtml;
+      } else {
+        commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+      }
+      document.getElementById('commentText').value = '';
+    } else {
+      alert('Ошибка добавления комментария');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при добавлении комментария');
+  });
+}
+</script>
+
+<style>
+.docs-zn-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+</style>
+{% endblock %}
+

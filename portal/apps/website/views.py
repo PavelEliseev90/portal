@@ -40,7 +40,7 @@ from online.models import Records_online_doc, Online_doc
 from telephony.models import Telephony_records_queue
 from telephony.views import refresh_records_download
 from django.contrib.auth import get_user_model
-from avtosalon.models import Avtohub, Autoteka_signal
+from avtosalon.models import Avtohub, Autoteka_signal, RegCarsOrganizationTask
 from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 from avtosalon.models import RefreshCarsLog
@@ -6185,6 +6185,21 @@ def build_kors_dashboard_context(request):
         'filter_unit': filter_unit_ids
     }
 
+    # Подсчет открытых задач по автомобилям с учетом фильтров
+    # Открытые задачи - это задачи со статусом 'new' или 'in_progress'
+    open_tasks_query = RegCarsOrganizationTask.objects.filter(
+        status__in=['new', 'in_progress']
+    )
+    
+    # Применяем фильтр по подразделениям, если он задан
+    if filter_unit_ids:
+        open_tasks_query = open_tasks_query.filter(car__unit__id__in=filter_unit_ids)
+    
+    open_tasks_count = open_tasks_query.count()
+
+    # Получаем все подразделения для фильтра
+    select_units = RefUnit.objects.filter(buauto=True).order_by('name')
+    
     return {
         'list_dc': list_dc,
         'dash': dash,
@@ -6196,6 +6211,8 @@ def build_kors_dashboard_context(request):
         'date_end': date_end,
         'znka_summary': znka_summary,
         'plan_summary': plan_summary,
+        'open_tasks_count': open_tasks_count,
+        'select_units': select_units,
     }
 
 

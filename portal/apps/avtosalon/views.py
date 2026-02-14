@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from refs.models import AutoruComplectation, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefTypeDrive
 from refs.models import RefStagePrice, RefTypeSaleCarsOrganization, RefStatusCarsOrganization, RefTypeDrive, RefTypeBody, RefTypeKpp, RefUnit, RefCity, RefSpecificationData, RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
@@ -19,7 +19,7 @@ from datetime import timedelta
 import os
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegInteractivOcenka, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations
-from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite
+from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, CarsWarehouseShowcase
 from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA, DocRLK, DocLO, RefService, DocServiceItem
 from django.http import JsonResponse
 from rest_framework import status
@@ -439,6 +439,9 @@ def disposition(request):
         'stage_price'
     ).prefetch_related(
         'refcarsorganizationfiles_set'
+    ).annotate(
+        # Подсчет активных задач (новые + в работе)
+        active_tasks_count=Count('tasks', filter=Q(tasks__status__in=['new', 'in_progress']))
     )
     
     # Фильтр по статусу (тип диспозиции)
@@ -799,11 +802,19 @@ def car(request, slug):
         'ratings'       : RefRatingCarsOrganization.objects.only('id', 'name').order_by('name'), 
     }
 
+    # Подсчет задач по автомобилю
+    tasks_count = RegCarsOrganizationTask.objects.filter(car=car).count()
+    tasks_new_count = RegCarsOrganizationTask.objects.filter(car=car, status='new').count()
+    tasks_in_progress_count = RegCarsOrganizationTask.objects.filter(car=car, status='in_progress').count()
+    
     params = {
         'object'        : car,
         'selected'      : selected,
         'qr_code'       : qr_code_base64,
         'car_url'       : car_url,
+        'tasks_count'   : tasks_count,
+        'tasks_new_count': tasks_new_count,
+        'tasks_in_progress_count': tasks_in_progress_count,
     }
     
     return render(request, "avtosalon/car_new.html", {'params': params})    
@@ -2025,3 +2036,275 @@ def deal_calculation(request):
     })
     
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
+
+# ========== Управление задачами по автомобилям ==========
+
+@login_required
+def car_tasks_list(request, car_id=None):
+    """Список задач по автомобилю или всех задач"""
+    from django.core.paginator import Paginator
+    
+    tasks = RegCarsOrganizationTask.objects.select_related('car', 'staff_created', 'staff_assignee').prefetch_related('comments')
+    
+    # Фильтры
+    status_filter = request.GET.get('status', '')
+    assignee_id = request.GET.get('assignee', '')
+    unit_id = request.GET.get('unit', '')
+    
+    if car_id:
+        tasks = tasks.filter(car_id=car_id)
+    
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+    
+    if assignee_id:
+        tasks = tasks.filter(staff_assignee_id=assignee_id)
+    
+    if unit_id:
+        tasks = tasks.filter(car__unit_id=unit_id)
+    
+    # Аннотации для подсчета комментариев
+    tasks = tasks.annotate(
+        comments_count=Count('comments', filter=Q(comments__is_deleted=False))
+    )
+    
+    # Пагинация
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(tasks.order_by('-date_created'), 25)
+    page_obj = paginator.get_page(page_number)
+    
+    # Для фильтров
+    from django.contrib.auth.models import User
+    users = User.objects.filter(is_active=True).order_by('username')
+    units = RefUnit.objects.all().order_by('name')
+    
+    params = {
+        'page_obj': page_obj,
+        'car_id': car_id,
+        'users': users,
+        'units': units,
+        'filters': {
+            'status': status_filter,
+            'assignee': assignee_id,
+            'unit': unit_id,
+        }
+    }
+    
+    return render(request, 'avtosalon/car_tasks_list.html', {'params': params})
+
+
+@login_required
+def car_task_create(request, car_id):
+    """Создание задачи по автомобилю"""
+    car = get_object_or_404(RefCarsOrganization, pk=car_id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '')
+        description = request.POST.get('description', '')
+        assignee_id = request.POST.get('assignee', '')
+        
+        task = RegCarsOrganizationTask.objects.create(
+            car=car,
+            staff_created=request.user,
+            title=title,
+            description=description,
+            status='new',
+            date_created=timezone.now()
+        )
+        
+        if assignee_id:
+            try:
+                assignee = User.objects.get(pk=assignee_id)
+                task.staff_assignee = assignee
+                task.save()
+            except:
+                pass
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'task_id': task.id})
+        
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', f'/cars/{car.slug}/'))
+    
+    # GET запрос - форма создания
+    from django.contrib.auth.models import User
+    users = User.objects.filter(is_active=True).order_by('username')
+    
+    params = {
+        'car': car,
+        'users': users,
+    }
+    
+    return render(request, 'avtosalon/car_task_create.html', {'params': params})
+
+
+@login_required
+def car_task_detail(request, task_id):
+    """Детали задачи по автомобилю"""
+    task = get_object_or_404(RegCarsOrganizationTask.objects.select_related('car', 'staff_created', 'staff_assignee').prefetch_related('comments__staff'), pk=task_id)
+    
+    # Комментарии
+    comments = task.comments.filter(is_deleted=False).order_by('date_created')
+    
+    params = {
+        'task': task,
+        'comments': comments,
+    }
+    
+    return render(request, 'avtosalon/car_task_detail.html', {'params': params})
+
+
+@login_required
+def car_task_take(request, task_id):
+    """Принятие задачи в работу"""
+    task = get_object_or_404(RegCarsOrganizationTask, pk=task_id)
+    
+    if task.status != 'new':
+        return JsonResponse({'success': False, 'error': 'Задача уже в работе или выполнена'}, status=400)
+    
+    task.staff_assignee = request.user
+    task.status = 'in_progress'
+    task.date_started = timezone.now()
+    task.save()
+    
+    return JsonResponse({'success': True, 'message': 'Задача принята в работу'})
+
+
+@login_required
+def car_task_complete(request, task_id):
+    """Завершение задачи"""
+    task = get_object_or_404(RegCarsOrganizationTask, pk=task_id)
+    
+    if task.status == 'completed':
+        return JsonResponse({'success': False, 'error': 'Задача уже выполнена'}, status=400)
+    
+    task.status = 'completed'
+    task.date_completed = timezone.now()
+    task.save()
+    
+    return JsonResponse({'success': True, 'message': 'Задача завершена'})
+
+
+@login_required
+def car_task_comment_add(request, task_id):
+    """Добавление комментария к задаче"""
+    task = get_object_or_404(RegCarsOrganizationTask, pk=task_id)
+    
+    if request.method == 'POST':
+        comment_text = request.POST.get('comment', '')
+        
+        if comment_text:
+            comment = RegCarsOrganizationTaskComment.objects.create(
+                task=task,
+                staff=request.user,
+                comment=comment_text,
+                date_created=timezone.now()
+            )
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'comment': {
+                        'id': comment.id,
+                        'text': comment.comment,
+                        'author': comment.staff.username if comment.staff else '',
+                        'date': comment.date_created.strftime('%d.%m.%Y %H:%M') if comment.date_created else '',
+                    }
+                })
+    
+    return JsonResponse({'success': False, 'error': 'Ошибка добавления комментария'}, status=400)
+
+
+# ========== Витрина склада ==========
+
+@login_required
+def warehouse_showcase_create(request):
+    """Создание витрины склада (запуск через задание)"""
+    from django.db import transaction
+    import json as json_lib
+    
+    unit_id = request.GET.get('unit', '')
+    unit = None
+    if unit_id:
+        unit = get_object_or_404(RefUnit, pk=unit_id)
+    
+    # Базовый queryset
+    cars_qs = RefCarsOrganization.objects.exclude(quantity=0).select_related(
+        'unit', 'status', 'store', 'modification_autoru',
+        'modification_autoru__model', 'modification_autoru__model__mark',
+        'evaluation', 'lo'
+    )
+    
+    if unit:
+        cars_qs = cars_qs.filter(unit=unit)
+    
+    # Подсчет метрик
+    total_cars = cars_qs.count()
+    total_price = cars_qs.aggregate(Sum('price'))['price__sum'] or 0
+    total_cost = cars_qs.aggregate(Sum('cost_price'))['cost_price__sum'] or 0
+    
+    # Проблемы
+    cars_no_photos = cars_qs.annotate(
+        photos_count=Count('refcarsorganizationfiles', filter=Q(refcarsorganizationfiles__file__isnull=False), distinct=True)
+    ).filter(photos_count=0).count()
+    
+    date_threshold_photos = timezone.now() - timedelta(days=90)
+    cars_old_photos = cars_qs.annotate(
+        oldest_photo_date=Min('refcarsorganizationfiles__date', filter=Q(refcarsorganizationfiles__file__isnull=False))
+    ).filter(oldest_photo_date__lt=date_threshold_photos).count()
+    
+    cars_no_evaluation = cars_qs.filter(evaluation__isnull=True).count()
+    
+    date_threshold_eval = timezone.now() - timedelta(days=90)
+    cars_old_evaluation = cars_qs.filter(
+        Q(evaluation__date__lt=date_threshold_eval) | Q(evaluation__isnull=True)
+    ).count()
+    
+    days_threshold = 180
+    date_threshold_stock = timezone.now() - timedelta(days=days_threshold)
+    cars_long_in_stock = cars_qs.filter(date_reception__lt=date_threshold_stock).count()
+    
+    # Создаем витрину
+    with transaction.atomic():
+        showcase = CarsWarehouseShowcase.objects.create(
+            unit=unit,
+            date_created=timezone.now(),
+            total_cars=total_cars,
+            total_price=total_price,
+            total_cost=total_cost,
+            cars_no_photos=cars_no_photos,
+            cars_old_photos=cars_old_photos,
+            cars_no_evaluation=cars_no_evaluation,
+            cars_old_evaluation=cars_old_evaluation,
+            cars_long_in_stock=cars_long_in_stock,
+            data_json=json_lib.dumps({})  # Можно добавить детальные данные
+        )
+    
+    return JsonResponse({
+        'success': True,
+        'showcase_id': showcase.id,
+        'message': 'Витрина склада создана успешно'
+    })
+
+
+@login_required
+def warehouse_analysis(request):
+    """Анализ склада через витрину"""
+    # Получаем последнюю витрину
+    unit_id = request.GET.get('unit', '')
+    showcase = None
+    
+    if unit_id:
+        showcase = CarsWarehouseShowcase.objects.filter(unit_id=unit_id).order_by('-date_created').first()
+    else:
+        showcase = CarsWarehouseShowcase.objects.order_by('-date_created').first()
+    
+    units = RefUnit.objects.all().order_by('name')
+    
+    params = {
+        'showcase': showcase,
+        'units': units,
+        'selected_unit_id': unit_id,
+    }
+    
+    return render(request, 'avtosalon/warehouse_analysis.html', {'params': params})
