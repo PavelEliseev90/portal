@@ -72,6 +72,59 @@
       </div>
     </div>
 
+    <!-- Файлы -->
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-mbri-file"></span> Файлы ({{ params.files|length }})
+        </h5>
+      </div>
+      <div class="card-body">
+        <!-- Форма загрузки файла -->
+        <div class="mb-4">
+          <form id="fileUploadForm" enctype="multipart/form-data">
+            <div class="mb-3">
+              <input type="file" class="form-control" id="fileInput" name="file" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);" required>
+              <small class="text-muted">Максимальный размер файла: 50 МБ</small>
+            </div>
+            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+              <span class="icon-mbri-upload"></span> Загрузить файл
+            </button>
+          </form>
+        </div>
+
+        <!-- Список файлов -->
+        <div id="filesList">
+          {% for file in params.files %}
+          <div class="card mb-2 file-item" data-file-id="{{ file.id }}" style="border-radius: 0.75rem; border: 1px solid rgba(0, 42, 90, 0.1);">
+            <div class="card-body py-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center" style="flex: 1; min-width: 0;">
+                  <span class="icon-mbri-file me-2" style="font-size: 1.5rem; color: #002a5a;"></span>
+                  <div style="flex: 1; min-width: 0;">
+                    <a href="{{ file.file.url }}" target="_blank" class="text-decoration-none" style="color: #002a5a; font-weight: 500;">
+                      {{ file.file_name }}
+                    </a>
+                    <div class="text-muted small">
+                      {{ file.get_file_size_display }} • Загрузил {{ file.staff.username|default:"—" }} • {{ file.date_created|date:"d.m.Y H:i" }}
+                    </div>
+                  </div>
+                </div>
+                {% if file.staff == request.user or request.user.is_staff %}
+                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="deleteFile({{ file.id }})" style="border-radius: 0.5rem;">
+                  <span class="icon-mbri-trash"></span>
+                </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted text-center py-4">Файлов пока нет</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
     <!-- Комментарии -->
     <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
       <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
@@ -117,6 +170,86 @@
 </div>
 
 <script>
+// Загрузка файла
+document.getElementById('fileUploadForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData();
+  const fileInput = document.getElementById('fileInput');
+  
+  if (!fileInput.files[0]) {
+    alert('Выберите файл для загрузки');
+    return;
+  }
+  
+  formData.append('file', fileInput.files[0]);
+  
+  const taskId = {{ params.task.id }};
+  const uploadUrl = `/cars/task/${taskId}/file/upload/`;
+  
+  fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Очищаем форму
+      fileInput.value = '';
+      // Обновляем страницу для отображения нового файла
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при загрузке файла');
+  });
+});
+
+// Удаление файла
+function deleteFile(fileId) {
+  if (!confirm('Удалить файл?')) return;
+  
+  fetch(`/cars/task/file/${fileId}/delete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Удаляем элемент из DOM
+      const fileItem = document.querySelector(`.file-item[data-file-id="${fileId}"]`);
+      if (fileItem) {
+        fileItem.remove();
+        // Обновляем счетчик файлов
+        const filesList = document.getElementById('filesList');
+        const fileCount = filesList.querySelectorAll('.file-item').length;
+        const header = document.querySelector('.card-header h5');
+        if (header) {
+          header.innerHTML = `<span class="icon-mbri-file"></span> Файлы (${fileCount})`;
+        }
+      } else {
+        location.reload();
+      }
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при удалении файла');
+  });
+}
+
 function takeTask(taskId) {
   if (!confirm('Принять задачу в работу?')) return;
   
