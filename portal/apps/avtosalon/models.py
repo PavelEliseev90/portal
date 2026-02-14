@@ -4,6 +4,7 @@ from datetime import datetime
 from refs.models import RefUnit, AutoruModification, AutoruComplectation, RefCarsOrganization
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
 import uuid
 import random
 import json
@@ -380,6 +381,41 @@ class RegCarsOrganizationTaskComment(models.Model):
         ordering = ['date_created']
         indexes = [
             models.Index(fields=['task', 'date_created']),
+        ]
+
+
+class RegCarsOrganizationTaskFile(models.Model):
+    """Файл, прикрепленный к задаче по автомобилю"""
+    task = models.ForeignKey(RegCarsOrganizationTask, on_delete=models.CASCADE, null=True, verbose_name="Задача", related_name='files')
+    staff = models.ForeignKey(User, related_name="car_task_file", on_delete=models.SET_NULL, null=True, verbose_name="Загрузил")
+    file = models.FileField("Файл", upload_to='car_tasks/%Y/%m/%d/', null=True, blank=True)
+    file_name = models.CharField("Имя файла", max_length=512, default='', null=True, blank=True)
+    file_size = models.IntegerField("Размер файла (байт)", default=0, null=True, blank=True)
+    date_created = models.DateTimeField('Дата загрузки', default=datetime.now, blank=True, null=True)
+    is_deleted = models.BooleanField("Удален", default=False)
+    
+    def __str__(self):
+        return "{} - {} - {}".format(self.task, self.file_name, self.date_created)
+    
+    def get_file_size_display(self):
+        """Возвращает размер файла в читаемом формате"""
+        if not self.file_size:
+            return "0 Б"
+        size = self.file_size
+        for unit in ['Б', 'КБ', 'МБ', 'ГБ']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} ТБ"
+    
+    class Meta:
+        db_table = 'regCarsOrganizationTaskFile'
+        verbose_name = "Файл задачи по автомобилю"
+        verbose_name_plural = "Файлы задач по автомобилям"
+        ordering = ['-date_created']
+        indexes = [
+            models.Index(fields=['task', 'date_created']),
+            models.Index(fields=['task', 'is_deleted']),
         ]
 
 

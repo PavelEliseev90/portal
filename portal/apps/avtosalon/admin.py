@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations, Avtohub, AvtohubSite, AvtohubSiteInfo, RefreshCarsLog, RefreshSpecificationsAutoRU, Autoteka_signal, Autoteka_signal_last_id, Autoteka_signal_region
+from .models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations, Avtohub, AvtohubSite, AvtohubSiteInfo, RefreshCarsLog, RefreshSpecificationsAutoRU, Autoteka_signal, Autoteka_signal_last_id, Autoteka_signal_region, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, RegCarsOrganizationTaskFile, CarsWarehouseShowcase
 
 
 @admin.register(AvtohubGroupOptions)
@@ -105,3 +105,39 @@ class AvtohubSiteInfoAdmin(admin.ModelAdmin):
     list_display = ('date', 'vin','site', 'externalState', 'externalURL',)
     list_filter     = ('date', 'site', )
     search_fields   = ('vin', )
+
+
+@admin.register(RegCarsOrganizationTask)
+class RegCarsOrganizationTaskAdmin(admin.ModelAdmin):
+    list_display = ('id', 'car', 'title', 'status', 'staff_created', 'staff_assignee', 'date_created', 'date_started', 'date_completed')
+    list_filter = ('status', 'date_created', 'staff_created', 'staff_assignee')
+    search_fields = ('title', 'description', 'car__vin', 'car__name')
+    raw_id_fields = ('car', 'staff_created', 'staff_assignee')
+    readonly_fields = ('date_created', 'date_started', 'date_completed')
+
+
+@admin.register(RegCarsOrganizationTaskComment)
+class RegCarsOrganizationTaskCommentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'task', 'staff', 'date_created', 'is_deleted')
+    list_filter = ('date_created', 'is_deleted')
+    search_fields = ('comment', 'task__title')
+    raw_id_fields = ('task', 'staff')
+    readonly_fields = ('date_created',)
+
+
+@admin.register(RegCarsOrganizationTaskFile)
+class RegCarsOrganizationTaskFileAdmin(admin.ModelAdmin):
+    list_display = ('id', 'task', 'file_name', 'staff', 'file_size', 'date_created', 'is_deleted')
+    list_filter = ('date_created', 'is_deleted')
+    search_fields = ('file_name', 'task__title')
+    raw_id_fields = ('task', 'staff')
+    readonly_fields = ('date_created', 'file_size')
+
+
+@admin.register(CarsWarehouseShowcase)
+class CarsWarehouseShowcaseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'date_created', 'unit', 'total_cars', 'total_price', 'total_cost')
+    list_filter = ('date_created', 'unit')
+    search_fields = ('unit__name',)
+    raw_id_fields = ('unit',)
+    readonly_fields = ('date_created',)

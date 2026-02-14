@@ -19,7 +19,7 @@ from datetime import timedelta
 import os
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegInteractivOcenka, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations
-from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, CarsWarehouseShowcase
+from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, RegCarsOrganizationTaskFile, CarsWarehouseShowcase
 from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA, DocRLK, DocLO, RefService, DocServiceItem
 from django.http import JsonResponse
 from rest_framework import status
@@ -2141,14 +2141,18 @@ def car_task_create(request, car_id):
 @login_required
 def car_task_detail(request, task_id):
     """Детали задачи по автомобилю"""
-    task = get_object_or_404(RegCarsOrganizationTask.objects.select_related('car', 'staff_created', 'staff_assignee').prefetch_related('comments__staff'), pk=task_id)
+    task = get_object_or_404(RegCarsOrganizationTask.objects.select_related('car', 'staff_created', 'staff_assignee').prefetch_related('comments__staff', 'files__staff'), pk=task_id)
     
     # Комментарии
     comments = task.comments.filter(is_deleted=False).order_by('date_created')
     
+    # Файлы
+    files = task.files.filter(is_deleted=False).order_by('-date_created')
+    
     params = {
         'task': task,
         'comments': comments,
+        'files': files,
     }
     
     return render(request, 'avtosalon/car_task_detail.html', {'params': params})
@@ -2213,6 +2217,71 @@ def car_task_comment_add(request, task_id):
                 })
     
     return JsonResponse({'success': False, 'error': 'Ошибка добавления комментария'}, status=400)
+
+
+@login_required
+def car_task_file_upload(request, task_id):
+    """Загрузка файла к задаче"""
+    task = get_object_or_404(RegCarsOrganizationTask, pk=task_id)
+    
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('file')
+        
+        if not uploaded_file:
+            return JsonResponse({'success': False, 'error': 'Файл не выбран'}, status=400)
+        
+        # Ограничение размера файла (50 МБ)
+        max_size = 50 * 1024 * 1024  # 50 МБ
+        if uploaded_file.size > max_size:
+            return JsonResponse({'success': False, 'error': 'Размер файла превышает 50 МБ'}, status=400)
+        
+        # Создаем запись о файле
+        task_file = RegCarsOrganizationTaskFile.objects.create(
+            task=task,
+            staff=request.user,
+            file=uploaded_file,
+            file_name=uploaded_file.name,
+            file_size=uploaded_file.size,
+            date_created=timezone.now()
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'file': {
+                'id': task_file.id,
+                'name': task_file.file_name,
+                'size': task_file.file_size,
+                'size_display': task_file.get_file_size_display(),
+                'url': task_file.file.url if task_file.file else '',
+                'date': task_file.date_created.strftime('%d.%m.%Y %H:%M') if task_file.date_created else '',
+                'staff': task_file.staff.username if task_file.staff else '',
+            }
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def car_task_file_delete(request, file_id):
+    """Удаление файла задачи"""
+    task_file = get_object_or_404(RegCarsOrganizationTaskFile, pk=file_id)
+    
+    # Проверяем права (только автор или администратор)
+    if task_file.staff != request.user and not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Нет прав на удаление файла'}, status=403)
+    
+    # Мягкое удаление
+    task_file.is_deleted = True
+    task_file.save()
+    
+    # Удаляем физический файл
+    if task_file.file:
+        try:
+            task_file.file.delete(save=False)
+        except:
+            pass
+    
+    return JsonResponse({'success': True, 'message': 'Файл удален'})
 
 
 # ========== Витрина склада ==========

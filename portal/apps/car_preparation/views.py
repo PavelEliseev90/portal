@@ -1,13 +1,16 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, Sum, Avg, Case, When, IntegerField
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.http import JsonResponse
 from datetime import datetime, timedelta
 from calendar import monthrange
+import json
 from .models import (
     CarPreparation, CarPreparationWorkSchedule, CarPreparationCalendar,
-    CarPreparationResource, RefCarPreparationStatus
+    CarPreparationResource, RefCarPreparationStatus, WorkOrder, WorkOrderItem,
+    WorkOrderTemplate, RefRepairZone, WorkOrderItemPhoto
 )
 from refs.models import RefUnit
 from django.shortcuts import redirect
@@ -118,7 +121,11 @@ def preparation_calendar(request):
 
 @login_required
 def preparation_schedule(request, preparation_id):
-    """Планирование конкретной подготовки"""
+    """Планирование конкретной подготовки с системой заказ-нарядов"""
+    from .models import (RefCarPreparationWork, WorkOrderTemplate, RefRepairZone, 
+                        WorkOrder, WorkOrderItem, CarPreparationResource)
+    from django.contrib.auth.models import User
+    
     preparation = get_object_or_404(CarPreparation, id=preparation_id)
     
     # Получаем работы с расписаниями
@@ -134,7 +141,6 @@ def preparation_schedule(request, preparation_id):
     ).select_related('performer')
     
     # Получаем все доступные виды работ для ручного добавления
-    from .models import RefCarPreparationWork
     available_works = RefCarPreparationWork.objects.filter(
         is_active=True
     ).select_related('stage').order_by('stage__sort_order', 'sort_order')
@@ -149,15 +155,36 @@ def preparation_schedule(request, preparation_id):
         if not preparation.work_items.filter(work=work).exists():
             works_by_stage[stage_name].append(work)
     
+    # Получаем шаблоны заказ-нарядов
+    templates = WorkOrderTemplate.objects.filter(is_active=True).prefetch_related('works')
+    
+    # Получаем ремонтные зоны
+    repair_zones = RefRepairZone.objects.filter(
+        is_active=True,
+        unit=preparation.unit
+    ).order_by('sort_order', 'name')
+    
+    # Получаем существующие заказ-наряды по этой подготовке
+    work_orders = WorkOrder.objects.filter(
+        preparation=preparation
+    ).prefetch_related('items__work', 'items__performer', 'repair_zone').order_by('-date_created')
+    
+    # Получаем всех исполнителей
+    performers = User.objects.filter(is_active=True).order_by('username')
+    
     context = {
         'preparation': preparation,
         'work_items': work_items,
         'resources': resources,
         'available_works': available_works,
         'works_by_stage': works_by_stage,
+        'templates': templates,
+        'repair_zones': repair_zones,
+        'work_orders': work_orders,
+        'performers': performers,
     }
     
-    return render(request, 'car_preparation/schedule.html', context)
+    return render(request, 'car_preparation/schedule_new.html', context)
 
 
 @login_required
@@ -680,4 +707,279 @@ def movement_consume(request):
     else:
         form = PreparationMaterialMovementForm(initial={'movement_type': 'consume'})
     return render(request, 'car_preparation/movement_form.html', {'form': form, 'title': 'Расход материалов'})
+
+
+# ===========================================
+# СИСТЕМА ЗАКАЗ-НАРЯДОВ
+# ===========================================
+
+@login_required
+def work_order_create(request, preparation_id):
+    """Создание заказ-наряда из корзины работ"""
+    from .models import RefCarPreparationWork
+    from django.contrib.auth.models import User
+    
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    
+    if request.method == 'POST':
+        try:
+            # Получаем данные из запроса (поддержка FormData и JSON)
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                work_ids = data.get('work_ids', [])
+                template_id = data.get('template_id')
+                planned_start_str = data.get('planned_start')
+                planned_end_str = data.get('planned_end')
+                repair_zone_id = data.get('repair_zone_id')
+                title = data.get('title', '')
+                description = data.get('description', '')
+            else:
+                work_ids = request.POST.getlist('work_ids[]')
+                template_id = request.POST.get('template_id') or None
+                planned_start_str = request.POST.get('planned_start')
+                planned_end_str = request.POST.get('planned_end')
+                repair_zone_id = request.POST.get('repair_zone_id') or None
+                title = request.POST.get('title', '')
+                description = request.POST.get('description', '')
+            
+            if not work_ids:
+                return JsonResponse({'success': False, 'error': 'Не выбрано ни одной работы'}, status=400)
+            
+            # Парсим даты
+            planned_start = None
+            planned_end = None
+            if planned_start_str:
+                try:
+                    # Формат: YYYY-MM-DDTHH:MM
+                    planned_start = datetime.strptime(planned_start_str, '%Y-%m-%dT%H:%M')
+                    if timezone.is_naive(planned_start):
+                        planned_start = timezone.make_aware(planned_start)
+                except:
+                    pass
+            if planned_end_str:
+                try:
+                    planned_end = datetime.strptime(planned_end_str, '%Y-%m-%dT%H:%M')
+                    if timezone.is_naive(planned_end):
+                        planned_end = timezone.make_aware(planned_end)
+                except:
+                    pass
+            
+            # Создаем заказ-наряд
+            work_order = WorkOrder.objects.create(
+                car=preparation.car,
+                preparation=preparation,
+                template_id=int(template_id) if template_id else None,
+                repair_zone_id=int(repair_zone_id) if repair_zone_id else None,
+                title=title or 'Заказ-наряд',
+                description=description,
+                planned_start=planned_start,
+                planned_end=planned_end,
+                status='scheduled',
+                created_by=getattr(request.user, 'staff', None),
+                date_created=timezone.now()
+            )
+            
+            # Добавляем работы в заказ-наряд
+            sort_order = 0
+            for work_id in work_ids:
+                try:
+                    work = RefCarPreparationWork.objects.get(id=int(work_id))
+                    WorkOrderItem.objects.create(
+                        work_order=work_order,
+                        work=work,
+                        sort_order=sort_order,
+                        status='pending',
+                        planned_start=planned_start,
+                        planned_end=planned_end
+                    )
+                    sort_order += 1
+                except (RefCarPreparationWork.DoesNotExist, ValueError):
+                    continue
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'work_order_id': work_order.id,
+                    'work_order_number': work_order.number,
+                    'message': 'Заказ-наряд создан успешно'
+                })
+            
+            return redirect('car_preparation:schedule', preparation_id=preparation_id)
+            
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                }, status=400)
+            raise
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def work_order_timeline(request, car_id):
+    """Таймлайн заказ-нарядов по автомобилю"""
+    from refs.models import RefCarsOrganization
+    
+    car = get_object_or_404(RefCarsOrganization, id=car_id)
+    
+    # Получаем все заказ-наряды по автомобилю
+    work_orders = WorkOrder.objects.filter(car=car).prefetch_related(
+        'items__work', 'items__performer', 'items__photos', 'repair_zone'
+    ).order_by('planned_start', 'date_created')
+    
+    context = {
+        'car': car,
+        'work_orders': work_orders,
+    }
+    
+    return render(request, 'car_preparation/work_order_timeline.html', context)
+
+
+@login_required
+def work_order_item_start(request, item_id):
+    """Начало выполнения работы в заказ-наряде"""
+    item = get_object_or_404(WorkOrderItem, id=item_id)
+    
+    if request.method == 'POST':
+        if item.status == 'completed':
+            return JsonResponse({'success': False, 'error': 'Работа уже выполнена'}, status=400)
+        
+        item.status = 'in_progress'
+        item.actual_start = timezone.now()
+        if not item.performer:
+            item.performer = getattr(request.user, 'staff', None)
+        item.save()
+        
+        # Обновляем статус заказ-наряда
+        work_order = item.work_order
+        if work_order.status == 'scheduled':
+            work_order.status = 'in_progress'
+            work_order.actual_start = timezone.now()
+            work_order.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Работа начата',
+            'actual_start': item.actual_start.strftime('%d.%m.%Y %H:%M') if item.actual_start else ''
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def work_order_item_complete(request, item_id):
+    """Завершение работы в заказ-наряде"""
+    item = get_object_or_404(WorkOrderItem, id=item_id)
+    
+    if request.method == 'POST':
+        if item.status == 'completed':
+            return JsonResponse({'success': False, 'error': 'Работа уже выполнена'}, status=400)
+        
+        item.status = 'completed'
+        item.actual_end = timezone.now()
+        item.save()
+        
+        # Проверяем, все ли работы выполнены
+        work_order = item.work_order
+        all_completed = work_order.items.exclude(status='completed').count() == 0
+        
+        if all_completed:
+            work_order.status = 'completed'
+            work_order.actual_end = timezone.now()
+            work_order.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Работа завершена',
+            'actual_end': item.actual_end.strftime('%d.%m.%Y %H:%M') if item.actual_end else '',
+            'work_order_completed': all_completed
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def work_order_item_photo_upload(request, item_id):
+    """Загрузка фотографии к работе в заказ-наряде"""
+    item = get_object_or_404(WorkOrderItem, id=item_id)
+    
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('photo')
+        description = request.POST.get('description', '')
+        
+        if not uploaded_file:
+            return JsonResponse({'success': False, 'error': 'Файл не выбран'}, status=400)
+        
+        # Ограничение размера файла (10 МБ)
+        max_size = 10 * 1024 * 1024  # 10 МБ
+        if uploaded_file.size > max_size:
+            return JsonResponse({'success': False, 'error': 'Размер файла превышает 10 МБ'}, status=400)
+        
+        # Создаем запись о фотографии
+        photo = WorkOrderItemPhoto.objects.create(
+            work_order_item=item,
+            photo=uploaded_file,
+            description=description,
+            created_by=getattr(request.user, 'staff', None),
+            date_created=timezone.now()
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'photo': {
+                'id': photo.id,
+                'url': photo.photo.url if photo.photo else '',
+                'description': photo.description,
+                'date': photo.date_created.strftime('%d.%m.%Y %H:%M') if photo.date_created else '',
+            }
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def work_order_detail(request, work_order_id):
+    """Детали заказ-наряда"""
+    from django.contrib.auth.models import User
+    
+    work_order = get_object_or_404(WorkOrder.objects.prefetch_related(
+        'items__work', 'items__performer', 'items__photos__created_by', 'repair_zone'
+    ), id=work_order_id)
+    
+    performers = User.objects.filter(is_active=True).order_by('username')
+    
+    context = {
+        'work_order': work_order,
+        'performers': performers,
+    }
+    
+    return render(request, 'car_preparation/work_order_detail.html', context)
+
+
+@login_required
+def work_order_template_works(request, template_id):
+    """API: Получение работ из шаблона заказ-наряда"""
+    template = get_object_or_404(WorkOrderTemplate, id=template_id)
+    
+    works = template.works.all().select_related('stage').order_by('workordertemplatework__sort_order')
+    
+    works_data = []
+    for work in works:
+        template_work = template.workordertemplatework_set.get(work=work)
+        works_data.append({
+            'id': work.id,
+            'name': work.name,
+            'estimated_time': template_work.estimated_time or work.estimated_time or 0,
+            'stage': work.stage.name if work.stage else 'Без этапа',
+            'is_required': template_work.is_required,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'works': works_data,
+        'template_name': template.name,
+        'estimated_duration': template.estimated_duration_minutes,
+    })
 

@@ -7,6 +7,8 @@ from .models import (
     CarPreparationWorkSchedule, CarPreparationCalendar, CarPreparationResource,
     RefPreparationMaterial, PreparationMaterialStock, PreparationMaterialMovement,
     PlannedMaterialConsumption,
+    RefRepairZone, WorkOrderTemplate, WorkOrderTemplateWork,
+    WorkOrder, WorkOrderItem, WorkOrderItemPhoto,
 )
 
 
@@ -202,5 +204,95 @@ class PlannedMaterialConsumptionAdmin(admin.ModelAdmin):
     list_display = ['work_item', 'material', 'qty_planned', 'qty_reserved', 'reserved', 'date_created']
     list_filter = ['reserved', 'material']
     search_fields = ['work_item__work__name', 'material__name', 'material__code']
+    date_hierarchy = 'date_created'
+
+
+# ===========================================
+# АДМИНКА ДЛЯ СИСТЕМЫ ЗАКАЗ-НАРЯДОВ
+# ===========================================
+
+@admin.register(RefRepairZone)
+class RefRepairZoneAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'unit', 'is_active', 'sort_order']
+    list_filter = ['is_active', 'unit']
+    search_fields = ['name', 'code', 'description']
+    ordering = ['sort_order', 'name']
+
+
+class WorkOrderTemplateWorkInline(admin.TabularInline):
+    model = WorkOrderTemplateWork
+    extra = 0
+    fields = ['work', 'is_required', 'estimated_time', 'sort_order']
+    ordering = ['sort_order']
+
+
+@admin.register(WorkOrderTemplate)
+class WorkOrderTemplateAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'unit', 'estimated_duration_minutes', 'is_active', 'is_default', 'date_created']
+    list_filter = ['is_active', 'is_default', 'unit']
+    search_fields = ['name', 'code', 'description']
+    inlines = [WorkOrderTemplateWorkInline]
+    readonly_fields = ['date_created', 'date_updated']
+
+
+class WorkOrderItemInline(admin.TabularInline):
+    model = WorkOrderItem
+    extra = 0
+    fields = ['work', 'status', 'performer', 'planned_start', 'planned_end', 'actual_start', 'actual_end', 'sort_order']
+    readonly_fields = ['actual_start', 'actual_end']
+    ordering = ['sort_order']
+
+
+class WorkOrderItemPhotoInline(admin.TabularInline):
+    model = WorkOrderItemPhoto
+    extra = 0
+    fields = ['photo', 'description', 'created_by', 'date_created']
+    readonly_fields = ['date_created']
+    max_num = 10
+
+
+@admin.register(WorkOrder)
+class WorkOrderAdmin(admin.ModelAdmin):
+    list_display = ['number', 'car', 'title', 'status', 'repair_zone', 'planned_start', 
+                   'actual_start', 'responsible', 'date_created']
+    list_filter = ['status', 'repair_zone', 'template', 'date_created']
+    search_fields = ['number', 'title', 'car__vin', 'car__name', 'description']
+    readonly_fields = ['number', 'date_created', 'date_updated']
+    inlines = [WorkOrderItemInline]
+    date_hierarchy = 'date_created'
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('number', 'car', 'preparation', 'template', 'title', 'description')
+        }),
+        ('Планирование', {
+            'fields': ('repair_zone', 'planned_start', 'planned_end', 'status')
+        }),
+        ('Выполнение', {
+            'fields': ('actual_start', 'actual_end', 'responsible')
+        }),
+        ('Системные', {
+            'fields': ('created_by', 'date_created', 'date_updated')
+        }),
+    )
+
+
+@admin.register(WorkOrderItem)
+class WorkOrderItemAdmin(admin.ModelAdmin):
+    list_display = ['work_order', 'work', 'status', 'performer', 'planned_start', 
+                   'actual_start', 'actual_end', 'sort_order']
+    list_filter = ['status', 'work_order__status']
+    search_fields = ['work_order__number', 'work__name', 'performer__name', 'comment']
+    readonly_fields = ['date_created', 'date_updated']
+    inlines = [WorkOrderItemPhotoInline]
+    date_hierarchy = 'date_created'
+
+
+@admin.register(WorkOrderItemPhoto)
+class WorkOrderItemPhotoAdmin(admin.ModelAdmin):
+    list_display = ['work_order_item', 'description', 'created_by', 'date_created']
+    list_filter = ['date_created']
+    search_fields = ['work_order_item__work__name', 'description']
+    readonly_fields = ['date_created']
     date_hierarchy = 'date_created'
 

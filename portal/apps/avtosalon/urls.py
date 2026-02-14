@@ -23,6 +23,10 @@ urlpatterns = [
    path('task/<int:task_id>/take/',          views.car_task_take, name='car_task_take'),
    path('task/<int:task_id>/complete/',      views.car_task_complete, name='car_task_complete'),
    path('task/<int:task_id>/comment/',       views.car_task_comment_add, name='car_task_comment_add'),
+   path('task/<int:task_id>/file/upload/',   views.car_task_file_upload, name='car_task_file_upload'),
+   path('task/file/<int:file_id>/delete/',   views.car_task_file_delete, name='car_task_file_delete'),
+   path('task/<int:task_id>/file/upload/',   views.car_task_file_upload, name='car_task_file_upload'),
+   path('task/file/<int:file_id>/delete/',   views.car_task_file_delete, name='car_task_file_delete'),
    
    path('deal/calculation/',                 views.deal_calculation, name='deal_calculation'),
    
