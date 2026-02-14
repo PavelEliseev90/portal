@@ -1,0 +1,341 @@
+{% extends "base_web.html" %}
+{% load custom_template_tags %}
+
+{% block title %} - Классифайды - {% if params.config %}Редактирование{% else %}Создание{% endif %} настройки {% endblock %}
+
+{% block title_navbar %} - Классифайды - {% if params.config %}Редактирование{% else %}Создание{% endif %} настройки {% endblock %}
+
+{% block content %}
+<div class="docs-zn-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0">{% if params.config %}Редактирование{% else %}Создание{% endif %} настройки выгрузки</h2>
+        <p class="text-muted mb-0">{% if params.config %}Изменение параметров выгрузки{% else %}Настройка параметров выгрузки автомобилей на площадку{% endif %}</p>
+      </div>
+      <a href="{% url 'classifieds:list' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+        <span class="icon-mbri-arrow-prev"></span> К списку
+      </a>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Основные параметры -->
+      <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+        <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+          <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+            <span class="icon-mbri-setting3"></span> Основные параметры
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="name" name="name" placeholder="Наименование настройки" 
+                       value="{% if params.config %}{{ params.config.name }}{% endif %}" required
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="name">Наименование настройки *</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="platform" name="platform" required
+                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  <option value="">Выберите площадку</option>
+                  {% for platform in params.platforms %}
+                  <option value="{{ platform.id }}" {% if params.config and params.config.platform and params.config.platform.id == platform.id %}selected{% endif %}>
+                    {{ platform.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <label for="platform">Площадка *</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="unit" name="unit"
+                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  <option value="">Все подразделения</option>
+                  {% for unit in params.units %}
+                  <option value="{{ unit.id }}" {% if params.config and params.config.unit and params.config.unit.id == unit.id %}selected{% endif %}>
+                    {{ unit.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <label for="unit">Подразделение ДЦ</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="type_exchange" name="type_exchange"
+                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  <option value="">Не выбрано</option>
+                  {% for type_exchange in params.type_exchanges %}
+                  <option value="{{ type_exchange.id }}" {% if params.config and params.config.type_exchange and params.config.type_exchange.id == type_exchange.id %}selected{% endif %}>
+                    {{ type_exchange.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <label for="type_exchange">Назначение выгрузки</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="status" name="status" required
+                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  <option value="active" {% if not params.config or params.config.status == 'active' %}selected{% endif %}>Активна</option>
+                  <option value="inactive" {% if params.config and params.config.status == 'inactive' %}selected{% endif %}>Неактивна</option>
+                  <option value="error" {% if params.config and params.config.status == 'error' %}selected{% endif %}>Ошибка</option>
+                </select>
+                <label for="status">Статус *</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                       {% if not params.config or params.config.is_active %}checked{% endif %}>
+                <label class="form-check-label" for="is_active" style="font-weight: 500;">Активна</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Настройки файла -->
+      <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+        <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+          <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+            <span class="icon-mbri-file"></span> Настройки файла
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="file_name_template" name="file_name_template" 
+                       placeholder="Шаблон имени файла" 
+                       value="{% if params.config %}{{ params.config.file_name_template }}{% else %}export_{platform}_{date}.xml{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="file_name_template">Шаблон имени файла</label>
+              </div>
+              <small class="text-muted">Доступны переменные: {platform}, {date}, {unit}, {count}</small>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="file_path" name="file_path" 
+                       placeholder="Путь для сохранения" 
+                       value="{% if params.config %}{{ params.config.file_path }}{% else %}/media/classifieds/exports/{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="file_path">Путь для сохранения</label>
+              </div>
+              <small class="text-muted">Путь относительно MEDIA_ROOT</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Настройки выгрузки -->
+      <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+        <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+          <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+            <span class="icon-mbri-play"></span> Настройки выгрузки
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="auto_export" name="auto_export" 
+                       {% if params.config and params.config.auto_export %}checked{% endif %}>
+                <label class="form-check-label" for="auto_export" style="font-weight: 500;">Автоматическая выгрузка</label>
+              </div>
+              <small class="text-muted">Автоматически выгружать при изменении автомобилей</small>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="schedule_cron" name="schedule_cron" 
+                       placeholder="Расписание (cron)" 
+                       value="{% if params.config %}{{ params.config.schedule_cron }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="schedule_cron">Расписание (cron)</label>
+              </div>
+              <small class="text-muted">Формат cron: '0 2 * * *' (каждый день в 2:00)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Фильтры для выбора автомобилей -->
+      <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+        <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+          <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+            <span class="icon-mbri-filter"></span> Фильтры для выбора автомобилей
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="filter_units" name="filter_units" multiple size="5"
+                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  {% for unit in params.units %}
+                  <option value="{{ unit.id }}" {% if params.config and unit in params.config.filter_units.all %}selected{% endif %}>
+                    {{ unit.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <label for="filter_units">Подразделения (фильтр)</label>
+              </div>
+              <small class="text-muted">Удерживайте Ctrl для выбора нескольких</small>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="filter_statuses" name="filter_statuses" multiple size="5"
+                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  {% for status in params.statuses %}
+                  <option value="{{ status.id }}" {% if params.config and status in params.config.filter_statuses.all %}selected{% endif %}>
+                    {{ status.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <label for="filter_statuses">Статусы автомобилей (фильтр)</label>
+              </div>
+              <small class="text-muted">Удерживайте Ctrl для выбора нескольких</small>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="filter_is_new" name="filter_is_new" 
+                       {% if params.config and params.config.filter_is_new %}checked{% endif %}>
+                <label class="form-check-label" for="filter_is_new" style="font-weight: 500;">Только новые автомобили</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="filter_min_price" name="filter_min_price" 
+                       placeholder="Минимальная цена" 
+                       value="{% if params.config and params.config.filter_min_price %}{{ params.config.filter_min_price }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="filter_min_price">Минимальная цена</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="filter_max_price" name="filter_max_price" 
+                       placeholder="Максимальная цена" 
+                       value="{% if params.config and params.config.filter_max_price %}{{ params.config.filter_max_price }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="filter_max_price">Максимальная цена</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="filter_min_year" name="filter_min_year" 
+                       placeholder="Минимальный год" 
+                       value="{% if params.config and params.config.filter_min_year %}{{ params.config.filter_min_year }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="filter_min_year">Минимальный год</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="filter_max_year" name="filter_max_year" 
+                       placeholder="Максимальный год" 
+                       value="{% if params.config and params.config.filter_max_year %}{{ params.config.filter_max_year }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="filter_max_year">Максимальный год</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="filter_marks" name="filter_marks" 
+                       placeholder="Марки (через запятую)" 
+                       value="{% if params.config %}{{ params.config.filter_marks }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="filter_marks">Марки (через запятую)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <textarea class="form-control" id="filter_exclude_vin" name="filter_exclude_vin" 
+                          placeholder="Исключить VIN (по одному на строку)" rows="3"
+                          style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">{% if params.config %}{{ params.config.filter_exclude_vin }}{% endif %}</textarea>
+                <label for="filter_exclude_vin">Исключить VIN (по одному на строку)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Дополнительные настройки -->
+      <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+        <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+          <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+            <span class="icon-mbri-setting3"></span> Дополнительные настройки
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="max_cars_per_export" name="max_cars_per_export" 
+                       placeholder="Максимум автомобилей в выгрузке" 
+                       value="{% if params.config and params.config.max_cars_per_export %}{{ params.config.max_cars_per_export }}{% endif %}"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <label for="max_cars_per_export">Максимум автомобилей в выгрузке</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" id="include_reserved" name="include_reserved" 
+                       {% if params.config and params.config.include_reserved %}checked{% endif %}>
+                <label class="form-check-label" for="include_reserved" style="font-weight: 500;">Включать зарезервированные</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="include_sold" name="include_sold" 
+                       {% if params.config and params.config.include_sold %}checked{% endif %}>
+                <label class="form-check-label" for="include_sold" style="font-weight: 500;">Включать проданные</label>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="form-floating">
+                <textarea class="form-control" id="comment" name="comment" 
+                          placeholder="Комментарий" rows="3"
+                          style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">{% if params.config %}{{ params.config.comment }}{% endif %}</textarea>
+                <label for="comment">Комментарий</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{% url 'classifieds:list' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+          <span class="icon-mbri-close"></span> Отмена
+        </a>
+        <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+          <span class="icon-mbri-success"></span> {% if params.config %}Сохранить изменения{% else %}Создать настройку{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.docs-zn-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
+}
+</style>
+{% endblock %}
+

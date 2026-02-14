@@ -1,153 +1,225 @@
 {% extends "base_web.html" %}
-{% load static %}
+{% load custom_template_tags %}
+
+{% block title %} - Классифайды - Настройки выгрузки {% endblock %}
+
+{% block title_navbar %} - Классифайды - Настройки выгрузки {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col">
-            <h4><span class="icon-mbri-file"></span> Классифайды - Настройки выгрузки</h4>
-        </div>
-        <div class="col-auto">
-            <a href="{% url 'classifieds:config_create' %}" class="btn btn-success">
-                <span class="icon-mbri-plus"></span> Создать настройку
-            </a>
-        </div>
+<div class="docs-zn-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0">Настройки выгрузки</h2>
+        <p class="text-muted mb-0">Управление настройками выгрузки автомобилей на площадки</p>
+      </div>
+      <a href="{% url 'classifieds:config_create' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+        <span class="icon-mbri-plus"></span> Создать настройку
+      </a>
     </div>
 
     <!-- Фильтры -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <input type="text" name="search" class="form-control" placeholder="Поиск..." 
-                           value="{{ params.filters.search }}">
-                </div>
-                <div class="col-md-2">
-                    <select name="platform" class="form-select">
-                        <option value="">Все площадки</option>
-                        {% for platform in params.platforms %}
-                        <option value="{{ platform.id }}" {% if params.filters.platform == platform.id|stringformat:"s" %}selected{% endif %}>
-                            {{ platform.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="unit" class="form-select">
-                        <option value="">Все подразделения</option>
-                        {% for unit in params.units %}
-                        <option value="{{ unit.id }}" {% if params.filters.unit == unit.id|stringformat:"s" %}selected{% endif %}>
-                            {{ unit.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="status" class="form-select">
-                        <option value="">Все статусы</option>
-                        <option value="active" {% if params.filters.status == 'active' %}selected{% endif %}>Активна</option>
-                        <option value="inactive" {% if params.filters.status == 'inactive' %}selected{% endif %}>Неактивна</option>
-                        <option value="error" {% if params.filters.status == 'error' %}selected{% endif %}>Ошибка</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary">Применить</button>
-                    <a href="{% url 'classifieds:list' %}" class="btn btn-secondary">Сбросить</a>
-                </div>
-            </form>
-        </div>
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-4">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="search" name="search" placeholder="Поиск..." value="{{ params.filters.search }}" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <label for="search">Поиск по названию, площадке или подразделению</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-floating">
+              <select name="platform" class="form-select" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <option value="">Все площадки</option>
+                {% for platform in params.platforms %}
+                <option value="{{ platform.id }}" {% if params.filters.platform == platform.id|stringformat:"s" %}selected{% endif %}>
+                  {{ platform.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <label for="platform">Площадка</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-floating">
+              <select name="unit" class="form-select" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <option value="">Все подразделения</option>
+                {% for unit in params.units %}
+                <option value="{{ unit.id }}" {% if params.filters.unit == unit.id|stringformat:"s" %}selected{% endif %}>
+                  {{ unit.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <label for="unit">Подразделение</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-floating">
+              <select name="status" class="form-select" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <option value="">Все статусы</option>
+                <option value="active" {% if params.filters.status == 'active' %}selected{% endif %}>Активна</option>
+                <option value="inactive" {% if params.filters.status == 'inactive' %}selected{% endif %}>Неактивна</option>
+                <option value="error" {% if params.filters.status == 'error' %}selected{% endif %}>Ошибка</option>
+              </select>
+              <label for="status">Статус</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.75rem;">
+              <span class="icon-mbri-search"></span> Применить
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Таблица настроек -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Наименование</th>
-                            <th>Площадка</th>
-                            <th>Подразделение</th>
-                            <th>Статус</th>
-                            <th>Авто</th>
-                            <th>Дата создания</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for config in params.page_obj %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'classifieds:config_detail' config.id %}">
-                                    {{ config.name }}
-                                </a>
-                            </td>
-                            <td>{{ config.platform.name|default:"—" }}</td>
-                            <td>{{ config.unit.name|default:"—" }}</td>
-                            <td>
-                                {% if config.status == 'active' %}
-                                    <span class="badge bg-success">Активна</span>
-                                {% elif config.status == 'inactive' %}
-                                    <span class="badge bg-secondary">Неактивна</span>
-                                {% else %}
-                                    <span class="badge bg-danger">Ошибка</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if config.auto_export %}
-                                    <span class="badge bg-info">Да</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Нет</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ config.date_create|date:"d.m.Y H:i" }}</td>
-                            <td>
-                                <a href="{% url 'classifieds:config_detail' config.id %}" class="btn btn-sm btn-outline-primary">
-                                    <span class="icon-mbri-eye"></span>
-                                </a>
-                                <a href="{% url 'classifieds:config_edit' config.id %}" class="btn btn-sm btn-outline-secondary">
-                                    <span class="icon-mbri-edit"></span>
-                                </a>
-                                <a href="{% url 'classifieds:export_run' config.id %}" class="btn btn-sm btn-outline-success">
-                                    <span class="icon-mbri-play"></span> Выгрузить
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center">Настройки не найдены</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Пагинация -->
-            {% if params.page_obj.has_other_pages %}
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    {% if params.page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% for key, value in params.filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Предыдущая</a>
-                    </li>
-                    {% endif %}
-                    
-                    <li class="page-item active">
-                        <span class="page-link">
-                            Страница {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}
-                        </span>
-                    </li>
-                    
-                    {% if params.page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% for key, value in params.filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
+    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+              <tr>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Наименование</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Площадка</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Подразделение</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Статус</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; text-align: center;">Авто</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Дата создания</th>
+                <th style="border: none; padding: 1rem; font-weight: 600; text-align: center;">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for config in params.page_obj %}
+              <tr>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  <a href="{% url 'classifieds:config_detail' config.id %}" style="font-weight: 500; color: #002a5a; text-decoration: none;">
+                    {{ config.name }}
+                  </a>
+                </td>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  <span style="color: #6c7a92;">{{ config.platform.name|default:"—" }}</span>
+                </td>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  <span style="color: #6c7a92;">{{ config.unit.name|default:"—" }}</span>
+                </td>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  {% if config.status == 'active' %}
+                    <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Активна</span>
+                  {% elif config.status == 'inactive' %}
+                    <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Неактивна</span>
+                  {% else %}
+                    <span class="badge bg-danger" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Ошибка</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 1rem; vertical-align: middle; text-align: center;">
+                  {% if config.auto_export %}
+                    <span class="badge bg-info" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Да</span>
+                  {% else %}
+                    <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Нет</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 1rem; vertical-align: middle;">
+                  <span style="color: #6c7a92;">{{ config.date_create|date:"d.m.Y H:i" }}</span>
+                </td>
+                <td style="padding: 1rem; vertical-align: middle; text-align: center;">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'classifieds:config_detail' config.id %}" class="btn btn-sm btn-outline-primary" style="border-radius: 0.5rem; padding: 0.4rem 0.8rem; margin-right: 0.25rem;">
+                      <span class="icon-mbri-search"></span>
+                    </a>
+                    <a href="{% url 'classifieds:config_edit' config.id %}" class="btn btn-sm btn-outline-secondary" style="border-radius: 0.5rem; padding: 0.4rem 0.8rem; margin-right: 0.25rem;">
+                      <span class="icon-mbri-edit"></span>
+                    </a>
+                    <a href="{% url 'classifieds:export_run' config.id %}" class="btn btn-sm btn-outline-success" style="border-radius: 0.5rem; padding: 0.4rem 0.8rem;">
+                      <span class="icon-mbri-play"></span> Выгрузить
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5" style="color: #6c7a92;">
+                  <div class="mb-3">
+                    <span class="icon-mbri-file" style="font-size: 3rem; opacity: 0.3;"></span>
+                  </div>
+                  <p class="mb-0">Настройки не найдены</p>
+                  <a href="{% url 'classifieds:config_create' %}" class="btn btn-primary mt-3" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem;">
+                    Создать первую настройку
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
+
+    <!-- Пагинация -->
+    {% if params.page_obj.has_other_pages %}
+    <nav aria-label="Навигация по страницам" class="mt-4">
+      <ul class="pagination justify-content-center">
+        {% if params.page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% if params.filters.search %}&search={{ params.filters.search }}{% endif %}{% if params.filters.platform %}&platform={{ params.filters.platform }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <span class="icon-mbri-arrow-prev"></span>
+          </a>
+        </li>
+        {% endif %}
+        
+        {% for num in params.page_obj.paginator.page_range %}
+          {% if params.page_obj.number == num %}
+          <li class="page-item active">
+            <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; margin: 0 0.25rem;">{{ num }}</span>
+          </li>
+          {% elif num > params.page_obj.number|add:'-3' and num < params.page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if params.filters.search %}&search={{ params.filters.search }}{% endif %}{% if params.filters.platform %}&platform={{ params.filters.platform }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">{{ num }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if params.page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% if params.filters.search %}&search={{ params.filters.search }}{% endif %}{% if params.filters.platform %}&platform={{ params.filters.platform }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <span class="icon-mbri-arrow-next"></span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
 </div>
+
+<style>
+.docs-zn-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0, 42, 90, 0.03);
+}
+
+.table thead tr {
+  border-radius: 1.25rem 1.25rem 0 0;
+  overflow: hidden;
+}
+</style>
 {% endblock %}
 

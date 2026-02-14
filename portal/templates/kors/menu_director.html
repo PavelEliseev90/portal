@@ -1,0 +1,547 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Панель управления автосалоном {% endblock %}
+
+{% block title_navbar %} - Панель управления автосалоном {% endblock %}
+
+{% block content %}
+<style>
+  .director-dashboard {
+    background: linear-gradient(135deg, #f4f7fb 0%, #e8f0f8 100%);
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+  }
+
+  .dashboard-header {
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0, 42, 90, 0.3);
+  }
+
+  .dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+  }
+
+  .dashboard-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 42, 90, 0.15);
+    border-color: #00509d;
+  }
+
+  .stat-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-card-label {
+    font-size: 0.9rem;
+    color: #6c7a92;
+    font-weight: 500;
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-card {
+    background: #fff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #002a5a 0%, #00509d 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+
+  .section-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0, 42, 90, 0.2);
+    border-color: #00509d;
+  }
+
+  .section-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .section-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    color: #fff;
+  }
+
+  .section-card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .section-card-description {
+    color: #6c7a92;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: #002a5a;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .action-btn:hover {
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    color: #fff;
+    border-color: transparent;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2);
+  }
+
+  .action-btn-icon {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  .action-btn-text {
+    flex: 1;
+  }
+
+  .action-btn-arrow {
+    opacity: 0.5;
+    transition: transform 0.2s ease;
+  }
+
+  .action-btn:hover .action-btn-arrow {
+    transform: translateX(5px);
+    opacity: 1;
+  }
+
+  .quick-actions {
+    background: #fff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.1);
+    margin-bottom: 2rem;
+  }
+
+  .quick-actions-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .quick-action-btn {
+    padding: 1rem;
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    border: none;
+    border-radius: 0.75rem;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2);
+  }
+
+  .quick-action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 42, 90, 0.3);
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .director-dashboard {
+      padding: 1rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1.8rem;
+    }
+
+    .stats-grid,
+    .section-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="director-dashboard">
+  <!-- Заголовок -->
+  <div class="dashboard-header">
+    <h1>🚗 Панель управления автосалоном</h1>
+    <p>Единая точка доступа ко всем инструментам управления</p>
+  </div>
+
+  <!-- Быстрые действия -->
+  <div class="quick-actions">
+    <div class="quick-actions-title">
+      <span>⚡</span>
+      Быстрые действия
+    </div>
+    <div class="quick-actions-grid">
+      <a href="/korsavto/dashboard/" class="quick-action-btn">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</div>
+        <div>Дашборд</div>
+      </a>
+      <a href="/cars/disposition/" class="quick-action-btn">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🚗</div>
+        <div>Склад</div>
+      </a>
+      <a href="/eco/funnel/analytics/" class="quick-action-btn">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔄</div>
+        <div>Воронка Trade-In</div>
+      </a>
+      <a href="{% url 'register:repricing_list' %}" class="quick-action-btn">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💲</div>
+        <div>Ценообразование</div>
+      </a>
+      <a href="/car_preparation/" class="quick-action-btn">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🛠️</div>
+        <div>Подготовка</div>
+      </a>
+      <a href="/settings/" class="quick-action-btn">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚙️</div>
+        <div>Настройки</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Основные разделы -->
+  <div class="section-grid">
+    <!-- Склад и каталог -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">📦</div>
+        <h3 class="section-card-title">Склад и каталог</h3>
+      </div>
+      <p class="section-card-description">
+        Управление складом автомобилей, каталогом, анализ остатков и движения товара
+      </p>
+      <div class="action-buttons">
+        <a href="/cars/disposition/" class="action-btn">
+          <span class="action-btn-icon">🚗</span>
+          <span class="action-btn-text">Склад автомобилей</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/cars/" class="action-btn">
+          <span class="action-btn-icon">📋</span>
+          <span class="action-btn-text">Каталог автомобилей</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/cars/warehouse/analysis/" class="action-btn">
+          <span class="action-btn-icon">📊</span>
+          <span class="action-btn-text">Анализ склада</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Продажи и сделки -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">💰</div>
+        <h3 class="section-card-title">Продажи и сделки</h3>
+      </div>
+      <p class="section-card-description">
+        Управление продажами, расчеты сделок, соглашения и отгрузки автомобилей
+      </p>
+      <div class="action-buttons">
+        <a href="{% url 'avtosalon:deal_calculation' %}" class="action-btn">
+          <span class="action-btn-icon">🧮</span>
+          <span class="action-btn-text">Расчет сделки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/docs_car_agreement/" class="action-btn">
+          <span class="action-btn-icon">🤝</span>
+          <span class="action-btn-text">Соглашения о покупке</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/docs_car_shipment/" class="action-btn">
+          <span class="action-btn-icon">🚚</span>
+          <span class="action-btn-text">Отгрузки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/korsavto/sales_funnel/" class="action-btn">
+          <span class="action-btn-icon">📈</span>
+          <span class="action-btn-text">Воронка продаж</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Trade-In и оценка -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">🔄</div>
+        <h3 class="section-card-title">Trade-In и оценка</h3>
+      </div>
+      <p class="section-card-description">
+        Воронка Trade-In, интерактивная оценка, рабочие листы и аналитика по оценщикам
+      </p>
+      <div class="action-buttons">
+        <a href="/eco/funnel/analytics/" class="action-btn">
+          <span class="action-btn-icon">📊</span>
+          <span class="action-btn-text">Аналитика воронки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/funnel/" class="action-btn">
+          <span class="action-btn-icon">🔄</span>
+          <span class="action-btn-text">Воронка Trade-In</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/" class="action-btn">
+          <span class="action-btn-icon">💻</span>
+          <span class="action-btn-text">Интерактивная оценка</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/rlks_trade_in/" class="action-btn">
+          <span class="action-btn-icon">📝</span>
+          <span class="action-btn-text">Рабочие листы</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/funnel/analytics/appraisers/" class="action-btn">
+          <span class="action-btn-icon">👤</span>
+          <span class="action-btn-text">Аналитика по оценщикам</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/funnel/rejected/" class="action-btn">
+          <span class="action-btn-icon">❌</span>
+          <span class="action-btn-text">Анализ не принятых</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Управление ценообразованием -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">💲</div>
+        <h3 class="section-card-title">Ценообразование</h3>
+      </div>
+      <p class="section-card-description">
+        Автоматическая переоценка, управление ценами, история изменений
+      </p>
+      <div class="action-buttons">
+        <a href="{% url 'register:repricing_list' %}" class="action-btn">
+          <span class="action-btn-icon">📊</span>
+          <span class="action-btn-text">История переоценок</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="{% url 'register:repricing_units' %}" class="action-btn">
+          <span class="action-btn-icon">🏢</span>
+          <span class="action-btn-text">Запуск переоценки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/pricing-report/" class="action-btn">
+          <span class="action-btn-icon">📈</span>
+          <span class="action-btn-text">Отчет по ценообразованию</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Подготовка автомобилей -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">🛠️</div>
+        <h3 class="section-card-title">Подготовка автомобилей</h3>
+      </div>
+      <p class="section-card-description">
+        Управление подготовкой, контроль качества, этапы работ
+      </p>
+      <div class="action-buttons">
+        <a href="/car_preparation/" class="action-btn">
+          <span class="action-btn-icon">🚗</span>
+          <span class="action-btn-text">Подготовка автомобилей</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Выгрузки и классифайды -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">📤</div>
+        <h3 class="section-card-title">Выгрузки на площадки</h3>
+      </div>
+      <p class="section-card-description">
+        Управление выгрузкой автомобилей на Авито, Авто.ру, Drom и другие площадки
+      </p>
+      <div class="action-buttons">
+        <a href="{% url 'classifieds:list' %}" class="action-btn">
+          <span class="action-btn-icon">⚙️</span>
+          <span class="action-btn-text">Настройки выгрузок</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="{% url 'classifieds:export_history' %}" class="action-btn">
+          <span class="action-btn-icon">📊</span>
+          <span class="action-btn-text">История выгрузок</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Аналитика и отчеты -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">📈</div>
+        <h3 class="section-card-title">Аналитика и отчеты</h3>
+      </div>
+      <p class="section-card-description">
+        Дашборды, KPI, эффективность работы, детальная аналитика
+      </p>
+      <div class="action-buttons">
+        <a href="/korsavto/dashboard/" class="action-btn">
+          <span class="action-btn-icon">📊</span>
+          <span class="action-btn-text">Дашборд</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/korsavto/kpi_eco/" class="action-btn">
+          <span class="action-btn-icon">🎯</span>
+          <span class="action-btn-text">KPI отдела оценки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/efficiency/" class="action-btn">
+          <span class="action-btn-icon">⚡</span>
+          <span class="action-btn-text">Эффективность работы</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/funnel/analytics/analysts/" class="action-btn">
+          <span class="action-btn-icon">👥</span>
+          <span class="action-btn-text">Аналитика по аналитикам</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/interactive-evaluations/" class="action-btn">
+          <span class="action-btn-icon">💻</span>
+          <span class="action-btn-text">Отчет по интерактивным оценкам</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Настройки и управление -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">⚙️</div>
+        <h3 class="section-card-title">Настройки и управление</h3>
+      </div>
+      <p class="section-card-description">
+        Центр настроек, справочники, конфигурация процессов
+      </p>
+      <div class="action-buttons">
+        <a href="/settings/" class="action-btn">
+          <span class="action-btn-icon">🔧</span>
+          <span class="action-btn-text">Центр настроек</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/settings/settings_unit_groups/" class="action-btn">
+          <span class="action-btn-icon">🏢</span>
+          <span class="action-btn-text">Группы подразделений</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/settings/settings_diagnostic_reference/" class="action-btn">
+          <span class="action-btn-icon">🔍</span>
+          <span class="action-btn-text">Справочник диагностики</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
