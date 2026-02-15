@@ -1,0 +1,294 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Рабочий стол подготовки {% endblock %}
+{% block title_navbar %} - Рабочий стол {% endblock %}
+
+{% block content %}
+<style>
+.dashboard-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+  border: 1px solid rgba(0, 42, 90, 0.1);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 23, 61, 0.12);
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #002a5a;
+  line-height: 1;
+  margin: 0.5rem 0;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chart-container {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+  border: 1px solid rgba(0, 42, 90, 0.1);
+  margin-bottom: 1.5rem;
+}
+</style>
+
+<div class="dashboard-page">
+  <div class="container-fluid">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Рабочий стол управления подготовкой</h2>
+      <div class="d-flex gap-2">
+        <a href="{% url 'car_preparation:list' %}" class="btn btn-outline-primary">
+          <span class="icon-mbri-list"></span> Подготовки
+        </a>
+        <a href="{% url 'car_preparation:repair_zones_list' %}" class="btn btn-outline-info">
+          <span class="icon-mbri-setting"></span> Ремонтные зоны
+        </a>
+        <a href="{% url 'car_preparation:work_order_templates_list' %}" class="btn btn-outline-success">
+          <span class="icon-mbri-file"></span> Шаблоны
+        </a>
+      </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="card mb-4" style="border-radius: 1rem;">
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label small">Подразделение</label>
+            <select name="unit_id" class="form-select">
+              <option value="">Все подразделения</option>
+              {% for unit in units %}
+              <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+                {{ unit.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Дата с</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Дата по</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+              <span class="icon-mbri-search"></span> Применить
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Статистика по подготовкам -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Всего подготовок</div>
+          <div class="stat-value">{{ total_preparations }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Активных</div>
+          <div class="stat-value text-warning">{{ active_preparations }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Завершено</div>
+          <div class="stat-value text-success">{{ completed_preparations }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Заказ-нарядов</div>
+          <div class="stat-value text-primary">{{ total_work_orders }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Статистика по заказ-нарядам -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Запланировано</div>
+          <div class="stat-value text-info">{{ scheduled_work_orders }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">В работе</div>
+          <div class="stat-value text-warning">{{ in_progress_work_orders }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Выполнено</div>
+          <div class="stat-value text-success">{{ completed_work_orders }}</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Стоимость материалов</div>
+          <div class="stat-value text-danger">{{ total_materials_cost|floatformat:2 }} ₽</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- График по дням -->
+      <div class="col-lg-8">
+        <div class="chart-container">
+          <h5 class="mb-3" style="color: #002a5a;">Динамика заказ-нарядов</h5>
+          <canvas id="dailyChart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Топ исполнителей -->
+      <div class="col-lg-4">
+        <div class="chart-container">
+          <h5 class="mb-3" style="color: #002a5a;">Топ исполнителей</h5>
+          <div class="list-group">
+            {% for stat in performers_stats %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ stat.performer__name }}</strong>
+                <div class="small text-muted">{{ stat.total_works }} работ</div>
+              </div>
+              <span class="badge bg-primary rounded-pill">{{ stat.total_time_minutes }} мин</span>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center py-3">Нет данных</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <!-- Материалы -->
+      <div class="col-lg-6">
+        <div class="chart-container">
+          <h5 class="mb-3" style="color: #002a5a;">Топ материалов</h5>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Материал</th>
+                  <th class="text-end">Количество</th>
+                  <th class="text-end">Стоимость</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for mat in materials_by_type %}
+                <tr>
+                  <td>{{ mat.material__name }}</td>
+                  <td class="text-end">{{ mat.total_qty|floatformat:2 }}</td>
+                  <td class="text-end"><strong>{{ mat.total_cost|floatformat:2 }} ₽</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted">Нет данных</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Последние заказ-наряды -->
+      <div class="col-lg-6">
+        <div class="chart-container">
+          <h5 class="mb-3" style="color: #002a5a;">Последние заказ-наряды</h5>
+          <div class="list-group">
+            {% for wo in recent_work_orders %}
+            <a href="{% url 'car_preparation:work_order_detail' wo.id %}" class="list-group-item list-group-item-action">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <strong>{{ wo.number }}</strong>
+                  <div class="small">{{ wo.title }}</div>
+                  <div class="small text-muted">{{ wo.car.name|default:wo.car.vin }}</div>
+                </div>
+                <span class="badge 
+                  {% if wo.status == 'completed' %}bg-success
+                  {% elif wo.status == 'in_progress' %}bg-warning
+                  {% elif wo.status == 'scheduled' %}bg-primary
+                  {% else %}bg-secondary{% endif %}">
+                  {{ wo.get_status_display }}
+                </span>
+              </div>
+            </a>
+            {% empty %}
+            <p class="text-muted text-center py-3">Нет данных</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+const dailyData = {{ daily_stats|safe }};
+const ctx = document.getElementById('dailyChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: dailyData.map(d => d.date),
+    datasets: [{
+      label: 'Создано',
+      data: dailyData.map(d => d.created),
+      borderColor: '#00509d',
+      backgroundColor: 'rgba(0, 80, 157, 0.1)',
+      tension: 0.4
+    }, {
+      label: 'Выполнено',
+      data: dailyData.map(d => d.completed),
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      tension: 0.4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  }
+});
+</script>
+{% endblock %}
+

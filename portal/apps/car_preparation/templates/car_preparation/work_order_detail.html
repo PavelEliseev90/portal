@@ -241,6 +241,103 @@
             {% endfor %}
           </div>
           {% endif %}
+          
+          <!-- Материалы/Товары -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label small mb-0">Материалы/Товары</label>
+              <button class="btn btn-sm btn-outline-primary" onclick="showMaterialForm({{ item.id }})">
+                <span class="icon-mbri-plus"></span> Добавить
+              </button>
+            </div>
+            
+            {% if item.materials.exists %}
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>Материал</th>
+                    <th class="text-end">Количество</th>
+                    <th class="text-end">Цена</th>
+                    <th class="text-end">Сумма</th>
+                    <th width="50"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for mat in item.materials.all %}
+                  <tr>
+                    <td>{{ mat.material.name }} <small class="text-muted">({{ mat.material.uom }})</small></td>
+                    <td class="text-end">{{ mat.quantity|floatformat:2 }}</td>
+                    <td class="text-end">{{ mat.unit_price|floatformat:2 }} ₽</td>
+                    <td class="text-end"><strong>{{ mat.total_price|floatformat:2 }} ₽</strong></td>
+                    <td>
+                      <button class="btn btn-sm btn-danger" onclick="deleteMaterial({{ mat.id }})">
+                        <span class="icon-mbri-trash"></span>
+                      </button>
+                    </td>
+                  </tr>
+                  {% if mat.comment %}
+                  <tr>
+                    <td colspan="5" class="small text-muted">{{ mat.comment }}</td>
+                  </tr>
+                  {% endif %}
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th colspan="3" class="text-end">Итого:</th>
+                    <th class="text-end">
+                      {% with total=0 %}
+                        {% for mat in item.materials.all %}
+                          {% widthratio mat.total_price 1 1 as mat_sum %}
+                          {% widthratio total|add:mat_sum 1 1 as total %}
+                        {% endfor %}
+                        {{ total|floatformat:2 }} ₽
+                      {% endwith %}
+                    </th>
+                    <th></th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-muted small mb-0">Материалы не добавлены</p>
+            {% endif %}
+          </div>
+          
+          <!-- Форма добавления материала (скрыта) -->
+          <div id="materialForm_{{ item.id }}" style="display: none;" class="border rounded p-3 bg-light mb-3">
+            <h6 class="mb-3">Добавить материал</h6>
+            <form onsubmit="addMaterial(event, {{ item.id }})">
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <select class="form-select form-select-sm" name="material_id" required>
+                    <option value="">Выберите материал</option>
+                    {% for material in materials %}
+                    <option value="{{ material.id }}">{{ material.name }} ({{ material.uom }})</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" class="form-control form-control-sm" name="quantity" 
+                         placeholder="Кол-во" step="0.001" min="0" value="1" required>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" class="form-control form-control-sm" name="unit_price" 
+                         placeholder="Цена" step="0.01" min="0" value="0" required>
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control form-control-sm" name="comment" 
+                         placeholder="Комментарий">
+                </div>
+                <div class="col-md-1">
+                  <button type="submit" class="btn btn-sm btn-success w-100">
+                    <span class="icon-mbri-save"></span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
         {% endfor %}
       </div>
@@ -340,6 +437,62 @@ function deletePhoto(photoId, itemId) {
   
   // TODO: Реализовать удаление фотографии через API
   console.log('Delete photo', photoId);
+}
+
+function showMaterialForm(itemId) {
+  const form = document.getElementById('materialForm_' + itemId);
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function addMaterial(event, itemId) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  fetch(`{% url 'car_preparation:work_order_item_material_add' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при добавлении материала');
+  });
+}
+
+function deleteMaterial(materialId) {
+  if (!confirm('Удалить материал?')) return;
+  
+  fetch(`{% url 'car_preparation:work_order_item_material_delete' 0 %}`.replace('0', materialId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при удалении материала');
+  });
 }
 </script>
 {% endblock %}

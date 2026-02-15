@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count, Sum, Avg, Case, When, IntegerField
+from django.db.models import Q, Count, Sum, Avg, Case, When, IntegerField, F, ExpressionWrapper, DurationField
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import JsonResponse
@@ -10,7 +10,8 @@ import json
 from .models import (
     CarPreparation, CarPreparationWorkSchedule, CarPreparationCalendar,
     CarPreparationResource, RefCarPreparationStatus, WorkOrder, WorkOrderItem,
-    WorkOrderTemplate, RefRepairZone, WorkOrderItemPhoto
+    WorkOrderTemplate, RefRepairZone, WorkOrderItemPhoto, WorkOrderItemMaterial,
+    RefCarPreparationStage, RefCarPreparationWork, RefPreparationMaterial
 )
 from refs.models import RefUnit
 from django.shortcuts import redirect
@@ -945,14 +946,23 @@ def work_order_detail(request, work_order_id):
     from django.contrib.auth.models import User
     
     work_order = get_object_or_404(WorkOrder.objects.prefetch_related(
-        'items__work', 'items__performer', 'items__photos__created_by', 'repair_zone'
+        'items__work', 'items__performer', 'items__photos__created_by', 
+        'items__materials__material', 'repair_zone'
     ), id=work_order_id)
     
     performers = User.objects.filter(is_active=True).order_by('username')
+    materials = RefPreparationMaterial.objects.filter(is_active=True).order_by('name')
+    
+    # Общая стоимость материалов по заказ-наряду
+    total_materials_cost = WorkOrderItemMaterial.objects.filter(
+        work_order_item__work_order=work_order
+    ).aggregate(total=Sum('total_price'))['total'] or 0
     
     context = {
         'work_order': work_order,
         'performers': performers,
+        'materials': materials,
+        'total_materials_cost': total_materials_cost,
     }
     
     return render(request, 'car_preparation/work_order_detail.html', context)
@@ -982,4 +992,236 @@ def work_order_template_works(request, template_id):
         'template_name': template.name,
         'estimated_duration': template.estimated_duration_minutes,
     })
+
+
+# ===========================================
+# DASHBOARD И УПРАВЛЕНИЕ
+# ===========================================
+
+@login_required
+def preparation_dashboard(request):
+    """Рабочий стол управления подготовкой"""
+    from django.db.models import Count, Sum, Avg, Q, F
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    # Параметры фильтрации
+    unit_id = request.GET.get('unit_id', None)
+    date_from = request.GET.get('date_from', None)
+    date_to = request.GET.get('date_to', None)
+    
+    # По умолчанию - текущий месяц
+    today = timezone.now().date()
+    if not date_from:
+        date_from = today.replace(day=1)
+    else:
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+        except:
+            date_from = today.replace(day=1)
+    
+    if not date_to:
+        last_day = monthrange(today.year, today.month)[1]
+        date_to = today.replace(day=last_day)
+    else:
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+        except:
+            last_day = monthrange(today.year, today.month)[1]
+            date_to = today.replace(day=last_day)
+    
+    # Базовые запросы
+    date_from_dt = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
+    date_to_dt = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
+    
+    # Фильтр по подразделению
+    unit_filter = Q()
+    if unit_id:
+        unit_filter = Q(unit_id=unit_id)
+    
+    # Статистика по подготовкам
+    preparations_query = CarPreparation.objects.filter(
+        date_created__gte=date_from_dt,
+        date_created__lte=date_to_dt
+    ).filter(unit_filter)
+    
+    total_preparations = preparations_query.count()
+    active_preparations = preparations_query.exclude(status__is_final=True).count()
+    completed_preparations = preparations_query.filter(status__is_final=True).count()
+    
+    # Статистика по заказ-нарядам
+    work_orders_query = WorkOrder.objects.filter(
+        date_created__gte=date_from_dt,
+        date_created__lte=date_to_dt
+    )
+    if unit_id:
+        work_orders_query = work_orders_query.filter(car__unit_id=unit_id)
+    
+    total_work_orders = work_orders_query.count()
+    scheduled_work_orders = work_orders_query.filter(status='scheduled').count()
+    in_progress_work_orders = work_orders_query.filter(status='in_progress').count()
+    completed_work_orders = work_orders_query.filter(status='completed').count()
+    
+    # Статистика по работам
+    work_items_query = WorkOrderItem.objects.filter(
+        work_order__date_created__gte=date_from_dt,
+        work_order__date_created__lte=date_to_dt
+    )
+    if unit_id:
+        work_items_query = work_items_query.filter(work_order__car__unit_id=unit_id)
+    
+    total_work_items = work_items_query.count()
+    completed_work_items = work_items_query.filter(status='completed').count()
+    in_progress_work_items = work_items_query.filter(status='in_progress').count()
+    
+    # Статистика по исполнителям
+    performers_stats = work_items_query.filter(
+        performer__isnull=False,
+        status='completed',
+        actual_start__isnull=False,
+        actual_end__isnull=False
+    ).values('performer__name').annotate(
+        total_works=Count('id')
+    ).order_by('-total_works')[:10]
+    
+    # Добавляем время выполнения для каждого исполнителя
+    for stat in performers_stats:
+        performer_name = stat['performer__name']
+        performer_items = work_items_query.filter(
+            performer__name=performer_name,
+            status='completed',
+            actual_start__isnull=False,
+            actual_end__isnull=False
+        )
+        total_seconds = 0
+        for item in performer_items:
+            if item.actual_start and item.actual_end:
+                delta = item.actual_end - item.actual_start
+                total_seconds += delta.total_seconds()
+        stat['total_time_minutes'] = int(total_seconds / 60) if total_seconds > 0 else 0
+    
+    # Статистика по материалам
+    materials_stats = WorkOrderItemMaterial.objects.filter(
+        work_order_item__work_order__date_created__gte=date_from_dt,
+        work_order_item__work_order__date_created__lte=date_to_dt
+    )
+    if unit_id:
+        materials_stats = materials_stats.filter(work_order_item__work_order__car__unit_id=unit_id)
+    
+    total_materials_cost = materials_stats.aggregate(
+        total=Sum('total_price')
+    )['total'] or 0
+    
+    materials_by_type = materials_stats.values('material__name').annotate(
+        total_qty=Sum('quantity'),
+        total_cost=Sum('total_price')
+    ).order_by('-total_cost')[:10]
+    
+    # Статистика по ремонтным зонам
+    zones_stats = work_orders_query.values('repair_zone__name').annotate(
+        total_orders=Count('id')
+    ).order_by('-total_orders')
+    
+    # График по дням (заказ-наряды)
+    daily_stats = []
+    current_date = date_from
+    while current_date <= date_to:
+        day_start = timezone.make_aware(datetime.combine(current_date, datetime.min.time()))
+        day_end = timezone.make_aware(datetime.combine(current_date, datetime.max.time()))
+        
+        day_orders = WorkOrder.objects.filter(
+            date_created__gte=day_start,
+            date_created__lte=day_end
+        )
+        if unit_id:
+            day_orders = day_orders.filter(car__unit_id=unit_id)
+        
+        daily_stats.append({
+            'date': current_date.strftime('%d.%m'),
+            'created': day_orders.count(),
+            'completed': day_orders.filter(status='completed').count(),
+        })
+        current_date += timedelta(days=1)
+    
+    # Последние заказ-наряды
+    recent_work_orders = work_orders_query.order_by('-date_created')[:10]
+    
+    # Подразделения для фильтра
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    
+    context = {
+        'total_preparations': total_preparations,
+        'active_preparations': active_preparations,
+        'completed_preparations': completed_preparations,
+        'total_work_orders': total_work_orders,
+        'scheduled_work_orders': scheduled_work_orders,
+        'in_progress_work_orders': in_progress_work_orders,
+        'completed_work_orders': completed_work_orders,
+        'total_work_items': total_work_items,
+        'completed_work_items': completed_work_items,
+        'in_progress_work_items': in_progress_work_items,
+        'performers_stats': performers_stats,
+        'total_materials_cost': total_materials_cost,
+        'materials_by_type': materials_by_type,
+        'zones_stats': zones_stats,
+        'daily_stats': daily_stats,
+        'recent_work_orders': recent_work_orders,
+        'units': units,
+        'selected_unit_id': unit_id,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    
+    return render(request, 'car_preparation/dashboard.html', context)
+
+
+@login_required
+def work_order_item_material_add(request, item_id):
+    """Добавление материала к работе в заказ-наряде"""
+    item = get_object_or_404(WorkOrderItem, id=item_id)
+    
+    if request.method == 'POST':
+        material_id = request.POST.get('material_id')
+        quantity = float(request.POST.get('quantity', 1) or 1)
+        unit_price = float(request.POST.get('unit_price', 0) or 0)
+        comment = request.POST.get('comment', '').strip()
+        
+        if not material_id:
+            return JsonResponse({'success': False, 'error': 'Материал не выбран'}, status=400)
+        
+        try:
+            material = RefPreparationMaterial.objects.get(id=int(material_id))
+            
+            material_item = WorkOrderItemMaterial.objects.create(
+                work_order_item=item,
+                material=material,
+                quantity=quantity,
+                unit_price=unit_price,
+                comment=comment
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'material_id': material_item.id,
+                'message': 'Материал добавлен'
+            })
+        except RefPreparationMaterial.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Материал не найден'}, status=404)
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def work_order_item_material_delete(request, material_id):
+    """Удаление материала из работы"""
+    material_item = get_object_or_404(WorkOrderItemMaterial, id=material_id)
+    
+    if request.method == 'POST':
+        material_item.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Материал удален'
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
 
