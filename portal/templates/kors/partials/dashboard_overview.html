@@ -446,15 +446,23 @@
                   <th class="text-end">Стоимость, ₽</th>
                   <th class="text-end">Затраты, ₽</th>
                   <th class="text-end">Себестоимость, ₽</th>
+                  <th class="text-end">Доля, %</th>
                 </tr>
               </thead>
               <tbody>
+                {% with total_segment_sum=params.dash.count_200_s__sum|add:params.dash.count_400_s__sum|add:params.dash.count_700_s__sum|add:params.dash.count_1200_s__sum|add:params.dash.count_2000_s__sum|add:params.dash.count_3000_s__sum|add:params.dash.count_5000_s__sum|add:params.dash.count_5001_s__sum %}
                 <tr>
                   <td>до 200 тыс.</td>
                   <td class="text-end">{{ params.dash.count_200__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_200_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_200_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_200_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_200_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>до 400 тыс.</td>
@@ -462,6 +470,12 @@
                   <td class="text-end">{{ params.dash.count_400_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_400_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_400_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_400_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>до 700 тыс.</td>
@@ -469,6 +483,12 @@
                   <td class="text-end">{{ params.dash.count_700_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_700_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_700_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_700_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>до 1,2 млн</td>
@@ -476,6 +496,12 @@
                   <td class="text-end">{{ params.dash.count_1200_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_1200_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_1200_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_1200_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>до 2,0 млн</td>
@@ -483,6 +509,12 @@
                   <td class="text-end">{{ params.dash.count_2000_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_2000_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_2000_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_2000_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>до 3,0 млн</td>
@@ -490,6 +522,12 @@
                   <td class="text-end">{{ params.dash.count_3000_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_3000_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_3000_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_3000_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>до 5,0 млн</td>
@@ -497,6 +535,12 @@
                   <td class="text-end">{{ params.dash.count_5000_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_5000_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_5000_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_5000_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>5,0 млн и выше</td>
@@ -504,7 +548,14 @@
                   <td class="text-end">{{ params.dash.count_5001_s__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_5001_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_5001_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_segment_sum > 0 %}
+                      {% widthratio params.dash.count_5001_s__sum|default:0 total_segment_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
+                {% endwith %}
               </tbody>
             </table>
           </div>
@@ -527,15 +578,23 @@
               <th class="text-end">Стоимость, ₽</th>
               <th class="text-end">Затраты, ₽</th>
               <th class="text-end">Себестоимость, ₽</th>
+              <th class="text-end">Доля, %</th>
             </tr>
           </thead>
           <tbody>
+            {% with total_stage_count=params.dash.count_test__sum|add:params.dash.count_rdo__sum|add:params.dash.count_kor__sum|add:params.dash.count_txt__sum total_stage_sum=params.dash.count_test_s__sum|add:params.dash.count_rdo_s__sum|add:params.dash.count_kor_s__sum|add:params.dash.count_txt_s__sum %}
             <tr>
               <td>Тест - прайс</td>
               <td class="text-end">{{ params.dash.count_test__sum|default:0 }}</td>
               <td class="text-end">{{ params.dash.count_test_s__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_test_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_test_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+              <td class="text-end">
+                {% if total_stage_sum > 0 %}
+                  {% widthratio params.dash.count_test_s__sum|default:0 total_stage_sum 100 as percent %}
+                  <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>РДО</td>
@@ -543,6 +602,12 @@
               <td class="text-end">{{ params.dash.count_rdo_s__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_rdo_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_rdo_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+              <td class="text-end">
+                {% if total_stage_sum > 0 %}
+                  {% widthratio params.dash.count_rdo_s__sum|default:0 total_stage_sum 100 as percent %}
+                  <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>Коррекция</td>
@@ -550,6 +615,12 @@
               <td class="text-end">{{ params.dash.count_kor_s__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_kor_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_kor_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+              <td class="text-end">
+                {% if total_stage_sum > 0 %}
+                  {% widthratio params.dash.count_kor_s__sum|default:0 total_stage_sum 100 as percent %}
+                  <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>TXT</td>
@@ -557,7 +628,14 @@
               <td class="text-end">{{ params.dash.count_txt_s__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_txt_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
               <td class="text-end">{{ params.dash.count_txt_cost__sum|default:0|floatformat:"2g" }} ₽</td>
+              <td class="text-end">
+                {% if total_stage_sum > 0 %}
+                  {% widthratio params.dash.count_txt_s__sum|default:0 total_stage_sum 100 as percent %}
+                  <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                {% else %}—{% endif %}
+              </td>
             </tr>
+            {% endwith %}
           </tbody>
         </table>
       </div>
@@ -649,39 +727,78 @@
                   <th>Тип</th>
                   <th class="text-end">Авто, шт.</th>
                   <th class="text-end">Стоимость, ₽</th>
+                  <th class="text-end">Доля, %</th>
                 </tr>
               </thead>
               <tbody>
+                {% with total_eval_count=params.dash.count_eval_express__sum|add:params.dash.count_eval_avtohab__sum|add:params.dash.count_eval_1c__sum|add:params.dash.count_eval_uk__sum|add:params.dash.count_eval_man__sum|add:params.dash.count_eval_sed__sum total_eval_sum=params.dash.count_eval_express_s__sum|add:params.dash.count_eval_avtohab_s__sum|add:params.dash.count_eval_1c_s__sum|add:params.dash.count_eval_uk_s__sum|add:params.dash.count_eval_man_s__sum|add:params.dash.count_eval_sed_s__sum %}
                 <tr>
                   <td>Экспресс</td>
                   <td class="text-end">{{ params.dash.count_eval_express__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_eval_express_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_eval_sum > 0 %}
+                      {% widthratio params.dash.count_eval_express_s__sum|default:0 total_eval_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>Автохаб</td>
                   <td class="text-end">{{ params.dash.count_eval_avtohab__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_eval_avtohab_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_eval_sum > 0 %}
+                      {% widthratio params.dash.count_eval_avtohab_s__sum|default:0 total_eval_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>1С</td>
                   <td class="text-end">{{ params.dash.count_eval_1c__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_eval_1c_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_eval_sum > 0 %}
+                      {% widthratio params.dash.count_eval_1c_s__sum|default:0 total_eval_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>УК</td>
                   <td class="text-end">{{ params.dash.count_eval_uk__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_eval_uk_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_eval_sum > 0 %}
+                      {% widthratio params.dash.count_eval_uk_s__sum|default:0 total_eval_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>Ручная</td>
                   <td class="text-end">{{ params.dash.count_eval_man__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_eval_man_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_eval_sum > 0 %}
+                      {% widthratio params.dash.count_eval_man_s__sum|default:0 total_eval_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <td>СЭД</td>
                   <td class="text-end">{{ params.dash.count_eval_sed__sum|default:0 }}</td>
                   <td class="text-end">{{ params.dash.count_eval_sed_s__sum|default:0|floatformat:"2g" }} ₽</td>
+                  <td class="text-end">
+                    {% if total_eval_sum > 0 %}
+                      {% widthratio params.dash.count_eval_sed_s__sum|default:0 total_eval_sum 100 as percent %}
+                      <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
+                    {% else %}—{% endif %}
+                  </td>
                 </tr>
+                {% endwith %}
               </tbody>
             </table>
           </div>
