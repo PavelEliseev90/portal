@@ -1051,3 +1051,30 @@ class WorkOrderItemPhoto(models.Model):
         verbose_name = "Фотография работы"
         verbose_name_plural = "Фотографии работ"
         ordering = ['-date_created']
+
+
+class WorkOrderItemMaterial(models.Model):
+    """Товары/материалы в работе заказ-наряда"""
+    work_order_item = models.ForeignKey(WorkOrderItem, on_delete=models.CASCADE,
+                                       verbose_name="Работа", related_name='materials')
+    material = models.ForeignKey('RefPreparationMaterial', on_delete=models.PROTECT,
+                                verbose_name="Материал/Товар")
+    quantity = models.DecimalField("Количество", max_digits=14, decimal_places=3, default=1)
+    unit_price = models.DecimalField("Цена за единицу", max_digits=14, decimal_places=2, default=0.00)
+    total_price = models.DecimalField("Общая стоимость", max_digits=14, decimal_places=2, default=0.00)
+    comment = models.CharField("Комментарий", max_length=500, blank=True, default='')
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    
+    def save(self, *args, **kwargs):
+        # Автоматический расчет общей стоимости
+        self.total_price = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.material.name} - {self.quantity} {self.material.uom}"
+    
+    class Meta:
+        db_table = 'workOrderItemMaterial'
+        verbose_name = "Материал в работе"
+        verbose_name_plural = "Материалы в работах"
+        ordering = ['-date_created']

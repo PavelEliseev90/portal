@@ -7,8 +7,8 @@ from .models import (
     CarPreparationWorkSchedule, CarPreparationCalendar, CarPreparationResource,
     RefPreparationMaterial, PreparationMaterialStock, PreparationMaterialMovement,
     PlannedMaterialConsumption,
-    RefRepairZone, WorkOrderTemplate, WorkOrderTemplateWork,
-    WorkOrder, WorkOrderItem, WorkOrderItemPhoto,
+    RefRepairZone,     WorkOrderTemplate, WorkOrderTemplateWork,
+    WorkOrder, WorkOrderItem, WorkOrderItemPhoto, WorkOrderItemMaterial,
 )
 
 
@@ -294,5 +294,14 @@ class WorkOrderItemPhotoAdmin(admin.ModelAdmin):
     list_filter = ['date_created']
     search_fields = ['work_order_item__work__name', 'description']
     readonly_fields = ['date_created']
+    date_hierarchy = 'date_created'
+
+
+@admin.register(WorkOrderItemMaterial)
+class WorkOrderItemMaterialAdmin(admin.ModelAdmin):
+    list_display = ['work_order_item', 'material', 'quantity', 'unit_price', 'total_price', 'date_created']
+    list_filter = ['material', 'date_created']
+    search_fields = ['work_order_item__work__name', 'material__name', 'comment']
+    readonly_fields = ['total_price', 'date_created']
     date_hierarchy = 'date_created'
 

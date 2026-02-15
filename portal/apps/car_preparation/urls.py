@@ -22,7 +22,23 @@ urlpatterns = [
     path('work_order/item/<int:item_id>/start/', views.work_order_item_start, name='work_order_item_start'),
     path('work_order/item/<int:item_id>/complete/', views.work_order_item_complete, name='work_order_item_complete'),
     path('work_order/item/<int:item_id>/photo/', views.work_order_item_photo_upload, name='work_order_item_photo_upload'),
+    path('work_order/item/<int:item_id>/material/', views.work_order_item_material_add, name='work_order_item_material_add'),
+    path('work_order/material/<int:material_id>/delete/', views.work_order_item_material_delete, name='work_order_item_material_delete'),
     path('api/templates/<int:template_id>/works/', views.work_order_template_works, name='work_order_template_works'),
+    # Dashboard и управление
+    path('dashboard/', views.preparation_dashboard, name='dashboard'),
+    # Ремонтные зоны
+    path('repair-zones/', views.repair_zones_list, name='repair_zones_list'),
+    path('repair-zones/create/', views.repair_zone_create, name='repair_zone_create'),
+    path('repair-zones/<int:zone_id>/edit/', views.repair_zone_edit, name='repair_zone_edit'),
+    path('repair-zones/<int:zone_id>/delete/', views.repair_zone_delete, name='repair_zone_delete'),
+    # Шаблоны заказ-нарядов
+    path('work-order-templates/', views.work_order_templates_list, name='work_order_templates_list'),
+    path('work-order-templates/create/', views.work_order_template_create, name='work_order_template_create'),
+    path('work-order-templates/<int:template_id>/edit/', views.work_order_template_edit, name='work_order_template_edit'),
+    path('work-order-templates/<int:template_id>/delete/', views.work_order_template_delete, name='work_order_template_delete'),
+    # Отчеты
+    path('reports/performers/', views.performers_report, name='performers_report'),
     path('notifications/', views_notifications.notifications_list, name='notifications_list'),
     path('notifications/<int:notification_id>/read/', views_notifications.notification_mark_read, name='notification_mark_read'),
     path('notifications/mark-all-read/', views_notifications.notification_mark_all_read, name='notification_mark_all_read'),
