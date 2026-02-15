@@ -8255,446 +8255,477 @@
 
 {% if params.page == 'rlk_trade_in' %}
 
-  <div class="row g-1">
-    
-    <div class="col-auto">
-      <a href="/korsavto/settings/" class="text-dark"> <span class="icon-mbri-database"> </span> На главную </a>
+<div class="container-fluid py-3">
+  
+  <!-- Заголовок страницы -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="mb-1" style="color: #002a5a; font-weight: 600;">Рабочие листы Trade In</h2>
+      <p class="text-muted mb-0">
+        {% if params.filtr.date_start %}
+          Период: {{ params.filtr.date_start|date:"d.m.Y" }}
+        {% else %}
+          Период: текущий месяц
+        {% endif %}
+        {% if params.filtr.date_end %}
+          — {{ params.filtr.date_end|date:"d.m.Y" }}
+        {% endif %}
+      </p>
     </div>
-    
-    <div class="col-auto">
-      <span class="icon-mbri-edit"> </span> Рабочие листы Trade In
+    <div class="d-flex gap-2">
+      <a href="/korsavto/settings/" class="btn btn-outline-secondary">
+        <span class="icon-mbri-arrow-prev"></span> На главную
+      </a>
     </div>
-    
   </div>
 
-  <hr>
-
-  <form method="get" class="hidemobile">
-    
-    <input type="text" hidden class="form-control" id="page" name="page" value="rlk_trade_in">
-
-    <div class="modal fade" id="exampleModalToggleNewFiltr" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-        </div>
-        <div class="modal-body">
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="new_filtr" name="new_filtr" placeholder="">
-            <label for="floatingInput">Наименование</label>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-success" name="save_filtr" type="submit" ><span class="icon-mbri-download"></span> Сохранить</button>
-        </div>
-        </div>
-      </div>
+  <!-- Форма фильтров -->
+  <form method="get" class="card shadow-sm border-0 mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+    <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+      <h5 class="mb-0" style="color: #fff;">
+        <span class="icon-mbri-setting3"></span> Фильтры
+      </h5>
     </div>
-
-    <div class="row">
-
-    <div class="col-sm">
-
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-      <label for="floatingInput">Дата начала</label>
-    </div>
-
-    </div>
-
-    <div class="col-sm">
-
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-      <label for="floatingInput">Дата окончания</label>
-    </div>
-
-    </div>
-
-    <div class="col-sm">
-
-    <div class="form-floating mb-3">
-      <input type="text" class="form-control" id="number_doc" name="number_doc" placeholder="" value="{{params.filtr.number_doc}}" autocomplete="off">
-      <label for="floatingInput">Номер РЛК</label>
-    </div>
-
-    </div>
-
-    <div class="col-sm">
-                
-      <div class="form-floating mb-3">
-        <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.filtr.filtr_vin}}">
-        <label for="floatingInput">VIN</label>
-      </div>
-
-    </div>
-    </div>
-
-    <div class="row">
+    <div class="card-body">
+      <input type="hidden" name="page" value="rlk_trade_in">
       
-      <div class="col-sm-3">
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-md-3">
+          <label class="form-label text-muted">Дата начала</label>
+          <input type="date" class="form-control" name="date_start" value="{{params.filtr.date_start|date:'Y-m-d'}}" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-muted">Дата окончания</label>
+          <input type="date" class="form-control" name="date_end" value="{{params.filtr.date_end|date:'Y-m-d'}}" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-muted">Номер РЛК</label>
+          <input type="text" class="form-control" name="number_doc" value="{{params.filtr.number_doc}}" placeholder="Введите номер" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label text-muted">VIN</label>
+          <input type="text" class="form-control" name="vin" value="{{params.filtr.filtr_vin}}" placeholder="Введите VIN" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+        </div>
+      </div>
 
-        <div class="card">
-          <div class="card-body1 bg-white" style="border-radius:  0.3rem;" > 
-            <label class="text-secondary" for="floatingInput" style="padding-left: 0.2rem;">Подразделение ДЦ</label><br>
-            <div class="checkselect ">
-              
-              <div class="sticky-top bg-white">
-                <input class="form-control form-control-sm" type="text" id="search_dc" value="">
-                <br>
-                <hr>
-              </div>
-              
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-md-3">
+          <label class="form-label text-uppercase">Подразделения</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
               {% for unit in params.select_units %}
-              
-                <label class="" id="label_search {{unit.name}}"><input type="checkbox" name="unit[]" value="{{unit.pk}}" id="dc_filtr_{{unit.pk}}" {% if unit.pk|join:"" in params.filtr.filter_unit %} checked {% endif %} > {{unit.name}}</label>
-        
+                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                  <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.pk }}" 
+                    {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
+                  {{ unit.name }}
+                </label>
               {% endfor %}
-            
-              <script>
-                $('#search_dc').on('input', function() {
-                    var search = $(this).val();
-                    if (search.length === 0){
-                      $('[id*="label_search"]').removeClass('d-none');
-                    }
-                    else {
-                      $('[id*="label_search"]').addClass('d-none');
-                      var search_lower = search.toLowerCase();
-                      var labels = $('[id*="label_search"]');
-                      for (let i = 0; i < labels.length; i++) {
-                        label = labels[i];
-                        var id_name = label.id.toLowerCase();
-                        if (id_name.indexOf(search_lower) >= 0){
-                          console.log(label.id);
-                          $('[id*="' + label.id + '"]').removeClass('d-none');                        
-                        };
-                      };
-                    };                  
-                });              
-              </script>
-  
-            </div> 
-          </div>
-            
-        </div>
-  
-      </div>
-
-      <div class="col-sm">
-        <div class="form-floating mb-3">							
-          <select class="form-select" id="filtr_lo" name="filtr_lo" placeholder="">
-            <option></option>
-            <option value="1" {% if params.filtr.filtr_lo == '1' %} selected {% endif %}> Нет листа оценки </option>
-            <option value="2" {% if params.filtr.filtr_lo == '2' %} selected {% endif %}> Лист оценки не проведен</option>
-            <option value="3" {% if params.filtr.filtr_lo == '3' %} selected {% endif %}> Лист оценки проведен</option>
-            
-          </select>
-          <label for="floatingInput">Лист оценки</label>
-        </div>
-      </div>
-
-      <div class="col-sm">
-        <div class="form-floating mb-3">							
-          <select class="form-select" id="filtr_rlk_op" name="filtr_rlk_op" placeholder="">
-            <option></option>
-            <option value="1" {% if params.filtr.filtr_rlk_op == '1' %} selected {% endif %}> Нет </option>
-            <option value="2" {% if params.filtr.filtr_rlk_op == '2' %} selected {% endif %}> Есть</option>
-          </select>
-          <label for="floatingInput">Рабочий лист ОП</label>
-        </div>
-      </div>
-      
-      <div class="col-sm">
-        <div class="form-floating mb-3">							
-          <select class="form-select" id="filtr_sale" name="filtr_sale" placeholder="">
-            <option></option>
-            <option value="1" {% if params.filtr.filtr_sale == '1' %} selected {% endif %}> Нет </option>
-            <option value="2" {% if params.filtr.filtr_sale == '2' %} selected {% endif %}> Есть</option>
-          </select>
-          <label for="floatingInput">Отгрузка ОП</label>
-        </div>
-      </div>
-      
-      <div class="col-sm">
-        <div class="form-floating mb-3">							
-          <select class="form-select" id="filtr_signal" name="filtr_signal" placeholder="">
-            <option></option>
-            <option value="1" {% if params.filtr.filtr_signal == 1 %} selected {% endif %}> Автомобиль в продаже </option>
-            <option value="2" {% if params.filtr.filtr_signal == 2 %} selected {% endif %}> Автомобиль в продаже (Дилер) </option>
-            <option value="3" {% if params.filtr.filtr_signal == 3 %} selected {% endif %}> Автомобиль в продаже (Частное лицо)</option>
-            <option value="4" {% if params.filtr.filtr_signal == 4 %} selected {% endif %}> Автомобиль в продаже (Перепродажа)</option>
-          </select>
-          <label for="floatingInput">Сигнал</label>
-        </div>
-      </div>
-
-    </div>
-
-    
-
-    <div class="row">
-      
-      <div class="col-sm-auto align-self-center">
-        <button class="btn btn-outline-success" type="submit" > <span class="icon-mbri-play"></span> Применить</button>
-      </div>
-    <!--
-      <div class="col-sm align-self-center">
-
-        <div class="row g-1">
-            
-          <div class="col-sm-auto align-self-center">
-            <button class="btn btn-outline-success" type="button" data-bs-target="#exampleModalToggleNewFiltr" data-bs-toggle="modal"><span class="icon-mbri-star"></span> Сохранить</button>
-          </div>
-          
-          <div class="col-sm align-self-center">
-            
-            <div class="table-responsive">
-              <table class="table table-fit" style="margin: 0px;">
-                <tbody>
-                  <tr>
-                    
-                    <td>
-                      <div class="vr"></div>
-                    </td>
-  
-                    {% for filter in params.filters_user %}
-                
-                      <td>
-                        
-                          <a href="{{filter.page}}{{filter.path}}&custom={{filter.pk}}" class="btn {% if params.filtr.custom == filter.pk|slugify %} btn-success {% else %} btn-outline-success {% endif %}">{{filter.name}}</a>
-  
-                      </td>
-                    
-                    {% endfor %}
-                    
-                    <td>
-                      <button class="btn btn-outline-secondary" type="button" data-bs-target="#exampleModalToggle2Filter" data-bs-toggle="modal"><span class="icon-mbri-setting3"></span> </button>
-                    </td>
-      
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
-  
-        </div> 
+          <div id="selectedUnits" class="mt-2"></div>
+        </div>
         
+        <div class="col-md-2">
+          <label class="form-label text-muted">Лист оценки</label>
+          <select class="form-select" name="filtr_lo" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <option value="">Все</option>
+            <option value="1" {% if params.filtr.filtr_lo == '1' %}selected{% endif %}>Нет листа оценки</option>
+            <option value="2" {% if params.filtr.filtr_lo == '2' %}selected{% endif %}>Лист оценки не проведен</option>
+            <option value="3" {% if params.filtr.filtr_lo == '3' %}selected{% endif %}>Лист оценки проведен</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label text-muted">Рабочий лист ОП</label>
+          <select class="form-select" name="filtr_rlk_op" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <option value="">Все</option>
+            <option value="1" {% if params.filtr.filtr_rlk_op == '1' %}selected{% endif %}>Нет</option>
+            <option value="2" {% if params.filtr.filtr_rlk_op == '2' %}selected{% endif %}>Есть</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label text-muted">Отгрузка ОП</label>
+          <select class="form-select" name="filtr_sale" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <option value="">Все</option>
+            <option value="1" {% if params.filtr.filtr_sale == '1' %}selected{% endif %}>Нет</option>
+            <option value="2" {% if params.filtr.filtr_sale == '2' %}selected{% endif %}>Есть</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label text-muted">Сигнал</label>
+          <select class="form-select" name="filtr_signal" style="border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <option value="">Все</option>
+            <option value="1" {% if params.filtr.filtr_signal == 1 %}selected{% endif %}>Автомобиль в продаже</option>
+            <option value="2" {% if params.filtr.filtr_signal == 2 %}selected{% endif %}>Автомобиль в продаже (Дилер)</option>
+            <option value="3" {% if params.filtr.filtr_signal == 3 %}selected{% endif %}>Автомобиль в продаже (Частное лицо)</option>
+            <option value="4" {% if params.filtr.filtr_signal == 4 %}selected{% endif %}>Автомобиль в продаже (Перепродажа)</option>
+          </select>
+        </div>
+        
+        <div class="col-md-1">
+          <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.85rem;">
+            <span class="icon-mbri-play"></span> Применить
+          </button>
+        </div>
       </div>
-    -->
-
     </div>
+  </form>
 
-    <hr>
+    
 
-  
 
-  <div class="table-responsive-sm">
-    <table class="table table-sm table-striped table-hover">
-      <thead>
-        <tr>
-          <th scope="col-auto"></th>
-          <th scope="col">Рабочий лист TradeIn</th>
-          <th scope="col">Лист оценки</th>
-          <th scope="col-2"> Оценка </th>
-          <th scope="col-2"> Авито </th>
-          <th scope="col-2"> Автохаб </th>
-          <th scope="col-2"> 1С </th>
-          <th scope="col">Рабочий лист ОП</th>
-          <th scope="col">Отгрузка ОП</th>
-          <th scope="col-2">Сигнал</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for object in params.paginator %}
-        
-          <tr>
-            <td class="col-auto">
-              <a href="/rlks_trade_in/{{object.id}}/"><span class="icon-mbri-play"></span></a>
-            </td>
-            <td class="col-2">
-              {{object.nomer}} от {{object.dataTime}}
-              <br>
-              {% if object.unit == None %} {{object.unit_dc.name}} {% else %} {{object.unit.name}} {% endif %}
-              <br>
-              {{object.manager_trade_in}}
-              <br>
-              {% if object.reasonArchive != '' %}
-                {{object.dateArchive}} /  {{object.reasonArchive}}
-              {% endif %}
-            </td> 
+  <!-- Таблица результатов -->
+  <div class="card shadow-sm border-0 mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+    <div class="card-header bg-white py-3" style="border-radius: 1.25rem 1.25rem 0 0; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0" style="color: #002a5a; font-weight: 600;">Рабочие листы</h5>
+        <div class="d-flex gap-2 align-items-center">
+          <a href="{{request.get_full_path}}&save_xls=True" class="btn btn-outline-secondary btn-sm">
+            <span class="icon-mbri-download"></span> Экспорт
+          </a>
+          <span class="text-muted small">Всего: {{params.paginator.paginator.count|default:0}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" style="margin-bottom: 0;">
+          <thead class="table-light" style="background-color: #f8f9fc;">
+            <tr>
+              <th style="width: 50px; padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);"></th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Рабочий лист TradeIn</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Лист оценки</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Оценка</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Авито</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Автохаб</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">1С</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Рабочий лист ОП</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Отгрузка ОП</th>
+              <th style="padding: 0.75rem 1rem; color: #002a5a; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(0, 42, 90, 0.1);">Сигнал</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for object in params.paginator %}
+            <tr style="transition: background-color 0.2s;">
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                <a href="/rlks_trade_in/{{object.id}}/" class="btn btn-sm btn-outline-primary" style="border-radius: 0.5rem;">
+                  <span class="icon-mbri-play"></span>
+                </a>
+              </td>
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                <div style="font-weight: 600; color: #002a5a; margin-bottom: 0.25rem;">{{object.nomer}}</div>
+                <div style="font-size: 0.85rem; color: #6c7a92;">{{object.dataTime|date:"d.m.Y H:i"}}</div>
+                <div style="font-size: 0.85rem; color: #6c7a92; margin-top: 0.25rem;">
+                  {% if object.unit == None %} {{object.unit_dc.name}} {% else %} {{object.unit.name}} {% endif %}
+                </div>
+                {% if object.manager_trade_in %}
+                <div style="font-size: 0.85rem; color: #6c7a92;">{{object.manager_trade_in}}</div>
+                {% endif %}
+                {% if object.reasonArchive != '' %}
+                <div style="font-size: 0.8rem; color: #d93025; margin-top: 0.25rem;">
+                  <span class="badge bg-danger bg-opacity-10">Архив: {{object.dateArchive|date:"d.m.Y"}} / {{object.reasonArchive}}</span>
+                </div>
+                {% endif %}
+              </td> 
 
-            <td {% if object.lo_nomer == '' %} class="col-2 bg-danger bg-opacity-25" {% elif object.lo_active == False %} class="bg-danger bg-opacity-10" {% else %} class="col-2 bg-success bg-opacity-25" {% endif %}> 
-              {% if object.lo_nomer != '' %}
-                {{object.lo_nomer}} от {{object.lo_date}} {% if object.lo_active %} Проведен {% else %} Не проведен {% endif %}
-                <br>
-                {{object.mark|default_if_none:"Нет данных"}} {{object.model|default_if_none:""}} {{object.modification|default_if_none:""}} 
-                <br> 
-                {{object.vin|default_if_none:""}} / {{object.year|default_if_none:""}}
-              {% endif %}
-            </td> 
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08); {% if object.lo_nomer == '' %} background-color: #fee2e2; {% elif object.lo_active == False %} background-color: #fef3c7; {% else %} background-color: #d1fae5; {% endif %}">
+                {% if object.lo_nomer != '' %}
+                <div style="font-weight: 600; color: #002a5a; margin-bottom: 0.25rem;">{{object.lo_nomer}}</div>
+                <div style="font-size: 0.85rem; color: #6c7a92;">{{object.lo_date|date:"d.m.Y"}}</div>
+                <div style="margin-top: 0.25rem;">
+                  {% if object.lo_active %}
+                  <span class="badge bg-success">Проведен</span>
+                  {% else %}
+                  <span class="badge bg-warning">Не проведен</span>
+                  {% endif %}
+                </div>
+                <div style="font-size: 0.85rem; color: #6c7a92; margin-top: 0.5rem;">
+                  {{object.mark|default_if_none:"Нет данных"}} {{object.model|default_if_none:""}} {{object.modification|default_if_none:""}}
+                </div>
+                <div style="font-size: 0.8rem; color: #8ea1ba; margin-top: 0.25rem;">
+                  {{object.vin|default_if_none:""}} / {{object.year|default_if_none:""}}
+                </div>
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">Нет данных</span>
+                {% endif %}
+              </td> 
             
-            <td class="col-2">
-              {% if object.price_recept > 0 %}
-                Прием - {{object.price_recept|floatformat:"2g"}} &#8381
-                <br>
-                Продажа - {{object.price_sale|floatformat:"2g"}} &#8381
-                <br>
-                ЕЦО КД - {{object.price_before_kd|floatformat:"2g"}} &#8381
-                <br>
-                ЕЦО - {{object.price_after_kd|floatformat:"2g"}} &#8381
-              {% endif %}
-            </td> 
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.price_recept > 0 %}
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Прием:</span> <strong style="color: #002a5a;">{{object.price_recept|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Продажа:</span> <strong style="color: #002a5a;">{{object.price_sale|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">ЕЦО КД:</span> <strong style="color: #002a5a;">{{object.price_before_kd|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem;">
+                  <span style="color: #6c7a92;">ЕЦО:</span> <strong style="color: #002a5a;">{{object.price_after_kd|floatformat:"2g"}} ₽</strong>
+                </div>
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td> 
 
-            <td class="col-2"> 
-              {% if object.estimation_avito_price_avg_condition > 0 %}
-              Объявления - {{object.estimation_avito_price_avg_condition|floatformat:"2g"}} &#8381
-              <br>
-              Реальные сделки - {{object.price_sale|floatformat:"2g"}} &#8381
-              <br>
-              Сделки - {{object.estimation_avito_price_market_min|floatformat:"2g"}} &#8381 - {{object.estimation_avito_price_market_max|floatformat:"2g"}} &#8381
-              <br>
-              Объявления - {{object.estimation_avito_price_min|floatformat:"2g"}} &#8381 - {{object.estimation_avito_price_max|floatformat:"2g"}} &#8381
-              {% endif %}
-            </td> 
-
-            <td class="col-2" автохаб> 
-              {% if object.estimation_hub_start != None %}
-              Объявления - {{object.estimation_avito_price_avg_condition1|floatformat:"2g"}} &#8381
-              <br>
-              Реальные сделки - {{object.price_sale1|floatformat:"2g"}} &#8381
-              <br>
-              Сделки - {{object.estimation_hub_sale_price_min|floatformat:"2g"}} &#8381 - {{object.estimation_hub_sale_price_max|floatformat:"2g"}} &#8381
-              <br>
-              Объявления - {{object.estimation_hub_price_min|floatformat:"2g"}} &#8381 - {{object.estimation_hub_price_max|floatformat:"2g"}} &#8381
-              {% endif %}
-            </td>
-
-            <td class="col-2" 1С> 
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.estimation_avito_price_avg_condition > 0 %}
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Объявления:</span> <strong style="color: #002a5a;">{{object.estimation_avito_price_avg_condition|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Сделки:</span> <strong style="color: #002a5a;">{{object.estimation_avito_price_market_min|floatformat:"2g"}} - {{object.estimation_avito_price_market_max|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem;">
+                  <span style="color: #6c7a92;">Объявления:</span> <strong style="color: #002a5a;">{{object.estimation_avito_price_min|floatformat:"2g"}} - {{object.estimation_avito_price_max|floatformat:"2g"}} ₽</strong>
+                </div>
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
               
-              {% if object.estimation_kors_start_store != None %}
-              Объявления - {{object.estimation_avito_price_avg_condition1|floatformat:"2g"}} &#8381
-              <br>
-              Реальные сделки - {{object.estimation_kors_sale_price_avg|floatformat:"2g"}} &#8381
-              <br>
-              Сделки - {{object.estimation_kors_price_market_min|floatformat:"2g"}} &#8381 - {{object.estimation_kors_price_market_max|floatformat:"2g"}} &#8381
-              <br>
-              Объявления - {{object.estimation_kors_price_min|floatformat:"2g"}} &#8381 - {{object.estimation_kors_price_max|floatformat:"2g"}} &#8381
-              {% endif %}
-            </td>
-
-            <td>
-              {% if object.rlk_op_nomer != None %} 
-                {{object.rlk_op_nomer}} от {{object.rlk_op_dataTime}}
-                <br>
-                {% if object.rlk_op_unitname == '' %} {{object.rlk_op_unitdcname}} {% else %} {{object.rlk_op_unitname}} {% endif %}
-                <br>
-                {{object.rlk_op_staff}}
-              {% endif %}
-            </td>
-            
-            <td> 
-              {% if object.sale_nomer != '' %} 
-                {{object.sale_nomer}} от {{object.sale_date}} {% if object.sale_active %}  Проведен {% endif %}
-                <br>
-                {{object.sale_car_mark}} {{object.sale_car_model}} 
-                <br> 
-                {{object.sale_car}}  / {{object.sale_car_year}}
-                
-              {% endif %}
-            </td> 
-
-            <td> 
-              {% if object.signal_brand != None %}
-                {{object.signal_seller}}
-                <br> 
-                {{object.signal_brand}} {{object.signal_model}} 
-                <br> 
-                {{object.signal_mileage|floatformat:"0g"}} км.  / {{object.signal_year}} г.в.
-                
-              {% endif %}
-            </td>
-
-            <td> 
-              {% if object.signal_brand != None %}
-                {{object.signal_price|floatformat:"2g"}} &#8381;
-                <br> 
-                {{object.signal_description|truncatechars:100}} ... 
-                <br>
-                <a href="{{object.signal_url}}" target="_blank">Открыть объявление</a> 
-                
-              {% endif %}
-            </td>
-
-          <tr>
-        {% endfor %}
-
-      </tbody>
-    </table>
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.estimation_hub_start != None %}
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Сделки:</span> <strong style="color: #002a5a;">{{object.estimation_hub_sale_price_min|floatformat:"2g"}} - {{object.estimation_hub_sale_price_max|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem;">
+                  <span style="color: #6c7a92;">Объявления:</span> <strong style="color: #002a5a;">{{object.estimation_hub_price_min|floatformat:"2g"}} - {{object.estimation_hub_price_max|floatformat:"2g"}} ₽</strong>
+                </div>
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+              
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.estimation_kors_start_store != None %}
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Сделки:</span> <strong style="color: #002a5a;">{{object.estimation_kors_sale_price_avg|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span style="color: #6c7a92;">Сделки:</span> <strong style="color: #002a5a;">{{object.estimation_kors_price_market_min|floatformat:"2g"}} - {{object.estimation_kors_price_market_max|floatformat:"2g"}} ₽</strong>
+                </div>
+                <div style="font-size: 0.85rem;">
+                  <span style="color: #6c7a92;">Объявления:</span> <strong style="color: #002a5a;">{{object.estimation_kors_price_min|floatformat:"2g"}} - {{object.estimation_kors_price_max|floatformat:"2g"}} ₽</strong>
+                </div>
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+              
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.rlk_op_nomer != None %}
+                <div style="font-weight: 600; color: #002a5a; margin-bottom: 0.25rem;">{{object.rlk_op_nomer}}</div>
+                <div style="font-size: 0.85rem; color: #6c7a92;">{{object.rlk_op_dataTime|date:"d.m.Y"}}</div>
+                <div style="font-size: 0.85rem; color: #6c7a92; margin-top: 0.25rem;">
+                  {% if object.rlk_op_unitname == '' %} {{object.rlk_op_unitdcname}} {% else %} {{object.rlk_op_unitname}} {% endif %}
+                </div>
+                {% if object.rlk_op_staff %}
+                <div style="font-size: 0.85rem; color: #6c7a92;">{{object.rlk_op_staff}}</div>
+                {% endif %}
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+              
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.sale_nomer != '' %}
+                <div style="font-weight: 600; color: #002a5a; margin-bottom: 0.25rem;">{{object.sale_nomer}}</div>
+                <div style="font-size: 0.85rem; color: #6c7a92;">{{object.sale_date|date:"d.m.Y"}}</div>
+                {% if object.sale_active %}
+                <span class="badge bg-success" style="margin-top: 0.25rem;">Проведен</span>
+                {% endif %}
+                <div style="font-size: 0.85rem; color: #6c7a92; margin-top: 0.5rem;">
+                  {{object.sale_car_mark}} {{object.sale_car_model}}
+                </div>
+                <div style="font-size: 0.8rem; color: #8ea1ba;">
+                  {{object.sale_car}} / {{object.sale_car_year}}
+                </div>
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+              
+              <td style="padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0, 42, 90, 0.08);">
+                {% if object.signal_brand != None %}
+                <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                  <span class="badge bg-info">{{object.signal_seller}}</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #002a5a; margin-bottom: 0.25rem;">
+                  {{object.signal_brand}} {{object.signal_model}}
+                </div>
+                <div style="font-size: 0.8rem; color: #6c7a92;">
+                  {{object.signal_mileage|floatformat:"0g"}} км. / {{object.signal_year}} г.в.
+                </div>
+                <div style="font-size: 0.85rem; color: #002a5a; margin-top: 0.5rem; font-weight: 600;">
+                  {{object.signal_price|floatformat:"2g"}} ₽
+                </div>
+                {% if object.signal_description %}
+                <div style="font-size: 0.8rem; color: #6c7a92; margin-top: 0.25rem;">
+                  {{object.signal_description|truncatechars:50}}...
+                </div>
+                {% endif %}
+                {% if object.signal_url %}
+                <a href="{{object.signal_url}}" target="_blank" class="btn btn-sm btn-outline-primary mt-2" style="font-size: 0.75rem; border-radius: 0.5rem;">
+                  Открыть
+                </a>
+                {% endif %}
+                {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <div class="row align-self-center align-items-center">
-	
-    <div class="col-auto">
-      <div class="row g-1">
-        <a href="{{request.get_full_path}}&save_xls=True" class="btn-outline-secondary"> <span class="icon-mbri-download"></span> Сохранить</a>
-      
-        <p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
-  
-      </div>
-      
-    </div>
-  
-    <div class="col-auto align-items-center align-self-center justify-content-center">
-      <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
-        
-          {% if params.paginator.has_previous %}
-            <li class="page-num mbr-section-btn">
-              <a class="btn btn-outline-secondary display-7" href="?{% url_replace page_num=params.paginator.previous_page_number %}">&lt;</a>
-            </li>
-          {% endif %}
-      
-          {% for p in params.paginator.paginator.page_range %}
-            {% if params.paginator.number == p %}
-              <li class="page-num mbr-section-btn disabled">
-                <a class="btn btn-secondary display-7">
-                  <b>{{p}}</b>
+  <!-- Пагинация и управление -->
+  <div class="card shadow-sm border-0" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-md-4">
+          <p class="mb-0 text-muted">
+            Всего записей: <strong style="color: #002a5a;">{{params.paginator.paginator.count|default:0}}</strong> / 
+            Выведено: <strong style="color: #002a5a;">{{params.paginator|length}}</strong>
+          </p>
+        </div>
+        <div class="col-md-4">
+          <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+              {% if params.paginator.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% url_replace page_num=params.paginator.previous_page_number %}" style="border-radius: 0.5rem; border: 1px solid rgba(0, 42, 90, 0.15); color: #002a5a;">
+                  <span class="icon-mbri-arrow-prev"></span>
                 </a>
               </li>
-            {% elif p >=  params.paginator.number|add:-3 and p <=  params.paginator.number|add:3  %}
-              <li class="page-num mbr-section-btn">
-                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page_num=p  %}">{{ p }}</a>
+              {% endif %}
+              
+              {% for p in params.paginator.paginator.page_range %}
+                {% if params.paginator.number == p %}
+                <li class="page-item active">
+                  <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; color: #fff;">
+                    {{p}}
+                  </span>
+                </li>
+                {% elif p >= params.paginator.number|add:-3 and p <= params.paginator.number|add:3 %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% url_replace page_num=p %}" style="border-radius: 0.5rem; border: 1px solid rgba(0, 42, 90, 0.15); color: #002a5a;">
+                    {{p}}
+                  </a>
+                </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if params.paginator.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% url_replace page_num=params.paginator.next_page_number %}" style="border-radius: 0.5rem; border: 1px solid rgba(0, 42, 90, 0.15); color: #002a5a;">
+                  <span class="icon-mbri-arrow-next"></span>
+                </a>
               </li>
-            {% endif %}
-          {% endfor %}
-            
-          {% if params.paginator.has_next %}
-            <li class="page-num mbr-section-btn">
-              <a class="btn btn-outline-secondary display-7" href="?{% url_replace page_num=params.paginator.next_page_number %}">&gt;</a>
-            </li>
-          {% endif %}
-    
-        </ul>
-      </nav>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        <div class="col-md-4">
+          <div class="d-flex justify-content-end">
+            <select class="form-select" id="select_count" name="select_count" onchange='this.form.submit()' style="max-width: 150px; border-radius: 0.85rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <option value="25" {% if params.filtr.select_count == 25 %}selected{% endif %}>25</option>
+              <option value="50" {% if params.filtr.select_count == 50 %}selected{% endif %}>50</option>
+              <option value="100" {% if params.filtr.select_count == 100 %}selected{% endif %}>100</option>
+              <option value="200" {% if params.filtr.select_count == 200 %}selected{% endif %}>200</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
-  
-    <div class="col-3 justify-content-center">
-      
-      <div class="form-floating mb-3">
-        <select class="form-select" id="select_count" name="select_count" onchange='this.form.submit()'>
-        <option {% if params.filtr.select_count == 25 %} selected {% endif %}>25</option>
-        <option {% if params.filtr.select_count == 50 %} selected {% endif %}>50</option>
-        <option {% if params.filtr.select_count == 100 %} selected {% endif %}>100</option>
-        <option {% if params.filtr.select_count == 200 %} selected {% endif %}> 200</option>
-        </select>
-        <label for="floatingInput">Выводить</label>
-      </div>
-      </div>
-  
   </div>
   </form>
+</div>
+
+<script>
+// Функции для работы с множественным выбором фильтров подразделений
+(function() {
+  function initUnitMultiSelect() {
+    const searchInput = document.getElementById('unitSearch');
+    const dropdown = document.getElementById('unitDropdown');
+    const selectedDiv = document.getElementById('selectedUnits');
+    
+    if (!searchInput || !dropdown || !selectedDiv) return;
+    
+    function updateSelected() {
+      const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+      selectedDiv.innerHTML = '';
+      if (checked.length > 0) {
+        const badges = Array.from(checked).map(cb => {
+          const label = cb.closest('label');
+          const text = label ? label.textContent.trim() : '';
+          const value = cb.value;
+          return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[name=&quot;unit_ids&quot;][value=&quot;${value}&quot;]').checked=false; updateSelectedUnits();"></button></span>`;
+        }).join('');
+        selectedDiv.innerHTML = badges;
+      }
+    }
+    
+    window.updateSelectedUnits = updateSelected;
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const items = dropdown.querySelectorAll('label');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+    
+    searchInput.addEventListener('focus', function() {
+      dropdown.style.display = 'block';
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelected);
+    });
+    
+    updateSelected();
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUnitMultiSelect);
+  } else {
+    initUnitMultiSelect();
+  }
+})();
+
+// Подготовка данных формы перед отправкой
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.querySelector('form[method="get"]');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const unitIds = Array.from(form.querySelectorAll('input[name="unit_ids"]:checked')).map(cb => cb.value);
+      form.querySelectorAll('input[type="hidden"][name="unit[]"]').forEach(el => el.remove());
+      unitIds.forEach(unitId => {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'unit[]';
+        hidden.value = unitId;
+        form.appendChild(hidden);
+      });
+    });
+  }
+});
+</script>
 
 {% endif %}
 
