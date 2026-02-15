@@ -16,7 +16,7 @@
   position: fixed;
   right: 0;
   top: 0;
-  width: 400px;
+  width: 450px;
   height: 100vh;
   background: #fff;
   box-shadow: -4px 0 20px rgba(0, 42, 90, 0.1);
@@ -65,6 +65,7 @@
   font-weight: 600;
   color: #002a5a;
   flex: 1;
+  font-size: 0.9rem;
 }
 
 .cart-item-remove {
@@ -79,8 +80,8 @@
 .work-card {
   background: #fff;
   border-radius: 1rem;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
   border: 1px solid rgba(0, 42, 90, 0.1);
   box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
   transition: all 0.3s ease;
@@ -101,13 +102,14 @@
   display: flex;
   justify-content: space-between;
   align-items: start;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .work-card-title {
   font-weight: 600;
   color: #002a5a;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
+  flex: 1;
 }
 
 .work-card-meta {
@@ -120,7 +122,7 @@
 .work-card-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   background: #e9ecef;
   color: #6c757d;
 }
@@ -129,7 +131,7 @@
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   border: 2px solid rgba(0, 42, 90, 0.1);
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1.25rem;
   margin-bottom: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -141,74 +143,183 @@
   transform: translateY(-2px);
 }
 
-.timeline-item {
-  position: relative;
-  padding-left: 2rem;
-  padding-bottom: 2rem;
-  border-left: 2px solid #e9ecef;
-}
-
-.timeline-item:last-child {
-  border-left: none;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: -8px;
-  top: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #00509d;
-  border: 3px solid #fff;
-  box-shadow: 0 0 0 2px #00509d;
-}
-
-.timeline-content {
+.preparation-work-item {
   background: #fff;
   border-radius: 0.75rem;
   padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid #00509d;
   box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
+}
+
+.preparation-work-item.completed {
+  border-left-color: #22c55e;
+}
+
+.preparation-work-item.in_progress {
+  border-left-color: #f59e0b;
+}
+
+.template-modal {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.template-search {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(0, 42, 90, 0.1);
 }
 </style>
 
 <div class="work-order-schedule-page">
   <div class="container-fluid">
-    <!-- Заголовок -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2 class="mb-1">Планирование работ</h2>
-        <p class="text-muted mb-0">
-          Автомобиль: <a href="/cars/{{ preparation.car.slug }}/" target="_blank">{{ preparation.car.name|default:preparation.car.vin }}</a>
-        </p>
+    <!-- Заголовок и информация об автомобиле -->
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="mb-1" style="color: #fff;">Планирование работ</h4>
+            <p class="mb-0" style="color: rgba(255,255,255,0.9);">
+              Автомобиль: <a href="/cars/{{ preparation.car.slug }}/" target="_blank" style="color: #fff; text-decoration: underline;">{{ preparation.car.name|default:preparation.car.vin }}</a>
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-light" onclick="toggleCart()" id="cartToggleBtn">
+              <span class="icon-mbri-shopping-cart"></span> Корзина (<span id="cartCount">0</span>)
+            </button>
+            <a href="{% url 'car_preparation:work_order_timeline' preparation.car.id %}" class="btn btn-light">
+              <span class="icon-mbri-clock"></span> Таймлайн
+            </a>
+            <a href="{% url 'car_preparation:list' %}" class="btn btn-light">
+              <span class="icon-mbri-arrow-prev"></span> К списку
+            </a>
+          </div>
+        </div>
       </div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-primary" onclick="toggleCart()" id="cartToggleBtn">
-          <span class="icon-mbri-shopping-cart"></span> Корзина (<span id="cartCount">0</span>)
-        </button>
-        <a href="{% url 'car_preparation:work_order_timeline' preparation.car.id %}" class="btn btn-outline-info">
-          <span class="icon-mbri-clock"></span> Таймлайн
-        </a>
-        <a href="{% url 'car_preparation:list' %}" class="btn btn-outline-secondary">
-          <span class="icon-mbri-arrow-prev"></span> К списку
-        </a>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" value="{{ preparation.car.vin }}" readonly>
+              <label>VIN</label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" value="{{ preparation.status.name|default:'Не указан' }}" readonly>
+              <label>Статус подготовки</label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" value="{{ preparation.responsible.name|default:'Не назначен' }}" readonly>
+              <label>Ответственный</label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" value="{{ preparation.unit.name|default:'Не указано' }}" readonly>
+              <label>Подразделение</label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Комментарии к подготовке -->
+        <div class="row g-3 mt-2">
+          <div class="col-md-4">
+            <label class="form-label small">Комментарий при создании</label>
+            <textarea class="form-control" id="comment_initial" rows="2" 
+                      placeholder="Комментарий при создании..."
+                      onblur="saveComment('comment_initial', this.value)">{{ preparation.comment_initial|default:'' }}</textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small">Комментарий при завершении</label>
+            <textarea class="form-control" id="comment_final" rows="2" 
+                      placeholder="Комментарий при завершении..."
+                      onblur="saveComment('comment_final', this.value)">{{ preparation.comment_final|default:'' }}</textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small">Заметки по качеству</label>
+            <textarea class="form-control" id="quality_notes" rows="2" 
+                      placeholder="Заметки по качеству..."
+                      onblur="saveComment('quality_notes', this.value)">{{ preparation.quality_notes|default:'' }}</textarea>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="row">
       <!-- Основной контент -->
       <div class="col-lg-9">
-        <!-- Шаблоны заказ-нарядов -->
-        {% if templates %}
+        <!-- Работы подготовки (существующие) -->
+        {% if preparation_works_by_stage %}
         <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
           <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
             <h5 class="mb-0" style="color: #fff;">
-              <span class="icon-mbri-file"></span> Шаблоны заказ-нарядов
+              <span class="icon-mbri-list"></span> Работы подготовки ({{ work_items.count }})
             </h5>
           </div>
           <div class="card-body">
-            <div class="row g-3">
-              {% for template in templates %}
+            {% for stage_name, stage_works in preparation_works_by_stage.items %}
+            <div class="mb-4">
+              <h6 class="border-bottom pb-2 mb-3" style="color: #002a5a;">{{ stage_name }}</h6>
+              {% for work_item in stage_works %}
+              <div class="preparation-work-item {{ work_item.status }}">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <strong style="color: #002a5a;">{{ work_item.work.name }}</strong>
+                      <span class="badge 
+                        {% if work_item.status == 'completed' %}bg-success
+                        {% elif work_item.status == 'in_progress' %}bg-warning
+                        {% else %}bg-secondary{% endif %}">
+                        {{ work_item.get_status_display }}
+                      </span>
+                      {% if work_item.is_confirmed %}
+                      <span class="badge bg-info">Подтверждена</span>
+                      {% endif %}
+                    </div>
+                    {% if work_item.comment %}
+                    <div class="small text-muted mb-1">{{ work_item.comment }}</div>
+                    {% endif %}
+                    {% if work_item.performer %}
+                    <div class="small text-muted">Исполнитель: {{ work_item.performer.name }}</div>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="addPreparationWorkToCart({{ work_item.work.id }}, '{{ work_item.work.name|escapejs }}')">
+                      <span class="icon-mbri-plus"></span> В корзину
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Шаблоны заказ-нарядов -->
+        <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0" style="color: #fff;">
+                <span class="icon-mbri-file"></span> Шаблоны заказ-нарядов
+              </h5>
+              <button class="btn btn-sm btn-light" onclick="showTemplateModal()">
+                <span class="icon-mbri-search"></span> Выбрать шаблон
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            {% if templates %}
+            <div class="row g-3" id="templatesGrid">
+              {% for template in templates|slice:":6" %}
               <div class="col-md-6">
                 <div class="template-card" onclick="loadTemplate({{ template.id }})">
                   <div class="d-flex justify-content-between align-items-start mb-2">
@@ -226,9 +337,18 @@
               </div>
               {% endfor %}
             </div>
+            {% if templates.count > 6 %}
+            <div class="text-center mt-3">
+              <button class="btn btn-outline-primary" onclick="showTemplateModal()">
+                Показать все шаблоны ({{ templates.count }})
+              </button>
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-muted text-center py-4">Шаблоны не созданы</p>
+            {% endif %}
           </div>
         </div>
-        {% endif %}
 
         <!-- Доступные работы -->
         <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
@@ -238,10 +358,11 @@
             </h5>
           </div>
           <div class="card-body">
+            {% if works_by_stage %}
             {% for stage_name, works in works_by_stage.items %}
             <div class="mb-4">
               <h6 class="border-bottom pb-2 mb-3" style="color: #002a5a;">{{ stage_name }}</h6>
-              <div class="row g-3">
+              <div class="row g-2">
                 {% for work in works %}
                 <div class="col-md-6 col-lg-4">
                   <div class="work-card" data-work-id="{{ work.id }}" onclick="toggleWorkSelection({{ work.id }})">
@@ -249,7 +370,8 @@
                       <div class="work-card-title">{{ work.name }}</div>
                       <input type="checkbox" class="form-check-input work-checkbox" 
                              data-work-id="{{ work.id }}" 
-                             onchange="updateCart({{ work.id }}, this.checked)">
+                             onchange="updateCart({{ work.id }}, this.checked)"
+                             onclick="event.stopPropagation()">
                     </div>
                     <div class="work-card-meta">
                       {% if work.estimated_time %}
@@ -257,18 +379,16 @@
                         <span class="icon-mbri-clock"></span> {{ work.estimated_time }} мин
                       </span>
                       {% endif %}
-                      {% if work.stage %}
-                      <span class="work-card-badge">{{ work.stage.name }}</span>
-                      {% endif %}
                     </div>
                   </div>
                 </div>
                 {% endfor %}
               </div>
             </div>
-            {% empty %}
-            <p class="text-muted text-center py-4">Все доступные работы уже добавлены в подготовку</p>
             {% endfor %}
+            {% else %}
+            <p class="text-muted text-center py-4">Все доступные работы уже добавлены в подготовку</p>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -319,6 +439,55 @@
   </div>
 </div>
 
+<!-- Модальное окно выбора шаблонов -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+        <h5 class="modal-title">Выбор шаблона заказ-наряда</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="template-search">
+          <input type="text" class="form-control" id="templateSearch" 
+                 placeholder="Поиск шаблона..." 
+                 onkeyup="filterTemplates(this.value)">
+        </div>
+        <div class="template-modal p-3">
+          <div class="row g-3" id="templatesModalGrid">
+            {% for template in templates %}
+            <div class="col-md-6 template-item" data-template-name="{{ template.name|lower }}" data-template-desc="{{ template.description|lower|default:'' }}">
+              <div class="template-card" onclick="loadTemplate({{ template.id }}); bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="mb-0" style="color: #002a5a; font-weight: 600;">{{ template.name }}</h6>
+                  <span class="badge bg-primary">{{ template.works.count }} работ</span>
+                </div>
+                {% if template.description %}
+                <p class="text-muted small mb-2">{{ template.description|truncatewords:20 }}</p>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="text-muted small">
+                    <span class="icon-mbri-clock me-1"></span>
+                    ~{{ template.estimated_duration_minutes }} мин
+                  </div>
+                  {% if template.is_default %}
+                  <span class="badge bg-warning">По умолчанию</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+              <p class="text-muted text-center py-4">Шаблоны не созданы</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Корзина работ -->
 <div class="cart-works" id="cartWorks">
   <div class="cart-header">
@@ -334,11 +503,11 @@
     <form id="workOrderForm">
       <div class="mb-3">
         <label class="form-label small">Название заказ-наряда</label>
-        <input type="text" class="form-control" name="title" placeholder="Например: Мойка перед выдачей" required>
+        <input type="text" class="form-control form-control-sm" name="title" placeholder="Например: Мойка перед выдачей" required>
       </div>
       <div class="mb-3">
         <label class="form-label small">Ремонтная зона</label>
-        <select class="form-select" name="repair_zone_id">
+        <select class="form-select form-select-sm" name="repair_zone_id">
           <option value="">Выберите зону</option>
           {% for zone in repair_zones %}
           <option value="{{ zone.id }}">{{ zone.name }}</option>
@@ -347,17 +516,17 @@
       </div>
       <div class="mb-3">
         <label class="form-label small">Планируемое время начала</label>
-        <input type="datetime-local" class="form-control" name="planned_start" required>
+        <input type="datetime-local" class="form-control form-control-sm" name="planned_start" required>
       </div>
       <div class="mb-3">
         <label class="form-label small">Планируемое время окончания</label>
-        <input type="datetime-local" class="form-control" name="planned_end" required>
+        <input type="datetime-local" class="form-control form-control-sm" name="planned_end" required>
       </div>
       <div class="mb-3">
         <label class="form-label small">Описание</label>
-        <textarea class="form-control" name="description" rows="3" placeholder="Дополнительная информация"></textarea>
+        <textarea class="form-control form-control-sm" name="description" rows="2" placeholder="Дополнительная информация"></textarea>
       </div>
-      <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
+      <button type="submit" class="btn btn-primary w-100 btn-sm" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
         <span class="icon-mbri-save"></span> Создать заказ-наряд
       </button>
     </form>
@@ -376,6 +545,18 @@ let workData = {};
       name: "{{ work.name|escapejs }}",
       estimated_time: {{ work.estimated_time|default:0 }},
       stage: "{{ work.stage.name|default:'Без этапа'|escapejs }}"
+    };
+  {% endfor %}
+{% endfor %}
+
+// Добавляем работы из подготовки
+{% for stage_name, stage_works in preparation_works_by_stage.items %}
+  {% for work_item in stage_works %}
+    workData[{{ work_item.work.id }}}] = {
+      id: {{ work_item.work.id }},
+      name: "{{ work_item.work.name|escapejs }}",
+      estimated_time: {{ work_item.work.estimated_time|default:0 }},
+      stage: "{{ work_item.work.stage.name|default:'Без этапа'|escapejs }}"
     };
   {% endfor %}
 {% endfor %}
@@ -461,25 +642,65 @@ function removeFromCart(workId) {
   updateWorkCard(workId, false);
 }
 
+function addPreparationWorkToCart(workId, workName) {
+  if (!cart.includes(workId)) {
+    cart.push(workId);
+    // Если работы нет в workData, добавляем
+    if (!workData[workId]) {
+      workData[workId] = {
+        id: workId,
+        name: workName,
+        estimated_time: 0,
+        stage: 'Из подготовки'
+      };
+    }
+    updateCartUI();
+    // Показываем корзину
+    toggleCart();
+  } else {
+    alert('Работа уже в корзине');
+  }
+}
+
+function showTemplateModal() {
+  const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+  modal.show();
+}
+
+function filterTemplates(searchText) {
+  const search = searchText.toLowerCase();
+  const items = document.querySelectorAll('.template-item');
+  
+  items.forEach(item => {
+    const name = item.dataset.templateName || '';
+    const desc = item.dataset.templateDesc || '';
+    
+    if (name.includes(search) || desc.includes(search)) {
+      item.style.display = '';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
 function loadTemplate(templateId) {
-  // Загружаем работы из шаблона через AJAX
   fetch(`{% url 'car_preparation:work_order_template_works' 0 %}`.replace('0', templateId))
     .then(response => response.json())
     .then(data => {
       if (data.success && data.works) {
         data.works.forEach(work => {
-          // Добавляем работу в корзину, если её еще нет
           if (!cart.includes(work.id)) {
             cart.push(work.id);
+            // Добавляем в workData если нет
+            if (!workData[work.id]) {
+              workData[work.id] = work;
+            }
             const checkbox = document.querySelector(`.work-checkbox[data-work-id="${work.id}"]`);
             if (checkbox) {
               checkbox.checked = true;
               updateWorkCard(work.id, true);
-            } else {
-              // Если работы нет в списке, добавляем её данные
-              workData[work.id] = work;
             }
-        }
+          }
         });
         updateCartUI();
         toggleCart();
@@ -490,6 +711,28 @@ function loadTemplate(templateId) {
       console.error('Error:', error);
       alert('Ошибка загрузки шаблона');
     });
+}
+
+function saveComment(commentType, commentText) {
+  fetch(`{% url 'car_preparation:preparation_comment_update' preparation.id %}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: `comment_type=${commentType}&comment=${encodeURIComponent(commentText)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Можно показать уведомление
+      console.log('Комментарий сохранен');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
 }
 
 // Обработка формы создания заказ-наряда
@@ -539,4 +782,3 @@ const endTime = new Date(now.getTime() + 60 * 60 * 1000); // +1 час
 document.querySelector('input[name="planned_end"]').value = endTime.toISOString().slice(0, 16);
 </script>
 {% endblock %}
-
