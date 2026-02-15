@@ -1,0 +1,91 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Ремонтные зоны {% endblock %}
+{% block title_navbar %} - Ремонтные зоны {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-center">
+    <h2>Ремонтные зоны</h2>
+    <a href="{% url 'car_preparation:repair_zone_create' %}" class="btn btn-primary">
+      <span class="icon-mbri-plus"></span> Создать зону
+    </a>
+  </div>
+
+  <div class="portal-panel">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Код</th>
+            <th>Подразделение</th>
+            <th>Порядок</th>
+            <th>Статус</th>
+            <th width="150">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for zone in zones %}
+          <tr>
+            <td>
+              <strong>{{ zone.name }}</strong>
+              {% if zone.description %}
+              <br><small class="text-muted">{{ zone.description|truncatewords:10 }}</small>
+              {% endif %}
+            </td>
+            <td>{{ zone.code|default:"-" }}</td>
+            <td>{{ zone.unit.name|default:"Все" }}</td>
+            <td>{{ zone.sort_order }}</td>
+            <td>
+              {% if zone.is_active %}
+              <span class="badge bg-success">Активна</span>
+              {% else %}
+              <span class="badge bg-secondary">Неактивна</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="{% url 'car_preparation:repair_zone_edit' zone.id %}" class="btn btn-outline-primary">
+                  <span class="icon-mbri-edit"></span>
+                </a>
+                <button class="btn btn-outline-danger" onclick="deleteZone({{ zone.id }}, '{{ zone.name }}')">
+                  <span class="icon-mbri-trash"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              Ремонтные зоны не созданы
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function deleteZone(zoneId, zoneName) {
+  if (!confirm(`Удалить ремонтную зону "${zoneName}"?`)) return;
+  
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `{% url 'car_preparation:repair_zone_delete' 0 %}`.replace('0', zoneId);
+  
+  const csrf = document.createElement('input');
+  csrf.type = 'hidden';
+  csrf.name = 'csrfmiddlewaretoken';
+  csrf.value = '{{ csrf_token }}';
+  form.appendChild(csrf);
+  
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,96 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Отчет по исполнителям {% endblock %}
+{% block title_navbar %} - Отчет по исполнителям {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Отчет по исполнителям</h2>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="portal-panel mb-4">
+    <form method="get" class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label small">Подразделение</label>
+        <select name="unit_id" class="form-select">
+          <option value="">Все подразделения</option>
+          {% for unit in units %}
+          <option value="{{ unit.id }}" {% if selected_unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+            {{ unit.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">Дата с</label>
+        <input type="date" name="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">Дата по</label>
+        <input type="date" name="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+          <span class="icon-mbri-search"></span> Применить
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Таблица отчета -->
+  <div class="portal-panel">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Исполнитель</th>
+            <th class="text-center">Всего работ</th>
+            <th class="text-center">Выполнено</th>
+            <th class="text-center">В работе</th>
+            <th class="text-center">Время работы</th>
+            <th class="text-center">Среднее время</th>
+            <th class="text-end">Стоимость материалов</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for performer in performers_data %}
+          <tr>
+            <td>
+              <strong>{{ performer.performer_name }}</strong>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-info">{{ performer.total_works }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-success">{{ performer.completed_works }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-warning">{{ performer.in_progress_works }}</span>
+            </td>
+            <td class="text-center">
+              <strong>{{ performer.total_hours|floatformat:2 }}</strong> ч
+            </td>
+            <td class="text-center">
+              {{ performer.avg_time_per_work|floatformat:2 }} ч
+            </td>
+            <td class="text-end">
+              <strong>{{ performer.materials_cost|floatformat:2 }} ₽</strong>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              Нет данных за выбранный период
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

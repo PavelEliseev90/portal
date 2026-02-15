@@ -585,7 +585,7 @@ def materials_list(request):
     elif is_active == 'false':
         materials = materials.filter(is_active=False)
     if search:
-        materials = materials.filter(models.Q(name__icontains=search) | models.Q(code__icontains=search))
+        materials = materials.filter(Q(name__icontains=search) | Q(code__icontains=search))
     return render(request, 'car_preparation/materials_list.html', {
         'materials': materials.order_by('name'),
         'is_active': is_active,
@@ -630,7 +630,7 @@ def stock_list(request):
     if unit_id:
         stock = stock.filter(unit_id=unit_id)
     if low_stock:
-        stock = stock.filter(qty_on_hand__lt=models.F('min_qty'))
+        stock = stock.filter(qty_on_hand__lt=F('min_qty'))
     
     units = RefUnit.objects.all().order_by('name')
     return render(request, 'car_preparation/stock_list.html', {
@@ -1421,9 +1421,18 @@ def work_order_template_create(request):
     units = RefUnit.objects.filter(buauto=True).order_by('name')
     works = RefCarPreparationWork.objects.filter(is_active=True).select_related('stage').order_by('stage__sort_order', 'sort_order')
     
+    # Группируем работы по этапам
+    works_by_stage = {}
+    for work in works:
+        stage_name = work.stage.name if work.stage else 'Без этапа'
+        if stage_name not in works_by_stage:
+            works_by_stage[stage_name] = []
+        works_by_stage[stage_name].append(work)
+    
     context = {
         'units': units,
         'works': works,
+        'works_by_stage': works_by_stage,
     }
     return render(request, 'car_preparation/work_order_template_form.html', context)
 
@@ -1491,10 +1500,19 @@ def work_order_template_edit(request, template_id):
     template_works = template.workordertemplatework_set.all().select_related('work')
     selected_work_ids = [tw.work_id for tw in template_works]
     
+    # Группируем работы по этапам
+    works_by_stage = {}
+    for work in works:
+        stage_name = work.stage.name if work.stage else 'Без этапа'
+        if stage_name not in works_by_stage:
+            works_by_stage[stage_name] = []
+        works_by_stage[stage_name].append(work)
+    
     context = {
         'template': template,
         'units': units,
         'works': works,
+        'works_by_stage': works_by_stage,
         'template_works': template_works,
         'selected_work_ids': selected_work_ids,
     }

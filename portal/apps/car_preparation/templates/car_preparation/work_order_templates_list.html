@@ -1,0 +1,107 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Шаблоны заказ-нарядов {% endblock %}
+{% block title_navbar %} - Шаблоны заказ-нарядов {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-center">
+    <h2>Шаблоны заказ-нарядов</h2>
+    <a href="{% url 'car_preparation:work_order_template_create' %}" class="btn btn-primary">
+      <span class="icon-mbri-plus"></span> Создать шаблон
+    </a>
+  </div>
+
+  <div class="portal-panel">
+    <div class="row g-3">
+      {% for template in templates %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100" style="border-radius: 1rem; border: 1px solid rgba(0, 42, 90, 0.1);">
+          <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1rem 1rem 0 0;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="mb-1" style="color: #fff;">{{ template.name }}</h6>
+                {% if template.code %}
+                <small style="color: rgba(255,255,255,0.8);">{{ template.code }}</small>
+                {% endif %}
+              </div>
+              <div>
+                {% if template.is_default %}
+                <span class="badge bg-warning">По умолчанию</span>
+                {% endif %}
+                {% if template.is_active %}
+                <span class="badge bg-success">Активен</span>
+                {% else %}
+                <span class="badge bg-secondary">Неактивен</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            {% if template.description %}
+            <p class="text-muted small mb-2">{{ template.description|truncatewords:15 }}</p>
+            {% endif %}
+            <div class="mb-2">
+              <small class="text-muted">Работ в шаблоне:</small>
+              <strong>{{ template.works.count }}</strong>
+            </div>
+            {% if template.estimated_duration_minutes %}
+            <div class="mb-2">
+              <small class="text-muted">Планируемое время:</small>
+              <strong>{{ template.estimated_duration_minutes }} мин</strong>
+            </div>
+            {% endif %}
+            {% if template.unit %}
+            <div class="mb-2">
+              <small class="text-muted">Подразделение:</small>
+              <strong>{{ template.unit.name }}</strong>
+            </div>
+            {% endif %}
+          </div>
+          <div class="card-footer bg-transparent border-top-0">
+            <div class="btn-group w-100">
+              <a href="{% url 'car_preparation:work_order_template_edit' template.id %}" class="btn btn-sm btn-outline-primary">
+                <span class="icon-mbri-edit"></span> Редактировать
+              </a>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplate({{ template.id }}, '{{ template.name }}')">
+                <span class="icon-mbri-trash"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="text-center text-muted py-5">
+          <p>Шаблоны заказ-нарядов не созданы</p>
+          <a href="{% url 'car_preparation:work_order_template_create' %}" class="btn btn-primary">
+            <span class="icon-mbri-plus"></span> Создать первый шаблон
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function deleteTemplate(templateId, templateName) {
+  if (!confirm(`Удалить шаблон "${templateName}"?`)) return;
+  
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `{% url 'car_preparation:work_order_template_delete' 0 %}`.replace('0', templateId);
+  
+  const csrf = document.createElement('input');
+  csrf.type = 'hidden';
+  csrf.name = 'csrfmiddlewaretoken';
+  csrf.value = '{{ csrf_token }}';
+  form.appendChild(csrf);
+  
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+{% endblock %}
+

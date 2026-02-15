@@ -1,0 +1,85 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {% if zone %}Редактирование{% else %}Создание{% endif %} ремонтной зоны {% endblock %}
+{% block title_navbar %} - {% if zone %}Редактирование{% else %}Создание{% endif %} зоны {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>{% if zone %}Редактирование{% else %}Создание{% endif %} ремонтной зоны</h2>
+  </div>
+
+  <div class="portal-panel">
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="name" name="name" 
+                   value="{{ zone.name|default:'' }}" required>
+            <label for="name">Название <span class="text-danger">*</span></label>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="code" name="code" 
+                   value="{{ zone.code|default:'' }}">
+            <label for="code">Код</label>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="form-floating">
+            <select class="form-select" id="unit_id" name="unit_id">
+              <option value="">Все подразделения</option>
+              {% for unit in units %}
+              <option value="{{ unit.id }}" {% if zone.unit_id == unit.id %}selected{% endif %}>
+                {{ unit.name }}
+              </option>
+              {% endfor %}
+            </select>
+            <label for="unit_id">Подразделение</label>
+          </div>
+        </div>
+        
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="number" class="form-control" id="sort_order" name="sort_order" 
+                   value="{{ zone.sort_order|default:0 }}">
+            <label for="sort_order">Порядок сортировки</label>
+          </div>
+        </div>
+        
+        <div class="col-md-3">
+          <div class="form-check form-switch mt-4">
+            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                   {% if not zone or zone.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">Активна</label>
+          </div>
+        </div>
+        
+        <div class="col-12">
+          <div class="form-floating">
+            <textarea class="form-control" id="description" name="description" 
+                      style="height: 100px">{{ zone.description|default:'' }}</textarea>
+            <label for="description">Описание</label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <span class="icon-mbri-save"></span> Сохранить
+        </button>
+        <a href="{% url 'car_preparation:repair_zones_list' %}" class="btn btn-outline-secondary">
+          <span class="icon-mbri-arrow-prev"></span> Отмена
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
