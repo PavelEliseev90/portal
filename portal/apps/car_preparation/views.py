@@ -173,9 +173,18 @@ def preparation_schedule(request, preparation_id):
     # Получаем всех исполнителей
     performers = User.objects.filter(is_active=True).order_by('username')
     
+    # Группируем работы подготовки по этапам для удобного отображения
+    preparation_works_by_stage = {}
+    for work_item in work_items:
+        stage_name = work_item.work.stage.name if work_item.work and work_item.work.stage else 'Без этапа'
+        if stage_name not in preparation_works_by_stage:
+            preparation_works_by_stage[stage_name] = []
+        preparation_works_by_stage[stage_name].append(work_item)
+    
     context = {
         'preparation': preparation,
         'work_items': work_items,
+        'preparation_works_by_stage': preparation_works_by_stage,
         'resources': resources,
         'available_works': available_works,
         'works_by_stage': works_by_stage,
@@ -992,6 +1001,35 @@ def work_order_template_works(request, template_id):
         'template_name': template.name,
         'estimated_duration': template.estimated_duration_minutes,
     })
+
+
+@login_required
+def preparation_comment_update(request, preparation_id):
+    """Обновление комментария к подготовке"""
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    
+    if request.method == 'POST':
+        comment_type = request.POST.get('comment_type', 'comment_initial')
+        comment_text = request.POST.get('comment', '').strip()
+        
+        if comment_type == 'comment_initial':
+            preparation.comment_initial = comment_text
+        elif comment_type == 'comment_final':
+            preparation.comment_final = comment_text
+        elif comment_type == 'quality_notes':
+            preparation.quality_notes = comment_text
+        
+        preparation.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Комментарий сохранен'
+            })
+        
+        return redirect('car_preparation:schedule', preparation_id=preparation_id)
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
 
 
 # ===========================================

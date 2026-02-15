@@ -15,6 +15,7 @@ urlpatterns = [
     path('report/<int:preparation_id>/', views.preparation_report, name='preparation_report'),
     path('calendar/', views.preparation_calendar, name='calendar'),
     path('schedule/<int:preparation_id>/', views.preparation_schedule, name='schedule'),
+    path('preparation/<int:preparation_id>/comment/', views.preparation_comment_update, name='preparation_comment_update'),
     # Заказ-наряды
     path('work_order/create/<int:preparation_id>/', views.work_order_create, name='work_order_create'),
     path('work_order/<int:work_order_id>/', views.work_order_detail, name='work_order_detail'),
