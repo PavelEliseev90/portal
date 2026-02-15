@@ -173,6 +173,312 @@
   padding: 1rem;
   border-bottom: 1px solid rgba(0, 42, 90, 0.1);
 }
+
+.comment-item {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.comment-files .file-item {
+  margin-bottom: 0.5rem;
+}
+
+/* ===========================================
+   МОБИЛЬНАЯ АДАПТАЦИЯ
+   =========================================== */
+
+@media (max-width: 991.98px) {
+  .cart-works {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .work-order-schedule-page {
+    padding: 1rem 0;
+  }
+  
+  .card-header h4 {
+    font-size: 1.25rem;
+  }
+  
+  .card-header .d-flex {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .card-header .d-flex > div:last-child {
+    width: 100%;
+  }
+  
+  .card-header .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .work-order-schedule-page {
+    padding: 0.75rem 0;
+  }
+  
+  .cart-works {
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .card {
+    border-radius: 1rem !important;
+    margin-bottom: 1rem;
+  }
+  
+  .card-header {
+    padding: 1rem !important;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  .card-header h4 {
+    font-size: 1.1rem;
+  }
+  
+  .card-header h5 {
+    font-size: 1rem;
+  }
+  
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  .card-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .card-header .d-flex > div:last-child {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .card-header .btn {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+  
+  .row.g-3 > [class*="col-"] {
+    margin-bottom: 0.75rem;
+  }
+  
+  .form-floating {
+    margin-bottom: 0.75rem;
+  }
+  
+  .work-card {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .work-card-title {
+    font-size: 0.85rem;
+  }
+  
+  .work-card-meta {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .template-card {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .template-card h6 {
+    font-size: 0.95rem;
+  }
+  
+  .preparation-work-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .preparation-work-item .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .preparation-work-item .btn {
+    width: 100%;
+  }
+  
+  .comment-item {
+    padding: 0.75rem !important;
+  }
+  
+  .comment-item .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .comment-item .btn {
+    align-self: flex-end;
+  }
+  
+  .comment-files {
+    margin-top: 0.75rem;
+  }
+  
+  .comment-files .d-flex {
+    flex-direction: column;
+  }
+  
+  .comment-files .file-item {
+    width: 100%;
+  }
+  
+  .comment-files .btn {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+  }
+  
+  #commentForm .btn {
+    width: 100%;
+  }
+  
+  .cart-header {
+    padding: 1rem;
+  }
+  
+  .cart-body {
+    padding: 0.75rem;
+  }
+  
+  .cart-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .cart-footer {
+    padding: 0.75rem !important;
+  }
+  
+  .cart-footer .form-control,
+  .cart-footer .form-select {
+    font-size: 0.9rem;
+  }
+  
+  .cart-footer .btn {
+    width: 100%;
+    padding: 0.75rem;
+  }
+  
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  .modal-content {
+    border-radius: 1rem;
+  }
+  
+  .modal-header {
+    padding: 1rem;
+    border-radius: 1rem 1rem 0 0;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  
+  .template-search {
+    padding: 0.75rem;
+  }
+  
+  .template-search input {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .work-order-schedule-page {
+    padding: 0.5rem 0;
+  }
+  
+  .card-header {
+    padding: 0.75rem !important;
+  }
+  
+  .card-header h4 {
+    font-size: 1rem;
+  }
+  
+  .card-header h5 {
+    font-size: 0.95rem;
+  }
+  
+  .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .stat-value {
+    font-size: 1.75rem;
+  }
+  
+  .work-card {
+    padding: 0.5rem;
+  }
+  
+  .template-card {
+    padding: 0.75rem;
+  }
+  
+  .preparation-work-item {
+    padding: 0.5rem;
+  }
+  
+  .comment-item {
+    padding: 0.5rem !important;
+  }
+  
+  .comment-text {
+    font-size: 0.9rem;
+  }
+  
+  .cart-header h5 {
+    font-size: 1rem;
+  }
+  
+  .cart-item-name {
+    font-size: 0.85rem;
+  }
+  
+  .form-label {
+    font-size: 0.85rem;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+  
+  .btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
 </style>
 
 <div class="work-order-schedule-page">
@@ -187,40 +493,40 @@
               Автомобиль: <a href="/cars/{{ preparation.car.slug }}/" target="_blank" style="color: #fff; text-decoration: underline;">{{ preparation.car.name|default:preparation.car.vin }}</a>
             </p>
           </div>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-light" onclick="toggleCart()" id="cartToggleBtn">
-              <span class="icon-mbri-shopping-cart"></span> Корзина (<span id="cartCount">0</span>)
+              <span class="icon-mbri-shopping-cart"></span> <span class="d-none d-md-inline">Корзина</span> (<span id="cartCount">0</span>)
             </button>
             <a href="{% url 'car_preparation:work_order_timeline' preparation.car.id %}" class="btn btn-light">
-              <span class="icon-mbri-clock"></span> Таймлайн
+              <span class="icon-mbri-clock"></span> <span class="d-none d-md-inline">Таймлайн</span>
             </a>
             <a href="{% url 'car_preparation:list' %}" class="btn btn-light">
-              <span class="icon-mbri-arrow-prev"></span> К списку
+              <span class="icon-mbri-arrow-prev"></span> <span class="d-none d-md-inline">К списку</span>
             </a>
           </div>
         </div>
       </div>
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-3">
+          <div class="col-12 col-sm-6 col-md-3">
             <div class="form-floating">
               <input type="text" class="form-control" value="{{ preparation.car.vin }}" readonly>
               <label>VIN</label>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-12 col-sm-6 col-md-3">
             <div class="form-floating">
               <input type="text" class="form-control" value="{{ preparation.status.name|default:'Не указан' }}" readonly>
               <label>Статус подготовки</label>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-12 col-sm-6 col-md-3">
             <div class="form-floating">
               <input type="text" class="form-control" value="{{ preparation.responsible.name|default:'Не назначен' }}" readonly>
               <label>Ответственный</label>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-12 col-sm-6 col-md-3">
             <div class="form-floating">
               <input type="text" class="form-control" value="{{ preparation.unit.name|default:'Не указано' }}" readonly>
               <label>Подразделение</label>
@@ -230,23 +536,166 @@
         
         <!-- Комментарии к подготовке -->
         <div class="row g-3 mt-2">
-          <div class="col-md-4">
+          <div class="col-12 col-md-4">
             <label class="form-label small">Комментарий при создании</label>
             <textarea class="form-control" id="comment_initial" rows="2" 
                       placeholder="Комментарий при создании..."
                       onblur="saveComment('comment_initial', this.value)">{{ preparation.comment_initial|default:'' }}</textarea>
           </div>
-          <div class="col-md-4">
+          <div class="col-12 col-md-4">
             <label class="form-label small">Комментарий при завершении</label>
             <textarea class="form-control" id="comment_final" rows="2" 
                       placeholder="Комментарий при завершении..."
                       onblur="saveComment('comment_final', this.value)">{{ preparation.comment_final|default:'' }}</textarea>
           </div>
-          <div class="col-md-4">
+          <div class="col-12 col-md-4">
             <label class="form-label small">Заметки по качеству</label>
             <textarea class="form-control" id="quality_notes" rows="2" 
                       placeholder="Заметки по качеству..."
                       onblur="saveComment('quality_notes', this.value)">{{ preparation.quality_notes|default:'' }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Данные интерактивной оценки -->
+    {% if interactive_estimation %}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <h5 class="mb-0" style="color: #fff;">
+              <span class="icon-mbri-search"></span> Данные интерактивной оценки
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <!-- Осмотр кузова -->
+              {% if body_inspection %}
+              <div class="col-12 col-md-4 mb-3">
+                <h6 class="mb-3" style="color: #002a5a;">Осмотр кузова</h6>
+                <div class="small">
+                  {% if body_inspection.check_vin_int == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> VIN проверен</div>{% elif body_inspection.check_vin_int == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Проблемы с VIN</div>{% endif %}
+                  {% if body_inspection.check_engine_int == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> ДВС и КПП на месте</div>{% elif body_inspection.check_engine_int == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Проблемы с ДВС/КПП</div>{% endif %}
+                  {% if body_inspection.windshield_error_int == 0 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Лобовое стекло повреждено</div>{% elif body_inspection.windshield_error_int == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Лобовое стекло в порядке</div>{% endif %}
+                  {% if body_inspection.light_error_int == 0 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Проблемы со светом</div>{% elif body_inspection.light_error_int == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Свет в порядке</div>{% endif %}
+                  {% if body_inspection.oil_error_int == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Подтекание масла</div>{% elif body_inspection.oil_error_int == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Масло в порядке</div>{% endif %}
+                  {% if body_inspection.color %}<div class="mb-1"><strong>Цвет:</strong> {{ body_inspection.color }}</div>{% endif %}
+                  {% if body_inspection.comment_vnesh %}<div class="mb-1"><small class="text-muted">{{ body_inspection.comment_vnesh|truncatewords:20 }}</small></div>{% endif %}
+                </div>
+              </div>
+              {% endif %}
+              
+              <!-- Осмотр салона -->
+              {% if interior_inspection %}
+              <div class="col-12 col-md-4 mb-3">
+                <h6 class="mb-3" style="color: #002a5a;">Осмотр салона</h6>
+                <div class="small">
+                  {% if interior_inspection.hand_brake == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Ручной тормоз</div>{% elif interior_inspection.hand_brake == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Ручной тормоз не работает</div>{% endif %}
+                  {% if interior_inspection.conditioner == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Кондиционер</div>{% elif interior_inspection.conditioner == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Кондиционер не работает</div>{% endif %}
+                  {% if interior_inspection.wiper == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Стеклоочиститель</div>{% elif interior_inspection.wiper == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Стеклоочиститель не работает</div>{% endif %}
+                  {% if interior_inspection.power_windows == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Стеклоподъемники</div>{% elif interior_inspection.power_windows == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Стеклоподъемники не работают</div>{% endif %}
+                  {% if interior_inspection.cleaning_int == 1 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Требуется химчистка</div>{% endif %}
+                  {% if interior_inspection.damage_wheel_int == 1 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Поврежден руль</div>{% endif %}
+                  {% if interior_inspection.damage_seat_int == 1 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Повреждены сиденья</div>{% endif %}
+                </div>
+              </div>
+              {% endif %}
+              
+              <!-- Диагностика -->
+              {% if diagnostics %}
+              <div class="col-12 col-md-4 mb-3">
+                <h6 class="mb-3" style="color: #002a5a;">Диагностика</h6>
+                <div class="small">
+                  {% if diagnostics.engine == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Двигатель</div>{% elif diagnostics.engine == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Двигатель не работает</div>{% elif diagnostics.engine == 2 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Двигатель - замечания</div>{% endif %}
+                  {% if diagnostics.gear == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> КПП</div>{% elif diagnostics.gear == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> КПП не работает</div>{% elif diagnostics.gear == 2 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> КПП - замечания</div>{% endif %}
+                  {% if diagnostics.brake == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Тормозная система</div>{% elif diagnostics.brake == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Тормоза не работают</div>{% elif diagnostics.brake == 2 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Тормоза - замечания</div>{% endif %}
+                  {% if diagnostics.suspension == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Подвеска</div>{% elif diagnostics.suspension == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Подвеска не работает</div>{% elif diagnostics.suspension == 2 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Подвеска - замечания</div>{% endif %}
+                  {% if diagnostics.airbag == 0 or diagnostics.airbag == 2 %}<div class="mb-1"><span class="badge bg-danger">⚠</span> Проблемы с подушками безопасности</div>{% elif diagnostics.airbag == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Подушки безопасности</div>{% endif %}
+                  {% if diagnostics.conditioner == 1 %}<div class="mb-1"><span class="badge bg-success">✓</span> Кондиционер</div>{% elif diagnostics.conditioner == 0 %}<div class="mb-1"><span class="badge bg-danger">✗</span> Кондиционер не работает</div>{% elif diagnostics.conditioner == 2 %}<div class="mb-1"><span class="badge bg-warning">⚠</span> Кондиционер - замечания</div>{% endif %}
+                  {% if diagnostics.comment %}<div class="mb-1"><small class="text-muted">{{ diagnostics.comment|truncatewords:15 }}</small></div>{% endif %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            {% if interactive_estimation.rlk %}
+            <div class="mt-3">
+              <a href="/estimations/{{ interactive_estimation.rlk.id }}/" target="_blank" class="btn btn-sm btn-outline-primary">
+                <span class="icon-mbri-arrow-next"></span> Открыть полную оценку
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Секция комментариев к подготовке -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <h5 class="mb-0" style="color: #fff;">
+              <span class="icon-mbri-chat"></span> Комментарии к подготовке
+            </h5>
+          </div>
+          <div class="card-body">
+            <!-- Форма добавления комментария -->
+            <div class="mb-4">
+              <form id="commentForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                  <label class="form-label">Добавить комментарий</label>
+                  <textarea class="form-control" id="commentText" rows="3" placeholder="Введите комментарий..." required></textarea>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Прикрепить файлы</label>
+                  <input type="file" class="form-control" id="commentFiles" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                  <small class="text-muted">Можно выбрать несколько файлов. Максимальный размер файла: 50 МБ</small>
+                  <div id="filePreview" class="mt-2"></div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
+                  <span class="icon-mbri-save"></span> Добавить комментарий
+                </button>
+              </form>
+            </div>
+
+            <!-- Список комментариев -->
+            <div id="commentsList">
+              {% for comment in comments %}
+              <div class="comment-item mb-3 p-3 border rounded" data-comment-id="{{ comment.id }}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <strong>{{ comment.author.name|default:'Неизвестно' }}</strong>
+                    <small class="text-muted ms-2">{{ comment.date_created|date:"d.m.Y H:i" }}</small>
+                  </div>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteComment({{ comment.id }})" title="Удалить">
+                    <span class="icon-mbri-trash"></span>
+                  </button>
+                </div>
+                <div class="comment-text mb-2">{{ comment.comment|linebreaks }}</div>
+                {% if comment.files.all %}
+                <div class="comment-files">
+                  <strong class="small">Прикрепленные файлы:</strong>
+                  <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for file in comment.files.all %}
+                    <div class="file-item">
+                      <a href="{{ file.file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <span class="icon-mbri-file"></span> {{ file.original_filename }}
+                        <small class="text-muted">({{ file.file_size|filesizeformat }})</small>
+                      </a>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% empty %}
+              <div class="text-center text-muted py-4">
+                <p>Пока нет комментариев. Будьте первым!</p>
+              </div>
+              {% endfor %}
+            </div>
           </div>
         </div>
       </div>
@@ -320,7 +769,7 @@
             {% if templates %}
             <div class="row g-3" id="templatesGrid">
               {% for template in templates|slice:":6" %}
-              <div class="col-md-6">
+              <div class="col-12 col-md-6">
                 <div class="template-card" onclick="loadTemplate({{ template.id }})">
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <h6 class="mb-0" style="color: #002a5a; font-weight: 600;">{{ template.name }}</h6>
@@ -364,7 +813,7 @@
               <h6 class="border-bottom pb-2 mb-3" style="color: #002a5a;">{{ stage_name }}</h6>
               <div class="row g-2">
                 {% for work in works %}
-                <div class="col-md-6 col-lg-4">
+                <div class="col-12 col-sm-6 col-md-6 col-lg-4">
                   <div class="work-card" data-work-id="{{ work.id }}" onclick="toggleWorkSelection({{ work.id }})">
                     <div class="work-card-header">
                       <div class="work-card-title">{{ work.name }}</div>
@@ -780,5 +1229,226 @@ now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
 document.querySelector('input[name="planned_start"]').value = now.toISOString().slice(0, 16);
 const endTime = new Date(now.getTime() + 60 * 60 * 1000); // +1 час
 document.querySelector('input[name="planned_end"]').value = endTime.toISOString().slice(0, 16);
+
+// ===========================================
+// КОММЕНТАРИИ К ПОДГОТОВКЕ
+// ===========================================
+
+// Предпросмотр выбранных файлов
+document.getElementById('commentFiles').addEventListener('change', function(e) {
+  const preview = document.getElementById('filePreview');
+  preview.innerHTML = '';
+  
+  if (this.files.length > 0) {
+    const fileList = document.createElement('div');
+    fileList.className = 'list-group';
+    
+    Array.from(this.files).forEach((file, index) => {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+      
+      const fileInfo = document.createElement('div');
+      fileInfo.innerHTML = `
+        <strong>${file.name}</strong>
+        <small class="text-muted d-block">${(file.size / 1024 / 1024).toFixed(2)} МБ</small>
+      `;
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-sm btn-outline-danger';
+      removeBtn.innerHTML = '<span class="icon-mbri-trash"></span>';
+      removeBtn.onclick = function() {
+        const dt = new DataTransfer();
+        Array.from(e.target.files).forEach((f, i) => {
+          if (i !== index) dt.items.add(f);
+        });
+        e.target.files = dt.files;
+        e.target.dispatchEvent(new Event('change'));
+      };
+      
+      fileItem.appendChild(fileInfo);
+      fileItem.appendChild(removeBtn);
+      fileList.appendChild(fileItem);
+    });
+    
+    preview.appendChild(fileList);
+  }
+});
+
+// Обработка формы добавления комментария
+document.getElementById('commentForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const commentText = document.getElementById('commentText').value.trim();
+  if (!commentText) {
+    alert('Введите текст комментария');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('comment', commentText);
+  
+  const files = document.getElementById('commentFiles').files;
+  for (let i = 0; i < files.length; i++) {
+    formData.append('files[]', files[i]);
+  }
+  
+  // Показываем индикатор загрузки
+  const submitBtn = this.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Отправка...';
+  
+  fetch('{% url "car_preparation:preparation_comment_add" preparation.id %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Добавляем новый комментарий в список
+      addCommentToDOM(data);
+      
+      // Очищаем форму
+      document.getElementById('commentText').value = '';
+      document.getElementById('commentFiles').value = '';
+      document.getElementById('filePreview').innerHTML = '';
+      
+      // Показываем уведомление
+      showNotification('Комментарий успешно добавлен', 'success');
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при добавлении комментария');
+  })
+  .finally(() => {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+  });
+});
+
+// Функция добавления комментария в DOM
+function addCommentToDOM(data) {
+  const commentsList = document.getElementById('commentsList');
+  
+  // Убираем сообщение "нет комментариев"
+  const emptyMessage = commentsList.querySelector('.text-center');
+  if (emptyMessage) {
+    emptyMessage.remove();
+  }
+  
+  const commentDiv = document.createElement('div');
+  commentDiv.className = 'comment-item mb-3 p-3 border rounded';
+  commentDiv.setAttribute('data-comment-id', data.comment_id);
+  
+  let filesHTML = '';
+  if (data.files && data.files.length > 0) {
+    filesHTML = `
+      <div class="comment-files">
+        <strong class="small">Прикрепленные файлы:</strong>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          ${data.files.map(file => `
+            <div class="file-item">
+              <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <span class="icon-mbri-file"></span> ${file.filename}
+                <small class="text-muted">(${formatFileSize(file.size)})</small>
+              </a>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  commentDiv.innerHTML = `
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div>
+        <strong>${data.author}</strong>
+        <small class="text-muted ms-2">${data.date_created}</small>
+      </div>
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteComment(${data.comment_id})" title="Удалить">
+        <span class="icon-mbri-trash"></span>
+      </button>
+    </div>
+    <div class="comment-text mb-2">${data.comment.replace(/\n/g, '<br>')}</div>
+    ${filesHTML}
+  `;
+  
+  commentsList.insertBefore(commentDiv, commentsList.firstChild);
+}
+
+// Функция удаления комментария
+function deleteComment(commentId) {
+  if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) {
+    return;
+  }
+  
+  fetch('{% url "car_preparation:preparation_comment_delete" 0 %}'.replace('0', commentId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
+      if (commentItem) {
+        commentItem.remove();
+      }
+      
+      // Если комментариев не осталось, показываем сообщение
+      const commentsList = document.getElementById('commentsList');
+      if (commentsList.children.length === 0) {
+        commentsList.innerHTML = `
+          <div class="text-center text-muted py-4">
+            <p>Пока нет комментариев. Будьте первым!</p>
+          </div>
+        `;
+      }
+      
+      showNotification('Комментарий удален', 'success');
+    } else {
+      alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Ошибка при удалении комментария');
+  });
+}
+
+// Функция форматирования размера файла
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Функция показа уведомления
+function showNotification(message, type) {
+  const notification = document.createElement('div');
+  notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  notification.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
 </script>
 {% endblock %}

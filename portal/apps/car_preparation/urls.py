@@ -16,6 +16,8 @@ urlpatterns = [
     path('calendar/', views.preparation_calendar, name='calendar'),
     path('schedule/<int:preparation_id>/', views.preparation_schedule, name='schedule'),
     path('preparation/<int:preparation_id>/comment/', views.preparation_comment_update, name='preparation_comment_update'),
+    path('preparation/<int:preparation_id>/comment/add/', views.preparation_comment_add, name='preparation_comment_add'),
+    path('preparation/comment/<int:comment_id>/delete/', views.preparation_comment_delete, name='preparation_comment_delete'),
     # Заказ-наряды
     path('work_order/create/<int:preparation_id>/', views.work_order_create, name='work_order_create'),
     path('work_order/<int:work_order_id>/', views.work_order_detail, name='work_order_detail'),
