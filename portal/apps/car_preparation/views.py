@@ -1225,3 +1225,404 @@ def work_order_item_material_delete(request, material_id):
     
     return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
 
+
+# ===========================================
+# УПРАВЛЕНИЕ РЕМОНТНЫМИ ЗОНАМИ
+# ===========================================
+
+@login_required
+def repair_zones_list(request):
+    """Список ремонтных зон"""
+    zones = RefRepairZone.objects.all().select_related('unit').order_by('sort_order', 'name')
+    
+    context = {
+        'zones': zones,
+    }
+    
+    return render(request, 'car_preparation/repair_zones_list.html', context)
+
+
+@login_required
+def repair_zone_create(request):
+    """Создание ремонтной зоны"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        description = request.POST.get('description', '').strip()
+        unit_id = request.POST.get('unit_id') or None
+        is_active = request.POST.get('is_active') == 'on'
+        sort_order = int(request.POST.get('sort_order', 0) or 0)
+        
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Название обязательно'}, status=400)
+        
+        zone = RefRepairZone.objects.create(
+            name=name,
+            code=code,
+            description=description,
+            unit_id=int(unit_id) if unit_id else None,
+            is_active=is_active,
+            sort_order=sort_order
+        )
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'zone_id': zone.id,
+                'message': 'Ремонтная зона создана'
+            })
+        
+        return redirect('car_preparation:repair_zones_list')
+    
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    context = {
+        'units': units,
+    }
+    return render(request, 'car_preparation/repair_zone_form.html', context)
+
+
+@login_required
+def repair_zone_edit(request, zone_id):
+    """Редактирование ремонтной зоны"""
+    zone = get_object_or_404(RefRepairZone, id=zone_id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        description = request.POST.get('description', '').strip()
+        unit_id = request.POST.get('unit_id') or None
+        is_active = request.POST.get('is_active') == 'on'
+        sort_order = int(request.POST.get('sort_order', 0) or 0)
+        
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Название обязательно'}, status=400)
+        
+        zone.name = name
+        zone.code = code
+        zone.description = description
+        zone.unit_id = int(unit_id) if unit_id else None
+        zone.is_active = is_active
+        zone.sort_order = sort_order
+        zone.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Ремонтная зона обновлена'
+            })
+        
+        return redirect('car_preparation:repair_zones_list')
+    
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    context = {
+        'zone': zone,
+        'units': units,
+    }
+    return render(request, 'car_preparation/repair_zone_form.html', context)
+
+
+@login_required
+def repair_zone_delete(request, zone_id):
+    """Удаление ремонтной зоны"""
+    zone = get_object_or_404(RefRepairZone, id=zone_id)
+    
+    if request.method == 'POST':
+        # Проверяем, используется ли зона
+        if WorkOrder.objects.filter(repair_zone=zone).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Невозможно удалить: зона используется в заказ-нарядах'
+            }, status=400)
+        
+        zone.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Ремонтная зона удалена'
+            })
+        
+        return redirect('car_preparation:repair_zones_list')
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+# ===========================================
+# УПРАВЛЕНИЕ ШАБЛОНАМИ ЗАКАЗ-НАРЯДОВ
+# ===========================================
+
+@login_required
+def work_order_templates_list(request):
+    """Список шаблонов заказ-нарядов"""
+    templates = WorkOrderTemplate.objects.all().select_related('unit').prefetch_related('works').order_by('name')
+    
+    context = {
+        'templates': templates,
+    }
+    
+    return render(request, 'car_preparation/work_order_templates_list.html', context)
+
+
+@login_required
+def work_order_template_create(request):
+    """Создание шаблона заказ-наряда"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        description = request.POST.get('description', '').strip()
+        unit_id = request.POST.get('unit_id') or None
+        is_active = request.POST.get('is_active') == 'on'
+        is_default = request.POST.get('is_default') == 'on'
+        estimated_duration = int(request.POST.get('estimated_duration_minutes', 0) or 0)
+        work_ids = request.POST.getlist('work_ids[]')
+        
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Название обязательно'}, status=400)
+        
+        template = WorkOrderTemplate.objects.create(
+            name=name,
+            code=code,
+            description=description,
+            unit_id=int(unit_id) if unit_id else None,
+            is_active=is_active,
+            is_default=is_default,
+            estimated_duration_minutes=estimated_duration
+        )
+        
+        # Добавляем работы в шаблон
+        from .models import WorkOrderTemplateWork
+        sort_order = 0
+        for work_id in work_ids:
+            try:
+                work = RefCarPreparationWork.objects.get(id=int(work_id))
+                estimated_time = int(request.POST.get(f'work_{work_id}_time', 0) or 0)
+                is_required = request.POST.get(f'work_{work_id}_required') == 'on'
+                
+                WorkOrderTemplateWork.objects.create(
+                    template=template,
+                    work=work,
+                    sort_order=sort_order,
+                    estimated_time=estimated_time,
+                    is_required=is_required
+                )
+                sort_order += 1
+            except (RefCarPreparationWork.DoesNotExist, ValueError):
+                continue
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'template_id': template.id,
+                'message': 'Шаблон создан'
+            })
+        
+        return redirect('car_preparation:work_order_templates_list')
+    
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    works = RefCarPreparationWork.objects.filter(is_active=True).select_related('stage').order_by('stage__sort_order', 'sort_order')
+    
+    context = {
+        'units': units,
+        'works': works,
+    }
+    return render(request, 'car_preparation/work_order_template_form.html', context)
+
+
+@login_required
+def work_order_template_edit(request, template_id):
+    """Редактирование шаблона заказ-наряда"""
+    template = get_object_or_404(WorkOrderTemplate.objects.prefetch_related('works'), id=template_id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        description = request.POST.get('description', '').strip()
+        unit_id = request.POST.get('unit_id') or None
+        is_active = request.POST.get('is_active') == 'on'
+        is_default = request.POST.get('is_default') == 'on'
+        estimated_duration = int(request.POST.get('estimated_duration_minutes', 0) or 0)
+        work_ids = request.POST.getlist('work_ids[]')
+        
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Название обязательно'}, status=400)
+        
+        template.name = name
+        template.code = code
+        template.description = description
+        template.unit_id = int(unit_id) if unit_id else None
+        template.is_active = is_active
+        template.is_default = is_default
+        template.estimated_duration_minutes = estimated_duration
+        template.save()
+        
+        # Удаляем старые работы
+        template.workordertemplatework_set.all().delete()
+        
+        # Добавляем новые работы
+        from .models import WorkOrderTemplateWork
+        sort_order = 0
+        for work_id in work_ids:
+            try:
+                work = RefCarPreparationWork.objects.get(id=int(work_id))
+                estimated_time = int(request.POST.get(f'work_{work_id}_time', 0) or 0)
+                is_required = request.POST.get(f'work_{work_id}_required') == 'on'
+                
+                WorkOrderTemplateWork.objects.create(
+                    template=template,
+                    work=work,
+                    sort_order=sort_order,
+                    estimated_time=estimated_time,
+                    is_required=is_required
+                )
+                sort_order += 1
+            except (RefCarPreparationWork.DoesNotExist, ValueError):
+                continue
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Шаблон обновлен'
+            })
+        
+        return redirect('car_preparation:work_order_templates_list')
+    
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    works = RefCarPreparationWork.objects.filter(is_active=True).select_related('stage').order_by('stage__sort_order', 'sort_order')
+    template_works = template.workordertemplatework_set.all().select_related('work')
+    selected_work_ids = [tw.work_id for tw in template_works]
+    
+    context = {
+        'template': template,
+        'units': units,
+        'works': works,
+        'template_works': template_works,
+        'selected_work_ids': selected_work_ids,
+    }
+    return render(request, 'car_preparation/work_order_template_form.html', context)
+
+
+@login_required
+def work_order_template_delete(request, template_id):
+    """Удаление шаблона заказ-наряда"""
+    template = get_object_or_404(WorkOrderTemplate, id=template_id)
+    
+    if request.method == 'POST':
+        # Проверяем, используется ли шаблон
+        if WorkOrder.objects.filter(template=template).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Невозможно удалить: шаблон используется в заказ-нарядах'
+            }, status=400)
+        
+        template.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Шаблон удален'
+            })
+        
+        return redirect('car_preparation:work_order_templates_list')
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+# ===========================================
+# ОТЧЕТЫ
+# ===========================================
+
+@login_required
+def performers_report(request):
+    """Отчет по исполнителям"""
+    unit_id = request.GET.get('unit_id', None)
+    date_from = request.GET.get('date_from', None)
+    date_to = request.GET.get('date_to', None)
+    
+    # По умолчанию - текущий месяц
+    today = timezone.now().date()
+    if not date_from:
+        date_from = today.replace(day=1)
+    else:
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+        except:
+            date_from = today.replace(day=1)
+    
+    if not date_to:
+        last_day = monthrange(today.year, today.month)[1]
+        date_to = today.replace(day=last_day)
+    else:
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+        except:
+            last_day = monthrange(today.year, today.month)[1]
+            date_to = today.replace(day=last_day)
+    
+    date_from_dt = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
+    date_to_dt = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
+    
+    # Запрос работ
+    work_items_query = WorkOrderItem.objects.filter(
+        work_order__date_created__gte=date_from_dt,
+        work_order__date_created__lte=date_to_dt,
+        performer__isnull=False
+    )
+    
+    if unit_id:
+        work_items_query = work_items_query.filter(work_order__car__unit_id=unit_id)
+    
+    # Группировка по исполнителям
+    performers_data = []
+    performers_list = work_items_query.values('performer__name', 'performer__id').distinct()
+    
+    for performer_info in performers_list:
+        performer_name = performer_info['performer__name']
+        performer_id = performer_info['performer__id']
+        
+        performer_items = work_items_query.filter(performer_id=performer_id)
+        
+        total_works = performer_items.count()
+        completed_works = performer_items.filter(status='completed').count()
+        in_progress_works = performer_items.filter(status='in_progress').count()
+        
+        # Расчет времени
+        total_seconds = 0
+        for item in performer_items.filter(status='completed', actual_start__isnull=False, actual_end__isnull=False):
+            if item.actual_start and item.actual_end:
+                delta = item.actual_end - item.actual_start
+                total_seconds += delta.total_seconds()
+        
+        total_hours = total_seconds / 3600 if total_seconds > 0 else 0
+        
+        # Стоимость материалов
+        materials_cost = WorkOrderItemMaterial.objects.filter(
+            work_order_item__performer_id=performer_id,
+            work_order_item__work_order__date_created__gte=date_from_dt,
+            work_order_item__work_order__date_created__lte=date_to_dt
+        ).aggregate(total=Sum('total_price'))['total'] or 0
+        
+        performers_data.append({
+            'performer_id': performer_id,
+            'performer_name': performer_name,
+            'total_works': total_works,
+            'completed_works': completed_works,
+            'in_progress_works': in_progress_works,
+            'total_hours': round(total_hours, 2),
+            'materials_cost': float(materials_cost),
+            'avg_time_per_work': round(total_hours / completed_works, 2) if completed_works > 0 else 0,
+        })
+    
+    performers_data.sort(key=lambda x: x['completed_works'], reverse=True)
+    
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
+    
+    context = {
+        'performers_data': performers_data,
+        'units': units,
+        'selected_unit_id': unit_id,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    
+    return render(request, 'car_preparation/performers_report.html', context)
+
