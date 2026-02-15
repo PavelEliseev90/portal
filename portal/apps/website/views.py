@@ -6200,12 +6200,18 @@ def build_kors_dashboard_context(request):
     # Получаем все подразделения для фильтра
     select_units = RefUnit.objects.filter(buauto=True).order_by('name')
     
+    # Преобразуем filter_unit_ids в список для шаблона (для проверки checked)
+    filter_unit_list = filter_unit_ids if filter_unit_ids else []
+    
     return {
         'list_dc': list_dc,
         'dash': dash,
         'estimations': estimations,
         'rating': rating,
-        'filtr': filtr,
+        'filtr': {
+            **filtr,
+            'filter_unit': filter_unit_list,  # Добавляем список выбранных ID для шаблона
+        },
         'filter_unit_ids': filter_unit_ids,
         'date_start': date_start,
         'date_end': date_end,
@@ -7219,12 +7225,11 @@ def korsavto_settings_dc(request):
 @login_required
 def korsavto_dashboard(request):
     
-    select_units = RefUnit.objects.filter(buauto=True).order_by('name')
     dashboard_context = build_kors_dashboard_context(request)
 
     params = {
         'type': 'korsavto_dashboard',
-        'select_units': select_units,
+        'select_units': dashboard_context['select_units'],
         'list_dc': dashboard_context['list_dc'],
         'dash': dashboard_context['dash'],
         'estimations': dashboard_context['estimations'],
@@ -7233,6 +7238,7 @@ def korsavto_dashboard(request):
         'quick_actions_base': reverse('website:korsavto_settings'),
         'znka_summary': dashboard_context['znka_summary'],
         'plan_summary': dashboard_context['plan_summary'],
+        'open_tasks_count': dashboard_context['open_tasks_count'],
     }
 
     return render(request, 'kors/dashboard.html', {'params': params})
