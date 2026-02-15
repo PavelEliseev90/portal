@@ -1078,3 +1078,56 @@ class WorkOrderItemMaterial(models.Model):
         verbose_name = "Материал в работе"
         verbose_name_plural = "Материалы в работах"
         ordering = ['-date_created']
+
+
+# ===========================================
+# КОММЕНТАРИИ К ПОДГОТОВКЕ
+# ===========================================
+
+class CarPreparationComment(models.Model):
+    """Комментарии к подготовке автомобиля"""
+    preparation = models.ForeignKey(CarPreparation, on_delete=models.CASCADE,
+                                   verbose_name="Подготовка", related_name='comments')
+    author = models.ForeignKey(RefStaff, null=True, on_delete=models.SET_NULL,
+                              verbose_name="Автор", related_name='preparation_comments')
+    comment = models.TextField("Комментарий", max_length=5000)
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    date_updated = models.DateTimeField('Дата обновления', auto_now=True)
+    is_deleted = models.BooleanField("Удален", default=False)
+    deleted_at = models.DateTimeField('Дата удаления', null=True, blank=True)
+    deleted_by = models.ForeignKey(RefStaff, null=True, blank=True, on_delete=models.SET_NULL,
+                                  verbose_name="Удалил", related_name='deleted_preparation_comments')
+    
+    def __str__(self):
+        return f"Комментарий к {self.preparation.car} от {self.author.name if self.author else 'Неизвестно'}"
+    
+    class Meta:
+        db_table = 'carPreparationComment'
+        verbose_name = "Комментарий к подготовке"
+        verbose_name_plural = "Комментарии к подготовке"
+        ordering = ['-date_created']
+        indexes = [
+            models.Index(fields=['preparation', 'is_deleted']),
+            models.Index(fields=['date_created']),
+        ]
+
+
+class CarPreparationCommentFile(models.Model):
+    """Прикрепленные файлы к комментариям подготовки"""
+    comment = models.ForeignKey(CarPreparationComment, on_delete=models.CASCADE,
+                               verbose_name="Комментарий", related_name='files')
+    file = models.FileField(upload_to='car_preparation/comments/%Y/%m/%d/',
+                            verbose_name="Файл", max_length=255)
+    original_filename = models.CharField("Оригинальное имя файла", max_length=255, default='')
+    file_size = models.IntegerField("Размер файла (байт)", default=0)
+    mime_type = models.CharField("MIME тип", max_length=100, blank=True, default='')
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    
+    def __str__(self):
+        return f"Файл {self.original_filename} к комментарию #{self.comment.id}"
+    
+    class Meta:
+        db_table = 'carPreparationCommentFile'
+        verbose_name = "Файл комментария"
+        verbose_name_plural = "Файлы комментариев"
+        ordering = ['-date_created']

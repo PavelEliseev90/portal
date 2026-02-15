@@ -11,7 +11,8 @@ from .models import (
     CarPreparation, CarPreparationWorkSchedule, CarPreparationCalendar,
     CarPreparationResource, RefCarPreparationStatus, WorkOrder, WorkOrderItem,
     WorkOrderTemplate, RefRepairZone, WorkOrderItemPhoto, WorkOrderItemMaterial,
-    RefCarPreparationStage, RefCarPreparationWork, RefPreparationMaterial
+    RefCarPreparationStage, RefCarPreparationWork, RefPreparationMaterial,
+    CarPreparationComment, CarPreparationCommentFile
 )
 from refs.models import RefUnit
 from django.shortcuts import redirect
@@ -181,6 +182,51 @@ def preparation_schedule(request, preparation_id):
             preparation_works_by_stage[stage_name] = []
         preparation_works_by_stage[stage_name].append(work_item)
     
+    # Получаем комментарии к подготовке
+    comments = CarPreparationComment.objects.filter(
+        preparation=preparation,
+        is_deleted=False
+    ).select_related('author').prefetch_related('files').order_by('-date_created')
+    
+    # Получаем данные интерактивной оценки для автомобиля
+    interactive_estimation = None
+    body_inspection = None
+    interior_inspection = None
+    diagnostics = None
+    
+    try:
+        from register.models import RegInteractivOcenka, RegInteractivOcenkaRLK
+        from documents.models import DocRLK
+        
+        # Ищем через DocRLK по автомобилю
+        rlk = DocRLK.objects.filter(car=preparation.car).order_by('-id').first()
+        if rlk:
+            # Пробуем через RegInteractivOcenkaRLK
+            estimation_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=rlk).select_related('estimation').first()
+            if estimation_rlk and estimation_rlk.estimation:
+                interactive_estimation = estimation_rlk.estimation
+            else:
+                # Пробуем напрямую через RegInteractivOcenka по rlk
+                interactive_estimation = RegInteractivOcenka.objects.filter(
+                    rlk=rlk
+                ).order_by('-id').first()
+        
+        # Если не нашли через RLK, пробуем по VIN
+        if not interactive_estimation and preparation.car.vin:
+            interactive_estimation = RegInteractivOcenka.objects.filter(
+                vin=preparation.car.vin
+            ).order_by('-id').first()
+        
+        if interactive_estimation:
+            body_inspection = interactive_estimation.page_vnesh
+            interior_inspection = interactive_estimation.page_salon
+            diagnostics = interactive_estimation.page_test_drive
+    except Exception as e:
+        # Если импорт не удался или нет данных - просто пропускаем
+        import traceback
+        print(f"Ошибка получения данных интерактивной оценки: {e}")
+        print(traceback.format_exc())
+    
     context = {
         'preparation': preparation,
         'work_items': work_items,
@@ -192,6 +238,11 @@ def preparation_schedule(request, preparation_id):
         'repair_zones': repair_zones,
         'work_orders': work_orders,
         'performers': performers,
+        'comments': comments,
+        'interactive_estimation': interactive_estimation,
+        'body_inspection': body_inspection,
+        'interior_inspection': interior_inspection,
+        'diagnostics': diagnostics,
     }
     
     return render(request, 'car_preparation/schedule_new.html', context)
@@ -1005,7 +1056,7 @@ def work_order_template_works(request, template_id):
 
 @login_required
 def preparation_comment_update(request, preparation_id):
-    """Обновление комментария к подготовке"""
+    """Обновление комментария к подготовке (старые поля)"""
     preparation = get_object_or_404(CarPreparation, id=preparation_id)
     
     if request.method == 'POST':
@@ -1028,6 +1079,108 @@ def preparation_comment_update(request, preparation_id):
             })
         
         return redirect('car_preparation:schedule', preparation_id=preparation_id)
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def preparation_comment_add(request, preparation_id):
+    """Добавление комментария к подготовке с файлами"""
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    
+    if request.method == 'POST':
+        comment_text = request.POST.get('comment', '').strip()
+        
+        if not comment_text:
+            return JsonResponse({'success': False, 'error': 'Комментарий не может быть пустым'}, status=400)
+        
+        # Получаем RefStaff из пользователя
+        try:
+            from refs.models import RefStaff
+            staff = RefStaff.objects.filter(user=request.user).first()
+        except:
+            staff = None
+        
+        # Создаем комментарий
+        comment = CarPreparationComment.objects.create(
+            preparation=preparation,
+            author=staff,
+            comment=comment_text,
+            date_created=timezone.now()
+        )
+        
+        # Обрабатываем прикрепленные файлы
+        uploaded_files = request.FILES.getlist('files[]')
+        files_data = []
+        
+        for uploaded_file in uploaded_files:
+            # Ограничение размера файла (50 МБ)
+            max_size = 50 * 1024 * 1024  # 50 МБ
+            if uploaded_file.size > max_size:
+                continue
+            
+            # Определяем MIME тип
+            import mimetypes
+            mime_type, _ = mimetypes.guess_type(uploaded_file.name)
+            
+            comment_file = CarPreparationCommentFile.objects.create(
+                comment=comment,
+                file=uploaded_file,
+                original_filename=uploaded_file.name,
+                file_size=uploaded_file.size,
+                mime_type=mime_type or 'application/octet-stream',
+                date_created=timezone.now()
+            )
+            
+            files_data.append({
+                'id': comment_file.id,
+                'filename': comment_file.original_filename,
+                'url': comment_file.file.url if comment_file.file else '',
+                'size': comment_file.file_size,
+            })
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'comment_id': comment.id,
+                'comment': comment.comment,
+                'author': comment.author.name if comment.author else 'Неизвестно',
+                'date_created': comment.date_created.strftime('%d.%m.%Y %H:%M') if comment.date_created else '',
+                'files': files_data,
+                'message': 'Комментарий добавлен'
+            })
+        
+        return redirect('car_preparation:schedule', preparation_id=preparation_id)
+    
+    return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def preparation_comment_delete(request, comment_id):
+    """Удаление комментария к подготовке"""
+    comment = get_object_or_404(CarPreparationComment, id=comment_id)
+    
+    if request.method == 'POST':
+        # Получаем RefStaff из пользователя
+        try:
+            from refs.models import RefStaff
+            staff = RefStaff.objects.filter(user=request.user).first()
+        except:
+            staff = None
+        
+        # Мягкое удаление
+        comment.is_deleted = True
+        comment.deleted_at = timezone.now()
+        comment.deleted_by = staff
+        comment.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Комментарий удален'
+            })
+        
+        return redirect('car_preparation:schedule', preparation_id=comment.preparation.id)
     
     return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
 
