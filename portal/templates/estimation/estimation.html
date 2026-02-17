@@ -10,64 +10,163 @@
 
 {% if params.estimation.type_estimation == 0 %}
   
-  <div class="hidesite" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; " >
-    <br>
-    <div class="row-1 g-1 btn-block text-white" >
-  
-      <label class="fs-4"> <span class="icon-mbri-right"></span> Выберите вариант оценки </label>
+  <div class="portal-page">
+    <div class="portal-header">
+      <h2>Начало оценки</h2>
+      <p>Укажите VIN номер или номер кузова автомобиля для начала оценки</p>
     </div>
-    <br> 
-    <br>
-  </div>
-  
 
-  <div class="hidemobile">
-    <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
-  
-      <label class="fs-3"> <span class="icon-mbri-right"></span> Выберите вариант оценки </label>
-    </div>
-    <br>
-  </div>
-
-  <br>
-  
-  <div class="row g-1">
-
-    <div class="col-12 col-sm-6">
-      <a class="card bg-dark bg-opacity-75" href="?type_estimation=1">
-        <div class="card-body  text-white ">
-          <label class="fs-4"> <span class="icon-mbri-like"></span> Стандартная оценка </label>
-          <hr style="width: 75%;">
-          <label class="fs-6">Оценка автомобиля с наличием VIN номера. <br>Примерное время оценки: 15 мин. </label>
+    <div class="portal-panel">
+      <form method="post" id="vinForm">
+        {% csrf_token %}
+        
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input type="text" 
+                     class="form-control" 
+                     id="vin_input" 
+                     name="vin_new" 
+                     value="{% if params.vin_trade_in %}{{ params.vin_trade_in }}{% elif params.estimation.vin %}{{ params.estimation.vin }}{% endif %}" 
+                     placeholder="VIN номер" 
+                     autocomplete="off"
+                     maxlength="17">
+              <label for="vin_input">VIN номер</label>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input type="text" 
+                     class="form-control" 
+                     id="body_number_input" 
+                     name="body_number_new" 
+                     value="{% if params.estimation.number_body %}{{ params.estimation.number_body }}{% endif %}" 
+                     placeholder="Номер кузова" 
+                     autocomplete="off"
+                     maxlength="21">
+              <label for="body_number_input">Номер кузова</label>
+            </div>
+          </div>
         </div>
-      </a>
-    </div>
 
-    <div class="col-12 col-sm-6">
-      <a class="card bg-dark bg-opacity-50" href="?type_estimation=3">
-        <div class="card-body  text-white ">
-          <label class="fs-4"> <span class="icon-mbri-preview"></span> Дистанционная оценка </label>
-          <hr style="width: 75%;">
-          <label class="fs-6">Оценка автомобиля с наличием VIN номера. <br>Примерное время оценки: 5 мин. </label>
+        <div class="alert alert-info" role="alert">
+          <i class="bi bi-info-circle me-2"></i>
+          Укажите VIN номер или номер кузова. После ввода станет доступен выбор типа оценки.
         </div>
-      </a>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary" id="saveVinBtn" disabled>
+            <span class="icon-mbri-save"></span> Сохранить
+          </button>
+        </div>
+      </form>
     </div>
 
+    <!-- Выбор типа оценки (показывается после сохранения VIN/номера кузова) -->
+    <div class="portal-panel" id="estimationTypePanel" style="display: {% if params.estimation.vin or params.estimation.number_body %}block{% else %}none{% endif %};">
+      <h6 class="mb-4">
+        <span class="icon-mbri-right"></span> Выберите тип оценки
+      </h6>
+      
+      <div class="row g-3">
+        <div class="col-md-6">
+          <form method="post" class="h-100">
+            {% csrf_token %}
+            <input type="hidden" name="set_type_estimation" value="1">
+            <input type="hidden" name="type_estimation" value="1">
+            <div class="portal-panel h-100" style="cursor: pointer; transition: all 0.2s;" 
+                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0, 23, 61, 0.12)';"
+                 onmouseout="this.style.transform=''; this.style.boxShadow='';"
+                 onclick="this.closest('form').submit();">
+              <div class="text-center">
+                <h5 class="mb-3">
+                  <span class="icon-mbri-like text-primary"></span> Стандартная оценка
+                </h5>
+                <p class="text-muted mb-0">
+                  Оценка автомобиля с наличием VIN номера.<br>
+                  Примерное время оценки: <strong>15 мин</strong>
+                </p>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="col-md-6">
+          <form method="post" class="h-100">
+            {% csrf_token %}
+            <input type="hidden" name="set_type_estimation" value="1">
+            <input type="hidden" name="type_estimation" value="3">
+            <div class="portal-panel h-100" style="cursor: pointer; transition: all 0.2s;" 
+                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0, 23, 61, 0.12)';"
+                 onmouseout="this.style.transform=''; this.style.boxShadow='';"
+                 onclick="this.closest('form').submit();">
+              <div class="text-center">
+                <h5 class="mb-3">
+                  <span class="icon-mbri-preview text-success"></span> Дистанционная оценка
+                </h5>
+                <p class="text-muted mb-0">
+                  Оценка автомобиля с наличием VIN номера.<br>
+                  Примерное время оценки: <strong>5 мин</strong>
+                </p>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <br>
-
-  <div class="row g-1">
-    <div class="col col-sm-6">
-      <a class="card bg-dark bg-opacity-75" href="?type_estimation=2">
-        <div class="card-body  text-white ">
-          <label class="fs-4"> <span class="icon-mbri-left-right"></span> Праворульный авто </label>
-          <hr style="width: 75%;">
-          <label class="fs-6">Оценка праворульного авто без VIN номера. <br>Поиск и подбор информации осществляется по номеру кузова.</label>
-        </div>
-      </a>
-    </div>
-  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const vinInput = document.getElementById('vin_input');
+      const bodyNumberInput = document.getElementById('body_number_input');
+      const saveBtn = document.getElementById('saveVinBtn');
+      const estimationTypePanel = document.getElementById('estimationTypePanel');
+      const vinForm = document.getElementById('vinForm');
+      
+      // Проверка наличия VIN или номера кузова
+      function checkInputs() {
+        const vinValue = vinInput.value.trim();
+        const bodyValue = bodyNumberInput.value.trim();
+        const hasValue = vinValue.length > 0 || bodyValue.length > 0;
+        
+        saveBtn.disabled = !hasValue;
+      }
+      
+      // Автозаполнение из vin_trade_in
+      {% if params.vin_trade_in %}
+        if (!vinInput.value && !bodyNumberInput.value) {
+          vinInput.value = '{{ params.vin_trade_in }}';
+          checkInputs();
+        }
+      {% endif %}
+      
+      // Проверка при изменении полей
+      vinInput.addEventListener('input', checkInputs);
+      bodyNumberInput.addEventListener('input', checkInputs);
+      
+      // Изначальная проверка
+      checkInputs();
+      
+      // Показываем панель выбора типа оценки, если уже есть сохраненные данные
+      {% if params.estimation.vin or params.estimation.number_body %}
+        estimationTypePanel.style.display = 'block';
+      {% endif %}
+      
+      // Обработка отправки формы
+      vinForm.addEventListener('submit', function(e) {
+        const vinValue = vinInput.value.trim();
+        const bodyValue = bodyNumberInput.value.trim();
+        
+        if (vinValue.length === 0 && bodyValue.length === 0) {
+          e.preventDefault();
+          alert('Пожалуйста, укажите VIN номер или номер кузова');
+          return false;
+        }
+      });
+    });
+  </script>
 
 {% elif  params.estimation.type_estimation == 1 or params.estimation.type_estimation == 3 or params.estimation.type_estimation == 2  %}
 

@@ -482,9 +482,36 @@ def estimation_rlk(request, rlk_id):
 
     if request.method == 'POST':
         
-        if 'vin_new' in request.POST:
-            reg_interactiv_ocenka.vin = request.POST.get('vin_new', '')
-            refresh_analitick(reg_interactiv_ocenka)
+        if 'vin_new' in request.POST or 'body_number_new' in request.POST:
+            vin_new = request.POST.get('vin_new', '').strip()
+            body_number_new = request.POST.get('body_number_new', '').strip()
+            
+            if vin_new:
+                reg_interactiv_ocenka.vin = vin_new
+                refresh_analitick(reg_interactiv_ocenka)
+            
+            if body_number_new:
+                reg_interactiv_ocenka.number_body = body_number_new
+            
+            reg_interactiv_ocenka.save()
+            return HttpResponseRedirect(request.path_info)
+        
+        if 'set_type_estimation' in request.POST:
+            type_estimation = int(request.POST.get('type_estimation', '0'))
+            reg_interactiv_ocenka.type_estimation = type_estimation
+            if type_estimation == 3:
+                if reg_interactiv_ocenka.page_remote == None:
+                    reg_interactiv_ocenka_page_remote = RegInteractivOcenkaRemote()
+                    reg_interactiv_ocenka_page_remote.save()
+                    reg_interactiv_ocenka.page_remote = reg_interactiv_ocenka_page_remote
+                    reg_interactiv_ocenka.save()
+                else:
+                    reg_interactiv_ocenka_page_remote = reg_interactiv_ocenka.page_remote
+                if reg_interactiv_ocenka_page_remote.start_estimation == None:
+                    reg_interactiv_ocenka_page_remote.start_estimation = datetime.now()
+                if reg_interactiv_ocenka_page_remote.end_estimation != None:
+                    reg_interactiv_ocenka_page_remote.start_estimation = None
+                reg_interactiv_ocenka_page_remote.save()
             reg_interactiv_ocenka.save()
             return HttpResponseRedirect(request.path_info)
 
@@ -1472,7 +1499,8 @@ def estimation_rlk(request, rlk_id):
         'list_repair_hisory_vin'        : list_repair_hisory_vin,
         'list_estimations_vin'          : list_estimations_vin,
         'car'                           : car,
-        'users'                         : users
+        'users'                         : users,
+        'vin_trade_in'                  : object.vin_trade_in if hasattr(object, 'vin_trade_in') else ''
     }
     
     if reg_interactiv_ocenka.modification == None:
