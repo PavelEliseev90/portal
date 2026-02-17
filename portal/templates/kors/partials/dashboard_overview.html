@@ -450,7 +450,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% with total_segment_sum=params.dash.count_200_s__sum|add:params.dash.count_400_s__sum|add:params.dash.count_700_s__sum|add:params.dash.count_1200_s__sum|add:params.dash.count_2000_s__sum|add:params.dash.count_3000_s__sum|add:params.dash.count_5000_s__sum|add:params.dash.count_5001_s__sum %}
+                {% with total_cars_count=params.dash.count_cars__sum|default:0 total_segment_count=params.dash.count_200__sum|add:params.dash.count_400__sum|add:params.dash.count_700__sum|add:params.dash.count_1200__sum|add:params.dash.count_2000__sum|add:params.dash.count_3000__sum|add:params.dash.count_5000__sum|add:params.dash.count_5001__sum %}
                 <tr>
                   <td>до 200 тыс.</td>
                   <td class="text-end">{{ params.dash.count_200__sum|default:0 }}</td>
@@ -458,8 +458,8 @@
                   <td class="text-end">{{ params.dash.count_200_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_200_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_200_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_200__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -471,8 +471,8 @@
                   <td class="text-end">{{ params.dash.count_400_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_400_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_400_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_400__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -484,8 +484,8 @@
                   <td class="text-end">{{ params.dash.count_700_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_700_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_700_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_700__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -497,8 +497,8 @@
                   <td class="text-end">{{ params.dash.count_1200_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_1200_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_1200_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_1200__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -510,8 +510,8 @@
                   <td class="text-end">{{ params.dash.count_2000_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_2000_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_2000_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_2000__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -523,8 +523,8 @@
                   <td class="text-end">{{ params.dash.count_3000_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_3000_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_3000_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_3000__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -536,8 +536,8 @@
                   <td class="text-end">{{ params.dash.count_5000_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_5000_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_5000_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_5000__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
@@ -549,12 +549,27 @@
                   <td class="text-end">{{ params.dash.count_5001_outlay__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">{{ params.dash.count_5001_cost__sum|default:0|floatformat:"2g" }} ₽</td>
                   <td class="text-end">
-                    {% if total_segment_sum > 0 %}
-                      {% widthratio params.dash.count_5001_s__sum|default:0 total_segment_sum 100 as percent %}
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_5001__sum|default:0 total_cars_count 100 as percent %}
                       <span class="text-muted small">{{ percent|floatformat:1 }}%</span>
                     {% else %}—{% endif %}
                   </td>
                 </tr>
+                {% if params.dash.count_other__sum|default:0 > 0 %}
+                <tr style="background-color: #fff3cd;">
+                  <td><strong>Прочие</strong> <span class="badge bg-warning text-dark" style="font-size: 0.7em;">Не определено</span></td>
+                  <td class="text-end"><strong>{{ params.dash.count_other__sum|default:0 }}</strong></td>
+                  <td class="text-end"><strong>{{ params.dash.count_other_s__sum|default:0|floatformat:"2g" }} ₽</strong></td>
+                  <td class="text-end"><strong>{{ params.dash.count_other_outlay__sum|default:0|floatformat:"2g" }} ₽</strong></td>
+                  <td class="text-end"><strong>{{ params.dash.count_other_cost__sum|default:0|floatformat:"2g" }} ₽</strong></td>
+                  <td class="text-end">
+                    {% if total_cars_count > 0 %}
+                      {% widthratio params.dash.count_other__sum|default:0 total_cars_count 100 as percent %}
+                      <span class="text-muted small"><strong>{{ percent|floatformat:1 }}%</strong></span>
+                    {% else %}—{% endif %}
+                  </td>
+                </tr>
+                {% endif %}
                 {% endwith %}
               </tbody>
             </table>
