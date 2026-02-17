@@ -21,7 +21,7 @@ from refs.models import RefUnit, RefStatusCarsOrganization, RefTypeExchange
 def classifieds_list(request):
     """Список настроек выгрузки"""
     search = request.GET.get('search', '')
-    platform_id = request.GET.get('platform', '')
+    type_exchange_id = request.GET.get('type_exchange', '')
     unit_id = request.GET.get('unit', '')
     status = request.GET.get('status', '')
     
@@ -30,12 +30,12 @@ def classifieds_list(request):
     if search:
         configs = configs.filter(
             Q(name__icontains=search) |
-            Q(platform__name__icontains=search) |
+            Q(type_exchange__name__icontains=search) |
             Q(unit__name__icontains=search)
         )
     
-    if platform_id:
-        configs = configs.filter(platform_id=platform_id)
+    if type_exchange_id:
+        configs = configs.filter(type_exchange_id=type_exchange_id)
     
     if unit_id:
         configs = configs.filter(unit_id=unit_id)
@@ -48,17 +48,17 @@ def classifieds_list(request):
     paginator = Paginator(configs.order_by('-date_create'), 25)
     page_obj = paginator.get_page(page_number)
     
-    platforms = RefClassifiedsPlatform.objects.filter(is_active=True)
+    type_exchanges = RefTypeExchange.objects.all().order_by('name')
     units = RefUnit.objects.all().order_by('name')
     
     params = {
         'type': 'classifieds_list',
         'page_obj': page_obj,
-        'platforms': platforms,
+        'type_exchanges': type_exchanges,
         'units': units,
         'filters': {
             'search': search,
-            'platform': platform_id,
+            'type_exchange': type_exchange_id,
             'unit': unit_id,
             'status': status,
         }
@@ -104,14 +104,12 @@ def classifieds_config_create(request):
         messages.success(request, 'Настройка создана успешно')
         return redirect('classifieds:list')
     
-    platforms = RefClassifiedsPlatform.objects.filter(is_active=True)
     units = RefUnit.objects.all().order_by('name')
     statuses = RefStatusCarsOrganization.objects.all().order_by('name')
     type_exchanges = RefTypeExchange.objects.all().order_by('name')
     
     params = {
         'type': 'classifieds_config_create',
-        'platforms': platforms,
         'units': units,
         'statuses': statuses,
         'type_exchanges': type_exchanges,
@@ -130,7 +128,6 @@ def classifieds_config_edit(request, config_id):
         messages.success(request, 'Настройка обновлена успешно')
         return redirect('classifieds:config_detail', config_id=config_id)
     
-    platforms = RefClassifiedsPlatform.objects.filter(is_active=True)
     units = RefUnit.objects.all().order_by('name')
     statuses = RefStatusCarsOrganization.objects.all().order_by('name')
     type_exchanges = RefTypeExchange.objects.all().order_by('name')
@@ -138,7 +135,6 @@ def classifieds_config_edit(request, config_id):
     params = {
         'type': 'classifieds_config_edit',
         'config': config,
-        'platforms': platforms,
         'units': units,
         'statuses': statuses,
         'type_exchanges': type_exchanges,

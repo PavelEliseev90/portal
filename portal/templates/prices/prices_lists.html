@@ -1,128 +1,207 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block url %} {% endblock %} 
+{% block url %} {% endblock %}
 
-{% block title %} - прайс-листы {% endblock %}
+{% block title %} - Прайс-листы {% endblock %}
 
-{% block title_navbar %} - прайс-листы {% endblock %}
-    
+{% block title_navbar %} - Прайс-листы {% endblock %}
+
 {% block content %}
+<div class="docs-zn-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0" style="color: #002a5a; font-weight: 600;">Прайс-листы</h2>
+        <p class="text-muted mb-0">Управление загрузкой и обработкой прайс-листов</p>
+      </div>
+      <a href="/prices_lists/0/" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+        <span class="icon-mbri-plus"></span> Добавить прайс-лист
+      </a>
+    </div>
 
+    <!-- Фильтры -->
+    <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+          <span class="icon-mbri-filter"></span> Фильтры
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-10">
+            <div class="form-floating">
+              <input type="text" list='options' class="form-control" id="manufacturen" name="manufacturen" 
+                     placeholder="Введите производителя" value="{{params.filtr.manufacturen}}"
+                     style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <label for="manufacturen">Производитель</label>
+              <datalist id='options'>
+                {% for manufacture in params.manufacturer %}
+                  <option value='{{manufacture.name}}'>
+                {% endfor %}
+              </datalist>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.75rem;">
+              <span class="icon-mbri-search"></span> Применить
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
-  
-  <form enctype="multipart/form-data" method="get">
-     
-    <div class="row g-2">
-      
-      <div class="col">
-        <div class="form-floating mb-3">
-          <input type="text" list='options' class="form-control" id="manufacturen" name="manufacturen" placeholder="" value="{{params.filtr.manufacturen}}" {% if params.manufacturen|length > 0 %} readonly {% endif %} >
-            <label for="floatingInput">Производитель</label>
-            <datalist id='options'>
-              {% for manufacture in params.manufacturer  %}
-                <option value='{{manufacture.name}}'>
-              {% endfor %}              
-            </datalist>
+    <!-- Таблица прайс-листов -->
+    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+        <h5 class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff;">
+          <span class="icon-mbri-file"></span> Список прайс-листов
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+              <tr>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Дата</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Производитель</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Позиций</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Ответственный</th>
+                <th style="border: none; padding: 1rem; font-weight: 600;">Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if params.paginator.object_list %}
+                {% for object in params.paginator.object_list %}
+                  <tr onclick="window.location.href='/prices_lists/{{object.pk}}/'; return false" style="cursor: pointer;">
+                    <td style="padding: 1rem; vertical-align: middle;">
+                      <span style="color: #002a5a; font-weight: 500;">{{object.date|date:"d.m.Y H:i"}}</span>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                      <span style="color: #002a5a; font-weight: 500;">{{object.settings.name|default:"—"}}</span>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                      <span class="badge bg-info" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">
+                        {{object.positions_success|default:0}} / {{object.positions_all|default:0}}
+                      </span>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                      <span style="color: #6c7a92;">{{object.user.last_name}} {{object.user.first_name}}</span>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                      {% if object.status == "Ожидается загрузка" %}
+                        <span class="badge bg-warning text-dark" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
+                      {% elif "Ошибка" in object.status or "ошибка" in object.status|lower %}
+                        <span class="badge bg-danger" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
+                      {% elif "Завершено" in object.status or "завершено" in object.status|lower or "успешно" in object.status|lower %}
+                        <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
+                      {% else %}
+                        <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{object.status}}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="5" class="text-center py-5" style="color: #6c7a92;">
+                    <div class="mb-3">
+                      <span class="icon-mbri-file" style="font-size: 3rem; opacity: 0.3;"></span>
+                    </div>
+                    <p class="mb-0">Прайс-листы не найдены</p>
+                    <a href="/prices_lists/0/" class="btn btn-primary mt-3" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem;">
+                      Добавить первый прайс-лист
+                    </a>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
         </div>
       </div>
-
-    </div>
-  
-    <button type="submit" class="btn btn-outline-success" > <span class="icon-mbri-play"></span> Применить</button>
-  
-  </form>
-
-  <hr style="width: 75%;">
-
-  <div class="row">
-    <div class="col">
-      <a type="submit" href="0" class="btn btn-outline-success btn-sm"> <span class="icon-mbri-plus"></span> Добавить</a>
-    </div>
-  </div>
-
-  <div class="table-responsive">
-  <table class="table table-striped table-hover">
-    <thead>
-      <tr>
-        <th scope="col">Дата</th>
-        <th scope="col">Производитель</th>
-        <th scope="col">Позиций</th>
-        <th scope="col">Ответственный</th>
-        <th scope="col">Статус</th>
-      </tr>
-    </thead>
-    <tbody>
-     
-      {% if params.paginator.object_list %}
-		    {% for object in params.paginator.object_list %}
-            <tr onclick="window.location.href='{{object.pk}}/'; return false">
-              <td> {{object.date}} </td>
-              <td> {{object.settings.name}} </td>
-              <td> {{object.positions_success}} / {{object.positions_all}} </td>
-              <td> {{object.user.last_name}} {{object.user.first_name}} </td>
-              <td> {{object.status}} </td>
-            </tr>
-          {% endfor %} 
-        {% endif %} 
-    </tbody>
-    
-  </table>
-  </div>
-
-  <div class="row align-self-center align-items-center">
-	
-    <div class="col-auto">
-      <p class="fw-normal">Всего записей: {{params.paginator.paginator.count}} / Выведено: {{params.paginator|length}}</p>
-    </div>
-  
-    <div class="col-auto align-items-center align-self-center justify-content-center">
-      <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
-        
-          {% if params.paginator.has_previous %}
-            <li class="page-num mbr-section-btn">
-              <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-            </li>
-          {% endif %}
       
-          {% for p in params.paginator.paginator.page_range %}
-            {% if params.paginator.number == p %}
-              <li class="page-num mbr-section-btn disabled">
-                <a class="btn btn-secondary display-7">
-                  <b>{{p}}</b>
+      <!-- Пагинация и информация -->
+      {% if params.paginator.has_other_pages or params.paginator.paginator.count > 0 %}
+      <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-3" style="border-radius: 0 0 1.25rem 1.25rem; padding: 1rem 1.5rem; border-top: 1px solid rgba(0, 42, 90, 0.08);">
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-muted small">Всего записей: <span class="fw-semibold">{{params.paginator.paginator.count}}</span></span>
+          <span class="text-muted small">Выведено: <span class="fw-semibold">{{params.paginator|length}}</span></span>
+        </div>
+        
+        {% if params.paginator.has_other_pages %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm mb-0">
+            {% if params.paginator.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% url_replace page=params.paginator.previous_page_number %}" aria-label="Предыдущая" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  <span aria-hidden="true">&laquo;</span>
                 </a>
               </li>
-            {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-              <li class="page-num mbr-section-btn">
-                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+            {% endif %}
+            
+            {% for p in params.paginator.paginator.page_range %}
+              {% if params.paginator.number == p %}
+                <li class="page-item active" aria-current="page">
+                  <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; margin: 0 0.25rem;">{{ p }}</span>
+                </li>
+              {% elif p >= params.paginator.number|add:-3 and p <= params.paginator.number|add:3 %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% url_replace page=p %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if params.paginator.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% url_replace page=params.paginator.next_page_number %}" aria-label="Следующая" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
               </li>
             {% endif %}
-          {% endfor %}
-            
-          {% if params.paginator.has_next %}
-            <li class="page-num mbr-section-btn">
-              <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-            </li>
-          {% endif %}
-    
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+        {% endif %}
+        
+        <div class="d-flex align-items-center gap-2">
+          <label for="select_count" class="form-label text-muted small mb-0">Показывать:</label>
+          <select class="form-select form-select-sm w-auto" id="select_count" name="select_count" onchange='window.location.href="?{% url_replace select_count="" %}" + this.value;' style="border-radius: 0.5rem;">
+            <option value="25" {% if params.select_count == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if params.select_count == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if params.select_count == 100 %}selected{% endif %}>100</option>
+            <option value="200" {% if params.select_count == 200 %}selected{% endif %}>200</option>
+          </select>
+        </div>
+      </div>
+      {% endif %}
     </div>
-  
-    <div class="col-2 justify-content-end">
-      
-      <div class="form-floating mb-3">
-        <select class="form-select" id="select_count" name="select_count" onchange="change_link()">
-        <option {% if params.select_count == 25 %} selected {% endif %}>25</option>
-        <option {% if params.select_count == 50 %} selected {% endif %}>50</option>
-        <option {% if params.select_count == 100 %} selected {% endif %}>100</option>
-        <option {% if params.select_count == 200 %} selected {% endif %}> 200</option>
-        </select>
-        <label for="floatingInput">Выводить</label>
-      </div>
-      </div>
-  
   </div>
+</div>
 
-  {% endblock %}
+<style>
+.docs-zn-page {
+  background: #f4f7fb;
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0, 42, 90, 0.03);
+}
+
+.table thead tr {
+  border-radius: 1.25rem 1.25rem 0 0;
+  overflow: hidden;
+}
+</style>
+{% endblock %}
