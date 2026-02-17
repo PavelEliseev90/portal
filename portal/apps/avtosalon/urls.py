@@ -7,6 +7,7 @@ app_name = 'avtosalon'
 urlpatterns = [
    
    path('disposition/',                      views.disposition, name='disposition'),
+   path('disposition/get_marks/',            views.disposition_get_marks, name='disposition_get_marks'),
    path('disposition/get_models/',           views.disposition_get_models, name='disposition_get_models'),
    path('warehouse/analysis/',               views.warehouse_analysis, name='warehouse_analysis'),
    path('catalog/',                          views.cars_catalog),
