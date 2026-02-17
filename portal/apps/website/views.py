@@ -17,7 +17,7 @@ import ctypes
 from recognition.models import Records_voice_recorder, Records_voice_recorder_cvc, Records_voice_recorder_queue, Records_voice_recorder_cvc_checklist, Records_voice_recorder_cvc_checklist_tematics, Records_voice_recorder_cvc_checklist_kg, Records_questions, Check_settings
 from django.http.response import JsonResponse
 from rest_framework import status
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, InvalidPage
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -4173,48 +4173,80 @@ def refresh_base_manufacturen(request):
 
 
 def prices_lists(request):
+    from django.contrib import messages
+    
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
-    else:
+    
+    try:
         text = ''
-        countListRecord = int(request.GET.get('select_count', '25'))
+        
+        # Безопасное получение параметра select_count
+        try:
+            countListRecord = int(request.GET.get('select_count', '25'))
+            if countListRecord not in [25, 50, 100, 200]:
+                countListRecord = 25
+        except (ValueError, TypeError):
+            countListRecord = 25
         
         filter_count = 0
 
-        tasks    = TaskRegPrices.objects.all().order_by('-date')
+        tasks = TaskRegPrices.objects.all().order_by('-date')
         
-        manufacturen            = request.GET.get('manufacturen', '')
+        manufacturen = request.GET.get('manufacturen', '').strip()
         
         if len(manufacturen) > 0:
-            tasks = tasks.filter(manufacturer__name__icontains = manufacturen)
+            tasks = tasks.filter(manufacturer__name__icontains=manufacturen)
             filter_count = filter_count + 1
-            
-        count   = tasks.count()
         
-        page_number = request.GET.get('page', 1)
-        
-        paginator   = Paginator(tasks, countListRecord)
-        page_obj    = paginator.get_page(page_number)
+        # Безопасная пагинация
+        try:
+            page_number = request.GET.get('page', 1)
+            paginator = Paginator(tasks, countListRecord)
+            page_obj = paginator.get_page(page_number)
+        except (ValueError, TypeError, EmptyPage, InvalidPage) as e:
+            messages.error(request, f'Ошибка при загрузке страницы: {str(e)}')
+            page_number = 1
+            paginator = Paginator(tasks, countListRecord)
+            page_obj = paginator.get_page(page_number)
         
         filtr = {
-            'manufacturen'  : manufacturen,
-            'filtr_count'   : filter_count
+            'manufacturen': manufacturen,
+            'filtr_count': filter_count
         }
 
         params = {
-            'type'          : 'prices',
-            'page_number'   : page_number,
-            'select_count'  : countListRecord,
-            'manufacturer'  : RefManufacturer.objects.all().order_by('name') ,
-            'paginator'     : page_obj,
-            'filtr'         : filtr,
+            'type': 'prices',
+            'page_number': page_number,
+            'select_count': countListRecord,
+            'manufacturer': RefManufacturer.objects.all().order_by('name'),
+            'paginator': page_obj,
+            'filtr': filtr,
         }
 
-
+        return render(request, 'prices/prices_lists.html', {'params': params})
+        
+    except Exception as e:
+        messages.error(request, f'Ошибка при загрузке списка прайс-листов: {str(e)}')
+        import traceback
+        print(traceback.format_exc())
+        # Возвращаем пустой список в случае ошибки
+        params = {
+            'type': 'prices',
+            'page_number': 1,
+            'select_count': 25,
+            'manufacturer': RefManufacturer.objects.all().order_by('name'),
+            'paginator': Paginator(TaskRegPrices.objects.none(), 25).page(1),
+            'filtr': {'manufacturen': '', 'filtr_count': 0},
+        }
         return render(request, 'prices/prices_lists.html', {'params': params})
 
 
 def prices_list(request, id):
+    from django.contrib import messages
+    from django.core.exceptions import ValidationError
+    from openpyxl import load_workbook
+    from openpyxl.utils.exceptions import InvalidFileException
     
     text        = ''
     file_name   = ''
@@ -4230,146 +4262,255 @@ def prices_list(request, id):
 
     if request.method == 'POST':
         if 'download' in request.POST:
-            
-            info_one_price  = request.POST.get('price_one_manufacturen', '')
-            if info_one_price == 'false':
-                info_one_price = False
+            try:
+                info_one_price  = request.POST.get('price_one_manufacturen', '')
+                if info_one_price == 'false':
+                    info_one_price = False
 
-            file_path       = request.POST.get('file_path_success', '')
-            file_name       = request.POST.get('file_name_success', '')
-            positions_row   = int(request.POST.get('positions_row_success', 0))
-            manufacturen    = request.POST.get('manufacturen', '')
-            start_row       = int(request.POST.get('start_row', '1'))
-            email           = request.POST.get('email', '')
-            article         = 0
-            name            = 0
-            category        = 0
-            group           = 0
-            price_min       = 0
-            price           = 0
-            manufacturen_col    = 0
-            
-            positions_row  = positions_row - start_row
+                file_path       = request.POST.get('file_path_success', '')
+                file_name       = request.POST.get('file_name_success', '')
+                
+                if not file_path or not file_name:
+                    messages.error(request, 'Ошибка: файл не был загружен. Пожалуйста, загрузите файл заново.')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                try:
+                    positions_row   = int(request.POST.get('positions_row_success', 0))
+                    start_row       = int(request.POST.get('start_row', '1'))
+                except ValueError:
+                    messages.error(request, 'Ошибка: некорректные значения для строк. Проверьте настройки загрузки.')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                manufacturen    = request.POST.get('manufacturen', '')
+                
+                if positions_row < start_row:
+                    messages.error(request, f'Ошибка: первая строка загрузки ({start_row}) больше общего количества строк ({positions_row}).')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                positions_row  = positions_row - start_row + 1
+                
+                email           = request.POST.get('email', '')
+                article         = 0
+                name            = 0
+                category        = 0
+                group           = 0
+                price_min       = 0
+                price           = 0
+                manufacturen_col    = 0
 
-            if len(manufacturen) > 0:
-                manufacturen_object = RefManufacturer.objects.get(name = manufacturen)
-            else:
                 manufacturen_object = None
+                if len(manufacturen) > 0:
+                    try:
+                        manufacturen_object = RefManufacturer.objects.get(name = manufacturen)
+                    except RefManufacturer.DoesNotExist:
+                        messages.error(request, f'Ошибка: производитель "{manufacturen}" не найден в базе данных.')
+                        return HttpResponseRedirect('/prices_lists/0/')
 
-            for key in request.POST.keys():
-                if key.startswith('col_'):
-                    val_key = request.POST.get(key, 0)
-                    if val_key != '-':
-                        val_int = int(val_key)
-                        if val_int == 1:
-                            article = int(key.replace('col_', ''))
-                        elif val_int == 2:
-                            name = int(key.replace('col_', ''))
-                        elif val_int == 3:
-                            category = int(key.replace('col_', ''))
-                        elif val_int == 4:
-                            group = int(key.replace('col_', ''))
-                        elif val_int == 5:
-                            price_min = int(key.replace('col_', ''))
-                        elif val_int == 6:
-                            price = int(key.replace('col_', ''))
-                        elif val_int == 7:
-                            manufacturen_col = int(key.replace('col_', ''))
-            
-            settingsRegPrices                   = SettingsRegPrices()
+                # Проверка обязательных полей
+                article_found = False
+                name_found = False
+                price_found = False
+                
+                for key in request.POST.keys():
+                    if key.startswith('col_'):
+                        val_key = request.POST.get(key, 0)
+                        if val_key != '-':
+                            try:
+                                val_int = int(val_key)
+                                col_num = int(key.replace('col_', ''))
+                                if val_int == 1:
+                                    article = col_num
+                                    article_found = True
+                                elif val_int == 2:
+                                    name = col_num
+                                    name_found = True
+                                elif val_int == 3:
+                                    category = col_num
+                                elif val_int == 4:
+                                    group = col_num
+                                elif val_int == 5:
+                                    price_min = col_num
+                                elif val_int == 6:
+                                    price = col_num
+                                    price_found = True
+                                elif val_int == 7:
+                                    manufacturen_col = col_num
+                            except ValueError:
+                                continue
+                
+                if not article_found:
+                    messages.error(request, 'Ошибка: необходимо указать колонку с артикулом.')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                if not name_found:
+                    messages.error(request, 'Ошибка: необходимо указать колонку с наименованием.')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                if not price_found:
+                    messages.error(request, 'Ошибка: необходимо указать колонку с ценой продажи.')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                settingsRegPrices = SettingsRegPrices()
 
-            if manufacturen_object != None:
-                settingsRegPrices.name              = "" + manufacturen_object.name
-            else:
-                settingsRegPrices.name              = "Мультипрайс список появится после загрузки"
-            
-            settingsRegPrices.manufacturer      = manufacturen_object
-            settingsRegPrices.user              = request.user
-            settingsRegPrices.start_row         = start_row
-            settingsRegPrices.number_name       = name
-            settingsRegPrices.number_article    = article
-            settingsRegPrices.number_category   = category
-            settingsRegPrices.number_group      = group
-            settingsRegPrices.number_price_min  = price_min
-            settingsRegPrices.number_price      = price
-            settingsRegPrices.email_push        = email
-            settingsRegPrices.number_manufacturer = manufacturen_col
-            settingsRegPrices.save()
+                if manufacturen_object != None:
+                    settingsRegPrices.name = manufacturen_object.name
+                else:
+                    settingsRegPrices.name = "Мультипрайс список появится после загрузки"
+                
+                settingsRegPrices.manufacturer      = manufacturen_object
+                settingsRegPrices.user              = request.user
+                settingsRegPrices.start_row         = start_row
+                settingsRegPrices.number_name       = name
+                settingsRegPrices.number_article    = article
+                settingsRegPrices.number_category   = category
+                settingsRegPrices.number_group      = group
+                settingsRegPrices.number_price_min  = price_min
+                settingsRegPrices.number_price      = price
+                settingsRegPrices.email_push        = email
+                settingsRegPrices.number_manufacturer = manufacturen_col
+                settingsRegPrices.save()
 
-            taskRegPrices = TaskRegPrices()
-            taskRegPrices.manufacturer  = manufacturen_object
-            taskRegPrices.user          = request.user
-            taskRegPrices.positions_all = positions_row 
-            taskRegPrices.status        = "Ожидается загрузка"
-            taskRegPrices.path_file_price   = file_path
-            taskRegPrices.file_name         = file_name
-            taskRegPrices.settings          = settingsRegPrices
-            taskRegPrices.save()
+                taskRegPrices = TaskRegPrices()
+                taskRegPrices.manufacturer  = manufacturen_object
+                taskRegPrices.user          = request.user
+                taskRegPrices.positions_all = positions_row 
+                taskRegPrices.status        = "Ожидается загрузка"
+                taskRegPrices.path_file_price   = file_path
+                taskRegPrices.file_name         = file_name
+                taskRegPrices.settings          = settingsRegPrices
+                taskRegPrices.save()
 
-            return HttpResponseRedirect('/prices_lists/' +  str(taskRegPrices.pk) + '/')
+                messages.success(request, 'Настройки загрузки прайс-листа сохранены. Загрузка будет выполнена в фоновом режиме.')
+                return HttpResponseRedirect('/prices_lists/' +  str(taskRegPrices.pk) + '/')
+                
+            except Exception as e:
+                messages.error(request, f'Ошибка при сохранении настроек: {str(e)}')
+                import traceback
+                print(traceback.format_exc())
+                return HttpResponseRedirect('/prices_lists/0/')
 
         else:
             manufacturen = request.POST.get('manufacturen', '')
 
             if len(request.FILES):
-                xmlfile     = request.FILES['file']
+                xmlfile = request.FILES.get('file')
+                
+                if not xmlfile:
+                    messages.error(request, 'Ошибка: файл не был загружен.')
+                    return HttpResponseRedirect('/prices_lists/0/')
+                
+                # Проверка расширения файла
+                if not xmlfile.name.endswith(('.xlsx', '.xls')):
+                    messages.error(request, 'Ошибка: поддерживаются только файлы Excel (.xlsx, .xls).')
+                    return HttpResponseRedirect('/prices_lists/0/')
                 
                 try:
                     path = default_storage.save('tmp/' + xmlfile.name, ContentFile(xmlfile.read()))
                     tmp_file = os.path.join(settings.MEDIA_ROOT, path)
-                    wb = load_workbook(tmp_file)
-                    worksheet = wb.active
                     
-                    positions_row   = worksheet.max_row
-                    column_max      = worksheet.max_column
-                    column_max      = min(30, worksheet.max_column)
+                    if not os.path.exists(tmp_file):
+                        messages.error(request, 'Ошибка: не удалось сохранить файл на сервере.')
+                        return HttpResponseRedirect('/prices_lists/0/')
                     
-                    file_path       = tmp_file
-                    file_name       = xmlfile.name
+                    try:
+                        wb = load_workbook(tmp_file, read_only=True)
+                        worksheet = wb.active
+                        
+                        if worksheet.max_row == 0:
+                            messages.error(request, 'Ошибка: файл пуст или не содержит данных.')
+                            return HttpResponseRedirect('/prices_lists/0/')
+                        
+                        positions_row   = worksheet.max_row
+                        column_max      = min(30, worksheet.max_column)
+                        
+                        if column_max == 0:
+                            messages.error(request, 'Ошибка: файл не содержит колонок с данными.')
+                            return HttpResponseRedirect('/prices_lists/0/')
+                        
+                        file_path       = tmp_file
+                        file_name       = xmlfile.name
 
-                    list_info       = list()
-                    for i in range(1, 25):
-                        list_row = list()
-                        for s in range(1, column_max +1):
-                            val = worksheet.cell(row = i, column = s).value
-                            if val == None:
-                                val = ''
-                            list_row.append(val)
-                        list_info.append(list_row)
-                finally:
-                    sd = 1
+                        list_info       = list()
+                        for i in range(1, min(25, positions_row + 1)):
+                            list_row = list()
+                            for s in range(1, column_max + 1):
+                                try:
+                                    val = worksheet.cell(row = i, column = s).value
+                                    if val == None:
+                                        val = ''
+                                    else:
+                                        val = str(val)
+                                    list_row.append(val)
+                                except Exception:
+                                    list_row.append('')
+                            list_info.append(list_row)
+                        
+                        wb.close()
+                        
+                    except InvalidFileException:
+                        messages.error(request, 'Ошибка: файл поврежден или имеет неподдерживаемый формат Excel.')
+                        return HttpResponseRedirect('/prices_lists/0/')
+                    except Exception as e:
+                        messages.error(request, f'Ошибка при чтении файла: {str(e)}')
+                        return HttpResponseRedirect('/prices_lists/0/')
+                        
+                except Exception as e:
+                    messages.error(request, f'Ошибка при загрузке файла: {str(e)}')
+                    import traceback
+                    print(traceback.format_exc())
+                    return HttpResponseRedirect('/prices_lists/0/')
+            else:
+                messages.error(request, 'Ошибка: файл не был загружен.')
+                return HttpResponseRedirect('/prices_lists/0/')
 
     else:
         text = 'Выберите файл и нажмите загрузить'
     
-    if int(id) == 0:
-        new     = True
+    try:
+        id_int = int(id)
+    except (ValueError, TypeError):
+        messages.error(request, 'Ошибка: некорректный идентификатор прайс-листа.')
+        return HttpResponseRedirect('/prices_lists/')
+    
+    if id_int == 0:
+        new = True
+    else:
+        new = False
 
     if new == False:
-        
-        search = request.GET.get('search', '')
+        try:
+            search = request.GET.get('search', '')
 
-        task = TaskRegPrices.objects.get(pk = id)
-        file_download = task.path_file_price.replace(settings.MEDIA_ROOT, '/media/')
-        
-        prices      = RegPrices.objects.filter(task = task).order_by('date')
-        if len(search) > 0:
-            prices = prices.filter(article_search__icontains = search) | prices.filter(name__icontains = search)
-        page_number = request.GET.get('page', 1)
-        
-        paginator   = Paginator(prices, 25)
-        page_obj    = paginator.get_page(page_number)
-        
-        params = {
-            'file_download'     : file_download,
-            'type'              : 'prices',
-            'new'               : new,
-            'task'              : task,
-            'paginator'         : page_obj,
-            'search'            : search
-        }
+            task = TaskRegPrices.objects.get(pk = id_int)
+            file_download = task.path_file_price.replace(settings.MEDIA_ROOT, '/media/') if task.path_file_price else ''
+            
+            prices = RegPrices.objects.filter(task = task).order_by('date')
+            if len(search) > 0:
+                prices = prices.filter(article_search__icontains = search) | prices.filter(name__icontains = search)
+            page_number = request.GET.get('page', 1)
+            
+            paginator   = Paginator(prices, 25)
+            page_obj    = paginator.get_page(page_number)
+            
+            params = {
+                'file_download'     : file_download,
+                'type'              : 'prices',
+                'new'               : new,
+                'task'              : task,
+                'paginator'         : page_obj,
+                'search'            : search
+            }
 
-        return render(request, 'prices/prices_list.html', {'params': params})   
+            return render(request, 'prices/prices_list.html', {'params': params})
+            
+        except TaskRegPrices.DoesNotExist:
+            messages.error(request, 'Ошибка: прайс-лист с указанным идентификатором не найден.')
+            return HttpResponseRedirect('/prices_lists/')
+        except Exception as e:
+            messages.error(request, f'Ошибка при загрузке данных: {str(e)}')
+            import traceback
+            print(traceback.format_exc())
+            return HttpResponseRedirect('/prices_lists/')
 
     params = {
         'type'          : 'prices',

@@ -40,17 +40,21 @@
             </div>
             <div class="col-md-6">
               <div class="form-floating">
-                <select class="form-select" id="platform" name="platform" required
+                <select class="form-select" id="type_exchange" name="type_exchange" required
                         style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                  <option value="">Выберите площадку</option>
-                  {% for platform in params.platforms %}
-                  <option value="{{ platform.id }}" {% if params.config and params.config.platform and params.config.platform.id == platform.id %}selected{% endif %}>
-                    {{ platform.name }}
+                  <option value="">Выберите назначение выгрузки</option>
+                  {% for type_exchange in params.type_exchanges %}
+                  <option value="{{ type_exchange.id }}" {% if params.config and params.config.type_exchange and params.config.type_exchange.id == type_exchange.id %}selected{% endif %}>
+                    {{ type_exchange.name }}
                   </option>
                   {% endfor %}
                 </select>
-                <label for="platform">Площадка *</label>
+                <label for="type_exchange">Назначение выгрузки *</label>
               </div>
+              <small class="text-muted">
+                <span class="icon-mbri-info"></span> 
+                Назначение выгрузки определяет формат XML и требования к данным (Авито, Авто.ру, Drom и т.д.).
+              </small>
             </div>
             <div class="col-md-6">
               <div class="form-floating">
@@ -64,20 +68,6 @@
                   {% endfor %}
                 </select>
                 <label for="unit">Подразделение ДЦ</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating">
-                <select class="form-select" id="type_exchange" name="type_exchange"
-                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                  <option value="">Не выбрано</option>
-                  {% for type_exchange in params.type_exchanges %}
-                  <option value="{{ type_exchange.id }}" {% if params.config and params.config.type_exchange and params.config.type_exchange.id == type_exchange.id %}selected{% endif %}>
-                    {{ type_exchange.name }}
-                  </option>
-                  {% endfor %}
-                </select>
-                <label for="type_exchange">Назначение выгрузки</label>
               </div>
             </div>
             <div class="col-md-6">
@@ -176,32 +166,40 @@
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <div class="form-floating">
-                <select class="form-select" id="filter_units" name="filter_units" multiple size="5"
-                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <label class="form-label text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Подразделения (фильтр)</label>
+              <div class="position-relative">
+                <input type="text" class="form-control" id="filterUnitsSearch" placeholder="Поиск по подразделениям..." autocomplete="off"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <div class="list-group position-absolute w-100 mt-1" id="filterUnitsDropdown" 
+                     style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
                   {% for unit in params.units %}
-                  <option value="{{ unit.id }}" {% if params.config and unit in params.config.filter_units.all %}selected{% endif %}>
-                    {{ unit.name }}
-                  </option>
+                    <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                      <input class="form-check-input me-2" type="checkbox" name="filter_units_ids" value="{{ unit.id }}" 
+                        {% if params.config and unit in params.config.filter_units.all %}checked{% endif %}>
+                      {{ unit.name }}
+                    </label>
                   {% endfor %}
-                </select>
-                <label for="filter_units">Подразделения (фильтр)</label>
+                </div>
               </div>
-              <small class="text-muted">Удерживайте Ctrl для выбора нескольких</small>
+              <div id="selectedFilterUnits" class="mt-2"></div>
             </div>
             <div class="col-md-6">
-              <div class="form-floating">
-                <select class="form-select" id="filter_statuses" name="filter_statuses" multiple size="5"
-                        style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <label class="form-label text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Статусы автомобилей (фильтр)</label>
+              <div class="position-relative">
+                <input type="text" class="form-control" id="filterStatusesSearch" placeholder="Поиск по статусам..." autocomplete="off"
+                       style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+                <div class="list-group position-absolute w-100 mt-1" id="filterStatusesDropdown" 
+                     style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
                   {% for status in params.statuses %}
-                  <option value="{{ status.id }}" {% if params.config and status in params.config.filter_statuses.all %}selected{% endif %}>
-                    {{ status.name }}
-                  </option>
+                    <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                      <input class="form-check-input me-2" type="checkbox" name="filter_statuses_ids" value="{{ status.id }}" 
+                        {% if params.config and status in params.config.filter_statuses.all %}checked{% endif %}>
+                      {{ status.name }}
+                    </label>
                   {% endfor %}
-                </select>
-                <label for="filter_statuses">Статусы автомобилей (фильтр)</label>
+                </div>
               </div>
-              <small class="text-muted">Удерживайте Ctrl для выбора нескольких</small>
+              <div id="selectedFilterStatuses" class="mt-2"></div>
             </div>
             <div class="col-md-6">
               <div class="form-check form-switch">
@@ -337,5 +335,101 @@
   box-shadow: 0 25px 50px rgba(0, 23, 61, 0.12) !important;
 }
 </style>
+
+<script>
+// Функции для работы с множественным выбором фильтров
+(function() {
+  function initMultiSelect(searchId, dropdownId, selectedId, checkboxName) {
+    const searchInput = document.getElementById(searchId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedDiv = document.getElementById(selectedId);
+    
+    if (!searchInput || !dropdown || !selectedDiv) return;
+    
+    function updateSelected() {
+      const checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+      selectedDiv.innerHTML = '';
+      if (checked.length > 0) {
+        const badges = Array.from(checked).map(cb => {
+          const label = cb.closest('label');
+          const text = label ? label.textContent.trim() : '';
+          const value = cb.value;
+          return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[name=&quot;${checkboxName}&quot;][value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedId}();"></button></span>`;
+        }).join('');
+        selectedDiv.innerHTML = badges;
+      }
+    }
+    
+    // Сохраняем функцию для глобального доступа
+    window['updateSelected_' + selectedId] = updateSelected;
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const items = dropdown.querySelectorAll('label');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+    
+    searchInput.addEventListener('focus', function() {
+      dropdown.style.display = 'block';
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelected);
+    });
+    
+    updateSelected();
+  }
+  
+  // Инициализация множественного выбора после загрузки DOM
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      initMultiSelect('filterUnitsSearch', 'filterUnitsDropdown', 'selectedFilterUnits', 'filter_units_ids');
+      initMultiSelect('filterStatusesSearch', 'filterStatusesDropdown', 'selectedFilterStatuses', 'filter_statuses_ids');
+    });
+  } else {
+    initMultiSelect('filterUnitsSearch', 'filterUnitsDropdown', 'selectedFilterUnits', 'filter_units_ids');
+    initMultiSelect('filterStatusesSearch', 'filterStatusesDropdown', 'selectedFilterStatuses', 'filter_statuses_ids');
+  }
+  
+  // Подготовка данных формы перед отправкой
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[method="post"]');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        // Собираем выбранные подразделения
+        const unitIds = Array.from(form.querySelectorAll('input[name="filter_units_ids"]:checked')).map(cb => cb.value);
+        form.querySelectorAll('input[type="hidden"][name="filter_units"]').forEach(el => el.remove());
+        unitIds.forEach(unitId => {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'filter_units';
+          hidden.value = unitId;
+          form.appendChild(hidden);
+        });
+        
+        // Собираем выбранные статусы
+        const statusIds = Array.from(form.querySelectorAll('input[name="filter_statuses_ids"]:checked')).map(cb => cb.value);
+        form.querySelectorAll('input[type="hidden"][name="filter_statuses"]').forEach(el => el.remove());
+        statusIds.forEach(statusId => {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'filter_statuses';
+          hidden.value = statusId;
+          form.appendChild(hidden);
+        });
+      });
+    }
+  });
+})();
+</script>
 {% endblock %}
 
