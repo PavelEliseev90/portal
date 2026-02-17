@@ -482,14 +482,23 @@ def disposition(request):
     if search_fields:
         cars = cars.filter(search_fields__icontains=search_fields)
     
-    mark_id = request.GET.get('mark', '')
-    if mark_id:
-        cars = cars.filter(modification_autoru__model__mark__id=mark_id)
+    # Фильтр по маркам (множественный выбор)
+    mark_ids = request.GET.getlist('mark[]')
+    if mark_ids:
+        try:
+            mark_ids_int = [int(mid) for mid in mark_ids if mid]
+            if mark_ids_int:
+                cars = cars.filter(modification_autoru__model__mark__id__in=mark_ids_int)
+        except ValueError:
+            pass
     
+    # Фильтр по моделям (множественный выбор)
     model_ids = request.GET.getlist('model[]')
     if model_ids:
         try:
-            cars = cars.filter(modification_autoru__model__id__in=[int(mid) for mid in model_ids])
+            model_ids_int = [int(mid) for mid in model_ids if mid]
+            if model_ids_int:
+                cars = cars.filter(modification_autoru__model__id__in=model_ids_int)
         except ValueError:
             pass
     
@@ -644,7 +653,7 @@ def disposition(request):
     
     # Проверка, есть ли активные фильтры (исключая статус, так как он всегда есть)
     has_filters = bool(
-        vin or mark_id or model_ids or year_start or year_end or 
+        vin or mark_ids or model_ids or year_start or year_end or 
         price_start or price_end or stock_number or (no_photo == 'on') or 
         (promotion == 'on') or body_type_ids or gear_type_ids or 
         drive_type_ids or evaluation_type_ids or unit_ids or 
@@ -667,33 +676,41 @@ def disposition(request):
     }
     
     # ОПТИМИЗАЦИЯ: Загружаем модели с select_related для марки
-    # Загружаем модели (все для множественного выбора, или отфильтрованные по марке)
+    # Загружаем модели (все для множественного выбора, или отфильтрованные по выбранным маркам)
     models_list = AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name')
-    if mark_id:
-        models_list = models_list.filter(mark__id=mark_id)
+    if mark_ids:
+        try:
+            mark_ids_int = [int(mid) for mid in mark_ids if mid]
+            if mark_ids_int:
+                models_list = models_list.filter(mark__id__in=mark_ids_int)
+        except ValueError:
+            pass
     
     # Преобразуем списки в строки для шаблона (для удобства проверки selected)
-    model_ids_str = [str(mid) for mid in model_ids]
-    body_type_ids_str = [str(btid) for btid in body_type_ids]
-    gear_type_ids_str = [str(gtid) for gtid in gear_type_ids]
-    drive_type_ids_str = [str(dtid) for dtid in drive_type_ids]
-    evaluation_type_ids_str = [str(etid) for etid in evaluation_type_ids]
-    unit_ids_str = [str(uid) for uid in unit_ids]
-    store_ids_str = [str(sid) for sid in store_ids]
+    mark_ids_str = [str(mid) for mid in mark_ids] if mark_ids else []
+    model_ids_str = [str(mid) for mid in model_ids] if model_ids else []
+    body_type_ids_str = [str(btid) for btid in body_type_ids] if body_type_ids else []
+    gear_type_ids_str = [str(gtid) for gtid in gear_type_ids] if gear_type_ids else []
+    drive_type_ids_str = [str(dtid) for dtid in drive_type_ids] if drive_type_ids else []
+    evaluation_type_ids_str = [str(etid) for etid in evaluation_type_ids] if evaluation_type_ids else []
+    unit_ids_str = [str(uid) for uid in unit_ids] if unit_ids else []
+    store_ids_str = [str(sid) for sid in store_ids] if store_ids else []
     
-    # Для фильтров с чекбоксами - списки ID для проверки в шаблоне
-    body_type_ids_list = body_type_ids
-    gear_type_ids_list = gear_type_ids
-    drive_type_ids_list = drive_type_ids
-    evaluation_type_ids_list = evaluation_type_ids
-    unit_ids_list = unit_ids
-    store_ids_list = store_ids
+    # Для фильтров с чекбоксами - списки ID для проверки в шаблоне (всегда списки, даже пустые)
+    mark_ids_list = [int(mid) for mid in mark_ids if mid] if mark_ids else []
+    model_ids_list = [int(mid) for mid in model_ids if mid] if model_ids else []
+    body_type_ids_list = [int(btid) for btid in body_type_ids if btid] if body_type_ids else []
+    gear_type_ids_list = [int(gtid) for gtid in gear_type_ids if gtid] if gear_type_ids else []
+    drive_type_ids_list = [int(dtid) for dtid in drive_type_ids if dtid] if drive_type_ids else []
+    evaluation_type_ids_list = [int(etid) for etid in evaluation_type_ids if etid] if evaluation_type_ids else []
+    unit_ids_list = [int(uid) for uid in unit_ids if uid] if unit_ids else []
+    store_ids_list = [int(sid) for sid in store_ids if sid] if store_ids else []
     
     filtr = {
         'status': status_type,
         'vin': vin,
         'search_fields': search_fields,
-        'mark': mark_id,
+        'mark': mark_ids_str,
         'model': model_ids_str,
         'year_start': year_start,
         'year_end': year_end,
@@ -730,6 +747,8 @@ def disposition(request):
         'total_cars_count': total_cars_count,
         'has_filters': has_filters,
         # Для фильтров с чекбоксами
+        'mark_ids_list': mark_ids_list,
+        'model_ids_list': model_ids_list,
         'body_type_ids_list': body_type_ids_list,
         'gear_type_ids_list': gear_type_ids_list,
         'drive_type_ids_list': drive_type_ids_list,
@@ -741,19 +760,49 @@ def disposition(request):
     return render(request, "avtosalon/disposition.html", {'params': params})
 
 
-def disposition_get_models(request):
+def disposition_get_marks(request):
     """
-    AJAX endpoint для загрузки моделей по марке
+    AJAX endpoint для загрузки марок (с поиском)
     """
     from django.http import JsonResponse
     
-    mark_id = request.GET.get('mark_id', '')
-    if not mark_id:
+    search = request.GET.get('search', '').strip()
+    
+    try:
+        marks = AutoruMark.objects.only('id', 'name').order_by('name')
+        if search:
+            marks = marks.filter(name__icontains=search)
+        # Ограничиваем количество для производительности
+        marks = marks[:100]
+        marks_list = [{'id': mark.id, 'name': mark.name} for mark in marks]
+        return JsonResponse({'marks': marks_list})
+    except Exception as e:
+        return JsonResponse({'marks': [], 'error': str(e)})
+
+
+def disposition_get_models(request):
+    """
+    AJAX endpoint для загрузки моделей по маркам (поддерживает несколько марок)
+    """
+    from django.http import JsonResponse
+    
+    mark_ids = request.GET.getlist('mark_ids[]')
+    search = request.GET.get('search', '').strip()
+    
+    if not mark_ids:
         return JsonResponse({'models': []})
     
     try:
-        models = AutoruModel.objects.filter(mark__id=mark_id).order_by('name')
-        models_list = [{'id': model.id, 'name': model.name} for model in models]
+        mark_ids_int = [int(mid) for mid in mark_ids if mid]
+        if not mark_ids_int:
+            return JsonResponse({'models': []})
+        
+        models = AutoruModel.objects.filter(mark__id__in=mark_ids_int).select_related('mark').only('id', 'name', 'mark').order_by('name')
+        if search:
+            models = models.filter(name__icontains=search)
+        # Ограничиваем количество для производительности
+        models = models[:200]
+        models_list = [{'id': model.id, 'name': model.name, 'mark_id': model.mark.id, 'mark_name': model.mark.name} for model in models]
         return JsonResponse({'models': models_list})
     except Exception as e:
         return JsonResponse({'models': [], 'error': str(e)})

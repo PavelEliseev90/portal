@@ -375,6 +375,32 @@
         </div>
         
         <div class="col-12 col-md-6 col-lg-3">
+          <label class="form-label text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Марка</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="markSearch" placeholder="Поиск по маркам..." autocomplete="off"
+                   style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <div class="list-group position-absolute w-100 mt-1" id="markDropdown" 
+                 style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
+              <!-- Марки будут загружены через AJAX -->
+            </div>
+          </div>
+          <div id="selectedMarks" class="mt-2"></div>
+        </div>
+        
+        <div class="col-12 col-md-6 col-lg-3">
+          <label class="form-label text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Модель</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="modelSearch" placeholder="Поиск по моделям..." autocomplete="off"
+                   style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);" disabled>
+            <div class="list-group position-absolute w-100 mt-1" id="modelDropdown" 
+                 style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
+              <!-- Модели будут загружены через AJAX -->
+            </div>
+          </div>
+          <div id="selectedModels" class="mt-2"></div>
+        </div>
+        
+        <div class="col-12 col-md-6 col-lg-3">
           <div class="form-floating">
             <input type="number" class="form-control" id="year_start" name="year_start" value="{{ params.filtr.year_start }}" placeholder="Год от">
             <label for="year_start">Год выпуска от</label>
@@ -429,7 +455,7 @@
                 {% for body_type in params.selected.body_types %}
                   <label class="list-group-item">
                     <input class="form-check-input me-2" type="checkbox" name="body_type[]" value="{{ body_type.id }}" 
-                      {% if body_type.id in params.body_type_ids_list %}checked{% endif %}>
+                      {% if params.body_type_ids_list and body_type.id in params.body_type_ids_list %}checked{% endif %}>
                     {{ body_type.name }}
                   </label>
                 {% endfor %}
@@ -446,7 +472,7 @@
                 {% for gear_type in params.selected.gear_types %}
                   <label class="list-group-item">
                     <input class="form-check-input me-2" type="checkbox" name="gear_type[]" value="{{ gear_type.id }}" 
-                      {% if gear_type.id in params.gear_type_ids_list %}checked{% endif %}>
+                      {% if params.gear_type_ids_list and gear_type.id in params.gear_type_ids_list %}checked{% endif %}>
                     {{ gear_type.name }}
                   </label>
                 {% endfor %}
@@ -463,7 +489,7 @@
                 {% for drive_type in params.selected.drive_types %}
                   <label class="list-group-item">
                     <input class="form-check-input me-2" type="checkbox" name="drive_type[]" value="{{ drive_type.id }}" 
-                      {% if drive_type.id in params.drive_type_ids_list %}checked{% endif %}>
+                      {% if params.drive_type_ids_list and drive_type.id in params.drive_type_ids_list %}checked{% endif %}>
                     {{ drive_type.name }}
                   </label>
                 {% endfor %}
@@ -480,7 +506,7 @@
                 {% for eval_type in params.selected.evaluation_types %}
                   <label class="list-group-item">
                     <input class="form-check-input me-2" type="checkbox" name="evaluation_type[]" value="{{ eval_type.id }}" 
-                      {% if eval_type.id in params.evaluation_type_ids_list %}checked{% endif %}>
+                      {% if params.evaluation_type_ids_list and eval_type.id in params.evaluation_type_ids_list %}checked{% endif %}>
                     {{ eval_type.name }}
                   </label>
                 {% endfor %}
@@ -497,7 +523,7 @@
                 {% for store in params.selected.stores %}
                   <label class="list-group-item">
                     <input class="form-check-input me-2" type="checkbox" name="store[]" value="{{ store.id }}" 
-                      {% if store.id in params.store_ids_list %}checked{% endif %}>
+                      {% if params.store_ids_list and store.id in params.store_ids_list %}checked{% endif %}>
                     {{ store.name }}
                   </label>
                 {% endfor %}
@@ -1774,7 +1800,12 @@ function applyMobileFilters() {
 
 // JavaScript для множественного выбора с поиском (как в воронке приема)
 (function() {
-  function initMultiSelect(searchId, dropdownId, selectedDivId) {
+  // Глобальные переменные для хранения загруженных данных
+  let marksLoaded = false;
+  let modelsLoaded = false;
+  let selectedMarkIds = [];
+  
+  function initMultiSelect(searchId, dropdownId, selectedDivId, loadDataFn = null) {
     const searchInput = document.getElementById(searchId);
     const dropdown = document.getElementById(dropdownId);
     const selectedDiv = document.getElementById(selectedDivId);
@@ -1804,10 +1835,43 @@ function applyMobileFilters() {
         const text = item.textContent.toLowerCase();
         item.style.display = text.includes(searchTerm) ? '' : 'none';
       });
+      
+      // Для поиска моделей - перезагружаем при изменении текста
+      if (searchId === 'modelSearch' && modelsLoaded) {
+        const selectedMarks = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(cb => cb.value);
+        if (selectedMarks.length > 0) {
+          // Небольшая задержка для debounce
+          clearTimeout(window.modelSearchTimeout);
+          window.modelSearchTimeout = setTimeout(() => {
+            loadModels();
+          }, 300);
+        }
+      }
+      
+      // Для поиска марок - перезагружаем при изменении текста
+      if (searchId === 'markSearch' && marksLoaded) {
+        clearTimeout(window.markSearchTimeout);
+        window.markSearchTimeout = setTimeout(() => {
+          marksLoaded = false;
+          loadMarks();
+        }, 300);
+      }
     });
     
     searchInput.addEventListener('focus', function() {
       dropdown.style.display = 'block';
+      // Загружаем данные при первом открытии, если функция загрузки указана
+      if (loadDataFn && !marksLoaded && searchId === 'markSearch') {
+        loadDataFn();
+      }
+    });
+    
+    searchInput.addEventListener('click', function() {
+      dropdown.style.display = 'block';
+      // Загружаем данные при первом открытии, если функция загрузки указана
+      if (loadDataFn && !marksLoaded && searchId === 'markSearch') {
+        loadDataFn();
+      }
     });
     
     document.addEventListener('click', function(e) {
@@ -1821,6 +1885,132 @@ function applyMobileFilters() {
     });
     
     updateSelected();
+  }
+  
+  // Функция загрузки марок через AJAX
+  function loadMarks() {
+    const markSearch = document.getElementById('markSearch');
+    const markDropdown = document.getElementById('markDropdown');
+    
+    if (!markSearch || !markDropdown) return;
+    
+    const search = markSearch.value.trim();
+    const url = `/cars/disposition/get_marks/?search=${encodeURIComponent(search)}`;
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.marks && data.marks.length > 0) {
+          markDropdown.innerHTML = '';
+          const selectedMarkIds = {% if params.mark_ids_list %}[{% for mid in params.mark_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %};
+          
+          data.marks.forEach(mark => {
+            const label = document.createElement('label');
+            label.className = 'list-group-item';
+            label.style.cssText = 'margin-bottom: 0; cursor: pointer;';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input me-2';
+            checkbox.name = 'mark[]';
+            checkbox.value = mark.id;
+            
+            // Проверяем, была ли марка выбрана ранее
+            if (selectedMarkIds.includes(mark.id)) {
+              checkbox.checked = true;
+            }
+            
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' ' + mark.name));
+            markDropdown.appendChild(label);
+          });
+          
+          // Инициализируем обработчики событий для новых чекбоксов
+          markDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+              updateSelected_selectedMarks();
+              // При изменении выбранных марок загружаем модели
+              modelsLoaded = false;
+              loadModels();
+            });
+          });
+          
+          updateSelected_selectedMarks();
+          marksLoaded = true;
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка загрузки марок:', error);
+      });
+  }
+  
+  // Функция загрузки моделей через AJAX
+  function loadModels() {
+    const modelSearch = document.getElementById('modelSearch');
+    const modelDropdown = document.getElementById('modelDropdown');
+    
+    if (!modelSearch || !modelDropdown) return;
+    
+    // Получаем выбранные марки
+    const selectedMarks = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(cb => cb.value);
+    
+    if (selectedMarks.length === 0) {
+      modelSearch.disabled = true;
+      modelDropdown.innerHTML = '';
+      updateSelected_selectedModels();
+      modelsLoaded = false;
+      return;
+    }
+    
+    modelSearch.disabled = false;
+    const search = modelSearch.value.trim();
+    const url = `/cars/disposition/get_models/?${selectedMarks.map(id => `mark_ids[]=${id}`).join('&')}&search=${encodeURIComponent(search)}`;
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.models && data.models.length > 0) {
+          modelDropdown.innerHTML = '';
+          const selectedModelIds = {% if params.model_ids_list %}[{% for mid in params.model_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %};
+          
+          data.models.forEach(model => {
+            const label = document.createElement('label');
+            label.className = 'list-group-item';
+            label.style.cssText = 'margin-bottom: 0; cursor: pointer;';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input me-2';
+            checkbox.name = 'model[]';
+            checkbox.value = model.id;
+            
+            // Проверяем, была ли модель выбрана ранее
+            if (selectedModelIds.includes(model.id)) {
+              checkbox.checked = true;
+            }
+            
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' ' + model.name + ' (' + model.mark_name + ')'));
+            modelDropdown.appendChild(label);
+          });
+          
+          // Инициализируем обработчики событий для новых чекбоксов
+          modelDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+              updateSelected_selectedModels();
+            });
+          });
+          
+          updateSelected_selectedModels();
+          modelsLoaded = true;
+        } else {
+          modelDropdown.innerHTML = '<div class="list-group-item text-muted">Модели не найдены</div>';
+          modelsLoaded = true;
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка загрузки моделей:', error);
+      });
   }
   
   function prepareFormData(form) {
@@ -1843,23 +2033,8 @@ function applyMobileFilters() {
   
   window.prepareFormData = prepareFormData;
   
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      // Десктоп версия
-      initMultiSelect('bodyTypeSearch', 'bodyTypeDropdown', 'selectedBodyTypes');
-      initMultiSelect('gearTypeSearch', 'gearTypeDropdown', 'selectedGearTypes');
-      initMultiSelect('driveTypeSearch', 'driveTypeDropdown', 'selectedDriveTypes');
-      initMultiSelect('evaluationTypeSearch', 'evaluationTypeDropdown', 'selectedEvaluationTypes');
-      initMultiSelect('storeSearch', 'storeDropdown', 'selectedStores');
-      
-      // Мобильная версия
-      initMultiSelect('mobile_bodyTypeSearch', 'mobile_bodyTypeDropdown', 'mobile_selectedBodyTypes');
-      initMultiSelect('mobile_gearTypeSearch', 'mobile_gearTypeDropdown', 'mobile_selectedGearTypes');
-      initMultiSelect('mobile_driveTypeSearch', 'mobile_driveTypeDropdown', 'mobile_selectedDriveTypes');
-      initMultiSelect('mobile_evaluationTypeSearch', 'mobile_evaluationTypeDropdown', 'mobile_selectedEvaluationTypes');
-      initMultiSelect('mobile_storeSearch', 'mobile_storeDropdown', 'mobile_selectedStores');
-    });
-  } else {
+  // Инициализация при загрузке страницы
+  function initializeFilters() {
     // Десктоп версия
     initMultiSelect('bodyTypeSearch', 'bodyTypeDropdown', 'selectedBodyTypes');
     initMultiSelect('gearTypeSearch', 'gearTypeDropdown', 'selectedGearTypes');
@@ -1867,12 +2042,42 @@ function applyMobileFilters() {
     initMultiSelect('evaluationTypeSearch', 'evaluationTypeDropdown', 'selectedEvaluationTypes');
     initMultiSelect('storeSearch', 'storeDropdown', 'selectedStores');
     
+    // Марки и модели с AJAX загрузкой
+    initMultiSelect('markSearch', 'markDropdown', 'selectedMarks', loadMarks);
+    initMultiSelect('modelSearch', 'modelDropdown', 'selectedModels');
+    
+    // Если есть выбранные марки, загружаем их и модели сразу
+    {% if params.mark_ids_list %}
+    const selectedMarkIds = [{% for mid in params.mark_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (selectedMarkIds.length > 0) {
+      // Загружаем марки и устанавливаем выбранные
+      loadMarks();
+      setTimeout(() => {
+        selectedMarkIds.forEach(markId => {
+          const checkbox = document.querySelector(`input[name="mark[]"][value="${markId}"]`);
+          if (checkbox) {
+            checkbox.checked = true;
+          }
+        });
+        updateSelected_selectedMarks();
+        // Загружаем модели для выбранных марок
+        loadModels();
+      }, 500);
+    }
+    {% endif %}
+    
     // Мобильная версия
     initMultiSelect('mobile_bodyTypeSearch', 'mobile_bodyTypeDropdown', 'mobile_selectedBodyTypes');
     initMultiSelect('mobile_gearTypeSearch', 'mobile_gearTypeDropdown', 'mobile_selectedGearTypes');
     initMultiSelect('mobile_driveTypeSearch', 'mobile_driveTypeDropdown', 'mobile_selectedDriveTypes');
     initMultiSelect('mobile_evaluationTypeSearch', 'mobile_evaluationTypeDropdown', 'mobile_selectedEvaluationTypes');
     initMultiSelect('mobile_storeSearch', 'mobile_storeDropdown', 'mobile_selectedStores');
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeFilters);
+  } else {
+    initializeFilters();
   }
 })();
 
