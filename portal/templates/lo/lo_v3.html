@@ -7611,6 +7611,93 @@
                                 </div>
                               </div>
 
+                              <div class="col-12 col-xl-6">
+                                <div class="portal-panel">
+                                  <h6>
+                                    <span class="icon-mbri-credit-card"></span> Амортизатор капота/багажника
+                                    <button 
+                                      type="button" 
+                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                      data-bs-toggle="modal" 
+                                      data-bs-target="#diagnosticReferenceModal"
+                                      data-category="hood_trunk_shock_absorber"
+                                      title="Открыть справочник диагностики"
+                                      style="color: #002a5a; text-decoration: none;"
+                                    >
+                                      <i class="bi bi-info-circle"></i>
+                                    </button>
+                                  </h6>
+                                  
+                                  <div class="kors-btn-group-wrapper-simple">
+                                    <div class="kors-btn-group-compact" role="group" aria-label="Амортизатор капота/багажника">
+                                      <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio1_hood_trunk_shock_absorber" value="1" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 1 %} checked {% endif %}>
+                                      <label class="btn btn-outline-success" for="inlineRadio1_hood_trunk_shock_absorber">Исправны</label>
+                                      <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio2_hood_trunk_shock_absorber" value="0" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 0 %} checked {% endif %}>
+                                      <label class="btn btn-outline-danger" for="inlineRadio2_hood_trunk_shock_absorber">Не исправны</label>
+                                      <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio3_hood_trunk_shock_absorber" value="4" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 4 %} checked {% endif %}>
+                                      <label class="btn btn-outline-secondary" for="inlineRadio3_hood_trunk_shock_absorber">Не предусмотрены</label>
+                                    </div>
+                                    <label class="fs-6" for="radio_hood_trunk_shock_absorber">Амортизатор капота/багажника</label>
+                                  </div>
+                                  
+                                  <div class="form-floating mb-3">
+                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_hood_trunk_shock_absorber" name="comment_hood_trunk_shock_absorber" value="{{params.estimation.page_test_drive.comment_hood_trunk_shock_absorber}}" placeholder="" autocomplete="off">
+                                    <label for="comment_hood_trunk_shock_absorber">Комментарий</label>
+                                  </div>
+                                </div>
+                              </div>
+
+                            </div>
+                            
+                            <div class="row g-2">
+                              <!-- Стапель -->
+                              <div class="col-12">
+                                <div class="portal-panel">
+                                  <h6>
+                                    <span class="icon-mbri-setting3"></span> Стапель
+                                  </h6>
+                                  <small class="text-muted">Выберите тип стапеля и укажите количество часов</small>
+                                  
+                                  <div class="kors-btn-group-wrapper-simple">
+                                    <div class="kors-btn-group-compact" role="group" aria-label="Стапель">
+                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio1_stapele" value="1" {% if params.estimation.page_test_drive.stapele_type == 1 %} checked {% endif %}>
+                                      <label class="btn btn-outline-primary" for="inlineRadio1_stapele" style="height: 90px;">
+                                        <div>Легкий</div>
+                                        <small style="font-size: 0.7rem; opacity: 0.8;">3000 ₽, мин. 12 ч</small>
+                                      </label>
+                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio2_stapele" value="2" {% if params.estimation.page_test_drive.stapele_type == 2 %} checked {% endif %}>
+                                      <label class="btn btn-outline-primary" for="inlineRadio2_stapele" style="height: 90px;">
+                                        <div>Средний</div>
+                                        <small style="font-size: 0.7rem; opacity: 0.8;">6000 ₽, мин. 12 ч</small>
+                                      </label>
+                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio3_stapele" value="3" {% if params.estimation.page_test_drive.stapele_type == 3 %} checked {% endif %}>
+                                      <label class="btn btn-outline-primary" for="inlineRadio3_stapele" style="height: 90px;">
+                                        <div>Тяжелый</div>
+                                        <small style="font-size: 0.7rem; opacity: 0.8;">9000 ₽, мин. 14 ч</small>
+                                      </label>
+                                    </div>
+                                    <label class="fs-6" for="radio_stapele">Тип стапеля</label>
+                                  </div>
+                                  
+                                  <div class="row g-2 mt-2">
+                                    <div class="col-md-6">
+                                      <div class="form-floating">
+                                        <input type="number" class="form-control kors-form-control" id="stapele_hours" name="stapele_hours" 
+                                               value="{% if params.estimation.page_test_drive.stapele_hours %}{{ params.estimation.page_test_drive.stapele_hours }}{% endif %}" 
+                                               placeholder="Количество часов" min="0" step="1">
+                                        <label for="stapele_hours">Количество часов</label>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <div class="form-floating">
+                                        <input type="number" class="form-control kors-form-control" id="stapele_cost_display" 
+                                               placeholder="Стоимость" readonly style="background-color: #f8f9fa;">
+                                        <label for="stapele_cost_display">Стоимость (₽)</label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                             
                             <div class="row g-2">
@@ -23737,6 +23824,54 @@
 
   <script>
     $(document).ready(function() {
+      // Обработка стапеля
+      function updateStapeleCost() {
+        const stapeleType = $('input[name="radio_stapele"]:checked').val();
+        const stapeleHours = parseInt($('#stapele_hours').val()) || 0;
+        const costDisplay = $('#stapele_cost_display');
+        
+        if (!stapeleType || stapeleHours === 0) {
+          costDisplay.val('');
+          return;
+        }
+        
+        // Определяем минимальное количество часов и стоимость в зависимости от типа
+        let minHours, baseCost;
+        if (stapeleType === '1') {
+          minHours = 12;
+          baseCost = 3000;
+        } else if (stapeleType === '2') {
+          minHours = 12;
+          baseCost = 6000;
+        } else if (stapeleType === '3') {
+          minHours = 14;
+          baseCost = 9000;
+        } else {
+          costDisplay.val('');
+          return;
+        }
+        
+        // Валидация минимального количества часов
+        if (stapeleHours < minHours) {
+          $('#stapele_hours').val(minHours);
+          costDisplay.val(baseCost.toLocaleString('ru-RU') + ' ₽');
+        } else {
+          costDisplay.val(baseCost.toLocaleString('ru-RU') + ' ₽');
+        }
+      }
+      
+      // Обработчики событий для стапеля
+      $('input[name="radio_stapele"]').on('change', function() {
+        updateStapeleCost();
+      });
+      
+      $('#stapele_hours').on('input', function() {
+        updateStapeleCost();
+      });
+      
+      // Инициализация при загрузке страницы
+      updateStapeleCost();
+      
       // Функция для показа/скрытия блока выбора проблем безопасности
       function toggleAirbagIssuesBlock() {
         const selectedValue = $('input[name="radio_airbag"]:checked').val();

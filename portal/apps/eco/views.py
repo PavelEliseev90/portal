@@ -3033,7 +3033,46 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.subframe              = int(request.POST.get('radio_subframe', '10'))  
             reg_interactiv_ocenka_test_drive.comment_subframe      = request.POST.get('comment_subframe', '')
 
+            reg_interactiv_ocenka_test_drive.hood_trunk_shock_absorber = int(request.POST.get('radio_hood_trunk_shock_absorber', '10'))
+            reg_interactiv_ocenka_test_drive.comment_hood_trunk_shock_absorber = request.POST.get('comment_hood_trunk_shock_absorber', '')
+
             reg_interactiv_ocenka_test_drive.to                 = int(request.POST.get('radio_to', '10'))
+            
+            # Стапель
+            stapele_type = request.POST.get('radio_stapele', '')
+            if stapele_type:
+                try:
+                    stapele_type_int = int(stapele_type)
+                    stapele_hours = request.POST.get('stapele_hours', '')
+                    
+                    if stapele_hours:
+                        stapele_hours_int = int(stapele_hours)
+                        # Определяем минимальное количество часов в зависимости от типа
+                        min_hours = 12 if stapele_type_int in [1, 2] else 14
+                        
+                        # Валидация минимального количества часов
+                        if stapele_hours_int < min_hours:
+                            stapele_hours_int = min_hours
+                        
+                        # Определяем стоимость в зависимости от типа
+                        stapele_cost = 3000 if stapele_type_int == 1 else (6000 if stapele_type_int == 2 else 9000)
+                        
+                        reg_interactiv_ocenka_test_drive.stapele_type = stapele_type_int
+                        reg_interactiv_ocenka_test_drive.stapele_hours = stapele_hours_int
+                        reg_interactiv_ocenka_test_drive.stapele_cost = stapele_cost
+                    else:
+                        # Если тип выбран, но часы не указаны, сбрасываем тип
+                        reg_interactiv_ocenka_test_drive.stapele_type = None
+                        reg_interactiv_ocenka_test_drive.stapele_hours = None
+                        reg_interactiv_ocenka_test_drive.stapele_cost = None
+                except (ValueError, TypeError):
+                    reg_interactiv_ocenka_test_drive.stapele_type = None
+                    reg_interactiv_ocenka_test_drive.stapele_hours = None
+                    reg_interactiv_ocenka_test_drive.stapele_cost = None
+            else:
+                reg_interactiv_ocenka_test_drive.stapele_type = None
+                reg_interactiv_ocenka_test_drive.stapele_hours = None
+                reg_interactiv_ocenka_test_drive.stapele_cost = None
 
             reg_interactiv_ocenka_test_drive.pp_dinamyc             = int(request.POST.get('radio_pp_dinamyc', '3'))
             reg_interactiv_ocenka_test_drive.pp_kpp                 = int(request.POST.get('radio_pp_kpp', '3'))
@@ -3053,7 +3092,7 @@ def doc(request, id):
             
             # Обрабатываем выбранные элементы для каждой категории
             category_codes = ['engine', 'gear', 'brake', 'suspension', 'system_og', 'wheel', 
-                            'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag']
+                            'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag', 'hood_trunk_shock_absorber']
             
             for category_code in category_codes:
                 selected_items_key = f'selected_reference_items_{category_code}'

@@ -2190,6 +2190,12 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     turbo                   = models.IntegerField('Турбина', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
     drive                   = models.IntegerField('Полный привод', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
     to                      = models.IntegerField('ТО', default=10, null=True, blank=True)                     #'// 0 - не работает 1 работает 2 есть замечания'
+    
+    # Стапель
+    stapele_type            = models.IntegerField('Тип стапеля', null=True, blank=True, 
+                                                   help_text='1 - легкий, 2 - средний, 3 - тяжелый')
+    stapele_hours           = models.IntegerField('Часы стапеля', null=True, blank=True)
+    stapele_cost            = models.IntegerField('Стоимость стапеля', null=True, blank=True)
 
     comment_engine          = models.CharField('Комментарий двигатель', max_length=512, default='', null=True, blank=True)  
     comment_system_og       = models.CharField('Комментарий система выпуска ОГ', max_length=512, default='', null=True, blank=True)  
@@ -2209,6 +2215,8 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     comment_wheel           = models.CharField('Комментарий рулевого управления', max_length=512, default='', null=True, blank=True)  
     comment_brake            = models.CharField('Комментарий тормозной системы', max_length=512, default='', null=True, blank=True)
     comment_subframe        = models.CharField('Комментарий подрамника', max_length=512, default='', null=True, blank=True)  
+    hood_trunk_shock_absorber = models.IntegerField('Амортизатор капота/багажника', default=10, null=True, blank=True)  #'// 1 - исправны 0 - не исправны 4 - не предусмотрены'
+    comment_hood_trunk_shock_absorber = models.CharField('Комментарий амортизатор капота/багажника', max_length=512, default='', null=True, blank=True)
     comment_conditioner     = models.CharField('Комментарий системы кондиционирования', max_length=512, default='', null=True, blank=True)  
     comment_turbo           = models.CharField('Комментарий турбокомпрессора', max_length=512, default='', null=True, blank=True)  
     comment_drive           = models.CharField('Комментарий полный привод', max_length=512, default='', null=True, blank=True)  

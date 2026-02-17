@@ -1433,7 +1433,7 @@ def refresh_avtoteka_vin():
         'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
     }
 
-    date_start = DT.datetime.now().replace(hour=1)
+    date_start = DT.datetime.now().replace(hour=1) - DT.timedelta(days=14)
     object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation')
     if len(object_estimations) > 0:
         
