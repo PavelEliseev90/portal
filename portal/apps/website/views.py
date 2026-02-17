@@ -5925,6 +5925,60 @@ def build_kors_dashboard_context(request):
         Sum('plan_sale'),
         Sum('reserve_amount')
     )
+    
+    # Расчет "прочих" автомобилей - тех, которые не попали ни в один ценовой сегмент
+    # Используемые ID ценовых сегментов: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12
+    total_segment_count = (
+        (dash.get('count_200__sum') or 0) +
+        (dash.get('count_400__sum') or 0) +
+        (dash.get('count_700__sum') or 0) +
+        (dash.get('count_1200__sum') or 0) +
+        (dash.get('count_2000__sum') or 0) +
+        (dash.get('count_3000__sum') or 0) +
+        (dash.get('count_5000__sum') or 0) +
+        (dash.get('count_5001__sum') or 0)
+    )
+    total_segment_sum = (
+        (dash.get('count_200_s__sum') or 0) +
+        (dash.get('count_400_s__sum') or 0) +
+        (dash.get('count_700_s__sum') or 0) +
+        (dash.get('count_1200_s__sum') or 0) +
+        (dash.get('count_2000_s__sum') or 0) +
+        (dash.get('count_3000_s__sum') or 0) +
+        (dash.get('count_5000_s__sum') or 0) +
+        (dash.get('count_5001_s__sum') or 0)
+    )
+    total_segment_outlay = (
+        (dash.get('count_200_outlay__sum') or 0) +
+        (dash.get('count_400_outlay__sum') or 0) +
+        (dash.get('count_700_outlay__sum') or 0) +
+        (dash.get('count_1200_outlay__sum') or 0) +
+        (dash.get('count_2000_outlay__sum') or 0) +
+        (dash.get('count_3000_outlay__sum') or 0) +
+        (dash.get('count_5000_outlay__sum') or 0) +
+        (dash.get('count_5001_outlay__sum') or 0)
+    )
+    total_segment_cost = (
+        (dash.get('count_200_cost__sum') or 0) +
+        (dash.get('count_400_cost__sum') or 0) +
+        (dash.get('count_700_cost__sum') or 0) +
+        (dash.get('count_1200_cost__sum') or 0) +
+        (dash.get('count_2000_cost__sum') or 0) +
+        (dash.get('count_3000_cost__sum') or 0) +
+        (dash.get('count_5000_cost__sum') or 0) +
+        (dash.get('count_5001_cost__sum') or 0)
+    )
+    
+    total_cars_count = dash.get('count_cars__sum') or 0
+    total_cars_sum = dash.get('count_cars_s__sum') or 0
+    total_cars_outlay = dash.get('count_cars_outlay__sum') or 0
+    total_cars_cost = dash.get('count_cars_cost_price__sum') or 0
+    
+    # "Прочие" - это разница между общим количеством и суммой всех сегментов
+    dash['count_other__sum'] = max(0, total_cars_count - total_segment_count)
+    dash['count_other_s__sum'] = max(0, total_cars_sum - total_segment_sum)
+    dash['count_other_outlay__sum'] = max(0, total_cars_outlay - total_segment_outlay)
+    dash['count_other_cost__sum'] = max(0, total_cars_cost - total_segment_cost)
 
     reserve_qs_total = RegEstimationBalanceUnit.objects.filter(
         unit__in=list_dc.values('id'),
