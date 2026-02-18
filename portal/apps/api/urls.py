@@ -1,6 +1,6 @@
 from django.urls import path, include
 from django.views.generic import TemplateView
-from api import views, views_avtosalon, views_catalog, views_mobile_android_api_v1
+from api import views, views_avtosalon, views_catalog, views_mobile_android_api_v1, views_mobile_android_api_v2
 from rest_framework_swagger.views import get_swagger_view
 
 from rest_framework import permissions
@@ -69,6 +69,19 @@ urlpatterns = [
 
 
    path('a/v1/estimation_add_fotos/<slug:slug_rlk>/',              views_mobile_android_api_v1.estimation_add_fotos, name='slug'),
+
+   # мобильное приложение версии 2 (Flutter, оптимизированные endpoints)
+   path('a/v2/login_in/',                                         views_mobile_android_api_v2.login_in_v2),
+   path('a/v2/login_info/',                                       views_mobile_android_api_v2.login_info_v2),
+   path('a/v2/rlk_eco/',                                          views_mobile_android_api_v2.rlk_eco_v2),
+   path('a/v2/estimation_body_elements/<int:rlk_id>/<str:inspection_type>/', views_mobile_android_api_v2.estimation_body_elements_v2),
+   path('a/v2/estimation_body_inspection_post/<int:rlk_id>/',     views_mobile_android_api_v2.estimation_body_inspection_post_v2),
+   path('a/v2/estimation_salon_elements/<int:rlk_id>/',           views_mobile_android_api_v2.estimation_salon_elements_v2),
+   path('a/v2/estimation_salon_inspection_post/<int:rlk_id>/',    views_mobile_android_api_v2.estimation_salon_inspection_post_v2),
+   path('a/v2/catalogs/marks/',                                   views_mobile_android_api_v2.catalogs_marks_v2),
+   path('a/v2/catalogs/models/<int:mark_id>/',                    views_mobile_android_api_v2.catalogs_models_v2),
+   path('a/v2/catalogs/modifications/<int:model_id>/',           views_mobile_android_api_v2.catalogs_modifications_v2),
+   path('a/v2/offline_sync/',                                     views_mobile_android_api_v2.offline_sync_v2),
 
    #/<slug:id>/<slug:doc_id>/',    views.control_detail_doc, name='slug'
 
