@@ -7635,7 +7635,7 @@
                                       <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio2_hood_trunk_shock_absorber" value="0" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 0 %} checked {% endif %}>
                                       <label class="btn btn-outline-danger" for="inlineRadio2_hood_trunk_shock_absorber">Не исправны</label>
                                       <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio3_hood_trunk_shock_absorber" value="4" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 4 %} checked {% endif %}>
-                                      <label class="btn btn-outline-secondary" for="inlineRadio3_hood_trunk_shock_absorber">Не предусмотрены</label>
+                                      <label class="btn btn-outline-success" for="inlineRadio3_hood_trunk_shock_absorber">Не предусмотрены</label>
                                     </div>
                                     <label class="fs-6" for="radio_hood_trunk_shock_absorber">Амортизатор капота/багажника</label>
                                   </div>
@@ -7661,22 +7661,21 @@
                                   <div class="kors-btn-group-wrapper-simple">
                                     <div class="kors-btn-group-compact" role="group" aria-label="Стапель">
                                       <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio1_stapele" value="1" {% if params.estimation.page_test_drive.stapele_type == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-primary" for="inlineRadio1_stapele" style="height: 90px;">
+                                      <label class="btn btn-outline-warning" for="inlineRadio1_stapele" style="height: 90px;">
                                         <div>Легкий</div>
                                         <small style="font-size: 0.7rem; opacity: 0.8;">3000 ₽, мин. 12 ч</small>
                                       </label>
                                       <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio2_stapele" value="2" {% if params.estimation.page_test_drive.stapele_type == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-primary" for="inlineRadio2_stapele" style="height: 90px;">
+                                      <label class="btn btn-outline-warning" for="inlineRadio2_stapele" style="height: 90px;">
                                         <div>Средний</div>
                                         <small style="font-size: 0.7rem; opacity: 0.8;">6000 ₽, мин. 12 ч</small>
                                       </label>
                                       <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio3_stapele" value="3" {% if params.estimation.page_test_drive.stapele_type == 3 %} checked {% endif %}>
-                                      <label class="btn btn-outline-primary" for="inlineRadio3_stapele" style="height: 90px;">
+                                      <label class="btn btn-outline-danger" for="inlineRadio3_stapele" style="height: 90px;">
                                         <div>Тяжелый</div>
                                         <small style="font-size: 0.7rem; opacity: 0.8;">9000 ₽, мин. 14 ч</small>
                                       </label>
-                                    </div>
-                                    <label class="fs-6" for="radio_stapele">Тип стапеля</label>
+                                    </div>                                    
                                   </div>
                                   
                                   <div class="row g-2 mt-2">
@@ -7694,11 +7693,108 @@
                                                placeholder="Стоимость" readonly style="background-color: #f8f9fa;">
                                         <label for="stapele_cost_display">Стоимость (₽)</label>
                                       </div>
+                                      <!-- Скрытое поле для отправки стоимости на сервер -->
+                                      <input type="hidden" id="stapele_cost" name="stapele_cost" value="{% if params.estimation.page_test_drive.stapele_cost %}{{ params.estimation.page_test_drive.stapele_cost }}{% endif %}">
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
+                            
+                            <script>
+                              (function() {
+                                // Конфигурация типов стапеля
+                                const stapeleConfig = {
+                                  1: { cost: 3000, minHours: 12 }, // Легкий
+                                  2: { cost: 6000, minHours: 12 }, // Средний
+                                  3: { cost: 9000, minHours: 14 }  // Тяжелый
+                                };
+                                
+                                // Получаем элементы
+                                const radioButtons = document.querySelectorAll('input[name="radio_stapele"]');
+                                const hoursInput = document.getElementById('stapele_hours');
+                                const costDisplay = document.getElementById('stapele_cost_display');
+                                const costHidden = document.getElementById('stapele_cost');
+                                
+                                // Функция обновления полей при выборе типа стапеля
+                                function updateStapeleFields(type) {
+                                  if (!type || !stapeleConfig[type]) {
+                                    // Если тип не выбран, очищаем поля
+                                    if (hoursInput) {
+                                      hoursInput.value = '';
+                                      hoursInput.min = '0';
+                                    }
+                                    if (costDisplay) costDisplay.value = '';
+                                    if (costHidden) costHidden.value = '';
+                                    return;
+                                  }
+                                  
+                                  const config = stapeleConfig[type];
+                                  
+                                  // Устанавливаем минимальное значение часов
+                                  if (hoursInput) {
+                                    hoursInput.min = config.minHours;
+                                  
+                                    // Если текущее значение меньше минимума, устанавливаем минимум
+                                    const currentHours = parseInt(hoursInput.value) || 0;
+                                    if (currentHours < config.minHours || !hoursInput.value) {
+                                      hoursInput.value = config.minHours;
+                                    }
+                                  }
+                                  
+                                  // Устанавливаем стоимость (только числовое значение)
+                                  if (costDisplay) {
+                                    // Устанавливаем чистое числовое значение напрямую
+                                    costDisplay.value = config.cost;
+                                  }
+                                  if (costHidden) {
+                                    costHidden.value = config.cost;
+                                  }
+                                }
+                                
+                                // Обработчик изменения radio buttons
+                                radioButtons.forEach(function(radio) {
+                                  radio.addEventListener('change', function() {
+                                    if (this.checked) {
+                                      const type = parseInt(this.value);
+                                      updateStapeleFields(type);
+                                    }
+                                  });
+                                });
+                                
+                                // Инициализация при загрузке страницы (если уже выбран тип)
+                                // Очищаем поле стоимости от возможного форматирования при загрузке
+                                if (costDisplay && costDisplay.value) {
+                                  const cleanValue = costDisplay.value.replace(/[^\d]/g, '');
+                                  if (cleanValue) {
+                                    costDisplay.value = cleanValue;
+                                  }
+                                }
+                                
+                                const checkedRadio = document.querySelector('input[name="radio_stapele"]:checked');
+                                if (checkedRadio) {
+                                  const type = parseInt(checkedRadio.value);
+                                  updateStapeleFields(type);
+                                }
+                                
+                                // Обработчик изменения часов (для пересчета стоимости, если нужно)
+                                if (hoursInput) {
+                                  hoursInput.addEventListener('input', function() {
+                                    const checkedRadio = document.querySelector('input[name="radio_stapele"]:checked');
+                                    if (checkedRadio) {
+                                      const type = parseInt(checkedRadio.value);
+                                      const config = stapeleConfig[type];
+                                      
+                                      // Проверяем минимальное значение
+                                      const currentHours = parseInt(this.value) || 0;
+                                      if (currentHours < config.minHours) {
+                                        this.value = config.minHours;
+                                      }
+                                    }
+                                  });
+                                }
+                              })();
+                            </script>
                             
                             <div class="row g-2">
                               <!-- ТО -->
