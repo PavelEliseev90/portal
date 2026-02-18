@@ -13,5 +13,5 @@ urlpatterns = [
    path('CumulativeMarginUS_refresh/',    views.CumulativeMarginUS_refresh),
    path('CumulativeMargin_refresh/',      views.CumulativeMargin_refresh),
    path('ComparativeReportOPFU_refresh/', views.ComparativeReportOPFU_refresh),
-
+   path('Stock_refresh',                  views.Stock_refresh),
 ]
