@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +9,7 @@ import '../../../data/models/damage_mark_model.dart';
 import '../../../data/repositories/inspection_repository.dart';
 import '../../../core/database/dao/inspection_dao.dart';
 import '../../../core/utils/image_utils.dart';
+import '../../../core/utils/image_loader.dart';
 import 'damage_type_selector.dart';
 import 'canvas_painter.dart';
 import '../../theme/app_colors.dart';
@@ -34,6 +36,7 @@ class BodyInspectionWidget extends StatefulWidget {
 
 class _BodyInspectionWidgetState extends State<BodyInspectionWidget> {
   final GlobalKey _canvasKey = GlobalKey();
+  final GlobalKey _repaintBoundaryKey = GlobalKey();
   final InspectionRepository _repository = InspectionRepository();
   final InspectionDao _dao = InspectionDao();
   
@@ -50,24 +53,27 @@ class _BodyInspectionWidgetState extends State<BodyInspectionWidget> {
   }
 
   Future<void> _loadBackgroundImage() async {
+    if (widget.baseImageUrl.isEmpty) return;
+    
     try {
-      // Загрузка изображения из URL
-      // В реальном приложении нужно использовать cached_network_image или подобное
-      // Здесь упрощенная версия
       setState(() {
         _isLoading = true;
       });
       
-      // TODO: Загрузить изображение из widget.baseImageUrl
-      // Для примера используем заглушку
+      final image = await ImageLoader.loadImageFromUrl(widget.baseImageUrl);
       
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _backgroundImage = image;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -301,9 +307,27 @@ class _BodyInspectionWidgetState extends State<BodyInspectionWidget> {
   }
 
   Future<Uint8List> _captureCanvas() async {
-    // TODO: Реализовать захват canvas
-    // Это требует использования RenderRepaintBoundary
-    return Uint8List(0);
+    try {
+      final RenderRepaintBoundary? boundary = 
+          _repaintBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      
+      if (boundary == null) {
+        throw Exception('RepaintBoundary not found');
+      }
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      
+      if (byteData == null) {
+        throw Exception('Failed to convert image to bytes');
+      }
+
+      return byteData.buffer.asUint8List();
+    } catch (e) {
+      print('Error capturing canvas: $e');
+      // Возвращаем пустой массив если не удалось захватить
+      return Uint8List(0);
+    }
   }
 
   @override
@@ -317,14 +341,17 @@ class _BodyInspectionWidgetState extends State<BodyInspectionWidget> {
               final size = MediaQuery.of(context).size;
               _handleTap(details, size);
             },
-            child: CustomPaint(
-              key: _canvasKey,
-              painter: CanvasPainter(
-                backgroundImage: _backgroundImage,
-                marks: _marks,
-                baseImageUrl: widget.baseImageUrl,
+            child: RepaintBoundary(
+              key: _repaintBoundaryKey,
+              child: CustomPaint(
+                key: _canvasKey,
+                painter: CanvasPainter(
+                  backgroundImage: _backgroundImage,
+                  marks: _marks,
+                  baseImageUrl: widget.baseImageUrl,
+                ),
+                size: Size.infinite,
               ),
-              size: Size.infinite,
             ),
           ),
         ),

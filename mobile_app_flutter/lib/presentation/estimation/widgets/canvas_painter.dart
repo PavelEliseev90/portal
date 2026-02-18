@@ -15,15 +15,45 @@ class CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // TODO: Загрузить и отрисовать фоновое изображение
-    // if (backgroundImage != null) {
-    //   canvas.drawImageRect(
-    //     backgroundImage!,
-    //     Rect.fromLTWH(0, 0, backgroundImage!.width.toDouble(), backgroundImage!.height.toDouble()),
-    //     Rect.fromLTWH(0, 0, size.width, size.height),
-    //     Paint(),
-    //   );
-    // }
+    // Отрисовка фонового изображения
+    if (backgroundImage != null) {
+      final imageWidth = backgroundImage!.width.toDouble();
+      final imageHeight = backgroundImage!.height.toDouble();
+      
+      // Вычисляем масштаб для подгонки изображения под размер canvas
+      final scaleX = size.width / imageWidth;
+      final scaleY = size.height / imageHeight;
+      final scale = scaleX < scaleY ? scaleX : scaleY;
+      
+      final scaledWidth = imageWidth * scale;
+      final scaledHeight = imageHeight * scale;
+      final offsetX = (size.width - scaledWidth) / 2;
+      final offsetY = (size.height - scaledHeight) / 2;
+      
+      canvas.drawImageRect(
+        backgroundImage!,
+        Rect.fromLTWH(0, 0, imageWidth, imageHeight),
+        Rect.fromLTWH(offsetX, offsetY, scaledWidth, scaledHeight),
+        Paint(),
+      );
+    } else if (baseImageUrl.isNotEmpty) {
+      // Если изображение еще не загружено, показываем индикатор загрузки
+      final paint = Paint()..color = Colors.grey[300]!;
+      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+      
+      final textPainter = TextPainter(
+        text: const TextSpan(
+          text: 'Загрузка изображения...',
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset((size.width - textPainter.width) / 2, (size.height - textPainter.height) / 2),
+      );
+    }
 
     // Отрисовка отметок
     for (int i = 0; i < marks.length; i++) {

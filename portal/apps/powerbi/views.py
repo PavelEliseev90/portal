@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU
+from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Stock
 import datetime as DT
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -238,5 +238,26 @@ def ComparativeReportOPFU_refresh(request):
         'date'      : f'{DT.datetime.now():%Y-%m-%d %H:%M:%S%z}'
     }
 
-    return JsonResponse(to_json, status=status.HTTP_200_OK)  
+    return JsonResponse(to_json, status=status.HTTP_200_OK) 
+
+@csrf_exempt
+def Stock_refresh(request):
+    body_unicode    = request.body.decode()
+    data            = json.loads(body_unicode)
+    
+    Stock.objects.delete()
+    
+    for item in data:
+        new_record = Stock()
+        for key, value in item.items():
+            if len(str(value)) > 0:
+                new_record.__setattr__(key , value)
+        new_record.save()
+    
+    to_json = {
+        'report'    : 'Stock',
+        'date'      : f'{DT.datetime.now():%Y-%m-%d %H:%M:%S%z}'
+    }
+
+    return JsonResponse(to_json, status=status.HTTP_200_OK)   
     
