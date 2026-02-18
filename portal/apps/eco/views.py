@@ -5516,6 +5516,28 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
 
+    # Амортизатор 
+    if estimation.page_test_drive != None and estimation.page_test_drive.hood_trunk_shock_absorber != None and estimation.page_test_drive.hood_trunk_shock_absorber == 0:
+        price_diff = 10000 
+        dop = {
+            'name'      : 'Амортизатор капата/багажника',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+    # Стапель 
+    if estimation.page_test_drive != None and estimation.page_test_drive.stapele_hours != None and estimation.page_test_drive.stapele_hours > 0:
+        price_diff = estimation.page_test_drive.stapele_hours * estimation.page_test_drive.stapele_cost 
+        dop = {
+            'name'      : 'Стапель',
+            'quantity'  : estimation.page_test_drive.stapele_hours,
+            'amount_pod': price_diff, 
+            'amount'    : price_diff
+        }
+        list_work_mcu.append(dop) 
+        amount_mcu = amount_mcu + price_diff
     # ТО
     if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
         price_diff = to_1 
