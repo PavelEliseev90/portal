@@ -2266,7 +2266,7 @@
 
         <main class="col">
           
-          <div class="hidesite fixed-top mobile-nav-select" style="margin-top: 3.5 rem;">
+          <div class="hidesite fixed-top mobile-nav-select" style="margin-top: 3.7 rem; right: 25px; left: 25px;">
             <div class="col">
               <select class="form-select" aria-label="" id="select_page">
                 <option {% if params.tabindex == 0 or not params.tabindex %} selected {% endif %} value="0">Главная</option>
@@ -7745,10 +7745,10 @@
                                   // Устанавливаем стоимость (только числовое значение)
                                   if (costDisplay) {
                                     // Устанавливаем чистое числовое значение напрямую
-                                    costDisplay.value = config.cost;
+                                    costDisplay.value = config.cost * hoursInput.value;
                                   }
                                   if (costHidden) {
-                                    costHidden.value = config.cost;
+                                    costHidden.value = config.cost * hoursInput.value;
                                   }
                                 }
                                 
@@ -23946,14 +23946,14 @@
           costDisplay.val('');
           return;
         }
-        
+        costDisplay.val(stapeleHours * baseCost);
         // Валидация минимального количества часов
-        if (stapeleHours < minHours) {
-          $('#stapele_hours').val(minHours);
-          costDisplay.val(baseCost.toLocaleString('ru-RU') + ' ₽');
-        } else {
-          costDisplay.val(baseCost.toLocaleString('ru-RU') + ' ₽');
-        }
+        // if (stapeleHours < minHours) {
+        //   $('#stapele_hours').val(minHours);
+        //   costDisplay.val(baseCost.toLocaleString('ru-RU') + ' ₽');
+        // } else {
+        //   costDisplay.val(baseCost.toLocaleString('ru-RU') + ' ₽');
+        // }
       }
       
       // Обработчики событий для стапеля
