@@ -438,3 +438,64 @@ class ComparativeReportOPFU(models.Model):
 		db_table = 'ComparativeReportOPFU'
 		verbose_name = 'СравнительныйОтчетОПФУ'
 		verbose_name_plural = 'СравнительныйОтчетОПФУ'
+
+
+class Stock(models.Model):
+	NotForSale = models.CharField("НеДляПродажи", max_length=512, null=True, blank=True)
+	IdKomplectation = models.CharField("ИДКомплектация", max_length=512, null=True, blank=True)
+	IdModification 	= models.CharField("ИДМодификация", max_length=512, null=True, blank=True)
+	VIN = models.CharField("VIN", max_length=512, null=True, blank=True)
+	VidKontragenta = models.CharField("ВидКонтрагента", max_length=512, null=True, blank=True)
+	VxodnayaStoimost = models.IntegerField("ВходнаяСтоимость", default = 0, null=True, blank=True)
+	Vyruchka = models.IntegerField("Выручка", default = 0, null=True, blank=True)
+	DataKontrakta = models.DateTimeField("ДатаКонтракта", null=True, blank=True)
+	DataOkonchaniyaKonsignacii = models.DateTimeField("ДатаОкончанияКонсигнации", null=True, blank=True)
+	DataOplaty = models.DateTimeField("ДатаОплаты", null=True, blank=True)
+	DataOtcheta = models.DateTimeField("ДатаОтчета", null=True, blank=True)
+	DataOtchitana = models.DateTimeField("ДатаОтчитана", null=True, blank=True)
+	DataPostupleniyaNaSklad = models.DateTimeField("ДатаПоступленияНаСклад", null=True, blank=True)
+	DataStopOtgruzka = models.DateTimeField("ДатаСтопОтгрузка", null=True, blank=True)
+	Obem = models.IntegerField("Объем", default = 0, null=True, blank=True)
+	Dostupnost = models.CharField("Доступность", max_length=512, null=True, blank=True)
+	ZalogSumma = models.IntegerField("ЗалогСумма", default = 0, null=True, blank=True)
+	Klient = models.CharField("Клиент", max_length=512, null=True, blank=True)
+	Kolichestvo = models.IntegerField("Количество", default = 0, null=True, blank=True)
+	Komplektaciya = models.CharField("Комплектация", max_length=512, null=True, blank=True)
+	Marka = models.CharField("Марка", max_length=512, null=True, blank=True)
+	Menedzher = models.CharField("Менеджер", max_length=512, null=True, blank=True)
+	Model = models.CharField("Модель", max_length=512, null=True, blank=True)
+	Moshhnost_LS = models.IntegerField("Мощность_ЛС", default = 0, null=True, blank=True)
+	PlaniruemayaDataVydachi = models.DateTimeField("ПланируемаяДатаВыдачи", null=True, blank=True)
+	PlanovayaDataOplaty = models.DateTimeField("ПлановаяДатаОплаты", null=True, blank=True)
+	PlanovayaCenaRealizacii = models.IntegerField("ПлановаяЦенаРеализации", default = 0, null=True, blank=True)
+	PoNalichiyu = models.CharField("ПоНаличию", max_length=512, null=True, blank=True)
+	PodrazdelenieDC = models.CharField("ПодразделениеДЦ", max_length=512, null=True, blank=True)
+	StatusAM = models.CharField("СтатусАМ", max_length=512, null=True, blank=True)
+	Finansirovanie = models.CharField("Финансирование", max_length=512, null=True, blank=True)
+	Firma = models.CharField("Фирма", max_length=512, null=True, blank=True)
+	Cvet = models.CharField("Цвет", max_length=512, null=True, blank=True)
+	RRC = models.IntegerField("РРЦ", default = 0, null=True, blank=True)
+	GodVypuska = models.CharField("ГодВыпуска", max_length=512, null=True, blank=True)
+	Postavshik = models.CharField("Поставщик", max_length=512, null=True, blank=True)
+	Postuplenie = models.CharField("Поступление", max_length=512, null=True, blank=True)
+	SummaTrejdIn = models.IntegerField("СуммаТрейдИн", default = 0, null=True, blank=True)
+	Alfa = models.CharField("Альфа", max_length=512, null=True, blank=True)
+	DataPostanovkiNaUchet = models.DateTimeField("ДатаПостановкиНаУчет", null=True, blank=True)
+	GosNomer = models.CharField("ГосНомер", max_length=512, null=True, blank=True)
+	DataSnyatiyaSUcheta = models.DateTimeField("ДатаСнятияСУчета", null=True, blank=True)
+	SvedORegTS = models.CharField("СведОРегТС", max_length=512, null=True, blank=True)
+	NomerSoglasheniya = models.CharField("НомерСоглашения", max_length=512, null=True, blank=True)
+	KodKomplektacii = models.CharField("КодКомплектации", max_length=512, null=True, blank=True)
+	StoimostPrixod = models.IntegerField("СтоимостьПриход", default = 0, null=True, blank=True)
+	RaznicaStoimosti = models.IntegerField("РазницаСтоимости", default = 0, null=True, blank=True)
+	DataOplatyZakazPostavshhiku = models.DateTimeField("ДатаОплатыЗаказПоставщику", null=True, blank=True)
+	OplataDengami = models.IntegerField("ОплатаДеньгами", default = 0, null=True, blank=True)
+	OplataVzaimozachet = models.IntegerField("ОплатаВзаимозачет", default = 0, null=True, blank=True)
+
+	def __str__(self):
+		return "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} ".format( self.NotForSale, self.IdKomplectation, self.VIN, self.VidKontragenta, self.VxodnayaStoimost, self.Vyruchka, self.DataKontrakta, self.DataOkonchaniyaKonsignacii, self.DataOplaty, self.DataOtcheta, self.DataOtchitana, self.DataPostupleniyaNaSklad, self.DataStopOtgruzka, self.Obem, self.Dostupnost, self.ZalogSumma, self.Klient, self.Kolichestvo, self.Komplektaciya, self.Marka, self.Menedzher, self.Model, self.Moshhnost_LS, self.PlaniruemayaDataVydachi, self.PlanovayaDataOplaty, self.PlanovayaCenaRealizacii, self.PoNalichiyu, self.PodrazdelenieDC, self.StatusAM, self.Finansirovanie, self.Firma, self.Cvet, self.RRC, self.GodVypuska, self.Postavshik, self.Postuplenie, self.SummaTrejdIn, self.Alfa, self.DataPostanovkiNaUchet, self.GosNomer, self.DataSnyatiyaSUcheta, self.SvedORegTS, self.NomerSoglasheniya, self.KodKomplektacii, self.StoimostPrixod, self.RaznicaStoimosti, self.DataOplatyZakazPostavshhiku, self.OplataDengami, self.OplataVzaimozachet,)  
+
+	class Meta:
+		db_table = 'Stock'
+		verbose_name = 'СтокДЦПлоскаяПоДням'
+		verbose_name_plural = 'СтокДЦПлоскаяПоДням'

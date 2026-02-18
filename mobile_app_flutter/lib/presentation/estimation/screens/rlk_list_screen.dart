@@ -157,8 +157,8 @@ class _RlkListScreenState extends ConsumerState<RlkListScreen>
                           rlk: rlk,
                           onTap: () {
                             Navigator.of(context).pushNamed(
-                              '/estimation-start',
-                              arguments: rlk.id,
+                              '/estimation-stages',
+                              arguments: {'rlkId': rlk.id},
                             );
                           },
                         ),

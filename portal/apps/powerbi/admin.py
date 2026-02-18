@@ -1,6 +1,9 @@
 from django.contrib import admin
-from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Bi_wash
+from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Bi_wash, Stock
 
+@admin.register(Stock)
+class StockAdmin(admin.ModelAdmin):
+	list_display = (  'NotForSale', 'IdKomplectation', 'VIN', 'VidKontragenta', 'VxodnayaStoimost', 'Vyruchka', 'DataKontrakta', 'DataOkonchaniyaKonsignacii', 'DataOplaty', 'DataOtcheta', 'DataOtchitana', 'DataPostupleniyaNaSklad', 'DataStopOtgruzka', 'Obem', 'Dostupnost', 'ZalogSumma', 'Klient', 'Kolichestvo', 'Komplektaciya', 'Marka', 'Menedzher', 'Model', 'Moshhnost_LS', 'PlaniruemayaDataVydachi', 'PlanovayaDataOplaty', 'PlanovayaCenaRealizacii', 'PoNalichiyu', 'PodrazdelenieDC', 'StatusAM', 'Finansirovanie', 'Firma', 'Cvet', 'RRC', 'GodVypuska', 'Postavshik', 'Postuplenie', 'SummaTrejdIn', 'Alfa', 'DataPostanovkiNaUchet', 'GosNomer', 'DataSnyatiyaSUcheta', 'SvedORegTS', 'NomerSoglasheniya', 'KodKomplektacii', 'StoimostPrixod', 'RaznicaStoimosti', 'DataOplatyZakazPostavshhiku', 'OplataDengami', 'OplataVzaimozachet',)
 
 @admin.register(Bi_wash)
 class Bi_washAdmin(admin.ModelAdmin):
