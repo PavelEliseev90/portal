@@ -541,6 +541,27 @@
       </div>
     </div>
 
+    <!-- Аналитика -->
+    {% if request.user.profiles.korsavto_settings %}
+      
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-icon">📊</div>
+          <h3 class="section-card-title">Аналитика</h3>
+        </div>
+        <p class="section-card-description">
+          Аналитические отчеты и данные по складу
+        </p>
+        <div class="action-buttons">
+          <a href="{% url 'powerbi:stock_list' %}" class="action-btn">
+            <span class="action-btn-icon">📦</span>
+            <span class="action-btn-text">Сток ДЦ</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Настройки и управление -->
     <div class="section-card">
       <div class="section-card-header">
