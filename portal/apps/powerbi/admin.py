@@ -1,9 +1,16 @@
 from django.contrib import admin
-from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Bi_wash, Stock
+from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Bi_wash, Stock, Cumulative
+
+
+@admin.register(Cumulative)
+class CumulativeAdmin(admin.ModelAdmin):
+	list_display = ('PodrazdelenieDTs', 'PodarkiSebestoimost', 'DopySebestoimost', 'DopyVTsene', 'SkidkaDTs', 'RRTS', 'VyruchkaZaAvto', 'SebestoimostPoDokumentu', 'SummaKASKO', 'SummaSZh', 'VPKredit', 'SebestoimostPodryad', 'SummaRabot', 'ValovayaPribylZChShiny', 'ValovayaPribylZCh', 'MesyatsProdazhi', 'SummaTreydInPoPlanu', 'KolichestvoAvto', 'KompensatsiyaSkidokTreydIn', 'KompensatsiyaProchikhSkidok', 'SkidkaTreydIn', 'SkidkaProchaya', 'SummaPodryad', 'KolichestvoNCh', 'SummaSertifikat', 'KolichestvoKredit', 'KolichestvoSZh', 'KolichestvoKASKO', 'VPOPFU', 'VPProchieOPFU', 'VyruchkaZCh', 'SebestoimostZCh', 'KategoriyaDniNaSklade', 'DataPostupleniya', 'DataProdazhi', 'VyruchkaShiny', 'SebestoimostShiny', 'KolichestvoTreydIn', 'SvoyRegion', 'DataKontraktovaniya', 'Model', 'TipProdazhi', 'Marka', 'VIN', 'ListOtsenkiVIN', 'SummaAktivnyeProdazhi', 'SummaOSAGO', 'KolichestvoOSAGO', 'SummaKreditaGAP', 'KolichestvoGAP', 'Firma', 'SummaGAP', 'OplataPoOSAGO', 'OplataPoKASKO', 'SummaPriema', 'SummaMarzhiBezNDS', 'DataVykupa', 'DataOtchitana', 'SummaKarty', 'KolichestvoKarty', 'SummaKompensatsiiBezNDS', 'KolichestvoProchieOPFU', 'VidProdazhi', 'SummaPoPrezidentu', 'SummaDeaktsept', 'SummaDeaktseptBezNDS', 'SummaGosreg', 'EstGosregistratsiya', 'SummaEkvayring', 'Postuplenie', 'Postavshchik', 'TorgovoeOboznachenie', 'NomerSoglasheniya', 'KolichestvoShiny', 'KorrektirovkaSebestoimosti', 'MoshchnostLS', 'Obem', 'IDModifikatsii', 'IdKomplektatsii', 'Modifikatsiya',)
+
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-	list_display = (  'NotForSale', 'IdKomplectation', 'VIN', 'VidKontragenta', 'VxodnayaStoimost', 'Vyruchka', 'DataKontrakta', 'DataOkonchaniyaKonsignacii', 'DataOplaty', 'DataOtcheta', 'DataOtchitana', 'DataPostupleniyaNaSklad', 'DataStopOtgruzka', 'Obem', 'Dostupnost', 'ZalogSumma', 'Klient', 'Kolichestvo', 'Komplektaciya', 'Marka', 'Menedzher', 'Model', 'Moshhnost_LS', 'PlaniruemayaDataVydachi', 'PlanovayaDataOplaty', 'PlanovayaCenaRealizacii', 'PoNalichiyu', 'PodrazdelenieDC', 'StatusAM', 'Finansirovanie', 'Firma', 'Cvet', 'RRC', 'GodVypuska', 'Postavshik', 'Postuplenie', 'SummaTrejdIn', 'Alfa', 'DataPostanovkiNaUchet', 'GosNomer', 'DataSnyatiyaSUcheta', 'SvedORegTS', 'NomerSoglasheniya', 'KodKomplektacii', 'StoimostPrixod', 'RaznicaStoimosti', 'DataOplatyZakazPostavshhiku', 'OplataDengami', 'OplataVzaimozachet',)
+	list_display = ('NotForSale', 'IdKomplectation', 'VIN', 'VidKontragenta', 'VxodnayaStoimost', 'Vyruchka', 'DataKontrakta', 'DataOkonchaniyaKonsignacii', 'DataOplaty', 'DataOtcheta', 'DataOtchitana', 'DataPostupleniyaNaSklad', 'DataStopOtgruzka', 'Obem', 'Dostupnost', 'ZalogSumma', 'Klient', 'Kolichestvo', 'Komplektaciya', 'Marka', 'Menedzher', 'Model', 'Moshhnost_LS', 'PlaniruemayaDataVydachi', 'PlanovayaDataOplaty', 'PlanovayaCenaRealizacii', 'PoNalichiyu', 'PodrazdelenieDC', 'StatusAM', 'Finansirovanie', 'Firma', 'Cvet', 'RRC', 'GodVypuska', 'Postavshik', 'Postuplenie', 'SummaTrejdIn', 'Alfa', 'DataPostanovkiNaUchet', 'GosNomer', 'DataSnyatiyaSUcheta', 'SvedORegTS', 'NomerSoglasheniya', 'KodKomplektacii', 'StoimostPrixod', 'RaznicaStoimosti', 'DataOplatyZakazPostavshhiku', 'OplataDengami', 'OplataVzaimozachet',)
+
 
 @admin.register(Bi_wash)
 class Bi_washAdmin(admin.ModelAdmin):

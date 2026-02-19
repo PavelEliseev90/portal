@@ -16,4 +16,5 @@ urlpatterns = [
    path('Stock_refresh/',                 views.Stock_refresh),
    path('stock/list/',                    views.stock_list, name='stock_list'),
    path('stock/export/',                  views.stock_export_excel, name='stock_export'),
+   path('Cumulative_refresh/',             views.Cumulative_refresh),
 ]

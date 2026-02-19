@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Stock
+from powerbi.models import mers_SQL, Bi_logs, StockTZK, MKU_State_Orders, EstimationOP, CumulativeMarginUS, CumulativeMargin, ComparativeReportOPFU, Stock, Cumulative
 import datetime as DT
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -266,6 +266,35 @@ def Stock_refresh(request):
 
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
+
+@csrf_exempt
+def Cumulative_refresh(request):
+    body_unicode    = request.body.decode()
+    data            = json.loads(body_unicode)
+    
+    filtr       = data['Filtr']
+    date_start  = filtr['ДатаНачала']
+    date_end    = filtr['ДатаОкончания']
+
+    count_delite = Cumulative.objects.filter(DataProdazhi__range = [date_start, date_end]).count()
+    if count_delite > 0:
+        Cumulative.objects.filter(DataProdazhi__range = [date_start, date_end]).delete()
+
+    data    = data['Data']
+
+    for item in data:
+        new_record = Cumulative()
+        for key, value in item.items():
+            if len(str(value)) > 0:
+                new_record.__setattr__(key , value)
+        new_record.save()
+    
+    to_json = {
+        'report'    : 'Cumulative',
+        'date'      : f'{DT.datetime.now():%Y-%m-%d %H:%M:%S%z}'
+    }
+
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
 
 def stock_list(request):
     """Список записей Stock с поиском и пагинацией"""
