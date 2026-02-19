@@ -7,6 +7,7 @@ from django.http.response import JsonResponse, HttpResponse
 from rest_framework import status
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db import models
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -281,13 +282,77 @@ def Cumulative_refresh(request):
         Cumulative.objects.filter(DataProdazhi__range = [date_start, date_end]).delete()
 
     data    = data['Data']
+    
+    # Получаем информацию о полях модели
+    model_fields = {f.name: f for f in Cumulative._meta.get_fields() if hasattr(f, 'name')}
 
     for item in data:
         new_record = Cumulative()
         for key, value in item.items():
-            if len(str(value)) > 0:
-                new_record.__setattr__(key , value)
-        new_record.save()
+            # Проверяем, существует ли поле в модели
+            if key not in model_fields:
+                continue
+            
+            field = model_fields[key]
+            
+            # Пропускаем пустые значения
+            if value is None or value == '':
+                continue
+            
+            # Обработка DateTimeField
+            if isinstance(field, models.DateTimeField):
+                try:
+                    # Если значение уже datetime объект
+                    if isinstance(value, DT.datetime):
+                        setattr(new_record, key, value)
+                    # Если значение строка, пытаемся распарсить
+                    elif isinstance(value, str):
+                        if len(value) > 0:
+                            # Пробуем разные форматы дат
+                            try:
+                                parsed_date = DT.datetime.fromisoformat(value.replace('Z', '+00:00'))
+                            except:
+                                try:
+                                    parsed_date = DT.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                                except:
+                                    try:
+                                        parsed_date = DT.datetime.strptime(value, '%Y-%m-%d')
+                                    except:
+                                        continue
+                            setattr(new_record, key, parsed_date)
+                except Exception as e:
+                    continue
+            # Обработка DateField
+            elif isinstance(field, models.DateField):
+                try:
+                    if isinstance(value, DT.date):
+                        setattr(new_record, key, value)
+                    elif isinstance(value, DT.datetime):
+                        setattr(new_record, key, value.date())
+                    elif isinstance(value, str) and len(value) > 0:
+                        try:
+                            parsed_date = DT.datetime.strptime(value, '%Y-%m-%d').date()
+                            setattr(new_record, key, parsed_date)
+                        except:
+                            continue
+                except:
+                    continue
+            # Обработка остальных полей
+            else:
+                try:
+                    # Проверяем, что значение не пустое
+                    if isinstance(value, str) and len(value) > 0:
+                        setattr(new_record, key, value)
+                    elif not isinstance(value, str) and value is not None:
+                        setattr(new_record, key, value)
+                except:
+                    continue
+        
+        try:
+            new_record.save()
+        except Exception as e:
+            # Пропускаем записи с ошибками
+            continue
     
     to_json = {
         'report'    : 'Cumulative',
