@@ -17,4 +17,6 @@ urlpatterns = [
    path('stock/list/',                    views.stock_list, name='stock_list'),
    path('stock/export/',                  views.stock_export_excel, name='stock_export'),
    path('Cumulative_refresh/',             views.Cumulative_refresh),
+   path('cumulative/list/',               views.cumulative_list, name='cumulative_list'),
+   path('cumulative/export/',             views.cumulative_export_excel, name='cumulative_export'),
 ]

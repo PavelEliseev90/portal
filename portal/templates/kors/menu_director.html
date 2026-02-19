@@ -552,13 +552,18 @@
         <p class="section-card-description">
           Аналитические отчеты и данные по складу
         </p>
-        <div class="action-buttons">
-          <a href="{% url 'powerbi:stock_list' %}" class="action-btn">
-            <span class="action-btn-icon">📦</span>
-            <span class="action-btn-text">Сток ДЦ</span>
-            <span class="action-btn-arrow">→</span>
-          </a>
-        </div>
+         <div class="action-buttons">
+           <a href="{% url 'powerbi:stock_list' %}" class="action-btn">
+             <span class="action-btn-icon">📦</span>
+             <span class="action-btn-text">Сток ДЦ</span>
+             <span class="action-btn-arrow">→</span>
+           </a>
+           <a href="{% url 'powerbi:cumulative_list' %}" class="action-btn">
+             <span class="action-btn-icon">📊</span>
+             <span class="action-btn-text">Кумулятивная маржа</span>
+             <span class="action-btn-arrow">→</span>
+           </a>
+         </div>
       </div>
     {% endif %}
 
