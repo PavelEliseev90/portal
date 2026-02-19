@@ -346,15 +346,22 @@
       Аналитика
     </h3>
     <p>Аналитические отчеты и данные по складу</p>
-    <div class="menu-items">
-      <a href="{% url 'powerbi:stock_list' %}" class="menu-item">
-        <span class="menu-item-icon">📦</span>
-        <div class="menu-item-content">
-          <div class="menu-item-title">Сток ДЦ</div>
-        </div>
-        <span class="menu-item-arrow">→</span>
-      </a>
-    </div>
+     <div class="menu-items">
+       <a href="{% url 'powerbi:stock_list' %}" class="menu-item">
+         <span class="menu-item-icon">📦</span>
+         <div class="menu-item-content">
+           <div class="menu-item-title">Сток ДЦ</div>
+         </div>
+         <span class="menu-item-arrow">→</span>
+       </a>
+       <a href="{% url 'powerbi:cumulative_list' %}" class="menu-item">
+         <span class="menu-item-icon">📊</span>
+         <div class="menu-item-content">
+           <div class="menu-item-title">Кумулятивная маржа</div>
+         </div>
+         <span class="menu-item-arrow">→</span>
+       </a>
+     </div>
   </div>
   {% endif %}
   
