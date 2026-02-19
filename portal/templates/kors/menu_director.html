@@ -263,7 +263,7 @@
 <div class="director-dashboard">
   <!-- Заголовок -->
   <div class="dashboard-header">
-    <h1>🚗 Панель управления автосалоном</h1>
+    <h1>Панель управления дилерским центром</h1>
     <p>Единая точка доступа ко всем инструментам управления</p>
   </div>
 
@@ -310,17 +310,17 @@
         <h3 class="section-card-title">Склад и каталог</h3>
       </div>
       <p class="section-card-description">
-        Управление складом автомобилей, каталогом, анализ остатков и движения товара
+        Управление складом автомобилей, каталогом, анализ остатков
       </p>
       <div class="action-buttons">
         <a href="/cars/disposition/" class="action-btn">
           <span class="action-btn-icon">🚗</span>
-          <span class="action-btn-text">Склад автомобилей</span>
+          <span class="action-btn-text">Диспозиция</span>
           <span class="action-btn-arrow">→</span>
         </a>
         <a href="/cars/" class="action-btn">
           <span class="action-btn-icon">📋</span>
-          <span class="action-btn-text">Каталог автомобилей</span>
+          <span class="action-btn-text">Каталог</span>
           <span class="action-btn-arrow">→</span>
         </a>
         <a href="/cars/warehouse/analysis/" class="action-btn">
@@ -330,7 +330,7 @@
         </a>
         <a href="{% url 'avtosalon:car_tasks_list' %}" class="action-btn">
           <span class="action-btn-icon">📋</span>
-          <span class="action-btn-text">Задачи по автомобилям</span>
+          <span class="action-btn-text">Задачи</span>
           <span class="action-btn-arrow">→</span>
         </a>
       </div>
@@ -346,9 +346,9 @@
         Управление продажами, расчеты сделок, соглашения и отгрузки автомобилей
       </p>
       <div class="action-buttons">
-        <a href="{% url 'avtosalon:deal_calculation' %}" class="action-btn">
-          <span class="action-btn-icon">🧮</span>
-          <span class="action-btn-text">Расчет сделки</span>
+        <a href="/rlks_trade_in/" class="action-btn">
+          <span class="action-btn-icon">📝</span>
+          <span class="action-btn-text">Рабочие листы</span>
           <span class="action-btn-arrow">→</span>
         </a>
         <a href="/docs_car_agreement/" class="action-btn">
@@ -361,11 +361,19 @@
           <span class="action-btn-text">Отгрузки</span>
           <span class="action-btn-arrow">→</span>
         </a>
+        <!--
         <a href="/korsavto/sales_funnel/" class="action-btn">
           <span class="action-btn-icon">📈</span>
           <span class="action-btn-text">Воронка продаж</span>
           <span class="action-btn-arrow">→</span>
         </a>
+        -->
+        <a href="{% url 'avtosalon:deal_calculation' %}" class="action-btn">
+          <span class="action-btn-icon">🧮</span>
+          <span class="action-btn-text">Расчет сделки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        
       </div>
     </div>
 
@@ -379,6 +387,16 @@
         Воронка Trade-In, интерактивная оценка, рабочие листы и аналитика по оценщикам
       </p>
       <div class="action-buttons">
+        <a href="/rlks_trade_in/" class="action-btn">
+          <span class="action-btn-icon">📝</span>
+          <span class="action-btn-text">Рабочие листы</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/eco/" class="action-btn">
+          <span class="action-btn-icon">💻</span>
+          <span class="action-btn-text">Интерактивная оценка</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
         <a href="/eco/funnel/analytics/" class="action-btn">
           <span class="action-btn-icon">📊</span>
           <span class="action-btn-text">Аналитика воронки</span>
@@ -388,17 +406,7 @@
           <span class="action-btn-icon">🔄</span>
           <span class="action-btn-text">Воронка Trade-In</span>
           <span class="action-btn-arrow">→</span>
-        </a>
-        <a href="/eco/" class="action-btn">
-          <span class="action-btn-icon">💻</span>
-          <span class="action-btn-text">Интерактивная оценка</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-        <a href="/rlks_trade_in/" class="action-btn">
-          <span class="action-btn-icon">📝</span>
-          <span class="action-btn-text">Рабочие листы</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
+        </a>        
         <a href="/eco/funnel/analytics/appraisers/" class="action-btn">
           <span class="action-btn-icon">👤</span>
           <span class="action-btn-text">Аналитика по оценщикам</span>
@@ -450,9 +458,23 @@
         Управление подготовкой, контроль качества, этапы работ
       </p>
       <div class="action-buttons">
+        <a href="/car_preparation/dashboard/" class="action-btn">
+          <span class="action-btn-icon">📊</span>
+          <span class="action-btn-text">Рабочий стол</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+      <div class="action-buttons">
         <a href="/car_preparation/" class="action-btn">
           <span class="action-btn-icon">🚗</span>
-          <span class="action-btn-text">Подготовка автомобилей</span>
+          <span class="action-btn-text">Подготовки</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+      <div class="action-buttons">
+        <a href="/car_preparation/dashboard/" class="action-btn">
+          <span class="action-btn-icon">📋</span>
+          <span class="action-btn-text">Задачи</span>
           <span class="action-btn-arrow">→</span>
         </a>
       </div>

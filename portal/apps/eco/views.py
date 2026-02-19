@@ -5516,6 +5516,28 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
         list_work_service.append(dop) 
         amount_ss = amount_ss + price_diff
 
+    # Амортизатор 
+    if estimation.page_test_drive != None and estimation.page_test_drive.hood_trunk_shock_absorber != None and estimation.page_test_drive.hood_trunk_shock_absorber == 0:
+        price_diff = 10000 
+        dop = {
+            'name'      : 'Амортизатор капата/багажника',
+            'quantity'  : 1,
+            'amount_pod': 1, 
+            'amount'    : price_diff
+        }
+        list_work_service.append(dop) 
+        amount_ss = amount_ss + price_diff
+    # Стапель 
+    if estimation.page_test_drive != None and estimation.page_test_drive.stapele_hours != None and estimation.page_test_drive.stapele_hours > 0:
+        price_diff = estimation.page_test_drive.stapele_hours * estimation.page_test_drive.stapele_cost 
+        dop = {
+            'name'      : 'Стапель',
+            'quantity'  : estimation.page_test_drive.stapele_hours,
+            'amount_pod': price_diff, 
+            'amount'    : price_diff
+        }
+        list_work_mcu.append(dop) 
+        amount_mcu = amount_mcu + price_diff
     # ТО
     if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
         price_diff = to_1 
@@ -8810,13 +8832,13 @@ def tradein_funnel_analytics(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible  and not request.user.profiles.korsavto_settings_dc:
+    #     params = {
+    #         'type': 'eco_funnel',
+    #         'nav_selected': 4,
+    #         'request': request,
+    #     }
+    #     return render(request, 'errors/403.html', {'params': params})
 
     now = DT.datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
@@ -9142,8 +9164,8 @@ def tradein_funnel_analytics_export(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        return HttpResponseRedirect('/')
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+    #     return HttpResponseRedirect('/')
     
     export_type = request.GET.get('export_type', '')  # op_rlk, rlk, before, after, reception, reception_price_list
     
@@ -9407,13 +9429,13 @@ def tradein_funnel_analytics_detail(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'eco_funnel',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.profiles.korsavto_settings_dc:
+    #     params = {
+    #         'type': 'eco_funnel',
+    #         'nav_selected': 4,
+    #         'request': request,
+    #     }
+    #     return render(request, 'errors/403.html', {'params': params})
     
     # Тип фильтра для детальной страницы
     filter_type = request.GET.get('filter_type', '')
@@ -9664,8 +9686,8 @@ def tradein_funnel_analytics_export(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        return HttpResponseRedirect('/')
+    # if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+    #     return HttpResponseRedirect('/')
     
     export_type = request.GET.get('export_type', '')  # op_rlk, rlk, before, after, reception, reception_price_list
     

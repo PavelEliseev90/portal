@@ -491,7 +491,8 @@ class Stock(models.Model):
 	DataOplatyZakazPostavshhiku = models.DateTimeField("ДатаОплатыЗаказПоставщику", null=True, blank=True)
 	OplataDengami = models.IntegerField("ОплатаДеньгами", default = 0, null=True, blank=True)
 	OplataVzaimozachet = models.IntegerField("ОплатаВзаимозачет", default = 0, null=True, blank=True)
-
+	City = models.CharField("ПодразделениеДЦ", max_length=512, null=True, blank=True)
+	
 	def __str__(self):
 		return "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} ".format( self.NotForSale, self.IdKomplectation, self.VIN, self.VidKontragenta, self.VxodnayaStoimost, self.Vyruchka, self.DataKontrakta, self.DataOkonchaniyaKonsignacii, self.DataOplaty, self.DataOtcheta, self.DataOtchitana, self.DataPostupleniyaNaSklad, self.DataStopOtgruzka, self.Obem, self.Dostupnost, self.ZalogSumma, self.Klient, self.Kolichestvo, self.Komplektaciya, self.Marka, self.Menedzher, self.Model, self.Moshhnost_LS, self.PlaniruemayaDataVydachi, self.PlanovayaDataOplaty, self.PlanovayaCenaRealizacii, self.PoNalichiyu, self.PodrazdelenieDC, self.StatusAM, self.Finansirovanie, self.Firma, self.Cvet, self.RRC, self.GodVypuska, self.Postavshik, self.Postuplenie, self.SummaTrejdIn, self.Alfa, self.DataPostanovkiNaUchet, self.GosNomer, self.DataSnyatiyaSUcheta, self.SvedORegTS, self.NomerSoglasheniya, self.KodKomplektacii, self.StoimostPrixod, self.RaznicaStoimosti, self.DataOplatyZakazPostavshhiku, self.OplataDengami, self.OplataVzaimozachet,)  
 

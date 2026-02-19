@@ -245,7 +245,7 @@ def Stock_refresh(request):
     body_unicode    = request.body.decode()
     data            = json.loads(body_unicode)
     
-    Stock.objects.delete()
+    Stock.objects.all().delete()
     
     for item in data:
         new_record = Stock()
