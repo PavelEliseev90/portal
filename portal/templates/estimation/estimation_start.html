@@ -649,12 +649,6 @@
               <div class="search-select-wrapper select2-wrapper">
                 <select class="search-select kors-form-control" id="body_config" name="body_config_id" required disabled>
                   <option selected></option>
-                  {% for body in params.type_bodies %}
-                    <option value="{{ body.id }}"
-                            {% if params.estimation.modification and params.estimation.modification.typeBody and params.estimation.modification.typeBody.id == body.id %}selected{% endif %}>
-                      {{ body.name }}
-                    </option>
-                  {% endfor %}
                 </select>
                 <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
               </div>
@@ -667,12 +661,6 @@
               <div class="search-select-wrapper select2-wrapper">
                 <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required disabled>
                   <option selected></option>
-                  {% for engine in params.type_engines %}
-                    <option value="{{ engine.id }}"
-                            {% if params.estimation.modification and params.estimation.modification.typeEngine and params.estimation.modification.typeEngine.id == engine.id %}selected{% endif %}>
-                      {{ engine.name }}
-                    </option>
-                  {% endfor %}
                 </select>
                 <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
               </div>
@@ -685,12 +673,6 @@
               <div class="search-select-wrapper select2-wrapper">
                 <select class="search-select kors-form-control" id="kpp" name="kpp_id" required disabled>
                   <option selected></option>
-                  {% for kpp in params.type_kpp %}
-                    <option value="{{ kpp.id }}"
-                            {% if params.estimation.modification and params.estimation.modification.typeGear and params.estimation.modification.typeGear.id == kpp.id %}selected{% endif %}>
-                      {{ kpp.name }}
-                    </option>
-                  {% endfor %}
                 </select>
                 <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
               </div>
@@ -1621,8 +1603,10 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const year = $(this).val();
       
+      // Устанавливаем флаг загрузки сразу, чтобы предотвратить повторные вызовы
+      $(this).data('loading', true);
+      
       // Очищаем зависимые поля без обновления Select2, чтобы избежать циклов
-      // Используем временное отключение Select2 для избежания событий
       if ($(markSelect).hasClass('select2-hidden-accessible')) {
         $(markSelect).select2('destroy');
       }
@@ -1642,44 +1626,104 @@ document.addEventListener('DOMContentLoaded', function() {
         $(complectationSelect).select2('destroy');
       }
       $(complectationSelect).html('<option selected></option>').prop('disabled', true).removeAttr('required');
-      complectationHint.style.display = 'none';
+      if (complectationHint) {
+        complectationHint.style.display = 'none';
+      }
       
-      // Обновляем Select2 для года, чтобы отображалось выбранное значение
-      setTimeout(() => {
-        try {
-          if ($(yearSelect).hasClass('select2-hidden-accessible')) {
-            $(yearSelect).select2('destroy');
-          }
-          const $label = $(yearSelect).closest('.search-select-wrapper').find('label');
-          const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
-          $(yearSelect).select2({
-            language: 'ru',
-            placeholder: placeholder,
-            allowClear: false,
-            width: '100%',
-            dropdownAutoWidth: true,
-            disabled: false
-          });
-        } catch (e) {
-          console.error('Ошибка обновления Select2 для года:', e);
-        }
-      }, 50);
+      // Очищаем поля типа кузова, двигателя и КПП
+      if ($('#body_config').hasClass('select2-hidden-accessible')) {
+        $('#body_config').select2('destroy');
+      }
+      $('#body_config').val('').prop('disabled', true);
       
-      // Очищаем поля, которые заполняются из модификации
+      if ($('#engine_type').hasClass('select2-hidden-accessible')) {
+        $('#engine_type').select2('destroy');
+      }
+      $('#engine_type').val('').prop('disabled', true);
+      
+      if ($('#kpp').hasClass('select2-hidden-accessible')) {
+        $('#kpp').select2('destroy');
+      }
+      $('#kpp').val('').prop('disabled', true);
+      
+      // Если год не выбран, просто очищаем все и выходим
       if (!year) {
-        $('#body_config').val('');
-        $('#engine_type').val('');
-        $('#kpp').val('');
-        // Переинициализируем Select2 для очищенных селектов
+        // Переинициализируем Select2 для очищенных селектов без вызова обработчиков
+        isUpdatingSelect2 = true;
         setTimeout(() => {
-          initSelect2();
-        }, 50);
+          try {
+            // Инициализируем только очищенные селекты, не трогая год
+            if (!$(markSelect).hasClass('select2-hidden-accessible')) {
+              const $label = $(markSelect).closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(markSelect).select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+            if (!$(modelSelect).hasClass('select2-hidden-accessible')) {
+              const $label = $(modelSelect).closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(modelSelect).select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+            if (!$('#body_config').hasClass('select2-hidden-accessible')) {
+              const $label = $('#body_config').closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $('#body_config').select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+            if (!$('#engine_type').hasClass('select2-hidden-accessible')) {
+              const $label = $('#engine_type').closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $('#engine_type').select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+            if (!$('#kpp').hasClass('select2-hidden-accessible')) {
+              const $label = $('#kpp').closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $('#kpp').select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+          } catch (e) {
+            console.error('Ошибка инициализации Select2:', e);
+          } finally {
+            isUpdatingSelect2 = false;
+            $(this).data('loading', false);
+          }
+        }, 100);
         return;
       }
       
-      // Устанавливаем флаг загрузки
-      $(this).data('loading', true);
-      
+      // Загружаем марки по году
       fetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
         .then(response => {
           if (!response.ok) {
@@ -1695,8 +1739,30 @@ document.addEventListener('DOMContentLoaded', function() {
             });
           }
           $(markSelect).prop('disabled', false);
-          // Обновляем Select2 только для этого селекта с задержкой
-          // Используем прямое обновление без вызова функции, чтобы избежать рекурсии
+          
+          // Обновляем Select2 для года, чтобы показать выбранное значение
+          isUpdatingSelect2 = true;
+          setTimeout(() => {
+            try {
+              if ($(yearSelect).hasClass('select2-hidden-accessible')) {
+                $(yearSelect).select2('destroy');
+              }
+              const $yearLabel = $(yearSelect).closest('.search-select-wrapper').find('label');
+              const yearPlaceholder = $yearLabel.length ? $yearLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(yearSelect).select2({
+                language: 'ru',
+                placeholder: yearPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: false
+              });
+            } catch (e) {
+              console.error('Ошибка обновления Select2 для года:', e);
+            }
+          }, 50);
+          
+          // Обновляем Select2 только для марки с задержкой
           setTimeout(() => {
             try {
               if ($(markSelect).hasClass('select2-hidden-accessible')) {
@@ -1714,6 +1780,8 @@ document.addEventListener('DOMContentLoaded', function() {
               });
             } catch (e) {
               console.error('Ошибка обновления Select2 для марки:', e);
+            } finally {
+              isUpdatingSelect2 = false;
             }
           }, 100);
         })
@@ -1788,6 +1856,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Функция загрузки модификаций с фильтрацией
     function loadModificationsWithFilters() {
+      // Предотвращаем повторные вызовы
+      if (isUpdatingSelect2 || isLoadingModifications) {
+        return;
+      }
+      
       const modelId = $(modelSelect).val();
       const year = $(yearSelect).val();
       const typeBodyId = $('#body_config').val();
@@ -1809,16 +1882,46 @@ document.addEventListener('DOMContentLoaded', function() {
           complectationHint.style.display = 'none';
         }
         
+        // Переинициализируем только модификацию и комплектацию без вызова обработчиков
+        isUpdatingSelect2 = true;
         setTimeout(() => {
-          if (!isUpdatingSelect2) {
-            initSelect2();
+          try {
+            if (!$(modificationFullSelect).hasClass('select2-hidden-accessible')) {
+              const $modLabel = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
+              const modPlaceholder = $modLabel.length ? $modLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(modificationFullSelect).select2({
+                language: 'ru',
+                placeholder: modPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+            if (!$(complectationSelect).hasClass('select2-hidden-accessible')) {
+              const $compLabel = $(complectationSelect).closest('.search-select-wrapper').find('label');
+              const compPlaceholder = $compLabel.length ? $compLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(complectationSelect).select2({
+                language: 'ru',
+                placeholder: compPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            }
+          } catch (e) {
+            console.error('Ошибка инициализации Select2:', e);
+          } finally {
+            isUpdatingSelect2 = false;
           }
         }, 100);
         return;
       }
       
-      // Устанавливаем флаг загрузки
+      // Устанавливаем флаги загрузки
       isUpdatingSelect2 = true;
+      isLoadingModifications = true;
       
       // Строим URL с фильтрами
       let url = `/estimations/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`;
@@ -1834,9 +1937,12 @@ document.addEventListener('DOMContentLoaded', function() {
           return response.json();
         })
         .then(data => {
+          // Уничтожаем Select2 перед обновлением опций
           if ($(modificationFullSelect).hasClass('select2-hidden-accessible')) {
             $(modificationFullSelect).select2('destroy');
           }
+          
+          // Обновляем опции
           $(modificationFullSelect).html('<option selected></option>');
           if (data.modifications && data.modifications.length > 0) {
             data.modifications.forEach(mod => {
@@ -1845,7 +1951,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           $(modificationFullSelect).prop('disabled', false);
           
-          // Обновляем Select2 с задержкой
+          // Обновляем Select2 с задержкой, чтобы избежать конфликтов
           setTimeout(() => {
             try {
               const $label = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
@@ -1862,12 +1968,14 @@ document.addEventListener('DOMContentLoaded', function() {
               console.error('Ошибка обновления Select2 для модификации:', e);
             } finally {
               isUpdatingSelect2 = false;
+              isLoadingModifications = false;
             }
-          }, 100);
+          }, 150);
         })
         .catch(error => {
           console.error('Ошибка при загрузке модификаций:', error);
           isUpdatingSelect2 = false;
+          isLoadingModifications = false;
         });
     }
     
@@ -1899,42 +2007,220 @@ document.addEventListener('DOMContentLoaded', function() {
       if ($('#body_config').hasClass('select2-hidden-accessible')) {
         $('#body_config').select2('destroy');
       }
-      $('#body_config').val('').prop('disabled', !modelId || !year);
+      $('#body_config').html('<option selected></option>').val('').prop('disabled', !modelId || !year);
       
       if ($('#engine_type').hasClass('select2-hidden-accessible')) {
         $('#engine_type').select2('destroy');
       }
-      $('#engine_type').val('').prop('disabled', !modelId || !year);
+      $('#engine_type').html('<option selected></option>').val('').prop('disabled', !modelId || !year);
       
       if ($('#kpp').hasClass('select2-hidden-accessible')) {
         $('#kpp').select2('destroy');
       }
-      $('#kpp').val('').prop('disabled', !modelId || !year);
+      $('#kpp').html('<option selected></option>').val('').prop('disabled', !modelId || !year);
       
       if (!modelId || !year) {
-        // Переинициализируем Select2 для очищенных селектов
+        // Переинициализируем Select2 для очищенных селектов без вызова обработчиков
+        isUpdatingSelect2 = true;
         setTimeout(() => {
-          if (!isUpdatingSelect2) {
-            initSelect2();
+          try {
+            // Инициализируем только очищенные селекты
+            if ($(modificationFullSelect).hasClass('select2-hidden-accessible')) {
+              $(modificationFullSelect).select2('destroy');
+            }
+            const $modLabel = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
+            const modPlaceholder = $modLabel.length ? $modLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+            $(modificationFullSelect).select2({
+              language: 'ru',
+              placeholder: modPlaceholder,
+              allowClear: false,
+              width: '100%',
+              dropdownAutoWidth: true,
+              disabled: true
+            });
+            
+            if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
+              $(complectationSelect).select2('destroy');
+            }
+            const $compLabel = $(complectationSelect).closest('.search-select-wrapper').find('label');
+            const compPlaceholder = $compLabel.length ? $compLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+            $(complectationSelect).select2({
+              language: 'ru',
+              placeholder: compPlaceholder,
+              allowClear: false,
+              width: '100%',
+              dropdownAutoWidth: true,
+              disabled: true
+            });
+            
+            if ($('#body_config').hasClass('select2-hidden-accessible')) {
+              $('#body_config').select2('destroy');
+            }
+            const $bodyLabel = $('#body_config').closest('.search-select-wrapper').find('label');
+            const bodyPlaceholder = $bodyLabel.length ? $bodyLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+            $('#body_config').select2({
+              language: 'ru',
+              placeholder: bodyPlaceholder,
+              allowClear: false,
+              width: '100%',
+              dropdownAutoWidth: true,
+              disabled: true
+            });
+            
+            if ($('#engine_type').hasClass('select2-hidden-accessible')) {
+              $('#engine_type').select2('destroy');
+            }
+            const $engineLabel = $('#engine_type').closest('.search-select-wrapper').find('label');
+            const enginePlaceholder = $engineLabel.length ? $engineLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+            $('#engine_type').select2({
+              language: 'ru',
+              placeholder: enginePlaceholder,
+              allowClear: false,
+              width: '100%',
+              dropdownAutoWidth: true,
+              disabled: true
+            });
+            
+            if ($('#kpp').hasClass('select2-hidden-accessible')) {
+              $('#kpp').select2('destroy');
+            }
+            const $kppLabel = $('#kpp').closest('.search-select-wrapper').find('label');
+            const kppPlaceholder = $kppLabel.length ? $kppLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+            $('#kpp').select2({
+              language: 'ru',
+              placeholder: kppPlaceholder,
+              allowClear: false,
+              width: '100%',
+              dropdownAutoWidth: true,
+              disabled: true
+            });
+          } catch (e) {
+            console.error('Ошибка инициализации Select2:', e);
+          } finally {
+            isUpdatingSelect2 = false;
           }
         }, 100);
         return;
       }
       
-      // Активируем поля типа кузова, двигателя и КПП
-      setTimeout(() => {
-        if (!isUpdatingSelect2) {
-          initSelect2();
-        }
-      }, 100);
+      // Загружаем доступные типы кузова, двигателя и КПП для модели
+      isUpdatingSelect2 = true;
+      
+      // Загружаем типы кузова
+      fetch(`/estimations/${rlkId}/api/body-types/?model_id=${modelId}&year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          $('#body_config').html('<option selected></option>');
+          if (data.body_types && data.body_types.length > 0) {
+            data.body_types.forEach(body => {
+              $('#body_config').append(`<option value="${body.id}">${body.name}</option>`);
+            });
+          }
+          $('#body_config').prop('disabled', false);
+        })
+        .catch(error => console.error('Ошибка при загрузке типов кузова:', error));
+      
+      // Загружаем типы двигателя
+      fetch(`/estimations/${rlkId}/api/engine-types/?model_id=${modelId}&year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          $('#engine_type').html('<option selected></option>');
+          if (data.engine_types && data.engine_types.length > 0) {
+            data.engine_types.forEach(engine => {
+              $('#engine_type').append(`<option value="${engine.id}">${engine.name}</option>`);
+            });
+          }
+          $('#engine_type').prop('disabled', false);
+        })
+        .catch(error => console.error('Ошибка при загрузке типов двигателя:', error));
+      
+      // Загружаем типы КПП
+      fetch(`/estimations/${rlkId}/api/kpp-types/?model_id=${modelId}&year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          $('#kpp').html('<option selected></option>');
+          if (data.kpp_types && data.kpp_types.length > 0) {
+            data.kpp_types.forEach(kpp => {
+              $('#kpp').append(`<option value="${kpp.id}">${kpp.name}</option>`);
+            });
+          }
+          $('#kpp').prop('disabled', false);
+          
+          // Инициализируем Select2 для всех трех полей после загрузки данных
+          setTimeout(() => {
+            try {
+              if (!$('#body_config').hasClass('select2-hidden-accessible')) {
+                const $bodyLabel = $('#body_config').closest('.search-select-wrapper').find('label');
+                const bodyPlaceholder = $bodyLabel.length ? $bodyLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+                $('#body_config').select2({
+                  language: 'ru',
+                  placeholder: bodyPlaceholder,
+                  allowClear: false,
+                  width: '100%',
+                  dropdownAutoWidth: true,
+                  disabled: false
+                });
+              }
+              
+              if (!$('#engine_type').hasClass('select2-hidden-accessible')) {
+                const $engineLabel = $('#engine_type').closest('.search-select-wrapper').find('label');
+                const enginePlaceholder = $engineLabel.length ? $engineLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+                $('#engine_type').select2({
+                  language: 'ru',
+                  placeholder: enginePlaceholder,
+                  allowClear: false,
+                  width: '100%',
+                  dropdownAutoWidth: true,
+                  disabled: false
+                });
+              }
+              
+              if (!$('#kpp').hasClass('select2-hidden-accessible')) {
+                const $kppLabel = $('#kpp').closest('.search-select-wrapper').find('label');
+                const kppPlaceholder = $kppLabel.length ? $kppLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+                $('#kpp').select2({
+                  language: 'ru',
+                  placeholder: kppPlaceholder,
+                  allowClear: false,
+                  width: '100%',
+                  dropdownAutoWidth: true,
+                  disabled: false
+                });
+              }
+            } catch (e) {
+              console.error('Ошибка инициализации Select2:', e);
+            } finally {
+              isUpdatingSelect2 = false;
+            }
+          }, 150);
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке типов КПП:', error);
+          isUpdatingSelect2 = false;
+        });
     });
+    
+    // Флаг для предотвращения рекурсивных вызовов при загрузке модификаций
+    let isLoadingModifications = false;
     
     // Обработчики для типа кузова, типа двигателя и КПП - загружают модификации с фильтрацией
     $('#body_config, #engine_type, #kpp').off('change').on('change', function() {
-      if (isAutofilling || isUpdatingSelect2) {
+      // Предотвращаем повторные вызовы
+      if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) {
         return;
       }
-      loadModificationsWithFilters();
+      
+      // Устанавливаем флаг перед вызовом
+      isLoadingModifications = true;
+      
+      // Вызываем загрузку модификаций с небольшой задержкой, чтобы избежать конфликтов
+      setTimeout(() => {
+        loadModificationsWithFilters();
+        // Сбрасываем флаг после небольшой задержки
+        setTimeout(() => {
+          isLoadingModifications = false;
+        }, 300);
+      }, 100);
     });
     
     // Флаг для предотвращения рекурсивных вызовов при изменении модификации

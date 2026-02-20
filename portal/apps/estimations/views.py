@@ -2443,6 +2443,105 @@ def api_get_modifications_by_model_year(request, rlk_id):
 
 
 @api_view(['GET'])
+def api_get_body_types_by_model(request, rlk_id):
+    """Получение доступных типов кузова для модели и года"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    model_id = request.GET.get('model_id', '')
+    year = request.GET.get('year', '')
+    
+    if not model_id or not year:
+        return JsonResponse({'body_types': []})
+    
+    try:
+        model = AutoruModel.objects.get(pk=model_id)
+        year_int = int(year)
+        
+        # Получаем все модификации для модели и года
+        modifications = AutoruModification.objects.filter(
+            model=model
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) & 
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
+        ).exclude(typeBody__isnull=True)
+        
+        # Получаем уникальные типы кузова
+        body_type_ids = modifications.values_list('typeBody_id', flat=True).distinct()
+        body_types = RefTypeBody.objects.filter(pk__in=body_type_ids).order_by('name')
+        body_types_data = [{'id': b.id, 'name': b.name} for b in body_types]
+        return JsonResponse({'body_types': body_types_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_engine_types_by_model(request, rlk_id):
+    """Получение доступных типов двигателя для модели и года"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    model_id = request.GET.get('model_id', '')
+    year = request.GET.get('year', '')
+    
+    if not model_id or not year:
+        return JsonResponse({'engine_types': []})
+    
+    try:
+        model = AutoruModel.objects.get(pk=model_id)
+        year_int = int(year)
+        
+        # Получаем все модификации для модели и года
+        modifications = AutoruModification.objects.filter(
+            model=model
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) & 
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
+        ).exclude(typeEngine__isnull=True)
+        
+        # Получаем уникальные типы двигателя
+        engine_type_ids = modifications.values_list('typeEngine_id', flat=True).distinct()
+        engine_types = RefTypeEngine.objects.filter(pk__in=engine_type_ids).order_by('name')
+        engine_types_data = [{'id': e.id, 'name': e.name} for e in engine_types]
+        return JsonResponse({'engine_types': engine_types_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_kpp_types_by_model(request, rlk_id):
+    """Получение доступных типов КПП для модели и года"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    model_id = request.GET.get('model_id', '')
+    year = request.GET.get('year', '')
+    
+    if not model_id or not year:
+        return JsonResponse({'kpp_types': []})
+    
+    try:
+        model = AutoruModel.objects.get(pk=model_id)
+        year_int = int(year)
+        
+        # Получаем все модификации для модели и года
+        modifications = AutoruModification.objects.filter(
+            model=model
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) & 
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
+        ).exclude(typeGear__isnull=True)
+        
+        # Получаем уникальные типы КПП
+        kpp_type_ids = modifications.values_list('typeGear_id', flat=True).distinct()
+        kpp_types = RefTypeKpp.objects.filter(pk__in=kpp_type_ids).order_by('name')
+        kpp_types_data = [{'id': k.id, 'name': k.name} for k in kpp_types]
+        return JsonResponse({'kpp_types': kpp_types_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
 def api_get_complectations_by_modification(request, rlk_id):
     """Получение комплектаций по модификации"""
     if not request.user.is_authenticated:
