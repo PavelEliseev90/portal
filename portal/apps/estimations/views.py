@@ -1640,7 +1640,116 @@ def estimation_start(request, rlk_id):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    return render(request, 'estimation/estimation_start.html')	
+    object                          = DocRLK.objects.get(id=rlk_id)
+    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
+    
+    # Обработка POST запроса - сохранение данных
+    if request.method == 'POST':
+        # VIN и номер кузова
+        vin = request.POST.get('vin', '').strip()
+        vin_missing = request.POST.get('vin_missing', '') == 'on'
+        body_number = request.POST.get('body_number', '').strip()
+        
+        if vin and not vin_missing:
+            reg_interactiv_ocenka.vin = vin
+            refresh_analitick(reg_interactiv_ocenka)
+        elif vin_missing:
+            reg_interactiv_ocenka.vin = ''
+        
+        if body_number:
+            reg_interactiv_ocenka.number_body = body_number
+        
+        # Модификация (может быть из двух полей)
+        modification_id = request.POST.get('modification_id', '')
+        if not modification_id:
+            modification_id = request.POST.get('modification_full', '')
+        if modification_id:
+            try:
+                modification = AutoruModification.objects.get(pk=modification_id)
+                reg_interactiv_ocenka.modification = modification
+                # Автоматически устанавливаем год из модификации, если не указан
+                if not reg_interactiv_ocenka.year and modification.ProductionStartYear:
+                    reg_interactiv_ocenka.year = modification.ProductionStartYear
+            except:
+                pass
+        
+        # Комплектация
+        complectation_id = request.POST.get('complectation_id', '')
+        if complectation_id:
+            try:
+                complectation = AutoruComplectation.objects.get(pk=complectation_id)
+                reg_interactiv_ocenka.complectation = complectation
+            except:
+                pass
+        
+        # Год выпуска
+        year = request.POST.get('year', '')
+        if year:
+            try:
+                reg_interactiv_ocenka.year = int(year)
+            except:
+                pass
+        
+        # Тип привода
+        type_drive = request.POST.get('type_drive', '')
+        if type_drive:
+            reg_interactiv_ocenka.type_drive = type_drive
+        
+        # Пробег (сохраняем в page_salon, если он существует)
+        run = request.POST.get('run', '')
+        if run:
+            try:
+                if reg_interactiv_ocenka.page_salon == None:
+                    reg_interactiv_ocenka_salon = RegInteractivOcenkaSalon()
+                    reg_interactiv_ocenka_salon.save()
+                    reg_interactiv_ocenka.page_salon = reg_interactiv_ocenka_salon
+                    reg_interactiv_ocenka.save()
+                else:
+                    reg_interactiv_ocenka_salon = reg_interactiv_ocenka.page_salon
+                
+                reg_interactiv_ocenka_salon.run = int(run)
+                reg_interactiv_ocenka_salon.save()
+            except:
+                pass
+        
+        reg_interactiv_ocenka.save()
+        
+        # Перенаправление на следующую страницу
+        return HttpResponseRedirect('/estimation/' + str(rlk_id) + '/')
+    
+    # Получаем все марки
+    marks = AutoruMark.objects.all().order_by('name')
+    
+    # Получаем данные для автозаполнения из предыдущей оценки
+    previous_estimation = None
+    if reg_interactiv_ocenka.vin:
+        previous_estimation = RegInteractivOcenka.objects.filter(
+            vin=reg_interactiv_ocenka.vin
+        ).exclude(id=reg_interactiv_ocenka.id).order_by('-start_estimation').first()
+    
+    # Получаем справочники
+    type_bodies = RefTypeBody.objects.all().order_by('name')
+    type_engines = RefTypeEngine.objects.all().order_by('name')
+    type_drives = ['Передний', 'Задний', 'Полный']
+    type_kpp = RefTypeKpp.objects.all().order_by('name')
+    
+    # Годы выпуска
+    current_year = datetime.now().year
+    years = list(range(current_year, 1960, -1))
+    
+    params = {
+        'rlk_id': rlk_id,
+        'estimation': reg_interactiv_ocenka,
+        'marks': marks,
+        'previous_estimation': previous_estimation,
+        'type_bodies': type_bodies,
+        'type_engines': type_engines,
+        'type_drives': type_drives,
+        'type_kpp': type_kpp,
+        'years': years,
+    }
+    
+    return render(request, 'estimation/estimation_start.html', {'params': params})	
 
 def years(request, rlk_id):
 
@@ -2201,3 +2310,200 @@ def connect_to_server(group, text):
         response = await websocket.recv()
         
 '''
+
+# API endpoints для новой страницы начала оценки
+
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+
+@api_view(['GET'])
+def api_get_models_by_mark(request, rlk_id):
+    """Получение моделей по марке"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    mark_id = request.GET.get('mark_id', '')
+    if not mark_id:
+        return JsonResponse({'models': []})
+    
+    try:
+        mark = AutoruMark.objects.get(pk=mark_id)
+        models = AutoruModel.objects.filter(mark=mark).order_by('name')
+        models_data = [{'id': m.id, 'name': m.name} for m in models]
+        return JsonResponse({'models': models_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_years_by_model(request, rlk_id):
+    """Получение годов выпуска по модели"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    model_id = request.GET.get('model_id', '')
+    if not model_id:
+        return JsonResponse({'years': []})
+    
+    try:
+        model = AutoruModel.objects.get(pk=model_id)
+        modifications = AutoruModification.objects.filter(model=model)
+        
+        # Получаем уникальные годы из модификаций
+        years_set = set()
+        for mod in modifications:
+            if mod.ProductionStartYear:
+                start = mod.ProductionStartYear
+                end = mod.ProductionEndYear if mod.ProductionEndYear and mod.ProductionEndYear < 2050 else datetime.now().year
+                years_set.update(range(start, end + 1))
+        
+        years = sorted(list(years_set), reverse=True)
+        return JsonResponse({'years': years})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_modifications_by_model_year(request, rlk_id):
+    """Получение модификаций по модели и году"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    model_id = request.GET.get('model_id', '')
+    year = request.GET.get('year', '')
+    
+    if not model_id or not year:
+        return JsonResponse({'modifications': []})
+    
+    try:
+        model = AutoruModel.objects.get(pk=model_id)
+        year_int = int(year)
+        
+        modifications = AutoruModification.objects.filter(
+            model=model
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) & 
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
+        ).order_by('name')
+        
+        modifications_data = []
+        for mod in modifications:
+            mod_data = {
+                'id': mod.id,
+                'name': mod.name,
+                'type_body_id': mod.typeBody.id if mod.typeBody else None,
+                'type_body_name': mod.typeBody.name if mod.typeBody else '',
+                'type_engine_id': mod.typeEngine.id if mod.typeEngine else None,
+                'type_engine_name': mod.typeEngine.name if mod.typeEngine else '',
+                'type_kpp_id': mod.typeGear.id if mod.typeGear else None,
+                'type_kpp_name': mod.typeGear.name if mod.typeGear else '',
+                'engine_volume': mod.engineVolume,
+                'engine_power': mod.enginePower,
+            }
+            modifications_data.append(mod_data)
+        
+        return JsonResponse({'modifications': modifications_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_complectations_by_modification(request, rlk_id):
+    """Получение комплектаций по модификации"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    modification_id = request.GET.get('modification_id', '')
+    if not modification_id:
+        return JsonResponse({'complectations': []})
+    
+    try:
+        modification = AutoruModification.objects.get(pk=modification_id)
+        complectations = AutoruComplectation.objects.filter(modification=modification).order_by('name')
+        complectations_data = [{'id': c.id, 'name': c.name} for c in complectations]
+        return JsonResponse({'complectations': complectations_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_previous_estimation(request, rlk_id):
+    """Получение данных предыдущей оценки по VIN"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    vin = request.GET.get('vin', '').strip()
+    body_number = request.GET.get('body_number', '').strip()
+    
+    if not vin and not body_number:
+        return JsonResponse({'estimation': None})
+    
+    try:
+        object = DocRLK.objects.get(id=rlk_id)
+        reg_interactiv_ocenka, created = RegInteractivOcenka.objects.get_or_create(rlk=object)
+        
+        # Ищем предыдущую оценку
+        query = Q()
+        if vin:
+            query |= Q(vin=vin)
+        if body_number:
+            query |= Q(number_body=body_number)
+        
+        previous_estimation = RegInteractivOcenka.objects.filter(query).exclude(
+            id=reg_interactiv_ocenka.id
+        ).order_by('-start_estimation').first()
+        
+        if not previous_estimation:
+            return JsonResponse({'estimation': None})
+        
+        estimation_data = {
+            'id': previous_estimation.id,
+            'vin': previous_estimation.vin,
+            'number_body': previous_estimation.number_body,
+            'year': previous_estimation.year,
+            'type_drive': previous_estimation.type_drive,
+            'start_estimation': previous_estimation.start_estimation.strftime('%Y-%m-%d') if previous_estimation.start_estimation else None,
+        }
+        
+        # Данные модификации
+        if previous_estimation.modification:
+            mod = previous_estimation.modification
+            estimation_data['modification'] = {
+                'id': mod.id,
+                'name': mod.name,
+                'model_id': mod.model.id if mod.model else None,
+                'model_name': mod.model.name if mod.model else '',
+                'mark_id': mod.model.mark.id if mod.model and mod.model.mark else None,
+                'mark_name': mod.model.mark.name if mod.model and mod.model.mark else '',
+                'type_body_id': mod.typeBody.id if mod.typeBody else None,
+                'type_body_name': mod.typeBody.name if mod.typeBody else '',
+                'type_engine_id': mod.typeEngine.id if mod.typeEngine else None,
+                'type_engine_name': mod.typeEngine.name if mod.typeEngine else '',
+                'type_kpp_id': mod.typeGear.id if mod.typeGear else None,
+                'type_kpp_name': mod.typeGear.name if mod.typeGear else '',
+            }
+        
+        # Данные комплектации
+        if previous_estimation.complectation:
+            estimation_data['complectation'] = {
+                'id': previous_estimation.complectation.id,
+                'name': previous_estimation.complectation.name,
+            }
+        
+        # Данные из документов
+        if previous_estimation.page_documents:
+            doc = previous_estimation.page_documents
+            estimation_data['documents'] = {
+                'pts_number': doc.pts_number,
+                'pts_date': doc.pts_date.strftime('%Y-%m-%d') if doc.pts_date else None,
+                'pts_original': doc.pts_original,
+                'count_owners': doc.count_owners,
+            }
+        
+        # Пробег из салона
+        if previous_estimation.page_salon:
+            estimation_data['run'] = previous_estimation.page_salon.run
+        
+        return JsonResponse({'estimation': estimation_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
