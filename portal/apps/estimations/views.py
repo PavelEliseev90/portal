@@ -2376,12 +2376,15 @@ def api_get_marks_by_year(request, rlk_id):
 
 @api_view(['GET'])
 def api_get_modifications_by_model_year(request, rlk_id):
-    """Получение модификаций по модели и году"""
+    """Получение модификаций по модели, году и фильтрам (тип кузова, тип двигателя, КПП)"""
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
     model_id = request.GET.get('model_id', '')
     year = request.GET.get('year', '')
+    type_body_id = request.GET.get('type_body_id', '')
+    type_engine_id = request.GET.get('type_engine_id', '')
+    type_kpp_id = request.GET.get('type_kpp_id', '')
     
     if not model_id or not year:
         return JsonResponse({'modifications': []})
@@ -2395,7 +2398,28 @@ def api_get_modifications_by_model_year(request, rlk_id):
         ).filter(
             Q(ProductionStartYear__lte=year_int) & 
             (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
-        ).order_by('name')
+        )
+        
+        # Применяем фильтры, если они указаны
+        if type_body_id:
+            try:
+                modifications = modifications.filter(typeBody_id=int(type_body_id))
+            except (ValueError, TypeError):
+                pass
+        
+        if type_engine_id:
+            try:
+                modifications = modifications.filter(typeEngine_id=int(type_engine_id))
+            except (ValueError, TypeError):
+                pass
+        
+        if type_kpp_id:
+            try:
+                modifications = modifications.filter(typeGear_id=int(type_kpp_id))
+            except (ValueError, TypeError):
+                pass
+        
+        modifications = modifications.order_by('name')
         
         modifications_data = []
         for mod in modifications:
