@@ -1,95 +1,714 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block title %} - оценка {{params.rlk}} {% endblock %}
+{% block title %} - Начало оценки {{params.rlk_id}} {% endblock %}
 
-{% block title_navbar %} - оценка {{params.rlk}} {% endblock %}
+{% block title_navbar %} - Начало оценки {% endblock %}
 
 {% block content %}
- 
 
-<div class="fixed-top hidemobile my_pages_title" >
-  
-  <div class="row g-1">
-    
-    <div class="col text-center">
-      <div class="row g-1 text-white"  style="background-color: #6c757d; margin-top: -1.5rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem; " >
-        <br><label class="fs-4"> &nbsp;<span class="icon-mbri-info"></span>Данные автомобиля</label><br>       
-      </div>   
-    </div>
-
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Начало оценки</h2>
+    <p>Заполните данные об автомобиле для начала оценки</p>
   </div>
 
-</div>
-
-
-<div class="fixed-top hidesite my_pages_title">
-  
-  <div class="row g-1 w-100">
-    
-    <div class="col text-center">
-      <div class="row-1 dw-block text-white" style="background-color: #6c757d; margin-top: -1.5rem; padding-top: 1rem; padding-left: 0.2rem; padding-right: 0.2rem; border-radius: 0 0 0.5rem 0.5rem; ">        
-        <label class="fs-4"> &nbsp;<span class="icon-mbri-info"></span>Данные автомобиля</label>       <br>
-      </div>    
-    </div>
-
-  </div>
-
-</div>
-
-<br>
-
-<div class="container-sm" style="max-width: 575px;">
-  <div class="card bg-gradient bg-secondary bg-opacity-10">
-    <div class="card-body">
-
-      <div class="mb-3">
-        <label for="exampleInputEmail1" class="form-label">VIN - номер автомобиля</label>
-        <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
-      </div>
-
-      <label class="text-secondary" for="floatingInput" style="padding-left: 0.2rem;">Марка</label><br>
-      <div class="checkselect ">
-              
-        <div class="sticky-top bg-white">
-          <input class="form-control form-control-sm" type="text" id="mark_name" value="" placeholder="">
-          <br>
-          <hr>
+  <div class="portal-panel">
+    <form method="post" id="estimationStartForm">
+      {% csrf_token %}
+      
+      <!-- VIN и номер кузова -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-floating">
+            <input type="text" 
+                   class="form-control" 
+                   id="vin" 
+                   name="vin" 
+                   value="{% if params.estimation.vin %}{{ params.estimation.vin }}{% endif %}" 
+                   placeholder="VIN номер" 
+                   autocomplete="off"
+                   maxlength="17">
+            <label for="vin">VIN номер <span class="text-danger">*</span></label>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="vin_missing" name="vin_missing">
+            <label class="form-check-label" for="vin_missing">
+              Отсутствует
+            </label>
+          </div>
         </div>
         
-        {% for unit in params.select_units %}
-        
-          <label class="" id="label_search {{unit.name}}"><input type="checkbox" name="mark_name[]" value="{{mark_name.pk}}" id="mark_filtr_{{mark_name.pk}}" {% if unit.pk|join:"" in params.filtr.filter_unit %} checked {% endif %} > {{unit.name}}</label>
-  
-        {% endfor %}
-      
-        <script>
-          $('#mark_name').on('input', function() {
-              var search = $(this).val();
-              if (search.length === 0){
-                $('[id*="label_search"]').removeClass('d-none');
-              }
-              else {
-                $('[id*="label_search"]').addClass('d-none');
-                var search_lower = search.toLowerCase();
-                var labels = $('[id*="label_search"]');
-                for (let i = 0; i < labels.length; i++) {
-                  label = labels[i];
-                  var id_name = label.id.toLowerCase();
-                  if (id_name.indexOf(search_lower) >= 0){
-                    console.log(label.id);
-                    $('[id*="' + label.id + '"]').removeClass('d-none');                        
-                  };
-                };
-              };                  
-          });              
-        </script>
+        <div class="col-md-6">
+          <div class="form-floating">
+            <input type="text" 
+                   class="form-control" 
+                   id="body_number" 
+                   name="body_number" 
+                   value="{% if params.estimation.number_body %}{{ params.estimation.number_body }}{% endif %}" 
+                   placeholder="Номер кузова" 
+                   autocomplete="off"
+                   maxlength="21">
+            <label for="body_number">Номер кузова</label>
+          </div>
+        </div>
+      </div>
 
-      </div> 
+      <div class="alert alert-info" role="alert" id="previousEstimationAlert" style="display: none;">
+        <i class="bi bi-info-circle me-2"></i>
+        <span id="previousEstimationText">Найдена предыдущая оценка этого автомобиля. Данные будут заполнены автоматически.</span>
+      </div>
 
-    </div>
+      <hr>
+
+      <!-- Марка -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="mark" class="form-label">Марка <span class="text-danger">*</span></label>
+          <select class="form-select" id="mark" name="mark_id" required>
+            <option value="">Выберите марку</option>
+            {% for mark in params.marks %}
+              <option value="{{ mark.id }}" 
+                      {% if params.estimation.modification and params.estimation.modification.model.mark.id == mark.id %}selected{% endif %}>
+                {{ mark.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Модель -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="model" class="form-label">Модель <span class="text-danger">*</span></label>
+          <select class="form-select" id="model" name="model_id" required disabled>
+            <option value="">Сначала выберите марку</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Год выпуска -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="year" class="form-label">Год <span class="text-danger">*</span></label>
+          <select class="form-select" id="year" name="year" required disabled>
+            <option value="">Сначала выберите модель</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Поколение (модификация) -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="modification" class="form-label">Поколение <span class="text-danger">*</span></label>
+          <select class="form-select" id="modification" name="modification_id" required disabled>
+            <option value="">Сначала выберите год</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Конфигурация кузова -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label for="body_config" class="form-label">Конфигурация кузова <span class="text-danger">*</span></label>
+          <select class="form-select" id="body_config" name="body_config_id" required>
+            <option value="">Выберите конфигурацию</option>
+            {% for body in params.type_bodies %}
+              <option value="{{ body.id }}"
+                      {% if params.estimation.modification and params.estimation.modification.typeBody and params.estimation.modification.typeBody.id == body.id %}selected{% endif %}>
+                {{ body.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" id="armored" name="armored">
+            <label class="form-check-label" for="armored">
+              Бронированный
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Тип двигателя -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="engine_type" class="form-label">Тип двигателя <span class="text-danger">*</span></label>
+          <select class="form-select" id="engine_type" name="engine_type_id" required>
+            <option value="">Выберите тип двигателя</option>
+            {% for engine in params.type_engines %}
+              <option value="{{ engine.id }}"
+                      {% if params.estimation.modification and params.estimation.modification.typeEngine and params.estimation.modification.typeEngine.id == engine.id %}selected{% endif %}>
+                {{ engine.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Тип привода -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="drive_type" class="form-label">Тип привода <span class="text-danger">*</span></label>
+          <select class="form-select" id="drive_type" name="type_drive" required>
+            <option value="">Выберите тип привода</option>
+            {% for drive in params.type_drives %}
+              <option value="{{ drive }}"
+                      {% if params.estimation.type_drive == drive %}selected{% endif %}>
+                {{ drive }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- КПП -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="kpp" class="form-label">КПП <span class="text-danger">*</span></label>
+          <select class="form-select" id="kpp" name="kpp_id" required>
+            <option value="">Выберите КПП</option>
+            {% for kpp in params.type_kpp %}
+              <option value="{{ kpp.id }}"
+                      {% if params.estimation.modification and params.estimation.modification.typeGear and params.estimation.modification.typeGear.id == kpp.id %}selected{% endif %}>
+                {{ kpp.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Модификация -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="modification_full" class="form-label">Модификация <span class="text-danger">*</span></label>
+          <select class="form-select" id="modification_full" name="modification_id" required disabled>
+            <option value="">Сначала выберите поколение</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Комплектация -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <label for="complectation" class="form-label">Комплектация</label>
+          <select class="form-select" id="complectation" name="complectation_id" disabled>
+            <option value="">Сначала выберите модификацию</option>
+          </select>
+          <small class="form-text text-muted" id="complectation_hint" style="display: none;">
+            Комплектация обязательна для выбора
+          </small>
+        </div>
+      </div>
+
+      <!-- Пробег -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-12">
+          <div class="form-floating">
+            <input type="number" 
+                   class="form-control" 
+                   id="run" 
+                   name="run" 
+                   placeholder="Пробег" 
+                   min="0"
+                   value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
+            <label for="run">Пробег <span class="text-danger">*</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="d-flex gap-2 mt-4">
+        <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+          <span class="icon-mbri-refresh"></span> Сбросить
+        </button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <span class="icon-mbri-right"></span> Продолжить
+        </button>
+      </div>
+    </form>
   </div>
-  
 </div>
+
+<script>
+// Функция сброса формы
+function resetForm() {
+  // Очищаем все каскадные поля
+  markSelect.value = '';
+  markSelect.dispatchEvent(new Event('change'));
+  document.getElementById('estimationStartForm').reset();
+}
+
+// Валидация формы перед отправкой (будет определена после загрузки DOM)
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const rlkId = '{{ params.rlk_id }}';
+  const markSelect = document.getElementById('mark');
+  const modelSelect = document.getElementById('model');
+  const yearSelect = document.getElementById('year');
+  const modificationSelect = document.getElementById('modification');
+  const modificationFullSelect = document.getElementById('modification_full');
+  const complectationSelect = document.getElementById('complectation');
+  const complectationHint = document.getElementById('complectation_hint');
+  const vinInput = document.getElementById('vin');
+  const bodyNumberInput = document.getElementById('body_number');
+  const vinMissingCheckbox = document.getElementById('vin_missing');
+  
+  // Валидация формы перед отправкой
+  document.getElementById('estimationStartForm').addEventListener('submit', function(e) {
+    const vin = vinInput.value.trim();
+    const vinMissing = vinMissingCheckbox.checked;
+    const mark = markSelect.value;
+    const model = modelSelect.value;
+    const year = yearSelect.value;
+    const modification = modificationSelect.value;
+    
+    // Проверка обязательных полей
+    if (!vinMissing && (!vin || vin.length < 17)) {
+      e.preventDefault();
+      alert('Пожалуйста, укажите корректный VIN номер (17 символов) или отметьте "Отсутствует"');
+      vinInput.focus();
+      return false;
+    }
+    
+    if (!mark) {
+      e.preventDefault();
+      alert('Пожалуйста, выберите марку');
+      markSelect.focus();
+      return false;
+    }
+    
+    if (!model) {
+      e.preventDefault();
+      alert('Пожалуйста, выберите модель');
+      modelSelect.focus();
+      return false;
+    }
+    
+    if (!year) {
+      e.preventDefault();
+      alert('Пожалуйста, выберите год выпуска');
+      yearSelect.focus();
+      return false;
+    }
+    
+    if (!modification) {
+      e.preventDefault();
+      alert('Пожалуйста, выберите поколение');
+      modificationSelect.focus();
+      return false;
+    }
+    
+    // Проверка комплектации (обязательна только если есть комплектации)
+    const complectation = complectationSelect.value;
+    if (complectationSelect.hasAttribute('required') && !complectation) {
+      e.preventDefault();
+      alert('Пожалуйста, выберите комплектацию');
+      complectationSelect.focus();
+      return false;
+    }
+    
+    // Блокируем кнопку отправки
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+  });
+  
+  // Обработка чекбокса "VIN отсутствует"
+  vinMissingCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+      vinInput.value = '';
+      vinInput.disabled = true;
+    } else {
+      vinInput.disabled = false;
+    }
+    checkPreviousEstimation();
+  });
+  
+  // Проверка предыдущей оценки при изменении VIN или номера кузова
+  function checkPreviousEstimation() {
+    const vin = vinInput.value.trim();
+    const bodyNumber = bodyNumberInput.value.trim();
+    
+    if ((vin && vin.length >= 17) || bodyNumber) {
+      const url = `/estimation/${rlkId}/api/previous-estimation/?vin=${encodeURIComponent(vin)}&body_number=${encodeURIComponent(bodyNumber)}`;
+      
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const alert = document.getElementById('previousEstimationAlert');
+          if (data.estimation) {
+            alert.style.display = 'block';
+            const dateText = data.estimation.start_estimation ? 
+              new Date(data.estimation.start_estimation).toLocaleDateString('ru-RU') : 
+              'ранее';
+            document.getElementById('previousEstimationText').textContent = 
+              `Найдена предыдущая оценка от ${dateText}. Заполняю данные...`;
+            
+            // Автозаполнение данных
+            autofillFromPreviousEstimation(data.estimation);
+          } else {
+            alert.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при проверке предыдущей оценки:', error);
+        });
+    } else {
+      document.getElementById('previousEstimationAlert').style.display = 'none';
+    }
+  }
+  
+  // Автозаполнение из предыдущей оценки
+  function autofillFromPreviousEstimation(estimation) {
+    if (estimation.modification) {
+      // Устанавливаем марку
+      if (estimation.modification.mark_id) {
+        markSelect.value = estimation.modification.mark_id;
+        markSelect.dispatchEvent(new Event('change'));
+        
+        // Загружаем модели
+        setTimeout(() => {
+          if (estimation.modification.model_id) {
+            modelSelect.value = estimation.modification.model_id;
+            modelSelect.dispatchEvent(new Event('change'));
+            
+            // Загружаем годы
+            setTimeout(() => {
+              if (estimation.year) {
+                yearSelect.value = estimation.year;
+                yearSelect.dispatchEvent(new Event('change'));
+                
+                // Загружаем модификации
+                setTimeout(() => {
+                  if (estimation.modification.id) {
+                    modificationSelect.value = estimation.modification.id;
+                    modificationSelect.dispatchEvent(new Event('change'));
+                    
+                    // Загружаем комплектации после выбора модификации
+                    setTimeout(() => {
+                      loadComplectations(estimation.modification.id);
+                      setTimeout(() => {
+                        if (estimation.complectation && estimation.complectation.id) {
+                          complectationSelect.value = estimation.complectation.id;
+                        }
+                      }, 500);
+                    }, 500);
+                  }
+                }, 500);
+              }
+            }, 500);
+          }
+        }, 500);
+      }
+      
+      // Устанавливаем тип кузова, двигателя, КПП
+      if (estimation.modification.type_body_id) {
+        document.getElementById('body_config').value = estimation.modification.type_body_id;
+      }
+      if (estimation.modification.type_engine_id) {
+        document.getElementById('engine_type').value = estimation.modification.type_engine_id;
+      }
+      if (estimation.modification.type_kpp_id) {
+        document.getElementById('kpp').value = estimation.modification.type_kpp_id;
+      }
+    }
+    
+    if (estimation.type_drive) {
+      document.getElementById('drive_type').value = estimation.type_drive;
+    }
+    
+    if (estimation.run) {
+      document.getElementById('run').value = estimation.run;
+    }
+    
+    // Автозаполнение комплектации из предыдущей оценки
+    if (estimation.complectation) {
+      setTimeout(() => {
+        const complectationSelect = document.getElementById('complectation');
+        if (complectationSelect && !complectationSelect.disabled) {
+          complectationSelect.value = estimation.complectation.id;
+        }
+      }, 1000);
+    }
+  }
+  
+  vinInput.addEventListener('input', checkPreviousEstimation);
+  bodyNumberInput.addEventListener('input', checkPreviousEstimation);
+  
+  // Каскадная загрузка моделей при выборе марки
+  markSelect.addEventListener('change', function() {
+    const markId = this.value;
+    
+    // Очищаем зависимые поля
+    modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
+    modelSelect.disabled = true;
+    yearSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
+    yearSelect.disabled = true;
+    modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
+    modificationSelect.disabled = true;
+    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.disabled = true;
+    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.disabled = true;
+    complectationSelect.removeAttribute('required');
+    complectationHint.style.display = 'none';
+    
+    // Очищаем поля, которые заполняются из модификации
+    if (!markId) {
+      document.getElementById('body_config').value = '';
+      document.getElementById('engine_type').value = '';
+      document.getElementById('kpp').value = '';
+    }
+    
+    if (!markId) return;
+    
+    fetch(`/estimation/${rlkId}/api/models/?mark_id=${markId}`)
+      .then(response => response.json())
+      .then(data => {
+        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+        data.models.forEach(model => {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.textContent = model.name;
+          modelSelect.appendChild(option);
+        });
+        modelSelect.disabled = false;
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке моделей:', error);
+      });
+  });
+  
+  // Каскадная загрузка годов при выборе модели
+  modelSelect.addEventListener('change', function() {
+    const modelId = this.value;
+    
+    // Очищаем зависимые поля
+    yearSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
+    yearSelect.disabled = true;
+    modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
+    modificationSelect.disabled = true;
+    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.disabled = true;
+    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.disabled = true;
+    complectationSelect.removeAttribute('required');
+    complectationHint.style.display = 'none';
+    
+    if (!modelId) return;
+    
+    fetch(`/estimation/${rlkId}/api/years/?model_id=${modelId}`)
+      .then(response => response.json())
+      .then(data => {
+        yearSelect.innerHTML = '<option value="">Выберите год</option>';
+        data.years.forEach(year => {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year;
+          yearSelect.appendChild(option);
+        });
+        yearSelect.disabled = false;
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке годов:', error);
+      });
+  });
+  
+  // Каскадная загрузка модификаций при выборе года
+  yearSelect.addEventListener('change', function() {
+    const modelId = modelSelect.value;
+    const year = this.value;
+    
+    // Очищаем зависимые поля
+    modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
+    modificationSelect.disabled = true;
+    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.disabled = true;
+    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.disabled = true;
+    complectationSelect.removeAttribute('required');
+    complectationHint.style.display = 'none';
+    
+    if (!modelId || !year) return;
+    
+    fetch(`/estimation/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
+      .then(response => response.json())
+      .then(data => {
+        modificationSelect.innerHTML = '<option value="">Выберите поколение</option>';
+        data.modifications.forEach(mod => {
+          const option = document.createElement('option');
+          option.value = mod.id;
+          option.textContent = mod.name;
+          modificationSelect.appendChild(option);
+        });
+        modificationSelect.disabled = false;
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке модификаций:', error);
+      });
+  });
+  
+  // При выборе модификации заполняем остальные поля и загружаем комплектации
+  modificationSelect.addEventListener('change', function() {
+    const modificationId = this.value;
+    
+    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.disabled = true;
+    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.disabled = true;
+    complectationSelect.removeAttribute('required');
+    complectationHint.style.display = 'none';
+    
+    if (!modificationId) {
+      // Очищаем поля при сбросе модификации
+      document.getElementById('body_config').value = '';
+      document.getElementById('engine_type').value = '';
+      document.getElementById('kpp').value = '';
+      return;
+    }
+    
+    // Находим выбранную модификацию в данных
+    fetch(`/estimation/${rlkId}/api/modifications/?model_id=${modelSelect.value}&year=${yearSelect.value}`)
+      .then(response => response.json())
+      .then(data => {
+        const selectedMod = data.modifications.find(m => m.id == modificationId);
+        if (selectedMod) {
+          // Автозаполнение полей из модификации
+          if (selectedMod.type_body_id) {
+            document.getElementById('body_config').value = selectedMod.type_body_id;
+          }
+          if (selectedMod.type_engine_id) {
+            document.getElementById('engine_type').value = selectedMod.type_engine_id;
+          }
+          if (selectedMod.type_kpp_id) {
+            document.getElementById('kpp').value = selectedMod.type_kpp_id;
+          }
+          
+          // Устанавливаем модификацию в финальное поле
+          modificationFullSelect.innerHTML = '<option value="">Выберите модификацию</option>';
+          const option = document.createElement('option');
+          option.value = selectedMod.id;
+          option.textContent = selectedMod.name;
+          option.selected = true;
+          modificationFullSelect.appendChild(option);
+          modificationFullSelect.disabled = false;
+          
+          // Загружаем комплектации для выбранной модификации
+          loadComplectations(modificationId);
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке данных модификации:', error);
+      });
+  });
+  
+  // Обработчик для финального поля модификации (если пользователь изменит его напрямую)
+  modificationFullSelect.addEventListener('change', function() {
+    const modificationId = this.value;
+    if (modificationId) {
+      loadComplectations(modificationId);
+    } else {
+      complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+      complectationSelect.disabled = true;
+      complectationSelect.removeAttribute('required');
+      complectationHint.style.display = 'none';
+    }
+  });
+  
+  // Функция загрузки комплектаций
+  function loadComplectations(modificationId) {
+    if (!modificationId) {
+      complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+      complectationSelect.disabled = true;
+      complectationSelect.removeAttribute('required');
+      complectationHint.style.display = 'none';
+      return;
+    }
+    
+    fetch(`/estimation/${rlkId}/api/complectations/?modification_id=${modificationId}`)
+      .then(response => response.json())
+      .then(data => {
+        complectationSelect.innerHTML = '<option value="">Выберите комплектацию</option>';
+        
+        if (data.complectations && data.complectations.length > 0) {
+          // Если есть комплектации, делаем поле обязательным
+          data.complectations.forEach(comp => {
+            const option = document.createElement('option');
+            option.value = comp.id;
+            option.textContent = comp.name;
+            complectationSelect.appendChild(option);
+          });
+          complectationSelect.disabled = false;
+          complectationSelect.setAttribute('required', 'required');
+          complectationHint.style.display = 'block';
+        } else {
+          // Если комплектаций нет, поле необязательное
+          complectationSelect.innerHTML = '<option value="">Комплектации отсутствуют</option>';
+          complectationSelect.disabled = false;
+          complectationSelect.removeAttribute('required');
+          complectationHint.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка при загрузке комплектаций:', error);
+        complectationSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+        complectationSelect.disabled = true;
+        complectationSelect.removeAttribute('required');
+        complectationHint.style.display = 'none';
+      });
+  }
+  
+  // Инициализация при загрузке страницы
+  {% if params.estimation.modification %}
+    // Если уже есть выбранная модификация, загружаем каскадно
+    const currentMod = {
+      markId: {{ params.estimation.modification.model.mark.id|default:"null" }},
+      modelId: {{ params.estimation.modification.model.id|default:"null" }},
+      year: {{ params.estimation.year|default:"null" }},
+      modificationId: {{ params.estimation.modification.id|default:"null" }}
+    };
+    
+    if (currentMod.markId) {
+      markSelect.value = currentMod.markId;
+      markSelect.dispatchEvent(new Event('change'));
+      
+      setTimeout(() => {
+        if (currentMod.modelId) {
+          modelSelect.value = currentMod.modelId;
+          modelSelect.dispatchEvent(new Event('change'));
+          
+          setTimeout(() => {
+            if (currentMod.year) {
+              yearSelect.value = currentMod.year;
+              yearSelect.dispatchEvent(new Event('change'));
+              
+              setTimeout(() => {
+                if (currentMod.modificationId) {
+                  modificationSelect.value = currentMod.modificationId;
+                  modificationSelect.dispatchEvent(new Event('change'));
+                  
+                  // Загружаем комплектации после выбора модификации
+                  setTimeout(() => {
+                    loadComplectations(currentMod.modificationId);
+                    setTimeout(() => {
+                      {% if params.estimation.complectation %}
+                        complectationSelect.value = {{ params.estimation.complectation.id }};
+                      {% endif %}
+                    }, 500);
+                  }, 500);
+                }
+              }, 500);
+            }
+          }, 500);
+        }
+      }, 500);
+    }
+  {% endif %}
+});
+</script>
 
 {% endblock %}
