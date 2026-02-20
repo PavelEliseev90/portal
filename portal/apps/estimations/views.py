@@ -2318,17 +2318,30 @@ from rest_framework.decorators import api_view
 
 @api_view(['GET'])
 def api_get_models_by_mark(request, rlk_id):
-    """Получение моделей по марке"""
+    """Получение моделей по марке и году"""
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
     mark_id = request.GET.get('mark_id', '')
-    if not mark_id:
+    year = request.GET.get('year', '')
+    
+    if not mark_id or not year:
         return JsonResponse({'models': []})
     
     try:
         mark = AutoruMark.objects.get(pk=mark_id)
-        models = AutoruModel.objects.filter(mark=mark).order_by('name')
+        year_int = int(year)
+        
+        # Получаем модели, которые имеют модификации для указанного года
+        modifications = AutoruModification.objects.filter(
+            model__mark=mark
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) & 
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
+        )
+        
+        model_ids = modifications.values_list('model__id', flat=True).distinct()
+        models = AutoruModel.objects.filter(pk__in=model_ids, mark=mark).order_by('name')
         models_data = [{'id': m.id, 'name': m.name} for m in models]
         return JsonResponse({'models': models_data})
     except Exception as e:
@@ -2336,29 +2349,28 @@ def api_get_models_by_mark(request, rlk_id):
 
 
 @api_view(['GET'])
-def api_get_years_by_model(request, rlk_id):
-    """Получение годов выпуска по модели"""
+def api_get_marks_by_year(request, rlk_id):
+    """Получение марок по году выпуска"""
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
-    model_id = request.GET.get('model_id', '')
-    if not model_id:
-        return JsonResponse({'years': []})
+    year = request.GET.get('year', '')
+    if not year:
+        return JsonResponse({'marks': []})
     
     try:
-        model = AutoruModel.objects.get(pk=model_id)
-        modifications = AutoruModification.objects.filter(model=model)
+        year_int = int(year)
         
-        # Получаем уникальные годы из модификаций
-        years_set = set()
-        for mod in modifications:
-            if mod.ProductionStartYear:
-                start = mod.ProductionStartYear
-                end = mod.ProductionEndYear if mod.ProductionEndYear and mod.ProductionEndYear < 2050 else datetime.now().year
-                years_set.update(range(start, end + 1))
+        # Получаем марки, которые имеют модификации для указанного года
+        modifications = AutoruModification.objects.filter(
+            Q(ProductionStartYear__lte=year_int) & 
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050))
+        )
         
-        years = sorted(list(years_set), reverse=True)
-        return JsonResponse({'years': years})
+        mark_ids = modifications.values_list('model__mark__id', flat=True).distinct()
+        marks = AutoruMark.objects.filter(pk__in=mark_ids).order_by('name')
+        marks_data = [{'id': m.id, 'name': m.name} for m in marks]
+        return JsonResponse({'marks': marks_data})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
