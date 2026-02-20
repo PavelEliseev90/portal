@@ -362,6 +362,8 @@ def Cumulative_refresh(request):
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
 def stock_list(request):
+    if not request.user.is_authenticated or not request.user.profiles.korsavto_settings: 
+        return render(request, 'errors/403.html')
     """Список записей Stock с поиском и пагинацией"""
     stocks = Stock.objects.all()
     
@@ -421,6 +423,10 @@ def stock_list(request):
 
 
 def stock_export_excel(request):
+    
+    if not request.user.is_authenticated or not request.user.profiles.korsavto_settings: 
+        return render(request, 'errors/403.html')
+    
     """Экспорт Stock в Excel"""
     stocks = Stock.objects.all()
     
@@ -500,6 +506,10 @@ def stock_export_excel(request):
 
 
 def cumulative_list(request):
+    
+    if not request.user.is_authenticated or not request.user.profiles.korsavto_settings: 
+        return render(request, 'errors/403.html')
+    
     """Список записей Cumulative с поиском и пагинацией"""
     cumulatives = Cumulative.objects.all()
     
@@ -586,6 +596,9 @@ def cumulative_list(request):
 
 def cumulative_export_excel(request):
     """Экспорт Cumulative в Excel"""
+    if not request.user.is_authenticated or not request.user.profiles.korsavto_settings: 
+        return render(request, 'errors/403.html')
+    
     cumulatives = Cumulative.objects.all()
     
     # Применяем те же фильтры, что и в списке

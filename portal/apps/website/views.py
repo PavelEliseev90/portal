@@ -105,7 +105,7 @@ AUTOPRICING_MARKUP_FIELDS = [
 ]
 
 #Настройки параметров доступа
-#server_im      = 'http://k01srv1c07/rinternetmag/hs/mb/'
+#server_im      = 'http://k01srv1c05/ralfa01eliseev/hs/mb/'
 server_im      = 'http://k01srv1c10/ralfa01/hs/mb/'
 time_out_im    = 25
 
