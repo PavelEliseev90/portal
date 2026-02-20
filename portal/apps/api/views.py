@@ -100,12 +100,13 @@ def get_info_estimation_vin(request):
                     
                 to_json = {
                     'id'                    : info.id,
+                    'rlk_id'                : info.rlk.id if info.rlk else None,
                     'date'                  : info.start_estimation,
                     'customer'              : customer,
                     'vin'                   : info.vin,
-                    'status'                : info.status.name,
-                    'staff'                 : info.staff.name,
-                    'mark'                  : info.modification.model.mark.name + ' ' + info.modification.model.name + ' ' + info.modification.name,
+                    'status'                : info.status.name if info.status else '',
+                    'staff'                 : info.staff.name if info.staff else '',
+                    'mark'                  : info.modification.model.mark.name + ' ' + info.modification.model.name + ' ' + info.modification.name if info.modification and info.modification.model and info.modification.model.mark else '',
                     'year'                  : info.year,
                     'run'                   : run
                 }

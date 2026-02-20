@@ -571,12 +571,6 @@
                        maxlength="17">
                 <label for="vin">VIN номер <span class="text-danger">*</span></label>
               </div>
-              <div class="form-check mt-2">
-                <input class="form-check-input" type="checkbox" id="vin_missing" name="vin_missing">
-                <label class="form-check-label" for="vin_missing">
-                  Отсутствует
-                </label>
-              </div>
             </div>
             
             <div class="col-md-5">
@@ -792,7 +786,10 @@
       <div id="infoBlocks" style="display: none;">
         <!-- Активная интерактивная оценка -->
         <div class="portal-panel mb-3">
-          <h5 class="mb-3"><i class="bi bi-file-earmark-text me-2"></i>Активная интерактивная оценка</h5>
+          <h5 class="mb-3">
+            <i class="bi bi-car-front me-2"></i>Активная интерактивная оценка
+            <span class="badge bg-primary ms-2" id="activeEstimationCount" style="cursor: pointer; display: none;" onclick="openActiveEstimationsModal()">0</span>
+          </h5>
           <div id="activeEstimationBlock">
             <div class="text-center text-muted py-3">
               <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
@@ -803,7 +800,10 @@
         
         <!-- История ремонтов -->
         <div class="portal-panel mb-3">
-          <h5 class="mb-3"><i class="bi bi-tools me-2"></i>История ремонтов</h5>
+          <h5 class="mb-3">
+            <i class="bi bi-tools me-2"></i>История ремонтов
+            <span class="badge bg-primary ms-2" id="repairHistoryCount" style="cursor: pointer; display: none;" onclick="openRepairHistoryModal()">0</span>
+          </h5>
           <div id="repairHistoryBlock">
             <div class="text-center text-muted py-3">
               <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
@@ -814,7 +814,10 @@
         
         <!-- История оценок -->
         <div class="portal-panel mb-3">
-          <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>История оценок</h5>
+          <h5 class="mb-3">
+            <i class="bi bi-clock-history me-2"></i>История оценок
+            <span class="badge bg-primary ms-2" id="estimationHistoryCount" style="cursor: pointer; display: none;" onclick="openEstimationHistoryModal()">0</span>
+          </h5>
           <div id="estimationHistoryBlock">
             <div class="text-center text-muted py-3">
               <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
@@ -826,6 +829,75 @@
     </div>
   </div>
   
+</div>
+
+<!-- Модальное окно для активных интерактивных оценок -->
+<div class="modal fade" id="activeEstimationsModal" tabindex="-1" aria-labelledby="activeEstimationsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="activeEstimationsModalLabel">
+          <i class="bi bi-car-front me-2"></i>Активные интерактивные оценки
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="activeEstimationsModalContent">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для истории ремонтов -->
+<div class="modal fade" id="repairHistoryModal" tabindex="-1" aria-labelledby="repairHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="repairHistoryModalLabel">
+          <i class="bi bi-tools me-2"></i>История ремонтов
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="repairHistoryModalContent">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для истории оценок -->
+<div class="modal fade" id="estimationHistoryModal" tabindex="-1" aria-labelledby="estimationHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="estimationHistoryModalLabel">
+          <i class="bi bi-clock-history me-2"></i>История оценок
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="estimationHistoryModalContent">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -852,7 +924,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const complectationHint = document.getElementById('complectation_hint');
   const vinInput = document.getElementById('vin');
   const bodyNumberInput = document.getElementById('body_number');
-  const vinMissingCheckbox = document.getElementById('vin_missing');
   const refreshBtn = document.getElementById('refreshBtn');
   const formFields = document.getElementById('formFields');
   const infoBlocks = document.getElementById('infoBlocks');
@@ -862,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const vin = vinInput.value.trim();
     const bodyNumber = bodyNumberInput.value.trim();
     
-    if (!vin && !bodyNumber && !vinMissingCheckbox.checked) {
+    if (!vin && !bodyNumber) {
       alert('Пожалуйста, введите VIN номер или номер кузова');
       return;
     }
@@ -877,36 +948,83 @@ document.addEventListener('DOMContentLoaded', function() {
       infoBlocks.style.display = 'block';
     }
     
+    // Показываем индикаторы загрузки
+    const activeEstimationBlock = document.getElementById('activeEstimationBlock');
+    const repairHistoryBlock = document.getElementById('repairHistoryBlock');
+    const estimationHistoryBlock = document.getElementById('estimationHistoryBlock');
+    
+    if (activeEstimationBlock) {
+      activeEstimationBlock.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Загрузка...</p></div>';
+    }
+    if (repairHistoryBlock) {
+      repairHistoryBlock.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Загрузка...</p></div>';
+    }
+    if (estimationHistoryBlock) {
+      estimationHistoryBlock.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Загрузка...</p></div>';
+    }
+    
     // Загружаем активные интерактивные оценки
     if (vin) {
       fetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('activeEstimationBlock');
+          const countBadge = document.getElementById('activeEstimationCount');
+          
+          // Сохраняем данные для модального окна
+          window.activeEstimationsData = data.list_estimation || [];
+          
           if (data.list_estimation && data.list_estimation.length > 0) {
-            let html = '<div class="list-group">';
-            data.list_estimation.forEach(est => {
-              const date = new Date(est.date).toLocaleDateString('ru-RU');
+            // Показываем счетчик
+            if (countBadge) {
+              countBadge.textContent = data.list_estimation.length;
+              countBadge.style.display = 'inline-block';
+            }
+            
+            let html = '<div class="list-group" style="max-height: 400px; overflow-y: auto;">';
+            data.list_estimation.slice(0, 10).forEach(est => {
+              const date = est.date ? new Date(est.date).toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : 'Не указано';
+              const rlkLink = est.rlk_id ? `/estimations/${est.rlk_id}/` : '#';
               html += `
-                <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${est.mark || 'Не указано'}</h6>
-                    <small>${date}</small>
+                <div class="list-group-item ${est.rlk_id ? 'list-group-item-action' : ''}" ${est.rlk_id ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
+                  <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">${est.mark || 'Не указано'}</h6>
+                      <p class="mb-1 small">
+                        <span class="badge bg-secondary me-2">${est.status || 'Без статуса'}</span>
+                        ${est.year ? `<span class="text-muted">${est.year} г.</span>` : ''}
+                        ${est.run ? `<span class="text-muted ms-2">Пробег: ${est.run} км</span>` : ''}
+                      </p>
+                      ${est.customer ? `<p class="mb-1 small text-muted"><i class="bi bi-person me-1"></i>${est.customer}</p>` : ''}
+                      ${est.staff ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${est.staff}</small>` : ''}
+                    </div>
+                    <small class="text-muted ms-2">${date}</small>
                   </div>
-                  <p class="mb-1">${est.status || ''} | Пробег: ${est.run || 0} км</p>
-                  <small>${est.staff || ''}</small>
+                  ${est.rlk_id ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть оценку</small></div>' : ''}
                 </div>
               `;
             });
             html += '</div>';
+            if (data.list_estimation.length > 10) {
+              html += `<p class="text-center mt-2"><small class="text-muted">Показано 10 из ${data.list_estimation.length}</small></p>`;
+            }
             block.innerHTML = html;
           } else {
-            block.innerHTML = '<div class="text-center text-muted py-3"><p>Активных оценок не найдено</p></div>';
+            if (countBadge) {
+              countBadge.style.display = 'none';
+            }
+            block.innerHTML = '<div class="text-center text-muted py-3"><p class="mb-0"><i class="bi bi-info-circle me-2"></i>Активных интерактивных оценок не найдено</p><small class="text-muted">За последние 14 дней</small></div>';
           }
         })
         .catch(error => {
           console.error('Ошибка при загрузке активных оценок:', error);
-          document.getElementById('activeEstimationBlock').innerHTML = '<div class="text-center text-danger py-3"><p>Ошибка загрузки</p></div>';
+          document.getElementById('activeEstimationBlock').innerHTML = '<div class="text-center text-danger py-3"><p class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Ошибка загрузки данных</p></div>';
         });
       
       // Загружаем историю ремонтов
@@ -914,33 +1032,55 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('repairHistoryBlock');
+          const countBadge = document.getElementById('repairHistoryCount');
+          
+          // Сохраняем данные для модального окна
+          window.repairHistoryData = data.objects || [];
+          
           if (data.objects && data.objects.length > 0) {
-            let html = '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
-            data.objects.slice(0, 5).forEach(repair => {
+            // Показываем счетчик
+            if (countBadge) {
+              countBadge.textContent = data.objects_count || data.objects.length;
+              countBadge.style.display = 'inline-block';
+            }
+            
+            let html = '<div class="list-group" style="max-height: 400px; overflow-y: auto;">';
+            data.objects.slice(0, 10).forEach(repair => {
               const date = repair.date || 'Не указано';
+              const amount = repair.amount_doc || 0;
+              const run = repair.run_car || 0;
               html += `
                 <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${repair.type_repair_name || 'Ремонт'}</h6>
-                    <small>${date}</small>
+                  <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">${repair.type_repair_name || 'Ремонт'}</h6>
+                      <p class="mb-1 small">
+                        ${amount > 0 ? `<span class="text-primary fw-bold">${amount.toLocaleString('ru-RU')} руб.</span>` : ''}
+                        ${run > 0 ? `<span class="text-muted ms-2">Пробег: ${run.toLocaleString('ru-RU')} км</span>` : ''}
+                      </p>
+                      ${repair.staff_name ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${repair.staff_name}</small>` : ''}
+                      ${repair.unit_name ? `<small class="text-muted d-block"><i class="bi bi-building me-1"></i>${repair.unit_name}</small>` : ''}
+                    </div>
+                    <small class="text-muted ms-2">${date}</small>
                   </div>
-                  <p class="mb-1">${repair.amount_doc || 0} руб. | Пробег: ${repair.run_car || 0} км</p>
-                  <small>${repair.staff_name || ''}</small>
                 </div>
               `;
             });
             html += '</div>';
-            if (data.objects_count > 5) {
-              html += `<p class="text-center mt-2"><small>Показано 5 из ${data.objects_count}</small></p>`;
+            if (data.objects_count > 10) {
+              html += `<p class="text-center mt-2"><small class="text-muted">Показано 10 из ${data.objects_count}</small></p>`;
             }
             block.innerHTML = html;
           } else {
-            block.innerHTML = '<div class="text-center text-muted py-3"><p>История ремонтов не найдена</p></div>';
+            if (countBadge) {
+              countBadge.style.display = 'none';
+            }
+            block.innerHTML = '<div class="text-center text-muted py-3"><p class="mb-0"><i class="bi bi-info-circle me-2"></i>История ремонтов не найдена</p></div>';
           }
         })
         .catch(error => {
           console.error('Ошибка при загрузке истории ремонтов:', error);
-          document.getElementById('repairHistoryBlock').innerHTML = '<div class="text-center text-danger py-3"><p>Ошибка загрузки</p></div>';
+          document.getElementById('repairHistoryBlock').innerHTML = '<div class="text-center text-danger py-3"><p class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Ошибка загрузки данных</p></div>';
         });
       
       // Загружаем историю оценок
@@ -948,33 +1088,61 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('estimationHistoryBlock');
+          const countBadge = document.getElementById('estimationHistoryCount');
+          
+          // Сохраняем данные для модального окна
+          window.estimationHistoryData = data.objects || [];
+          
           if (data.objects && data.objects.length > 0) {
-            let html = '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
-            data.objects.slice(0, 5).forEach(est => {
+            // Показываем счетчик
+            if (countBadge) {
+              countBadge.textContent = data.objects_count || data.objects.length;
+              countBadge.style.display = 'inline-block';
+            }
+            
+            let html = '<div class="list-group" style="max-height: 400px; overflow-y: auto;">';
+            data.objects.slice(0, 10).forEach(est => {
               const date = est.date || 'Не указано';
+              const costPrice = est.cost_price_doc || 0;
+              const run = est.run_car || 0;
+              const carName = `${est.mark || ''} ${est.model || ''} ${est.car_name || ''}`.trim() || 'Не указано';
+              const slug = est.slug || null;
+              const rlkLink = slug ? `/documents/rlk/${slug}/` : '#';
               html += `
-                <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${est.mark || ''} ${est.model || ''}</h6>
-                    <small>${date}</small>
+                <div class="list-group-item ${slug ? 'list-group-item-action' : ''}" ${slug ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
+                  <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">${carName}</h6>
+                      <p class="mb-1 small">
+                        ${costPrice > 0 ? `<span class="text-primary fw-bold">${costPrice.toLocaleString('ru-RU')} руб.</span>` : ''}
+                        ${run > 0 ? `<span class="text-muted ms-2">Пробег: ${run.toLocaleString('ru-RU')} км</span>` : ''}
+                        ${est.year_car ? `<span class="text-muted ms-2">${est.year_car} г.</span>` : ''}
+                      </p>
+                      ${est.staff_name ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${est.staff_name}</small>` : ''}
+                      ${est.unit_name ? `<small class="text-muted d-block"><i class="bi bi-building me-1"></i>${est.unit_name}</small>` : ''}
+                      ${est.number ? `<small class="text-muted d-block"><i class="bi bi-file-text me-1"></i>${est.number}</small>` : ''}
+                    </div>
+                    <small class="text-muted ms-2">${date}</small>
                   </div>
-                  <p class="mb-1">${est.cost_price_doc || 0} руб. | Пробег: ${est.run_car || 0} км</p>
-                  <small>${est.staff_name || ''}</small>
+                  ${slug ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть RLK</small></div>' : ''}
                 </div>
               `;
             });
             html += '</div>';
-            if (data.objects_count > 5) {
-              html += `<p class="text-center mt-2"><small>Показано 5 из ${data.objects_count}</small></p>`;
+            if (data.objects_count > 10) {
+              html += `<p class="text-center mt-2"><small class="text-muted">Показано 10 из ${data.objects_count}</small></p>`;
             }
             block.innerHTML = html;
           } else {
-            block.innerHTML = '<div class="text-center text-muted py-3"><p>История оценок не найдена</p></div>';
+            if (countBadge) {
+              countBadge.style.display = 'none';
+            }
+            block.innerHTML = '<div class="text-center text-muted py-3"><p class="mb-0"><i class="bi bi-info-circle me-2"></i>История оценок не найдена</p></div>';
           }
         })
         .catch(error => {
           console.error('Ошибка при загрузке истории оценок:', error);
-          document.getElementById('estimationHistoryBlock').innerHTML = '<div class="text-center text-danger py-3"><p>Ошибка загрузки</p></div>';
+          document.getElementById('estimationHistoryBlock').innerHTML = '<div class="text-center text-danger py-3"><p class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Ошибка загрузки данных</p></div>';
         });
     } else {
       // Если VIN нет, скрываем блоки информации
@@ -994,18 +1162,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Обработка чекбокса "VIN отсутствует"
-  if (vinMissingCheckbox) {
-    vinMissingCheckbox.addEventListener('change', function() {
-      if (this.checked) {
-        vinInput.value = '';
-        vinInput.disabled = true;
-      } else {
-        vinInput.disabled = false;
-      }
-    });
-  }
-  
   // Если VIN уже есть при загрузке страницы, показываем поля
   if (vinInput.value || bodyNumberInput.value) {
     loadVehicleInfo();
@@ -1020,9 +1176,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const modification = modificationSelect.value;
     
     // Проверка обязательных полей
-    if (!vinMissing && (!vin || vin.length < 17)) {
+    if (!vin || vin.length < 17) {
       e.preventDefault();
-      alert('Пожалуйста, укажите корректный VIN номер (17 символов) или отметьте "Отсутствует"');
+      alert('Пожалуйста, укажите корректный VIN номер (17 символов)');
       vinInput.focus();
       return false;
     }
@@ -1219,11 +1375,8 @@ document.addEventListener('DOMContentLoaded', function() {
           complectationSelect.removeAttribute('required');
           complectationHint.style.display = 'none';
         }
-        // Обновляем Select2
-        if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
-          $(complectationSelect).select2('destroy');
-        }
-        initSelect2();
+        // Обновляем Select2 только для этого селекта
+        updateSelect2($(complectationSelect));
       })
       .catch(error => {
         console.error('Ошибка при загрузке комплектаций:', error);
@@ -1287,21 +1440,51 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем Select2 для всех селектов с классом search-select
     function initSelect2() {
       $('.search-select').each(function() {
-        if (!$(this).hasClass('select2-hidden-accessible')) {
+        const $select = $(this);
+        // Проверяем, не инициализирован ли уже Select2
+        if (!$select.hasClass('select2-hidden-accessible')) {
           // Для пустой опции используем текст из label
-          const $label = $(this).closest('.search-select-wrapper').find('label');
+          const $label = $select.closest('.search-select-wrapper').find('label');
           const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
-          const isDisabled = $(this).prop('disabled');
-          $(this).select2({
-            language: 'ru',
-            placeholder: placeholder,
-            allowClear: false,
-            width: '100%',
-            dropdownAutoWidth: true,
-            disabled: isDisabled
-          });
+          const isDisabled = $select.prop('disabled');
+          
+          // Инициализируем Select2 только если селект не инициализирован
+          try {
+            $select.select2({
+              language: 'ru',
+              placeholder: placeholder,
+              allowClear: false,
+              width: '100%',
+              dropdownAutoWidth: true,
+              disabled: isDisabled
+            });
+          } catch (e) {
+            console.error('Ошибка инициализации Select2:', e);
+          }
         }
       });
+    }
+    
+    // Функция для обновления конкретного селекта без переинициализации всех
+    function updateSelect2($select) {
+      if ($select.hasClass('select2-hidden-accessible')) {
+        $select.select2('destroy');
+      }
+      const $label = $select.closest('.search-select-wrapper').find('label');
+      const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+      const isDisabled = $select.prop('disabled');
+      try {
+        $select.select2({
+          language: 'ru',
+          placeholder: placeholder,
+          allowClear: false,
+          width: '100%',
+          dropdownAutoWidth: true,
+          disabled: isDisabled
+        });
+      } catch (e) {
+        console.error('Ошибка обновления Select2:', e);
+      }
     }
     
     // Обновляем Select2 при изменении disabled состояния
@@ -1320,10 +1503,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Привязываем обработчики событий после инициализации Select2
     // Каскадная загрузка марок при выборе года
-    $(yearSelect).off('change').on('change', function() {
+    $(yearSelect).off('change').on('change', function(e) {
+      // Предотвращаем повторные вызовы
+      if ($(this).data('loading')) {
+        return;
+      }
+      
       const year = $(this).val();
       
-      // Очищаем зависимые поля
+      // Очищаем зависимые поля без обновления Select2, чтобы избежать циклов
       $(markSelect).html('<option selected></option>').prop('disabled', true);
       $(modelSelect).html('<option selected></option>').prop('disabled', true);
       $(modificationSelect).html('<option selected></option>').prop('disabled', true);
@@ -1339,27 +1527,44 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
+      // Устанавливаем флаг загрузки
+      $(this).data('loading', true);
+      
       fetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           $(markSelect).html('<option selected></option>');
-          data.marks.forEach(mark => {
-            $(markSelect).append(`<option value="${mark.id}">${mark.name}</option>`);
-          });
-          $(markSelect).prop('disabled', false);
-          // Обновляем Select2
-          if ($(markSelect).hasClass('select2-hidden-accessible')) {
-            $(markSelect).select2('destroy');
+          if (data.marks && data.marks.length > 0) {
+            data.marks.forEach(mark => {
+              $(markSelect).append(`<option value="${mark.id}">${mark.name}</option>`);
+            });
           }
-          initSelect2();
+          $(markSelect).prop('disabled', false);
+          // Обновляем Select2 только для этого селекта
+          updateSelect2($(markSelect));
         })
         .catch(error => {
           console.error('Ошибка при загрузке марок:', error);
+          alert('Ошибка при загрузке марок. Проверьте консоль для деталей.');
+        })
+        .finally(() => {
+          // Снимаем флаг загрузки
+          $(this).data('loading', false);
         });
     });
     
     // Каскадная загрузка моделей при выборе марки
     $(markSelect).off('change').on('change', function() {
+      // Предотвращаем повторные вызовы
+      if ($(this).data('loading')) {
+        return;
+      }
+      
       const markId = $(this).val();
       const year = $(yearSelect).val();
       
@@ -1372,27 +1577,43 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (!markId || !year) return;
       
+      // Устанавливаем флаг загрузки
+      $(this).data('loading', true);
+      
       fetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}&year=${year}`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           $(modelSelect).html('<option selected></option>');
-          data.models.forEach(model => {
-            $(modelSelect).append(`<option value="${model.id}">${model.name}</option>`);
-          });
-          $(modelSelect).prop('disabled', false);
-          // Обновляем Select2
-          if ($(modelSelect).hasClass('select2-hidden-accessible')) {
-            $(modelSelect).select2('destroy');
+          if (data.models && data.models.length > 0) {
+            data.models.forEach(model => {
+              $(modelSelect).append(`<option value="${model.id}">${model.name}</option>`);
+            });
           }
-          initSelect2();
+          $(modelSelect).prop('disabled', false);
+          // Обновляем Select2 только для этого селекта
+          updateSelect2($(modelSelect));
         })
         .catch(error => {
           console.error('Ошибка при загрузке моделей:', error);
+        })
+        .finally(() => {
+          // Снимаем флаг загрузки
+          $(this).data('loading', false);
         });
     });
     
     // Каскадная загрузка модификаций (поколений) при выборе модели
     $(modelSelect).off('change').on('change', function() {
+      // Предотвращаем повторные вызовы
+      if ($(this).data('loading')) {
+        return;
+      }
+      
       const modelId = $(this).val();
       const year = $(yearSelect).val();
       
@@ -1404,22 +1625,33 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (!modelId || !year) return;
       
+      // Устанавливаем флаг загрузки
+      $(this).data('loading', true);
+      
       fetch(`/estimations/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           $(modificationSelect).html('<option selected></option>');
-          data.modifications.forEach(mod => {
-            $(modificationSelect).append(`<option value="${mod.id}">${mod.name}</option>`);
-          });
-          $(modificationSelect).prop('disabled', false);
-          // Обновляем Select2
-          if ($(modificationSelect).hasClass('select2-hidden-accessible')) {
-            $(modificationSelect).select2('destroy');
+          if (data.modifications && data.modifications.length > 0) {
+            data.modifications.forEach(mod => {
+              $(modificationSelect).append(`<option value="${mod.id}">${mod.name}</option>`);
+            });
           }
-          initSelect2();
+          $(modificationSelect).prop('disabled', false);
+          // Обновляем Select2 только для этого селекта
+          updateSelect2($(modificationSelect));
         })
         .catch(error => {
           console.error('Ошибка при загрузке модификаций:', error);
+        })
+        .finally(() => {
+          // Снимаем флаг загрузки
+          $(this).data('loading', false);
         });
     });
     
@@ -1460,11 +1692,8 @@ document.addEventListener('DOMContentLoaded', function() {
             $(modificationFullSelect).html('<option selected></option>');
             $(modificationFullSelect).append(`<option value="${selectedMod.id}" selected>${selectedMod.name}</option>`);
             $(modificationFullSelect).prop('disabled', false);
-            // Обновляем Select2
-            if ($(modificationFullSelect).hasClass('select2-hidden-accessible')) {
-              $(modificationFullSelect).select2('destroy');
-            }
-            initSelect2();
+            // Обновляем Select2 только для этого селекта
+            updateSelect2($(modificationFullSelect));
             
             // Загружаем комплектации для выбранной модификации
             loadComplectations(modificationId);
@@ -1472,11 +1701,15 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
           console.error('Ошибка при загрузке данных модификации:', error);
+        })
+        .finally(() => {
+          // Снимаем флаг загрузки
+          $(this).data('loading', false);
         });
     });
     
     // Обработчик для финального поля модификации
-    $(modificationFullSelect).off('change').on('change', function() {
+    $(modificationFullSelect).off('change.select2').on('change.select2', function() {
       const modificationId = $(this).val();
       if (modificationId) {
         loadComplectations(modificationId);
@@ -1505,6 +1738,137 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// Функции для открытия модальных окон
+function openActiveEstimationsModal() {
+  const modal = new bootstrap.Modal(document.getElementById('activeEstimationsModal'));
+  const content = document.getElementById('activeEstimationsModalContent');
+  
+  if (!window.activeEstimationsData || window.activeEstimationsData.length === 0) {
+    content.innerHTML = '<div class="text-center text-muted py-5"><p>Нет данных для отображения</p></div>';
+    modal.show();
+    return;
+  }
+  
+  let html = '<div class="list-group">';
+  window.activeEstimationsData.forEach(est => {
+    const date = est.date ? new Date(est.date).toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : 'Не указано';
+    const rlkLink = est.rlk_id ? `/estimations/${est.rlk_id}/` : '#';
+    html += `
+      <div class="list-group-item ${est.rlk_id ? 'list-group-item-action' : ''}" ${est.rlk_id ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
+        <div class="d-flex w-100 justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${est.mark || 'Не указано'}</h6>
+            <p class="mb-1 small">
+              <span class="badge bg-secondary me-2">${est.status || 'Без статуса'}</span>
+              ${est.year ? `<span class="text-muted">${est.year} г.</span>` : ''}
+              ${est.run ? `<span class="text-muted ms-2">Пробег: ${est.run} км</span>` : ''}
+            </p>
+            ${est.customer ? `<p class="mb-1 small text-muted"><i class="bi bi-person me-1"></i>${est.customer}</p>` : ''}
+            ${est.staff ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${est.staff}</small>` : ''}
+            ${est.vin ? `<small class="text-muted d-block"><i class="bi bi-upc me-1"></i>VIN: ${est.vin}</small>` : ''}
+          </div>
+          <small class="text-muted ms-2">${date}</small>
+        </div>
+        ${est.rlk_id ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть оценку</small></div>' : ''}
+      </div>
+    `;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+  modal.show();
+}
+
+function openRepairHistoryModal() {
+  const modal = new bootstrap.Modal(document.getElementById('repairHistoryModal'));
+  const content = document.getElementById('repairHistoryModalContent');
+  
+  if (!window.repairHistoryData || window.repairHistoryData.length === 0) {
+    content.innerHTML = '<div class="text-center text-muted py-5"><p>Нет данных для отображения</p></div>';
+    modal.show();
+    return;
+  }
+  
+  let html = '<div class="list-group">';
+  window.repairHistoryData.forEach(repair => {
+    const date = repair.date || 'Не указано';
+    const amount = repair.amount_doc || 0;
+    const run = repair.run_car || 0;
+    html += `
+      <div class="list-group-item">
+        <div class="d-flex w-100 justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${repair.type_repair_name || 'Ремонт'}</h6>
+            <p class="mb-1 small">
+              ${amount > 0 ? `<span class="text-primary fw-bold">${amount.toLocaleString('ru-RU')} руб.</span>` : ''}
+              ${run > 0 ? `<span class="text-muted ms-2">Пробег: ${run.toLocaleString('ru-RU')} км</span>` : ''}
+            </p>
+            ${repair.staff_name ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${repair.staff_name}</small>` : ''}
+            ${repair.unit_name ? `<small class="text-muted d-block"><i class="bi bi-building me-1"></i>${repair.unit_name}</small>` : ''}
+            ${repair.description_podgotovka_doc ? `<small class="text-muted d-block mt-1">${repair.description_podgotovka_doc}</small>` : ''}
+            ${repair.description_op_doc ? `<small class="text-muted d-block mt-1">${repair.description_op_doc}</small>` : ''}
+          </div>
+          <small class="text-muted ms-2">${date}</small>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+  modal.show();
+}
+
+function openEstimationHistoryModal() {
+  const modal = new bootstrap.Modal(document.getElementById('estimationHistoryModal'));
+  const content = document.getElementById('estimationHistoryModalContent');
+  
+  if (!window.estimationHistoryData || window.estimationHistoryData.length === 0) {
+    content.innerHTML = '<div class="text-center text-muted py-5"><p>Нет данных для отображения</p></div>';
+    modal.show();
+    return;
+  }
+  
+  let html = '<div class="list-group">';
+  window.estimationHistoryData.forEach(est => {
+    const date = est.date || 'Не указано';
+    const costPrice = est.cost_price_doc || 0;
+    const run = est.run_car || 0;
+    const carName = `${est.mark || ''} ${est.model || ''} ${est.car_name || ''}`.trim() || 'Не указано';
+    const slug = est.slug || null;
+    const rlkLink = slug ? `/documents/rlk/${slug}/` : '#';
+    html += `
+      <div class="list-group-item ${slug ? 'list-group-item-action' : ''}" ${slug ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
+        <div class="d-flex w-100 justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${carName}</h6>
+            <p class="mb-1 small">
+              ${costPrice > 0 ? `<span class="text-primary fw-bold">${costPrice.toLocaleString('ru-RU')} руб.</span>` : ''}
+              ${run > 0 ? `<span class="text-muted ms-2">Пробег: ${run.toLocaleString('ru-RU')} км</span>` : ''}
+              ${est.year_car ? `<span class="text-muted ms-2">${est.year_car} г.</span>` : ''}
+            </p>
+            ${est.staff_name ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${est.staff_name}</small>` : ''}
+            ${est.unit_name ? `<small class="text-muted d-block"><i class="bi bi-building me-1"></i>${est.unit_name}</small>` : ''}
+            ${est.number ? `<small class="text-muted d-block"><i class="bi bi-file-text me-1"></i>${est.number}</small>` : ''}
+            ${est.type_reception_name ? `<small class="text-muted d-block"><i class="bi bi-reception me-1"></i>${est.type_reception_name}</small>` : ''}
+            ${est.customer_name ? `<small class="text-muted d-block"><i class="bi bi-person me-1"></i>${est.customer_name}</small>` : ''}
+            ${est.plate_number ? `<small class="text-muted d-block"><i class="bi bi-123 me-1"></i>ГРЗ: ${est.plate_number}</small>` : ''}
+          </div>
+          <small class="text-muted ms-2">${date}</small>
+        </div>
+        ${slug ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть RLK</small></div>' : ''}
+      </div>
+    `;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+  modal.show();
+}
 </script>
 
 {% endblock %}

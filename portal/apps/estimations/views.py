@@ -1647,13 +1647,12 @@ def estimation_start(request, rlk_id):
     if request.method == 'POST':
         # VIN и номер кузова
         vin = request.POST.get('vin', '').strip()
-        vin_missing = request.POST.get('vin_missing', '') == 'on'
         body_number = request.POST.get('body_number', '').strip()
         
-        if vin and not vin_missing:
+        if vin:
             reg_interactiv_ocenka.vin = vin
             refresh_analitick(reg_interactiv_ocenka)
-        elif vin_missing:
+        else:
             reg_interactiv_ocenka.vin = ''
         
         if body_number:
