@@ -7,240 +7,825 @@
 
 {% block content %}
 
-<div class="portal-page">
-  <div class="portal-header">
-    <h2>Начало оценки</h2>
-    <p>Заполните данные об автомобиле для начала оценки</p>
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin: 0rem 0.5rem 0.5rem 0.5rem; 
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0, 42, 90, 0.3);
+  }
+
+  .dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+  }
+
+  .dashboard-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 42, 90, 0.15);
+    border-color: #00509d;
+  }
+
+  .stat-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-card-label {
+    font-size: 0.9rem;
+    color: #6c7a92;
+    font-weight: 500;
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-card {
+    background: #fff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #002a5a 0%, #00509d 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+
+  .section-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0, 42, 90, 0.2);
+    border-color: #00509d;
+  }
+
+  .section-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .section-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    color: #fff;
+  }
+
+  .section-card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0;
+  }
+
+  .section-card-description {
+    color: #6c7a92;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: #002a5a;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .action-btn:hover {
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    color: #fff;
+    border-color: transparent;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2);
+  }
+
+  .action-btn-icon {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  .action-btn-text {
+    flex: 1;
+  }
+
+  .action-btn-arrow {
+    opacity: 0.5;
+    transition: transform 0.2s ease;
+  }
+
+  .action-btn:hover .action-btn-arrow {
+    transform: translateX(5px);
+    opacity: 1;
+  }
+
+  .quick-actions {
+    background: #fff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 42, 90, 0.1);
+    margin-bottom: 2rem;
+  }
+
+  .quick-actions-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .quick-action-btn {
+    padding: 1rem;
+    background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
+    border: none;
+    border-radius: 0.75rem;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2);
+  }
+
+  .quick-action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 42, 90, 0.3);
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .director-dashboard {
+      padding: 1rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1.8rem;
+    }
+
+    .stats-grid,
+    .section-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  /* btn-group-wrapper в стиле form-floating для radio кнопок */
+.kors-btn-group-wrapper {
+  position: relative;
+  margin-bottom: 1rem;
+  width: 100%;
+  display: block;
+}
+
+.kors-btn-group-wrapper > label.fs-6 {
+  position: absolute;
+  top: 0.625rem;
+  left: 0.75rem;
+  padding: 0 0.25rem;
+  pointer-events: none;
+  transform-origin: 0 0;
+  color: #656b74;
+  font-size: 0.75rem;
+  z-index: 0;
+  background: #fff;
+  margin: 0;
+}
+
+
+.kors-btn-group-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: calc(3.5rem + 2px);
+  padding: 2.225rem 0.75rem 0.625rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  background: #fff;
+  box-shadow: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  align-items: center;
+  width: 100%;
+}
+
+
+
+/* Стили для radio кнопок внутри */
+.kors-btn-group-compact .btn-check {
+  position: absolute;
+  clip: rect(0, 0, 0, 0);
+  pointer-events: none;
+}
+
+.kors-btn-group-compact .btn {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  background: #fff;
+  color: #002a5a;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 3px rgba(0, 23, 61, 0.08);
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kors-btn-group-compact .btn:hover {
+  background: #f4f7fb;
+  border-color: rgba(0, 42, 90, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 23, 61, 0.12);
+}
+
+.kors-btn-group-compact .btn-check:checked + .btn {
+  background: linear-gradient(140deg, #002c63, #000000);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 33, 79, 0.3);
+}
+
+.kors-btn-group-compact .btn-check:focus + .btn {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+}
+
+/* Специальные цвета для success, warning и danger */
+.kors-btn-group-compact .btn-outline-success {
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.kors-btn-group-compact .btn-outline-success:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #16a34a;
+}
+
+.kors-btn-group-compact .btn-check:checked + .btn-outline-success {
+  background: linear-gradient(140deg, #22c55e, #16a34a);
+  color: #fff;
+  border-color: transparent;
+}
+
+.kors-btn-group-compact .btn-outline-warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.kors-btn-group-compact .btn-outline-warning:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #d97706;
+}
+
+.kors-btn-group-compact .btn-check:checked + .btn-outline-warning {
+  background: linear-gradient(140deg, #f59e0b, #d97706);
+  color: #fff;
+  border-color: transparent;
+}
+
+.kors-btn-group-compact .btn-outline-danger {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.kors-btn-group-compact .btn-outline-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #dc2626;
+}
+
+.kors-btn-group-compact .btn-check:checked + .btn-outline-danger {
+  background: linear-gradient(140deg, #ef4444, #dc2626);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .kors-btn-group-compact {
+    flex-direction: column;
+    width: 100%;
+    padding: 2.225rem 0.75rem 0.625rem;
+  }
+
+  .kors-btn-group-compact .btn {
+    width: 100%;
+    flex: none;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* search-select-wrapper */
+.search-select-wrapper {
+  position: relative;
+  margin-bottom: 0rem;
+}
+
+.search-select-wrapper label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 0.375rem 0.75rem;
+  pointer-events: none;
+  border: 1px solid transparent;
+  transform-origin: 0 0;
+  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+  color: #8ea1ba;
+  font-size: 0.85rem;
+  z-index: 1;
+}
+
+.search-select {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  box-shadow: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  padding: 1.625rem 0.75rem 0.625rem;
+  height: calc(3.5rem + 2px);
+  min-height: calc(3.5rem + 2px);
+}
+
+.search-select:focus {
+  border-color: #002a5a;
+  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+  outline: 0;
+}
+
+.search-select:focus ~ label,
+.search-select:not([value=""]) ~ label,
+.search-select.has-value ~ label {
+  opacity: 0.65;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  color: #002a5a;
+}
+
+/* Стили для Select2 (если используется Select2) */
+.select2-container--default .select2-selection--single {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  box-shadow: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  height: calc(3.5rem + 2px);
+  min-height: calc(3.5rem + 2px);
+  padding: 1.2rem 0.75rem 0.625rem;
+}
+
+.select2-container--default .select2-selection--single:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+  outline: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: calc(3.5rem + 2px);
+  right: 0.75rem;
+}
+
+/* Обертка для label при использовании Select2 */
+.search-select-wrapper.select2-wrapper label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 0.6rem 0.75rem;
+  pointer-events: none;
+  transform-origin: 0 0;
+  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+  color: #8ea1ba;
+  font-size: 0.85rem;
+  z-index: 1;
+}
+
+.select2-container--default.select2-container--focus ~ label,
+.select2-container--default.select2-container--open ~ label,
+.search-select-wrapper.select2-wrapper.has-value label {
+  opacity: 0.65;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  color: #002a5a;
+}
+
+/* Иконка внутри form-floating - стилизованный вариант */
+.form-floating.position-relative {
+  position: relative;
+}
+
+.btn-floating-icon {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 42, 90, 0.05);
+  border: 1px solid rgba(0, 42, 90, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  color: #8ea1ba;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: auto;
+  min-width: 2rem;
+}
+
+.btn-floating-icon:hover {
+  color: #002a5a;
+  background: rgba(0, 42, 90, 0.1);
+  border-color: rgba(0, 42, 90, 0.2);
+}
+
+.btn-floating-icon:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Отступ для input */
+.form-floating.position-relative .form-control {
+  padding-right: 3rem;
+}
+
+</style>
+
+<div class="">
+  
+  <div class="dashboard-header">
+    <h1>Начало оценки</h1>
+    <p class="">Заполните данные об автомобиле для начала оценки</p>
   </div>
 
-  <div class="portal-panel">
-    <form method="post" id="estimationStartForm">
-      {% csrf_token %}
-      
-      <!-- VIN и номер кузова -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-6">
-          <div class="form-floating">
-            <input type="text" 
-                   class="form-control" 
-                   id="vin" 
-                   name="vin" 
-                   value="{% if params.estimation.vin %}{{ params.estimation.vin }}{% endif %}" 
-                   placeholder="VIN номер" 
-                   autocomplete="off"
-                   maxlength="17">
-            <label for="vin">VIN номер <span class="text-danger">*</span></label>
+  <div class="row">
+    <div class="col-12 col-md-8">
+      <div class="portal-panel">
+        <form method="post" id="estimationStartForm">
+          {% csrf_token %}
+          
+          <!-- VIN и номер кузова -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-5">
+              <div class="form-floating">
+                <input type="text" 
+                       class="form-control" 
+                       id="vin" 
+                       name="vin" 
+                       value="{% if params.estimation.vin %}{{ params.estimation.vin }}{% endif %}" 
+                       placeholder="VIN номер" 
+                       autocomplete="off"
+                       maxlength="17">
+                <label for="vin">VIN номер <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="vin_missing" name="vin_missing">
+                <label class="form-check-label" for="vin_missing">
+                  Отсутствует
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-md-5">
+              <div class="form-floating">
+                <input type="text" 
+                       class="form-control" 
+                       id="body_number" 
+                       name="body_number" 
+                       value="{% if params.estimation.number_body %}{{ params.estimation.number_body }}{% endif %}" 
+                       placeholder="Номер кузова" 
+                       autocomplete="off"
+                       maxlength="21">
+                <label for="body_number">Номер кузова</label>
+              </div>
+            </div>
+            
+            <div class="col-md-2">
+              <button type="button" class="btn btn-primary w-100 h-100" id="refreshBtn" style="min-height: 58px;">
+                <i class="bi bi-arrow-clockwise"></i> Обновить
+              </button>
+            </div>
           </div>
-          <div class="form-check mt-2">
-            <input class="form-check-input" type="checkbox" id="vin_missing" name="vin_missing">
-            <label class="form-check-label" for="vin_missing">
-              Отсутствует
-            </label>
+    
+          <div class="alert alert-info" role="alert" id="previousEstimationAlert" style="display: none;">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="previousEstimationText">Найдена предыдущая оценка этого автомобиля. Данные будут заполнены автоматически.</span>
+          </div>
+    
+          <!-- Скрываемая часть формы -->
+          <div id="formFields" style="display: none;">
+          <!-- Год выпуска -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="year" name="year" required>
+                  <option selected></option>
+                  {% for year in params.years %}
+                    <option value="{{ year }}" {% if params.estimation.year == year %}selected{% endif %}>{{ year }}</option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="year">Год выпуска <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Марка -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="mark" name="mark_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Модель -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Поколение (модификация) -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="modification" name="modification_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="modification">Поколение <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Конфигурация кузова -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="body_config" name="body_config_id" required>
+                  <option selected></option>
+                  {% for body in params.type_bodies %}
+                    <option value="{{ body.id }}"
+                            {% if params.estimation.modification and params.estimation.modification.typeBody and params.estimation.modification.typeBody.id == body.id %}selected{% endif %}>
+                      {{ body.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Тип двигателя -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required>
+                  <option selected></option>
+                  {% for engine in params.type_engines %}
+                    <option value="{{ engine.id }}"
+                            {% if params.estimation.modification and params.estimation.modification.typeEngine and params.estimation.modification.typeEngine.id == engine.id %}selected{% endif %}>
+                      {{ engine.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Тип привода -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="drive_type" name="type_drive" required>
+                  <option selected></option>
+                  {% for drive in params.type_drives %}
+                    <option value="{{ drive }}"
+                            {% if params.estimation.type_drive == drive %}selected{% endif %}>
+                      {{ drive }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="drive_type">Тип привода <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- КПП -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="kpp" name="kpp_id" required>
+                  <option selected></option>
+                  {% for kpp in params.type_kpp %}
+                    <option value="{{ kpp.id }}"
+                            {% if params.estimation.modification and params.estimation.modification.typeGear and params.estimation.modification.typeGear.id == kpp.id %}selected{% endif %}>
+                      {{ kpp.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Модификация -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Комплектация -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="complectation">Комплектация</label>
+                <small class="form-text text-muted" id="complectation_hint" style="display: none;">
+                  Комплектация обязательна для выбора
+                </small>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Пробег -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="form-floating">
+                <input type="number" 
+                       class="form-control" 
+                       id="run" 
+                       name="run" 
+                       placeholder="Пробег" 
+                       min="0"
+                       value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
+                <label for="run">Пробег <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Кнопки -->
+          <div class="d-flex gap-2 mt-4">
+            <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+              <span class="icon-mbri-refresh"></span> Сбросить
+            </button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span class="icon-mbri-right"></span> Продолжить
+            </button>
+          </div>
+          </div> <!-- Конец скрываемой части формы -->
+        </form>
+      </div>
+    
+    </div>
+    <div class="col-12 col-md-4">
+      <!-- Блоки информации -->
+      <div id="infoBlocks" style="display: none;">
+        <!-- Активная интерактивная оценка -->
+        <div class="portal-panel mb-3">
+          <h5 class="mb-3"><i class="bi bi-file-earmark-text me-2"></i>Активная интерактивная оценка</h5>
+          <div id="activeEstimationBlock">
+            <div class="text-center text-muted py-3">
+              <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+              <p class="mt-2 mb-0">Загрузка...</p>
+            </div>
           </div>
         </div>
         
-        <div class="col-md-6">
-          <div class="form-floating">
-            <input type="text" 
-                   class="form-control" 
-                   id="body_number" 
-                   name="body_number" 
-                   value="{% if params.estimation.number_body %}{{ params.estimation.number_body }}{% endif %}" 
-                   placeholder="Номер кузова" 
-                   autocomplete="off"
-                   maxlength="21">
-            <label for="body_number">Номер кузова</label>
+        <!-- История ремонтов -->
+        <div class="portal-panel mb-3">
+          <h5 class="mb-3"><i class="bi bi-tools me-2"></i>История ремонтов</h5>
+          <div id="repairHistoryBlock">
+            <div class="text-center text-muted py-3">
+              <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+              <p class="mt-2 mb-0">Загрузка...</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- История оценок -->
+        <div class="portal-panel mb-3">
+          <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>История оценок</h5>
+          <div id="estimationHistoryBlock">
+            <div class="text-center text-muted py-3">
+              <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+              <p class="mt-2 mb-0">Загрузка...</p>
+            </div>
           </div>
         </div>
       </div>
-
-      <div class="alert alert-info" role="alert" id="previousEstimationAlert" style="display: none;">
-        <i class="bi bi-info-circle me-2"></i>
-        <span id="previousEstimationText">Найдена предыдущая оценка этого автомобиля. Данные будут заполнены автоматически.</span>
-      </div>
-
-      <hr>
-
-      <!-- Марка -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="mark" name="mark_id" required>
-              <option selected></option>
-              {% for mark in params.marks %}
-                <option value="{{ mark.id }}" 
-                        {% if params.estimation.modification and params.estimation.modification.model.mark.id == mark.id %}selected{% endif %}>
-                  {{ mark.name }}
-                </option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Модель -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
-              <option selected></option>
-            </select>
-            <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Год выпуска -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="year" name="year" required disabled>
-              <option selected></option>
-            </select>
-            <label class="fs-6" for="year">Год <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Поколение (модификация) -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="modification" name="modification_id" required disabled>
-              <option selected></option>
-            </select>
-            <label class="fs-6" for="modification">Поколение <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Конфигурация кузова -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="body_config" name="body_config_id" required>
-              <option selected></option>
-              {% for body in params.type_bodies %}
-                <option value="{{ body.id }}"
-                        {% if params.estimation.modification and params.estimation.modification.typeBody and params.estimation.modification.typeBody.id == body.id %}selected{% endif %}>
-                  {{ body.name }}
-                </option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Тип двигателя -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required>
-              <option selected></option>
-              {% for engine in params.type_engines %}
-                <option value="{{ engine.id }}"
-                        {% if params.estimation.modification and params.estimation.modification.typeEngine and params.estimation.modification.typeEngine.id == engine.id %}selected{% endif %}>
-                  {{ engine.name }}
-                </option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Тип привода -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="drive_type" name="type_drive" required>
-              <option selected></option>
-              {% for drive in params.type_drives %}
-                <option value="{{ drive }}"
-                        {% if params.estimation.type_drive == drive %}selected{% endif %}>
-                  {{ drive }}
-                </option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="drive_type">Тип привода <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- КПП -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="kpp" name="kpp_id" required>
-              <option selected></option>
-              {% for kpp in params.type_kpp %}
-                <option value="{{ kpp.id }}"
-                        {% if params.estimation.modification and params.estimation.modification.typeGear and params.estimation.modification.typeGear.id == kpp.id %}selected{% endif %}>
-                  {{ kpp.name }}
-                </option>
-              {% endfor %}
-            </select>
-            <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Модификация -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
-              <option selected></option>
-            </select>
-            <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Комплектация -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="search-select-wrapper select2-wrapper">
-            <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
-              <option selected></option>
-            </select>
-            <label class="fs-6" for="complectation">Комплектация</label>
-            <small class="form-text text-muted" id="complectation_hint" style="display: none;">
-              Комплектация обязательна для выбора
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Пробег -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-12">
-          <div class="form-floating">
-            <input type="number" 
-                   class="form-control" 
-                   id="run" 
-                   name="run" 
-                   placeholder="Пробег" 
-                   min="0"
-                   value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
-            <label for="run">Пробег <span class="text-danger">*</span></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Кнопки -->
-      <div class="d-flex gap-2 mt-4">
-        <button type="reset" class="btn btn-secondary" onclick="resetForm()">
-          <span class="icon-mbri-refresh"></span> Сбросить
-        </button>
-        <button type="submit" class="btn btn-primary" id="submitBtn">
-          <span class="icon-mbri-right"></span> Продолжить
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
+  
 </div>
 
 <script>
@@ -268,11 +853,167 @@ document.addEventListener('DOMContentLoaded', function() {
   const vinInput = document.getElementById('vin');
   const bodyNumberInput = document.getElementById('body_number');
   const vinMissingCheckbox = document.getElementById('vin_missing');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const formFields = document.getElementById('formFields');
+  const infoBlocks = document.getElementById('infoBlocks');
+  
+  // Функция загрузки информации по VIN
+  function loadVehicleInfo() {
+    const vin = vinInput.value.trim();
+    const bodyNumber = bodyNumberInput.value.trim();
+    
+    if (!vin && !bodyNumber && !vinMissingCheckbox.checked) {
+      alert('Пожалуйста, введите VIN номер или номер кузова');
+      return;
+    }
+    
+    // Показываем поля формы
+    if (formFields) {
+      formFields.style.display = 'block';
+    }
+    
+    // Показываем блоки информации
+    if (infoBlocks) {
+      infoBlocks.style.display = 'block';
+    }
+    
+    // Загружаем активные интерактивные оценки
+    if (vin) {
+      fetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}`)
+        .then(response => response.json())
+        .then(data => {
+          const block = document.getElementById('activeEstimationBlock');
+          if (data.list_estimation && data.list_estimation.length > 0) {
+            let html = '<div class="list-group">';
+            data.list_estimation.forEach(est => {
+              const date = new Date(est.date).toLocaleDateString('ru-RU');
+              html += `
+                <div class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${est.mark || 'Не указано'}</h6>
+                    <small>${date}</small>
+                  </div>
+                  <p class="mb-1">${est.status || ''} | Пробег: ${est.run || 0} км</p>
+                  <small>${est.staff || ''}</small>
+                </div>
+              `;
+            });
+            html += '</div>';
+            block.innerHTML = html;
+          } else {
+            block.innerHTML = '<div class="text-center text-muted py-3"><p>Активных оценок не найдено</p></div>';
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке активных оценок:', error);
+          document.getElementById('activeEstimationBlock').innerHTML = '<div class="text-center text-danger py-3"><p>Ошибка загрузки</p></div>';
+        });
+      
+      // Загружаем историю ремонтов
+      fetch(`/api/a/v1/vin_repairs/${encodeURIComponent(vin)}/`)
+        .then(response => response.json())
+        .then(data => {
+          const block = document.getElementById('repairHistoryBlock');
+          if (data.objects && data.objects.length > 0) {
+            let html = '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
+            data.objects.slice(0, 5).forEach(repair => {
+              const date = repair.date || 'Не указано';
+              html += `
+                <div class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${repair.type_repair_name || 'Ремонт'}</h6>
+                    <small>${date}</small>
+                  </div>
+                  <p class="mb-1">${repair.amount_doc || 0} руб. | Пробег: ${repair.run_car || 0} км</p>
+                  <small>${repair.staff_name || ''}</small>
+                </div>
+              `;
+            });
+            html += '</div>';
+            if (data.objects_count > 5) {
+              html += `<p class="text-center mt-2"><small>Показано 5 из ${data.objects_count}</small></p>`;
+            }
+            block.innerHTML = html;
+          } else {
+            block.innerHTML = '<div class="text-center text-muted py-3"><p>История ремонтов не найдена</p></div>';
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке истории ремонтов:', error);
+          document.getElementById('repairHistoryBlock').innerHTML = '<div class="text-center text-danger py-3"><p>Ошибка загрузки</p></div>';
+        });
+      
+      // Загружаем историю оценок
+      fetch(`/api/a/v1/vin_estimation/${encodeURIComponent(vin)}/`)
+        .then(response => response.json())
+        .then(data => {
+          const block = document.getElementById('estimationHistoryBlock');
+          if (data.objects && data.objects.length > 0) {
+            let html = '<div class="list-group" style="max-height: 300px; overflow-y: auto;">';
+            data.objects.slice(0, 5).forEach(est => {
+              const date = est.date || 'Не указано';
+              html += `
+                <div class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${est.mark || ''} ${est.model || ''}</h6>
+                    <small>${date}</small>
+                  </div>
+                  <p class="mb-1">${est.cost_price_doc || 0} руб. | Пробег: ${est.run_car || 0} км</p>
+                  <small>${est.staff_name || ''}</small>
+                </div>
+              `;
+            });
+            html += '</div>';
+            if (data.objects_count > 5) {
+              html += `<p class="text-center mt-2"><small>Показано 5 из ${data.objects_count}</small></p>`;
+            }
+            block.innerHTML = html;
+          } else {
+            block.innerHTML = '<div class="text-center text-muted py-3"><p>История оценок не найдена</p></div>';
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке истории оценок:', error);
+          document.getElementById('estimationHistoryBlock').innerHTML = '<div class="text-center text-danger py-3"><p>Ошибка загрузки</p></div>';
+        });
+    } else {
+      // Если VIN нет, скрываем блоки информации
+      if (infoBlocks) {
+        infoBlocks.style.display = 'none';
+      }
+    }
+    
+    // Проверяем предыдущую оценку
+    checkPreviousEstimation();
+  }
+  
+  // Обработчик кнопки "Обновить"
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', function() {
+      loadVehicleInfo();
+    });
+  }
+  
+  // Обработка чекбокса "VIN отсутствует"
+  if (vinMissingCheckbox) {
+    vinMissingCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        vinInput.value = '';
+        vinInput.disabled = true;
+      } else {
+        vinInput.disabled = false;
+      }
+    });
+  }
+  
+  // Если VIN уже есть при загрузке страницы, показываем поля
+  if (vinInput.value || bodyNumberInput.value) {
+    loadVehicleInfo();
+  }
   
   // Валидация формы перед отправкой
   document.getElementById('estimationStartForm').addEventListener('submit', function(e) {
     const vin = vinInput.value.trim();
-    const vinMissing = vinMissingCheckbox.checked;
     const mark = markSelect.value;
     const model = modelSelect.value;
     const year = yearSelect.value;
@@ -329,16 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
   });
   
-  // Обработка чекбокса "VIN отсутствует"
-  vinMissingCheckbox.addEventListener('change', function() {
-    if (this.checked) {
-      vinInput.value = '';
-      vinInput.disabled = true;
-    } else {
-      vinInput.disabled = false;
-    }
-    checkPreviousEstimation();
-  });
+
   
   // Проверка предыдущей оценки при изменении VIN или номера кузова
   function checkPreviousEstimation() {
@@ -377,28 +1109,28 @@ document.addEventListener('DOMContentLoaded', function() {
   // Автозаполнение из предыдущей оценки
   function autofillFromPreviousEstimation(estimation) {
     if (estimation.modification) {
-      // Устанавливаем марку
-      if (estimation.modification.mark_id) {
-        markSelect.value = estimation.modification.mark_id;
-        markSelect.dispatchEvent(new Event('change'));
+      // Сначала устанавливаем год
+      if (estimation.year) {
+        yearSelect.value = estimation.year;
+        $(yearSelect).trigger('change');
         
-        // Загружаем модели
+        // Загружаем марки по году
         setTimeout(() => {
-          if (estimation.modification.model_id) {
-            modelSelect.value = estimation.modification.model_id;
-            modelSelect.dispatchEvent(new Event('change'));
+          if (estimation.modification.mark_id) {
+            markSelect.value = estimation.modification.mark_id;
+            $(markSelect).trigger('change');
             
-            // Загружаем годы
+            // Загружаем модели по марке и году
             setTimeout(() => {
-              if (estimation.year) {
-                yearSelect.value = estimation.year;
-                yearSelect.dispatchEvent(new Event('change'));
+              if (estimation.modification.model_id) {
+                modelSelect.value = estimation.modification.model_id;
+                $(modelSelect).trigger('change');
                 
-                // Загружаем модификации
+                // Загружаем модификации (поколения) по модели и году
                 setTimeout(() => {
                   if (estimation.modification.id) {
                     modificationSelect.value = estimation.modification.id;
-                    modificationSelect.dispatchEvent(new Event('change'));
+                    $(modificationSelect).trigger('change');
                     
                     // Загружаем комплектации после выбора модификации
                     setTimeout(() => {
@@ -451,202 +1183,8 @@ document.addEventListener('DOMContentLoaded', function() {
   vinInput.addEventListener('input', checkPreviousEstimation);
   bodyNumberInput.addEventListener('input', checkPreviousEstimation);
   
-  // Каскадная загрузка моделей при выборе марки
-  markSelect.addEventListener('change', function() {
-    const markId = this.value;
-    
-    // Очищаем зависимые поля
-    modelSelect.innerHTML = '<option selected></option>';
-    modelSelect.disabled = true;
-    $(modelSelect).trigger('change.select2');
-    yearSelect.innerHTML = '<option selected></option>';
-    yearSelect.disabled = true;
-    $(yearSelect).trigger('change.select2');
-    modificationSelect.innerHTML = '<option selected></option>';
-    modificationSelect.disabled = true;
-    $(modificationSelect).trigger('change.select2');
-    modificationFullSelect.innerHTML = '<option selected></option>';
-    modificationFullSelect.disabled = true;
-    $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option selected></option>';
-    complectationSelect.disabled = true;
-    complectationSelect.removeAttribute('required');
-    complectationHint.style.display = 'none';
-    $(complectationSelect).trigger('change.select2');
-    
-    // Очищаем поля, которые заполняются из модификации
-    if (!markId) {
-      document.getElementById('body_config').value = '';
-      document.getElementById('engine_type').value = '';
-      document.getElementById('kpp').value = '';
-    }
-    
-    if (!markId) return;
-    
-      fetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}`)
-      .then(response => response.json())
-      .then(data => {
-        modelSelect.innerHTML = '<option selected></option>';
-        data.models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.textContent = model.name;
-          modelSelect.appendChild(option);
-        });
-        modelSelect.disabled = false;
-        $(modelSelect).trigger('change.select2');
-      })
-      .catch(error => {
-        console.error('Ошибка при загрузке моделей:', error);
-      });
-  });
-  
-  // Каскадная загрузка годов при выборе модели
-  modelSelect.addEventListener('change', function() {
-    const modelId = this.value;
-    
-    // Очищаем зависимые поля
-    yearSelect.innerHTML = '<option selected></option>';
-    yearSelect.disabled = true;
-    $(yearSelect).trigger('change.select2');
-    modificationSelect.innerHTML = '<option selected></option>';
-    modificationSelect.disabled = true;
-    $(modificationSelect).trigger('change.select2');
-    modificationFullSelect.innerHTML = '<option selected></option>';
-    modificationFullSelect.disabled = true;
-    $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option selected></option>';
-    complectationSelect.disabled = true;
-    complectationSelect.removeAttribute('required');
-    complectationHint.style.display = 'none';
-    $(complectationSelect).trigger('change.select2');
-    
-    if (!modelId) return;
-    
-      fetch(`/estimations/${rlkId}/api/years/?model_id=${modelId}`)
-      .then(response => response.json())
-      .then(data => {
-        yearSelect.innerHTML = '<option selected></option>';
-        data.years.forEach(year => {
-          const option = document.createElement('option');
-          option.value = year;
-          option.textContent = year;
-          yearSelect.appendChild(option);
-        });
-        yearSelect.disabled = false;
-        $(yearSelect).trigger('change.select2');
-      })
-      .catch(error => {
-        console.error('Ошибка при загрузке годов:', error);
-      });
-  });
-  
-  // Каскадная загрузка модификаций при выборе года
-  yearSelect.addEventListener('change', function() {
-    const modelId = modelSelect.value;
-    const year = this.value;
-    
-    // Очищаем зависимые поля
-    modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
-    modificationSelect.disabled = true;
-    $(modificationSelect).trigger('change.select2');
-    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
-    modificationFullSelect.disabled = true;
-    $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
-    complectationSelect.disabled = true;
-    complectationSelect.removeAttribute('required');
-    complectationHint.style.display = 'none';
-    $(complectationSelect).trigger('change.select2');
-    
-    if (!modelId || !year) return;
-    
-      fetch(`/estimations/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
-      .then(response => response.json())
-      .then(data => {
-        modificationSelect.innerHTML = '<option selected></option>';
-        data.modifications.forEach(mod => {
-          const option = document.createElement('option');
-          option.value = mod.id;
-          option.textContent = mod.name;
-          modificationSelect.appendChild(option);
-        });
-        modificationSelect.disabled = false;
-        $(modificationSelect).trigger('change.select2');
-      })
-      .catch(error => {
-        console.error('Ошибка при загрузке модификаций:', error);
-      });
-  });
-  
-  // При выборе модификации заполняем остальные поля и загружаем комплектации
-  modificationSelect.addEventListener('change', function() {
-    const modificationId = this.value;
-    
-    modificationFullSelect.innerHTML = '<option selected></option>';
-    modificationFullSelect.disabled = true;
-    $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option selected></option>';
-    complectationSelect.disabled = true;
-    complectationSelect.removeAttribute('required');
-    complectationHint.style.display = 'none';
-    $(complectationSelect).trigger('change.select2');
-    
-    if (!modificationId) {
-      // Очищаем поля при сбросе модификации
-      document.getElementById('body_config').value = '';
-      document.getElementById('engine_type').value = '';
-      document.getElementById('kpp').value = '';
-      return;
-    }
-    
-    // Находим выбранную модификацию в данных
-    fetch(`/estimation/${rlkId}/api/modifications/?model_id=${modelSelect.value}&year=${yearSelect.value}`)
-      .then(response => response.json())
-      .then(data => {
-        const selectedMod = data.modifications.find(m => m.id == modificationId);
-        if (selectedMod) {
-          // Автозаполнение полей из модификации
-          if (selectedMod.type_body_id) {
-            document.getElementById('body_config').value = selectedMod.type_body_id;
-          }
-          if (selectedMod.type_engine_id) {
-            document.getElementById('engine_type').value = selectedMod.type_engine_id;
-          }
-          if (selectedMod.type_kpp_id) {
-            document.getElementById('kpp').value = selectedMod.type_kpp_id;
-          }
-          
-          // Устанавливаем модификацию в финальное поле
-          modificationFullSelect.innerHTML = '<option selected></option>';
-          const option = document.createElement('option');
-          option.value = selectedMod.id;
-          option.textContent = selectedMod.name;
-          option.selected = true;
-          modificationFullSelect.appendChild(option);
-          modificationFullSelect.disabled = false;
-          
-          // Загружаем комплектации для выбранной модификации
-          loadComplectations(modificationId);
-        }
-      })
-      .catch(error => {
-        console.error('Ошибка при загрузке данных модификации:', error);
-      });
-  });
-  
-  // Обработчик для финального поля модификации (если пользователь изменит его напрямую)
-  modificationFullSelect.addEventListener('change', function() {
-    const modificationId = this.value;
-    if (modificationId) {
-      loadComplectations(modificationId);
-    } else {
-      complectationSelect.innerHTML = '<option selected></option>';
-      complectationSelect.disabled = true;
-      complectationSelect.removeAttribute('required');
-      complectationHint.style.display = 'none';
-    }
-  });
+  // Обработчики событий для каскадных селектов будут привязаны после инициализации Select2
+  // в блоке $(document).ready() ниже
   
   // Функция загрузки комплектаций
   function loadComplectations(modificationId) {
@@ -681,7 +1219,11 @@ document.addEventListener('DOMContentLoaded', function() {
           complectationSelect.removeAttribute('required');
           complectationHint.style.display = 'none';
         }
-        $(complectationSelect).trigger('change.select2');
+        // Обновляем Select2
+        if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
+          $(complectationSelect).select2('destroy');
+        }
+        initSelect2();
       })
       .catch(error => {
         console.error('Ошибка при загрузке комплектаций:', error);
@@ -702,24 +1244,25 @@ document.addEventListener('DOMContentLoaded', function() {
       modificationId: {{ params.estimation.modification.id|default:"null" }}
     };
     
-    if (currentMod.markId) {
-      markSelect.value = currentMod.markId;
-      markSelect.dispatchEvent(new Event('change'));
+    if (currentMod.year) {
+      // Сначала устанавливаем год
+      yearSelect.value = currentMod.year;
+      $(yearSelect).trigger('change');
       
       setTimeout(() => {
-        if (currentMod.modelId) {
-          modelSelect.value = currentMod.modelId;
-          modelSelect.dispatchEvent(new Event('change'));
+        if (currentMod.markId) {
+          markSelect.value = currentMod.markId;
+          $(markSelect).trigger('change');
           
           setTimeout(() => {
-            if (currentMod.year) {
-              yearSelect.value = currentMod.year;
-              yearSelect.dispatchEvent(new Event('change'));
+            if (currentMod.modelId) {
+              modelSelect.value = currentMod.modelId;
+              $(modelSelect).trigger('change');
               
               setTimeout(() => {
                 if (currentMod.modificationId) {
                   modificationSelect.value = currentMod.modificationId;
-                  modificationSelect.dispatchEvent(new Event('change'));
+                  $(modificationSelect).trigger('change');
                   
                   // Загружаем комплектации после выбора модификации
                   setTimeout(() => {
@@ -745,7 +1288,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function initSelect2() {
       $('.search-select').each(function() {
         if (!$(this).hasClass('select2-hidden-accessible')) {
-          const placeholder = $(this).find('option[value=""]').text() || 'Выберите...';
+          // Для пустой опции используем текст из label
+          const $label = $(this).closest('.search-select-wrapper').find('label');
+          const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
           const isDisabled = $(this).prop('disabled');
           $(this).select2({
             language: 'ru',
@@ -773,38 +1318,190 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализация при загрузке
     initSelect2();
     
-    // Обновляем Select2 при изменении опций или disabled состояния
+    // Привязываем обработчики событий после инициализации Select2
+    // Каскадная загрузка марок при выборе года
+    $(yearSelect).off('change').on('change', function() {
+      const year = $(this).val();
+      
+      // Очищаем зависимые поля
+      $(markSelect).html('<option selected></option>').prop('disabled', true);
+      $(modelSelect).html('<option selected></option>').prop('disabled', true);
+      $(modificationSelect).html('<option selected></option>').prop('disabled', true);
+      $(modificationFullSelect).html('<option selected></option>').prop('disabled', true);
+      $(complectationSelect).html('<option selected></option>').prop('disabled', true).removeAttr('required');
+      complectationHint.style.display = 'none';
+      
+      // Очищаем поля, которые заполняются из модификации
+      if (!year) {
+        $('#body_config').val('');
+        $('#engine_type').val('');
+        $('#kpp').val('');
+        return;
+      }
+      
+      fetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          $(markSelect).html('<option selected></option>');
+          data.marks.forEach(mark => {
+            $(markSelect).append(`<option value="${mark.id}">${mark.name}</option>`);
+          });
+          $(markSelect).prop('disabled', false);
+          // Обновляем Select2
+          if ($(markSelect).hasClass('select2-hidden-accessible')) {
+            $(markSelect).select2('destroy');
+          }
+          initSelect2();
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке марок:', error);
+        });
+    });
+    
+    // Каскадная загрузка моделей при выборе марки
+    $(markSelect).off('change').on('change', function() {
+      const markId = $(this).val();
+      const year = $(yearSelect).val();
+      
+      // Очищаем зависимые поля
+      $(modelSelect).html('<option selected></option>').prop('disabled', true);
+      $(modificationSelect).html('<option selected></option>').prop('disabled', true);
+      $(modificationFullSelect).html('<option selected></option>').prop('disabled', true);
+      $(complectationSelect).html('<option selected></option>').prop('disabled', true).removeAttr('required');
+      complectationHint.style.display = 'none';
+      
+      if (!markId || !year) return;
+      
+      fetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}&year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          $(modelSelect).html('<option selected></option>');
+          data.models.forEach(model => {
+            $(modelSelect).append(`<option value="${model.id}">${model.name}</option>`);
+          });
+          $(modelSelect).prop('disabled', false);
+          // Обновляем Select2
+          if ($(modelSelect).hasClass('select2-hidden-accessible')) {
+            $(modelSelect).select2('destroy');
+          }
+          initSelect2();
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке моделей:', error);
+        });
+    });
+    
+    // Каскадная загрузка модификаций (поколений) при выборе модели
+    $(modelSelect).off('change').on('change', function() {
+      const modelId = $(this).val();
+      const year = $(yearSelect).val();
+      
+      // Очищаем зависимые поля
+      $(modificationSelect).html('<option selected></option>').prop('disabled', true);
+      $(modificationFullSelect).html('<option selected></option>').prop('disabled', true);
+      $(complectationSelect).html('<option selected></option>').prop('disabled', true).removeAttr('required');
+      complectationHint.style.display = 'none';
+      
+      if (!modelId || !year) return;
+      
+      fetch(`/estimations/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          $(modificationSelect).html('<option selected></option>');
+          data.modifications.forEach(mod => {
+            $(modificationSelect).append(`<option value="${mod.id}">${mod.name}</option>`);
+          });
+          $(modificationSelect).prop('disabled', false);
+          // Обновляем Select2
+          if ($(modificationSelect).hasClass('select2-hidden-accessible')) {
+            $(modificationSelect).select2('destroy');
+          }
+          initSelect2();
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке модификаций:', error);
+        });
+    });
+    
+    // При выборе модификации заполняем остальные поля и загружаем комплектации
+    $(modificationSelect).off('change').on('change', function() {
+      const modificationId = $(this).val();
+      
+      $(modificationFullSelect).html('<option selected></option>').prop('disabled', true);
+      $(complectationSelect).html('<option selected></option>').prop('disabled', true).removeAttr('required');
+      complectationHint.style.display = 'none';
+      
+      if (!modificationId) {
+        // Очищаем поля при сбросе модификации
+        $('#body_config').val('');
+        $('#engine_type').val('');
+        $('#kpp').val('');
+        return;
+      }
+      
+      // Находим выбранную модификацию в данных
+      fetch(`/estimations/${rlkId}/api/modifications/?model_id=${$(modelSelect).val()}&year=${$(yearSelect).val()}`)
+        .then(response => response.json())
+        .then(data => {
+          const selectedMod = data.modifications.find(m => m.id == modificationId);
+          if (selectedMod) {
+            // Автозаполнение полей из модификации
+            if (selectedMod.type_body_id) {
+              $('#body_config').val(selectedMod.type_body_id).trigger('change.select2');
+            }
+            if (selectedMod.type_engine_id) {
+              $('#engine_type').val(selectedMod.type_engine_id).trigger('change.select2');
+            }
+            if (selectedMod.type_kpp_id) {
+              $('#kpp').val(selectedMod.type_kpp_id).trigger('change.select2');
+            }
+            
+            // Устанавливаем модификацию в финальное поле
+            $(modificationFullSelect).html('<option selected></option>');
+            $(modificationFullSelect).append(`<option value="${selectedMod.id}" selected>${selectedMod.name}</option>`);
+            $(modificationFullSelect).prop('disabled', false);
+            // Обновляем Select2
+            if ($(modificationFullSelect).hasClass('select2-hidden-accessible')) {
+              $(modificationFullSelect).select2('destroy');
+            }
+            initSelect2();
+            
+            // Загружаем комплектации для выбранной модификации
+            loadComplectations(modificationId);
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке данных модификации:', error);
+        });
+    });
+    
+    // Обработчик для финального поля модификации
+    $(modificationFullSelect).off('change').on('change', function() {
+      const modificationId = $(this).val();
+      if (modificationId) {
+        loadComplectations(modificationId);
+      } else {
+        $(complectationSelect).html('<option selected></option>').prop('disabled', true).removeAttr('required');
+        complectationHint.style.display = 'none';
+      }
+    });
+    
+    // Обновляем Select2 при изменении disabled состояния (без MutationObserver для childList, чтобы избежать циклов)
+    // MutationObserver только для disabled атрибута
     const observer = new MutationObserver(function(mutations) {
       mutations.forEach(function(mutation) {
-        if (mutation.type === 'childList') {
-          $(mutation.target).trigger('change.select2');
-        }
         if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
           updateSelect2Disabled();
         }
       });
     });
     
-    // Наблюдаем за изменениями в селектах
+    // Наблюдаем только за изменениями disabled атрибута
     $('.search-select').each(function() {
       observer.observe(this, { 
-        childList: true, 
-        subtree: true,
         attributes: true,
         attributeFilter: ['disabled']
       });
-    });
-    
-    // Инициализируем Select2 для динамически созданных селектов
-    setTimeout(function() {
-      initSelect2();
-    }, 100);
-    
-    // Обновляем Select2 при программном изменении значения
-    $(document).on('change', '.search-select', function() {
-      if ($(this).hasClass('select2-hidden-accessible')) {
-        $(this).trigger('change.select2');
-      }
     });
   });
 });
