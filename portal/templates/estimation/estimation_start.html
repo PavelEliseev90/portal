@@ -65,7 +65,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="mark" class="form-label">Марка <span class="text-danger">*</span></label>
-          <select class="form-select" id="mark" name="mark_id" required>
+          <select class="form-select search-select" id="mark" name="mark_id" required>
             <option value="">Выберите марку</option>
             {% for mark in params.marks %}
               <option value="{{ mark.id }}" 
@@ -81,7 +81,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="model" class="form-label">Модель <span class="text-danger">*</span></label>
-          <select class="form-select" id="model" name="model_id" required disabled>
+          <select class="form-select search-select" id="model" name="model_id" required disabled>
             <option value="">Сначала выберите марку</option>
           </select>
         </div>
@@ -91,7 +91,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="year" class="form-label">Год <span class="text-danger">*</span></label>
-          <select class="form-select" id="year" name="year" required disabled>
+          <select class="form-select search-select" id="year" name="year" required disabled>
             <option value="">Сначала выберите модель</option>
           </select>
         </div>
@@ -101,7 +101,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="modification" class="form-label">Поколение <span class="text-danger">*</span></label>
-          <select class="form-select" id="modification" name="modification_id" required disabled>
+          <select class="form-select search-select" id="modification" name="modification_id" required disabled>
             <option value="">Сначала выберите год</option>
           </select>
         </div>
@@ -109,9 +109,9 @@
 
       <!-- Конфигурация кузова -->
       <div class="row g-3 mb-4">
-        <div class="col-md-6">
+        <div class="col-md-12">
           <label for="body_config" class="form-label">Конфигурация кузова <span class="text-danger">*</span></label>
-          <select class="form-select" id="body_config" name="body_config_id" required>
+          <select class="form-select search-select" id="body_config" name="body_config_id" required>
             <option value="">Выберите конфигурацию</option>
             {% for body in params.type_bodies %}
               <option value="{{ body.id }}"
@@ -121,21 +121,13 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-md-6">
-          <div class="form-check mt-4">
-            <input class="form-check-input" type="checkbox" id="armored" name="armored">
-            <label class="form-check-label" for="armored">
-              Бронированный
-            </label>
-          </div>
-        </div>
       </div>
 
       <!-- Тип двигателя -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="engine_type" class="form-label">Тип двигателя <span class="text-danger">*</span></label>
-          <select class="form-select" id="engine_type" name="engine_type_id" required>
+          <select class="form-select search-select" id="engine_type" name="engine_type_id" required>
             <option value="">Выберите тип двигателя</option>
             {% for engine in params.type_engines %}
               <option value="{{ engine.id }}"
@@ -151,7 +143,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="drive_type" class="form-label">Тип привода <span class="text-danger">*</span></label>
-          <select class="form-select" id="drive_type" name="type_drive" required>
+          <select class="form-select search-select" id="drive_type" name="type_drive" required>
             <option value="">Выберите тип привода</option>
             {% for drive in params.type_drives %}
               <option value="{{ drive }}"
@@ -167,7 +159,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="kpp" class="form-label">КПП <span class="text-danger">*</span></label>
-          <select class="form-select" id="kpp" name="kpp_id" required>
+          <select class="form-select search-select" id="kpp" name="kpp_id" required>
             <option value="">Выберите КПП</option>
             {% for kpp in params.type_kpp %}
               <option value="{{ kpp.id }}"
@@ -183,7 +175,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="modification_full" class="form-label">Модификация <span class="text-danger">*</span></label>
-          <select class="form-select" id="modification_full" name="modification_id" required disabled>
+          <select class="form-select search-select" id="modification_full" name="modification_id" required disabled>
             <option value="">Сначала выберите поколение</option>
           </select>
         </div>
@@ -193,7 +185,7 @@
       <div class="row g-3 mb-4">
         <div class="col-md-12">
           <label for="complectation" class="form-label">Комплектация</label>
-          <select class="form-select" id="complectation" name="complectation_id" disabled>
+          <select class="form-select search-select" id="complectation" name="complectation_id" disabled>
             <option value="">Сначала выберите модификацию</option>
           </select>
           <small class="form-text text-muted" id="complectation_hint" style="display: none;">
@@ -334,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const bodyNumber = bodyNumberInput.value.trim();
     
     if ((vin && vin.length >= 17) || bodyNumber) {
-      const url = `/estimation/${rlkId}/api/previous-estimation/?vin=${encodeURIComponent(vin)}&body_number=${encodeURIComponent(bodyNumber)}`;
+      const url = `/estimations/${rlkId}/api/previous-estimation/?vin=${encodeURIComponent(vin)}&body_number=${encodeURIComponent(bodyNumber)}`;
       
       fetch(url)
         .then(response => response.json())
@@ -446,16 +438,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Очищаем зависимые поля
     modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
     modelSelect.disabled = true;
+    $(modelSelect).trigger('change.select2');
     yearSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
     yearSelect.disabled = true;
+    $(yearSelect).trigger('change.select2');
     modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
     modificationSelect.disabled = true;
+    $(modificationSelect).trigger('change.select2');
     modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
     modificationFullSelect.disabled = true;
+    $(modificationFullSelect).trigger('change.select2');
     complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
+    $(complectationSelect).trigger('change.select2');
     
     // Очищаем поля, которые заполняются из модификации
     if (!markId) {
@@ -466,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!markId) return;
     
-    fetch(`/estimation/${rlkId}/api/models/?mark_id=${markId}`)
+      fetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}`)
       .then(response => response.json())
       .then(data => {
         modelSelect.innerHTML = '<option value="">Выберите модель</option>';
@@ -477,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
           modelSelect.appendChild(option);
         });
         modelSelect.disabled = false;
+        $(modelSelect).trigger('change.select2');
       })
       .catch(error => {
         console.error('Ошибка при загрузке моделей:', error);
@@ -490,18 +488,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Очищаем зависимые поля
     yearSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
     yearSelect.disabled = true;
+    $(yearSelect).trigger('change.select2');
     modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
     modificationSelect.disabled = true;
+    $(modificationSelect).trigger('change.select2');
     modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
     modificationFullSelect.disabled = true;
+    $(modificationFullSelect).trigger('change.select2');
     complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
+    $(complectationSelect).trigger('change.select2');
     
     if (!modelId) return;
     
-    fetch(`/estimation/${rlkId}/api/years/?model_id=${modelId}`)
+      fetch(`/estimations/${rlkId}/api/years/?model_id=${modelId}`)
       .then(response => response.json())
       .then(data => {
         yearSelect.innerHTML = '<option value="">Выберите год</option>';
@@ -512,6 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
           yearSelect.appendChild(option);
         });
         yearSelect.disabled = false;
+        $(yearSelect).trigger('change.select2');
       })
       .catch(error => {
         console.error('Ошибка при загрузке годов:', error);
@@ -526,16 +529,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Очищаем зависимые поля
     modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
     modificationSelect.disabled = true;
+    $(modificationSelect).trigger('change.select2');
     modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
     modificationFullSelect.disabled = true;
+    $(modificationFullSelect).trigger('change.select2');
     complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
+    $(complectationSelect).trigger('change.select2');
     
     if (!modelId || !year) return;
     
-    fetch(`/estimation/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
+      fetch(`/estimations/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
       .then(response => response.json())
       .then(data => {
         modificationSelect.innerHTML = '<option value="">Выберите поколение</option>';
@@ -546,6 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
           modificationSelect.appendChild(option);
         });
         modificationSelect.disabled = false;
+        $(modificationSelect).trigger('change.select2');
       })
       .catch(error => {
         console.error('Ошибка при загрузке модификаций:', error);
@@ -558,10 +565,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
     modificationFullSelect.disabled = true;
+    $(modificationFullSelect).trigger('change.select2');
     complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
+    $(complectationSelect).trigger('change.select2');
     
     if (!modificationId) {
       // Очищаем поля при сбросе модификации
@@ -629,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    fetch(`/estimation/${rlkId}/api/complectations/?modification_id=${modificationId}`)
+      fetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modificationId}`)
       .then(response => response.json())
       .then(data => {
         complectationSelect.innerHTML = '<option value="">Выберите комплектацию</option>';
@@ -652,6 +661,7 @@ document.addEventListener('DOMContentLoaded', function() {
           complectationSelect.removeAttribute('required');
           complectationHint.style.display = 'none';
         }
+        $(complectationSelect).trigger('change.select2');
       })
       .catch(error => {
         console.error('Ошибка при загрузке комплектаций:', error);
@@ -708,6 +718,75 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 500);
     }
   {% endif %}
+  
+  // Инициализация Select2 для всех селектов с поиском
+  $(document).ready(function() {
+    // Инициализируем Select2 для всех селектов с классом search-select
+    function initSelect2() {
+      $('.search-select').each(function() {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+          const placeholder = $(this).find('option[value=""]').text() || 'Выберите...';
+          const isDisabled = $(this).prop('disabled');
+          $(this).select2({
+            language: 'ru',
+            placeholder: placeholder,
+            allowClear: false,
+            width: '100%',
+            dropdownAutoWidth: true,
+            disabled: isDisabled
+          });
+        }
+      });
+    }
+    
+    // Обновляем Select2 при изменении disabled состояния
+    function updateSelect2Disabled() {
+      $('.search-select').each(function() {
+        const $select = $(this);
+        const isDisabled = $select.prop('disabled');
+        if ($select.hasClass('select2-hidden-accessible')) {
+          $select.prop('disabled', isDisabled);
+        }
+      });
+    }
+    
+    // Инициализация при загрузке
+    initSelect2();
+    
+    // Обновляем Select2 при изменении опций или disabled состояния
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+          $(mutation.target).trigger('change.select2');
+        }
+        if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
+          updateSelect2Disabled();
+        }
+      });
+    });
+    
+    // Наблюдаем за изменениями в селектах
+    $('.search-select').each(function() {
+      observer.observe(this, { 
+        childList: true, 
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['disabled']
+      });
+    });
+    
+    // Инициализируем Select2 для динамически созданных селектов
+    setTimeout(function() {
+      initSelect2();
+    }, 100);
+    
+    // Обновляем Select2 при программном изменении значения
+    $(document).on('change', '.search-select', function() {
+      if ($(this).hasClass('select2-hidden-accessible')) {
+        $(this).trigger('change.select2');
+      }
+    });
+  });
 });
 </script>
 
