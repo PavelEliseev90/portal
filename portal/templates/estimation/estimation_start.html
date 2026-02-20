@@ -64,133 +64,153 @@
       <!-- Марка -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="mark" class="form-label">Марка <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="mark" name="mark_id" required>
-            <option value="">Выберите марку</option>
-            {% for mark in params.marks %}
-              <option value="{{ mark.id }}" 
-                      {% if params.estimation.modification and params.estimation.modification.model.mark.id == mark.id %}selected{% endif %}>
-                {{ mark.name }}
-              </option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="mark" name="mark_id" required>
+              <option selected></option>
+              {% for mark in params.marks %}
+                <option value="{{ mark.id }}" 
+                        {% if params.estimation.modification and params.estimation.modification.model.mark.id == mark.id %}selected{% endif %}>
+                  {{ mark.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Модель -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="model" class="form-label">Модель <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="model" name="model_id" required disabled>
-            <option value="">Сначала выберите марку</option>
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
+              <option selected></option>
+            </select>
+            <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Год выпуска -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="year" class="form-label">Год <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="year" name="year" required disabled>
-            <option value="">Сначала выберите модель</option>
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="year" name="year" required disabled>
+              <option selected></option>
+            </select>
+            <label class="fs-6" for="year">Год <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Поколение (модификация) -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="modification" class="form-label">Поколение <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="modification" name="modification_id" required disabled>
-            <option value="">Сначала выберите год</option>
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="modification" name="modification_id" required disabled>
+              <option selected></option>
+            </select>
+            <label class="fs-6" for="modification">Поколение <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Конфигурация кузова -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="body_config" class="form-label">Конфигурация кузова <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="body_config" name="body_config_id" required>
-            <option value="">Выберите конфигурацию</option>
-            {% for body in params.type_bodies %}
-              <option value="{{ body.id }}"
-                      {% if params.estimation.modification and params.estimation.modification.typeBody and params.estimation.modification.typeBody.id == body.id %}selected{% endif %}>
-                {{ body.name }}
-              </option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="body_config" name="body_config_id" required>
+              <option selected></option>
+              {% for body in params.type_bodies %}
+                <option value="{{ body.id }}"
+                        {% if params.estimation.modification and params.estimation.modification.typeBody and params.estimation.modification.typeBody.id == body.id %}selected{% endif %}>
+                  {{ body.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Тип двигателя -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="engine_type" class="form-label">Тип двигателя <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="engine_type" name="engine_type_id" required>
-            <option value="">Выберите тип двигателя</option>
-            {% for engine in params.type_engines %}
-              <option value="{{ engine.id }}"
-                      {% if params.estimation.modification and params.estimation.modification.typeEngine and params.estimation.modification.typeEngine.id == engine.id %}selected{% endif %}>
-                {{ engine.name }}
-              </option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required>
+              <option selected></option>
+              {% for engine in params.type_engines %}
+                <option value="{{ engine.id }}"
+                        {% if params.estimation.modification and params.estimation.modification.typeEngine and params.estimation.modification.typeEngine.id == engine.id %}selected{% endif %}>
+                  {{ engine.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Тип привода -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="drive_type" class="form-label">Тип привода <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="drive_type" name="type_drive" required>
-            <option value="">Выберите тип привода</option>
-            {% for drive in params.type_drives %}
-              <option value="{{ drive }}"
-                      {% if params.estimation.type_drive == drive %}selected{% endif %}>
-                {{ drive }}
-              </option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="drive_type" name="type_drive" required>
+              <option selected></option>
+              {% for drive in params.type_drives %}
+                <option value="{{ drive }}"
+                        {% if params.estimation.type_drive == drive %}selected{% endif %}>
+                  {{ drive }}
+                </option>
+              {% endfor %}
+            </select>
+            <label class="fs-6" for="drive_type">Тип привода <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- КПП -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="kpp" class="form-label">КПП <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="kpp" name="kpp_id" required>
-            <option value="">Выберите КПП</option>
-            {% for kpp in params.type_kpp %}
-              <option value="{{ kpp.id }}"
-                      {% if params.estimation.modification and params.estimation.modification.typeGear and params.estimation.modification.typeGear.id == kpp.id %}selected{% endif %}>
-                {{ kpp.name }}
-              </option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="kpp" name="kpp_id" required>
+              <option selected></option>
+              {% for kpp in params.type_kpp %}
+                <option value="{{ kpp.id }}"
+                        {% if params.estimation.modification and params.estimation.modification.typeGear and params.estimation.modification.typeGear.id == kpp.id %}selected{% endif %}>
+                  {{ kpp.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Модификация -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="modification_full" class="form-label">Модификация <span class="text-danger">*</span></label>
-          <select class="form-select search-select" id="modification_full" name="modification_id" required disabled>
-            <option value="">Сначала выберите поколение</option>
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
+              <option selected></option>
+            </select>
+            <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
+          </div>
         </div>
       </div>
 
       <!-- Комплектация -->
       <div class="row g-3 mb-4">
         <div class="col-md-12">
-          <label for="complectation" class="form-label">Комплектация</label>
-          <select class="form-select search-select" id="complectation" name="complectation_id" disabled>
-            <option value="">Сначала выберите модификацию</option>
-          </select>
-          <small class="form-text text-muted" id="complectation_hint" style="display: none;">
-            Комплектация обязательна для выбора
-          </small>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
+              <option selected></option>
+            </select>
+            <label class="fs-6" for="complectation">Комплектация</label>
+            <small class="form-text text-muted" id="complectation_hint" style="display: none;">
+              Комплектация обязательна для выбора
+            </small>
+          </div>
         </div>
       </div>
 
@@ -436,19 +456,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const markId = this.value;
     
     // Очищаем зависимые поля
-    modelSelect.innerHTML = '<option value="">Сначала выберите марку</option>';
+    modelSelect.innerHTML = '<option selected></option>';
     modelSelect.disabled = true;
     $(modelSelect).trigger('change.select2');
-    yearSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
+    yearSelect.innerHTML = '<option selected></option>';
     yearSelect.disabled = true;
     $(yearSelect).trigger('change.select2');
-    modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
+    modificationSelect.innerHTML = '<option selected></option>';
     modificationSelect.disabled = true;
     $(modificationSelect).trigger('change.select2');
-    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.innerHTML = '<option selected></option>';
     modificationFullSelect.disabled = true;
     $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.innerHTML = '<option selected></option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
@@ -466,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}`)
       .then(response => response.json())
       .then(data => {
-        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+        modelSelect.innerHTML = '<option selected></option>';
         data.models.forEach(model => {
           const option = document.createElement('option');
           option.value = model.id;
@@ -486,16 +506,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const modelId = this.value;
     
     // Очищаем зависимые поля
-    yearSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
+    yearSelect.innerHTML = '<option selected></option>';
     yearSelect.disabled = true;
     $(yearSelect).trigger('change.select2');
-    modificationSelect.innerHTML = '<option value="">Сначала выберите год</option>';
+    modificationSelect.innerHTML = '<option selected></option>';
     modificationSelect.disabled = true;
     $(modificationSelect).trigger('change.select2');
-    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.innerHTML = '<option selected></option>';
     modificationFullSelect.disabled = true;
     $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.innerHTML = '<option selected></option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
@@ -506,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch(`/estimations/${rlkId}/api/years/?model_id=${modelId}`)
       .then(response => response.json())
       .then(data => {
-        yearSelect.innerHTML = '<option value="">Выберите год</option>';
+        yearSelect.innerHTML = '<option selected></option>';
         data.years.forEach(year => {
           const option = document.createElement('option');
           option.value = year;
@@ -544,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch(`/estimations/${rlkId}/api/modifications/?model_id=${modelId}&year=${year}`)
       .then(response => response.json())
       .then(data => {
-        modificationSelect.innerHTML = '<option value="">Выберите поколение</option>';
+        modificationSelect.innerHTML = '<option selected></option>';
         data.modifications.forEach(mod => {
           const option = document.createElement('option');
           option.value = mod.id;
@@ -563,10 +583,10 @@ document.addEventListener('DOMContentLoaded', function() {
   modificationSelect.addEventListener('change', function() {
     const modificationId = this.value;
     
-    modificationFullSelect.innerHTML = '<option value="">Сначала выберите поколение</option>';
+    modificationFullSelect.innerHTML = '<option selected></option>';
     modificationFullSelect.disabled = true;
     $(modificationFullSelect).trigger('change.select2');
-    complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+    complectationSelect.innerHTML = '<option selected></option>';
     complectationSelect.disabled = true;
     complectationSelect.removeAttribute('required');
     complectationHint.style.display = 'none';
@@ -598,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           // Устанавливаем модификацию в финальное поле
-          modificationFullSelect.innerHTML = '<option value="">Выберите модификацию</option>';
+          modificationFullSelect.innerHTML = '<option selected></option>';
           const option = document.createElement('option');
           option.value = selectedMod.id;
           option.textContent = selectedMod.name;
@@ -621,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modificationId) {
       loadComplectations(modificationId);
     } else {
-      complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+      complectationSelect.innerHTML = '<option selected></option>';
       complectationSelect.disabled = true;
       complectationSelect.removeAttribute('required');
       complectationHint.style.display = 'none';
@@ -631,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Функция загрузки комплектаций
   function loadComplectations(modificationId) {
     if (!modificationId) {
-      complectationSelect.innerHTML = '<option value="">Сначала выберите модификацию</option>';
+      complectationSelect.innerHTML = '<option selected></option>';
       complectationSelect.disabled = true;
       complectationSelect.removeAttribute('required');
       complectationHint.style.display = 'none';
@@ -641,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modificationId}`)
       .then(response => response.json())
       .then(data => {
-        complectationSelect.innerHTML = '<option value="">Выберите комплектацию</option>';
+        complectationSelect.innerHTML = '<option selected></option>';
         
         if (data.complectations && data.complectations.length > 0) {
           // Если есть комплектации, делаем поле обязательным
@@ -656,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
           complectationHint.style.display = 'block';
         } else {
           // Если комплектаций нет, поле необязательное
-          complectationSelect.innerHTML = '<option value="">Комплектации отсутствуют</option>';
+          complectationSelect.innerHTML = '<option selected></option>';
           complectationSelect.disabled = false;
           complectationSelect.removeAttribute('required');
           complectationHint.style.display = 'none';
@@ -665,7 +685,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(error => {
         console.error('Ошибка при загрузке комплектаций:', error);
-        complectationSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+        complectationSelect.innerHTML = '<option selected></option>';
         complectationSelect.disabled = true;
         complectationSelect.removeAttribute('required');
         complectationHint.style.display = 'none';
