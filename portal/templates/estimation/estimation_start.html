@@ -955,51 +955,16 @@ document.addEventListener('DOMContentLoaded', function() {
           window.activeEstimationsData = data.list_estimation || [];
           
           if (data.list_estimation && data.list_estimation.length > 0) {
-            // Показываем счетчик
             if (countBadge) {
               countBadge.textContent = data.list_estimation.length;
               countBadge.style.display = 'inline-block';
             }
-            
-            let html = '<div class="list-group" style="max-height: 400px; overflow-y: auto;">';
-            data.list_estimation.slice(0, 10).forEach(est => {
-              const date = est.date ? new Date(est.date).toLocaleDateString('ru-RU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : 'Не указано';
-              const rlkLink = est.rlk_id ? `/estimations/${est.rlk_id}/` : '#';
-              html += `
-                <div class="list-group-item ${est.rlk_id ? 'list-group-item-action' : ''}" ${est.rlk_id ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
-                  <div class="d-flex w-100 justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                      <h6 class="mb-1">${est.mark || 'Не указано'}</h6>
-                      <p class="mb-1 small">
-                        <span class="badge bg-secondary me-2">${est.status || 'Без статуса'}</span>
-                        ${est.year ? `<span class="text-muted">${est.year} г.</span>` : ''}
-                        ${est.run ? `<span class="text-muted ms-2">Пробег: ${est.run} км</span>` : ''}
-                      </p>
-                      ${est.customer ? `<p class="mb-1 small text-muted"><i class="bi bi-person me-1"></i>${est.customer}</p>` : ''}
-                      ${est.staff ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${est.staff}</small>` : ''}
-                    </div>
-                    <small class="text-muted ms-2">${date}</small>
-                  </div>
-                  ${est.rlk_id ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть оценку</small></div>' : ''}
-                </div>
-              `;
-            });
-            html += '</div>';
-            if (data.list_estimation.length > 10) {
-              html += `<p class="text-center mt-2"><small class="text-muted">Показано 10 из ${data.list_estimation.length}</small></p>`;
-            }
-            block.innerHTML = html;
+            block.innerHTML = '<p class="text-muted mb-0">Нажмите на счётчик для просмотра</p>';
           } else {
             if (countBadge) {
               countBadge.style.display = 'none';
             }
-            block.innerHTML = '<div class="text-center text-muted py-3"><p class="mb-0"><i class="bi bi-info-circle me-2"></i>Активных интерактивных оценок не найдено</p><small class="text-muted">За последние 14 дней</small></div>';
+            block.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-2"></i>Активных интерактивных оценок не найдено</p>';
           }
         })
         .catch(error => {
@@ -1018,44 +983,16 @@ document.addEventListener('DOMContentLoaded', function() {
           window.repairHistoryData = data.objects || [];
           
           if (data.objects && data.objects.length > 0) {
-            // Показываем счетчик
             if (countBadge) {
               countBadge.textContent = data.objects_count || data.objects.length;
               countBadge.style.display = 'inline-block';
             }
-            
-            let html = '<div class="list-group" style="max-height: 400px; overflow-y: auto;">';
-            data.objects.slice(0, 10).forEach(repair => {
-              const date = repair.date || 'Не указано';
-              const amount = repair.amount_doc || 0;
-              const run = repair.run_car || 0;
-              html += `
-                <div class="list-group-item">
-                  <div class="d-flex w-100 justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                      <h6 class="mb-1">${repair.type_repair_name || 'Ремонт'}</h6>
-                      <p class="mb-1 small">
-                        ${amount > 0 ? `<span class="text-primary fw-bold">${amount.toLocaleString('ru-RU')} руб.</span>` : ''}
-                        ${run > 0 ? `<span class="text-muted ms-2">Пробег: ${run.toLocaleString('ru-RU')} км</span>` : ''}
-                      </p>
-                      ${repair.staff_name ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${repair.staff_name}</small>` : ''}
-                      ${repair.unit_name ? `<small class="text-muted d-block"><i class="bi bi-building me-1"></i>${repair.unit_name}</small>` : ''}
-                    </div>
-                    <small class="text-muted ms-2">${date}</small>
-                  </div>
-                </div>
-              `;
-            });
-            html += '</div>';
-            if (data.objects_count > 10) {
-              html += `<p class="text-center mt-2"><small class="text-muted">Показано 10 из ${data.objects_count}</small></p>`;
-            }
-            block.innerHTML = html;
+            block.innerHTML = '<p class="text-muted mb-0">Нажмите на счётчик для просмотра</p>';
           } else {
             if (countBadge) {
               countBadge.style.display = 'none';
             }
-            block.innerHTML = '<div class="text-center text-muted py-3"><p class="mb-0"><i class="bi bi-info-circle me-2"></i>История ремонтов не найдена</p></div>';
+            block.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-2"></i>История ремонтов не найдена</p>';
           }
         })
         .catch(error => {
@@ -1074,50 +1011,16 @@ document.addEventListener('DOMContentLoaded', function() {
           window.estimationHistoryData = data.objects || [];
           
           if (data.objects && data.objects.length > 0) {
-            // Показываем счетчик
             if (countBadge) {
               countBadge.textContent = data.objects_count || data.objects.length;
               countBadge.style.display = 'inline-block';
             }
-            
-            let html = '<div class="list-group" style="max-height: 400px; overflow-y: auto;">';
-            data.objects.slice(0, 10).forEach(est => {
-              const date = est.date || 'Не указано';
-              const costPrice = est.cost_price_doc || 0;
-              const run = est.run_car || 0;
-              const carName = `${est.mark || ''} ${est.model || ''} ${est.car_name || ''}`.trim() || 'Не указано';
-              const rlkId = est.rlk_id || est.slug || null;
-              const rlkLink = rlkId ? `/estimations/${rlkId}/` : '#';
-              html += `
-                <div class="list-group-item ${rlkId ? 'list-group-item-action' : ''}" ${rlkId ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
-                  <div class="d-flex w-100 justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                      <h6 class="mb-1">${carName}</h6>
-                      <p class="mb-1 small">
-                        ${costPrice > 0 ? `<span class="text-primary fw-bold">${costPrice.toLocaleString('ru-RU')} руб.</span>` : ''}
-                        ${run > 0 ? `<span class="text-muted ms-2">Пробег: ${run.toLocaleString('ru-RU')} км</span>` : ''}
-                        ${est.year_car ? `<span class="text-muted ms-2">${est.year_car} г.</span>` : ''}
-                      </p>
-                      ${est.staff_name ? `<small class="text-muted"><i class="bi bi-person-badge me-1"></i>${est.staff_name}</small>` : ''}
-                      ${est.unit_name ? `<small class="text-muted d-block"><i class="bi bi-building me-1"></i>${est.unit_name}</small>` : ''}
-                      ${est.number ? `<small class="text-muted d-block"><i class="bi bi-file-text me-1"></i>${est.number}</small>` : ''}
-                    </div>
-                    <small class="text-muted ms-2">${date}</small>
-                  </div>
-                  ${rlkId ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть оценку</small></div>' : ''}
-                </div>
-              `;
-            });
-            html += '</div>';
-            if (data.objects_count > 10) {
-              html += `<p class="text-center mt-2"><small class="text-muted">Показано 10 из ${data.objects_count}</small></p>`;
-            }
-            block.innerHTML = html;
+            block.innerHTML = '<p class="text-muted mb-0">Нажмите на счётчик для просмотра</p>';
           } else {
             if (countBadge) {
               countBadge.style.display = 'none';
             }
-            block.innerHTML = '<div class="text-center text-muted py-3"><p class="mb-0"><i class="bi bi-info-circle me-2"></i>История оценок не найдена</p></div>';
+            block.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-2"></i>История оценок не найдена</p>';
           }
         })
         .catch(error => {
