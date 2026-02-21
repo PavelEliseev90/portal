@@ -2641,3 +2641,86 @@ def api_get_previous_estimation(request, rlk_id):
         return JsonResponse({'estimation': estimation_data})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_repair_history(request, rlk_id):
+    """История ремонтов по VIN (session auth)"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    vin = request.GET.get('vin', '').strip()
+    if not vin:
+        return JsonResponse({'objects': [], 'objects_count': 0})
+    try:
+        docs = DocZN.objects.filter(cars__vin__icontains=vin).filter(closed=True).order_by('-dataTime')
+        objects = []
+        for d in docs:
+            objects.append({
+                'slug': d.id,
+                'date': d.dataTime.strftime('%d.%m.%Y %H:%M:%S') if d.dataTime else 'Не указано',
+                'amount_doc': float(d.amount) if d.amount else 0,
+                'run_car': d.run or 0,
+                'type_repair_name': d.typeRemont.name if d.typeRemont else 'Ремонт',
+                'staff_name': d.master.name if d.master else '',
+                'unit_name': d.unit.name if d.unit else '',
+            })
+        return JsonResponse({'objects': objects, 'objects_count': len(objects)})
+    except Exception as e:
+        return JsonResponse({'objects': [], 'objects_count': 0, 'error': str(e)})
+
+
+@api_view(['GET'])
+def api_get_estimation_history(request, rlk_id):
+    """История оценок по VIN (session auth)"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    vin = request.GET.get('vin', '').strip()
+    if not vin:
+        return JsonResponse({'objects': [], 'objects_count': 0})
+    try:
+        objects = []
+        # RegInteractivOcenka (интерактивные оценки)
+        for est in RegInteractivOcenka.objects.filter(vin=vin).order_by('-start_estimation')[:50]:
+            rlk_id = est.rlk.id if est.rlk else None
+            car_name = ''
+            if est.modification:
+                car_name = f"{est.modification.model.mark.name if est.modification.model and est.modification.model.mark else ''} {est.modification.model.name if est.modification.model else ''} {est.modification.name}".strip()
+            objects.append({
+                'slug': rlk_id,
+                'rlk_id': rlk_id,
+                'date': est.start_estimation.strftime('%d.%m.%Y %H:%M:%S') if est.start_estimation else 'Не указано',
+                'cost_price_doc': 0,
+                'run_car': est.page_salon.run if est.page_salon else 0,
+                'year_car': est.year or '',
+                'mark': est.modification.model.mark.name if est.modification and est.modification.model and est.modification.model.mark else '',
+                'model': est.modification.model.name if est.modification and est.modification.model else '',
+                'car_name': car_name,
+                'staff_name': est.staff.name if est.staff else '',
+                'unit_name': est.rlk.unit.name if est.rlk and est.rlk.unit else '',
+                'number': '',
+            })
+        # DocLO (документы оценки)
+        lo_qs = DocLO.objects.filter(vin=vin).order_by('-dataTime')[:50]
+        for lo in lo_qs:
+            if RegInteractivOcenka.objects.filter(rlk=lo.rlk).exists():
+                continue
+            rlk_id = lo.rlk.id if lo.rlk else None
+            mod = lo.modification_autoru if hasattr(lo, 'modification_autoru') and lo.modification_autoru else None
+            objects.append({
+                'slug': rlk_id,
+                'rlk_id': rlk_id,
+                'date': lo.dataTime.strftime('%d.%m.%Y %H:%M:%S') if lo.dataTime else 'Не указано',
+                'cost_price_doc': float(lo.cost_price) if lo.cost_price else 0,
+                'run_car': lo.run or 0,
+                'year_car': lo.year or '',
+                'mark': mod.model.mark.name if mod and mod.model and mod.model.mark else '',
+                'model': mod.model.name if mod and mod.model else '',
+                'car_name': mod.name if mod else '',
+                'staff_name': lo.staff.name if lo.staff else '',
+                'unit_name': lo.unit.name if lo.unit else '',
+                'number': lo.nomer or '',
+            })
+        objects.sort(key=lambda x: x['date'] or '', reverse=True)
+        return JsonResponse({'objects': objects[:50], 'objects_count': len(objects)})
+    except Exception as e:
+        return JsonResponse({'objects': [], 'objects_count': 0, 'error': str(e)})
