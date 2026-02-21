@@ -1582,17 +1582,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // Обновляем Select2 при изменении disabled состояния
-    function updateSelect2Disabled() {
-      $('.search-select').each(function() {
-        const $select = $(this);
-        const isDisabled = $select.prop('disabled');
-        if ($select.hasClass('select2-hidden-accessible')) {
-          $select.prop('disabled', isDisabled);
-        }
-      });
-    }
-    
     // Инициализация при загрузке
     initSelect2();
     
@@ -2198,18 +2187,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // isLoadingModifications объявлен в DOMContentLoaded
-    
-    // Обработчики для типа кузова, типа двигателя и КПП - загружают модификации с фильтрацией
-    $('#body_config, #engine_type, #kpp').off('change').on('change', function() {
-      if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) {
-        return;
-      }
-      // Флаг устанавливается внутри loadModificationsWithFilters
-      setTimeout(() => {
+    // Debounce для loadModificationsWithFilters — при быстром выборе body/engine/kpp один вызов
+    let loadModificationsTimer = null;
+    function scheduleLoadModifications() {
+      if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) return;
+      if (loadModificationsTimer) clearTimeout(loadModificationsTimer);
+      loadModificationsTimer = setTimeout(function() {
+        loadModificationsTimer = null;
         loadModificationsWithFilters();
-      }, 100);
-    });
+      }, 150);
+    }
+    
+    $('#body_config, #engine_type, #kpp').off('change').on('change', scheduleLoadModifications);
     
     // Обработчик типа привода - Select2 обновляет отображение при выборе, дополнительная логика не требуется
     $('#drive_type').off('change').on('change', function() {
@@ -2257,23 +2246,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // При выборе модификации загружаем комплектации
     $(modificationFullSelect).off('change').on('change', handleModificationChange);
     
-    // Обновляем Select2 при изменении disabled состояния (без MutationObserver для childList, чтобы избежать циклов)
-    // MutationObserver только для disabled атрибута
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
-          updateSelect2Disabled();
-        }
-      });
-    });
-    
-    // Наблюдаем только за изменениями disabled атрибута
-    $('.search-select').each(function() {
-      observer.observe(this, { 
-        attributes: true,
-        attributeFilter: ['disabled']
-      });
-    });
+    // MutationObserver убран — вызывал бесконечные обновления и зависание при смене disabled
   });
 });
 
