@@ -2025,75 +2025,70 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           try {
             // Инициализируем только очищенные селекты
-            if ($(modificationFullSelect).hasClass('select2-hidden-accessible')) {
-              $(modificationFullSelect).select2('destroy');
+            if (!$(modificationFullSelect).hasClass('select2-hidden-accessible')) {
+              const $modLabel = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
+              const modPlaceholder = $modLabel.length ? $modLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(modificationFullSelect).select2({
+                language: 'ru',
+                placeholder: modPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
             }
-            const $modLabel = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
-            const modPlaceholder = $modLabel.length ? $modLabel.text().replace(/\s*\*/, '') : 'Выберите...';
-            $(modificationFullSelect).select2({
-              language: 'ru',
-              placeholder: modPlaceholder,
-              allowClear: false,
-              width: '100%',
-              dropdownAutoWidth: true,
-              disabled: true
-            });
             
-            if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
-              $(complectationSelect).select2('destroy');
+            if (!$(complectationSelect).hasClass('select2-hidden-accessible')) {
+              const $compLabel = $(complectationSelect).closest('.search-select-wrapper').find('label');
+              const compPlaceholder = $compLabel.length ? $compLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(complectationSelect).select2({
+                language: 'ru',
+                placeholder: compPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
             }
-            const $compLabel = $(complectationSelect).closest('.search-select-wrapper').find('label');
-            const compPlaceholder = $compLabel.length ? $compLabel.text().replace(/\s*\*/, '') : 'Выберите...';
-            $(complectationSelect).select2({
-              language: 'ru',
-              placeholder: compPlaceholder,
-              allowClear: false,
-              width: '100%',
-              dropdownAutoWidth: true,
-              disabled: true
-            });
             
-            if ($('#body_config').hasClass('select2-hidden-accessible')) {
-              $('#body_config').select2('destroy');
+            if (!$('#body_config').hasClass('select2-hidden-accessible')) {
+              const $bodyLabel = $('#body_config').closest('.search-select-wrapper').find('label');
+              const bodyPlaceholder = $bodyLabel.length ? $bodyLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $('#body_config').select2({
+                language: 'ru',
+                placeholder: bodyPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
             }
-            const $bodyLabel = $('#body_config').closest('.search-select-wrapper').find('label');
-            const bodyPlaceholder = $bodyLabel.length ? $bodyLabel.text().replace(/\s*\*/, '') : 'Выберите...';
-            $('#body_config').select2({
-              language: 'ru',
-              placeholder: bodyPlaceholder,
-              allowClear: false,
-              width: '100%',
-              dropdownAutoWidth: true,
-              disabled: true
-            });
             
-            if ($('#engine_type').hasClass('select2-hidden-accessible')) {
-              $('#engine_type').select2('destroy');
+            if (!$('#engine_type').hasClass('select2-hidden-accessible')) {
+              const $engineLabel = $('#engine_type').closest('.search-select-wrapper').find('label');
+              const enginePlaceholder = $engineLabel.length ? $engineLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $('#engine_type').select2({
+                language: 'ru',
+                placeholder: enginePlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
             }
-            const $engineLabel = $('#engine_type').closest('.search-select-wrapper').find('label');
-            const enginePlaceholder = $engineLabel.length ? $engineLabel.text().replace(/\s*\*/, '') : 'Выберите...';
-            $('#engine_type').select2({
-              language: 'ru',
-              placeholder: enginePlaceholder,
-              allowClear: false,
-              width: '100%',
-              dropdownAutoWidth: true,
-              disabled: true
-            });
             
-            if ($('#kpp').hasClass('select2-hidden-accessible')) {
-              $('#kpp').select2('destroy');
+            if (!$('#kpp').hasClass('select2-hidden-accessible')) {
+              const $kppLabel = $('#kpp').closest('.search-select-wrapper').find('label');
+              const kppPlaceholder = $kppLabel.length ? $kppLabel.text().replace(/\s*\*/, '') : 'Выберите...';
+              $('#kpp').select2({
+                language: 'ru',
+                placeholder: kppPlaceholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
             }
-            const $kppLabel = $('#kpp').closest('.search-select-wrapper').find('label');
-            const kppPlaceholder = $kppLabel.length ? $kppLabel.text().replace(/\s*\*/, '') : 'Выберите...';
-            $('#kpp').select2({
-              language: 'ru',
-              placeholder: kppPlaceholder,
-              allowClear: false,
-              width: '100%',
-              dropdownAutoWidth: true,
-              disabled: true
-            });
           } catch (e) {
             console.error('Ошибка инициализации Select2:', e);
           } finally {
@@ -2221,6 +2216,37 @@ document.addEventListener('DOMContentLoaded', function() {
           isLoadingModifications = false;
         }, 300);
       }, 100);
+    });
+    
+    // Обработчик для типа привода - загружает модификации, если все остальные поля заполнены
+    // Используем обычное событие change - Select2 автоматически обработает его
+    $('#drive_type').off('change').on('change', function() {
+      // Предотвращаем повторные вызовы
+      if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) {
+        return;
+      }
+      
+      // Проверяем, все ли необходимые поля заполнены
+      const modelId = $(modelSelect).val();
+      const year = $(yearSelect).val();
+      const typeBodyId = $('#body_config').val();
+      const typeEngineId = $('#engine_type').val();
+      const typeKppId = $('#kpp').val();
+      
+      // Если все поля заполнены, загружаем модификации
+      if (modelId && year && typeBodyId && typeEngineId && typeKppId) {
+        // Устанавливаем флаг перед вызовом
+        isLoadingModifications = true;
+        
+        // Вызываем загрузку модификаций с небольшой задержкой
+        setTimeout(() => {
+          loadModificationsWithFilters();
+          // Сбрасываем флаг после небольшой задержки
+          setTimeout(() => {
+            isLoadingModifications = false;
+          }, 300);
+        }, 200);
+      }
     });
     
     // Флаг для предотвращения рекурсивных вызовов при изменении модификации
