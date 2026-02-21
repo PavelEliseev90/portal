@@ -876,9 +876,11 @@
 <script>
 // Функция сброса формы
 function resetForm() {
-  // Очищаем все каскадные поля
-  markSelect.value = '';
-  markSelect.dispatchEvent(new Event('change'));
+  const markSelect = document.getElementById('mark');
+  if (markSelect) {
+    markSelect.value = '';
+    markSelect.dispatchEvent(new Event('change'));
+  }
   document.getElementById('estimationStartForm').reset();
 }
 
@@ -903,6 +905,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Флаги для предотвращения повторных вызовов
   let isCheckingPreviousEstimation = false;
   let isAutofilling = false;
+  let isUpdatingSelect2 = false;
+  let isLoadingModifications = false;
   
   // Функция загрузки информации по VIN
   function loadVehicleInfo() {
@@ -1149,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mark = markSelect.value;
     const model = modelSelect.value;
     const year = yearSelect.value;
-    const modification = modificationSelect.value;
+    const modification = modificationFullSelect.value;
     
     // Проверка обязательных полей
     if (!vin || vin.length < 17) {
@@ -1183,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!modification) {
       e.preventDefault();
       alert('Пожалуйста, выберите поколение');
-      modificationSelect.focus();
+      modificationFullSelect.focus();
       return false;
     }
     
@@ -1342,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (estimation.type_drive) {
-      document.getElementById('drive_type').value = estimation.type_drive;
+      $('#drive_type').val(estimation.type_drive).trigger('change');
     }
     
     if (estimation.run) {
@@ -1485,8 +1489,8 @@ document.addEventListener('DOMContentLoaded', function() {
               
               setTimeout(() => {
                 if (currentMod.modificationId) {
-                  modificationSelect.value = currentMod.modificationId;
-                  $(modificationSelect).trigger('change');
+                  modificationFullSelect.value = currentMod.modificationId;
+                  $(modificationFullSelect).trigger('change');
                   
                   // Загружаем комплектации после выбора модификации
                   setTimeout(() => {
@@ -1536,8 +1540,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
     
-    // Флаг для предотвращения рекурсивных вызовов updateSelect2
-    let isUpdatingSelect2 = false;
+    // isUpdatingSelect2 объявлен в DOMContentLoaded для доступа из loadComplectations
     
     // Функция для обновления конкретного селекта без переинициализации всех
     function updateSelect2($select) {
@@ -2195,58 +2198,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Флаг для предотвращения рекурсивных вызовов при загрузке модификаций
-    let isLoadingModifications = false;
+    // isLoadingModifications объявлен в DOMContentLoaded
     
     // Обработчики для типа кузова, типа двигателя и КПП - загружают модификации с фильтрацией
     $('#body_config, #engine_type, #kpp').off('change').on('change', function() {
-      // Предотвращаем повторные вызовы
       if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) {
         return;
       }
-      
-      // Устанавливаем флаг перед вызовом
-      isLoadingModifications = true;
-      
-      // Вызываем загрузку модификаций с небольшой задержкой, чтобы избежать конфликтов
+      // Флаг устанавливается внутри loadModificationsWithFilters
       setTimeout(() => {
         loadModificationsWithFilters();
-        // Сбрасываем флаг после небольшой задержки
-        setTimeout(() => {
-          isLoadingModifications = false;
-        }, 300);
       }, 100);
     });
     
-    // Обработчик для типа привода - загружает модификации, если все остальные поля заполнены
-    // Используем обычное событие change - Select2 автоматически обработает его
+    // Обработчик типа привода - Select2 обновляет отображение при выборе, дополнительная логика не требуется
     $('#drive_type').off('change').on('change', function() {
-      // Предотвращаем повторные вызовы
-      if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) {
-        return;
-      }
-      
-      // Проверяем, все ли необходимые поля заполнены
-      const modelId = $(modelSelect).val();
-      const year = $(yearSelect).val();
-      const typeBodyId = $('#body_config').val();
-      const typeEngineId = $('#engine_type').val();
-      const typeKppId = $('#kpp').val();
-      
-      // Если все поля заполнены, загружаем модификации
-      if (modelId && year && typeBodyId && typeEngineId && typeKppId) {
-        // Устанавливаем флаг перед вызовом
-        isLoadingModifications = true;
-        
-        // Вызываем загрузку модификаций с небольшой задержкой
-        setTimeout(() => {
-          loadModificationsWithFilters();
-          // Сбрасываем флаг после небольшой задержки
-          setTimeout(() => {
-            isLoadingModifications = false;
-          }, 300);
-        }, 200);
-      }
+      // Не вызываем loadModificationsWithFilters - тип привода не влияет на API модификаций
+      // Выбранное значение Select2 отображает автоматически
     });
     
     // Флаг для предотвращения рекурсивных вызовов при изменении модификации
