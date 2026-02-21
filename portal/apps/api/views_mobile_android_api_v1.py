@@ -125,7 +125,9 @@ def get_user_info(request):
     
     if user_auth_tuple is not None:
         user, _         = user_auth_tuple
-        profiles_user   = True
+    elif request.user and request.user.is_authenticated:
+        # Веб-пользователи: сессия Django (cookies)
+        user            = request.user
     
     if user == None:
         answer = {

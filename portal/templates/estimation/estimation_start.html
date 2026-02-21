@@ -679,12 +679,12 @@
             </div>
           </div>
     
-          <!-- Тип привода -->
+          <!-- Тип привода (обычный select без Select2 — 3 опции, всегда работает) -->
           <div class="row g-3 mb-2">
             <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="drive_type" name="type_drive" required>
-                  <option selected></option>
+              <div class="form-floating">
+                <select class="form-control" id="drive_type" name="type_drive" required>
+                  <option value="">Выберите тип привода</option>
                   {% for drive in params.type_drives %}
                     <option value="{{ drive }}"
                             {% if params.estimation.type_drive == drive %}selected{% endif %}>
@@ -692,7 +692,7 @@
                     </option>
                   {% endfor %}
                 </select>
-                <label class="fs-6" for="drive_type">Тип привода <span class="text-danger">*</span></label>
+                <label for="drive_type">Тип привода <span class="text-danger">*</span></label>
               </div>
             </div>
           </div>
@@ -1008,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       
       // Загружаем историю ремонтов
-      fetch(`/api/a/v1/vin_repairs/${encodeURIComponent(vin)}/`)
+      fetch(`/estimations/${rlkId}/api/repair-history/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('repairHistoryBlock');
@@ -1064,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       
       // Загружаем историю оценок
-      fetch(`/api/a/v1/vin_estimation/${encodeURIComponent(vin)}/`)
+      fetch(`/estimations/${rlkId}/api/estimation-history/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('estimationHistoryBlock');
@@ -1086,10 +1086,10 @@ document.addEventListener('DOMContentLoaded', function() {
               const costPrice = est.cost_price_doc || 0;
               const run = est.run_car || 0;
               const carName = `${est.mark || ''} ${est.model || ''} ${est.car_name || ''}`.trim() || 'Не указано';
-              const slug = est.slug || null;
-              const rlkLink = slug ? `/documents/rlk/${slug}/` : '#';
+              const rlkId = est.rlk_id || est.slug || null;
+              const rlkLink = rlkId ? `/estimations/${rlkId}/` : '#';
               html += `
-                <div class="list-group-item ${slug ? 'list-group-item-action' : ''}" ${slug ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
+                <div class="list-group-item ${rlkId ? 'list-group-item-action' : ''}" ${rlkId ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
                   <div class="d-flex w-100 justify-content-between align-items-start">
                     <div class="flex-grow-1">
                       <h6 class="mb-1">${carName}</h6>
@@ -1104,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <small class="text-muted ms-2">${date}</small>
                   </div>
-                  ${slug ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть RLK</small></div>' : ''}
+                  ${rlkId ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть оценку</small></div>' : ''}
                 </div>
               `;
             });
@@ -1271,23 +1271,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const yearChangeEvent = new Event('change', { bubbles: true });
         yearSelect.dispatchEvent(yearChangeEvent);
         
-        // Загружаем марки по году
+        // Загружаем марки по году (800ms на запрос)
         setTimeout(() => {
           if (estimation.modification.mark_id) {
             markSelect.value = estimation.modification.mark_id;
-            const markChangeEvent = new Event('change', { bubbles: true });
-            markSelect.dispatchEvent(markChangeEvent);
+            markSelect.dispatchEvent(new Event('change', { bubbles: true }));
             
-            // Загружаем модели по марке и году
             setTimeout(() => {
               if (estimation.modification.model_id) {
                 modelSelect.value = estimation.modification.model_id;
-                const modelChangeEvent = new Event('change', { bubbles: true });
-                modelSelect.dispatchEvent(modelChangeEvent);
+                modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 
-                // Устанавливаем тип кузова, двигателя, КПП после выбора модели
                 setTimeout(() => {
-                  // Устанавливаем тип кузова, двигателя, КПП
                   if (estimation.modification.type_body_id) {
                     $('#body_config').val(estimation.modification.type_body_id).trigger('change');
                   }
@@ -1298,11 +1293,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     $('#kpp').val(estimation.modification.type_kpp_id).trigger('change');
                   }
                   
-                  // Загружаем модификации с фильтрацией после установки всех фильтров
                   setTimeout(() => {
                     loadModificationsWithFilters();
                     
-                    // После загрузки модификаций выбираем нужную
                     setTimeout(() => {
                       if (estimation.modification.id) {
                         modificationFullSelect.value = estimation.modification.id;
@@ -1316,28 +1309,30 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (estimation.complectation && estimation.complectation.id) {
                               complectationSelect.value = estimation.complectation.id;
                             }
-                            // Восстанавливаем флаг после завершения автозаполнения
+                            if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
+                              $(complectationSelect).trigger('change');
+                            }
                             isAutofilling = false;
                             isCheckingPreviousEstimation = wasChecking;
-                          }, 500);
-                        }, 500);
+                          }, 600);
+                        }, 600);
                       } else {
                         isAutofilling = false;
                         isCheckingPreviousEstimation = wasChecking;
                       }
-                    }, 500);
-                  }, 500);
-                }, 500);
+                    }, 800);
+                  }, 800);
+                }, 800);
               } else {
                 isAutofilling = false;
                 isCheckingPreviousEstimation = wasChecking;
               }
-            }, 500);
+            }, 800);
           } else {
             isAutofilling = false;
             isCheckingPreviousEstimation = wasChecking;
           }
-        }, 500);
+        }, 800);
       } else {
         isAutofilling = false;
         isCheckingPreviousEstimation = wasChecking;
@@ -1346,7 +1341,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (estimation.type_drive) {
-      $('#drive_type').val(estimation.type_drive).trigger('change');
+      document.getElementById('drive_type').value = estimation.type_drive;
     }
     
     if (estimation.run) {
@@ -1588,8 +1583,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Привязываем обработчики событий после инициализации Select2
     // Каскадная загрузка марок при выборе года
     $(yearSelect).off('change').on('change', function(e) {
-      // Предотвращаем повторные вызовы и вызовы во время автозаполнения
-      if ($(this).data('loading') || isAutofilling || isUpdatingSelect2) {
+      if ($(this).data('loading') || isUpdatingSelect2) {
         return;
       }
       
@@ -1789,8 +1783,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Каскадная загрузка моделей при выборе марки
     $(markSelect).off('change').on('change', function() {
-      // Предотвращаем повторные вызовы и вызовы во время автозаполнения
-      if ($(this).data('loading') || isAutofilling) {
+      if ($(this).data('loading')) {
         return;
       }
       
@@ -1973,8 +1966,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // При выборе модели активируем поля типа кузова, двигателя и КПП
     $(modelSelect).off('change').on('change', function() {
-      // Предотвращаем повторные вызовы и вызовы во время автозаполнения
-      if ($(this).data('loading') || isAutofilling || isUpdatingSelect2) {
+      if ($(this).data('loading') || isUpdatingSelect2) {
         return;
       }
       
@@ -2190,7 +2182,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Debounce для loadModificationsWithFilters — при быстром выборе body/engine/kpp один вызов
     let loadModificationsTimer = null;
     function scheduleLoadModifications() {
-      if (isAutofilling || isUpdatingSelect2 || isLoadingModifications) return;
+      if (isUpdatingSelect2 || isLoadingModifications) return;
       if (loadModificationsTimer) clearTimeout(loadModificationsTimer);
       loadModificationsTimer = setTimeout(function() {
         loadModificationsTimer = null;
@@ -2200,11 +2192,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     $('#body_config, #engine_type, #kpp').off('change').on('change', scheduleLoadModifications);
     
-    // Обработчик типа привода - Select2 обновляет отображение при выборе, дополнительная логика не требуется
-    $('#drive_type').off('change').on('change', function() {
-      // Не вызываем loadModificationsWithFilters - тип привода не влияет на API модификаций
-      // Выбранное значение Select2 отображает автоматически
-    });
     
     // Флаг для предотвращения рекурсивных вызовов при изменении модификации
     let isProcessingModification = false;
@@ -2212,7 +2199,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция обработки изменения модификации
     function handleModificationChange() {
       // Предотвращаем вызовы во время автозаполнения, обновления Select2 или обработки модификации
-      if (isAutofilling || isUpdatingSelect2 || isProcessingModification) {
+      if (isUpdatingSelect2 || isProcessingModification) {
         return;
       }
       
@@ -2351,10 +2338,10 @@ function openEstimationHistoryModal() {
     const costPrice = est.cost_price_doc || 0;
     const run = est.run_car || 0;
     const carName = `${est.mark || ''} ${est.model || ''} ${est.car_name || ''}`.trim() || 'Не указано';
-    const slug = est.slug || null;
-    const rlkLink = slug ? `/documents/rlk/${slug}/` : '#';
+    const rlkId = est.rlk_id || est.slug || null;
+    const rlkLink = rlkId ? `/estimations/${rlkId}/` : '#';
     html += `
-      <div class="list-group-item ${slug ? 'list-group-item-action' : ''}" ${slug ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
+      <div class="list-group-item ${rlkId ? 'list-group-item-action' : ''}" ${rlkId ? `onclick="window.location.href='${rlkLink}'" style="cursor: pointer;"` : ''}>
         <div class="d-flex w-100 justify-content-between align-items-start">
           <div class="flex-grow-1">
             <h6 class="mb-1">${carName}</h6>
@@ -2372,7 +2359,7 @@ function openEstimationHistoryModal() {
           </div>
           <small class="text-muted ms-2">${date}</small>
         </div>
-        ${slug ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть RLK</small></div>' : ''}
+        ${rlkId ? '<div class="mt-2"><small class="text-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Открыть оценку</small></div>' : ''}
       </div>
     `;
   });

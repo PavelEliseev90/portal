@@ -25,4 +25,6 @@ urlpatterns = [
     path('<slug:rlk_id>/api/modifications/',                                   views.api_get_modifications_by_model_year, name='api_modifications'),
     path('<slug:rlk_id>/api/complectations/',                                  views.api_get_complectations_by_modification, name='api_complectations'),
     path('<slug:rlk_id>/api/previous-estimation/',                             views.api_get_previous_estimation, name='api_previous_estimation'),
+    path('<slug:rlk_id>/api/repair-history/',                                 views.api_get_repair_history, name='api_repair_history'),
+    path('<slug:rlk_id>/api/estimation-history/',                             views.api_get_estimation_history, name='api_estimation_history'),
 ]
