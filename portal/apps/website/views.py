@@ -105,7 +105,7 @@ AUTOPRICING_MARKUP_FIELDS = [
 ]
 
 #Настройки параметров доступа
-#server_im      = 'http://k01srv1c07/rinternetmag/hs/mb/'
+#server_im      = 'http://k01srv1c05/ralfa01eliseev/hs/mb/'
 server_im      = 'http://k01srv1c10/ralfa01/hs/mb/'
 time_out_im    = 25
 
@@ -9544,6 +9544,8 @@ def sb_lo(request):
 
 def test(request):
     
+    from task_manager.views import refresh_auctohub_guide
+    refresh_auctohub_guide()
     # RegInteractivOcenka.objects.get(pk = 47119).save()
     #DocRLK.objects.get(pk = 2607921).save()
 

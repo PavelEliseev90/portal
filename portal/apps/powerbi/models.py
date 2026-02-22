@@ -441,7 +441,8 @@ class ComparativeReportOPFU(models.Model):
 
 
 class Cumulative(models.Model):
-	PodrazdelenieDTs = models.CharField("ПодразделениеДЦ", max_length=512, null=True, blank=True)
+	PodrazdelenieDTs 	= models.CharField("ПодразделениеДЦ", max_length=512, null=True, blank=True)
+	Rrodavec 			= models.CharField("Продавец", max_length=512, null=True, blank=True)
 	PodarkiSebestoimost = models.CharField("ПодаркиСебестоимость", max_length=512, null=True, blank=True)
 	DopySebestoimost = models.CharField("ДопыСебестоимость", max_length=512, null=True, blank=True)
 	DopyVTsene = models.CharField("ДопыВЦене", max_length=512, null=True, blank=True)

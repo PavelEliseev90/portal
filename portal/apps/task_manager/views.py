@@ -459,10 +459,10 @@ def kors_estimation_data(id_estimation):
 # Обновление каталога модификаций автохаб для экспресс оценки
 def refresh_auctohub_guide():
     
-    #refresh_group_options_autohub()
-    #refresh_options_autohub()
+    refresh_group_options_autohub()
+    refresh_options_autohub()
     refresh_complectations_autohub()
-    #refresh_autohub_modification()
+    refresh_autohub_modification()
 
 def refresh_complectations_autohub():
     url_request = 'https://api.maxposter.ru/partners-api/directories/vehicle-complectations'  

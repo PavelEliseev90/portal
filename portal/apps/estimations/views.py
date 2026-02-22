@@ -478,6 +478,10 @@ def estimation_rlk(request, rlk_id):
     object                          = DocRLK.objects.get(id=rlk_id)
     reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
     
+    list_statuses = [1, 2, 7]
+    if not reg_interactiv_ocenka.status.id in list_statuses:
+        return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
+
     #send_channel_message(user, id_rlk = 0, message = 'Прикол')
 
     if request.method == 'POST':
@@ -1714,7 +1718,7 @@ def estimation_start(request, rlk_id):
         reg_interactiv_ocenka.save()
         
         # Перенаправление на следующую страницу
-        return HttpResponseRedirect('/estimation/' + str(rlk_id) + '/')
+        return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
     
     # Получаем все марки
     marks = AutoruMark.objects.all().order_by('name')
@@ -2605,6 +2609,8 @@ def api_get_previous_estimation(request, rlk_id):
             estimation_data['modification'] = {
                 'id': mod.id,
                 'name': mod.name,
+                'modification_id': mod.id if mod else None,
+                'modification_name': mod.name if mod else '',
                 'model_id': mod.model.id if mod.model else None,
                 'model_name': mod.model.name if mod.model else '',
                 'mark_id': mod.model.mark.id if mod.model and mod.model.mark else None,

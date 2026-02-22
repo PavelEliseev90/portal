@@ -6157,12 +6157,13 @@
                       <div class="portal-panel">
                         <div class="">
                           <h6><span class="icon-mbri-cust-feedback"></span> Задачи по оценке 
-                            <button style="padding: 5px 10px;" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#exampleModalAddTask" data-bs-whatever="@mdo">
-                              <span class="icon-mbri-plus" ></span> 
-                            </button>
+                            {% if params.user.profiles.eco %}
+                              <button style="padding: 5px 10px;" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#exampleModalAddTask" data-bs-whatever="@mdo">
+                                <span class="icon-mbri-plus" ></span> 
+                              </button>
+                            {% endif %}
                           </h6>
                           
-        
                           <div class="table-responsive-sm">
                             <table class="table table-sm table-striped table-hover">
                               <tbody>
@@ -21203,6 +21204,9 @@
                                   
                                   <input hidden type="text" name="custom_type_sale_auction" id="custom_type_sale_auction" value="{{params.price_custom.auction}}">
                                   <input hidden type="text" name="custom_type_sale_comment" id="custom_type_sale_comment" value="{{params.price_custom.auction_comment}}">
+                                  
+                                  <label class="fs-7 text-danger">Все задачи по оценке в случае их наличия будут закрыты.</label>
+                                  <br><br>
                                   
                                   <div class="row g-1">
                                     <div class="col">
