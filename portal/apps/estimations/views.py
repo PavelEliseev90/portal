@@ -1740,9 +1740,15 @@ def estimation_start(request, rlk_id):
     # Годы выпуска
     current_year = datetime.now().year
     years = list(range(current_year, 1960, -1))
-    
+    unit_name = object.unit_dc
+    if unit_name == None:
+        unit_name = object.unit
+
     params = {
         'rlk_id': rlk_id,
+        'rlk_nomer': object.nomer,
+        'rlk_date': object.dataTime,
+        'rlk_unit' : unit_name,
         'estimation': reg_interactiv_ocenka,
         'marks': marks,
         'previous_estimation': previous_estimation,
