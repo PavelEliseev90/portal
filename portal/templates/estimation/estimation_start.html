@@ -542,6 +542,15 @@
   padding-right: 3rem;
 }
 
+/* Плитки групп опций комплектации */
+.complectation-group-tile {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.complectation-group-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .25rem .5rem rgba(0,0,0,.15) !important;
+}
+
 </style>
 
 <div class="">
@@ -721,14 +730,14 @@
                   Комплектация обязательна для выбора
                 </small>
               </div>
-              <!-- Опции комплектации (AvtohubOptions по группам) -->
+              <!-- Опции комплектации (плитка групп, по клику — модальное окно) -->
               <div id="complectationOptionsBlock" class="mt-2" style="display: none;">
                 <div class="card border-0 bg-light">
                   <div class="card-body py-2 px-3">
                     <h6 class="card-title mb-2 small text-muted">
                       Опции комплектации <span id="complectationOptionsTotal" class="badge bg-secondary">0</span>
                     </h6>
-                    <div id="complectationOptionsContent"></div>
+                    <div id="complectationOptionsContent" class="row g-2"></div>
                   </div>
                 </div>
               </div>
@@ -856,6 +865,23 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для опций группы комплектации -->
+<div class="modal fade" id="complectationOptionsModal" tabindex="-1" aria-labelledby="complectationOptionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="complectationOptionsModalLabel">
+          <i class="bi bi-list-check me-2"></i><span id="complectationOptionsModalGroupName">Опции</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul id="complectationOptionsModalContent" class="list-group list-group-flush"></ul>
       </div>
     </div>
   </div>
@@ -1389,6 +1415,7 @@ document.addEventListener('DOMContentLoaded', function() {
       block.style.display = 'none';
       content.innerHTML = '';
       totalEl.textContent = '0';
+      window.complectationOptionsGroups = [];
       return;
     }
     
@@ -1396,20 +1423,22 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(r => r.json())
       .then(data => {
         totalEl.textContent = data.total_count || 0;
+        window.complectationOptionsGroups = data.groups || [];
         if (!data.groups || data.groups.length === 0) {
           block.style.display = 'none';
           content.innerHTML = '';
+          window.complectationOptionsGroups = [];
           return;
         }
         block.style.display = 'block';
         let html = '';
-        data.groups.forEach(gr => {
-          html += `<div class="mb-2"><strong class="small text-secondary">${gr.name || 'Без группы'}</strong> <span class="badge bg-secondary">${gr.count}</span>`;
-          html += '<ul class="list-unstyled mb-0 ms-2 small">';
-          (gr.options || []).forEach(opt => {
-            html += `<li>${opt.name || ''}</li>`;
-          });
-          html += '</ul></div>';
+        data.groups.forEach((gr, idx) => {
+          const groupName = (gr.name || 'Без группы').replace(/"/g, '&quot;');
+          html += `<div class="col-6 col-md-4 col-lg-3"><div class="card border shadow-sm complectation-group-tile" data-group-idx="${idx}" style="cursor: pointer;">`;
+          html += `<div class="card-body py-2 px-2 text-center">`;
+          html += `<div class="small text-truncate" title="${groupName}">${gr.name || 'Без группы'}</div>`;
+          html += `<span class="badge bg-primary">${gr.count}</span>`;
+          html += `</div></div></div>`;
         });
         content.innerHTML = html;
       })
@@ -1422,6 +1451,27 @@ document.addEventListener('DOMContentLoaded', function() {
   $(complectationSelect).on('change', function() {
     const val = $(this).val();
     loadComplectationOptions(val || null);
+  });
+  
+  $(document).on('click', '.complectation-group-tile', function() {
+    const idx = parseInt($(this).data('group-idx'), 10);
+    const groups = window.complectationOptionsGroups || [];
+    const gr = groups[idx];
+    if (!gr) return;
+    const title = document.getElementById('complectationOptionsModalGroupName');
+    const listEl = document.getElementById('complectationOptionsModalContent');
+    if (title) title.textContent = gr.name || 'Без группы';
+    if (listEl) {
+      listEl.innerHTML = '';
+      (gr.options || []).forEach(opt => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.textContent = opt.name || '';
+        listEl.appendChild(li);
+      });
+    }
+    const modal = new bootstrap.Modal(document.getElementById('complectationOptionsModal'));
+    modal.show();
   });
   
   // Инициализация при загрузке страницы
