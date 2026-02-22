@@ -26,6 +26,7 @@ from django.conf import settings
 from eco.views import repair_history, estimation_lo_history, save_recovery_estimations
 from register.models import RegSwapKors, RegInfoBody
 from refs.models import RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr
+from avtosalon.models import AvtohubComplectations, AvtohubOptions, AvtohubGroupOptions
 
 from datetime import datetime
 
@@ -2560,6 +2561,52 @@ def api_get_complectations_by_modification(request, rlk_id):
         complectations = AutoruComplectation.objects.filter(modification=modification).order_by('name')
         complectations_data = [{'id': c.id, 'name': c.name} for c in complectations]
         return JsonResponse({'complectations': complectations_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+def api_get_complectation_options(request, rlk_id):
+    """Опции комплектации из AvtohubComplectations по autoruId (AutoruComplectation.idSite), с группировкой по AvtohubGroupOptions"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    complectation_id = request.GET.get('complectation_id', '')
+    if not complectation_id:
+        return JsonResponse({'groups': [], 'total_count': 0})
+    
+    try:
+        complectation = AutoruComplectation.objects.get(pk=complectation_id)
+        autoru_id = complectation.idSite
+        if autoru_id is None:
+            return JsonResponse({'groups': [], 'total_count': 0})
+        
+        avtohub_comp = AvtohubComplectations.objects.filter(autoruId=autoru_id).first()
+        if not avtohub_comp:
+            return JsonResponse({'groups': [], 'total_count': 0})
+        
+        options = avtohub_comp.equipment.select_related('groupId').order_by('groupId__sortOrder', 'groupId__name', 'sortOrder', 'name')
+        
+        groups_dict = {}
+        for opt in options:
+            group = opt.groupId
+            group_key = group.id if group else 0
+            if group_key not in groups_dict:
+                groups_dict[group_key] = {
+                    'id': group.id if group else None,
+                    'name': group.name if group else 'Без группы',
+                    'sortOrder': group.sortOrder if group else 999,
+                    'options': [],
+                    'count': 0,
+                }
+            groups_dict[group_key]['options'].append({'id': opt.id, 'name': opt.name or ''})
+            groups_dict[group_key]['count'] += 1
+        
+        groups = sorted(groups_dict.values(), key=lambda g: (g['sortOrder'], g['name'] or ''))
+        total_count = sum(g['count'] for g in groups)
+        return JsonResponse({'groups': groups, 'total_count': total_count})
+    except AutoruComplectation.DoesNotExist:
+        return JsonResponse({'groups': [], 'total_count': 0})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
