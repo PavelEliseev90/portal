@@ -721,6 +721,17 @@
                   Комплектация обязательна для выбора
                 </small>
               </div>
+              <!-- Опции комплектации (AvtohubOptions по группам) -->
+              <div id="complectationOptionsBlock" class="mt-2" style="display: none;">
+                <div class="card border-0 bg-light">
+                  <div class="card-body py-2 px-3">
+                    <h6 class="card-title mb-2 small text-muted">
+                      Опции комплектации <span id="complectationOptionsTotal" class="badge bg-secondary">0</span>
+                    </h6>
+                    <div id="complectationOptionsContent"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
     
@@ -907,6 +918,9 @@ document.addEventListener('DOMContentLoaded', function() {
   let isAutofilling = false;
   let isUpdatingSelect2 = false;
   let isLoadingModifications = false;
+  
+  // Функция загрузки модификаций (определяется в document.ready, нужна для autofill)
+  let loadModificationsWithFilters = null;
   
   // Функция загрузки информации по VIN
   function loadVehicleInfo() {
@@ -1186,47 +1200,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 
                 setTimeout(() => {
+                  // Устанавливаем body/engine/kpp без trigger — сами вызываем loadModificationsWithFilters
                   if (estimation.modification.type_body_id) {
-                    $('#body_config').val(estimation.modification.type_body_id).trigger('change');
+                    $('#body_config').val(estimation.modification.type_body_id);
                   }
                   if (estimation.modification.type_engine_id) {
-                    $('#engine_type').val(estimation.modification.type_engine_id).trigger('change');
+                    $('#engine_type').val(estimation.modification.type_engine_id);
                   }
                   if (estimation.modification.type_kpp_id) {
-                    $('#kpp').val(estimation.modification.type_kpp_id).trigger('change');
+                    $('#kpp').val(estimation.modification.type_kpp_id);
                   }
-                  if (estimation.modification.modification_id) {
-                    $('#modification_full').val(estimation.modification.modification_id).trigger('change');
-                  }
-                  setTimeout(() => {
-                    loadModificationsWithFilters();
-                    
-                    setTimeout(() => {
-                      if (estimation.modification.id) {
-                        modificationFullSelect.value = estimation.modification.id;
-                        const modChangeEvent = new Event('change', { bubbles: true });
-                        modificationFullSelect.dispatchEvent(modChangeEvent);
-                        
-                        // Загружаем комплектации после выбора модификации
+                  const modificationId = estimation.modification.id || estimation.modification.modification_id;
+                  const loadMods = (typeof loadModificationsWithFilters === 'function') 
+                    ? loadModificationsWithFilters() 
+                    : Promise.resolve();
+                  loadMods.then(() => {
+                    if (modificationId) {
+                      modificationFullSelect.value = modificationId;
+                      const modChangeEvent = new Event('change', { bubbles: true });
+                      modificationFullSelect.dispatchEvent(modChangeEvent);
+                      
+                      // Загружаем комплектации после выбора модификации
+                      setTimeout(() => {
+                        loadComplectations(modificationId);
                         setTimeout(() => {
-                          loadComplectations(estimation.modification.id);
-                          setTimeout(() => {
-                            if (estimation.complectation && estimation.complectation.id) {
-                              complectationSelect.value = estimation.complectation.id;
-                            }
-                            if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
-                              $(complectationSelect).trigger('change');
-                            }
-                            isAutofilling = false;
-                            isCheckingPreviousEstimation = wasChecking;
-                          }, 600);
+                          if (estimation.complectation && estimation.complectation.id) {
+                            complectationSelect.value = estimation.complectation.id;
+                          }
+                          if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
+                            $(complectationSelect).trigger('change');
+                          }
+                          isAutofilling = false;
+                          isCheckingPreviousEstimation = wasChecking;
                         }, 600);
-                      } else {
-                        isAutofilling = false;
-                        isCheckingPreviousEstimation = wasChecking;
-                      }
-                    }, 800);
-                  }, 800);
+                      }, 600);
+                    } else {
+                      isAutofilling = false;
+                      isCheckingPreviousEstimation = wasChecking;
+                    }
+                  }).catch(() => {
+                    isAutofilling = false;
+                    isCheckingPreviousEstimation = wasChecking;
+                  });
                 }, 800);
               } else {
                 isAutofilling = false;
@@ -1289,6 +1304,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (complectationHint) {
           complectationHint.style.display = 'none';
         }
+        loadComplectationOptions(null);
       }
       return;
     }
@@ -1361,6 +1377,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
   }
+  
+  // Загрузка опций комплектации (AvtohubOptions по AvtohubGroupOptions)
+  function loadComplectationOptions(complectationId) {
+    const block = document.getElementById('complectationOptionsBlock');
+    const content = document.getElementById('complectationOptionsContent');
+    const totalEl = document.getElementById('complectationOptionsTotal');
+    if (!block || !content || !totalEl) return;
+    
+    if (!complectationId) {
+      block.style.display = 'none';
+      content.innerHTML = '';
+      totalEl.textContent = '0';
+      return;
+    }
+    
+    fetch(`/estimations/${rlkId}/api/complectation-options/?complectation_id=${complectationId}`)
+      .then(r => r.json())
+      .then(data => {
+        totalEl.textContent = data.total_count || 0;
+        if (!data.groups || data.groups.length === 0) {
+          block.style.display = 'none';
+          content.innerHTML = '';
+          return;
+        }
+        block.style.display = 'block';
+        let html = '';
+        data.groups.forEach(gr => {
+          html += `<div class="mb-2"><strong class="small text-secondary">${gr.name || 'Без группы'}</strong> <span class="badge bg-secondary">${gr.count}</span>`;
+          html += '<ul class="list-unstyled mb-0 ms-2 small">';
+          (gr.options || []).forEach(opt => {
+            html += `<li>${opt.name || ''}</li>`;
+          });
+          html += '</ul></div>';
+        });
+        content.innerHTML = html;
+      })
+      .catch(err => {
+        console.error('Ошибка загрузки опций комплектации:', err);
+        block.style.display = 'none';
+      });
+  }
+  
+  $(complectationSelect).on('change', function() {
+    const val = $(this).val();
+    loadComplectationOptions(val || null);
+  });
   
   // Инициализация при загрузке страницы
   {% if params.estimation.modification %}
@@ -1744,11 +1806,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Функция загрузки модификаций с фильтрацией
-    function loadModificationsWithFilters() {
+    // Функция загрузки модификаций с фильтрацией (возвращает Promise для autofill)
+    loadModificationsWithFilters = function() {
       // Предотвращаем повторные вызовы
       if (isUpdatingSelect2 || isLoadingModifications) {
-        return;
+        return Promise.resolve();
       }
       
       const modelId = $(modelSelect).val();
@@ -1806,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isUpdatingSelect2 = false;
           }
         }, 100);
-        return;
+        return Promise.resolve();
       }
       
       // Устанавливаем флаги загрузки
@@ -1819,7 +1881,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeEngineId) url += `&type_engine_id=${typeEngineId}`;
       if (typeKppId) url += `&type_kpp_id=${typeKppId}`;
       
-      fetch(url)
+      return fetch(url)
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -1842,25 +1904,28 @@ document.addEventListener('DOMContentLoaded', function() {
           $(modificationFullSelect).prop('disabled', false);
           
           // Обновляем Select2 с задержкой, чтобы избежать конфликтов
-          setTimeout(() => {
-            try {
-              const $label = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
-              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
-              $(modificationFullSelect).select2({
-                language: 'ru',
-                placeholder: placeholder,
-                allowClear: false,
-                width: '100%',
-                dropdownAutoWidth: true,
-                disabled: false
-              });
-            } catch (e) {
-              console.error('Ошибка обновления Select2 для модификации:', e);
-            } finally {
-              isUpdatingSelect2 = false;
-              isLoadingModifications = false;
-            }
-          }, 150);
+          return new Promise(function(resolve) {
+            setTimeout(() => {
+              try {
+                const $label = $(modificationFullSelect).closest('.search-select-wrapper').find('label');
+                const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+                $(modificationFullSelect).select2({
+                  language: 'ru',
+                  placeholder: placeholder,
+                  allowClear: false,
+                  width: '100%',
+                  dropdownAutoWidth: true,
+                  disabled: false
+                });
+              } catch (e) {
+                console.error('Ошибка обновления Select2 для модификации:', e);
+              } finally {
+                isUpdatingSelect2 = false;
+                isLoadingModifications = false;
+                resolve();
+              }
+            }, 150);
+          });
         })
         .catch(error => {
           console.error('Ошибка при загрузке модификаций:', error);
@@ -2120,6 +2185,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (complectationHint) {
         complectationHint.style.display = 'none';
       }
+      loadComplectationOptions(null);
       
       if (!modificationId) {
         isProcessingModification = false;
