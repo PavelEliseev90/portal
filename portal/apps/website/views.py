@@ -152,9 +152,20 @@ def custom_page_not_found_view(request, exception):
     return render(request, "errors/404.html", {'params': params})
 
 def custom_error_view(request, exception=None):
+    # Для API-запросов возвращаем JSON с причиной ошибки
+    path = getattr(request, 'path', '') or ''
+    accept = request.META.get('HTTP_ACCEPT', '')
+    if '/api/' in path or 'application/json' in accept:
+        err_msg = 'Внутренняя ошибка сервера'
+        try:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            if exc_value:
+                err_msg = str(exc_value)
+        except Exception:
+            pass
+        return JsonResponse({'error': err_msg}, status=500)
     
     user    = None
-    
     params  = {
 				'type'		    : 'home',
 				'user'		    : user                
