@@ -45,6 +45,16 @@ from analytics.models import (
 )
 
 
+def close_task(reg_interactiv_ocenka):
+    tasks = RegInteractivOcenkaTask.objects.filter(estimation = reg_interactiv_ocenka).filter(staff_close = None)
+    for task in tasks:
+        task.comment_success = 'Закрыто согласованием цены после диагностики'
+        task.date_close     = DT.datetime.now()
+        task.staff_close    = request.user
+        task.save()
+    reg_interactiv_ocenka.returned = False
+    
+
 def add_swap(estimation):
     try:        
         swap                = RegSwapKors()
@@ -3207,6 +3217,7 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())
         
         if 'price_after_kd' in request.POST:
+            close_task(reg_interactiv_ocenka)
             if reg_interactiv_ocenka.page_soglasovanie == None:
                 reg_interactiv_ocenka_soglasovanie = RegInteractivOcenkaSoglasovanie()
                 reg_interactiv_ocenka_soglasovanie.save()
@@ -3269,6 +3280,7 @@ def doc(request, id):
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.date_s_diag = DT.datetime.now()
             reg_interactiv_ocenka.save()
+            
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())
         
@@ -3342,7 +3354,7 @@ def doc(request, id):
                 reg_interactiv_ocenka.save()
 
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
-                    
+                    close_task(reg_interactiv_ocenka)
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
                     '''
                     price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
@@ -3449,7 +3461,7 @@ def doc(request, id):
                 reg_interactiv_ocenka.save()
                 
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
-                    
+                    close_task(reg_interactiv_ocenka)
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
                     '''
                     price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')

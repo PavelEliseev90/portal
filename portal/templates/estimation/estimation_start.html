@@ -1195,7 +1195,9 @@ document.addEventListener('DOMContentLoaded', function() {
                   if (estimation.modification.type_kpp_id) {
                     $('#kpp').val(estimation.modification.type_kpp_id).trigger('change');
                   }
-                  
+                  if (estimation.modification.modification_id) {
+                    $('#modification_full').val(estimation.modification.modification_id).trigger('change');
+                  }
                   setTimeout(() => {
                     loadModificationsWithFilters();
                     
