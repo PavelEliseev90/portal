@@ -1,9 +1,9 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block title %} - Начало оценки {{params.rlk_id}} {% endblock %}
+{% block title %} - Начало оценки {{params.rlk_nomer}}  {% endblock %}
 
-{% block title_navbar %} - Начало оценки {% endblock %}
+{% block title_navbar %} - Начало оценки {{params.rlk_nomer}}  {% endblock %}
 
 {% block content %}
 
@@ -547,8 +547,8 @@
 <div class="">
   
   <div class="dashboard-header">
-    <h1>Начало оценки</h1>
-    <p class="">Заполните данные об автомобиле для начала оценки</p>
+    <h1>Начало оценки </h1>
+    <p class="">{{params.rlk_unit.name}} {{params.rlk_nomer}} от {{params.rlk_date}}</p>
   </div>
 
   <div class="row">
@@ -589,7 +589,7 @@
             </div>
             
             <div class="col-md-2">
-              <button type="button" class="btn btn-primary w-100 h-100" id="refreshBtn" style="min-height: 58px;">
+              <button type="button" class="btn btn-primary w-100 h-100 bg-gradient" id="refreshBtn" style="min-height: 58px;">
                 <i class="bi bi-arrow-clockwise"></i> Обновить
               </button>
             </div>
@@ -753,12 +753,19 @@
     
           <!-- Кнопки -->
           <div class="d-flex gap-2 mt-4">
-            <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+            
+            <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
               <span class="icon-mbri-refresh"></span> Сбросить
             </button>
-            <button type="submit" class="btn btn-primary" id="submitBtn">
-              <span class="icon-mbri-right"></span> Продолжить
+
+            <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
+              <span class="icon-mbri-right"></span> Интерактивная оценка
             </button>
+
+            <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
+              <span class="icon-mbri-right"></span> Дистанционая оценка
+            </button>
+
           </div>
           </div> <!-- Конец скрываемой части формы -->
         </div>
