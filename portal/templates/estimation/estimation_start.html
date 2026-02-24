@@ -559,10 +559,12 @@
     <h1>Начало оценки </h1>
     <p class="">{{params.rlk_unit.name}} {{params.rlk_nomer}} от {{params.rlk_date}}</p>
   </div>
-
+  <form method="post" id="estimationStartForm">
   <div class="row">
+    
     <div class="col-12 col-md-8">
-      <form method="post" id="estimationStartForm">
+      
+      
         
         {% csrf_token %}
           
@@ -610,227 +612,230 @@
           </div>
         </div>
 
-        <div class="portal-panel">
-          <!-- Скрываемая часть формы -->
-          <div id="formFields" style="display: none;">
-          <!-- Год выпуска -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="year" name="year" required>
-                  <option selected></option>
-                  {% for year in params.years %}
-                    <option value="{{ year }}" {% if params.estimation.year == year %}selected{% endif %}>{{ year }}</option>
-                  {% endfor %}
-                </select>
-                <label class="fs-6" for="year">Год выпуска <span class="text-danger">*</span></label>
+        <div id="infoBlocks" style="display: none;">
+          <!-- Активная интерактивная оценка -->
+          <div class="portal-panel mb-3">
+            <h5 class="mb-3">
+              <i class="bi bi-car-front me-2"></i>Активная интерактивная оценка
+              <span class="badge bg-primary bg-gradient ms-2" id="activeEstimationCount" style="cursor: pointer; display: none;" onclick="openActiveEstimationsModal()">0</span>
+            </h5>
+            <div id="activeEstimationBlock">
+              <div class="text-center text-muted py-3">
+                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Загрузка...</p>
               </div>
             </div>
           </div>
-    
-          <!-- Марка -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="mark" name="mark_id" required disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
+          
+          <!-- История ремонтов -->
+          <div class="portal-panel mb-3">
+            <h5 class="mb-3">
+              <i class="bi bi-tools me-2"></i>История ремонтов
+              <span class="badge bg-primary ms-2" id="repairHistoryCount" style="cursor: pointer; display: none;" onclick="openRepairHistoryModal()">0</span>
+            </h5>
+            <div id="repairHistoryBlock">
+              <div class="text-center text-muted py-3">
+                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Загрузка...</p>
               </div>
             </div>
           </div>
-    
-          <!-- Модель -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
+          
+          <!-- История оценок -->
+          <div class="portal-panel mb-3">
+            <h5 class="mb-3">
+              <i class="bi bi-clock-history me-2"></i>История оценок
+              <span class="badge bg-primary bg-gradient ms-2" id="estimationHistoryCount" style="cursor: pointer; display: none;" onclick="openEstimationHistoryModal()">0</span>
+            </h5>
+            <div id="estimationHistoryBlock">
+              <div class="text-center text-muted py-3">
+                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Загрузка...</p>
               </div>
             </div>
           </div>
-    
-          <!-- Конфигурация кузова (после модели) -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="body_config" name="body_config_id" required disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
-              </div>
-            </div>
-          </div>
-    
-          <!-- Тип двигателя -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
-              </div>
-            </div>
-          </div>
-    
-          <!-- КПП -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="kpp" name="kpp_id" required disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
-              </div>
-            </div>
-          </div>
-    
-          <!-- Тип привода (обычный select без Select2 — 3 опции, всегда работает) -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="form-floating">
-                <select class="form-control" id="drive_type" name="type_drive" required>
-                  <option value="">Выберите тип привода</option>
-                  {% for drive in params.type_drives %}
-                    <option value="{{ drive }}"
-                            {% if params.estimation.type_drive == drive %}selected{% endif %}>
-                      {{ drive }}
-                    </option>
-                  {% endfor %}
-                </select>
-                <label for="drive_type">Тип привода <span class="text-danger">*</span></label>
-              </div>
-            </div>
-          </div>
-    
-          <!-- Модификация -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
-              </div>
-            </div>
-          </div>
-    
-          <!-- Комплектация -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="search-select-wrapper select2-wrapper">
-                <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
-                  <option selected></option>
-                </select>
-                <label class="fs-6" for="complectation">Комплектация</label>
-                <small class="form-text text-muted" id="complectation_hint" style="display: none;">
-                  Комплектация обязательна для выбора
-                </small>
-              </div>
-              <!-- Опции комплектации (плитка групп, по клику — модальное окно) -->
-              <div id="complectationOptionsBlock" class="mt-2" style="display: none;">
-                <div class="card border-0 bg-light">
-                  <div class="card-body py-2 px-3">
-                    <h6 class="card-title mb-2 small text-muted">
-                      Опции комплектации <span id="complectationOptionsTotal" class="badge bg-secondary">0</span>
-                    </h6>
-                    <div id="complectationOptionsContent" class="row g-2"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-    
-          <!-- Пробег -->
-          <div class="row g-3 mb-2">
-            <div class="col-md-12">
-              <div class="form-floating">
-                <input type="number" 
-                       class="form-control" 
-                       id="run" 
-                       name="run" 
-                       placeholder="Пробег" 
-                       min="0"
-                       value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
-                <label for="run">Пробег <span class="text-danger">*</span></label>
-              </div>
-            </div>
-          </div>
-    
-          <!-- Кнопки -->
-          <div class="d-flex gap-2 mt-4">
-            
-            <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
-              <span class="icon-mbri-refresh"></span> Сбросить
-            </button>
-
-            <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
-              <span class="icon-mbri-right"></span> Интерактивная оценка
-            </button>
-
-            <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
-              <span class="icon-mbri-right"></span> Дистанционая оценка
-            </button>
-
-          </div>
-          </div> <!-- Конец скрываемой части формы -->
         </div>
-      </form>
+
+        <div id="complectationOptionsBlock" class="portal-panel mb-3" style="display: none;">
+          <h5 class="mb-3">
+            Опции комплектации <span id="complectationOptionsTotal" class="badge bg-primary bg-gradient">0</span>
+          </h5>
+          <div id="complectationOptionsContent" class="row g-2"></div>
+        </div>
       
+
     </div>
+    
     <div class="col-12 col-md-4">
       <!-- Блоки информации -->
-      <div id="infoBlocks" style="display: none;">
-        <!-- Активная интерактивная оценка -->
-        <div class="portal-panel mb-3">
-          <h5 class="mb-3">
-            <i class="bi bi-car-front me-2"></i>Активная интерактивная оценка
-            <span class="badge bg-primary ms-2" id="activeEstimationCount" style="cursor: pointer; display: none;" onclick="openActiveEstimationsModal()">0</span>
-          </h5>
-          <div id="activeEstimationBlock">
-            <div class="text-center text-muted py-3">
-              <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-              <p class="mt-2 mb-0">Загрузка...</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- История ремонтов -->
-        <div class="portal-panel mb-3">
-          <h5 class="mb-3">
-            <i class="bi bi-tools me-2"></i>История ремонтов
-            <span class="badge bg-primary ms-2" id="repairHistoryCount" style="cursor: pointer; display: none;" onclick="openRepairHistoryModal()">0</span>
-          </h5>
-          <div id="repairHistoryBlock">
-            <div class="text-center text-muted py-3">
-              <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-              <p class="mt-2 mb-0">Загрузка...</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- История оценок -->
-        <div class="portal-panel mb-3">
-          <h5 class="mb-3">
-            <i class="bi bi-clock-history me-2"></i>История оценок
-            <span class="badge bg-primary ms-2" id="estimationHistoryCount" style="cursor: pointer; display: none;" onclick="openEstimationHistoryModal()">0</span>
-          </h5>
-          <div id="estimationHistoryBlock">
-            <div class="text-center text-muted py-3">
-              <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-              <p class="mt-2 mb-0">Загрузка...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-</div>
+      
 
+      <div class="portal-panel">
+        <!-- Скрываемая часть формы -->
+        <div id="formFields" style="display: none;">
+        <!-- Год выпуска -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="year" name="year" required>
+                <option selected></option>
+                {% for year in params.years %}
+                  <option value="{{ year }}" {% if params.estimation.year == year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+              </select>
+              <label class="fs-6" for="year">Год выпуска <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Марка -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="mark" name="mark_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Модель -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Конфигурация кузова (после модели) -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="body_config" name="body_config_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Тип двигателя -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- КПП -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="kpp" name="kpp_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Тип привода (обычный select без Select2 — 3 опции, всегда работает) -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="form-floating">
+              <select class="form-control" id="drive_type" name="type_drive" required>
+                <option value="">Выберите тип привода</option>
+                {% for drive in params.type_drives %}
+                  <option value="{{ drive }}"
+                          {% if params.estimation.type_drive == drive %}selected{% endif %}>
+                    {{ drive }}
+                  </option>
+                {% endfor %}
+              </select>
+              <label for="drive_type">Тип привода <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Модификация -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Комплектация -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="complectation">Комплектация</label>
+              <small class="form-text text-muted" id="complectation_hint" style="display: none;">
+                Комплектация обязательна для выбора
+              </small>
+            </div>
+            <!-- Опции комплектации (плитка групп, по клику — модальное окно) -->
+            
+          </div>
+        </div>
+  
+        <!-- Пробег -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="form-floating">
+              <input type="number" 
+                     class="form-control" 
+                     id="run" 
+                     name="run" 
+                     placeholder="Пробег" 
+                     min="0"
+                     value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
+              <label for="run">Пробег <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Кнопки -->
+        <div class="d-flex gap-2 mt-4">
+          
+          <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
+            <span class="icon-mbri-refresh"></span> Сбросить
+          </button>
+
+          <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
+            <span class="icon-mbri-right"></span> Интерактивная оценка
+          </button>
+
+          <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
+            <span class="icon-mbri-right"></span> Дистанционая оценка
+          </button>
+
+        </div>
+        </div> <!-- Конец скрываемой части формы -->
+      </div>
+
+    </div>
+
+  </div>
+  </form>
+</div>
+  
 <!-- Модальное окно для активных интерактивных оценок -->
 <div class="modal fade" id="activeEstimationsModal" tabindex="-1" aria-labelledby="activeEstimationsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen">
@@ -1202,122 +1207,120 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Автозаполнение из предыдущей оценки
+  // Вспомогательно: заполнить селект и переинициализировать Select2
+  function autofillPopulateSelect($select, options, selectedId, reinitSelect2) {
+    if ($select.hasClass('select2-hidden-accessible')) {
+      $select.select2('destroy');
+    }
+    $select.html('<option value="">Выберите...</option>');
+    (options || []).forEach(o => {
+      $select.append(`<option value="${o.id}">${o.name || ''}</option>`);
+    });
+    $select.prop('disabled', false);
+    if (selectedId != null && selectedId !== '') {
+      $select.val(String(selectedId));
+    }
+    if (reinitSelect2 !== false) {
+      isUpdatingSelect2 = true;
+      setTimeout(() => {
+        try {
+          const $label = $select.closest('.search-select-wrapper').find('label');
+          const ph = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+          $select.select2({ language: 'ru', placeholder: ph, allowClear: false, width: '100%', dropdownAutoWidth: true });
+        } catch (e) { console.error('Select2 init:', e); }
+        finally { isUpdatingSelect2 = false; }
+      }, 50);
+    }
+  }
+  
+  // Автозаполнение из предыдущей оценки — только прямые вызовы API, без change-обработчиков
   function autofillFromPreviousEstimation(estimation) {
     if (!estimation || !estimation.modification) {
       isAutofilling = false;
       return;
     }
-    
-    // Временно отключаем проверку предыдущей оценки
     const wasChecking = isCheckingPreviousEstimation;
     isCheckingPreviousEstimation = true;
+    const mod = estimation.modification;
+    const year = estimation.year;
     
-    if (estimation.modification) {
-      // Сначала устанавливаем год
-      if (estimation.year) {
-        yearSelect.value = estimation.year;
-        // Используем прямой вызов обработчика вместо trigger, чтобы избежать рекурсии
-        const yearChangeEvent = new Event('change', { bubbles: true });
-        yearSelect.dispatchEvent(yearChangeEvent);
-        
-        // Загружаем марки по году (800ms на запрос)
-        setTimeout(() => {
-          if (estimation.modification.mark_id) {
-            markSelect.value = estimation.modification.mark_id;
-            markSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            
-            setTimeout(() => {
-              if (estimation.modification.model_id) {
-                modelSelect.value = estimation.modification.model_id;
-                modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                setTimeout(() => {
-                  // Устанавливаем body/engine/kpp без trigger — сами вызываем loadModificationsWithFilters
-                  if (estimation.modification.type_body_id) {
-                    $('#body_config').val(estimation.modification.type_body_id);
-                  }
-                  if (estimation.modification.type_engine_id) {
-                    $('#engine_type').val(estimation.modification.type_engine_id);
-                  }
-                  if (estimation.modification.type_kpp_id) {
-                    $('#kpp').val(estimation.modification.type_kpp_id);
-                  }
-                  const modificationId = estimation.modification.id || estimation.modification.modification_id;
-                  const loadMods = (typeof loadModificationsWithFilters === 'function') 
-                    ? loadModificationsWithFilters() 
-                    : Promise.resolve();
-                  loadMods.then(() => {
-                    if (modificationId) {
-                      modificationFullSelect.value = modificationId;
-                      const modChangeEvent = new Event('change', { bubbles: true });
-                      modificationFullSelect.dispatchEvent(modChangeEvent);
-                      
-                      // Загружаем комплектации после выбора модификации
-                      setTimeout(() => {
-                        loadComplectations(modificationId);
-                        setTimeout(() => {
-                          if (estimation.complectation && estimation.complectation.id) {
-                            complectationSelect.value = estimation.complectation.id;
-                          }
-                          if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
-                            $(complectationSelect).trigger('change');
-                          }
-                          isAutofilling = false;
-                          isCheckingPreviousEstimation = wasChecking;
-                        }, 600);
-                      }, 600);
-                    } else {
-                      isAutofilling = false;
-                      isCheckingPreviousEstimation = wasChecking;
-                    }
-                  }).catch(() => {
-                    isAutofilling = false;
-                    isCheckingPreviousEstimation = wasChecking;
-                  });
-                }, 800);
-              } else {
-                isAutofilling = false;
-                isCheckingPreviousEstimation = wasChecking;
-              }
-            }, 800);
-          } else {
-            isAutofilling = false;
-            isCheckingPreviousEstimation = wasChecking;
-          }
-        }, 800);
-      } else {
-        isAutofilling = false;
-        isCheckingPreviousEstimation = wasChecking;
-      }
-      
+    function finish() {
+      isAutofilling = false;
+      isCheckingPreviousEstimation = wasChecking;
     }
     
-    if (estimation.type_drive) {
-      document.getElementById('drive_type').value = estimation.type_drive;
+    if (!year || !mod.mark_id || !mod.model_id) {
+      finish();
+      return;
     }
     
-    if (estimation.run) {
-      document.getElementById('run').value = estimation.run;
-    }
+    $(yearSelect).val(String(year));
+    const compId = estimation.complectation && estimation.complectation.id;
     
-    // Если автозаполнение не было выполнено через каскадные селекты, сбрасываем флаг
-    setTimeout(() => {
-      if (isAutofilling) {
-        isAutofilling = false;
-        isCheckingPreviousEstimation = false;
-      }
-    }, 3000);
+    // Очищаем зависимые поля, чтобы избежать некорректного состояния
+    [$(modelSelect), $(modificationFullSelect), $(complectationSelect), $('#body_config'), $('#engine_type'), $('#kpp')].forEach($s => {
+      if ($s.hasClass('select2-hidden-accessible')) $s.select2('destroy');
+      $s.html('<option value="">Выберите...</option>').prop('disabled', true);
+    });
+    loadComplectationOptions(null);
     
-    // Автозаполнение комплектации из предыдущей оценки
-    if (estimation.complectation) {
-      setTimeout(() => {
-        const complectationSelect = document.getElementById('complectation');
-        if (complectationSelect && !complectationSelect.disabled) {
-          complectationSelect.value = estimation.complectation.id;
+    // Прямые fetch, без trigger('change') — исключаем гонки с isUpdatingSelect2 и data('loading')
+    fetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
+      .then(r => r.json())
+      .then(data => {
+        autofillPopulateSelect($(markSelect), data.marks || [], mod.mark_id);
+        return fetch(`/estimations/${rlkId}/api/models/?mark_id=${mod.mark_id}&year=${year}`);
+      })
+      .then(r => r.json())
+      .then(data => {
+        autofillPopulateSelect($(modelSelect), data.models || [], mod.model_id);
+        const bodyP = fetch(`/estimations/${rlkId}/api/body-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
+        const engineP = fetch(`/estimations/${rlkId}/api/engine-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
+        const kppP = fetch(`/estimations/${rlkId}/api/kpp-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
+        return Promise.all([bodyP, engineP, kppP]);
+      })
+      .then(([bodyData, engineData, kppData]) => {
+        autofillPopulateSelect($('#body_config'), bodyData.body_types || [], mod.type_body_id);
+        autofillPopulateSelect($('#engine_type'), engineData.engine_types || [], mod.type_engine_id);
+        autofillPopulateSelect($('#kpp'), kppData.kpp_types || [], mod.type_kpp_id);
+        const modId = mod.id || mod.modification_id;
+        const typeBody = mod.type_body_id || '';
+        const typeEngine = mod.type_engine_id || '';
+        const typeKpp = mod.type_kpp_id || '';
+        const url = `/estimations/${rlkId}/api/modifications/?model_id=${mod.model_id}&year=${year}&type_body_id=${typeBody}&type_engine_id=${typeEngine}&type_kpp_id=${typeKpp}`;
+        return fetch(url).then(r => r.json()).then(data => ({ data, modId }));
+      })
+      .then(({ data, modId }) => {
+        autofillPopulateSelect($(modificationFullSelect), data.modifications || [], modId);
+        if (!modId) {
+          if (estimation.type_drive) document.getElementById('drive_type').value = estimation.type_drive || '';
+          if (estimation.run) document.getElementById('run').value = estimation.run || '';
+          finish();
+          return;
         }
-      }, 1000);
-    }
+        return fetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modId}`).then(r => r.json()).then(d => ({ d, modId }));
+      })
+      .then(res => {
+        if (!res) return;
+        const { d, modId } = res;
+        const comps = d.complectations || [];
+        autofillPopulateSelect($(complectationSelect), comps, compId);
+        if (comps.length > 0) {
+          complectationSelect.setAttribute('required', 'required');
+          if (complectationHint) complectationHint.style.display = 'block';
+        } else {
+          complectationSelect.removeAttribute('required');
+          if (complectationHint) complectationHint.style.display = 'none';
+        }
+        if (estimation.type_drive) document.getElementById('drive_type').value = estimation.type_drive || '';
+        if (estimation.run) document.getElementById('run').value = estimation.run || '';
+        loadComplectationOptions(compId || null);
+        finish();
+      })
+      .catch(err => {
+        console.error('Ошибка автозаполнения:', err);
+        finish();
+      });
   }
   
   // УБРАНО: обработчики input для VIN и номера кузова
