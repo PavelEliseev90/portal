@@ -1,5 +1,6 @@
 from django.db import models
 from refs.models import RefUnit, RefCars, RefCustomer
+from documents.models import DocRLK
 from datetime import datetime
 import uuid
 import random
@@ -80,9 +81,10 @@ class PersonalDataConsent(models.Model):
     phone = models.CharField("Номер телефона", max_length=20, default='', blank=False)
     email = models.EmailField("Email", max_length=254, default='', blank=True)
     
-    # Связи
-    customer = models.ForeignKey(RefCustomer, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Клиент")
-    unit = models.ForeignKey(RefUnit, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Подразделение")
+    # Связи 
+    rlk         = models.ForeignKey(DocRLK, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
+    customer    = models.ForeignKey(RefCustomer, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Клиент")
+    unit        = models.ForeignKey(RefUnit, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Подразделение")
     
     # Даты и время
     date_created = models.DateTimeField("Дата и время создания ссылки", default=datetime.now, blank=False)
