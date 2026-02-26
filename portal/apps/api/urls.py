@@ -104,7 +104,9 @@ urlpatterns = [
    path('v1/post_image_change/',                views_avtosalon.post_image_change),
 
 
-
+   path('create_personal_data/',    views.create_personal_data),
+   path('info_personal_data/',      views.info_personal_data),
+   
    path('avtohub_info/',            views_avtosalon.avtohub_info),
    path('zna_info/',                views_avtosalon.zna_info),
    

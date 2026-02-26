@@ -313,38 +313,11 @@
                 
           {% if params.tabindex == 1 or params.tabindex == 0 %}
           
-          <div class="modal fade" id="vin_edit" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header">
-              <span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Изменение VIN автомобиля</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-                <div class="modal-body">
-                  <form method="post">
-                    {% csrf_token %} 
-                  <div class="form-floating mb-3">
-                    <input class="form-control form-control-sm" type="text" id="vin_new" name="vin_new" value="" placeholder="-" maxlength="17" required>
-                    <label class="fs-6" for="floatingInput">VIN новый</label>
-                  </div>
-                  <button type="submit" class="btn btn-success bg-gradient btn_block" data-bs-dismiss="modal"> <span class="icon-mbri-success"></span> Сохранить</button>
-                </form>
-                </div>
-                
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary bg-gradient" data-bs-dismiss="modal"> <span class="icon-mbri-close"></span> Закрыть</button>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
-
           <div class="modal fade" id="edit_modification" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
-              <span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Измененить выбранную модификацию</h5>
+              <span class=""></span><h5 class="modal-title" id="rlkLabel"> <span class="icon-mbri-file"></span> Измененить информацию по автомобилю</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
                 <div class="modal-body">
@@ -444,9 +417,7 @@
                     <div class="">
                       
                       <h6><span class="icon-mbri-delivery"></span> Данные автомобиля</h6>
-
                       
-
                       <div class="row g-1" style="padding: 0.2rem;">
                         
                         <div class="col-12 col-xl-3">
@@ -506,7 +477,7 @@
                                 <button type="button" 
                                         class="btn-floating-icon" 
                                         data-bs-toggle="modal" 
-                                        data-bs-target="#vin_edit"
+                                        data-bs-target="#edit_modification"
                                         aria-label="Редактировать VIN">
                                   <span class="icon-mbri-edit"></span>
                                 </button>
@@ -520,9 +491,17 @@
                         
                         <div class="col-4 col-xl-3">
                           <div class="form-floating mb-3">
-                            <input class="form-control form-control-sm" type="text" id="number_body" name="number_body" value="{{params.estimation.number_body|default_if_none:"Не указан"}}" placeholder="-" readonly>
-                            <label class="fs-6" for="floatingInput">Номер кузова</label>
+                            <input class="form-control form-control-sm" type="text" id="number_body" name="number_body" value="{{params.estimation.number_body|default_if_none:"Отсутствует"}}" placeholder="-" readonly>
+                            <label class="fs-6" for="floatingInput">VIN</label>
+                            <button type="button" 
+                                    class="btn-floating-icon" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#edit_modification"
+                                    aria-label="Редактировать Номер кузова">
+                              <span class="icon-mbri-edit"></span>
+                            </button>
                           </div>
+                          
                         </div>
 
                         <div class="col-4 col-xl-3">

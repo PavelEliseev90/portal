@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
-from register.models import RegInteractivOcenkaRemote, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import RegInteractivOcenkaRLK, RegInteractivOcenkaRemote, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
 from refs.models import RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
 from profiles.models import Profiles
@@ -477,9 +477,16 @@ def estimation_rlk(request, rlk_id):
     users   = list()
 
     object                          = DocRLK.objects.get(id=rlk_id)
-    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
     
-    list_statuses = [1, 2, 7]
+    object_interactiv_data, created          = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
+    if object_interactiv_data.estimation == None:
+        reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
+        object_interactiv_data.estimation = reg_interactiv_ocenka
+        object_interactiv_data.save()
+    else:
+        reg_interactiv_ocenka = object_interactiv_data.estimation
+    
+    list_statuses = [1, 2, 7, 9]
     if not reg_interactiv_ocenka.status.id in list_statuses:
         return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
 
@@ -525,7 +532,7 @@ def estimation_rlk(request, rlk_id):
             reg_interactiv_ocenka.modification  = None
             refresh_analitick(reg_interactiv_ocenka)
             reg_interactiv_ocenka.save()
-            return HttpResponseRedirect(request.path_info + "/s/")
+            return HttpResponseRedirect(request.path_info + "start/")
         
         if 's_documents' in request.POST:
             
@@ -1508,8 +1515,9 @@ def estimation_rlk(request, rlk_id):
         'vin_trade_in'                  : object.vin_trade_in if hasattr(object, 'vin_trade_in') else ''
     }
     
-    if reg_interactiv_ocenka.modification == None:
-        return render(request, 'estimation/estimation.html', {'params': params}) 
+    if reg_interactiv_ocenka.modification == None or reg_interactiv_ocenka.year == None or reg_interactiv_ocenka.year < 1950:
+        return HttpResponseRedirect(request.path_info + 'start/')
+        #return render(request, 'estimation/estimation.html', {'params': params}) 
     
     else:
         
@@ -1703,16 +1711,28 @@ def estimation_start(request, rlk_id):
         run = request.POST.get('run', '')
         if run:
             try:
-                if reg_interactiv_ocenka.page_salon == None:
-                    reg_interactiv_ocenka_salon = RegInteractivOcenkaSalon()
-                    reg_interactiv_ocenka_salon.save()
-                    reg_interactiv_ocenka.page_salon = reg_interactiv_ocenka_salon
-                    reg_interactiv_ocenka.save()
+                if reg_interactiv_ocenka.type_estimation == 3:
+                    if reg_interactiv_ocenka.page_remote == None:
+                        reg_interactiv_ocenka_remote = RegInteractivOcenkaRemote()
+                        reg_interactiv_ocenka_remote.save()
+                        reg_interactiv_ocenka.page_remote = reg_interactiv_ocenka_remote
+                        reg_interactiv_ocenka.save()
+                    else:
+                        reg_interactiv_ocenka_remote = reg_interactiv_ocenka.page_remote
+                    
+                    reg_interactiv_ocenka_remote.run = int(run)
+                    reg_interactiv_ocenka_remote.save()
                 else:
-                    reg_interactiv_ocenka_salon = reg_interactiv_ocenka.page_salon
-                
-                reg_interactiv_ocenka_salon.run = int(run)
-                reg_interactiv_ocenka_salon.save()
+                    if reg_interactiv_ocenka.page_salon == None:
+                        reg_interactiv_ocenka_salon = RegInteractivOcenkaSalon()
+                        reg_interactiv_ocenka_salon.save()
+                        reg_interactiv_ocenka.page_salon = reg_interactiv_ocenka_salon
+                        reg_interactiv_ocenka.save()
+                    else:
+                        reg_interactiv_ocenka_salon = reg_interactiv_ocenka.page_salon
+                    
+                    reg_interactiv_ocenka_salon.run = int(run)
+                    reg_interactiv_ocenka_salon.save()
             except:
                 pass
         

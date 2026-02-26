@@ -45,15 +45,15 @@ from analytics.models import (
 )
 
 
-def close_task(reg_interactiv_ocenka):
+def close_task(reg_interactiv_ocenka, user):
     tasks = RegInteractivOcenkaTask.objects.filter(estimation = reg_interactiv_ocenka).filter(staff_close = None)
     for task in tasks:
         task.comment_success = 'Закрыто согласованием цены после диагностики'
         task.date_close     = DT.datetime.now()
-        task.staff_close    = request.user
+        task.staff_close    = user
         task.save()
     reg_interactiv_ocenka.returned = False
-    
+
 
 def add_swap(estimation):
     try:        
@@ -3153,6 +3153,37 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica_comment = ''
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica = False
 
+            reg_interactiv_ocenka_soglasovanie.comment_no_endoscop = request.POST.get('comment_no_endoscop', '')
+            reg_interactiv_ocenka_soglasovanie.comment_no_scaner = request.POST.get('comment_no_scaner', '')
+
+            file_scaner = request.FILES.getlist('file_scaner')
+            for file_object in file_scaner: 
+                name = file_object.name.lower()
+                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = 'scaner', type_point = type_point, text = text, cor_x = x, cor_y = y, name = name)
+                new_estimation_files.file_number    = 1 
+                new_estimation_files.name           = name
+                new_estimation_files.text           = text
+                new_estimation_files.type_point     = type_point
+                new_estimation_files.cor_x          = x
+                new_estimation_files.cor_y          = y
+                new_estimation_files.file           = file_object
+                new_estimation_files.user           = request.user
+                new_estimation_files.save()
+
+            file_endoscop = request.FILES.getlist('file_endoscop')
+            for file_object in file_endoscop: 
+                name = file_object.name.lower()
+                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = 'endoscop', type_point = type_point, text = text, cor_x = x, cor_y = y, name = name)
+                new_estimation_files.file_number    = 1 
+                new_estimation_files.name           = name
+                new_estimation_files.text           = text
+                new_estimation_files.type_point     = type_point
+                new_estimation_files.cor_x          = x
+                new_estimation_files.cor_y          = y
+                new_estimation_files.file           = file_object
+                new_estimation_files.user           = request.user
+                new_estimation_files.save()
+
             files_diagnostic = request.FILES.getlist('file_diagnistic')
             for file_object in files_diagnostic: 
                 name = file_object.name.lower()
@@ -3217,7 +3248,7 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())
         
         if 'price_after_kd' in request.POST:
-            close_task(reg_interactiv_ocenka)
+            close_task(reg_interactiv_ocenka, request.user)
             if reg_interactiv_ocenka.page_soglasovanie == None:
                 reg_interactiv_ocenka_soglasovanie = RegInteractivOcenkaSoglasovanie()
                 reg_interactiv_ocenka_soglasovanie.save()
@@ -3354,7 +3385,7 @@ def doc(request, id):
                 reg_interactiv_ocenka.save()
 
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
-                    close_task(reg_interactiv_ocenka)
+                    close_task(reg_interactiv_ocenka, request.user)
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
                     '''
                     price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
@@ -3461,7 +3492,7 @@ def doc(request, id):
                 reg_interactiv_ocenka.save()
                 
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
-                    close_task(reg_interactiv_ocenka)
+                    close_task(reg_interactiv_ocenka, request.user)
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
                     '''
                     price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
@@ -6544,19 +6575,20 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
         cna_expenses = zna
     estimation_price_to_bcp = 0    
     
-    if auction:
+    
 
-        difference_sum = 0
-        if estimation.page_soglasovanie != None:
-            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
-        if difference_sum > 0:
-            estimation_price_to_bcp = estimation_price + difference_sum
-        else:
-            estimation_price_to_bcp = estimation_price         
-        
-        matrix_auction = 0
-        
+    difference_sum = 0
+    if estimation.page_soglasovanie != None:
+        if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+            difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+    if difference_sum > 0:
+        estimation_price_to_bcp = estimation_price + difference_sum
+    else:
+        estimation_price_to_bcp = estimation_price         
+    
+    matrix_auction = 0
+
+    if auction:   
         if estimation_price_to_bcp < 200000:
             matrix_auction  = settings_matrix.charge_bcp_200
         elif estimation_price_to_bcp < 400000:
@@ -6574,7 +6606,9 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
         else:
             matrix_auction  = settings_matrix.charge_bcp_5001        
         cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
-
+    else:
+        cna_expenses = cna_expenses + difference_sum
+    
     try:
         if type_calculation == 'custom':
             s = 1

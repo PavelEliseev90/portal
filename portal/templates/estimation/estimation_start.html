@@ -8,7 +8,6 @@
 {% block content %}
 
 <style>
-  
 .dashboard-header {
     background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
     border-radius: 1.5rem;
@@ -560,299 +559,402 @@
     <h1>Начало оценки </h1>
     <p class="">{{params.rlk_unit.name}} {{params.rlk_nomer}} от {{params.rlk_date}}</p>
   </div>
+  
   <form method="post" id="estimationStartForm">
-  <div class="row">
+    {% csrf_token %}
+          
+    <div class="row">
     
-    <div class="col-12 col-md-8">
-      
-      
+      <div class="col-12 col-md-8">
         
-        {% csrf_token %}
-          
-        <div class="portal-panel">
-          <!-- VIN и номер кузова -->
-          <div class="row g-3 mb-3">
-            <div class="col-md-5">
-              <div class="form-floating">
-                <input type="text" 
-                       class="form-control" 
-                       id="vin" 
-                       name="vin" 
-                       value="{% if params.estimation.vin %}{{ params.estimation.vin }}{% endif %}" 
-                       placeholder="VIN номер" 
-                       autocomplete="off"
-                       maxlength="17">
-                <label for="vin">VIN номер <span class="text-danger">*</span></label>
+          <div class="portal-panel">
+            <!-- VIN и номер кузова -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-5">
+                <div class="form-floating">
+                  <input type="text" 
+                        class="form-control" 
+                        id="vin" 
+                        name="vin" 
+                        value="{% if params.estimation.vin %}{{ params.estimation.vin }}{% endif %}" 
+                        placeholder="VIN номер" 
+                        autocomplete="off"
+                        maxlength="17">
+                  <label for="vin">VIN номер <span class="text-danger"></span></label>
+                </div>
+              </div>
+              
+              <div class="col-md-5">
+                <div class="form-floating">
+                  <input type="text" 
+                        class="form-control" 
+                        id="body_number" 
+                        name="body_number" 
+                        value="{% if params.estimation.number_body %}{{ params.estimation.number_body }}{% endif %}" 
+                        placeholder="Номер кузова" 
+                        autocomplete="off"
+                        maxlength="21">
+                  <label for="body_number">Номер кузова</label>
+                </div>
+              </div>
+              
+              <div class="col-md-2">
+                <button type="button" class="btn btn-primary w-100 h-100 bg-gradient" id="refreshBtn" style="min-height: 58px;">
+                  <i class="bi bi-arrow-clockwise"></i> Обновить
+                </button>
               </div>
             </div>
-            
-            <div class="col-md-5">
-              <div class="form-floating">
-                <input type="text" 
-                       class="form-control" 
-                       id="body_number" 
-                       name="body_number" 
-                       value="{% if params.estimation.number_body %}{{ params.estimation.number_body }}{% endif %}" 
-                       placeholder="Номер кузова" 
-                       autocomplete="off"
-                       maxlength="21">
-                <label for="body_number">Номер кузова</label>
-              </div>
-            </div>
-            
-            <div class="col-md-2">
-              <button type="button" class="btn btn-primary w-100 h-100 bg-gradient" id="refreshBtn" style="min-height: 58px;">
-                <i class="bi bi-arrow-clockwise"></i> Обновить
-              </button>
-            </div>
-          </div>
-    
-          <div class="alert alert-info" role="alert" id="previousEstimationAlert" style="display: none;">
-            <i class="bi bi-info-circle me-2"></i>
-            <span id="previousEstimationText">Найдена предыдущая оценка этого автомобиля. Данные будут заполнены автоматически.</span>
-          </div>
-        </div>
-
-        <div id="infoBlocks" style="display: none;">
-          <!-- Активная интерактивная оценка -->
-          <div class="portal-panel mb-3">
-            <h5 class="mb-3">
-              <i class="bi bi-car-front me-2"></i>Активная интерактивная оценка
-              <span class="badge bg-primary bg-gradient ms-2" id="activeEstimationCount" style="cursor: pointer; display: none;" onclick="openActiveEstimationsModal()">0</span>
-            </h5>
-            <div id="activeEstimationBlock">
-              <div class="text-center text-muted py-3">
-                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-                <p class="mt-2 mb-0">Загрузка...</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- История ремонтов -->
-          <div class="portal-panel mb-3">
-            <h5 class="mb-3">
-              <i class="bi bi-tools me-2"></i>История ремонтов
-              <span class="badge bg-primary ms-2" id="repairHistoryCount" style="cursor: pointer; display: none;" onclick="openRepairHistoryModal()">0</span>
-            </h5>
-            <div id="repairHistoryBlock">
-              <div class="text-center text-muted py-3">
-                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-                <p class="mt-2 mb-0">Загрузка...</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- История оценок -->
-          <div class="portal-panel mb-3">
-            <h5 class="mb-3">
-              <i class="bi bi-clock-history me-2"></i>История оценок
-              <span class="badge bg-primary bg-gradient ms-2" id="estimationHistoryCount" style="cursor: pointer; display: none;" onclick="openEstimationHistoryModal()">0</span>
-            </h5>
-            <div id="estimationHistoryBlock">
-              <div class="text-center text-muted py-3">
-                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-                <p class="mt-2 mb-0">Загрузка...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="complectationOptionsBlock" class="portal-panel mb-3" style="display: none;">
-          <h5 class="mb-3">
-            Опции комплектации <span id="complectationOptionsTotal" class="badge bg-primary bg-gradient">0</span>
-          </h5>
-          <div id="complectationOptionsContent" class="row g-2"></div>
-        </div>
       
+            <div class="alert alert-info" role="alert" id="previousEstimationAlert" style="display: none;">
+              <i class="bi bi-info-circle me-2"></i>
+              <span id="previousEstimationText">Найдена предыдущая оценка этого автомобиля. Данные будут заполнены автоматически.</span>
+            </div>
+          </div>
 
-    </div>
-    
-    <div class="col-12 col-md-4">
+          <div id="infoBlocks" style="display: none;">
+            <!-- Активная интерактивная оценка -->
+            <div class="portal-panel mb-3">
+              <h5 class="mb-3">
+                <i class="bi bi-car-front me-2"></i>Активная интерактивная оценка
+                <span class="badge bg-primary bg-gradient ms-2" id="activeEstimationCount" style="cursor: pointer; display: none;" onclick="openActiveEstimationsModal()">0</span>
+              </h5>
+              <div id="activeEstimationBlock">
+                <div class="text-center text-muted py-3">
+                  <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                  <p class="mt-2 mb-0">Загрузка...</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- История ремонтов -->
+            <div class="portal-panel mb-3">
+              <h5 class="mb-3">
+                <i class="bi bi-tools me-2"></i>История ремонтов
+                <span class="badge bg-primary ms-2" id="repairHistoryCount" style="cursor: pointer; display: none;" onclick="openRepairHistoryModal()">0</span>
+              </h5>
+              <div id="repairHistoryBlock">
+                <div class="text-center text-muted py-3">
+                  <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                  <p class="mt-2 mb-0">Загрузка...</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- История оценок -->
+            <div class="portal-panel mb-3">
+              <h5 class="mb-3">
+                <i class="bi bi-clock-history me-2"></i>История оценок
+                <span class="badge bg-primary bg-gradient ms-2" id="estimationHistoryCount" style="cursor: pointer; display: none;" onclick="openEstimationHistoryModal()">0</span>
+              </h5>
+              <div id="estimationHistoryBlock">
+                <div class="text-center text-muted py-3">
+                  <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                  <p class="mt-2 mb-0">Загрузка...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="complectationOptionsBlock" class="portal-panel mb-3" style="display: none;">
+            <h5 class="mb-3">
+              Опции комплектации <span id="complectationOptionsTotal" class="badge bg-primary bg-gradient">0</span>
+            </h5>
+            <div id="complectationOptionsContent" class="row g-2"></div>
+          </div>
+        
+      </div>
+      
+      <div class="col-12 col-md-4" id="catalog_data">
       <!-- Блоки информации -->
       
-
       <div class="portal-panel">
         <!-- Скрываемая часть формы -->
         <div id="formFields" style="display: none;">
+          
+          <!-- Год выпуска -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="year" name="year" required>
+                  <option selected></option>
+                  {% for year in params.years %}
+                    <option value="{{ year }}" {% if params.estimation.year == year %}selected{% endif %}>{{ year }}</option>
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="year">Год выпуска <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Марка -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="mark" name="mark_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Модель -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Конфигурация кузова (после модели) -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="body_config" name="body_config_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Тип двигателя -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- КПП -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="kpp" name="kpp_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Тип привода (обычный select без Select2 — 3 опции, всегда работает) -->
+          <div class="row g-3 mb-2">
+            
+            <div class="col-md-12">
+              <div class="form-floating">
+                <select class="form-control" id="drive_type" name="type_drive" required>
+                  <option value="">Выберите тип привода</option>
+                  {% for drive in params.type_drives %}
+                    <option value="{{ drive }}"
+                            {% if params.estimation.type_drive == drive %}selected{% endif %}>
+                      {{ drive }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <label for="drive_type">Тип привода <span class="text-danger">*</span></label>
+              </div>
+            </div>
+
+          </div>
+
+            <!-- Модификация -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+      
+            <!-- Комплектация -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
+                  <option selected></option>
+                </select>
+                <label class="fs-6" for="complectation">Комплектация</label>
+                <small class="form-text text-muted" id="complectation_hint" style="display: none;">
+                  Комплектация обязательна для выбора
+                </small>
+              </div>
+              <!-- Опции комплектации (плитка групп, по клику — модальное окно) -->
+              
+            </div>
+          </div>
+      
+            <!-- Пробег -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-12">
+              <div class="form-floating">
+                <input type="number" 
+                      class="form-control" 
+                      id="run" 
+                      name="run" 
+                      placeholder="Пробег" 
+                      min="0"
+                      value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
+                <label for="run">Пробег <span class="text-danger">*</span></label>
+              </div>
+            </div>
+          </div>
+      
+            <!-- Кнопки -->
+          <div class="d-flex gap-2 mt-4">
+            
+            <button type="button" class="btn btn-danger bg-gradient w-100" onclick="customForm()">
+              <span class="icon-mbri-refresh"></span> Нет нужной модификации 
+            </button>
+
+            <button type="reset" class="btn btn-secondary bg-gradient w-100" onclick="resetForm()">
+              <span class="icon-mbri-refresh"></span> Сбросить
+            </button>
+
+            <button type="submit" class="btn btn-dark bg-gradient w-100" id="submitBtn">
+              <span class="icon-mbri-right"></span> Начать оценку
+            </button>
+
+          </div>
+
+        </div> <!-- Конец скрываемой части формы -->
+      
+        </div>
+
+      </div>
+
+      <div class="col-12 col-md-4  d-none" id="custom_data">
+      
+        <div class="portal-panel" >
+        <!-- Скрываемая часть формы -->
+        
         <!-- Год выпуска -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="year" name="year" required>
-                <option selected></option>
-                {% for year in params.years %}
-                  <option value="{{ year }}" {% if params.estimation.year == year %}selected{% endif %}>{{ year }}</option>
-                {% endfor %}
-              </select>
-              <label class="fs-6" for="year">Год выпуска <span class="text-danger">*</span></label>
+        <div class="row g-1" style="padding: 0.2rem;">
+          
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <input class="form-control form-control-sm" type="number" id="custom_year" name="custom_year" value="{{params.estimation.year}}" placeholder="">
+              <label class="fs-6" for="floatingInput">Год выпуска</label>
             </div>
           </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <input class="form-control form-control-sm" type="text" id="custom_mark" name="custom_mark" value="{{params.estimation.modification.model.mark.name}}" placeholder="-" >
+              <label class="fs-6" for="floatingInput">Марка</label>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <input class="form-control form-control-sm" type="text" id="custom_model" name="custom_model" value="{{params.estimation.modification.model.name}}" placeholder="-" >
+              <label class="fs-6" for="floatingInput">Модель</label>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <input class="form-control form-control-sm" type="text" id="custom_modification" name="custom_modification" value="{{params.estimation.modification.model.name}}" placeholder="-">
+              <label class="fs-6" for="floatingInput">Модификация</label>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="custom_body_config" name="custom_body_config">
+                  <option selected></option>
+                  {% for type_bodies in params.type_bodies %}
+                    <option value="{{type_bodies.id}}"> {{type_bodies.name}} </option>                
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="body_config">Конфигурация кузова</label>
+              </div>  
+            </div>        
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="custom_engine_config" name="custom_engine_config">
+                  <option selected></option>
+                  {% for type_engines in params.type_engines %}
+                    <option value="{{type_engines.id}}"> {{type_engines.name}} </option>                
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="body_config">Тип двигателя</label>
+              </div>  
+            </div>        
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <div class="search-select-wrapper select2-wrapper">
+                <select class="search-select kors-form-control" id="custom_kpp_config" name="custom_kpp_config">
+                  <option selected></option>
+                  {% for type_kpp in params.type_kpp %}
+                    <option value="{{type_kpp.id}}"> {{type_kpp.name}} </option>                
+                  {% endfor %}
+                </select>
+                <label class="fs-6" for="body_config">КПП</label>
+              </div>  
+            </div>        
+          </div>
+
+          <div class="col-12">
+            
+            <div class="form-floating mb-3">							
+              <select class="form-select" id="custom_type_drive" name="custom_type_drive" placeholder="">
+                <option></option>
+              
+                <option value="Передний" {% if params.estimation.type_drive == "Передний" %} selected {% endif %}> Передний </option>
+                <option value="Полный" {% if params.estimation.type_drive == "Полный" %} selected {% endif %}> Полный </option>
+                <option value="Задний" {% if params.estimation.type_drive == "Задний" %} selected {% endif %}> Задний </option>
+                
+              </select>
+              <label class="fs-6" for="floatingInput">Привод</label>
+
+            </div>
+            
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating mb-3">
+              <input class="form-control form-control-sm" type="number" id="custom_run" name="custom_run" value="{{params.estimation.modification.model.name}}" placeholder="0" >
+              <label class="fs-6" for="floatingInput">Пробег</label>
+            </div>
+          </div>
+
         </div>
-  
-        <!-- Марка -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="mark" name="mark_id" required disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="mark">Марка <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Модель -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="model" name="model_id" required disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="model">Модель <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Конфигурация кузова (после модели) -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="body_config" name="body_config_id" required disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="body_config">Конфигурация кузова <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Тип двигателя -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="engine_type" name="engine_type_id" required disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="engine_type">Тип двигателя <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- КПП -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="kpp" name="kpp_id" required disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="kpp">КПП <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Тип привода (обычный select без Select2 — 3 опции, всегда работает) -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="form-floating">
-              <select class="form-control" id="drive_type" name="type_drive" required>
-                <option value="">Выберите тип привода</option>
-                {% for drive in params.type_drives %}
-                  <option value="{{ drive }}"
-                          {% if params.estimation.type_drive == drive %}selected{% endif %}>
-                    {{ drive }}
-                  </option>
-                {% endfor %}
-              </select>
-              <label for="drive_type">Тип привода <span class="text-danger">*</span></label>
-            </div>
-          </div>
     
           <!-- Кнопки -->
           <div class="d-flex gap-2 mt-4">
             
-            <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
-              <span class="icon-mbri-refresh"></span> Сбросить
-            </button>
-
-            <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
-              <span class="icon-mbri-right"></span> Интерактивная оценка
-            </button>
-
-            <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
-              <span class="icon-mbri-right"></span> Дистанционая оценка
+            <button type="submit" class="btn btn-dark bg-gradient w-100" id="submitBtn">
+              <span class="icon-mbri-right"></span> Начать оценку
             </button>
 
           </div>
-          </div> <!-- Конец скрываемой части формы -->
-        </div>
-  
-        <!-- Модификация -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Комплектация -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="search-select-wrapper select2-wrapper">
-              <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
-                <option selected></option>
-              </select>
-              <label class="fs-6" for="complectation">Комплектация</label>
-              <small class="form-text text-muted" id="complectation_hint" style="display: none;">
-                Комплектация обязательна для выбора
-              </small>
-            </div>
-            <!-- Опции комплектации (плитка групп, по клику — модальное окно) -->
-            
-          </div>
-        </div>
-  
-        <!-- Пробег -->
-        <div class="row g-3 mb-2">
-          <div class="col-md-12">
-            <div class="form-floating">
-              <input type="number" 
-                     class="form-control" 
-                     id="run" 
-                     name="run" 
-                     placeholder="Пробег" 
-                     min="0"
-                     value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
-              <label for="run">Пробег <span class="text-danger">*</span></label>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Кнопки -->
-        <div class="d-flex gap-2 mt-4">
-          
-          <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
-            <span class="icon-mbri-refresh"></span> Сбросить
-          </button>
 
-          <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
-            <span class="icon-mbri-right"></span> Интерактивная оценка
-          </button>
-
-          <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
-            <span class="icon-mbri-right"></span> Дистанционая оценка
-          </button>
-
-        </div>
-        </div> <!-- Конец скрываемой части формы -->
+        </div> 
+      
       </div>
 
     </div>
 
-  </div>
   </form>
+
 </div>
   
 <!-- Модальное окно для активных интерактивных оценок -->
@@ -987,6 +1089,11 @@ function apiFetch(url, opts) {
   });
 }
 
+function customForm(){
+  $('#custom_data').removeClass('d-none');
+  $('#catalog_data').addClass('d-none');
+}
+
 // Функция сброса формы
 function resetForm() {
   const markSelect = document.getElementById('mark');
@@ -1061,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Загружаем активные интерактивные оценки
     if (vin) {
-      apiFetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}`)
+      apiFetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}&exclude_rlk=${encodeURIComponent(rlkId)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('activeEstimationBlock');
@@ -1175,12 +1282,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const modification = modificationFullSelect.value;
     
     // Проверка обязательных полей
-    if (!vin || vin.length < 17) {
-      e.preventDefault();
-      alert('Пожалуйста, укажите корректный VIN номер (17 символов)');
-      vinInput.focus();
-      return false;
-    }
+    // if (!vin || vin.length < 17) {
+    //   e.preventDefault();
+    //   alert('Пожалуйста, укажите корректный VIN номер (17 символов)');
+    //   vinInput.focus();
+    //   return false;
+    // }
     
     if (!mark) {
       e.preventDefault();
@@ -1297,6 +1404,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  // Принудительно обновить отображение года в Select2 (значение уже в селекте, виджет показывает плейсхолдер)
+  function refreshYearSelect2Display() {
+    const el = document.getElementById('year');
+    if (!el) return;
+    const val = el.value;
+    const $el = $(el);
+    if ($el.hasClass('select2-hidden-accessible')) {
+      $el.select2('destroy');
+    }
+    if (val) {
+      el.value = String(val);
+      $el.val(el.value);
+    }
+    const $label = $el.closest('.search-select-wrapper').find('label');
+    const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+    $el.select2({ language: 'ru', placeholder: placeholder, allowClear: false, width: '100%', dropdownAutoWidth: true });
+  }
+  
   // Автозаполнение из предыдущей оценки — только прямые вызовы API, без change-обработчиков
   function autofillFromPreviousEstimation(estimation) {
     if (!estimation || !estimation.modification) {
@@ -1318,7 +1443,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    $(yearSelect).val(String(year));
     const compId = estimation.complectation && estimation.complectation.id;
     
     // Очищаем зависимые поля, чтобы избежать некорректного состояния
@@ -1327,6 +1451,9 @@ document.addEventListener('DOMContentLoaded', function() {
       $s.html('<option value="">Выберите...</option>').prop('disabled', true);
     });
     loadComplectationOptions(null);
+    const yearStr = String(year);
+    yearSelect.value = yearStr;
+    refreshYearSelect2Display();
     
     // Прямые fetch, без trigger('change') — исключаем гонки с isUpdatingSelect2 и data('loading')
     apiFetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
@@ -1563,11 +1690,13 @@ document.addEventListener('DOMContentLoaded', function() {
       year: {{ params.estimation.year|default:"null" }},
       modificationId: {{ params.estimation.modification.id|default:"null" }}
     };
-    
+    console.log(currentMod);
     if (currentMod.year) {
-      // Сначала устанавливаем год
-      yearSelect.value = currentMod.year;
+      const yearStr = String(currentMod.year);
+      yearSelect.value = yearStr;
       $(yearSelect).trigger('change');
+      // Обновить отображение года в Select2 после инициализации виджета (document.ready)
+      setTimeout(refreshYearSelect2Display, 150);
       
       setTimeout(() => {
         if (currentMod.markId) {
@@ -1677,6 +1806,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализация при загрузке
     initSelect2();
     
+    // Принудительно показать выбранный год в виджете (значение может быть задано сервером или currentMod до initSelect2)
+    refreshYearSelect2Display();
+    
     // Привязываем обработчики событий после инициализации Select2
     // Каскадная загрузка марок при выборе года
     $(yearSelect).off('change').on('change', function(e) {
@@ -1735,6 +1867,19 @@ document.addEventListener('DOMContentLoaded', function() {
         isUpdatingSelect2 = true;
         setTimeout(() => {
           try {
+            // Инициализируем только очищенные селекты, не трогая год
+            if (!$(markSelect).hasClass('select2-hidden-accessible')) {
+              const $label = $(markSelect).closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(markSelect).select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            };
             // Инициализируем только очищенные селекты, не трогая год
             if (!$(markSelect).hasClass('select2-hidden-accessible')) {
               const $label = $(markSelect).closest('.search-select-wrapper').find('label');
