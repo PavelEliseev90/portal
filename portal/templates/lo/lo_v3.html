@@ -823,6 +823,12 @@
       position: relative;
       overflow: hidden;
     }
+
+    .kors-hero-dop {
+      background: radial-gradient(circle at top right, rgba(255, 213, 0, 0.22), transparent 45%),
+                  linear-gradient(135deg, #683700, #012a58 65%, #023b86);
+    
+    }
   
     .kors-hero::after {
       content: '';
@@ -1657,7 +1663,7 @@
   
     <div class="portal-page lo-v3-page">
       
-      <section class="kors-hero">
+      <section class="kors-hero  {% if params.rlk_estimations|length > 1 %} kors-hero-dop {% endif %}">
 
         {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
           <div class="kors-brand-pill bg-danger bg-gradient">
@@ -1671,17 +1677,35 @@
         <div class="kors-hero__grid row gy-4 align-items-center">
           <div class="col-12 col-xxl-5">            
           
-            <div class="kors-brand-pill">
-              <span class="icon-mbri-globe" aria-hidden="true"></span>
-              
-              {% if params.rlk.unit_dc != None %}
-                {{params.rlk.unit_dc.name}}
-              {% elif params.rlk.unit != None %}
-                {{params.rlk.unit.name}}
+            {% for estimation_rlk in params.rlk_estimations %}
+              {% if estimation_rlk.rlk == params.rlk %}
+                <div class="kors-brand-pill bg-success bg-opacity-75 bg-gradient text-white fs-8">
+                  <span class="icon-mbri-globe" aria-hidden="true"></span>
+                  
+                  {% if estimation_rlk.rlk.unit_dc != None %}
+                    {{estimation_rlk.rlk.unit_dc.name}}
+                  {% elif estimation_rlk.rlk.unit != None %}
+                    {{estimation_rlk.rlk.unit.name}}
+                  {% else %}
+                    {{estimation_rlk.rlk.estimation.page_documents.unit.name}}
+                  {% endif %} · РЛК {{estimation_rlk.rlk.nomer}} 
+                </div>
               {% else %}
-                {{params.rlk.estimation.page_documents.unit.name}}
-              {% endif %} · РЛК {{params.rlk.nomer}} 
-            </div>
+                <div class="kors-brand-pill bg-secondary bg-opacity-75 bg-gradient">
+                  <a href="/eco/{{estimation_rlk.rlk.id}}/?page={{params.page}}" class="text-white fs-8">
+                    <span class="icon-mbri-globe" aria-hidden="true"></span>
+                    
+                    {% if estimation_rlk.rlk.unit_dc != None %}
+                      {{estimation_rlk.rlk.unit_dc.name}}
+                    {% elif estimation_rlk.rlk.unit != None %}
+                      {{estimation_rlk.rlk.unit.name}}
+                    {% else %}
+                      {{estimation_rlk.rlk.estimation.page_documents.unit.name}}
+                    {% endif %} · РЛК {{estimation_rlk.rlk.nomer}} 
+                  </a>
+                </div>
+              {% endif %}
+            {% endfor %}
 
             <h1 class="kors-hero__title">
               {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} 

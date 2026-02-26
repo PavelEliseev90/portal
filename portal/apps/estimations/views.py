@@ -478,19 +478,15 @@ def estimation_rlk(request, rlk_id):
 
     object                          = DocRLK.objects.get(id=rlk_id)
     
-    object_interactiv_data, created          = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
+    object_interactiv_data, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
     if object_interactiv_data.estimation == None:
-        reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
-        object_interactiv_data.estimation = reg_interactiv_ocenka
-        object_interactiv_data.save()
+        return HttpResponseRedirect(request.path_info + 'start/')
     else:
         reg_interactiv_ocenka = object_interactiv_data.estimation
-    
-    list_statuses = [1, 2, 7, 9]
-    if not reg_interactiv_ocenka.status.id in list_statuses:
-        return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
 
-    #send_channel_message(user, id_rlk = 0, message = 'Прикол')
+    list_statuses = [1, 2, 7, 9]
+    if not object_interactiv_data.status.id in list_statuses:
+        return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
 
     if request.method == 'POST':
         
@@ -1648,14 +1644,34 @@ def estimation(request):
     
     return render(request, 'estimation/estimation.html', {'params': params})	
 
+
 def estimation_start(request, rlk_id):
 
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
     object                          = DocRLK.objects.get(id=rlk_id)
-    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
+    object_interactiv_data, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
+    estimation_active               = None
     
+    if request.method == 'GET':
+        active = request.GET.get('active', '').strip()
+        if active != '':
+            estimation_active_all   = RegInteractivOcenkaRLK.objects.filter(rlk__id = int(active)).first()
+            reg_interactiv_ocenka   = estimation_active_all.estimation 
+
+    if object_interactiv_data.estimation == None:
+        if estimation_active == None:
+            reg_interactiv_ocenka = RegInteractivOcenka.objects.get_or_create(rlk = object)
+            object_interactiv_data.estimation = reg_interactiv_ocenka
+            object_interactiv_data.save()            
+        else:
+            object_interactiv_data.estimation = estimation_active
+            object_interactiv_data.save()
+            return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
+    else:
+        reg_interactiv_ocenka = object_interactiv_data.estimation
+
     # Обработка POST запроса - сохранение данных
     if request.method == 'POST':
         # VIN и номер кузова
@@ -1780,6 +1796,7 @@ def estimation_start(request, rlk_id):
     }
     
     return render(request, 'estimation/estimation_start.html', {'params': params})	
+
 
 def years(request, rlk_id):
 
