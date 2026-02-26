@@ -2536,8 +2536,12 @@ def doc(request, id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
     rlk     = DocRLK.objects.get(pk=id)
-    estimations_data = RegInteractivOcenkaRLK.objects.filter(rlk = rlk)
-    estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
+    estimations_data, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = rlk)
+    #estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
+    
+    estimation = estimations_data.estimation 
+    if estimation == None:
+        return HttpResponseRedirect('/estimations/' + str(id) + '/')
     
     if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
@@ -2551,7 +2555,8 @@ def doc(request, id):
         return render(request, 'errors/403.html', {'params': params})
 
     warning_list = list()
-
+    rlk_estimations = RegInteractivOcenkaRLK.objects.filter(estimation = estimation) 
+    
     params  = {}
     selected            = ''
     balance_date        = estimation.start_estimation 
@@ -2901,9 +2906,10 @@ def doc(request, id):
                 })
         
         params = {
-                
+                'page'                  : page,
                 'type'                  : 'eco',
                 'rlk'                   : rlk,
+                'rlk_estimations'       : rlk_estimations,
                 'estimation'            : estimation,
                 'price'                 : price,
                 'price_kors'            : price_kors,

@@ -3166,12 +3166,17 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
                         eyar_k = 1
                     run = self.page_salon.run
                     self.k_i = round(run / (eyar_k * 35000), 2)
-                    if run <= 175000 and self.k_i <= 1.2:
+                    run_iznos = eyar_k * 35000
+                    if run > run_iznos or run > 175000:
+                        self.iznos = True
+                    else:
                         self.iznos = False
-                    elif run <= 175000 and self.k_i > 1.2:
-                        self.iznos = True
-                    elif run > 175000 and self.k_i > 0:
-                        self.iznos = True
+                    # if run <= 175000 and self.k_i <= 1.2:
+                    #     self.iznos = False
+                    # elif run <= 175000 and self.k_i > 1.2:
+                    #     self.iznos = True
+                    # elif run > 175000 and self.k_i > 0:
+                    #     self.iznos = True
             elif self.page_remote != None:
                 if self.page_remote.run > 0:
                     eyar_k = datetime.now().year - self.year
@@ -3179,12 +3184,17 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
                         eyar_k = 1
                     run = self.page_remote.run
                     self.k_i = round(run / (eyar_k * 35000), 2)
-                    if run <= 175000 and self.k_i <= 1.2:
+                    run_iznos = eyar_k * 35000
+                    if run > run_iznos or run > 175000:
+                        self.iznos = True
+                    else:
                         self.iznos = False
-                    elif run <= 175000 and self.k_i > 1.2:
-                        self.iznos = True
-                    elif run > 175000 and self.k_i > 0:
-                        self.iznos = True
+                    # if run <= 175000 and self.k_i <= 1.2:
+                    #     self.iznos = False
+                    # elif run <= 175000 and self.k_i > 1.2:
+                    #     self.iznos = True
+                    # elif run > 175000 and self.k_i > 0:
+                    #     self.iznos = True
         except:
             s = 1
 

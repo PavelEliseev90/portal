@@ -834,6 +834,28 @@
 
       </div>
 
+      <!-- Блок активной интерактивной оценки (на месте catalog_data/custom_data) -->
+      <div class="col-12 col-md-4 d-none" id="active_estimation_panel">
+        <div class="portal-panel">
+          <h5 class="mb-3">
+            <i class="bi bi-car-front me-2"></i>Активная оценка
+          </h5>
+          <div id="active_estimation_panel_content">
+            <!-- Заполняется JS при загрузке list_estimation -->
+          </div>
+          <div class="d-flex flex-column gap-2 mt-3">
+            
+            <a href="#" id="active_estimation_continue_btn" class="btn btn-dark bg-gradient w-100">
+              <span class="icon-mbri-right"></span> Начать оценку
+            </a>
+
+            <a class="btn btn-outline-secondary w-100 d-none" href="{{request.path_info}}?active=" id="active_estimation">
+              <span class="icon-mbri-refresh"></span> Начать новую оценку
+            </a>
+          </div>
+        </div>
+      </div>
+
       <div class="col-12 col-md-4  d-none" id="custom_data">
       
         <div class="portal-panel" >
@@ -1092,6 +1114,24 @@ function apiFetch(url, opts) {
 function customForm(){
   $('#custom_data').removeClass('d-none');
   $('#catalog_data').addClass('d-none');
+  // Снимаем required с полей каталога, чтобы при отправке не проверялась заполненность formFields
+  const formFields = document.getElementById('formFields');
+  if (formFields) {
+    formFields.querySelectorAll('[required]').forEach(function(el) { el.removeAttribute('required'); });
+  }
+  var form = document.getElementById('estimationStartForm');
+  if (form) form.setAttribute('novalidate', 'novalidate');
+  // Гарантированно разрешаем все поля в custom_data для ввода (и через DOM, и через jQuery — чтобы сбросить состояние Select2)
+  var block = document.getElementById('custom_data');
+  if (block) {
+    block.querySelectorAll('input, select, button[type="submit"]').forEach(function(el) {
+      el.removeAttribute('disabled');
+      el.disabled = false;
+      el.removeAttribute('readonly');
+      if (el.readOnly !== undefined) el.readOnly = false;
+      if (window.jQuery && $(el).length) $(el).prop('disabled', false).prop('readonly', false);
+    });
+  }
 }
 
 // Функция сброса формы
@@ -1102,6 +1142,18 @@ function resetForm() {
     markSelect.dispatchEvent(new Event('change'));
   }
   document.getElementById('estimationStartForm').reset();
+  // Возврат к форме каталога и восстановление required на полях formFields
+  $('#catalog_data').removeClass('d-none');
+  $('#custom_data').addClass('d-none');
+  const formFields = document.getElementById('formFields');
+  if (formFields) {
+    const idsWithRequired = ['year', 'mark', 'model', 'body_config', 'engine_type', 'kpp', 'drive_type', 'modification_full'];
+    idsWithRequired.forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('required', 'required');
+    });
+    // complectation — required восстанавливается динамически по логике модификации
+  }
 }
 
 // Валидация формы перед отправкой (будет определена после загрузки DOM)
@@ -1182,17 +1234,52 @@ document.addEventListener('DOMContentLoaded', function() {
               countBadge.textContent = data.list_estimation.length;
               countBadge.style.display = 'inline-block';
             }
-            block.innerHTML = '<p class="text-muted mb-0">Нажмите на счётчик для просмотра</p>';
+            block.innerHTML = '<p class="text-muted mb-0">Активная оценка отображается в блоке справа</p>';
+            // Показываем блок активной оценки в правой колонке вместо catalog_data/custom_data
+            const first = data.list_estimation[0];
+            const panelContent = document.getElementById('active_estimation_panel_content');
+            const continueBtn = document.getElementById('active_estimation_continue_btn');
+            const activePanel = document.getElementById('active_estimation_panel');
+            if (panelContent && continueBtn && activePanel) {
+              const date = first.date ? new Date(first.date).toLocaleDateString('ru-RU', {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+              }) : 'Не указано';
+              const rlkLink = first.rlk_id ? `{{request.path_info}}?active=${first.rlk_id}` : '#';
+              panelContent.innerHTML = `
+                <div class="border rounded p-3 mb-2">
+                  <h6 class="mb-2">${first.mark || 'Не указано'}</h6>
+                  <p class="mb-1 small">
+                    <span class="badge bg-secondary me-2">${first.status || 'Без статуса'}</span>
+                    ${first.year ? `<span class="text-muted">${first.year} г.</span>` : ''}
+                    ${first.run ? `<span class="text-muted ms-2">Пробег: ${first.run} км</span>` : ''}
+                  </p>
+                  ${first.customer ? `<p class="mb-1 small text-muted"><i class="bi bi-person me-1"></i>${first.customer}</p>` : ''}
+                  ${first.staff ? `<small class="text-muted d-block"><i class="bi bi-person-badge me-1"></i>${first.staff}</small>` : ''}
+                  ${first.vin ? `<small class="text-muted d-block"><i class="bi bi-upc me-1"></i>VIN: ${first.vin}</small>` : ''}
+                  <small class="text-muted d-block mt-1">${date}</small>
+                </div>
+                ${data.list_estimation.length > 1 ? `<p class="small mb-0"><a href="#" onclick="openActiveEstimationsModal(); return false;">Показать все (${data.list_estimation.length})</a></p>` : ''}
+              `;
+              continueBtn.href = rlkLink;
+              continueBtn.style.display = first.rlk_id ? '' : 'none';
+              $('#catalog_data').addClass('d-none');
+              $('#custom_data').addClass('d-none');
+              $('#active_estimation_panel').removeClass('d-none');
+            }
           } else {
             if (countBadge) {
               countBadge.style.display = 'none';
             }
             block.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-2"></i>Активных интерактивных оценок не найдено</p>';
+            $('#active_estimation_panel').addClass('d-none');
+            $('#catalog_data').removeClass('d-none');
           }
         })
         .catch(error => {
           console.error('Ошибка при загрузке активных оценок:', error);
           document.getElementById('activeEstimationBlock').innerHTML = '<div class="text-center text-danger py-3"><p class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Ошибка загрузки данных</p></div>';
+          $('#active_estimation_panel').addClass('d-none');
+          $('#catalog_data').removeClass('d-none');
         });
       
       // Загружаем историю ремонтов
@@ -1275,61 +1362,174 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Валидация формы перед отправкой
   document.getElementById('estimationStartForm').addEventListener('submit', function(e) {
-    const vin = vinInput.value.trim();
-    const mark = markSelect.value;
-    const model = modelSelect.value;
-    const year = yearSelect.value;
-    const modification = modificationFullSelect.value;
-    
-    // Проверка обязательных полей
-    // if (!vin || vin.length < 17) {
-    //   e.preventDefault();
-    //   alert('Пожалуйста, укажите корректный VIN номер (17 символов)');
-    //   vinInput.focus();
-    //   return false;
-    // }
-    
-    if (!mark) {
-      e.preventDefault();
-      alert('Пожалуйста, выберите марку');
-      markSelect.focus();
-      return false;
+    const form = e.target;
+    form.noValidate = true;
+
+    const customDataEl = document.getElementById('custom_data');
+    const isCustomFormMode = customDataEl && !customDataEl.classList.contains('d-none');
+
+    // Фокус после закрытия alert: для каталога — focus/select2 open (для custom_data разблокировку вызываем синхронно после alert, без setTimeout)
+    function safeFocus(el, reenableCustom) {
+      if (!el) return;
+      if (reenableCustom) return;
+      setTimeout(function() {
+        if ($(el).hasClass('select2-hidden-accessible')) {
+          try { $(el).select2('open'); } catch (err) { el.focus(); }
+        } else {
+          el.focus();
+        }
+      }, 150);
     }
-    
-    if (!model) {
-      e.preventDefault();
-      alert('Пожалуйста, выберите модель');
-      modelSelect.focus();
-      return false;
+
+    // В режиме custom_data при ошибке валидации принудительно разрешаем все поля (марка, модель, модификация, пробег и др.)
+    function ensureCustomFieldsEnabled() {
+      const block = document.getElementById('custom_data');
+      if (!block) return;
+      function enableOne(el) {
+        if (!el) return;
+        el.removeAttribute('disabled');
+        el.disabled = false;
+        el.removeAttribute('readonly');
+        if (el.readOnly !== undefined) el.readOnly = false;
+        if (window.jQuery && $(el).length) $(el).prop('disabled', false).prop('readonly', false);
+      }
+      var ids = ['custom_year', 'custom_mark', 'custom_model', 'custom_modification', 'custom_body_config', 'custom_engine_config', 'custom_kpp_config', 'custom_type_drive', 'custom_run'];
+      ids.forEach(function(id) { enableOne(document.getElementById(id)); });
+      block.querySelectorAll('input, select, button[type="submit"]').forEach(enableOne);
+      setTimeout(function() { ids.forEach(function(id) { enableOne(document.getElementById(id)); }); block.querySelectorAll('input, select, button[type="submit"]').forEach(enableOne); }, 0);
     }
-    
-    if (!year) {
-      e.preventDefault();
-      alert('Пожалуйста, выберите год выпуска');
-      yearSelect.focus();
-      return false;
+
+    if (isCustomFormMode) {
+      // Режим «Нет нужной модификации» — проверяем только поля блока custom_data
+      const customYear = document.getElementById('custom_year');
+      const customMark = document.getElementById('custom_mark');
+      const customModel = document.getElementById('custom_model');
+      const customModification = document.getElementById('custom_modification');
+      const customTypeDrive = document.getElementById('custom_type_drive');
+      const customRun = document.getElementById('custom_run');
+      const customBodyConfig = document.getElementById('custom_body_config');
+      const customEngineConfig = document.getElementById('custom_engine_config');
+      const customKppConfig = document.getElementById('custom_kpp_config');
+
+      if (!customYear || !customYear.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, укажите год выпуска');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customMark || !customMark.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, укажите марку');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customModel || !customModel.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, укажите модель');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customModification || !customModification.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, укажите модификацию');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customTypeDrive || !customTypeDrive.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, выберите тип привода');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customRun || customRun.value.trim() === '' || isNaN(parseInt(customRun.value, 10))) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, укажите пробег');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customBodyConfig || !customBodyConfig.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, выберите конфигурацию кузова (тип кузова)');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customEngineConfig || !customEngineConfig.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, выберите тип двигателя');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+      if (!customKppConfig || !customKppConfig.value.trim()) {
+        e.preventDefault();
+        ensureCustomFieldsEnabled();
+        alert('Пожалуйста, выберите тип коробки передач (КПП)');
+        customForm();
+        ensureCustomFieldsEnabled();
+        return false;
+      }
+    } else {
+      // Обычный режим каталога — проверяем в порядке: год → марка → модель → модификация → комплектация
+      const year = yearSelect.value;
+      const mark = markSelect.value;
+      const model = modelSelect.value;
+      const modification = modificationFullSelect.value;
+
+      if (!year) {
+        e.preventDefault();
+        alert('Пожалуйста, выберите год выпуска');
+        safeFocus(yearSelect);
+        return false;
+      }
+      if (!mark) {
+        e.preventDefault();
+        alert('Пожалуйста, выберите марку');
+        safeFocus(markSelect);
+        return false;
+      }
+      if (!model) {
+        e.preventDefault();
+        alert('Пожалуйста, выберите модель');
+        safeFocus(modelSelect);
+        return false;
+      }
+      if (!modification) {
+        e.preventDefault();
+        alert('Пожалуйста, выберите поколение');
+        safeFocus(modificationFullSelect);
+        return false;
+      }
+
+      const complectation = complectationSelect.value;
+      if (complectationSelect.hasAttribute('required') && !complectation) {
+        e.preventDefault();
+        alert('Пожалуйста, выберите комплектацию');
+        safeFocus(complectationSelect);
+        return false;
+      }
     }
-    
-    if (!modification) {
-      e.preventDefault();
-      alert('Пожалуйста, выберите поколение');
-      modificationFullSelect.focus();
-      return false;
-    }
-    
-    // Проверка комплектации (обязательна только если есть комплектации)
-    const complectation = complectationSelect.value;
-    if (complectationSelect.hasAttribute('required') && !complectation) {
-      e.preventDefault();
-      alert('Пожалуйста, выберите комплектацию');
-      complectationSelect.focus();
-      return false;
-    }
-    
-    // Блокируем кнопку отправки
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+
+    // Валидация пройдена — блокируем все кнопки отправки (форма отправится по умолчанию)
+    const submitBtns = form.querySelectorAll('button[type="submit"]');
+    submitBtns.forEach(function(btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+    });
   });
   
 
@@ -2467,6 +2667,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // MutationObserver убран — вызывал бесконечные обновления и зависание при смене disabled
   });
 });
+
+// Показать форму каталога вместо блока активной оценки (кнопка «Начать новую оценку»)
+function showCatalogFormFromActivePanel() {
+  $('#active_estimation_panel').addClass('d-none');
+  $('#catalog_data').removeClass('d-none');
+  $('#custom_data').addClass('d-none');
+}
 
 // Функции для открытия модальных окон
 function openActiveEstimationsModal() {
