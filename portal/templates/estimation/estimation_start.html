@@ -8,7 +8,7 @@
 {% block content %}
 
 <style>
-  
+
 .dashboard-header {
     background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
     border-radius: 1.5rem;
@@ -766,24 +766,7 @@
             </div>
           </div>
     
-          <!-- Кнопки -->
-          <div class="d-flex gap-2 mt-4">
-            
-            <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
-              <span class="icon-mbri-refresh"></span> Сбросить
-            </button>
-
-            <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
-              <span class="icon-mbri-right"></span> Интерактивная оценка
-            </button>
-
-            <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
-              <span class="icon-mbri-right"></span> Дистанционая оценка
-            </button>
-
-          </div>
-          </div> <!-- Конец скрываемой части формы -->
-        </div>
+          
   
         <!-- Модификация -->
         <div class="row g-3 mb-2">
@@ -833,16 +816,12 @@
         <!-- Кнопки -->
         <div class="d-flex gap-2 mt-4">
           
-          <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
+          <button type="reset" class="btn btn-secondary bg-gradient w-50" onclick="resetForm()">
             <span class="icon-mbri-refresh"></span> Сбросить
           </button>
 
-          <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
-            <span class="icon-mbri-right"></span> Интерактивная оценка
-          </button>
-
-          <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
-            <span class="icon-mbri-right"></span> Дистанционая оценка
+          <button type="submit" class="btn btn-dark bg-gradient w-100" id="submitBtn">
+            <span class="icon-mbri-right"></span> Начать оценку
           </button>
 
         </div>
@@ -1297,6 +1276,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  // Принудительно обновить отображение года в Select2 (значение уже в селекте, виджет показывает плейсхолдер)
+  function refreshYearSelect2Display() {
+    const el = document.getElementById('year');
+    if (!el) return;
+    const val = el.value;
+    const $el = $(el);
+    if ($el.hasClass('select2-hidden-accessible')) {
+      $el.select2('destroy');
+    }
+    if (val) {
+      el.value = String(val);
+      $el.val(el.value);
+    }
+    const $label = $el.closest('.search-select-wrapper').find('label');
+    const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+    $el.select2({ language: 'ru', placeholder: placeholder, allowClear: false, width: '100%', dropdownAutoWidth: true });
+  }
+  
   // Автозаполнение из предыдущей оценки — только прямые вызовы API, без change-обработчиков
   function autofillFromPreviousEstimation(estimation) {
     if (!estimation || !estimation.modification) {
@@ -1318,7 +1315,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    $(yearSelect).val(String(year));
     const compId = estimation.complectation && estimation.complectation.id;
     
     // Очищаем зависимые поля, чтобы избежать некорректного состояния
@@ -1327,6 +1323,9 @@ document.addEventListener('DOMContentLoaded', function() {
       $s.html('<option value="">Выберите...</option>').prop('disabled', true);
     });
     loadComplectationOptions(null);
+    const yearStr = String(year);
+    yearSelect.value = yearStr;
+    refreshYearSelect2Display();
     
     // Прямые fetch, без trigger('change') — исключаем гонки с isUpdatingSelect2 и data('loading')
     apiFetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
@@ -1563,11 +1562,13 @@ document.addEventListener('DOMContentLoaded', function() {
       year: {{ params.estimation.year|default:"null" }},
       modificationId: {{ params.estimation.modification.id|default:"null" }}
     };
-    
+    console.log(currentMod);
     if (currentMod.year) {
-      // Сначала устанавливаем год
-      yearSelect.value = currentMod.year;
+      const yearStr = String(currentMod.year);
+      yearSelect.value = yearStr;
       $(yearSelect).trigger('change');
+      // Обновить отображение года в Select2 после инициализации виджета (document.ready)
+      setTimeout(refreshYearSelect2Display, 150);
       
       setTimeout(() => {
         if (currentMod.markId) {
@@ -1677,6 +1678,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализация при загрузке
     initSelect2();
     
+    // Принудительно показать выбранный год в виджете (значение может быть задано сервером или currentMod до initSelect2)
+    refreshYearSelect2Display();
+    
     // Привязываем обработчики событий после инициализации Select2
     // Каскадная загрузка марок при выборе года
     $(yearSelect).off('change').on('change', function(e) {
@@ -1735,6 +1739,19 @@ document.addEventListener('DOMContentLoaded', function() {
         isUpdatingSelect2 = true;
         setTimeout(() => {
           try {
+            // Инициализируем только очищенные селекты, не трогая год
+            if (!$(markSelect).hasClass('select2-hidden-accessible')) {
+              const $label = $(markSelect).closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(markSelect).select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
+            };
             // Инициализируем только очищенные селекты, не трогая год
             if (!$(markSelect).hasClass('select2-hidden-accessible')) {
               const $label = $(markSelect).closest('.search-select-wrapper').find('label');
