@@ -1,9 +1,9 @@
-{% extends 'base_web.html' %}
+{% extends 'base_web_no_users.html' %}
 
 {% block title %} Согласие на обработку персональных данных {% endblock %}
 
 {% block content %}
-<div class="portal-page">
+
   <div class="container" style="max-width: 800px;">
     <div class="portal-panel">
       <div class="portal-header text-center mb-4">
@@ -55,13 +55,13 @@
           
           <div class="col-12 col-md-6">
             <div class="form-floating">
-              <input type="tel" class="form-control" id="phone" name="phone" 
+              <input type="tel" class="form-control" readonly id="phone" name="phone" 
                      value="{{ params.form_data.phone }}" 
                      placeholder="+7 (999) 123-45-67" 
                      pattern="[\+]?[0-9\s\-\(\)]+" required>
               <label for="phone">Номер телефона <span class="text-danger">*</span></label>
             </div>
-            <small class="text-muted">Формат: +7 (999) 123-45-67</small>
+           
           </div>
           
           <div class="col-12 col-md-6">
@@ -71,7 +71,7 @@
                      placeholder="example@mail.ru">
               <label for="email">Email (необязательно)</label>
             </div>
-            <small class="text-muted">Укажите email для получения уведомлений</small>
+            
           </div>
         </div>
 
@@ -144,7 +144,7 @@
       </form>
     </div>
   </div>
-</div>
+
 
 <style>
   .consent-text {

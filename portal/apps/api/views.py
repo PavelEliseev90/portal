@@ -35,7 +35,7 @@ from documents.models import DocServices, DocServiceItem, DocZNServicesKA, DocZN
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
 from refs.serializers import AutoruComplectationSerializer, AutoruMarkSerializer, AutoruModelSerializer, AutoruModificationSerializer
-from online.models import Online_doc, Records_online_doc
+from online.models import Online_doc, Records_online_doc, PersonalDataConsent
 from register.models import RegPrices, RegInteractivOcenka
 from avtosalon.models import RefreshSpecificationsAutoRU
 from recognition.models import Recognition_call, Records_voice_recorder
@@ -89,6 +89,11 @@ def get_info_estimation_vin(request):
         date_start = DT.datetime.now() - DT.timedelta(days=14)
         infos = RegInteractivOcenka.objects.filter(vin = vin, 
                                        start_estimation__gte =  date_start)
+        
+        exclude_rlk = request.GET.get('exclude_rlk', '')
+        if exclude_rlk != '':
+            infos = infos.exclude(rlk__id = exclude_rlk)
+
         if infos.count() > 0:
             for info in infos:
                 customer = ''
@@ -117,6 +122,78 @@ def get_info_estimation_vin(request):
     }
     return JsonResponse(json_info, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def create_personal_data(request):
+    url = ''
+    error = ''
+    token = ''
+
+    try:
+        info = json.loads(request.body)
+        rlk  = get_worksheet(info)
+        
+        phone = rlk.phone
+        
+        personal_data, created = PersonalDataConsent.objects.get_or_create(rlk = rlk)
+
+        personal_data.phone = phone
+        personal_data.save()
+
+        url     = 'https://ah.kors-group.com/online/consent/' + personal_data.token + '/' 
+        token   = personal_data.token
+
+    except Exception as e:
+        error = str(e)
+    
+    to_json = {
+        'url'       : url,
+        'token'     : token,
+        'error'     : error
+    }
+    return JsonResponse(to_json, status=status.HTTP_200_OK) 
+
+@api_view(['GET'])
+def info_personal_data(request):
+    
+    date_start  = request.GET.get('date_start', '')
+    token       = request.GET.get('token', '')
+    
+    if token == '':
+        if date_start == '':
+            date_start = DT.datetime.now() - DT.timedelta(days=14)
+        else:
+            date_start = DT.datetime.strptime(date_start, "%Y-%m-%d").date()
+
+    list_data   = list()
+    error       = ''
+    if token != '':
+        list_infos = PersonalDataConsent.objects.filter(token =token)
+    else:
+        list_infos = PersonalDataConsent.objects.filter(date_confirmed__gte = date_start).filter(confirmed = True)
+
+    for list_info in list_infos:
+        data_object = {
+            'token'             : list_info.token,
+            'rlk_uin'           : list_info.rlk.uin,
+            'phone'             : list_info.phone,
+            'date_created'      : list_info.date_created,
+            'date_opened'       : list_info.date_opened,
+            'date_confirmed'    : list_info.date_confirmed,
+            'email'             : list_info.email,
+            'last_name'         : list_info.last_name,
+            'first_name'        : list_info.first_name,
+            'middle_name'       : list_info.middle_name,
+            'ip_address'        : list_info.ip_address,
+            'user_agent'        : list_info.user_agent,
+        }
+        list_data.append(data_object)
+
+    to_json = {
+        'list'      : list_data,
+        'count'     : list_infos.count()
+    }
+
+    return JsonResponse(to_json, status=status.HTTP_200_OK) 
 
 @api_view(['POST'])
 def post_info(request):

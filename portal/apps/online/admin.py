@@ -24,12 +24,12 @@ class PersonalDataConsentAdmin(ImportExportActionModelAdmin):
 	list_display 	= ('date_created', 'get_full_name', 'phone', 'email', 'confirmed', 'revoked', 'date_confirmed', 'unit')
 	list_filter 	= ('confirmed', 'revoked', 'date_created', 'date_confirmed', 'unit')
 	search_fields 	= ('last_name', 'first_name', 'middle_name', 'phone', 'email', 'token')
-	readonly_fields = ('token', 'date_created', 'date_opened', 'date_confirmed', 'date_revoked', 'ip_address', 'user_agent', 'consent_text')
-	raw_id_fields 	= ('customer', 'unit')
+	readonly_fields = ('token', 'date_created', 'rlk', 'date_opened', 'date_confirmed', 'date_revoked', 'ip_address', 'user_agent', 'consent_text')
+	raw_id_fields 	= ('customer', 'rlk', 'unit')
 	
 	fieldsets = (
 		('Основная информация', {
-			'fields': ('token', 'last_name', 'first_name', 'middle_name', 'phone', 'email', 'customer', 'unit', 'comment')
+			'fields': ('rlk', 'token', 'last_name', 'first_name', 'middle_name', 'phone', 'email', 'customer', 'unit', 'comment')
 		}),
 		('Статус', {
 			'fields': ('confirmed', 'revoked', 'date_created', 'date_opened', 'date_confirmed', 'date_revoked')
