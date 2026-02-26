@@ -8,6 +8,7 @@
 {% block content %}
 
 <style>
+
 .dashboard-header {
     background: linear-gradient(135deg, #002a5a 0%, #00509d 100%);
     border-radius: 1.5rem;
@@ -764,7 +765,8 @@
               <label for="drive_type">Тип привода <span class="text-danger">*</span></label>
             </div>
           </div>
-        </div>
+    
+          
   
         <!-- Модификация -->
         <div class="row g-3 mb-2">
@@ -814,16 +816,12 @@
         <!-- Кнопки -->
         <div class="d-flex gap-2 mt-4">
           
-          <button type="reset" class="btn btn-secondary bg-gradient" onclick="resetForm()">
+          <button type="reset" class="btn btn-secondary bg-gradient w-50" onclick="resetForm()">
             <span class="icon-mbri-refresh"></span> Сбросить
           </button>
 
-          <button type="submit" class="btn btn-dark bg-gradient" id="submitBtn">
-            <span class="icon-mbri-right"></span> Интерактивная оценка
-          </button>
-
-          <button type="submit" class="btn btn-danger bg-gradient" id="submitBtn">
-            <span class="icon-mbri-right"></span> Дистанционая оценка
+          <button type="submit" class="btn btn-dark bg-gradient w-100" id="submitBtn">
+            <span class="icon-mbri-right"></span> Начать оценку
           </button>
 
         </div>
@@ -922,7 +920,52 @@
   </div>
 </div>
 
+<!-- Контейнер для тостов с ошибками API -->
+<div class="toast-container position-fixed top-0 end-0 p-3" id="estimationErrorToasts" style="z-index: 1100;"></div>
+
 <script>
+// Показать ошибку API пользователю
+function showEstimationError(message, context) {
+  const container = document.getElementById('estimationErrorToasts');
+  if (!container) return;
+  const id = 'toast-' + Date.now();
+  const html = `
+    <div class="toast align-items-center text-bg-danger border-0" id="${id}" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Ошибка</strong>${context ? ': ' + context : ''}<br>
+          <span class="small">${(message || 'Неизвестная ошибка').replace(/</g, '&lt;')}</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  const toastEl = document.getElementById(id);
+  if (toastEl && typeof bootstrap !== 'undefined') {
+    const toast = new bootstrap.Toast(toastEl, { delay: 10000 });
+    toast.show();
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+  }
+  console.error('Estimation API error:', message);
+}
+
+// fetch с проверкой response.ok и выводом причины ошибки
+function apiFetch(url, opts) {
+  return fetch(url, opts || {}).then(response => {
+    if (response.ok) return response;
+    return response.text().then(text => {
+      let msg = 'Ошибка ' + response.status + (response.statusText ? ' ' + response.statusText : '');
+      try {
+        const j = JSON.parse(text);
+        if (j.error) msg = j.error;
+      } catch (e) {}
+      showEstimationError(msg);
+      return Promise.reject(new Error(msg));
+    });
+  });
+}
+
 // Функция сброса формы
 function resetForm() {
   const markSelect = document.getElementById('mark');
@@ -997,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Загружаем активные интерактивные оценки
     if (vin) {
-      fetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}`)
+      apiFetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('activeEstimationBlock');
@@ -1025,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       
       // Загружаем историю ремонтов
-      fetch(`/estimations/${rlkId}/api/repair-history/?vin=${encodeURIComponent(vin)}`)
+      apiFetch(`/estimations/${rlkId}/api/repair-history/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('repairHistoryBlock');
@@ -1053,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       
       // Загружаем историю оценок
-      fetch(`/estimations/${rlkId}/api/estimation-history/?vin=${encodeURIComponent(vin)}`)
+      apiFetch(`/estimations/${rlkId}/api/estimation-history/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
         .then(data => {
           const block = document.getElementById('estimationHistoryBlock');
@@ -1177,7 +1220,7 @@ document.addEventListener('DOMContentLoaded', function() {
       isCheckingPreviousEstimation = true;
       const url = `/estimations/${rlkId}/api/previous-estimation/?vin=${encodeURIComponent(vin)}&body_number=${encodeURIComponent(bodyNumber)}`;
       
-      fetch(url)
+      apiFetch(url)
         .then(response => response.json())
         .then(data => {
           const alert = document.getElementById('previousEstimationAlert');
@@ -1254,7 +1297,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    $(yearSelect).val(String(year));
     const compId = estimation.complectation && estimation.complectation.id;
     
     // Очищаем зависимые поля, чтобы избежать некорректного состояния
@@ -1263,20 +1305,23 @@ document.addEventListener('DOMContentLoaded', function() {
       $s.html('<option value="">Выберите...</option>').prop('disabled', true);
     });
     loadComplectationOptions(null);
+    document.getElementById('year').value = year;
+    //$(yearSelect).val(String(year));
+    console.log( String(document.getElementById('year').value) + String('asdad'));
     
     // Прямые fetch, без trigger('change') — исключаем гонки с isUpdatingSelect2 и data('loading')
-    fetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
+    apiFetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
       .then(r => r.json())
       .then(data => {
         autofillPopulateSelect($(markSelect), data.marks || [], mod.mark_id);
-        return fetch(`/estimations/${rlkId}/api/models/?mark_id=${mod.mark_id}&year=${year}`);
+        return apiFetch(`/estimations/${rlkId}/api/models/?mark_id=${mod.mark_id}&year=${year}`);
       })
       .then(r => r.json())
       .then(data => {
         autofillPopulateSelect($(modelSelect), data.models || [], mod.model_id);
-        const bodyP = fetch(`/estimations/${rlkId}/api/body-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
-        const engineP = fetch(`/estimations/${rlkId}/api/engine-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
-        const kppP = fetch(`/estimations/${rlkId}/api/kpp-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
+        const bodyP = apiFetch(`/estimations/${rlkId}/api/body-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
+        const engineP = apiFetch(`/estimations/${rlkId}/api/engine-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
+        const kppP = apiFetch(`/estimations/${rlkId}/api/kpp-types/?model_id=${mod.model_id}&year=${year}`).then(r => r.json());
         return Promise.all([bodyP, engineP, kppP]);
       })
       .then(([bodyData, engineData, kppData]) => {
@@ -1288,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const typeEngine = mod.type_engine_id || '';
         const typeKpp = mod.type_kpp_id || '';
         const url = `/estimations/${rlkId}/api/modifications/?model_id=${mod.model_id}&year=${year}&type_body_id=${typeBody}&type_engine_id=${typeEngine}&type_kpp_id=${typeKpp}`;
-        return fetch(url).then(r => r.json()).then(data => ({ data, modId }));
+        return apiFetch(url).then(r => r.json()).then(data => ({ data, modId }));
       })
       .then(({ data, modId }) => {
         autofillPopulateSelect($(modificationFullSelect), data.modifications || [], modId);
@@ -1298,7 +1343,7 @@ document.addEventListener('DOMContentLoaded', function() {
           finish();
           return;
         }
-        return fetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modId}`).then(r => r.json()).then(d => ({ d, modId }));
+        return apiFetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modId}`).then(r => r.json()).then(d => ({ d, modId }));
       })
       .then(res => {
         if (!res) return;
@@ -1345,7 +1390,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    fetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modificationId}`)
+    apiFetch(`/estimations/${rlkId}/api/complectations/?modification_id=${modificationId}`)
       .then(response => response.json())
       .then(data => {
         if ($(complectationSelect).hasClass('select2-hidden-accessible')) {
@@ -1353,6 +1398,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         complectationSelect.innerHTML = '<option selected></option>';
+        loadComplectationOptions(null);
         
         if (data.complectations && data.complectations.length > 0) {
           // Если есть комплектации, делаем поле обязательным
@@ -1411,6 +1457,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (complectationHint) {
           complectationHint.style.display = 'none';
         }
+        loadComplectationOptions(null);
       });
   }
   
@@ -1429,7 +1476,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    fetch(`/estimations/${rlkId}/api/complectation-options/?complectation_id=${complectationId}`)
+    apiFetch(`/estimations/${rlkId}/api/complectation-options/?complectation_id=${complectationId}`)
       .then(r => r.json())
       .then(data => {
         totalEl.textContent = data.total_count || 0;
@@ -1460,7 +1507,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   $(complectationSelect).on('change', function() {
     const val = $(this).val();
-    loadComplectationOptions(val || null);
+    if (!val) {
+      loadComplectationOptions(null);
+    } else {
+      loadComplectationOptions(val);
+    }
   });
   
   $(document).on('click', '.complectation-group-tile', function() {
@@ -1493,7 +1544,7 @@ document.addEventListener('DOMContentLoaded', function() {
       year: {{ params.estimation.year|default:"null" }},
       modificationId: {{ params.estimation.modification.id|default:"null" }}
     };
-    
+    console.log(currentMod);
     if (currentMod.year) {
       // Сначала устанавливаем год
       yearSelect.value = currentMod.year;
@@ -1677,6 +1728,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropdownAutoWidth: true,
                 disabled: true
               });
+            };
+            // Инициализируем только очищенные селекты, не трогая год
+            if (!$(markSelect).hasClass('select2-hidden-accessible')) {
+              const $label = $(markSelect).closest('.search-select-wrapper').find('label');
+              const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+              $(markSelect).select2({
+                language: 'ru',
+                placeholder: placeholder,
+                allowClear: false,
+                width: '100%',
+                dropdownAutoWidth: true,
+                disabled: true
+              });
             }
             if (!$(modelSelect).hasClass('select2-hidden-accessible')) {
               const $label = $(modelSelect).closest('.search-select-wrapper').find('label');
@@ -1737,13 +1801,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // Загружаем марки по году
-      fetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
+      apiFetch(`/estimations/${rlkId}/api/marks/?year=${year}`)
+        .then(response => response.json())
         .then(data => {
           $(markSelect).html('<option selected></option>');
           if (data.marks && data.marks.length > 0) {
@@ -1839,13 +1898,8 @@ document.addEventListener('DOMContentLoaded', function() {
       // Устанавливаем флаг загрузки
       $(this).data('loading', true);
       
-      fetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}&year=${year}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
+      apiFetch(`/estimations/${rlkId}/api/models/?mark_id=${markId}&year=${year}`)
+        .then(response => response.json())
         .then(data => {
           $(modelSelect).html('<option selected></option>');
           if (data.models && data.models.length > 0) {
@@ -1941,13 +1995,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeEngineId) url += `&type_engine_id=${typeEngineId}`;
       if (typeKppId) url += `&type_kpp_id=${typeKppId}`;
       
-      return fetch(url)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
+      return apiFetch(url)
+        .then(response => response.json())
         .then(data => {
           // Уничтожаем Select2 перед обновлением опций
           if ($(modificationFullSelect).hasClass('select2-hidden-accessible')) {
@@ -2116,7 +2165,7 @@ document.addEventListener('DOMContentLoaded', function() {
       isUpdatingSelect2 = true;
       
       // Загружаем типы кузова
-      fetch(`/estimations/${rlkId}/api/body-types/?model_id=${modelId}&year=${year}`)
+      apiFetch(`/estimations/${rlkId}/api/body-types/?model_id=${modelId}&year=${year}`)
         .then(response => response.json())
         .then(data => {
           $('#body_config').html('<option selected></option>');
@@ -2130,7 +2179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Ошибка при загрузке типов кузова:', error));
       
       // Загружаем типы двигателя
-      fetch(`/estimations/${rlkId}/api/engine-types/?model_id=${modelId}&year=${year}`)
+      apiFetch(`/estimations/${rlkId}/api/engine-types/?model_id=${modelId}&year=${year}`)
         .then(response => response.json())
         .then(data => {
           $('#engine_type').html('<option selected></option>');
@@ -2144,7 +2193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Ошибка при загрузке типов двигателя:', error));
       
       // Загружаем типы КПП
-      fetch(`/estimations/${rlkId}/api/kpp-types/?model_id=${modelId}&year=${year}`)
+      apiFetch(`/estimations/${rlkId}/api/kpp-types/?model_id=${modelId}&year=${year}`)
         .then(response => response.json())
         .then(data => {
           $('#kpp').html('<option selected></option>');
