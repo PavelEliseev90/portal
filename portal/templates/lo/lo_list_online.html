@@ -324,6 +324,10 @@ z-index: 1044;">
                 if (obj.auction){
                   auction = '<span class="badge bg-danger rounded-pill justify-content-end">A</span>';
                 };
+                estimation_rlk_count = ''
+                if (obj.estimation_rlk_count > 1){
+                  estimation_rlk_count = '<span class="badge bg-success rounded-pill justify-content-end">E ' + obj.estimation_rlk_count + '</span>';
+                };
                 
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
@@ -355,6 +359,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=             estimation_rlk_count;
                 html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
                 html += '          ';
                 html += '        </div>';
@@ -568,6 +573,11 @@ z-index: 1044;">
                   auction = '<span class="badge bg-danger rounded-pill justify-content-end">A</span>';
                 };
 
+                estimation_rlk_count = ''
+                if (obj.estimation_rlk_count > 1){
+                  estimation_rlk_count = '<span class="badge bg-success rounded-pill justify-content-end">E ' + obj.estimation_rlk_count + '</span>';
+                };
+
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
@@ -597,6 +607,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=                  estimation_rlk_count;
                 html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
                 html += '          ';
                 html += '        </div>';

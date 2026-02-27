@@ -450,16 +450,9 @@
                         </div>
                         
                         <div class="col-12 col-xl-3">
-                          <div class="search-select-wrapper select2-wrapper">
-                            <select class="search-select kors-form-control" id="complectation_id" name="complectation_id">
-                              <option selected></option>
-                              {% for complectation in params.selected.complectations %}
-                                <option value="{{complectation.id}}" {% if params.estimation.complectation.id == complectation.id %} selected {% endif %}> 
-                                  {{complectation.name}} 
-                                </option>
-                              {% endfor %}
-                            </select>
-                            <label class="fs-6" for="complectation_id">Комплектация</label>
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="complectation_id" name="complectation_id" value="{{params.estimation.complectation.name}}" placeholder="-" readonly>
+                            <label class="fs-6" for="floatingInput">Комплектация</label>
                           </div>
                         </div>
                       
@@ -505,25 +498,16 @@
 
                         <div class="col-4 col-xl-3">
                           <div class="form-floating mb-3">
-                            <input class="form-control form-control-sm" type="text" id="year" name="year" value="{{params.estimation.year}}" placeholder="-">
+                            <input class="form-control form-control-sm" type="text" id="year" name="year" value="{{params.estimation.year}}" placeholder="-" readonly>
                             <label class="fs-6" for="floatingInput">Год выпуска</label>
                           </div>
                         </div>
                         
                         <div class="col-4 col-xl-3">
-                          
-                          <div class="form-floating mb-3">							
-                            <select class="form-select" id="type_drive" name="type_drive" placeholder="">
-                              <option></option>
-                            
-                              <option value="Передний" {% if params.estimation.type_drive == "Передний" %} selected {% endif %}> Передний </option>
-                              <option value="Полный" {% if params.estimation.type_drive == "Полный" %} selected {% endif %}> Полный </option>
-                              <option value="Задний" {% if params.estimation.type_drive == "Задний" %} selected {% endif %}> Задний </option>
-                              
-                            </select>
+                          <div class="form-floating mb-3">
+                            <input class="form-control form-control-sm" type="text" id="type_drive" name="type_drive" value="{{params.estimation.type_drive}}" placeholder="-" readonly>
                             <label class="fs-6" for="floatingInput">Привод</label>
                           </div>
-                          
                         </div>
 
                       </div>
@@ -551,7 +535,7 @@
                             <select class="search-select kors-form-control" id="organization_id" name="organization_id">
                               <option selected></option>
                               {% for organization in params.selected.organizations %}
-                                <option value="{{organization.slug}}" {% if params.estimation.page_documents.organization.id == organization.slug %} selected {% endif %}> {{organization.name}} </option>
+                                <option value="{{organization.slug}}" {% if params.interactiv_rlk.organization.id == organization.slug %} selected {% endif %}> {{organization.name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="organization_id">Организация</label>
@@ -565,7 +549,7 @@
                             <select class="search-select kors-form-control" id="filial_id" name="filial_id">
                               <option selected></option>
                               {% for filial in params.selected.filials %}
-                                <option value="{{filial.slug}}" {% if params.estimation.page_documents.filial.id == filial.slug %} selected {% endif %}> {{filial.name}} </option>
+                                <option value="{{filial.slug}}" {% if params.interactiv_rlk.filial.id == filial.slug %} selected {% endif %}> {{filial.name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="filial_id">Филиал</label>
@@ -579,7 +563,7 @@
                             <select class="search-select kors-form-control" id="unit_id" name="unit_id">
                               <option selected></option>
                               {% for unit in params.selected.units %}
-                                <option value="{{unit.slug}}" {% if params.estimation.page_documents.unit.id == unit.slug %} selected {% endif %}> {{unit.name}} </option>
+                                <option value="{{unit.slug}}" {% if params.interactiv_rlk.unit.id == unit.slug %} selected {% endif %}> {{unit.name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="unit_id">Подразделение ДЦ</label>
@@ -593,7 +577,7 @@
                             <select class="search-select kors-form-control" id="store_id" name="store_id">
                               <option selected></option>
                               {% for store in params.selected.stores %}
-                                <option value="{{store.slug}}" {% if params.estimation.page_documents.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
+                                <option value="{{store.slug}}" {% if params.interactiv_rlk.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="store_id">Стоянка</label>
@@ -607,7 +591,7 @@
                             <select class="search-select kors-form-control" id="type_reception_id" name="type_reception_id">
                               <option selected></option>
                               {% for type_reception in params.selected.type_receptions %}
-                                <option value="{{type_reception.slug}}" {% if params.estimation.page_documents.type_reception.id == type_reception.slug %} selected {% endif %}> {{type_reception.name}} </option>
+                                <option value="{{type_reception.slug}}" {% if params.interactiv_rlk.type_reception.id == type_reception.slug %} selected {% endif %}> {{type_reception.name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="type_reception_id">Тип приема</label>
@@ -4439,7 +4423,7 @@
                         </h6>
 
                           
-                          {% for access_user in params.estimation.access_user.all %}
+                          {% for access_user in params.interactiv_rlk.access_user.all %}
                             
                             <button type="button" style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                               {% if access_user.profiles.eco_name != '' %} {{access_user.profiles.eco_name}} {% else %} {{access_user.last_name}} {{access_user.first_name}} {% endif %}
@@ -4593,18 +4577,18 @@
                           <input hidden class="form-control form-control-sm" type="text" id="users" name="users" value="">
                             
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" id="price_reception" name="price_reception" value="{{params.estimation.page_soglasovanie.price_reception}}" required>
+                            <input class="form-control form-control-sm" type="number" id="price_reception" name="price_reception" value="{{params.interactiv_rlk.page_soglasovanie.price_reception}}" required>
                             <label class="fs-6" for="floatingInput">Цена приема &#8381;</label>
                           </div>
                           <br>
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" id="price_recovery" name="price_recovery" value="{{params.estimation.page_soglasovanie.price_recovery}}" required>
+                            <input class="form-control form-control-sm" type="number" id="price_recovery" name="price_recovery" value="{{params.interactiv_rlk.page_soglasovanie.price_recovery}}" required>
                             <label class="fs-6" for="floatingInput">Затраты на автомобиль &#8381;</label>
                           </div>
                           <br>
 
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" id="price_sale" name="price_sale" value="{{params.estimation.page_soglasovanie.price_sale}}" required>
+                            <input class="form-control form-control-sm" type="number" id="price_sale" name="price_sale" value="{{params.interactiv_rlk.page_soglasovanie.price_sale}}" required>
                             <label class="fs-6" for="floatingInput">Цена продажи &#8381;</label>
                           </div>
                           <br>
@@ -4613,13 +4597,13 @@
                           
 
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_soglasovanie.car_sale_info}}" required>
+                            <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.interactiv_rlk.page_soglasovanie.car_sale_info}}" required>
                             <label class="fs-6" for="floatingInput">Приобретаемый АМ</label>
                           </div>
                           <br>
           
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="text" id="car_sale_price" name="car_sale_price" value="{{params.estimation.page_soglasovanie.car_sale_price}}" required>
+                            <input class="form-control form-control-sm" type="text" id="car_sale_price" name="car_sale_price" value="{{params.interactiv_rlk.page_soglasovanie.car_sale_price}}" required>
                             <label class="fs-6" for="floatingInput">Цена приобретаемого АМ &#8381;</label>
                           </div>
 
@@ -4628,9 +4612,9 @@
                         <div class="col-sm-6">
                           <div class="form-group">
                             <label class="fs-6" for="comment">Комментарий</label>
-                            <textarea class="form-control" name="comment" id="comment" rows="12" {% if params.estimation.page_soglasovanie.end_estimation != None %} readonly {% endif %} >{{params.estimation.page_soglasovanie.comment}}</textarea>
+                            <textarea class="form-control" name="comment" id="comment" rows="12" {% if params.interactiv_rlk.page_soglasovanie.end_estimation != None %} readonly {% endif %} >{{params.interactiv_rlk.page_soglasovanie.comment}}</textarea>
                           </div>
-                          {% if params.estimation.page_soglasovanie.end_estimation != None %} 
+                          {% if params.interactiv_rlk.page_soglasovanie.end_estimation != None %} 
                         
                             <label class=""> <span class="icon-mbri-edit fw-bold fs-6 text-secondary" data-bs-target="#price_comment_edit" data-bs-toggle="modal"> Добавить</span> </label>
                                 

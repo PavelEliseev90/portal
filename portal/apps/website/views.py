@@ -46,7 +46,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection
+from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaRLK, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -5423,22 +5423,22 @@ def rlk_trade_in(request, id):
 
     
     docs        = DocRLK.objects.filter(pk = id).filter(eco = True).order_by('-dataTime')
-    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery    = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     docs        = docs.annotate(
         status_estimation    = Subquery(subquery.values('status__name')[:1])).annotate(
-        status_estimation_id  = Subquery(subquery.values('status__id')[:1])).annotate(
-        start_estimation    = Subquery(subquery.values('start_estimation')[:1])).annotate(
-        remote_price        = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-        end_estimation      = Subquery(subquery.values('end_estimation')[:1])).annotate(
-        staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
-        mark                = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-        model = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-        modification = Subquery(subquery.values('modification__name')[:1])).annotate(
-        type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-        type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year = Subquery(subquery.values('year')[:1])).annotate(
-        vin = Subquery(subquery.values('vin')[:1])).annotate(
-        number_body = Subquery(subquery.values('number_body')[:1])).annotate(
+        status_estimation_id = Subquery(subquery.values('status__id')[:1])).annotate(
+        start_estimation    = Subquery(subquery.values('estimation__start_estimation')[:1])).annotate(
+        remote_price        = Subquery(subquery.values('estimation__page_remote__price_sale')[:1])).annotate(
+        end_estimation      = Subquery(subquery.values('estimation__end_estimation')[:1])).annotate(
+        staff_estimation    = Subquery(subquery.values('staff_rlk')[:1])).annotate(
+        mark                = Subquery(subquery.values('estimation__modification__model__mark__name')[:1])).annotate(
+        model = Subquery(subquery.values('estimation__modification__model__name')[:1])).annotate(
+        modification = Subquery(subquery.values('estimation__modification__name')[:1])).annotate(
+        type_estimation_ocenka = Subquery(subquery.values('type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id = Subquery(subquery.values('type_reception__id')[:1])).annotate(
+        year = Subquery(subquery.values('estimation__year')[:1])).annotate(
+        vin = Subquery(subquery.values('estimation__vin')[:1])).annotate(
+        number_body = Subquery(subquery.values('estimation__number_body')[:1])).annotate(
         lo_pk = Subquery(subquery.values('id')[:1])).annotate(
         estimation_price_staff = Subquery(subquery.values('page_soglasovanie__price_reception')[:1])).annotate(
         estimation_price_staff_sale = Subquery(subquery.values('page_soglasovanie__price_sale')[:1])).annotate(
@@ -5467,7 +5467,7 @@ def rlk_trade_in(request, id):
     if len(docs) > 0:
         page_obj = docs[0]
         if page_obj.lo_pk != None:
-            estimation  = RegInteractivOcenka.objects.get(pk=  page_obj.lo_pk)
+            estimation  = RegInteractivOcenkaRLK.objects.get(pk=page_obj.lo_pk)
             chat        = Chat.objects.get_or_create(name = page_obj.pk, slug = 'rlk_' + str(page_obj.pk))[0]
 
     selected = {
@@ -9649,7 +9649,7 @@ def test(request):
     #AutoruComplectation.objects.all().delete()
     
     from register.models import RegInteractivOcenkaRLK
-    date_start = DT.datetime.now().replace(day=1, hour = 1, month=1, year=2026)
+    date_start = DT.datetime.now().replace(day=24, hour = 1, month=2, year=2026)
     count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
     s = 0
     estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
@@ -9677,18 +9677,18 @@ def test(request):
             
             reg_interactiv.save()
             
-            if reg_interactiv.page_soglasovanie != None:
-                if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0 or reg_interactiv.page_soglasovanie.discount_torg == 0:
-                    price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
-                    if price_autohub != None:
-                        reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
-                        reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-                        reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-                        reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-                        reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-                        reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
-                        reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-                        reg_interactiv_ocenka_soglasovanie.save()
+            # if reg_interactiv.page_soglasovanie != None:
+            #     if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0 or reg_interactiv.page_soglasovanie.discount_torg == 0:
+            #         price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+            #         if price_autohub != None:
+            #             reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+            #             reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+            #             reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+            #             reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+            #             reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+            #             reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
+            #             reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+            #             reg_interactiv_ocenka_soglasovanie.save()
 
             estimation.save()
             s = s + 1 

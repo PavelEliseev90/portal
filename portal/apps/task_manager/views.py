@@ -2071,7 +2071,7 @@ def send_push_estimation():
             plaintext   = get_template('email_eco.txt')
             htmly       = get_template('email_eco.html')
             
-            ref = 'https://ah.kors-group.com/eco/' + str(push_user.estimation.rlk.id)
+            ref = 'https://ah.kors-group.com/eco/' + str(push_user.rlk.id)
             
             estimation = push_user.estimation 
             car = '' + estimation.modification.model.mark.name + ' ' + estimation.modification.model.name + ' ' + estimation.modification.name + ' ' + str(estimation.year)
